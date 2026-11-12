@@ -84,7 +84,7 @@ public partial class Game : Node2D
         attackCooldown = 0.33f; attackEffect = 0.17f;
         foreach (var enemy in enemies) {
             Vector2 offset = enemy.Pos - player;
-            if (offset.Length() < (enemy.Boss ? 95 : 78) && (offset.Length() < 20 || facing.Dot(offset.Normalized()) > 0.1f)) { enemy.Hp -= damage; enemy.Pos += facing * 15; }
+            if (offset.Length() < (enemy.Boss ? 95 : 78) && (offset.Length() < 20 || facing.Dot(offset.Normalized()) > 0.1f)) { enemy.Hp -= damage; PushEnemy(enemy, facing * 15); }
         }
     }
     private void UseWhirlwind() {
@@ -94,9 +94,14 @@ public partial class Game : Node2D
             Vector2 offset = enemy.Pos - player;
             if (offset.Length() < 110) {
                 enemy.Hp -= damage * 1.6f;
-                if (offset.LengthSquared() > 0) enemy.Pos += offset.Normalized() * 25;
+                if (offset.LengthSquared() > 0) PushEnemy(enemy, offset.Normalized() * 25);
             }
         }
+    }
+    private static void PushEnemy(Enemy enemy, Vector2 displacement) {
+        enemy.Pos += displacement;
+        enemy.Pos.X = Mathf.Clamp(enemy.Pos.X, 85, 875);
+        enemy.Pos.Y = Mathf.Clamp(enemy.Pos.Y, 128, 533);
     }
     public override void _PhysicsProcess(double delta) {
         noticeTime = Math.Max(0, noticeTime - (float)delta);
@@ -176,7 +181,7 @@ public partial class Game : Node2D
         DrawRect(new Rect2(45, 95, 870, 472), new Color("3c3e3a")); DrawRect(new Rect2(65, 108, 830, 445), new Color("303530"));
         for (int y = 0; y < 7; y++) for (int x = 0; x < 12; x++) DrawRect(new Rect2(70 + x * 68, 112 + y * 62, 67, 61), new Color("39403a"), false);
         DrawRect(new Rect2(65, 108, 830, 445), new Color("7c7866"), false, 4);
-        DrawRect(new Rect2(873, 293, 22, 75), enemies.Count == 0 ? new Color("8ac4a9") : new Color("252526"));
+        DrawRect(new Rect2(873, 293, 22, 75), enemies.Count == 0 && loot.Count == 0 ? new Color("8ac4a9") : new Color("252526"));
         if (room == 2) DrawRect(new Rect2(730, 318, 40, 27), new Color("ac7b3e"));
         foreach (var enemy in enemies) {
             float radius = enemy.Boss ? 23 : 15;
@@ -184,6 +189,11 @@ public partial class Game : Node2D
             DrawCircle(enemy.Pos, radius, enemy.Boss ? new Color("8f6459") : enemy.Archer ? new Color("8b9f75") : new Color("b7b5a6"));
             DrawCircle(enemy.Pos + new Vector2(-5, -4), 2.5f, new Color("bc5145")); DrawCircle(enemy.Pos + new Vector2(5, -4), 2.5f, new Color("bc5145"));
             DrawRect(new Rect2(enemy.Pos.X - 22, enemy.Pos.Y - radius - 10, 44 * Math.Max(0, enemy.Hp / enemy.MaxHp), 4), new Color("b8584f"));
+            if (enemy.Boss) {
+                Text("GUARDIÃO DA CRIPTA", new Vector2(373, 104), 13, goldColor);
+                DrawRect(new Rect2(360, 112, 240, 7), new Color("191919"));
+                DrawRect(new Rect2(360, 112, 240 * Mathf.Clamp(enemy.Hp / enemy.MaxHp, 0, 1), 7), new Color("b8584f"));
+            }
         }
         foreach (var shot in projectiles) DrawCircle(shot.Pos, 5, new Color("e5ae69"));
         foreach (var item in loot) {
@@ -198,7 +208,7 @@ public partial class Game : Node2D
         Text("WASD: mover   ESPAÇO: atacar   SHIFT: esquivar   Q: poção   E: interagir", new Vector2(68, 618), 13, text);
         if (noticeTime > 0) Text(notice, new Vector2(260, 175), 15, goldColor);
         if (state == "playing") Text($"R: redemoinho {(skillCooldown > 0 ? skillCooldown.ToString("0.0") + "s" : "pronto")}   I: arma   F5: salvar", new Vector2(570, 590), 12, text);
-        if (enemies.Count == 0 && state == "playing") Text(room == 2 ? "APROXIME-SE DO BAÚ E PRESSIONE E" : "SALA LIMPA: PORTA ABERTA", new Vector2(300, 145), 16, goldColor);
+        if (enemies.Count == 0 && state == "playing") Text(loot.Count > 0 ? "RECOLHA OS ITENS NO CHÃO" : room == 2 ? "APROXIME-SE DO BAÚ E PRESSIONE E" : "SALA LIMPA: PORTA ABERTA", new Vector2(300, 145), 16, goldColor);
         if (state != "playing") {
             DrawRect(new Rect2(0, 0, 960, 640), new Color(0.025f, 0.03f, 0.035f, 0.92f));
             Text(state == "title" ? "SCADRYK RPG" : state == "victory" ? "VITÓRIA!" : "VOCÊ CAIU", new Vector2(330, 260), 38, goldColor);
