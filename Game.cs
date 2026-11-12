@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 public partial class Game : Node2D
 {
-    private class Enemy { public Vector2 Pos, AttackTarget; public float Hp, MaxHp, Cooldown, Windup, HitTextTime; public string HitText = ""; public int BossPattern; public bool Boss, Archer, Elite, Mage; }
+    private class Enemy { public Vector2 Pos, AttackTarget; public float Hp, MaxHp, Cooldown, Windup, HitTextTime, BleedTime; public string HitText = ""; public int BossPattern; public bool Boss, Archer, Elite, Mage; }
     private class Projectile { public Vector2 Pos, Velocity; public float Life = 3f; }
     private class Loot { public Vector2 Pos; public bool Potion; public int Amount; public int Weapon = -1; public bool Armor, Relic; }
     private readonly List<Enemy> enemies = new();
@@ -46,6 +46,13 @@ public partial class Game : Node2D
     }
     public override void _UnhandledInput(InputEvent e) {
         if (e is not InputEventKey key || !key.Pressed || key.Echo) return;
+        if (state == "chest_choice") {
+            if (key.Keycode == Key.Key1) gold += 75;
+            else if (key.Keycode == Key.Key2) potions += 2;
+            else if (key.Keycode == Key.Key3) health = maxHealth;
+            else return;
+            state = "victory"; notice = "RECOMPENSA ESCOLHIDA"; noticeTime = 2; QueueRedraw(); return;
+        }
         if (state != "playing") { if (key.Keycode == Key.F5 && state == "victory") SaveGame(); else if (key.Keycode == Key.Enter || key.Keycode == Key.Space) StartGame(); else if (key.Keycode == Key.C && state == "title") LoadGame(); return; }
         if (talentChoice) {
             if (key.Keycode == Key.Key1) { healthTalent++; maxHealth += 20; health = Math.Min(maxHealth, health + 20); }
@@ -73,7 +80,7 @@ public partial class Game : Node2D
             case Key.E:
                 if (enemies.Count == 0 && loot.Count > 0) { notice = "RECOLHA OS ITENS ANTES DE SAIR"; noticeTime = 3; }
                 else if (enemies.Count == 0 && room < 2 && player.DistanceTo(new Vector2(850, 330)) < 95) { room++; SetupRoom(); }
-                else if (enemies.Count == 0 && room == 2 && player.DistanceTo(new Vector2(750, 330)) < 100) { gold += 100; state = "victory"; }
+                else if (enemies.Count == 0 && room == 2 && player.DistanceTo(new Vector2(750, 330)) < 100) state = "chest_choice";
                 break;
         }
         QueueRedraw();
@@ -193,8 +200,9 @@ public partial class Game : Node2D
         foreach (var enemy in enemies) {
             Vector2 offset = enemy.Pos - player;
             if (offset.Length() < (enemy.Boss ? 95 : 78) && (offset.Length() < 20 || facing.Dot(offset.Normalized()) > 0.1f)) {
-                bool critical = GD.Randf() < 0.12f; int dealt = critical ? damage * 2 : damage;
+                bool critical = GD.Randf() < (weaponLevel == 2 ? 0.25f : 0.12f); int dealt = critical ? damage * 2 : damage;
                 enemy.Hp -= dealt; enemy.HitText = critical ? $"CRÍTICO! -{dealt}" : $"-{dealt}"; enemy.HitTextTime = 0.65f;
+                if (weaponLevel == 1) enemy.BleedTime = 3f;
                 PushEnemy(enemy, facing * 15);
             }
         }
@@ -275,6 +283,7 @@ public partial class Game : Node2D
         for (int i = enemies.Count - 1; i >= 0; i--) {
             var enemy = enemies[i];
             enemy.HitTextTime = Math.Max(0, enemy.HitTextTime - dt);
+            if (enemy.BleedTime > 0) { enemy.BleedTime = Math.Max(0, enemy.BleedTime - dt); enemy.Hp -= 2f * dt; }
             if (enemy.Hp <= 0) {
                 loot.Add(new Loot { Pos = enemy.Pos, Amount = enemy.Boss ? 20 : enemy.Elite ? 15 : 6 });
                 if (relicEquipped) health = Math.Min(maxHealth, health + 5);
@@ -315,10 +324,11 @@ public partial class Game : Node2D
                 if (state != "playing") break;
                 continue;
             }
-            if (enemy.Boss && enemy.Cooldown <= 0 && offset.Length() < 100) {
+            bool enraged = enemy.Boss && enemy.Hp <= enemy.MaxHp * 0.5f;
+            if (enemy.Boss && enemy.Cooldown <= 0 && offset.Length() < 125) {
                 enemy.BossPattern = (enemy.BossPattern + 1) % 2;
                 enemy.AttackTarget = player;
-                enemy.Windup = 0.85f; enemy.Cooldown = 2.2f; continue;
+                enemy.Windup = enraged ? 0.55f : 0.85f; enemy.Cooldown = enraged ? 1.35f : 2.2f; continue;
             }
             if (offset.Length() > (enemy.Boss ? 39 : 30)) MoveEnemy(enemy, offset.Normalized() * (enemy.Boss ? 58 : 76 + room * 8) * dt);
             else if (enemy.Cooldown <= 0) {
@@ -384,12 +394,12 @@ public partial class Game : Node2D
                 string status = !owned ? "NÃO ENCONTRADA" : i == weaponLevel ? "EQUIPADA" : "DISPONÍVEL";
                 string speed = i == 2 ? "RÁPIDA" : "NORMAL";
                 int comparison = WeaponBonuses[i] - WeaponBonuses[weaponLevel];
-                Text($"{i + 1}. {WeaponNames[i]}  |  DANO {comparison:+#;-#;0}  |  {speed}  |  {status}", new Vector2(190, 245 + i * 53), 14, owned ? text : new Color("777777"));
+                Text($"{i + 1}. {WeaponNames[i]}  |  DANO {comparison:+#;-#;0}  |  {speed}  |  {status}", new Vector2(190, 245 + i * 38), 14, owned ? text : new Color("777777"));
             }
-            Text($"4. PEITORAL DE PEDRA  |  REDUZ DANO EM 30%  |  {(hasArmor ? armorEquipped ? "EQUIPADO" : "DISPONÍVEL" : "NÃO ENCONTRADO")}", new Vector2(190, 410), 14, hasArmor ? text : new Color("777777"));
-            Text($"PROTEÇÃO ATUAL: {(armorEquipped ? "30%" : "0%")}", new Vector2(190, 445), 14, new Color("9fd0bb"));
-            Text($"5. RELICÁRIO VITAL  |  CURA 5 VIDA AO ABATER  |  {(hasRelic ? relicEquipped ? "EQUIPADO" : "DISPONÍVEL" : "NÃO ENCONTRADO")}", new Vector2(190, 470), 13, hasRelic ? text : new Color("777777"));
-            Text($"DANO ATUAL: {damage}   OURO: {gold}", new Vector2(190, 480), 15, goldColor);
+            Text($"4. PEITORAL DE PEDRA  |  REDUZ DANO EM 30%  |  {(hasArmor ? armorEquipped ? "EQUIPADO" : "DISPONÍVEL" : "NÃO ENCONTRADO")}", new Vector2(190, 375), 14, hasArmor ? text : new Color("777777"));
+            Text($"PROTEÇÃO ATUAL: {(armorEquipped ? "30%" : "0%")}", new Vector2(190, 405), 14, new Color("9fd0bb"));
+            Text($"5. RELICÁRIO VITAL  |  CURA 5 VIDA AO ABATER  |  {(hasRelic ? relicEquipped ? "EQUIPADO" : "DISPONÍVEL" : "NÃO ENCONTRADO")}", new Vector2(190, 440), 13, hasRelic ? text : new Color("777777"));
+            Text($"DANO ATUAL: {damage}   OURO: {gold}", new Vector2(190, 475), 15, goldColor);
         }
         if (talentChoice && state == "playing") {
             DrawRect(new Rect2(185, 200, 590, 225), new Color(0.04f, 0.05f, 0.05f, 0.97f));
@@ -398,10 +408,17 @@ public partial class Game : Node2D
             Text($"2. DOMÍNIO  Redemoinho recarrega mais rápido  (nível {skillTalent})", new Vector2(220, 330), 15, text);
             Text($"3. AGILIDADE  esquiva recarrega mais rápido  (nível {dodgeTalent})", new Vector2(220, 370), 15, text);
         }
-        if (state != "playing") {
+        if (state == "chest_choice") {
+            DrawRect(new Rect2(185, 200, 590, 225), new Color(0.04f, 0.05f, 0.05f, 0.97f));
+            Text("BAÚ DA CRIPTA — ESCOLHA UMA RECOMPENSA", new Vector2(220, 245), 18, goldColor);
+            Text("1. 75 OURO", new Vector2(220, 300), 16, text);
+            Text("2. DUAS POÇÕES", new Vector2(220, 340), 16, text);
+            Text("3. RECUPERAR TODA A VIDA", new Vector2(220, 380), 16, text);
+        }
+        if (state != "playing" && state != "chest_choice") {
             DrawRect(new Rect2(0, 0, 960, 640), new Color(0.025f, 0.03f, 0.035f, 0.92f));
             Text(state == "title" ? "SCADRYK RPG" : state == "victory" ? "VITÓRIA!" : "VOCÊ CAIU", new Vector2(330, 260), 38, goldColor);
-            Text("ENTER PARA COMEÇAR", new Vector2(355, 370), 18, text);
+            Text(state == "victory" ? "F5 PARA SALVAR • ENTER PARA RECOMEÇAR" : "ENTER PARA COMEÇAR", new Vector2(300, 370), 18, text);
             if (state == "title") Text("C PARA CARREGAR JOGO", new Vector2(350, 395), 16, text);
             if (noticeTime > 0) Text(notice, new Vector2(300, 460), 15, text);
             Text("WASD mover  •  ESPAÇO atacar  •  SHIFT esquivar", new Vector2(240, 420), 16, text);
