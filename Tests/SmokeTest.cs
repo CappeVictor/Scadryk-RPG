@@ -45,10 +45,16 @@ public partial class SmokeTest : Node
             Check((string)Get("notice") == "PROGRESSO SALVO", "Falha ao salvar.");
             Set("gold", 0); Call("LoadGame");
             Check((int)Get("gold") == 123 && enemies.Count == 0, "Salvamento não restaurou ouro ou sala limpa.");
-            var invalid = new ConfigFile(); invalid.SetValue("player", "gold", "inválido");
+            var invalid = new ConfigFile();
+            Check(invalid.Load("user://scadryk-smoketest.cfg") == Error.Ok, "Falha ao abrir salvamento de teste.");
+            invalid.SetValue("player", "gold", "inválido");
             Check(invalid.Save("user://scadryk-smoketest.cfg") == Error.Ok, "Falha ao criar teste de arquivo inválido.");
             Call("LoadGame");
             Check((string)Get("notice") == "SALVAMENTO INVÁLIDO" && (int)Get("gold") == 123, "Dados inválidos alteraram o progresso atual.");
+            invalid.SetValue("player", "gold", 123); invalid.SetValue("player", "room", 100);
+            Check(invalid.Save("user://scadryk-smoketest.cfg") == Error.Ok, "Falha ao criar teste de valores fora do intervalo.");
+            Call("LoadGame");
+            Check((string)Get("notice") == "SALVAMENTO INVÁLIDO" && (int)Get("gold") == 123, "Valor fora do intervalo alterou o progresso.");
             Call("StartGame");
             first = enemies[0];
             first.GetType().GetField("Pos").SetValue(first, new Vector2(870, 330));
