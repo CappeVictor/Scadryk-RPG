@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 public partial class Game : Node2D
 {
-    private class Enemy { public Vector2 Pos; public float Hp, MaxHp, Cooldown, Windup; public bool Boss, Archer, Elite; }
+    private class Enemy { public Vector2 Pos, AttackTarget; public float Hp, MaxHp, Cooldown, Windup; public int BossPattern; public bool Boss, Archer, Elite; }
     private class Projectile { public Vector2 Pos, Velocity; public float Life = 3f; }
     private class Loot { public Vector2 Pos; public bool Potion; public int Amount; public int Weapon = -1; public bool Armor; }
     private readonly List<Enemy> enemies = new();
@@ -20,6 +20,9 @@ public partial class Game : Node2D
     private int ownedWeapons = 1;
     private bool inventoryOpen;
     private bool hasArmor, armorEquipped;
+    private bool talentChoice;
+    private int healthTalent, skillTalent, dodgeTalent;
+    private readonly Rect2[] obstacles = { new Rect2(345, 235, 48, 90), new Rect2(565, 375, 58, 80) };
     private static readonly string[] WeaponNames = { "ESPADA COMUM", "LÂMINA RARA", "LÂMINA DO CREPÚSCULO" };
     private static readonly int[] WeaponBonuses = { 0, 10, 4 };
     private string notice = "";
@@ -27,7 +30,7 @@ public partial class Game : Node2D
     private float skillCooldown, skillEffect;
     public override void _Ready() => QueueRedraw();
     private void StartGame() {
-        room = 0; level = 1; xp = 0; gold = 0; potions = 2; damage = 25; weaponLevel = 0; ownedWeapons = 1; inventoryOpen = false; hasArmor = armorEquipped = false;
+        room = 0; level = 1; xp = 0; gold = 0; potions = 2; damage = 25; weaponLevel = 0; ownedWeapons = 1; inventoryOpen = false; hasArmor = armorEquipped = false; talentChoice = false; healthTalent = skillTalent = dodgeTalent = 0;
         health = maxHealth = 100; attackCooldown = attackEffect = dashCooldown = dashTime = invulnerable = hitFlash = skillCooldown = skillEffect = 0;
         state = "playing"; SetupRoom();
     }
@@ -43,6 +46,13 @@ public partial class Game : Node2D
     public override void _UnhandledInput(InputEvent e) {
         if (e is not InputEventKey key || !key.Pressed || key.Echo) return;
         if (state != "playing") { if (key.Keycode == Key.F5 && state == "victory") SaveGame(); else if (key.Keycode == Key.Enter || key.Keycode == Key.Space) StartGame(); else if (key.Keycode == Key.C && state == "title") LoadGame(); return; }
+        if (talentChoice) {
+            if (key.Keycode == Key.Key1) { healthTalent++; maxHealth += 20; health = Math.Min(maxHealth, health + 20); }
+            else if (key.Keycode == Key.Key2) skillTalent++;
+            else if (key.Keycode == Key.Key3) dodgeTalent++;
+            else return;
+            talentChoice = false; QueueRedraw(); return;
+        }
         if (key.Keycode == Key.I) { inventoryOpen = !inventoryOpen; QueueRedraw(); return; }
         if (inventoryOpen) {
             if (key.Keycode == Key.Key1) EquipWeapon(0);
@@ -54,7 +64,7 @@ public partial class Game : Node2D
         }
         switch (key.Keycode) {
             case Key.Space: case Key.J: Attack(); break;
-            case Key.Shift: case Key.K: if (dashCooldown <= 0) { dashTime = 0.17f; dashCooldown = 1.15f; } break;
+            case Key.Shift: case Key.K: if (dashCooldown <= 0) { dashTime = 0.17f; dashCooldown = Math.Max(0.35f, 1.15f - dodgeTalent * 0.12f); } break;
             case Key.Q: if (potions > 0 && health < maxHealth) { potions--; health = Math.Min(maxHealth, health + 45); } break;
             case Key.R: UseWhirlwind(); break;
             case Key.F5: SaveGame(); break;
@@ -90,6 +100,7 @@ public partial class Game : Node2D
         file.SetValue("player", "weapon", weaponLevel); file.SetValue("player", "health", health);
         file.SetValue("player", "owned_weapons", ownedWeapons);
         file.SetValue("player", "has_armor", hasArmor); file.SetValue("player", "armor_equipped", armorEquipped);
+        file.SetValue("player", "health_talent", healthTalent); file.SetValue("player", "skill_talent", skillTalent); file.SetValue("player", "dodge_talent", dodgeTalent);
         file.SetValue("player", "max_health", maxHealth);
         Error error = file.Save(savePath);
         notice = error == Error.Ok ? "PROGRESSO SALVO" : "ERRO AO SALVAR"; noticeTime = 3;
@@ -116,6 +127,7 @@ public partial class Game : Node2D
         bool savedHasArmor = (bool)file.GetValue("player", "has_armor", false);
         bool savedArmorEquipped = (bool)file.GetValue("player", "armor_equipped", false);
         if (savedArmorEquipped && !savedHasArmor) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
+        int savedHealthTalent = ReadTalent(file, "health_talent"); int savedSkillTalent = ReadTalent(file, "skill_talent"); int savedDodgeTalent = ReadTalent(file, "dodge_talent");
         long savedRoom = file.GetValue("player", "room").AsInt64();
         long savedLevel = file.GetValue("player", "level").AsInt64();
         long savedXp = file.GetValue("player", "xp").AsInt64();
@@ -148,12 +160,18 @@ public partial class Game : Node2D
         xp = Math.Max(0, (int)file.GetValue("player", "xp", 0)); gold = Math.Max(0, (int)file.GetValue("player", "gold", 0));
         potions = Math.Max(0, (int)file.GetValue("player", "potions", 2)); damage = Math.Max(1, (int)file.GetValue("player", "damage", 25));
         weaponLevel = (int)savedWeapon; ownedWeapons = (int)savedOwned; hasArmor = savedHasArmor; armorEquipped = savedArmorEquipped;
+        healthTalent = savedHealthTalent; skillTalent = savedSkillTalent; dodgeTalent = savedDodgeTalent; talentChoice = false;
         maxHealth = Math.Max(1, (float)file.GetValue("player", "max_health", 100f));
         health = Mathf.Clamp((float)file.GetValue("player", "health", 100f), 1, maxHealth);
         SetupRoom();
         if ((bool)file.GetValue("player", "room_cleared", false)) enemies.Clear();
         state = completed ? "victory" : "playing";
         notice = "PROGRESSO CARREGADO"; noticeTime = 3;
+    }
+    private static int ReadTalent(ConfigFile file, string key) {
+        if (!file.HasSectionKey("player", key)) return 0;
+        Variant value = file.GetValue("player", key);
+        return value.VariantType == Variant.Type.Int ? Mathf.Clamp((int)value, 0, 20) : 0;
     }
     private void Attack() {
         if (attackCooldown > 0) return;
@@ -165,7 +183,7 @@ public partial class Game : Node2D
     }
     private void UseWhirlwind() {
         if (skillCooldown > 0) return;
-        skillCooldown = 6f; skillEffect = 0.3f;
+        skillCooldown = Math.Max(1.5f, 6f - skillTalent * 0.5f); skillEffect = 0.3f;
         foreach (var enemy in enemies) {
             Vector2 offset = enemy.Pos - player;
             if (offset.Length() < 110) {
@@ -189,7 +207,11 @@ public partial class Game : Node2D
         dashCooldown = Math.Max(0, dashCooldown - dt); invulnerable = Math.Max(0, invulnerable - dt); hitFlash = Math.Max(0, hitFlash - dt);
         Vector2 dir = new((Input.IsKeyPressed(Key.D) || Input.IsKeyPressed(Key.Right) ? 1 : 0) - (Input.IsKeyPressed(Key.A) || Input.IsKeyPressed(Key.Left) ? 1 : 0), (Input.IsKeyPressed(Key.S) || Input.IsKeyPressed(Key.Down) ? 1 : 0) - (Input.IsKeyPressed(Key.W) || Input.IsKeyPressed(Key.Up) ? 1 : 0));
         dir = dir.Normalized(); if (dir != Vector2.Zero && dashTime <= 0) facing = dir;
-        bool dashing = dashTime > 0; player += (dashing ? facing : dir) * (dashing ? 530 : 190) * dt;
+        bool dashing = dashTime > 0;
+        Vector2 candidate = player + (dashing ? facing : dir) * (dashing ? 530 : 190) * dt;
+        Rect2 playerBox = new(candidate - new Vector2(12, 12), new Vector2(24, 24));
+        bool hitsObstacle = false; foreach (Rect2 obstacle in obstacles) if (playerBox.Intersects(obstacle)) { hitsObstacle = true; break; }
+        if (!hitsObstacle) player = candidate;
         dashTime = Math.Max(0, dashTime - dt);
         player.X = Mathf.Clamp(player.X, 85, 875); player.Y = Mathf.Clamp(player.Y, 128, 533);
         for (int i = loot.Count - 1; i >= 0; i--) {
@@ -209,6 +231,7 @@ public partial class Game : Node2D
                 if (health <= 0) { health = 0; state = "dead"; }
             } else if (shot.Life <= 0 || shot.Pos.X < 65 || shot.Pos.X > 895 || shot.Pos.Y < 108 || shot.Pos.Y > 553) projectiles.RemoveAt(i);
         }
+        if (talentChoice) { QueueRedraw(); return; }
         if (state != "playing") { QueueRedraw(); return; }
         for (int i = enemies.Count - 1; i >= 0; i--) {
             var enemy = enemies[i];
@@ -217,7 +240,7 @@ public partial class Game : Node2D
                 xp += enemy.Boss ? 45 : enemy.Elite ? 30 : 20;
                 if (enemy.Elite && !hasArmor) loot.Add(new Loot { Pos = enemy.Pos + new Vector2(20, 0), Armor = true });
                 else if (!enemy.Boss && GD.Randf() < 0.18f) loot.Add(new Loot { Pos = enemy.Pos + new Vector2(18, 0), Potion = true });
-                if (xp >= level * 60) { xp -= level * 60; level++; maxHealth += 15; health = Math.Min(maxHealth, health + 25); damage += 5; }
+                if (xp >= level * 60) { xp -= level * 60; level++; damage += 5; talentChoice = true; }
                 enemies.RemoveAt(i);
                 if (enemies.Count == 0 && room < 2) {
                     int found = room == 0 ? 2 : 1;
@@ -237,15 +260,18 @@ public partial class Game : Node2D
             }
             if (enemy.Windup > 0) {
                 enemy.Windup -= dt;
-                if (enemy.Windup <= 0 && offset.Length() < 90 && invulnerable <= 0 && !dashing) {
-                    health -= MitigatedDamage(22); invulnerable = 0.55f; hitFlash = 0.2f;
+                float strikeDistance = enemy.BossPattern == 0 ? 90 : 42;
+                if (enemy.Windup <= 0 && (enemy.BossPattern == 0 ? offset.Length() < strikeDistance : player.DistanceTo(enemy.AttackTarget) < strikeDistance) && invulnerable <= 0 && !dashing) {
+                    health -= MitigatedDamage(enemy.BossPattern == 0 ? 22 : 30); invulnerable = 0.55f; hitFlash = 0.2f;
                     if (health <= 0) { health = 0; state = "dead"; }
                 }
                 if (state != "playing") break;
                 continue;
             }
             if (enemy.Boss && enemy.Cooldown <= 0 && offset.Length() < 100) {
-                enemy.Windup = 0.75f; enemy.Cooldown = 2.2f; continue;
+                enemy.BossPattern = (enemy.BossPattern + 1) % 2;
+                enemy.AttackTarget = player;
+                enemy.Windup = 0.85f; enemy.Cooldown = 2.2f; continue;
             }
             if (offset.Length() > (enemy.Boss ? 39 : 30)) enemy.Pos += offset.Normalized() * (enemy.Boss ? 58 : 76 + room * 8) * dt;
             else if (enemy.Cooldown <= 0) {
@@ -266,12 +292,16 @@ public partial class Game : Node2D
         Text($"VIDA {health:0}/{maxHealth:0}   NÍVEL {level}   XP {xp}/{level * 60}   OURO {gold}   POÇÕES {potions}", new Vector2(240, 45), 15, text);
         DrawRect(new Rect2(45, 95, 870, 472), new Color("3c3e3a")); DrawRect(new Rect2(65, 108, 830, 445), new Color("303530"));
         for (int y = 0; y < 7; y++) for (int x = 0; x < 12; x++) DrawRect(new Rect2(70 + x * 68, 112 + y * 62, 67, 61), new Color("39403a"), false);
+        foreach (Rect2 obstacle in obstacles) { DrawRect(obstacle, new Color("514c40")); DrawRect(obstacle, new Color("82765f"), false, 3); }
         DrawRect(new Rect2(65, 108, 830, 445), new Color("7c7866"), false, 4);
         DrawRect(new Rect2(873, 293, 22, 75), enemies.Count == 0 && loot.Count == 0 ? new Color("8ac4a9") : new Color("252526"));
         if (room == 2) DrawRect(new Rect2(730, 318, 40, 27), new Color("ac7b3e"));
         foreach (var enemy in enemies) {
             float radius = enemy.Boss ? 23 : 15;
-            if (enemy.Windup > 0) DrawArc(enemy.Pos, 90, 0, Mathf.Tau, 48, new Color("e67b58"), 3, true);
+            if (enemy.Windup > 0) {
+                if (enemy.BossPattern == 0) DrawArc(enemy.Pos, 90, 0, Mathf.Tau, 48, new Color("e67b58"), 3, true);
+                else { DrawLine(enemy.Pos, enemy.AttackTarget, new Color("e67b58"), 12); DrawCircle(enemy.AttackTarget, 42, new Color(0.9f, 0.35f, 0.25f, 0.35f)); }
+            }
             DrawCircle(enemy.Pos, radius, enemy.Boss ? new Color("8f6459") : enemy.Elite ? new Color("a67dc0") : enemy.Archer ? new Color("8b9f75") : new Color("b7b5a6"));
             if (enemy.Elite) Text("ELITE", enemy.Pos + new Vector2(-18, -31), 10, new Color("d4a7e8"));
             DrawCircle(enemy.Pos + new Vector2(-5, -4), 2.5f, new Color("bc5145")); DrawCircle(enemy.Pos + new Vector2(5, -4), 2.5f, new Color("bc5145"));
@@ -310,6 +340,13 @@ public partial class Game : Node2D
             Text($"4. PEITORAL DE PEDRA  |  REDUZ DANO EM 30%  |  {(hasArmor ? armorEquipped ? "EQUIPADO" : "DISPONÍVEL" : "NÃO ENCONTRADO")}", new Vector2(190, 410), 14, hasArmor ? text : new Color("777777"));
             Text($"PROTEÇÃO ATUAL: {(armorEquipped ? "30%" : "0%")}", new Vector2(190, 445), 14, new Color("9fd0bb"));
             Text($"DANO ATUAL: {damage}   OURO: {gold}", new Vector2(190, 480), 15, goldColor);
+        }
+        if (talentChoice && state == "playing") {
+            DrawRect(new Rect2(185, 200, 590, 225), new Color(0.04f, 0.05f, 0.05f, 0.97f));
+            Text("SUBIU DE NÍVEL — ESCOLHA UMA MELHORIA", new Vector2(220, 238), 18, goldColor);
+            Text($"1. VIGOR  +20 VIDA MÁXIMA  (nível {healthTalent})", new Vector2(220, 290), 15, text);
+            Text($"2. DOMÍNIO  Redemoinho recarrega mais rápido  (nível {skillTalent})", new Vector2(220, 330), 15, text);
+            Text($"3. AGILIDADE  esquiva recarrega mais rápido  (nível {dodgeTalent})", new Vector2(220, 370), 15, text);
         }
         if (state != "playing") {
             DrawRect(new Rect2(0, 0, 960, 640), new Color(0.025f, 0.03f, 0.035f, 0.92f));
