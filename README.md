@@ -1,72 +1,80 @@
-# Scadryk RPG
+# Scadryk
 
-Protótipo jogável de RPG de ação com visão superior e fantasia sombria, feito em **Godot 4 .NET e C#**. O projeto está em evolução; arte e efeitos ainda são provisórios e desenhados pelo código.
+Scadryk é um RPG de ação 2D em fantasia sombria, feito em C# com .NET 8 e Windows Forms. O desenho usa GDI+; o projeto não depende de Godot nem de outro motor de jogo. Diablo é uma referência de ritmo, combate e progressão. O mundo, os nomes e os itens de Scadryk são próprios.
 
-## Conteúdo atual
+O jogo atual é um protótipo curto com três salas, inimigos de funções distintas, um elite com afixação, um Guardião com duas fases, loot, equipamentos, níveis e talentos. A base está preparada para crescer por etapas.
 
-- Três salas de combate com inimigos comuns, arqueiros, elite, conjurador e Guardião da Cripta.
-- O elite usa um golpe de área anunciado por um marcador que encolhe durante a preparação, dando tempo para esquivar.
-- O elite recebe uma afixação aleatória por partida: Frenético ataca mais rápido; Blindado suporta mais dano e aparece com um aro de proteção.
-- Combate corpo a corpo, acertos críticos, esquiva e habilidade Redemoinho.
-- Segunda fase do guardião abaixo de metade da vida, com ataques mais rápidos.
-- Barra de vida com alerta visual em vida baixa e indicador explícito da fase enfurecida do guardião.
-- Ouro, poções, experiência, níveis e escolhas de talentos.
-- Armas com atributos e efeitos próprios, armadura e relíquia equipáveis.
-- Ataques corpo a corpo são bloqueados por pilares; inimigos comuns se espalham para evitar que todos ocupem o mesmo ponto.
-- Nomes de função acima de arqueiros, conjuradores e elites deixam os papéis do grupo mais fáceis de reconhecer.
-- Cada nível ganho gera sua própria escolha de talento, mesmo quando vários níveis são alcançados na mesma luta.
-- A conclusão ou derrota mostra um resumo da tentativa: tempo, inimigos derrotados, críticos, poções usadas e dano recebido.
-- Poções mostram o efeito imediato; tentar usar sem estoque também apresenta uma mensagem.
-- Itens deixados no chão, baú final com escolha de recompensa e salvamento local.
+## Requisitos
 
-## Requisitos e execução
+- Windows 10 ou 11.
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0).
+- [Visual Studio Code](https://code.visualstudio.com/).
 
-1. Instale a **Godot 4.3 .NET** (a edição com suporte a C#) e o **SDK .NET 8**.
-2. Clone o repositório ou baixe e extraia o ZIP.
-3. Na Godot .NET, importe `project.godot` e abra o projeto.
-4. Compile pelo botão **Build/Compilar** e pressione **F6** ou **F5** para executar a cena/projeto.
+Não é preciso instalar Godot ou um motor de jogo. A extensão C# Dev Kit do VS Code é opcional; o terminal do .NET basta para compilar e iniciar.
+
+## Abrir e iniciar no VS Code
+
+1. Instale o .NET 8 SDK e o VS Code.
+2. Baixe o projeto pelo botão **Code → Download ZIP** no GitHub ou clone o repositório.
+3. Extraia o ZIP, se necessário, e abra a pasta do projeto no VS Code (**File → Open Folder**).
+4. Abra o terminal integrado (**Terminal → New Terminal**).
+5. Na pasta que contém `Scadryk.csproj`, execute:
+
+   ```powershell
+   dotnet run
+   ```
+
+Para compilar uma versão de produção:
+
+```powershell
+dotnet build --configuration Release
+```
+
+Para executar as verificações automatizadas incluídas:
+
+```powershell
+dotnet run -- --self-test
+```
+
+O executável compilado aparece em `bin/Release/net8.0-windows/`. Para criar uma pasta executável independente de uma instalação do .NET no computador de destino:
+
+```powershell
+dotnet publish --configuration Release --runtime win-x64 --self-contained true
+```
 
 ## Controles
 
-| Tecla | Ação |
+| Tecla ou ação | Função |
 | --- | --- |
 | WASD ou setas | Mover |
-| Espaço ou J | Atacar |
-| Clique esquerdo | Atacar mirando na posição do cursor |
+| Espaço, J ou clique esquerdo | Atacar |
 | Shift ou K | Esquivar |
 | R ou clique direito | Redemoinho |
 | Q | Usar poção |
 | E | Abrir passagem ou interagir com o baú |
-| I | Abrir/fechar inventário |
-| 1–5 no inventário | Equipar arma, armadura ou relíquia |
-| F5 | Salvar progresso |
-| C na tela inicial | Carregar progresso salvo |
-| Tab | Selecionar/ciclar alvo; ataques se voltam ao alvo marcado |
-| 1, 2 ou 3 no baú final | Escolher ouro, poções ou recuperar a vida |
+| I | Abrir ou fechar inventário |
+| 1–3 no inventário | Equipar arma |
+| 4–5 no inventário | Alternar armadura e relíquia |
+| 1–3 ao subir de nível | Escolher talento |
+| Tab | Trocar alvo |
+| F5 | Salvar depois de limpar a sala e recolher o loot |
+| C na tela inicial | Carregar o save |
+| Enter | Começar ou reiniciar |
 
-Recolha os itens que caem antes de sair da sala. Na última câmara, derrote os inimigos, aproxime-se do baú e pressione **E**. O progresso e as estatísticas da tentativa são salvos em `user://scadryk-save.cfg`.
+Os ataques corpo a corpo comuns agora mostram a área de impacto antes do golpe. Saia do círculo para evitar dano. O movimento também desliza pela quina dos obstáculos quando uma direção fica bloqueada.
 
-## Validação
+## Salvamento
 
-O projeto compila com Godot .NET 4.3 e SDK .NET 8. A compilação confirma o código C#, mas não substitui uma partida manual. Se quiser executar os testes automatizados incluídos no repositório, abra `Tests/SmokeTest.tscn` na Godot .NET; eles cobrem verificações básicas de combate, itens, limites da sala e salvamento.
+O save JSON fica em `%LOCALAPPDATA%\Scadryk\save.json`. Na tela inicial, pressione **C** para carregar. Se não houver um save novo, o jogo também procura o ConfigFile da versão anterior em `%APPDATA%\Godot\app_userdata\Scadryk RPG\scadryk-save.cfg` e migra os dados encontrados para o formato JSON.
 
-## Arquivos principais
+## Estrutura
 
-- `project.godot`: configurações do projeto.
-- `Scadryk.csproj`: projeto C# e versão do SDK.
-- `Main.tscn`: cena principal.
-- `Game.cs`: lógica, interface e desenho do protótipo.
+- `Program.cs`: ponto de entrada do aplicativo Windows.
+- `Game.cs`: janela, desenho 2D, combate, inimigos, loot, progressão e save.
+- `Scadryk.csproj`: projeto C#/.NET 8 Windows Forms.
+- `.github/workflows/validate.yml`: compilação e smoke test no GitHub Actions.
 
-## Próximas etapas
+## Limites atuais
 
-Separar os sistemas em cenas e classes, substituir os gráficos provisórios por arte original, adicionar áudio e animações, ampliar salas e inimigos, e validar o ciclo completo de jogo na Godot. Antes de aumentar muito o escopo, preparar uma demonstração curta e colher feedback de jogadores para medir clareza, diversão e interesse. O desempenho deve ser otimizado a partir de medições reais.
+Este é um protótipo com três salas e arte procedural desenhada em formas 2D. Ainda faltam campanha longa, mais chefes e builds, arte e áudio originais, animações, balanceamento amplo e testes manuais em diferentes resoluções. Não há medição de desempenho em máquinas variadas.
 
-## Referências de design consultadas
-
-- [Diablo IV: leitura visual dos efeitos e ataques](https://news.blizzard.com/en-gb/article/23746639/diablo-iv-quarterly-updatedecember-2021): os sinais de combate devem continuar claros em meio aos efeitos.
-- [Diablo IV: ajustes de masmorras e redução de retrocesso](https://news.blizzard.com/en-us/article/24009151/descend-into-the-diablo-iv-developer-update-livestream): objetivos e rotas mais diretos ajudam a manter o ritmo da exploração.
-- [Diablo IV: identidade e comportamento dos inimigos](https://news.blizzard.com/en-us/article/24243142/sanctuary-ignites-with-itemization-systems-changes): cada tipo de inimigo ganha um papel reconhecível.
-- [Diablo IV: afixações de monstros](https://news.blizzard.com/en-us/article/23189677/diablo-iv-feature-overview): modificadores devem alterar a estratégia contra o inimigo, não apenas seus números; isso inspirou as variantes do elite.
-- [Last Epoch: melhorias de qualidade de vida e filtros de loot](https://forum.lastepoch.com/t/harbingers-of-ruin-quality-of-life-more/71756): informação de equipamento e filtros claros são boas referências para uma futura expansão do inventário.
-
-Essas referências orientam princípios gerais; Scadryk mantém personagens, mundo, itens e apresentação próprios.

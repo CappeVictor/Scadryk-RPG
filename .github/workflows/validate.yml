@@ -1,0 +1,19 @@
+name: Validate C# game
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Build
+        run: dotnet build Scadryk.csproj --configuration Release
+      - name: Gameplay smoke tests
+        run: dotnet run --project Scadryk.csproj --configuration Release --no-build -- --self-test
+

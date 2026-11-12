@@ -1,535 +1,326 @@
-using Godot;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.IO;
+using System.Linq;
+using System.Text.Json;
+using System.Windows.Forms;
 
-public partial class Game : Node2D
+public sealed class Game : Form
 {
-    private enum EnemyAffix { None, Frenzied, Armored }
-    private class Enemy { public Vector2 Pos, AttackTarget; public float Hp, MaxHp, Cooldown, Windup, HitTextTime, BleedTime; public string HitText = ""; public int BossPattern; public EnemyAffix Affix; public bool Boss, Archer, Elite, Mage; }
-    private class Projectile { public Vector2 Pos, Velocity; public float Life = 3f; }
-    private class Loot { public Vector2 Pos; public bool Potion; public int Amount; public int Weapon = -1; public bool Armor, Relic; }
+    private enum EnemyKind { Grunt, Archer, Mage, Elite, Guardian }
+    private sealed class Enemy
+    {
+        public PointF Pos, Target;
+        public EnemyKind Kind;
+        public float Hp, MaxHp, Cooldown, Windup, WindupMax, Flash;
+        public int BossPattern;
+        public bool Armored;
+        public bool Boss => Kind == EnemyKind.Guardian;
+        public float Radius => Boss ? 23 : Kind == EnemyKind.Elite ? 18 : 14;
+    }
+    private sealed class Drop { public PointF Pos; public string Kind = "gold"; public int Amount; }
+    private sealed class SaveData
+    {
+        public int Room { get; set; }
+        public int Level { get; set; } = 1;
+        public int Xp { get; set; }
+        public int Gold { get; set; }
+        public int Potions { get; set; } = 2;
+        public int Damage { get; set; } = 25;
+        public float Health { get; set; } = 100;
+        public float MaxHealth { get; set; } = 100;
+        public int Weapon { get; set; }
+        public int OwnedWeapons { get; set; } = 1;
+        public bool Armor { get; set; }
+        public bool Relic { get; set; }
+        public int HealthTalent { get; set; }
+        public int SkillTalent { get; set; }
+        public int DodgeTalent { get; set; }
+        public bool RoomCleared { get; set; }
+        public bool Completed { get; set; }
+    }
+
+    private static readonly RectangleF[] Walls = { new(345, 235, 48, 90), new(565, 375, 58, 80) };
     private readonly List<Enemy> enemies = new();
-    private readonly List<Projectile> projectiles = new();
-    private readonly List<Loot> loot = new();
-    private readonly string[] rooms = { "VESTÍBULO EM RUÍNAS", "SALÃO DOS OSSOS", "CÂMARA DO GUARDIÃO" };
-    private Vector2 player = new(150, 330), facing = Vector2.Right;
-    private int room, level = 1, xp, gold, potions = 2, damage = 25;
-    private int enemiesDefeated, criticalHits, potionsUsed;
-    private float runTime, damageTaken;
-    private float health = 100, maxHealth = 100, attackCooldown, attackEffect, dashCooldown, dashTime, invulnerable, hitFlash;
-    private string state = "title";
-    private Enemy lockedTarget;
-    private string savePath = "user://scadryk-save.cfg";
-    private int weaponLevel;
-    private int ownedWeapons = 1;
-    private bool inventoryOpen;
-    private bool hasArmor, armorEquipped;
-    private bool hasRelic, relicEquipped;
-    private bool talentChoice;
-    private int pendingTalentChoices;
-    private int healthTalent, skillTalent, dodgeTalent;
-    private static readonly Rect2[] obstacles = { new Rect2(345, 235, 48, 90), new Rect2(565, 375, 58, 80) };
-    private static readonly string[] WeaponNames = { "ESPADA COMUM", "LÂMINA RARA", "LÂMINA DO CREPÚSCULO" };
-    private static readonly int[] WeaponBonuses = { 0, 10, 4 };
+    private readonly List<Drop> drops = new();
+    private readonly HashSet<Keys> down = new();
+    private readonly System.Windows.Forms.Timer timer = new() { Interval = 16 };
+    private readonly Random random = new();
+    private readonly string[] roomNames = { "VESTÍBULO EM RUÍNAS", "SALÃO DOS OSSOS", "CÂMARA DO GUARDIÃO" };
+    private readonly string[] weaponNames = { "ESPADA COMUM", "LÂMINA RARA", "LÂMINA DO CREPÚSCULO" };
+    private readonly int[] weaponDamage = { 0, 10, 4 };
+    private PointF player = new(150, 330), facing = new(1, 0), mouseAim = new(1, 0);
+    private int room, level = 1, xp, gold, potions = 2, damage = 25, weapon, ownedWeapons = 1;
+    private int healthTalent, skillTalent, dodgeTalent, pendingTalents, enemiesDefeated;
+    private float health = 100, maxHealth = 100, attackCd, skillCd, dashCd, dashTime, invulnerable, noticeTime, windupPulse;
+    private bool armor, armorOn, relic, relicOn, inventoryOpen, title = true, dead, victory, talentChoice, chestChoice;
     private string notice = "";
-    private float noticeTime;
-    private float skillCooldown, skillEffect;
-    public override void _Ready() => QueueRedraw();
-    private void StartGame() {
-        room = 0; level = 1; xp = 0; gold = 0; potions = 2; damage = 25; weaponLevel = 0; ownedWeapons = 1; inventoryOpen = false; hasArmor = armorEquipped = hasRelic = relicEquipped = false; talentChoice = false; pendingTalentChoices = 0; healthTalent = skillTalent = dodgeTalent = 0;
-        enemiesDefeated = criticalHits = potionsUsed = 0; runTime = damageTaken = 0;
-        health = maxHealth = 100; attackCooldown = attackEffect = dashCooldown = dashTime = invulnerable = hitFlash = skillCooldown = skillEffect = 0;
-        state = "playing"; SetupRoom();
+    private string SavePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Scadryk", "save.json");
+
+    public Game()
+    {
+        Text = "Scadryk — RPG de ação 2D"; ClientSize = new Size(960, 640); MinimumSize = MaximumSize = new Size(976, 679);
+        FormBorderStyle = FormBorderStyle.FixedSingle; MaximizeBox = false; StartPosition = FormStartPosition.CenterScreen;
+        DoubleBuffered = true; KeyPreview = true; BackColor = Color.FromArgb(16, 19, 23);
+        timer.Tick += (_, _) => TickGame(); timer.Start();
+        KeyDown += OnKeyDown; KeyUp += (_, e) => down.Remove(e.KeyCode);
+        MouseMove += (_, e) => { mouseAim = Normalize(new PointF(e.X - player.X, e.Y - player.Y), facing); };
+        MouseDown += (_, e) => { if (title || dead || victory || chestChoice || talentChoice || inventoryOpen) return; mouseAim = Normalize(new PointF(e.X - player.X, e.Y - player.Y), facing); if (e.Button == MouseButtons.Left) Attack(); if (e.Button == MouseButtons.Right) Whirlwind(); };
     }
-    private void SetupRoom() {
-        player = new Vector2(150, 330); enemies.Clear(); projectiles.Clear(); loot.Clear(); lockedTarget = null;
+
+    private void StartGame()
+    {
+        room = 0; level = 1; xp = gold = damage = 0; damage = 25; potions = 2; weapon = 0; ownedWeapons = 1;
+        armor = armorOn = relic = relicOn = inventoryOpen = dead = victory = chestChoice = talentChoice = false;
+        healthTalent = skillTalent = dodgeTalent = pendingTalents = enemiesDefeated = 0;
+        health = maxHealth = 100; attackCd = skillCd = dashCd = dashTime = invulnerable = 0; title = false; SetupRoom();
+    }
+
+    private void SetupRoom()
+    {
+        player = new PointF(150, 330); enemies.Clear(); drops.Clear(); lockedTarget = null;
         int count = room == 0 ? 3 : room == 1 ? 5 : 4;
-        for (int i = 0; i < count; i++) {
-            bool boss = room == 2 && i == 0; bool archer = room > 0 && i == 1; bool mage = room == 2 && i == 2; bool elite = room == 1 && i == count - 1;
-            EnemyAffix affix = elite ? GD.Randf() < 0.5f ? EnemyAffix.Frenzied : EnemyAffix.Armored : EnemyAffix.None;
-            float hp = boss ? 125 : elite ? affix == EnemyAffix.Armored ? 145 : 105 : archer || mage ? 40 : 50 + room * 8;
-            enemies.Add(new Enemy { Pos = new Vector2(480 + i % 3 * 120, 220 + i / 3 * 170 + i % 2 * 60), Boss = boss, Archer = archer, Mage = mage, Elite = elite, Affix = affix, Hp = hp, MaxHp = hp, Cooldown = 1 });
+        for (int i = 0; i < count; i++)
+        {
+            EnemyKind kind = room == 2 && i == 0 ? EnemyKind.Guardian : room == 1 && i == count - 1 ? EnemyKind.Elite : room > 0 && i == 1 ? EnemyKind.Archer : room == 2 && i == 2 ? EnemyKind.Mage : EnemyKind.Grunt;
+            float hp = kind switch { EnemyKind.Guardian => 160, EnemyKind.Elite => 120, EnemyKind.Archer or EnemyKind.Mage => 48, _ => 58 + room * 8 };
+            var enemy = new Enemy { Pos = new PointF(485 + i % 3 * 120, 215 + i / 3 * 165), Kind = kind, Hp = hp, MaxHp = hp, Cooldown = 0.7f + (float)random.NextDouble(), Armored = kind == EnemyKind.Elite && random.Next(2) == 0 };
+            if (Blocked(enemy.Pos, enemy.Radius)) enemy.Pos = new PointF(660 + i * 12, 480 - i * 8);
+            enemies.Add(enemy);
         }
     }
-    public override void _UnhandledInput(InputEvent e) {
-        if (e is InputEventMouseButton mouse && mouse.Pressed && state == "playing" && !inventoryOpen && !talentChoice) {
-            Vector2 aim = GetGlobalMousePosition() - player;
-            if (aim.LengthSquared() > 0.001f) facing = aim.Normalized();
-            if (mouse.ButtonIndex == MouseButton.Left) Attack();
-            else if (mouse.ButtonIndex == MouseButton.Right) UseWhirlwind();
-            else return;
-            QueueRedraw(); return;
-        }
-        if (e is not InputEventKey key || !key.Pressed || key.Echo) return;
-        if (state == "chest_choice") {
-            if (key.Keycode == Key.Key1) gold += 75;
-            else if (key.Keycode == Key.Key2) potions += 2;
-            else if (key.Keycode == Key.Key3) health = maxHealth;
-            else return;
-            state = "victory"; notice = "RECOMPENSA ESCOLHIDA"; noticeTime = 2; QueueRedraw(); return;
-        }
-        if (state != "playing") { if (key.Keycode == Key.F5 && state == "victory") SaveGame(); else if (key.Keycode == Key.Enter || key.Keycode == Key.Space) StartGame(); else if (key.Keycode == Key.C && state == "title") LoadGame(); return; }
-        if (talentChoice) {
-            if (key.Keycode == Key.Key1) { healthTalent++; maxHealth += 20; health = Math.Min(maxHealth, health + 20); }
-            else if (key.Keycode == Key.Key2) skillTalent++;
-            else if (key.Keycode == Key.Key3) dodgeTalent++;
-            else return;
-            pendingTalentChoices = Math.Max(0, pendingTalentChoices - 1);
-            talentChoice = pendingTalentChoices > 0; QueueRedraw(); return;
-        }
-        if (key.Keycode == Key.I) { inventoryOpen = !inventoryOpen; QueueRedraw(); return; }
-        if (inventoryOpen) {
-            if (key.Keycode == Key.Key1) EquipWeapon(0);
-            else if (key.Keycode == Key.Key2) EquipWeapon(1);
-            else if (key.Keycode == Key.Key3) EquipWeapon(2);
-            else if (key.Keycode == Key.Key4) EquipArmor();
-            else if (key.Keycode == Key.Key5) EquipRelic();
-            else if (key.Keycode == Key.Escape) inventoryOpen = false;
-            QueueRedraw(); return;
-        }
-        switch (key.Keycode) {
-            case Key.Space: case Key.J: Attack(); break;
-            case Key.Shift: case Key.K: if (dashCooldown <= 0) { dashTime = 0.17f; dashCooldown = Math.Max(0.35f, 1.15f - dodgeTalent * 0.12f); } break;
-            case Key.Q:
-                if (potions > 0 && health < maxHealth) { potions--; potionsUsed++; health = Math.Min(maxHealth, health + 45); notice = "+45 VIDA"; noticeTime = 1.2f; }
-                else if (potions <= 0) { notice = "SEM POÇÕES"; noticeTime = 1.5f; }
-                break;
-            case Key.R: UseWhirlwind(); break;
-            case Key.F5: SaveGame(); break;
-            case Key.Tab: CycleTarget(); break;
-            case Key.E:
-                if (enemies.Count == 0 && loot.Count > 0) { notice = "RECOLHA OS ITENS ANTES DE SAIR"; noticeTime = 3; }
-                else if (enemies.Count == 0 && room < 2 && player.DistanceTo(new Vector2(850, 330)) < 95) { room++; SetupRoom(); }
-                else if (enemies.Count == 0 && room == 2 && player.DistanceTo(new Vector2(750, 330)) < 100) state = "chest_choice";
-                break;
-        }
-        QueueRedraw();
+
+    private void OnKeyDown(object? sender, KeyEventArgs e)
+    {
+        down.Add(e.KeyCode);
+        if (e.KeyCode == Keys.Enter && (title || dead || victory)) { StartGame(); return; }
+        if (e.KeyCode == Keys.C && title) { LoadGame(); return; }
+        if (e.KeyCode == Keys.F5 && victory) { SaveGame(); return; }
+        if (title || dead || victory) return;
+        if (chestChoice) { if (e.KeyCode == Keys.D1) gold += 75; else if (e.KeyCode == Keys.D2) potions += 2; else if (e.KeyCode == Keys.D3) health = maxHealth; else return; chestChoice = false; victory = true; return; }
+        if (talentChoice) { SelectTalent(e.KeyCode); return; }
+        if (e.KeyCode == Keys.I) { inventoryOpen = !inventoryOpen; return; }
+        if (inventoryOpen) { if (e.KeyCode >= Keys.D1 && e.KeyCode <= Keys.D3) EquipWeapon((int)e.KeyCode - (int)Keys.D1); else if (e.KeyCode == Keys.D4 && armor) armorOn = !armorOn; else if (e.KeyCode == Keys.D5 && relic) relicOn = !relicOn; return; }
+        if (e.KeyCode == Keys.Space || e.KeyCode == Keys.J) Attack();
+        else if ((e.KeyCode == Keys.ShiftKey || e.KeyCode == Keys.K) && dashCd <= 0) { dashTime = 0.17f; dashCd = Math.Max(0.35f, 1.15f - dodgeTalent * 0.12f); }
+        else if (e.KeyCode == Keys.R) Whirlwind();
+        else if (e.KeyCode == Keys.Q) UsePotion();
+        else if (e.KeyCode == Keys.E) Interact();
+        else if (e.KeyCode == Keys.F5) { if (enemies.Count == 0 && drops.Count == 0) SaveGame(); else { notice = "LIMPE A SALA E RECOLHA O LOOT ANTES DE SALVAR"; noticeTime = 2; } }
+        else if (e.KeyCode == Keys.Tab) CycleTarget();
     }
-    private void CycleTarget() {
-        if (enemies.Count == 0) { lockedTarget = null; notice = "NENHUM ALVO NA SALA"; noticeTime = 1.5f; return; }
-        int current = enemies.IndexOf(lockedTarget);
-        if (current >= 0) lockedTarget = enemies[(current + 1) % enemies.Count];
-        else {
-            lockedTarget = enemies[0];
-            foreach (Enemy enemy in enemies) if (enemy.Pos.DistanceSquaredTo(player) < lockedTarget.Pos.DistanceSquaredTo(player)) lockedTarget = enemy;
-        }
-        string name = lockedTarget.Boss ? "GUARDIÃO DA CRIPTA" : lockedTarget.Elite ? lockedTarget.Affix == EnemyAffix.Frenzied ? "ELITE FRENÉTICO" : "ELITE BLINDADO" : lockedTarget.Mage ? "CONJURADOR" : lockedTarget.Archer ? "ARQUEIRO" : "INIMIGO";
-        notice = $"ALVO: {name}"; noticeTime = 1.5f;
+
+    private void SelectTalent(Keys key)
+    {
+        if (key == Keys.D1) { healthTalent++; maxHealth += 20; health = Math.Min(maxHealth, health + 20); }
+        else if (key == Keys.D2) skillTalent++;
+        else if (key == Keys.D3) dodgeTalent++;
+        else return;
+        pendingTalents--; talentChoice = pendingTalents > 0;
     }
-    private void EquipWeapon(int index) {
-        if (index < 0 || index >= WeaponNames.Length || (ownedWeapons & (1 << index)) == 0) { notice = "ARMA AINDA NÃO ENCONTRADA"; noticeTime = 2; return; }
-        damage += WeaponBonuses[index] - WeaponBonuses[weaponLevel];
-        weaponLevel = index;
-        notice = $"EQUIPADA: {WeaponNames[index]}"; noticeTime = 2;
-    }
-    private void EquipArmor() {
-        if (!hasArmor) { notice = "ARMADURA AINDA NÃO ENCONTRADA"; noticeTime = 2; return; }
-        armorEquipped = !armorEquipped;
-        notice = armorEquipped ? "PEITORAL DE PEDRA EQUIPADO • -30% DANO" : "PEITORAL DE PEDRA DESEQUIPADO";
-        noticeTime = 2;
-    }
-    private void EquipRelic() {
-        if (!hasRelic) { notice = "RELÍQUIA AINDA NÃO ENCONTRADA"; noticeTime = 2; return; }
-        relicEquipped = !relicEquipped;
-        notice = relicEquipped ? "RELICÁRIO VITAL EQUIPADO • CURA AO ABATER" : "RELICÁRIO VITAL DESEQUIPADO";
-        noticeTime = 2;
-    }
-    private void SaveGame() {
-        if (talentChoice) { notice = "ESCOLHA SEU TALENTO ANTES DE SALVAR"; noticeTime = 3; return; }
-        if (state != "victory" && enemies.Count != 0) { notice = "LIMPE A SALA ANTES DE SALVAR"; noticeTime = 3; return; }
-        if (loot.Count != 0) { notice = "RECOLHA OS ITENS ANTES DE SALVAR"; noticeTime = 3; return; }
-        var file = new ConfigFile();
-        file.SetValue("player", "room_cleared", true);
-        file.SetValue("player", "completed", state == "victory");
-        file.SetValue("player", "room", room); file.SetValue("player", "level", level);
-        file.SetValue("player", "xp", xp); file.SetValue("player", "gold", gold);
-        file.SetValue("player", "potions", potions); file.SetValue("player", "damage", damage);
-        file.SetValue("player", "weapon", weaponLevel); file.SetValue("player", "health", health);
-        file.SetValue("player", "owned_weapons", ownedWeapons);
-        file.SetValue("player", "has_armor", hasArmor); file.SetValue("player", "armor_equipped", armorEquipped);
-        file.SetValue("player", "has_relic", hasRelic); file.SetValue("player", "relic_equipped", relicEquipped);
-        file.SetValue("player", "health_talent", healthTalent); file.SetValue("player", "skill_talent", skillTalent); file.SetValue("player", "dodge_talent", dodgeTalent);
-        file.SetValue("player", "max_health", maxHealth);
-        file.SetValue("run", "enemies_defeated", enemiesDefeated); file.SetValue("run", "critical_hits", criticalHits);
-        file.SetValue("run", "potions_used", potionsUsed); file.SetValue("run", "elapsed", runTime); file.SetValue("run", "damage_taken", damageTaken);
-        Error error = file.Save(savePath);
-        notice = error == Error.Ok ? "PROGRESSO SALVO" : "ERRO AO SALVAR"; noticeTime = 3;
-    }
-    private void LoadGame() {
-        var file = new ConfigFile();
-        if (file.Load(savePath) != Error.Ok) { notice = "NENHUM SALVAMENTO ENCONTRADO"; noticeTime = 3; return; }
-        string[] integers = { "room", "level", "xp", "gold", "potions", "damage", "weapon" };
-        foreach (string key in integers) {
-            if (!file.HasSectionKey("player", key) || file.GetValue("player", key).VariantType != Variant.Type.Int) {
-                notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return;
-            }
-        }
-        foreach (string key in new[] { "health", "max_health" }) {
-            if (!file.HasSectionKey("player", key)) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
-            var type = file.GetValue("player", key).VariantType;
-            if (type != Variant.Type.Float && type != Variant.Type.Int) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
-        }
-        if (file.HasSectionKey("player", "room_cleared") && file.GetValue("player", "room_cleared").VariantType != Variant.Type.Bool) {
-            notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return;
-        }
-        if (file.HasSectionKey("player", "completed") && file.GetValue("player", "completed").VariantType != Variant.Type.Bool) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
-        string[] runCounters = { "enemies_defeated", "critical_hits", "potions_used" };
-        string[] runTotals = { "elapsed", "damage_taken" };
-        bool hasRunData = file.HasSectionKey("run", "enemies_defeated") || file.HasSectionKey("run", "critical_hits") || file.HasSectionKey("run", "potions_used") || file.HasSectionKey("run", "elapsed") || file.HasSectionKey("run", "damage_taken");
-        if (hasRunData) {
-            foreach (string key in runCounters) {
-                if (!file.HasSectionKey("run", key) || file.GetValue("run", key).VariantType != Variant.Type.Int || file.GetValue("run", key).AsInt64() < 0 || file.GetValue("run", key).AsInt64() > 1000000) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
-            }
-            foreach (string key in runTotals) {
-                if (!file.HasSectionKey("run", key)) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
-                Variant value = file.GetValue("run", key);
-                if ((value.VariantType != Variant.Type.Float && value.VariantType != Variant.Type.Int) || !double.IsFinite(value.AsDouble()) || value.AsDouble() < 0 || value.AsDouble() > 1000000000) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
-            }
-        }
-        foreach (string key in new[] { "has_armor", "armor_equipped" }) if (file.HasSectionKey("player", key) && file.GetValue("player", key).VariantType != Variant.Type.Bool) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
-        foreach (string key in new[] { "health_talent", "skill_talent", "dodge_talent" }) {
-            if (file.HasSectionKey("player", key) && (file.GetValue("player", key).VariantType != Variant.Type.Int || file.GetValue("player", key).AsInt64() < 0 || file.GetValue("player", key).AsInt64() > 20)) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
-        }
-        bool savedHasArmor = (bool)file.GetValue("player", "has_armor", false);
-        bool savedArmorEquipped = (bool)file.GetValue("player", "armor_equipped", false);
-        if (savedArmorEquipped && !savedHasArmor) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
-        foreach (string key in new[] { "has_relic", "relic_equipped" }) if (file.HasSectionKey("player", key) && file.GetValue("player", key).VariantType != Variant.Type.Bool) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
-        bool savedHasRelic = (bool)file.GetValue("player", "has_relic", false), savedRelicEquipped = (bool)file.GetValue("player", "relic_equipped", false);
-        if (savedRelicEquipped && !savedHasRelic) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
-        int savedHealthTalent = ReadTalent(file, "health_talent"); int savedSkillTalent = ReadTalent(file, "skill_talent"); int savedDodgeTalent = ReadTalent(file, "dodge_talent");
-        long savedRoom = file.GetValue("player", "room").AsInt64();
-        long savedLevel = file.GetValue("player", "level").AsInt64();
-        long savedXp = file.GetValue("player", "xp").AsInt64();
-        long savedGold = file.GetValue("player", "gold").AsInt64();
-        long savedPotions = file.GetValue("player", "potions").AsInt64();
-        long savedDamage = file.GetValue("player", "damage").AsInt64();
-        long savedWeapon = file.GetValue("player", "weapon").AsInt64();
-        double savedHealth = file.GetValue("player", "health").AsDouble();
-        double savedMaxHealth = file.GetValue("player", "max_health").AsDouble();
-        if (savedRoom < 0 || savedRoom > 2 || savedLevel < 1 || savedLevel > 10000 ||
-            savedXp < 0 || savedXp >= savedLevel * 60 || savedGold < 0 || savedGold > int.MaxValue ||
-            savedPotions < 0 || savedPotions > int.MaxValue || savedDamage < 1 || savedDamage > int.MaxValue ||
-            savedWeapon < 0 || savedWeapon > 2 || !double.IsFinite(savedHealth) || !double.IsFinite(savedMaxHealth) ||
-            savedMaxHealth < 1 || savedMaxHealth > 1000000 || savedHealth <= 0 || savedHealth > savedMaxHealth) {
-            notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return;
-        }
-        // Salvamentos anteriores não tinham inventário; conceder armas já ultrapassadas.
-        long savedOwned = (savedWeapon == 1 ? 3 : 1) | (savedRoom >= 1 ? 4 : 0);
-        if (file.HasSectionKey("player", "owned_weapons")) {
-            Variant value = file.GetValue("player", "owned_weapons");
-            if (value.VariantType != Variant.Type.Int) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
-            savedOwned = value.AsInt64();
-        }
-        if (savedOwned < 1 || savedOwned > 7 || (savedOwned & 1) == 0 || (savedOwned & (1 << (int)savedWeapon)) == 0) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
-        bool completed = (bool)file.GetValue("player", "completed", false);
-        if (completed && savedRoom != 2) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
-        StartGame();
-        room = Mathf.Clamp((int)file.GetValue("player", "room", 0), 0, 2);
-        level = Math.Max(1, (int)file.GetValue("player", "level", 1));
-        xp = Math.Max(0, (int)file.GetValue("player", "xp", 0)); gold = Math.Max(0, (int)file.GetValue("player", "gold", 0));
-        if (hasRunData) {
-            enemiesDefeated = (int)file.GetValue("run", "enemies_defeated"); criticalHits = (int)file.GetValue("run", "critical_hits");
-            potionsUsed = (int)file.GetValue("run", "potions_used"); runTime = (float)file.GetValue("run", "elapsed").AsDouble(); damageTaken = (float)file.GetValue("run", "damage_taken").AsDouble();
-        }
-        potions = Math.Max(0, (int)file.GetValue("player", "potions", 2)); damage = Math.Max(1, (int)file.GetValue("player", "damage", 25));
-        weaponLevel = (int)savedWeapon; ownedWeapons = (int)savedOwned; hasArmor = savedHasArmor; armorEquipped = savedArmorEquipped;
-        healthTalent = savedHealthTalent; skillTalent = savedSkillTalent; dodgeTalent = savedDodgeTalent; talentChoice = false; pendingTalentChoices = 0; hasRelic = savedHasRelic; relicEquipped = savedRelicEquipped;
-        maxHealth = Math.Max(1, (float)file.GetValue("player", "max_health", 100f));
-        health = Mathf.Clamp((float)file.GetValue("player", "health", 100f), 1, maxHealth);
-        SetupRoom();
-        if ((bool)file.GetValue("player", "room_cleared", false)) enemies.Clear();
-        state = completed ? "victory" : "playing";
-        notice = "PROGRESSO CARREGADO"; noticeTime = 3;
-    }
-    private static int ReadTalent(ConfigFile file, string key) {
-        if (!file.HasSectionKey("player", key)) return 0;
-        return (int)file.GetValue("player", key);
-    }
-    private void Attack() {
-        if (attackCooldown > 0) return;
-        if (lockedTarget != null && enemies.Contains(lockedTarget)) {
-            Vector2 targetDirection = lockedTarget.Pos - player;
-            if (targetDirection.LengthSquared() > 0.001f) facing = targetDirection.Normalized();
-        }
-        attackCooldown = weaponLevel == 2 ? 0.23f : 0.33f; attackEffect = 0.17f;
-        foreach (var enemy in enemies) {
-            Vector2 offset = enemy.Pos - player;
-            if (offset.Length() < (enemy.Boss ? 95 : 78) && (offset.Length() < 20 || facing.Dot(offset.Normalized()) > 0.1f) && !ProjectileBlocked(player, enemy.Pos)) {
-                bool critical = GD.Randf() < (weaponLevel == 2 ? 0.25f : 0.12f); int dealt = critical ? damage * 2 : damage;
-                if (enemy.Affix == EnemyAffix.Armored) dealt = Mathf.RoundToInt(dealt * 0.75f);
-                if (critical) criticalHits++;
-                enemy.Hp -= dealt; enemy.HitText = critical ? $"CRÍTICO! -{dealt}" : $"-{dealt}"; enemy.HitTextTime = 0.65f;
-                if (weaponLevel == 1) enemy.BleedTime = 3f;
-                PushEnemy(enemy, facing * 15);
-            }
+
+    private void Attack()
+    {
+        if (attackCd > 0) return;
+        facing = lockedTarget is not null && enemies.Contains(lockedTarget) ? Normalize(Sub(lockedTarget.Pos, player), facing) : mouseAim;
+        attackCd = weapon == 2 ? 0.23f : 0.33f;
+        foreach (Enemy enemy in enemies.ToArray())
+        {
+            PointF offset = Sub(enemy.Pos, player); float distance = Length(offset);
+            if (distance > (enemy.Boss ? 95 : 78) || (distance >= 20 && Dot(facing, Normalize(offset, facing)) <= 0.1f) || BlockedLine(player, enemy.Pos)) continue;
+            bool critical = random.NextDouble() < (weapon == 2 ? 0.25 : 0.12); int dealt = damage * (critical ? 2 : 1); if (enemy.Armored) dealt = (int)(dealt * 0.75f);
+            enemy.Hp -= dealt; enemy.Flash = 0.2f; if (enemy.Hp <= 0) Defeat(enemy);
         }
     }
-    private void UseWhirlwind() {
-        if (skillCooldown > 0) return;
-        skillCooldown = Math.Max(1.5f, 6f - skillTalent * 0.5f); skillEffect = 0.3f;
-        foreach (var enemy in enemies) {
-            Vector2 offset = enemy.Pos - player;
-            if (offset.Length() < 110) {
-                enemy.Hp -= damage * 1.6f * (enemy.Affix == EnemyAffix.Armored ? 0.75f : 1f);
-                if (offset.LengthSquared() > 0) PushEnemy(enemy, offset.Normalized() * 25);
-            }
+
+    private void Whirlwind()
+    {
+        if (skillCd > 0 || talentChoice) return;
+        skillCd = Math.Max(1.5f, 6f - skillTalent * 0.5f);
+        foreach (Enemy enemy in enemies.ToArray()) if (Distance(player, enemy.Pos) < 110) { enemy.Hp -= (int)(damage * 1.6f * (enemy.Armored ? 0.75f : 1)); if (enemy.Hp <= 0) Defeat(enemy); }
+    }
+
+    private void Defeat(Enemy enemy)
+    {
+        if (!enemies.Remove(enemy)) return;
+        enemiesDefeated++; drops.Add(new Drop { Pos = enemy.Pos, Kind = "gold", Amount = enemy.Boss ? 35 : enemy.Kind == EnemyKind.Elite ? 20 : 8 });
+        AddXp(enemy.Boss ? 75 : enemy.Kind == EnemyKind.Elite ? 40 : 22);
+        if (enemy.Boss && !relic) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "relic" });
+        if (enemy.Kind == EnemyKind.Elite && !armor) drops.Add(new Drop { Pos = Offset(enemy.Pos, 24, 0), Kind = "armor" });
+        else if (!enemy.Boss && random.NextDouble() < 0.2) drops.Add(new Drop { Pos = Offset(enemy.Pos, 16, 12), Kind = "potion" });
+        if (relicOn) health = Math.Min(maxHealth, health + 5);
+        if (enemies.Count == 0 && room < 2) { int next = room == 0 ? 2 : 1; if ((ownedWeapons & (1 << next)) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, -16, -8), Kind = "weapon", Amount = next }); }
+        if (enemies.Count == 0 && drops.Count == 0 && room == 2) chestChoice = true;
+    }
+
+    private void AddXp(int amount)
+    {
+        xp += amount;
+        while (xp >= level * 60) { xp -= level * 60; level++; damage += 5; pendingTalents++; }
+        if (pendingTalents > 0) talentChoice = true;
+    }
+
+    private void TickGame()
+    {
+        float dt = timer.Interval / 1000f; noticeTime = Math.Max(0, noticeTime - dt); attackCd = Math.Max(0, attackCd - dt); skillCd = Math.Max(0, skillCd - dt); dashCd = Math.Max(0, dashCd - dt); dashTime = Math.Max(0, dashTime - dt); invulnerable = Math.Max(0, invulnerable - dt); windupPulse += dt;
+        if (title || dead || victory || inventoryOpen || talentChoice || chestChoice) { Invalidate(); return; }
+        PointF dir = new((down.Contains(Keys.D) || down.Contains(Keys.Right) ? 1 : 0) - (down.Contains(Keys.A) || down.Contains(Keys.Left) ? 1 : 0), (down.Contains(Keys.S) || down.Contains(Keys.Down) ? 1 : 0) - (down.Contains(Keys.W) || down.Contains(Keys.Up) ? 1 : 0));
+        dir = Normalize(dir, PointF.Empty); if (dashTime > 0) dir = facing;
+        MovePlayer(Scale(dir, (dashTime > 0 ? 530 : 190) * dt));
+        for (int i = drops.Count - 1; i >= 0; i--) if (Distance(player, drops[i].Pos) < 30) Collect(drops[i]);
+        foreach (Enemy enemy in enemies.ToArray()) { UpdateEnemy(enemy, dt); if (dead) break; }
+        if (enemies.Count == 0 && drops.Count == 0 && room == 2) chestChoice = true;
+        Invalidate();
+    }
+
+    private void UpdateEnemy(Enemy e, float dt)
+    {
+        e.Cooldown -= dt; e.Flash = Math.Max(0, e.Flash - dt); PointF offset = Sub(player, e.Pos); float dist = Length(offset);
+        if (e.Windup > 0) {
+            e.Windup -= dt;
+            float reach = e.Boss ? e.BossPattern == 0 ? 90 : 42 : e.Kind == EnemyKind.Elite ? 62 : e.Kind == EnemyKind.Mage ? 52 : e.Kind == EnemyKind.Archer ? 230 : 38;
+            bool targeted = e.Boss && e.BossPattern == 1 || e.Kind is EnemyKind.Mage or EnemyKind.Elite or EnemyKind.Archer;
+            if (e.Windup <= 0 && (targeted ? Distance(player, e.Target) < reach : dist < reach) && invulnerable <= 0 && dashTime <= 0) HitPlayer(e.Boss ? 26 : e.Kind == EnemyKind.Elite ? 20 : e.Kind == EnemyKind.Mage ? 16 : 10);
+            return;
         }
+        if (e.Kind == EnemyKind.Archer) { if (dist < 170) e.Pos = MoveEnemy(e, Scale(Normalize(Offset(e.Pos, player), PointF.Empty), 55 * dt)); else if (e.Cooldown <= 0) { BeginWindup(e, player, 0.6f); e.Cooldown = 1.8f; } SeparateFromPack(e, dt); return; }
+        if (e.Kind == EnemyKind.Mage && dist < 165) e.Pos = MoveEnemy(e, Scale(Normalize(Offset(e.Pos, player), PointF.Empty), 42 * dt));
+        if (e.Kind == EnemyKind.Elite && e.Cooldown <= 0 && dist < 220) { BeginWindup(e, player, e.Armored ? 0.72f : 0.5f); e.Cooldown = e.Armored ? 2.5f : 2f; return; }
+        if (e.Boss && e.Cooldown <= 0 && dist < 135) { e.BossPattern = 1 - e.BossPattern; BeginWindup(e, player, e.Hp < e.MaxHp * 0.5f ? 0.52f : 0.8f); e.Cooldown = e.Hp < e.MaxHp * 0.5f ? 1.3f : 2.1f; return; }
+        if (e.Kind == EnemyKind.Mage && e.Cooldown <= 0) { BeginWindup(e, player, 0.8f); e.Cooldown = 2.2f; SeparateFromPack(e, dt); return; }
+        if (dist > (e.Boss ? 40 : 30)) e.Pos = MoveEnemy(e, Scale(Normalize(offset, PointF.Empty), (e.Boss ? 55 : 74 + room * 7) * dt));
+        else if (e.Cooldown <= 0) { BeginWindup(e, player, 0.45f); e.Cooldown = 1.35f; }
+        if (!e.Boss) SeparateFromPack(e, dt);
     }
-    private static void PushEnemy(Enemy enemy, Vector2 displacement) {
-        MoveEnemy(enemy, displacement);
+
+    private static void BeginWindup(Enemy enemy, PointF target, float duration) { enemy.Target = target; enemy.Windup = enemy.WindupMax = duration; }
+    private void HitPlayer(float value) { health = Math.Max(0, health - value * (armorOn ? 0.7f : 1)); invulnerable = 0.6f; if (health <= 0) dead = true; }
+    private void Collect(Drop item)
+    {
+        switch (item.Kind) { case "gold": gold += item.Amount; notice = $"+{item.Amount} OURO"; break; case "potion": potions++; notice = "+1 POÇÃO"; break; case "weapon": ownedWeapons |= 1 << item.Amount; notice = $"ARMA: {weaponNames[item.Amount]}"; break; case "armor": armor = true; notice = "PEITORAL DE PEDRA ENCONTRADO"; break; case "relic": relic = true; notice = "RELÍQUIA VITAL ENCONTRADA"; break; }
+        drops.Remove(item); noticeTime = 1.7f;
     }
-    private static bool Blocked(Vector2 position) {
-        Rect2 body = new(position - new Vector2(12, 12), new Vector2(24, 24));
-        foreach (Rect2 obstacle in obstacles) if (body.Intersects(obstacle)) return true;
+
+    private void UsePotion() { if (potions > 0 && health < maxHealth) { potions--; health = Math.Min(maxHealth, health + 45); notice = "+45 VIDA"; noticeTime = 1.3f; } else { notice = potions == 0 ? "SEM POÇÕES" : "VIDA JÁ ESTÁ CHEIA"; noticeTime = 1.3f; } }
+    private void Interact() { if (enemies.Count != 0) { notice = "DERROTE OS INIMIGOS PRIMEIRO"; noticeTime = 1.2f; } else if (drops.Count != 0) { notice = "RECOLHA O LOOT ANTES DE AVANÇAR"; noticeTime = 1.5f; } else if (room < 2 && player.X > 790) { room++; SetupRoom(); } else if (room == 2 && Distance(player, new PointF(750, 330)) < 110) chestChoice = true; }
+    private Enemy? lockedTarget;
+    private void CycleTarget() { if (enemies.Count == 0) { lockedTarget = null; return; } int i = lockedTarget is null ? -1 : enemies.IndexOf(lockedTarget); lockedTarget = enemies[(i + 1) % enemies.Count]; notice = lockedTarget.Boss ? "ALVO: GUARDIÃO DA CRIPTA" : $"ALVO: {EnemyName(lockedTarget)}"; noticeTime = 1.4f; }
+    private void EquipWeapon(int index) { if ((ownedWeapons & (1 << index)) == 0) { notice = "ARMA AINDA NÃO ENCONTRADA"; noticeTime = 1.4f; return; } damage += weaponDamage[index] - weaponDamage[weapon]; weapon = index; }
+    private PointF MoveEnemy(Enemy e, PointF delta) { PointF p = e.Pos; PointF x = new(p.X + delta.X, p.Y), y = new(p.X, p.Y + delta.Y); if (!Blocked(x, e.Radius)) p.X = x.X; if (!Blocked(new PointF(p.X, y.Y), e.Radius)) p.Y = y.Y; return new PointF(Math.Clamp(p.X, 85, 875), Math.Clamp(p.Y, 128, 533)); }
+    private void SeparateFromPack(Enemy enemy, float dt) { PointF push = PointF.Empty; foreach (Enemy other in enemies) { if (ReferenceEquals(enemy, other)) continue; PointF away = Sub(enemy.Pos, other.Pos); float d = Length(away); if (d > 0.01f && d < 40) push = Add(push, Scale(away, (40 - d) / (40 * d))); } if (Length(push) > 0.01f) enemy.Pos = MoveEnemy(enemy, Scale(Normalize(push, PointF.Empty), 52 * dt)); }
+    private void MovePlayer(PointF delta) { PointF x = new(player.X + delta.X, player.Y), y = new(player.X, player.Y + delta.Y); if (!Blocked(x)) player.X = x.X; if (!Blocked(new PointF(player.X, y.Y))) player.Y = y.Y; player.X = Math.Clamp(player.X, 85, 875); player.Y = Math.Clamp(player.Y, 128, 533); }
+    private static bool Blocked(PointF p, float radius = 12) { RectangleF body = new(p.X - radius, p.Y - radius, radius * 2, radius * 2); return Walls.Any(w => w.IntersectsWith(body)); }
+    private static bool BlockedLine(PointF a, PointF b)
+    {
+        int steps = Math.Max(1, (int)(Distance(a, b) / 6));
+        for (int i = 0; i <= steps; i++) { float t = i / (float)steps; PointF p = new(a.X + (b.X - a.X) * t, a.Y + (b.Y - a.Y) * t); if (Walls.Any(w => w.Contains(p))) return true; }
         return false;
     }
-    private static void MoveEnemy(Enemy enemy, Vector2 displacement) {
-        Vector2 next = enemy.Pos + displacement;
-        if (!Blocked(new Vector2(next.X, enemy.Pos.Y))) enemy.Pos.X = next.X;
-        if (!Blocked(new Vector2(enemy.Pos.X, next.Y))) enemy.Pos.Y = next.Y;
-        enemy.Pos.X = Mathf.Clamp(enemy.Pos.X, 85, 875); enemy.Pos.Y = Mathf.Clamp(enemy.Pos.Y, 128, 533);
+
+    private void SaveGame() { Directory.CreateDirectory(Path.GetDirectoryName(SavePath)!); var data = new SaveData { Room = room, Level = level, Xp = xp, Gold = gold, Potions = potions, Damage = damage, Health = health, MaxHealth = maxHealth, Weapon = weapon, OwnedWeapons = ownedWeapons, Armor = armor, Relic = relic, HealthTalent = healthTalent, SkillTalent = skillTalent, DodgeTalent = dodgeTalent, RoomCleared = true, Completed = victory }; File.WriteAllText(SavePath, JsonSerializer.Serialize(data)); notice = "PROGRESSO SALVO"; noticeTime = 2; }
+    private string LegacySavePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Godot", "app_userdata", "Scadryk RPG", "scadryk-save.cfg");
+    private SaveData ReadLegacySave()
+    {
+        if (!File.Exists(LegacySavePath)) throw new FileNotFoundException();
+        string section = ""; var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (string raw in File.ReadLines(LegacySavePath)) { string line = raw.Trim(); if (line.StartsWith('[') && line.EndsWith(']')) { section = line[1..^1]; continue; } int split = line.IndexOf('='); if (split > 0) values[section + "." + line[..split].Trim()] = line[(split + 1)..].Trim().Trim('"'); }
+        string Get(string key, string fallback = "") => values.GetValueOrDefault("player." + key, fallback);
+        int Int(string key, int fallback = 0) => int.TryParse(Get(key), out int n) ? n : fallback;
+        float Float(string key, float fallback) => float.TryParse(Get(key), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float n) ? n : fallback;
+        bool Bool(string key, bool fallback = false) => bool.TryParse(Get(key), out bool b) ? b : fallback;
+        int savedWeapon = Int("weapon"); int savedRoom = Int("room");
+        return new SaveData { Room = savedRoom, Level = Int("level", 1), Xp = Int("xp"), Gold = Int("gold"), Potions = Int("potions", 2), Damage = Int("damage", 25), Health = Float("health", 100), MaxHealth = Float("max_health", 100), Weapon = savedWeapon, OwnedWeapons = Int("owned_weapons", savedWeapon == 1 ? 3 : savedRoom > 0 ? 5 : 1), Armor = Bool("has_armor"), Relic = Bool("has_relic"), HealthTalent = Int("health_talent"), SkillTalent = Int("skill_talent"), DodgeTalent = Int("dodge_talent"), RoomCleared = Bool("room_cleared", true), Completed = Bool("completed") };
     }
-    private void SeparateFromPack(Enemy enemy, float dt) {
-        Vector2 separation = Vector2.Zero;
-        foreach (Enemy other in enemies) {
-            if (ReferenceEquals(enemy, other)) continue;
-            Vector2 away = enemy.Pos - other.Pos;
-            float distance = away.Length();
-            if (distance > 0.01f && distance < 44f) separation += away / distance * ((44f - distance) / 44f);
+    private void LoadGame()
+    {
+        try
+        {
+            bool migrated = !File.Exists(SavePath); SaveData s = migrated ? ReadLegacySave() : JsonSerializer.Deserialize<SaveData>(File.ReadAllText(SavePath)) ?? throw new InvalidDataException();
+            if (s.Room is < 0 or > 2 || s.Level is < 1 or > 10000 || s.Xp < 0 || s.Xp >= s.Level * 60 || s.Weapon is < 0 or > 2 || s.OwnedWeapons < 1 || s.OwnedWeapons > 7 || (s.OwnedWeapons & (1 << s.Weapon)) == 0 || s.MaxHealth < 1 || s.Health <= 0 || s.Health > s.MaxHealth || s.Potions < 0 || s.Gold < 0 || s.Damage < 1 || s.Completed && s.Room != 2) throw new InvalidDataException();
+            StartGame(); room = s.Room; level = s.Level; xp = s.Xp; gold = s.Gold; potions = s.Potions; damage = s.Damage; health = s.Health; maxHealth = s.MaxHealth; weapon = s.Weapon; ownedWeapons = s.OwnedWeapons; armor = s.Armor; relic = s.Relic; healthTalent = s.HealthTalent; skillTalent = s.SkillTalent; dodgeTalent = s.DodgeTalent; SetupRoom(); if (s.RoomCleared) enemies.Clear(); victory = s.Completed; title = false;
+            if (migrated) SaveGame(); notice = migrated ? "SAVE ANTIGO MIGRADO" : "PROGRESSO CARREGADO"; noticeTime = 2;
         }
-        if (separation.LengthSquared() > 0.001f) MoveEnemy(enemy, separation.Normalized() * 58f * dt);
+        catch { notice = "NENHUM SALVAMENTO VÁLIDO"; noticeTime = 2; }
     }
-    private bool ProjectileBlocked(Vector2 from, Vector2 to) {
-        foreach (Rect2 obstacle in obstacles) {
-            Rect2 hitbox = new(obstacle.Position - new Vector2(4, 4), obstacle.Size + new Vector2(8, 8));
-            if (hitbox.HasPoint(to) || hitbox.HasPoint(from)) return true;
-            Vector2 a = hitbox.Position, b = hitbox.Position + new Vector2(hitbox.Size.X, 0);
-            Vector2 c = hitbox.Position + hitbox.Size, d = hitbox.Position + new Vector2(0, hitbox.Size.Y);
-            if (Geometry2D.SegmentIntersectsSegment(from, to, a, b).VariantType != Variant.Type.Nil || Geometry2D.SegmentIntersectsSegment(from, to, b, c).VariantType != Variant.Type.Nil || Geometry2D.SegmentIntersectsSegment(from, to, c, d).VariantType != Variant.Type.Nil || Geometry2D.SegmentIntersectsSegment(from, to, d, a).VariantType != Variant.Type.Nil) return true;
-        }
-        return false;
+
+    protected override void OnPaint(PaintEventArgs e)
+    {
+        Graphics g = e.Graphics; g.SmoothingMode = SmoothingMode.AntiAlias; g.Clear(Color.FromArgb(16, 19, 23));
+        using var goldBrush = new SolidBrush(Color.FromArgb(230, 193, 129)); using var textBrush = new SolidBrush(Color.FromArgb(222, 216, 201));
+        using var panel = new SolidBrush(Color.FromArgb(28, 32, 35)); using var floor = new SolidBrush(Color.FromArgb(54, 60, 53)); using var tile = new Pen(Color.FromArgb(70, 78, 68));
+        using var headerFont = new Font("Georgia", 22, FontStyle.Bold); using var hudFont = new Font("Segoe UI", 12, FontStyle.Bold); using var roomFont = new Font("Georgia", 13, FontStyle.Bold); using var helpFont = new Font("Segoe UI", 10);
+        g.FillRectangle(panel, 0, 0, 960, 83); g.DrawString("SCADRYK", headerFont, goldBrush, 24, 18);
+        g.DrawString($"VIDA {health:0}/{maxHealth:0}     NÍVEL {level}     XP {xp}/{level * 60}     OURO {gold}     POÇÕES {potions}", hudFont, textBrush, 255, 29);
+        using var healthBack = new SolidBrush(Color.FromArgb(52, 56, 51)); using var healthBar = new SolidBrush(health / maxHealth < .25f ? Color.IndianRed : Color.FromArgb(112, 171, 123));
+        g.FillRectangle(healthBack, 25, 58, 190, 11); g.FillRectangle(healthBar, 25, 58, 190 * health / maxHealth, 11);
+        g.FillRectangle(floor, 65, 108, 830, 445); for (int y = 0; y < 7; y++) for (int x = 0; x < 12; x++) g.DrawRectangle(tile, 70 + x * 68, 112 + y * 62, 67, 61);
+        using var wallBrush = new SolidBrush(Color.FromArgb(90, 79, 62)); using var wallEdge = new Pen(Color.FromArgb(154, 132, 91), 3); foreach (RectangleF wall in Walls) { g.FillRectangle(wallBrush, wall); g.DrawRectangle(wallEdge, wall.X, wall.Y, wall.Width, wall.Height); }
+        using var exitPen = new Pen(enemies.Count == 0 && drops.Count == 0 ? Color.LightGreen : Color.FromArgb(45, 48, 43), 8); g.DrawRectangle(exitPen, 882, 293, 3, 75);
+        foreach (Enemy enemy in enemies) DrawEnemy(g, enemy);
+        foreach (Drop item in drops) DrawDrop(g, item);
+        DrawPlayer(g);
+        g.DrawString($"{room + 1} / 3   {roomNames[room]}", roomFont, goldBrush, 67, 572);
+        g.DrawString("WASD mover   ESPAÇO/CLIQUE atacar   SHIFT esquivar   R redemoinho   Q poção   E interagir   I inventário", helpFont, textBrush, 67, 606);
+        if (noticeTime > 0) DrawCentered(g, notice, 170, new Font("Segoe UI", 13, FontStyle.Bold), Color.FromArgb(230, 193, 129));
+        if (title || dead || victory) DrawOverlay(g, title ? "SCADRYK" : victory ? "VITÓRIA" : "VOCÊ CAIU", title ? "ENTER PARA COMEÇAR    •    C CARREGAR SAVE" : "ENTER PARA RECOMEÇAR    •    F5 SALVAR");
+        if (inventoryOpen) DrawInventory(g);
+        if (talentChoice) DrawChoice(g, $"SUBIU DE NÍVEL — ESCOLHA ({pendingTalents} PENDENTES)", "1. VIGOR  +20 VIDA MÁXIMA", "2. DOMÍNIO  Redemoinho recarrega mais rápido", "3. AGILIDADE  esquiva recarrega mais rápido");
+        if (chestChoice) DrawChoice(g, "BAÚ DA CRIPTA — ESCOLHA UMA RECOMPENSA", "1. 75 OURO", "2. DUAS POÇÕES", "3. RECUPERAR TODA A VIDA");
     }
-    public override void _PhysicsProcess(double delta) {
-        noticeTime = Math.Max(0, noticeTime - (float)delta);
-        if (state != "playing") { QueueRedraw(); return; }
-        if (inventoryOpen) { QueueRedraw(); return; }
-        float dt = (float)delta;
-        skillCooldown = Math.Max(0, skillCooldown - dt); skillEffect = Math.Max(0, skillEffect - dt);
-        attackCooldown = Math.Max(0, attackCooldown - dt); attackEffect = Math.Max(0, attackEffect - dt);
-        dashCooldown = Math.Max(0, dashCooldown - dt); invulnerable = Math.Max(0, invulnerable - dt); hitFlash = Math.Max(0, hitFlash - dt);
-        Vector2 dir = new((Input.IsKeyPressed(Key.D) || Input.IsKeyPressed(Key.Right) ? 1 : 0) - (Input.IsKeyPressed(Key.A) || Input.IsKeyPressed(Key.Left) ? 1 : 0), (Input.IsKeyPressed(Key.S) || Input.IsKeyPressed(Key.Down) ? 1 : 0) - (Input.IsKeyPressed(Key.W) || Input.IsKeyPressed(Key.Up) ? 1 : 0));
-        dir = dir.Normalized(); if (dir != Vector2.Zero && dashTime <= 0) facing = dir;
-        bool dashing = dashTime > 0;
-        Vector2 candidate = player + (dashing ? facing : dir) * (dashing ? 530 : 190) * dt;
-        Rect2 playerBox = new(candidate - new Vector2(12, 12), new Vector2(24, 24));
-        bool hitsObstacle = false; foreach (Rect2 obstacle in obstacles) if (playerBox.Intersects(obstacle)) { hitsObstacle = true; break; }
-        if (!hitsObstacle) player = candidate;
-        dashTime = Math.Max(0, dashTime - dt);
-        player.X = Mathf.Clamp(player.X, 85, 875); player.Y = Mathf.Clamp(player.Y, 128, 533);
-        for (int i = loot.Count - 1; i >= 0; i--) {
-            var item = loot[i];
-            if (player.DistanceTo(item.Pos) < 30) {
-                if (item.Relic) { hasRelic = true; notice = "RELÍQUIA ENCONTRADA: RELICÁRIO VITAL"; }
-                else if (item.Armor) { hasArmor = true; notice = "ARMADURA ENCONTRADA: PEITORAL DE PEDRA"; }
-                else if (item.Weapon >= 0) { ownedWeapons |= 1 << item.Weapon; notice = $"ARMA ENCONTRADA: {WeaponNames[item.Weapon]}"; }
-                else if (item.Potion) { potions++; notice = "+1 POÇÃO"; }
-                else { gold += item.Amount; notice = $"+{item.Amount} OURO"; }
-                noticeTime = 1.5f; loot.RemoveAt(i);
-            }
-        }
-        for (int i = projectiles.Count - 1; i >= 0; i--) {
-            var shot = projectiles[i]; Vector2 previous = shot.Pos; shot.Pos += shot.Velocity * dt; shot.Life -= dt;
-            if (ProjectileBlocked(previous, shot.Pos)) { projectiles.RemoveAt(i); continue; }
-            if (shot.Pos.DistanceTo(player) < 18 && !dashing && invulnerable <= 0) {
-                TakeDamage(9); invulnerable = 0.55f; hitFlash = 0.2f; projectiles.RemoveAt(i);
-            } else if (shot.Life <= 0 || shot.Pos.X < 65 || shot.Pos.X > 895 || shot.Pos.Y < 108 || shot.Pos.Y > 553) projectiles.RemoveAt(i);
-        }
-        if (talentChoice) { QueueRedraw(); return; }
-        if (state != "playing") { QueueRedraw(); return; }
-        runTime += dt;
-        for (int i = enemies.Count - 1; i >= 0; i--) {
-            var enemy = enemies[i];
-            enemy.HitTextTime = Math.Max(0, enemy.HitTextTime - dt);
-            if (enemy.BleedTime > 0) { enemy.BleedTime = Math.Max(0, enemy.BleedTime - dt); enemy.Hp -= 2f * dt; }
-            if (enemy.Hp <= 0) {
-                enemiesDefeated++;
-                loot.Add(new Loot { Pos = enemy.Pos, Amount = enemy.Boss ? 20 : enemy.Elite ? 15 : 6 });
-                if (relicEquipped) health = Math.Min(maxHealth, health + 5);
-                xp += enemy.Boss ? 45 : enemy.Elite ? 30 : 20;
-                if (enemy.Boss && !hasRelic) loot.Add(new Loot { Pos = enemy.Pos + new Vector2(-20, 0), Relic = true });
-                if (enemy.Elite && !hasArmor) loot.Add(new Loot { Pos = enemy.Pos + new Vector2(20, 0), Armor = true });
-                else if (!enemy.Boss && GD.Randf() < 0.18f) loot.Add(new Loot { Pos = enemy.Pos + new Vector2(18, 0), Potion = true });
-                while (xp >= level * 60) { xp -= level * 60; level++; damage += 5; pendingTalentChoices++; }
-                talentChoice = pendingTalentChoices > 0;
-                enemies.RemoveAt(i);
-                if (ReferenceEquals(enemy, lockedTarget)) lockedTarget = null;
-                if (enemies.Count == 0 && room < 2) {
-                    int found = room == 0 ? 2 : 1;
-                    if ((ownedWeapons & (1 << found)) == 0) loot.Add(new Loot { Pos = enemy.Pos + new Vector2(-18, 0), Weapon = found });
-                }
-                if (talentChoice) { QueueRedraw(); return; }
-                continue;
-            }
-            if (!enemy.Boss && enemy.Windup <= 0) SeparateFromPack(enemy, dt);
-            enemy.Cooldown -= dt; Vector2 offset = player - enemy.Pos;
-            if (enemy.Mage && enemy.Windup <= 0) {
-                if (offset.Length() < 170 && offset.LengthSquared() > 0) MoveEnemy(enemy, -offset.Normalized() * 48 * dt);
-                if (enemy.Cooldown <= 0) { enemy.AttackTarget = player; enemy.Windup = 0.8f; enemy.Cooldown = 2.3f; }
-                continue;
-            }
-            if (enemy.Archer) {
-                if (offset.Length() > 250) MoveEnemy(enemy, offset.Normalized() * 60 * dt);
-                else if (offset.Length() < 150 && offset.LengthSquared() > 0) MoveEnemy(enemy, -offset.Normalized() * 60 * dt);
-                enemy.Pos.X = Mathf.Clamp(enemy.Pos.X, 85, 875); enemy.Pos.Y = Mathf.Clamp(enemy.Pos.Y, 128, 533);
-                if (enemy.Cooldown <= 0 && offset.LengthSquared() > 0) {
-                    projectiles.Add(new Projectile { Pos = enemy.Pos, Velocity = offset.Normalized() * 210 }); enemy.Cooldown = 1.8f;
-                }
-                continue;
-            }
-            if (enemy.Windup > 0) {
-                enemy.Windup -= dt;
-                float strikeDistance = enemy.Mage ? 52 : enemy.Elite ? 62 : enemy.BossPattern == 0 ? 90 : 42;
-                bool targetedStrike = enemy.Mage || enemy.Elite || enemy.BossPattern == 1;
-                if (enemy.Windup <= 0 && (targetedStrike ? player.DistanceTo(enemy.AttackTarget) < strikeDistance : offset.Length() < strikeDistance) && invulnerable <= 0 && !dashing) {
-                    float incomingDamage = enemy.Mage ? 16 : enemy.Elite ? enemy.Affix == EnemyAffix.Frenzied ? 23 : 20 : enemy.BossPattern == 0 ? 22 : 30;
-                    TakeDamage(incomingDamage); invulnerable = 0.55f; hitFlash = 0.2f;
-                }
-                if (state != "playing") break;
-                continue;
-            }
-            if (enemy.Elite && enemy.Cooldown <= 0 && offset.Length() < 220) {
-                enemy.AttackTarget = player;
-                enemy.Windup = enemy.Affix == EnemyAffix.Frenzied ? 0.52f : 0.75f;
-                enemy.Cooldown = enemy.Affix == EnemyAffix.Frenzied ? 2.1f : 2.6f; continue;
-            }
-            bool enraged = enemy.Boss && enemy.Hp <= enemy.MaxHp * 0.5f;
-            if (enemy.Boss && enemy.Cooldown <= 0 && offset.Length() < 125) {
-                enemy.BossPattern = (enemy.BossPattern + 1) % 2;
-                enemy.AttackTarget = player;
-                enemy.Windup = enraged ? 0.55f : 0.85f; enemy.Cooldown = enraged ? 1.35f : 2.2f; continue;
-            }
-            if (offset.Length() > (enemy.Boss ? 39 : 30)) MoveEnemy(enemy, offset.Normalized() * (enemy.Boss ? 58 : 76 + room * 8) * dt);
-            else if (enemy.Cooldown <= 0) {
-                enemy.Cooldown = enemy.Boss ? 1.1f : 1.35f;
-                if (invulnerable <= 0 && !dashing) { TakeDamage(enemy.Boss ? 18 : enemy.Elite ? 14 : 10); invulnerable = 0.55f; hitFlash = 0.2f; }
-            }
-            if (state != "playing") break;
-        }
-        QueueRedraw();
+
+    private void DrawEnemy(Graphics g, Enemy enemy)
+    {
+        float r = enemy.Radius; Color color = enemy.Boss ? Color.FromArgb(145, 87, 77) : enemy.Kind switch { EnemyKind.Elite => enemy.Armored ? Color.SlateGray : Color.IndianRed, EnemyKind.Archer => Color.FromArgb(128, 151, 106), EnemyKind.Mage => Color.MediumPurple, _ => Color.FromArgb(183, 181, 166) };
+        if (enemy.Windup > 0) { float baseWarn = enemy.Kind == EnemyKind.Elite ? 62 : enemy.Kind == EnemyKind.Mage ? 52 : enemy.Boss && enemy.BossPattern == 0 ? 90 : enemy.Kind == EnemyKind.Archer ? 26 : 36; float progress = Math.Clamp(enemy.Windup / Math.Max(0.01f, enemy.WindupMax), 0, 1); float warn = baseWarn * (0.4f + progress * 0.6f); using var p = new Pen(Color.FromArgb(235, 115, 75), 3); using var b = new SolidBrush(Color.FromArgb(35, 235, 115, 75)); if (enemy.Kind == EnemyKind.Archer) g.DrawLine(p, enemy.Pos, enemy.Target); g.FillEllipse(b, enemy.Target.X - warn, enemy.Target.Y - warn, warn * 2, warn * 2); g.DrawEllipse(p, enemy.Target.X - warn, enemy.Target.Y - warn, warn * 2, warn * 2); }
+        using var body = new SolidBrush(enemy.Flash > 0 ? Color.White : color); using var edge = new Pen(enemy == lockedTarget ? Color.Gold : enemy.Armored ? Color.LightSteelBlue : Color.FromArgb(35, 25, 22), enemy == lockedTarget ? 4 : 2);
+        g.FillEllipse(body, enemy.Pos.X - r, enemy.Pos.Y - r, r * 2, r * 2); g.DrawEllipse(edge, enemy.Pos.X - r, enemy.Pos.Y - r, r * 2, r * 2);
+        using var hpBack = new SolidBrush(Color.FromArgb(40, 20, 20)); using var hpBar = new SolidBrush(Color.FromArgb(188, 76, 70)); g.FillRectangle(hpBack, enemy.Pos.X - 22, enemy.Pos.Y - r - 10, 44, 5); g.FillRectangle(hpBar, enemy.Pos.X - 22, enemy.Pos.Y - r - 10, 44 * Math.Max(0, enemy.Hp / enemy.MaxHp), 5);
+        string name = EnemyName(enemy); if (name.Length > 0) DrawCentered(g, name, enemy.Pos.Y - r - 28, new Font("Segoe UI", 8, FontStyle.Bold), Color.FromArgb(233, 198, 151), enemy.Pos.X);
+        if (enemy.Boss) { using var bossBack = new SolidBrush(Color.FromArgb(40, 20, 20)); using var bossHp = new SolidBrush(enemy.Hp <= enemy.MaxHp * 0.5f ? Color.OrangeRed : Color.Firebrick); g.FillRectangle(bossBack, 360, 112, 240, 8); g.FillRectangle(bossHp, 360, 112, 240 * Math.Clamp(enemy.Hp / enemy.MaxHp, 0, 1), 8); DrawCentered(g, enemy.Hp <= enemy.MaxHp * 0.5f ? "GUARDIÃO • ENFURECIDO" : "GUARDIÃO DA CRIPTA", 91, new Font("Georgia", 11, FontStyle.Bold), enemy.Hp <= enemy.MaxHp * 0.5f ? Color.OrangeRed : Color.Goldenrod); }
     }
-    private float MitigatedDamage(float incoming) => armorEquipped ? incoming * 0.7f : incoming;
-    private void TakeDamage(float incoming) {
-        float applied = Math.Min(health, MitigatedDamage(incoming));
-        damageTaken += applied;
-        health = Math.Max(0, health - applied);
-        if (health <= 0) state = "dead";
+    private void DrawDrop(Graphics g, Drop item) { Color c = item.Kind switch { "relic" => Color.Violet, "armor" => Color.MediumAquamarine, "weapon" => Color.CornflowerBlue, "potion" => Color.IndianRed, _ => Color.Goldenrod }; using var b = new SolidBrush(c); using var p = new Pen(Color.FromArgb(230, 220, 190), 1); g.FillEllipse(b, item.Pos.X - 8, item.Pos.Y - 8, 16, 16); g.DrawEllipse(p, item.Pos.X - 8, item.Pos.Y - 8, 16, 16); }
+    private void DrawPlayer(Graphics g) { using var b = new SolidBrush(invulnerable > 0 ? Color.Salmon : Color.FromArgb(90, 143, 138)); using var face = new SolidBrush(Color.Bisque); g.FillEllipse(b, player.X - 16, player.Y - 16, 32, 32); g.FillEllipse(face, player.X - 8, player.Y - 11, 16, 16); using var p = new Pen(Color.AntiqueWhite, 4); g.DrawLine(p, player, Add(player, Scale(facing, 24))); if (skillCd > 0) { using var cooldownPen = new Pen(Color.FromArgb(190, 230, 193, 129), 3); g.DrawArc(cooldownPen, player.X - 25, player.Y - 25, 50, 50, -90, 360 * skillCd / Math.Max(1.5f, 6f - skillTalent * .5f)); } }
+    private void DrawInventory(Graphics g)
+    {
+        using var b = new SolidBrush(Color.FromArgb(245, 17, 19, 20)); using var itemFont = new Font("Segoe UI", 12); g.FillRectangle(b, 150, 145, 660, 355);
+        DrawCentered(g, "INVENTÁRIO   •   1–3 ARMAS   •   4 ARMADURA   •   5 RELÍQUIA   •   I FECHAR", 180, new Font("Segoe UI", 12, FontStyle.Bold), Color.Goldenrod);
+        for (int i = 0; i < 3; i++) g.DrawString($"{i + 1}. {weaponNames[i]}    DANO {weaponDamage[i] - weaponDamage[weapon]:+#;-#;0}    {(weapon == i ? "EQUIPADA" : (ownedWeapons & (1 << i)) != 0 ? "DISPONÍVEL" : "NÃO ENCONTRADA")}", itemFont, (ownedWeapons & (1 << i)) != 0 ? Brushes.AntiqueWhite : Brushes.Gray, 205, 230 + i * 40);
+        g.DrawString($"4. PEITORAL DE PEDRA {(armorOn ? "EQUIPADO" : armor ? "DISPONÍVEL" : "NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 360);
+        g.DrawString($"5. RELICÁRIO VITAL {(relicOn ? "EQUIPADO" : relic ? "DISPONÍVEL" : "NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 400);
     }
-    private void Text(string s, Vector2 p, int size, Color c) => DrawString(ThemeDB.FallbackFont, p, s, HorizontalAlignment.Left, -1, size, c);
-    public override void _Draw() {
-        Color goldColor = new("e6c181"), text = new("ded8c9");
-        DrawRect(new Rect2(0, 0, 960, 640), new Color("101317"));
-        DrawRect(new Rect2(0, 0, 960, 83), new Color("1c2023"));
-        Text("SCADRYK RPG", new Vector2(25, 45), 22, goldColor);
-        Text($"VIDA {health:0}/{maxHealth:0}   NÍVEL {level}   XP {xp}/{level * 60}   OURO {gold}   POÇÕES {potions}", new Vector2(240, 45), 15, text);
-        DrawRect(new Rect2(25, 61, 185, 9), new Color("292929"));
-        DrawRect(new Rect2(25, 61, 185 * Mathf.Clamp(health / maxHealth, 0, 1), 9), health / maxHealth <= 0.25f ? new Color("d84f49") : new Color("7eb77d"));
-        DrawRect(new Rect2(45, 95, 870, 472), new Color("3c3e3a")); DrawRect(new Rect2(65, 108, 830, 445), new Color("303530"));
-        for (int y = 0; y < 7; y++) for (int x = 0; x < 12; x++) DrawRect(new Rect2(70 + x * 68, 112 + y * 62, 67, 61), new Color("39403a"), false);
-        foreach (Rect2 obstacle in obstacles) { DrawRect(obstacle, new Color("514c40")); DrawRect(obstacle, new Color("82765f"), false, 3); }
-        DrawRect(new Rect2(65, 108, 830, 445), new Color("7c7866"), false, 4);
-        DrawRect(new Rect2(873, 293, 22, 75), enemies.Count == 0 && loot.Count == 0 ? new Color("8ac4a9") : new Color("252526"));
-        if (room == 2) DrawRect(new Rect2(730, 318, 40, 27), new Color("ac7b3e"));
-        foreach (var enemy in enemies) {
-            float radius = enemy.Boss ? 23 : 15;
-            if (enemy.Windup > 0) {
-                if (enemy.Mage || enemy.Elite) {
-                    float baseRadius = enemy.Elite ? 62 : 52;
-                    float windupDuration = enemy.Elite ? enemy.Affix == EnemyAffix.Frenzied ? 0.52f : 0.75f : 0.8f;
-                    float warningRadius = baseRadius * Mathf.Lerp(0.35f, 1f, Mathf.Clamp(enemy.Windup / windupDuration, 0, 1));
-                    Color warningColor = enemy.Elite ? enemy.Affix == EnemyAffix.Frenzied ? new Color("ed7058") : new Color("e6a45e") : new Color("bd91e8");
-                    DrawCircle(enemy.AttackTarget, warningRadius, new Color(warningColor.R, warningColor.G, warningColor.B, 0.2f));
-                    DrawArc(enemy.AttackTarget, warningRadius, 0, Mathf.Tau, 40, warningColor, 4, true);
-                }
-                else if (enemy.BossPattern == 0) DrawArc(enemy.Pos, 90, 0, Mathf.Tau, 48, new Color("e67b58"), 3, true);
-                else { DrawLine(enemy.Pos, enemy.AttackTarget, new Color("e67b58"), 12); DrawCircle(enemy.AttackTarget, 42, new Color(0.9f, 0.35f, 0.25f, 0.35f)); }
-            }
-            DrawCircle(enemy.Pos, radius, enemy.Boss ? new Color("8f6459") : enemy.Elite ? enemy.Affix == EnemyAffix.Frenzied ? new Color("b96050") : new Color("777b91") : enemy.Mage ? new Color("8d72c7") : enemy.Archer ? new Color("8b9f75") : new Color("b7b5a6"));
-            if (enemy.Affix == EnemyAffix.Armored) DrawArc(enemy.Pos, radius + 4, 0, Mathf.Tau, 24, new Color("b8c4d4"), 3, true);
-            if (ReferenceEquals(enemy, lockedTarget)) DrawArc(enemy.Pos, radius + 8, 0, Mathf.Tau, 32, new Color("f3d477"), 3, true);
-            string role = enemy.Elite ? enemy.Affix == EnemyAffix.Frenzied ? "ELITE • FRENÉTICO" : "ELITE • BLINDADO" : enemy.Archer ? "ARQUEIRO" : enemy.Mage ? "CONJURADOR" : "";
-            if (role.Length > 0) Text(role, enemy.Pos + new Vector2(-35, -31), 10, enemy.Elite ? enemy.Affix == EnemyAffix.Frenzied ? new Color("f08b72") : new Color("c3c9d8") : enemy.Mage ? new Color("d7b6f0") : new Color("b9cc9f"));
-            DrawCircle(enemy.Pos + new Vector2(-5, -4), 2.5f, new Color("bc5145")); DrawCircle(enemy.Pos + new Vector2(5, -4), 2.5f, new Color("bc5145"));
-            if (enemy.HitTextTime > 0) Text(enemy.HitText, enemy.Pos + new Vector2(-22, -radius - 25), 11, enemy.HitText.StartsWith("CRÍTICO") ? new Color("ffd16f") : text);
-            DrawRect(new Rect2(enemy.Pos.X - 22, enemy.Pos.Y - radius - 10, 44 * Math.Max(0, enemy.Hp / enemy.MaxHp), 4), new Color("b8584f"));
-            if (enemy.Boss) {
-                bool enraged = enemy.Hp <= enemy.MaxHp * 0.5f;
-                Text(enraged ? "GUARDIÃO DA CRIPTA • ENFURECIDO" : "GUARDIÃO DA CRIPTA", new Vector2(enraged ? 340 : 373, 104), 13, enraged ? new Color("ed725d") : goldColor);
-                DrawRect(new Rect2(360, 112, 240, 7), new Color("191919"));
-                DrawRect(new Rect2(360, 112, 240 * Mathf.Clamp(enemy.Hp / enemy.MaxHp, 0, 1), 7), enraged ? new Color("e3654d") : new Color("b8584f"));
-            }
-        }
-        foreach (var shot in projectiles) DrawCircle(shot.Pos, 5, new Color("e5ae69"));
-        for (int i = 0; i < loot.Count; i++) {
-            var item = loot[i];
-            Color itemColor = item.Relic ? new Color("e7a4ed") : item.Armor ? new Color("72b9a3") : item.Weapon >= 0 ? new Color("719ede") : item.Potion ? new Color("d55857") : new Color("e6c181");
-            int stack = 0;
-            for (int j = 0; j < i; j++) if (loot[j].Pos.DistanceTo(item.Pos) < 34) stack++;
-            DrawLine(item.Pos, item.Pos + new Vector2(0, -19), itemColor, 3);
-            DrawCircle(item.Pos, 8, itemColor);
-            string label = item.Relic ? "RELICÁRIO" : item.Armor ? "PEITORAL" : item.Weapon >= 0 ? WeaponNames[item.Weapon] + " [RARO]" : item.Potion ? "POÇÃO" : "OURO";
-            Text(label, item.Pos + new Vector2(-18, -15 - stack * 13), 10, itemColor);
-        }
-        DrawCircle(player, 16, hitFlash > 0 ? new Color("e88975") : new Color("6c8b8a")); DrawCircle(player + new Vector2(0, -5), 8, new Color("dfbd94"));
-        DrawLine(player + facing * 8, player + facing * 24, new Color("e7d7b9"), 4);
-        if (attackEffect > 0) DrawArc(player, 56, facing.Angle() - 0.8f, facing.Angle() + 0.8f, 16, goldColor, 6, true);
-        if (skillEffect > 0) DrawArc(player, 110, 0, Mathf.Tau, 48, new Color("edb96d"), 5, true);
-        Text($"{room + 1} / 3    {rooms[room]}", new Vector2(68, 590), 14, text);
-        string dashStatus = dashCooldown > 0 ? $"{dashCooldown:0.0}s" : "PRONTA";
-        Text($"WASD: mover   ESPAÇO/CLIQUE: atacar   SHIFT: esquivar [{dashStatus}]   Q: poção   E: interagir", new Vector2(68, 618), 12, text);
-        if (noticeTime > 0) Text(notice, new Vector2(260, 175), 15, goldColor);
-        if (state == "playing") Text($"R/CLIQUE DIREITO: redemoinho {(skillCooldown > 0 ? skillCooldown.ToString("0.0") + "s" : "pronto")}   TAB: alvo   I: inventário", new Vector2(438, 590), 11, text);
-        if (enemies.Count == 0 && state == "playing") Text(loot.Count > 0 ? "RECOLHA OS ITENS NO CHÃO" : room == 2 ? "APROXIME-SE DO BAÚ E PRESSIONE E" : "SALA LIMPA: PORTA ABERTA", new Vector2(300, 145), 16, goldColor);
-        if (inventoryOpen && state == "playing") {
-            DrawRect(new Rect2(150, 145, 660, 360), new Color(0.04f, 0.05f, 0.05f, 0.96f));
-            Text("INVENTÁRIO  •  1–3 ARMAS  •  4 ARMADURA  •  5 RELÍQUIA  •  I FECHAR", new Vector2(190, 195), 14, goldColor);
-            for (int i = 0; i < WeaponNames.Length; i++) {
-                bool owned = (ownedWeapons & (1 << i)) != 0;
-                string status = !owned ? "NÃO ENCONTRADA" : i == weaponLevel ? "EQUIPADA" : "DISPONÍVEL";
-                string speed = i == 2 ? "RÁPIDA" : "NORMAL";
-                int comparison = WeaponBonuses[i] - WeaponBonuses[weaponLevel];
-                Text($"{i + 1}. {WeaponNames[i]}  |  DANO {comparison:+#;-#;0}  |  {speed}  |  {status}", new Vector2(190, 245 + i * 38), 14, owned ? text : new Color("777777"));
-            }
-            Text($"4. PEITORAL DE PEDRA  |  REDUZ DANO EM 30%  |  {(hasArmor ? armorEquipped ? "EQUIPADO" : "DISPONÍVEL" : "NÃO ENCONTRADO")}", new Vector2(190, 375), 14, hasArmor ? text : new Color("777777"));
-            Text($"PROTEÇÃO ATUAL: {(armorEquipped ? "30%" : "0%")}", new Vector2(190, 405), 14, new Color("9fd0bb"));
-            Text($"5. RELICÁRIO VITAL  |  CURA 5 VIDA AO ABATER  |  {(hasRelic ? relicEquipped ? "EQUIPADO" : "DISPONÍVEL" : "NÃO ENCONTRADO")}", new Vector2(190, 440), 13, hasRelic ? text : new Color("777777"));
-            Text($"DANO ATUAL: {damage}   OURO: {gold}", new Vector2(190, 475), 15, goldColor);
-        }
-        if (talentChoice && state == "playing") {
-            DrawRect(new Rect2(185, 200, 590, 225), new Color(0.04f, 0.05f, 0.05f, 0.97f));
-            Text(pendingTalentChoices > 1 ? $"SUBIU DE NÍVEL — ESCOLHA UMA MELHORIA ({pendingTalentChoices} PENDENTES)" : "SUBIU DE NÍVEL — ESCOLHA UMA MELHORIA", new Vector2(220, 238), 18, goldColor);
-            Text($"1. VIGOR  +20 VIDA MÁXIMA  (nível {healthTalent})", new Vector2(220, 290), 15, text);
-            Text($"2. DOMÍNIO  Redemoinho recarrega mais rápido  (nível {skillTalent})", new Vector2(220, 330), 15, text);
-            Text($"3. AGILIDADE  esquiva recarrega mais rápido  (nível {dodgeTalent})", new Vector2(220, 370), 15, text);
-        }
-        if (state == "chest_choice") {
-            DrawRect(new Rect2(185, 200, 590, 225), new Color(0.04f, 0.05f, 0.05f, 0.97f));
-            Text("BAÚ DA CRIPTA — ESCOLHA UMA RECOMPENSA", new Vector2(220, 245), 18, goldColor);
-            Text("1. 75 OURO", new Vector2(220, 300), 16, text);
-            Text("2. DUAS POÇÕES", new Vector2(220, 340), 16, text);
-            Text("3. RECUPERAR TODA A VIDA", new Vector2(220, 380), 16, text);
-        }
-        if (state != "playing" && state != "chest_choice") {
-            DrawRect(new Rect2(0, 0, 960, 640), new Color(0.025f, 0.03f, 0.035f, 0.92f));
-            Text(state == "title" ? "SCADRYK RPG" : state == "victory" ? "VITÓRIA!" : "VOCÊ CAIU", new Vector2(330, 260), 38, goldColor);
-            if (state == "victory" || state == "dead") {
-                int elapsed = (int)runTime;
-                Text($"INIMIGOS {enemiesDefeated}   CRÍTICOS {criticalHits}   POÇÕES {potionsUsed}", new Vector2(300, 320), 16, text);
-                Text($"TEMPO {elapsed / 60:00}:{elapsed % 60:00}   DANO RECEBIDO {damageTaken:0}", new Vector2(315, 350), 15, text);
-            }
-            Text(state == "victory" ? "F5 PARA SALVAR • ENTER PARA RECOMEÇAR" : "ENTER PARA COMEÇAR", new Vector2(300, 370), 18, text);
-            if (state == "title") Text("C PARA CARREGAR JOGO", new Vector2(350, 395), 16, text);
-            if (noticeTime > 0) Text(notice, new Vector2(300, 460), 15, text);
-            Text("WASD mover  •  ESPAÇO atacar  •  SHIFT esquivar", new Vector2(240, 420), 16, text);
-        }
+    private void DrawChoice(Graphics g, string titleText, string a, string b, string c)
+    {
+        using var bg = new SolidBrush(Color.FromArgb(248, 15, 17, 18)); using var optionFont = new Font("Segoe UI", 12); g.FillRectangle(bg, 170, 205, 620, 225);
+        DrawCentered(g, titleText, 238, new Font("Georgia", 15, FontStyle.Bold), Color.Goldenrod);
+        g.DrawString(a, optionFont, Brushes.AntiqueWhite, 220, 286); g.DrawString(b, optionFont, Brushes.AntiqueWhite, 220, 330); g.DrawString(c, optionFont, Brushes.AntiqueWhite, 220, 374);
+    }
+    private void DrawOverlay(Graphics g, string titleText, string instruction) { using var bg = new SolidBrush(Color.FromArgb(225, 8, 10, 12)); g.FillRectangle(bg, 0, 0, 960, 640); DrawCentered(g, titleText, 250, new Font("Georgia", 36, FontStyle.Bold), Color.FromArgb(230, 193, 129)); DrawCentered(g, instruction, 340, new Font("Segoe UI", 15, FontStyle.Bold), Color.AntiqueWhite); if (noticeTime > 0) DrawCentered(g, notice, 410, new Font("Segoe UI", 12), Color.Goldenrod); }
+    private static void DrawCentered(Graphics g, string s, float y, Font f, Color color, float x = 480) { using (f) using (var brush = new SolidBrush(color)) { SizeF size = g.MeasureString(s, f); g.DrawString(s, f, brush, x - size.Width / 2, y); } }
+    private static string EnemyName(Enemy e) => e.Boss ? "GUARDIÃO" : e.Kind switch { EnemyKind.Elite => e.Armored ? "ELITE • BLINDADO" : "ELITE • FRENÉTICO", EnemyKind.Archer => "ARQUEIRO", EnemyKind.Mage => "CONJURADOR", _ => "" };
+    private static PointF Normalize(PointF p, PointF fallback) { float n = Length(p); return n > 0.001f ? new PointF(p.X / n, p.Y / n) : fallback; }
+    private static float Length(PointF p) => MathF.Sqrt(p.X * p.X + p.Y * p.Y);
+    private static float Distance(PointF a, PointF b) => Length(Sub(a, b));
+    private static PointF Sub(PointF a, PointF b) => new(a.X - b.X, a.Y - b.Y);
+    private static PointF Offset(PointF a, float x, float y) => new(a.X + x, a.Y + y);
+    private static PointF Add(PointF a, PointF b) => new(a.X + b.X, a.Y + b.Y);
+    private static PointF Scale(PointF a, float m) => new(a.X * m, a.Y * m);
+    private static float Dot(PointF a, PointF b) => a.X * b.X + a.Y * b.Y;
+
+    public static int SelfTest()
+    {
+        using var game = new Game(); game.timer.Stop(); game.StartGame();
+        if (game.enemies.Count != 3) throw new InvalidOperationException("A primeira sala deve iniciar com três inimigos.");
+        game.player = new PointF(320, 230); game.MovePlayer(new PointF(40, 40));
+        if (Math.Abs(game.player.X - 320) > 0.01f || Math.Abs(game.player.Y - 270) > 0.01f) throw new InvalidOperationException("O movimento não deslizou pela quina do obstáculo.");
+        Enemy grunt = game.enemies[0]; game.player = new PointF(grunt.Pos.X - 22, grunt.Pos.Y); grunt.Cooldown = 0; game.UpdateEnemy(grunt, 0.01f);
+        if (grunt.Windup <= 0 || game.health < game.maxHealth) throw new InvalidOperationException("Ataque corpo a corpo comum não foi anunciado.");
+        game.player = new PointF(grunt.Pos.X - 100, grunt.Pos.Y); game.UpdateEnemy(grunt, 0.6f);
+        if (game.health < game.maxHealth) throw new InvalidOperationException("A esquiva antes do golpe não evitou o dano.");
+        game.AddXp(60);
+        if (game.level != 2 || !game.talentChoice || game.pendingTalents != 1) throw new InvalidOperationException("A progressão por nível não concedeu uma escolha de talento.");
+        Console.WriteLine("TESTES OK: movimento, aviso de ataque, esquiva e progressão."); return 0;
     }
 }
+

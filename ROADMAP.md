@@ -1,16 +1,24 @@
-# Meta de desenvolvimento — Scadryk RPG
+# Meta de desenvolvimento — Scadryk
 
-Criar um RPG de ação de fantasia sombria em Godot 4 .NET e C#, com combate responsivo, masmorras, loot, progressão e identidade própria. Diablo é uma referência de qualidade e sensação de jogo; conteúdo e identidade de Scadryk serão originais.
+Construir um RPG de ação 2D em C# para Windows, com combate responsivo, masmorras, loot e builds com identidade própria. Diablo orienta a sensação e a ambição de qualidade; conteúdo, personagens e apresentação continuam originais.
 
-## Marcos
+## Estado atual
 
-1. **Base estável:** ciclo jogável completo, correção de falhas, salvamento confiável e testes automatizados e manuais.
-2. **Combate:** cenas e componentes organizados, controles configuráveis, ataques, esquiva, habilidades e inimigos distintos.
-3. **RPG e loot:** inventário, equipamentos, raridades, atributos, recompensas e progressão persistente.
-4. **Conteúdo:** salas variadas, obstáculos, chefes, ambiente visual e sonoro próprios.
-5. **Expansão:** classes, builds, regiões, missões e geração de masmorras após validação da base.
-6. **Finalização:** testes em máquinas diferentes, desempenho medido, acessibilidade, balanceamento, correção de bugs e distribuição.
+- A Godot foi removida do projeto. A janela e o desenho usam C#/.NET 8 Windows Forms e GDI+.
+- O protótipo mantém três salas, inimigos comuns, arqueiro, conjurador, elite e Guardião da Cripta.
+- Combate: ataque corpo a corpo, ataque especial Redemoinho, esquiva, crítico, alvo marcado e golpes inimigos anunciados.
+- Progressão: XP, níveis, escolhas de talentos, ouro, poções, três armas, armadura e relíquia.
+- Salvamento local em JSON com migração do save ConfigFile da versão Godot.
+- Movimento com colisão por eixo, permitindo deslizar pelas quinas.
 
-## Critérios de entrega
+## Próximas etapas
 
-Cada marco deve compilar, ter os sistemas correspondentes testados e documentar limitações. Compilação isolada não comprova jogabilidade. A qualidade comparável a uma grande produção é uma meta de longo prazo e não uma garantia de prazo.
+1. **Validar a base C#** — compilar no Windows, executar os smoke tests, conferir save novo e migração do save antigo.
+2. **Aprofundar combate** — mais ataques legíveis, esquiva consistente, inimigos com funções distintas e balanceamento por sala.
+3. **Expandir loot e builds** — raridades com efeitos reais, comparação de equipamento e escolhas de habilidades relevantes.
+4. **Criar masmorras** — mais salas, rotas, eventos, chefes e recompensas.
+5. **Finalizar apresentação** — arte original, animações, áudio e opções de acessibilidade.
+6. **Preparar distribuição** — builds self-contained, testes em Windows e instruções de atualização do save.
+
+Cada etapa deve compilar, incluir uma validação adequada e registrar as limitações conhecidas. O protótipo atual ainda não tem o volume de conteúdo de Diablo; essa escala exige desenvolvimento continuado.
+
