@@ -68,6 +68,21 @@ public partial class Game : Node2D
     private void LoadGame() {
         var file = new ConfigFile();
         if (file.Load(savePath) != Error.Ok) { notice = "NENHUM SALVAMENTO ENCONTRADO"; noticeTime = 3; return; }
+        string[] integers = { "room", "level", "xp", "gold", "potions", "damage", "weapon" };
+        foreach (string key in integers) {
+            if (file.HasSectionKey("player", key) && file.GetValue("player", key).VariantType != Variant.Type.Int) {
+                notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return;
+            }
+        }
+        foreach (string key in new[] { "health", "max_health" }) {
+            if (file.HasSectionKey("player", key)) {
+                var type = file.GetValue("player", key).VariantType;
+                if (type != Variant.Type.Float && type != Variant.Type.Int) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
+            }
+        }
+        if (file.HasSectionKey("player", "room_cleared") && file.GetValue("player", "room_cleared").VariantType != Variant.Type.Bool) {
+            notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return;
+        }
         StartGame();
         room = Mathf.Clamp((int)file.GetValue("player", "room", 0), 0, 2);
         level = Math.Max(1, (int)file.GetValue("player", "level", 1));
