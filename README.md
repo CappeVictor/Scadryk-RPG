@@ -15,6 +15,7 @@ Protótipo jogável de RPG de ação com visão superior e fantasia sombria, fei
 - Nomes de função acima de arqueiros, conjuradores e elites deixam os papéis do grupo mais fáceis de reconhecer.
 - Cada nível ganho gera sua própria escolha de talento, mesmo quando vários níveis são alcançados na mesma luta.
 - A conclusão ou derrota mostra um resumo da tentativa: tempo, inimigos derrotados, críticos, poções usadas e dano recebido.
+- Poções mostram o efeito imediato; tentar usar sem estoque também apresenta uma mensagem.
 - Itens deixados no chão, baú final com escolha de recompensa e salvamento local.
 
 ## Requisitos e execução
