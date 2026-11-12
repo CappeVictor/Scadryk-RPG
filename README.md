@@ -8,7 +8,7 @@ Protótipo de RPG de ação com visão de cima, fantasia sombria e exploração 
 
 - Três salas em sequência, com porta liberada após derrotar os inimigos.
 - Movimento em oito direções, ataque corpo a corpo, esquiva e poções.
-- Inimigos que perseguem o jogador e um guardião na última sala.
+- Inimigos que perseguem o jogador, um arqueiro, um inimigo de elite na segunda sala e um guardião na última sala.
 - Vida, experiência, níveis, ouro, uma arma rara e um baú de recompensa.
 - Ouro e poções coletáveis ao se aproximar dos itens deixados por inimigos.
 - Salvamento manual de atributos, ouro, poções, arma e sala atual. Salve após eliminar os inimigos; ao carregar um salvamento novo, a sala permanece limpa.
@@ -64,10 +64,10 @@ Otimizações devem ser guiadas por medições de desempenho, começando pelos p
 
 Scadryk busca a atmosfera sombria, o combate de ação e a busca por equipamentos presentes nos RPGs de ação modernos, incluindo Diablo como referência. A identidade, os personagens, os cenários e os itens serão próprios. A meta é evoluir por etapas: primeiro validar combate e progressão, depois criar classes, loot variado, habilidades e masmorras mais ricas.
 
-Ao sair das duas primeiras salas, o jogador encontra novas armas. Pressione I para abrir o inventário e 1, 2 ou 3 para equipar uma arma encontrada. A lâmina do crepúsculo ataca mais rápido; a lâmina rara oferece mais dano. O jogo pausa enquanto o inventário está aberto. O salvamento é manual e só está disponível após limpar a sala. Salvamentos antigos, criados antes dessa regra, ainda reiniciam os inimigos ao carregar. O inventário inicial contém três armas; armaduras, descarte e itens aleatórios ainda não foram implementados.
+Ao limpar as duas primeiras salas, novas armas aparecem no chão e são recolhidas ao se aproximar. Pressione I para abrir o inventário e 1, 2 ou 3 para equipar uma arma encontrada. A lâmina do crepúsculo ataca mais rápido; a lâmina rara oferece mais dano. O jogo pausa enquanto o inventário está aberto. O salvamento é manual e só está disponível após limpar a sala. Salvamentos antigos, criados antes dessa regra, ainda reiniciam os inimigos ao carregar. O inventário inicial contém três armas; armaduras, descarte e itens aleatórios ainda não foram implementados.
 
 Recolha todos os itens da sala antes de salvar ou passar pela porta, para que nenhuma recompensa seja perdida.
 
 ## Testes automatizados básicos
 
-Compile o projeto e execute a cena `Tests/SmokeTest.tscn` na Godot .NET. Ela verifica ataque, recarga da habilidade, coleta, limites da sala e salvamento. Os testes usam um arquivo de salvamento separado do jogo. Esses testes não substituem uma partida completa.
+Compile o projeto e execute a cena `Tests/SmokeTest.tscn` na Godot .NET. Ela verifica ataque, recarga da habilidade, coleta de armas e ouro, limites da sala e salvamento. Os testes usam um arquivo de salvamento separado do jogo. Esses testes não substituem uma partida completa.
