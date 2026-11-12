@@ -6,7 +6,7 @@ public partial class Game : Node2D
 {
     private class Enemy { public Vector2 Pos; public float Hp, MaxHp, Cooldown, Windup; public bool Boss, Archer, Elite; }
     private class Projectile { public Vector2 Pos, Velocity; public float Life = 3f; }
-    private class Loot { public Vector2 Pos; public bool Potion; public int Amount; public int Weapon = -1; }
+    private class Loot { public Vector2 Pos; public bool Potion; public int Amount; public int Weapon = -1; public bool Armor; }
     private readonly List<Enemy> enemies = new();
     private readonly List<Projectile> projectiles = new();
     private readonly List<Loot> loot = new();
@@ -19,6 +19,7 @@ public partial class Game : Node2D
     private int weaponLevel;
     private int ownedWeapons = 1;
     private bool inventoryOpen;
+    private bool hasArmor, armorEquipped;
     private static readonly string[] WeaponNames = { "ESPADA COMUM", "LÂMINA RARA", "LÂMINA DO CREPÚSCULO" };
     private static readonly int[] WeaponBonuses = { 0, 10, 4 };
     private string notice = "";
@@ -26,7 +27,7 @@ public partial class Game : Node2D
     private float skillCooldown, skillEffect;
     public override void _Ready() => QueueRedraw();
     private void StartGame() {
-        room = 0; level = 1; xp = 0; gold = 0; potions = 2; damage = 25; weaponLevel = 0; ownedWeapons = 1; inventoryOpen = false;
+        room = 0; level = 1; xp = 0; gold = 0; potions = 2; damage = 25; weaponLevel = 0; ownedWeapons = 1; inventoryOpen = false; hasArmor = armorEquipped = false;
         health = maxHealth = 100; attackCooldown = attackEffect = dashCooldown = dashTime = invulnerable = hitFlash = skillCooldown = skillEffect = 0;
         state = "playing"; SetupRoom();
     }
@@ -47,6 +48,7 @@ public partial class Game : Node2D
             if (key.Keycode == Key.Key1) EquipWeapon(0);
             else if (key.Keycode == Key.Key2) EquipWeapon(1);
             else if (key.Keycode == Key.Key3) EquipWeapon(2);
+            else if (key.Keycode == Key.Key4) EquipArmor();
             else if (key.Keycode == Key.Escape) inventoryOpen = false;
             QueueRedraw(); return;
         }
@@ -70,6 +72,12 @@ public partial class Game : Node2D
         weaponLevel = index;
         notice = $"EQUIPADA: {WeaponNames[index]}"; noticeTime = 2;
     }
+    private void EquipArmor() {
+        if (!hasArmor) { notice = "ARMADURA AINDA NÃO ENCONTRADA"; noticeTime = 2; return; }
+        armorEquipped = !armorEquipped;
+        notice = armorEquipped ? "PEITORAL DE PEDRA EQUIPADO • -30% DANO" : "PEITORAL DE PEDRA DESEQUIPADO";
+        noticeTime = 2;
+    }
     private void SaveGame() {
         if (enemies.Count != 0) { notice = "LIMPE A SALA ANTES DE SALVAR"; noticeTime = 3; return; }
         if (loot.Count != 0) { notice = "RECOLHA OS ITENS ANTES DE SALVAR"; noticeTime = 3; return; }
@@ -80,6 +88,7 @@ public partial class Game : Node2D
         file.SetValue("player", "potions", potions); file.SetValue("player", "damage", damage);
         file.SetValue("player", "weapon", weaponLevel); file.SetValue("player", "health", health);
         file.SetValue("player", "owned_weapons", ownedWeapons);
+        file.SetValue("player", "has_armor", hasArmor); file.SetValue("player", "armor_equipped", armorEquipped);
         file.SetValue("player", "max_health", maxHealth);
         Error error = file.Save(savePath);
         notice = error == Error.Ok ? "PROGRESSO SALVO" : "ERRO AO SALVAR"; noticeTime = 3;
@@ -101,6 +110,10 @@ public partial class Game : Node2D
         if (file.HasSectionKey("player", "room_cleared") && file.GetValue("player", "room_cleared").VariantType != Variant.Type.Bool) {
             notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return;
         }
+        foreach (string key in new[] { "has_armor", "armor_equipped" }) if (file.HasSectionKey("player", key) && file.GetValue("player", key).VariantType != Variant.Type.Bool) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
+        bool savedHasArmor = (bool)file.GetValue("player", "has_armor", false);
+        bool savedArmorEquipped = (bool)file.GetValue("player", "armor_equipped", false);
+        if (savedArmorEquipped && !savedHasArmor) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
         long savedRoom = file.GetValue("player", "room").AsInt64();
         long savedLevel = file.GetValue("player", "level").AsInt64();
         long savedXp = file.GetValue("player", "xp").AsInt64();
@@ -130,7 +143,7 @@ public partial class Game : Node2D
         level = Math.Max(1, (int)file.GetValue("player", "level", 1));
         xp = Math.Max(0, (int)file.GetValue("player", "xp", 0)); gold = Math.Max(0, (int)file.GetValue("player", "gold", 0));
         potions = Math.Max(0, (int)file.GetValue("player", "potions", 2)); damage = Math.Max(1, (int)file.GetValue("player", "damage", 25));
-        weaponLevel = (int)savedWeapon; ownedWeapons = (int)savedOwned;
+        weaponLevel = (int)savedWeapon; ownedWeapons = (int)savedOwned; hasArmor = savedHasArmor; armorEquipped = savedArmorEquipped;
         maxHealth = Math.Max(1, (float)file.GetValue("player", "max_health", 100f));
         health = Mathf.Clamp((float)file.GetValue("player", "health", 100f), 1, maxHealth);
         SetupRoom();
@@ -177,7 +190,8 @@ public partial class Game : Node2D
         for (int i = loot.Count - 1; i >= 0; i--) {
             var item = loot[i];
             if (player.DistanceTo(item.Pos) < 30) {
-                if (item.Weapon >= 0) { ownedWeapons |= 1 << item.Weapon; notice = $"ARMA ENCONTRADA: {WeaponNames[item.Weapon]}"; }
+                if (item.Armor) { hasArmor = true; notice = "ARMADURA ENCONTRADA: PEITORAL DE PEDRA"; }
+                else if (item.Weapon >= 0) { ownedWeapons |= 1 << item.Weapon; notice = $"ARMA ENCONTRADA: {WeaponNames[item.Weapon]}"; }
                 else if (item.Potion) { potions++; notice = "+1 POÇÃO"; }
                 else { gold += item.Amount; notice = $"+{item.Amount} OURO"; }
                 noticeTime = 1.5f; loot.RemoveAt(i);
@@ -196,7 +210,8 @@ public partial class Game : Node2D
             if (enemy.Hp <= 0) {
                 loot.Add(new Loot { Pos = enemy.Pos, Amount = enemy.Boss ? 20 : enemy.Elite ? 15 : 6 });
                 xp += enemy.Boss ? 45 : enemy.Elite ? 30 : 20;
-                if (!enemy.Boss && GD.Randf() < 0.18f) loot.Add(new Loot { Pos = enemy.Pos + new Vector2(18, 0), Potion = true });
+                if (enemy.Elite && !hasArmor) loot.Add(new Loot { Pos = enemy.Pos + new Vector2(20, 0), Armor = true });
+                else if (!enemy.Boss && GD.Randf() < 0.18f) loot.Add(new Loot { Pos = enemy.Pos + new Vector2(18, 0), Potion = true });
                 if (xp >= level * 60) { xp -= level * 60; level++; maxHealth += 15; health = Math.Min(maxHealth, health + 25); damage += 5; }
                 enemies.RemoveAt(i);
                 if (enemies.Count == 0 && room < 2) {
@@ -218,7 +233,7 @@ public partial class Game : Node2D
             if (enemy.Windup > 0) {
                 enemy.Windup -= dt;
                 if (enemy.Windup <= 0 && offset.Length() < 90 && invulnerable <= 0 && !dashing) {
-                    health -= 22; invulnerable = 0.55f; hitFlash = 0.2f;
+                    health -= MitigatedDamage(22); invulnerable = 0.55f; hitFlash = 0.2f;
                     if (health <= 0) { health = 0; state = "dead"; }
                 }
                 if (state != "playing") break;
@@ -230,12 +245,13 @@ public partial class Game : Node2D
             if (offset.Length() > (enemy.Boss ? 39 : 30)) enemy.Pos += offset.Normalized() * (enemy.Boss ? 58 : 76 + room * 8) * dt;
             else if (enemy.Cooldown <= 0) {
                 enemy.Cooldown = enemy.Boss ? 1.1f : 1.35f;
-                if (invulnerable <= 0 && !dashing) { health -= enemy.Boss ? 18 : enemy.Elite ? 14 : 10; invulnerable = 0.55f; hitFlash = 0.2f; if (health <= 0) { health = 0; state = "dead"; } }
+                if (invulnerable <= 0 && !dashing) { health -= MitigatedDamage(enemy.Boss ? 18 : enemy.Elite ? 14 : 10); invulnerable = 0.55f; hitFlash = 0.2f; if (health <= 0) { health = 0; state = "dead"; } }
             }
             if (state != "playing") break;
         }
         QueueRedraw();
     }
+    private float MitigatedDamage(float incoming) => armorEquipped ? incoming * 0.7f : incoming;
     private void Text(string s, Vector2 p, int size, Color c) => DrawString(ThemeDB.FallbackFont, p, s, HorizontalAlignment.Left, -1, size, c);
     public override void _Draw() {
         Color goldColor = new("e6c181"), text = new("ded8c9");
@@ -263,8 +279,8 @@ public partial class Game : Node2D
         }
         foreach (var shot in projectiles) DrawCircle(shot.Pos, 5, new Color("e5ae69"));
         foreach (var item in loot) {
-            DrawCircle(item.Pos, 8, item.Weapon >= 0 ? new Color("719ede") : item.Potion ? new Color("d55857") : new Color("e6c181"));
-            Text(item.Weapon >= 0 ? WeaponNames[item.Weapon] + " [RARO]" : item.Potion ? "POÇÃO" : "OURO", item.Pos + new Vector2(-18, -12), 10, text);
+            DrawCircle(item.Pos, 8, item.Armor ? new Color("72b9a3") : item.Weapon >= 0 ? new Color("719ede") : item.Potion ? new Color("d55857") : new Color("e6c181"));
+            Text(item.Armor ? "PEITORAL" : item.Weapon >= 0 ? WeaponNames[item.Weapon] + " [RARO]" : item.Potion ? "POÇÃO" : "OURO", item.Pos + new Vector2(-18, -12), 10, text);
         }
         DrawCircle(player, 16, hitFlash > 0 ? new Color("e88975") : new Color("6c8b8a")); DrawCircle(player + new Vector2(0, -5), 8, new Color("dfbd94"));
         DrawLine(player + facing * 8, player + facing * 24, new Color("e7d7b9"), 4);
@@ -277,7 +293,7 @@ public partial class Game : Node2D
         if (enemies.Count == 0 && state == "playing") Text(loot.Count > 0 ? "RECOLHA OS ITENS NO CHÃO" : room == 2 ? "APROXIME-SE DO BAÚ E PRESSIONE E" : "SALA LIMPA: PORTA ABERTA", new Vector2(300, 145), 16, goldColor);
         if (inventoryOpen && state == "playing") {
             DrawRect(new Rect2(150, 155, 660, 330), new Color(0.04f, 0.05f, 0.05f, 0.96f));
-            Text("INVENTÁRIO  •  1–3 EQUIPAR  •  I FECHAR", new Vector2(190, 195), 18, goldColor);
+            Text("INVENTÁRIO  •  1–3 ARMAS  •  4 ARMADURA  •  I FECHAR", new Vector2(190, 195), 16, goldColor);
             for (int i = 0; i < WeaponNames.Length; i++) {
                 bool owned = (ownedWeapons & (1 << i)) != 0;
                 string status = !owned ? "NÃO ENCONTRADA" : i == weaponLevel ? "EQUIPADA" : "DISPONÍVEL";
@@ -286,6 +302,7 @@ public partial class Game : Node2D
                 Text($"{i + 1}. {WeaponNames[i]}  |  DANO {comparison:+#;-#;0}  |  {speed}  |  {status}", new Vector2(190, 245 + i * 53), 14, owned ? text : new Color("777777"));
             }
             Text($"DANO ATUAL: {damage}   OURO: {gold}", new Vector2(190, 435), 15, goldColor);
+            Text($"4. PEITORAL DE PEDRA  |  REDUZ DANO EM 30%  |  {(hasArmor ? armorEquipped ? "EQUIPADO" : "DISPONÍVEL" : "NÃO ENCONTRADO")}", new Vector2(190, 410), 14, hasArmor ? text : new Color("777777"));
         }
         if (state != "playing") {
             DrawRect(new Rect2(0, 0, 960, 640), new Color(0.025f, 0.03f, 0.035f, 0.92f));
