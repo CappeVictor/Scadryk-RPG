@@ -38,7 +38,7 @@ Se ocorrer um erro de compilação, confira se instalou o **SDK** .NET, reinicie
 | I | Abrir ou fechar inventário |
 | 1, 2 ou 3 no inventário | Equipar uma arma encontrada |
 | 4 no inventário | Equipar ou desequipar o peitoral |
-| F5 após limpar a sala | Salvar progresso |
+| F5 após limpar uma sala ou vencer | Salvar progresso |
 | C na tela inicial | Carregar progresso |
 
 Derrote todos os inimigos, recolha os itens no chão aproximando-se deles, aproxime-se da porta à direita e pressione **E**. Na última sala, vença o guardião, aproxime-se do baú e pressione **E** para concluir.
@@ -65,7 +65,7 @@ Otimizações devem ser guiadas por medições de desempenho, começando pelos p
 
 Scadryk busca a atmosfera sombria, o combate de ação e a busca por equipamentos presentes nos RPGs de ação modernos, incluindo Diablo como referência. A identidade, os personagens, os cenários e os itens serão próprios. A meta é evoluir por etapas: primeiro validar combate e progressão, depois criar classes, loot variado, habilidades e masmorras mais ricas.
 
-Ao limpar as duas primeiras salas, novas armas aparecem no chão e são recolhidas ao se aproximar. Pressione I para abrir o inventário e 1, 2 ou 3 para equipar uma arma encontrada. A lâmina do crepúsculo ataca mais rápido; a lâmina rara oferece mais dano. O jogo pausa enquanto o inventário está aberto. O salvamento é manual e só está disponível após limpar a sala. Salvamentos antigos, criados antes dessa regra, ainda reiniciam os inimigos ao carregar. O inventário inicial contém três armas e um peitoral de pedra. O elite da segunda sala pode deixar o peitoral; equipado, reduz em 30% o dano recebido.
+Ao limpar as duas primeiras salas, novas armas aparecem no chão e são recolhidas ao se aproximar. Pressione I para abrir o inventário e 1, 2 ou 3 para equipar uma arma encontrada. A lâmina do crepúsculo ataca mais rápido; a lâmina rara oferece mais dano. O jogo pausa enquanto o inventário está aberto. O salvamento é manual e fica disponível após limpar uma sala ou concluir a masmorra. Salvamentos antigos, criados antes dessa regra, ainda reiniciam os inimigos ao carregar. O inventário inicial contém três armas e um peitoral de pedra. O elite da segunda sala pode deixar o peitoral; equipado, reduz em 30% o dano recebido.
 
 Recolha todos os itens da sala antes de salvar ou passar pela porta, para que nenhuma recompensa seja perdida.
 
