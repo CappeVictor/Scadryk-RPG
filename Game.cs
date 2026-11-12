@@ -15,6 +15,7 @@ public partial class Game : Node2D
     private int room, level = 1, xp, gold, potions = 2, damage = 25;
     private float health = 100, maxHealth = 100, attackCooldown, attackEffect, dashCooldown, dashTime, invulnerable, hitFlash;
     private string state = "title";
+    private string savePath = "user://scadryk-save.cfg";
     private int weaponLevel;
     private string notice = "";
     private float noticeTime;
@@ -61,12 +62,12 @@ public partial class Game : Node2D
         file.SetValue("player", "potions", potions); file.SetValue("player", "damage", damage);
         file.SetValue("player", "weapon", weaponLevel); file.SetValue("player", "health", health);
         file.SetValue("player", "max_health", maxHealth);
-        Error error = file.Save("user://scadryk-save.cfg");
+        Error error = file.Save(savePath);
         notice = error == Error.Ok ? "PROGRESSO SALVO" : "ERRO AO SALVAR"; noticeTime = 3;
     }
     private void LoadGame() {
         var file = new ConfigFile();
-        if (file.Load("user://scadryk-save.cfg") != Error.Ok) { notice = "NENHUM SALVAMENTO ENCONTRADO"; noticeTime = 3; return; }
+        if (file.Load(savePath) != Error.Ok) { notice = "NENHUM SALVAMENTO ENCONTRADO"; noticeTime = 3; return; }
         StartGame();
         room = Mathf.Clamp((int)file.GetValue("player", "room", 0), 0, 2);
         level = Math.Max(1, (int)file.GetValue("player", "level", 1));
