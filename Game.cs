@@ -316,13 +316,18 @@ public partial class Game : Node2D
             }
             if (enemy.Windup > 0) {
                 enemy.Windup -= dt;
-                float strikeDistance = enemy.Mage ? 52 : enemy.BossPattern == 0 ? 90 : 42;
-                if (enemy.Windup <= 0 && (enemy.Mage || enemy.BossPattern == 1 ? player.DistanceTo(enemy.AttackTarget) < strikeDistance : offset.Length() < strikeDistance) && invulnerable <= 0 && !dashing) {
-                    health -= MitigatedDamage(enemy.Mage ? 16 : enemy.BossPattern == 0 ? 22 : 30); invulnerable = 0.55f; hitFlash = 0.2f;
+                float strikeDistance = enemy.Mage ? 52 : enemy.Elite ? 62 : enemy.BossPattern == 0 ? 90 : 42;
+                bool targetedStrike = enemy.Mage || enemy.Elite || enemy.BossPattern == 1;
+                if (enemy.Windup <= 0 && (targetedStrike ? player.DistanceTo(enemy.AttackTarget) < strikeDistance : offset.Length() < strikeDistance) && invulnerable <= 0 && !dashing) {
+                    float incomingDamage = enemy.Mage ? 16 : enemy.Elite ? 20 : enemy.BossPattern == 0 ? 22 : 30;
+                    health -= MitigatedDamage(incomingDamage); invulnerable = 0.55f; hitFlash = 0.2f;
                     if (health <= 0) { health = 0; state = "dead"; }
                 }
                 if (state != "playing") break;
                 continue;
+            }
+            if (enemy.Elite && enemy.Cooldown <= 0 && offset.Length() < 220) {
+                enemy.AttackTarget = player; enemy.Windup = 0.75f; enemy.Cooldown = 2.6f; continue;
             }
             bool enraged = enemy.Boss && enemy.Hp <= enemy.MaxHp * 0.5f;
             if (enemy.Boss && enemy.Cooldown <= 0 && offset.Length() < 125) {
@@ -358,7 +363,14 @@ public partial class Game : Node2D
         foreach (var enemy in enemies) {
             float radius = enemy.Boss ? 23 : 15;
             if (enemy.Windup > 0) {
-                if (enemy.Mage) { DrawCircle(enemy.AttackTarget, 52, new Color(0.7f, 0.3f, 0.85f, 0.18f)); DrawArc(enemy.AttackTarget, 52, 0, Mathf.Tau, 32, new Color("bd91e8"), 3, true); }
+                if (enemy.Mage || enemy.Elite) {
+                    float baseRadius = enemy.Elite ? 62 : 52;
+                    float windupDuration = enemy.Elite ? 0.75f : 0.8f;
+                    float warningRadius = baseRadius * Mathf.Lerp(0.35f, 1f, Mathf.Clamp(enemy.Windup / windupDuration, 0, 1));
+                    Color warningColor = enemy.Elite ? new Color("e6a45e") : new Color("bd91e8");
+                    DrawCircle(enemy.AttackTarget, warningRadius, new Color(warningColor.R, warningColor.G, warningColor.B, 0.2f));
+                    DrawArc(enemy.AttackTarget, warningRadius, 0, Mathf.Tau, 40, warningColor, 4, true);
+                }
                 else if (enemy.BossPattern == 0) DrawArc(enemy.Pos, 90, 0, Mathf.Tau, 48, new Color("e67b58"), 3, true);
                 else { DrawLine(enemy.Pos, enemy.AttackTarget, new Color("e67b58"), 12); DrawCircle(enemy.AttackTarget, 42, new Color(0.9f, 0.35f, 0.25f, 0.35f)); }
             }
