@@ -9,7 +9,7 @@ Protótipo de RPG de ação com visão de cima, fantasia sombria e exploração 
 - Três salas em sequência, com porta liberada após derrotar os inimigos.
 - Movimento em oito direções, ataque corpo a corpo, esquiva e poções.
 - Inimigos que perseguem o jogador e um guardião na última sala.
-- Vida, experiência, níveis, ouro, uma arma rara e um baú de recompensa.\n- Salvamento manual de atributos, ouro, poções, arma e sala atual. Salve após eliminar os inimigos; ao carregar um salvamento novo, a sala permanece limpa.
+- Vida, experiência, níveis, ouro, uma arma rara e um baú de recompensa.\n- Ouro e poções coletáveis ao se aproximar dos itens deixados por inimigos.\n- Salvamento manual de atributos, ouro, poções, arma e sala atual. Salve após eliminar os inimigos; ao carregar um salvamento novo, a sala permanece limpa.
 - Tela inicial, derrota e vitória.
 
 ## Como executar
@@ -33,7 +33,7 @@ Se ocorrer um erro de compilação, confira se instalou o **SDK** .NET, reinicie
 | E | Interagir com a porta ou o baú |
 | Enter ou Espaço | Começar ou reiniciar |\n| R | Redemoinho (dano em área) |\n| I | Ver arma e dano |\n| F5 após limpar a sala | Salvar progresso |\n| C na tela inicial | Carregar progresso |
 
-Derrote todos os inimigos, aproxime-se da porta à direita e pressione **E**. Na última sala, vença o guardião, aproxime-se do baú e pressione **E** para concluir.
+Derrote todos os inimigos, recolha os itens no chão aproximando-se deles, aproxime-se da porta à direita e pressione **E**. Na última sala, vença o guardião, aproxime-se do baú e pressione **E** para concluir.
 
 ## Arquivos principais
 
@@ -52,4 +52,4 @@ Derrote todos os inimigos, aproxime-se da porta à direita e pressione **E**. Na
 6. **Expandir as masmorras:** acrescentar salas, armadilhas e, após validar o conteúdo manual, geração procedural.
 
 Otimizações devem ser guiadas por medições de desempenho, começando pelos pontos que realmente afetarem a experiência.
-\n## Direção do projeto\n\nScadryk busca a atmosfera sombria, o combate de ação e a busca por equipamentos presentes nos RPGs de ação modernos, incluindo Diablo como referência. A identidade, os personagens, os cenários e os itens serão próprios. A meta é evoluir por etapas: primeiro validar combate e progressão, depois criar classes, loot variado, habilidades e masmorras mais ricas.\n\nA arma rara é equipada automaticamente ao sair da segunda sala; I mostra a arma atual. O salvamento é manual e só está disponível após limpar a sala. Salvamentos antigos, criados antes dessa regra, ainda reiniciam os inimigos ao carregar. Não há inventário completo ainda.\n
+\n## Direção do projeto\n\nScadryk busca a atmosfera sombria, o combate de ação e a busca por equipamentos presentes nos RPGs de ação modernos, incluindo Diablo como referência. A identidade, os personagens, os cenários e os itens serão próprios. A meta é evoluir por etapas: primeiro validar combate e progressão, depois criar classes, loot variado, habilidades e masmorras mais ricas.\n\nA arma rara é equipada automaticamente ao sair da segunda sala; I mostra a arma atual. O salvamento é manual e só está disponível após limpar a sala. Salvamentos antigos, criados antes dessa regra, ainda reiniciam os inimigos ao carregar. Não há inventário completo ainda.\n\nRecolha todos os itens da sala antes de salvar ou passar pela porta, para que nenhuma recompensa seja perdida.\n
