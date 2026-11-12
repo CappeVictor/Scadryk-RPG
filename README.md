@@ -14,6 +14,7 @@ Protótipo jogável de RPG de ação com visão superior e fantasia sombria, fei
 - Ataques corpo a corpo são bloqueados por pilares; inimigos comuns se espalham para evitar que todos ocupem o mesmo ponto.
 - Nomes de função acima de arqueiros, conjuradores e elites deixam os papéis do grupo mais fáceis de reconhecer.
 - Cada nível ganho gera sua própria escolha de talento, mesmo quando vários níveis são alcançados na mesma luta.
+- A conclusão ou derrota mostra um resumo da tentativa: tempo, inimigos derrotados, críticos, poções usadas e dano recebido.
 - Itens deixados no chão, baú final com escolha de recompensa e salvamento local.
 
 ## Requisitos e execução
@@ -54,7 +55,7 @@ O projeto compila com Godot .NET 4.3 e SDK .NET 8. A compilação confirma o có
 
 ## Próximas etapas
 
-Separar os sistemas em cenas e classes, substituir os gráficos provisórios por arte original, adicionar áudio e animações, ampliar salas e inimigos, e validar o ciclo completo de jogo na Godot. O desempenho deve ser otimizado a partir de medições reais.
+Separar os sistemas em cenas e classes, substituir os gráficos provisórios por arte original, adicionar áudio e animações, ampliar salas e inimigos, e validar o ciclo completo de jogo na Godot. Antes de aumentar muito o escopo, preparar uma demonstração curta e colher feedback de jogadores para medir clareza, diversão e interesse. O desempenho deve ser otimizado a partir de medições reais.
 
 ## Referências de design consultadas
 
