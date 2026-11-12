@@ -14,10 +14,11 @@ public partial class Game : Node2D
     private int weaponLevel;
     private string notice = "";
     private float noticeTime;
+    private float skillCooldown, skillEffect;
     public override void _Ready() => QueueRedraw();
     private void StartGame() {
         room = 0; level = 1; xp = 0; gold = 0; potions = 2; damage = 25; weaponLevel = 0;
-        health = maxHealth = 100; attackCooldown = attackEffect = dashCooldown = dashTime = invulnerable = hitFlash = 0;
+        health = maxHealth = 100; attackCooldown = attackEffect = dashCooldown = dashTime = invulnerable = hitFlash = skillCooldown = skillEffect = 0;
         state = "playing"; SetupRoom();
     }
     private void SetupRoom() {
@@ -35,6 +36,7 @@ public partial class Game : Node2D
             case Key.Space: case Key.J: Attack(); break;
             case Key.Shift: case Key.K: if (dashCooldown <= 0) { dashTime = 0.17f; dashCooldown = 1.15f; } break;
             case Key.Q: if (potions > 0 && health < maxHealth) { potions--; health = Math.Min(maxHealth, health + 45); } break;
+            case Key.R: UseWhirlwind(); break;
             case Key.F5: SaveGame(); break;
             case Key.I: notice = $"ARMA: {(weaponLevel == 0 ? "ESPADA COMUM" : "LÂMINA RARA")}  |  DANO {damage}  |  OURO {gold}"; noticeTime = 3; break;
             case Key.E:
@@ -75,10 +77,22 @@ public partial class Game : Node2D
             if (offset.Length() < (enemy.Boss ? 95 : 78) && (offset.Length() < 20 || facing.Dot(offset.Normalized()) > 0.1f)) { enemy.Hp -= damage; enemy.Pos += facing * 15; }
         }
     }
+    private void UseWhirlwind() {
+        if (skillCooldown > 0) return;
+        skillCooldown = 6f; skillEffect = 0.3f;
+        foreach (var enemy in enemies) {
+            Vector2 offset = enemy.Pos - player;
+            if (offset.Length() < 110) {
+                enemy.Hp -= damage * 1.6f;
+                if (offset.LengthSquared() > 0) enemy.Pos += offset.Normalized() * 25;
+            }
+        }
+    }
     public override void _PhysicsProcess(double delta) {
         noticeTime = Math.Max(0, noticeTime - (float)delta);
         if (state != "playing") { QueueRedraw(); return; }
         float dt = (float)delta;
+        skillCooldown = Math.Max(0, skillCooldown - dt); skillEffect = Math.Max(0, skillEffect - dt);
         attackCooldown = Math.Max(0, attackCooldown - dt); attackEffect = Math.Max(0, attackEffect - dt);
         dashCooldown = Math.Max(0, dashCooldown - dt); invulnerable = Math.Max(0, invulnerable - dt); hitFlash = Math.Max(0, hitFlash - dt);
         Vector2 dir = new((Input.IsKeyPressed(Key.D) || Input.IsKeyPressed(Key.Right) ? 1 : 0) - (Input.IsKeyPressed(Key.A) || Input.IsKeyPressed(Key.Left) ? 1 : 0), (Input.IsKeyPressed(Key.S) || Input.IsKeyPressed(Key.Down) ? 1 : 0) - (Input.IsKeyPressed(Key.W) || Input.IsKeyPressed(Key.Up) ? 1 : 0));
@@ -136,10 +150,11 @@ public partial class Game : Node2D
         DrawCircle(player, 16, hitFlash > 0 ? new Color("e88975") : new Color("6c8b8a")); DrawCircle(player + new Vector2(0, -5), 8, new Color("dfbd94"));
         DrawLine(player + facing * 8, player + facing * 24, new Color("e7d7b9"), 4);
         if (attackEffect > 0) DrawArc(player, 56, facing.Angle() - 0.8f, facing.Angle() + 0.8f, 16, goldColor, 6, true);
+        if (skillEffect > 0) DrawArc(player, 110, 0, Mathf.Tau, 48, new Color("edb96d"), 5, true);
         Text($"{room + 1} / 3    {rooms[room]}", new Vector2(68, 590), 14, text);
         Text("WASD: mover   ESPAÇO: atacar   SHIFT: esquivar   Q: poção   E: interagir", new Vector2(68, 618), 13, text);
         if (noticeTime > 0) Text(notice, new Vector2(260, 175), 15, goldColor);
-        if (state == "playing") Text("I: arma   F5: salvar", new Vector2(710, 590), 13, text);
+        if (state == "playing") Text($"R: redemoinho {(skillCooldown > 0 ? skillCooldown.ToString("0.0") + "s" : "pronto")}   I: arma   F5: salvar", new Vector2(570, 590), 12, text);
         if (enemies.Count == 0 && state == "playing") Text(room == 2 ? "APROXIME-SE DO BAÚ E PRESSIONE E" : "SALA LIMPA: PORTA ABERTA", new Vector2(300, 145), 16, goldColor);
         if (state != "playing") {
             DrawRect(new Rect2(0, 0, 960, 640), new Color(0.025f, 0.03f, 0.035f, 0.92f));
