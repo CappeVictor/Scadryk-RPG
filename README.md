@@ -11,6 +11,9 @@ Protótipo jogável de RPG de ação com visão superior e fantasia sombria, fei
 - Barra de vida com alerta visual em vida baixa e indicador explícito da fase enfurecida do guardião.
 - Ouro, poções, experiência, níveis e escolhas de talentos.
 - Armas com atributos e efeitos próprios, armadura e relíquia equipáveis.
+- Ataques corpo a corpo são bloqueados por pilares; inimigos comuns se espalham para evitar que todos ocupem o mesmo ponto.
+- Nomes de função acima de arqueiros, conjuradores e elites deixam os papéis do grupo mais fáceis de reconhecer.
+- Cada nível ganho gera sua própria escolha de talento, mesmo quando vários níveis são alcançados na mesma luta.
 - Itens deixados no chão, baú final com escolha de recompensa e salvamento local.
 
 ## Requisitos e execução
@@ -52,3 +55,12 @@ O projeto compila com Godot .NET 4.3 e SDK .NET 8. A compilação confirma o có
 ## Próximas etapas
 
 Separar os sistemas em cenas e classes, substituir os gráficos provisórios por arte original, adicionar áudio e animações, ampliar salas e inimigos, e validar o ciclo completo de jogo na Godot. O desempenho deve ser otimizado a partir de medições reais.
+
+## Referências de design consultadas
+
+- [Diablo IV: leitura visual dos efeitos e ataques](https://news.blizzard.com/en-gb/article/23746639/diablo-iv-quarterly-updatedecember-2021): os sinais de combate devem continuar claros em meio aos efeitos.
+- [Diablo IV: ajustes de masmorras e redução de retrocesso](https://news.blizzard.com/en-us/article/24009151/descend-into-the-diablo-iv-developer-update-livestream): objetivos e rotas mais diretos ajudam a manter o ritmo da exploração.
+- [Diablo IV: identidade e comportamento dos inimigos](https://news.blizzard.com/en-us/article/24243142/sanctuary-ignites-with-itemization-systems-changes): cada tipo de inimigo ganha um papel reconhecível.
+- [Last Epoch: melhorias de qualidade de vida e filtros de loot](https://forum.lastepoch.com/t/harbingers-of-ruin-quality-of-life-more/71756): informação de equipamento e filtros claros são boas referências para uma futura expansão do inventário.
+
+Essas referências orientam princípios gerais; Scadryk mantém personagens, mundo, itens e apresentação próprios.
