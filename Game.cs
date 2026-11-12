@@ -11,9 +11,12 @@ public partial class Game : Node2D
     private int room, level = 1, xp, gold, potions = 2, damage = 25;
     private float health = 100, maxHealth = 100, attackCooldown, attackEffect, dashCooldown, dashTime, invulnerable, hitFlash;
     private string state = "title";
+    private int weaponLevel;
+    private string notice = "";
+    private float noticeTime;
     public override void _Ready() => QueueRedraw();
     private void StartGame() {
-        room = 0; level = 1; xp = 0; gold = 0; potions = 2; damage = 25;
+        room = 0; level = 1; xp = 0; gold = 0; potions = 2; damage = 25; weaponLevel = 0;
         health = maxHealth = 100; attackCooldown = attackEffect = dashCooldown = dashTime = invulnerable = hitFlash = 0;
         state = "playing"; SetupRoom();
     }
@@ -27,17 +30,42 @@ public partial class Game : Node2D
     }
     public override void _UnhandledInput(InputEvent e) {
         if (e is not InputEventKey key || !key.Pressed || key.Echo) return;
-        if (state != "playing") { if (key.Keycode == Key.Enter || key.Keycode == Key.Space) StartGame(); return; }
+        if (state != "playing") { if (key.Keycode == Key.Enter || key.Keycode == Key.Space) StartGame(); else if (key.Keycode == Key.C && state == "title") LoadGame(); return; }
         switch (key.Keycode) {
             case Key.Space: case Key.J: Attack(); break;
             case Key.Shift: case Key.K: if (dashCooldown <= 0) { dashTime = 0.17f; dashCooldown = 1.15f; } break;
             case Key.Q: if (potions > 0 && health < maxHealth) { potions--; health = Math.Min(maxHealth, health + 45); } break;
+            case Key.F5: SaveGame(); break;
+            case Key.I: notice = $"ARMA: {(weaponLevel == 0 ? "ESPADA COMUM" : "LÂMINA RARA")}  |  DANO {damage}  |  OURO {gold}"; noticeTime = 3; break;
             case Key.E:
-                if (enemies.Count == 0 && room < 2 && player.DistanceTo(new Vector2(850, 330)) < 95) { room++; SetupRoom(); }
+                if (enemies.Count == 0 && room < 2 && player.DistanceTo(new Vector2(850, 330)) < 95) { if (room == 1 && weaponLevel == 0) { weaponLevel = 1; damage += 10; notice = "LÂMINA RARA EQUIPADA: +10 DANO"; noticeTime = 3; } room++; SetupRoom(); }
                 else if (enemies.Count == 0 && room == 2 && player.DistanceTo(new Vector2(750, 330)) < 100) { gold += 100; state = "victory"; }
                 break;
         }
         QueueRedraw();
+    }
+    private void SaveGame() {
+        var file = new ConfigFile();
+        file.SetValue("player", "room", room); file.SetValue("player", "level", level);
+        file.SetValue("player", "xp", xp); file.SetValue("player", "gold", gold);
+        file.SetValue("player", "potions", potions); file.SetValue("player", "damage", damage);
+        file.SetValue("player", "weapon", weaponLevel); file.SetValue("player", "health", health);
+        file.SetValue("player", "max_health", maxHealth);
+        Error error = file.Save("user://scadryk-save.cfg");
+        notice = error == Error.Ok ? "PROGRESSO SALVO" : "ERRO AO SALVAR"; noticeTime = 3;
+    }
+    private void LoadGame() {
+        var file = new ConfigFile();
+        if (file.Load("user://scadryk-save.cfg") != Error.Ok) { notice = "NENHUM SALVAMENTO ENCONTRADO"; noticeTime = 3; return; }
+        StartGame();
+        room = Mathf.Clamp((int)file.GetValue("player", "room", 0), 0, 2);
+        level = Math.Max(1, (int)file.GetValue("player", "level", 1));
+        xp = Math.Max(0, (int)file.GetValue("player", "xp", 0)); gold = Math.Max(0, (int)file.GetValue("player", "gold", 0));
+        potions = Math.Max(0, (int)file.GetValue("player", "potions", 2)); damage = Math.Max(1, (int)file.GetValue("player", "damage", 25));
+        weaponLevel = Mathf.Clamp((int)file.GetValue("player", "weapon", 0), 0, 1);
+        maxHealth = Math.Max(1, (float)file.GetValue("player", "max_health", 100f));
+        health = Mathf.Clamp((float)file.GetValue("player", "health", 100f), 1, maxHealth);
+        SetupRoom(); notice = "PROGRESSO CARREGADO: SALA REINICIADA"; noticeTime = 3;
     }
     private void Attack() {
         if (attackCooldown > 0) return;
@@ -48,6 +76,7 @@ public partial class Game : Node2D
         }
     }
     public override void _PhysicsProcess(double delta) {
+        noticeTime = Math.Max(0, noticeTime - (float)delta);
         if (state != "playing") { QueueRedraw(); return; }
         float dt = (float)delta;
         attackCooldown = Math.Max(0, attackCooldown - dt); attackEffect = Math.Max(0, attackEffect - dt);
@@ -109,11 +138,15 @@ public partial class Game : Node2D
         if (attackEffect > 0) DrawArc(player, 56, facing.Angle() - 0.8f, facing.Angle() + 0.8f, 16, goldColor, 6, true);
         Text($"{room + 1} / 3    {rooms[room]}", new Vector2(68, 590), 14, text);
         Text("WASD: mover   ESPAÇO: atacar   SHIFT: esquivar   Q: poção   E: interagir", new Vector2(68, 618), 13, text);
+        if (noticeTime > 0) Text(notice, new Vector2(260, 175), 15, goldColor);
+        if (state == "playing") Text("I: arma   F5: salvar", new Vector2(710, 590), 13, text);
         if (enemies.Count == 0 && state == "playing") Text(room == 2 ? "APROXIME-SE DO BAÚ E PRESSIONE E" : "SALA LIMPA: PORTA ABERTA", new Vector2(300, 145), 16, goldColor);
         if (state != "playing") {
             DrawRect(new Rect2(0, 0, 960, 640), new Color(0.025f, 0.03f, 0.035f, 0.92f));
             Text(state == "title" ? "SCADRYK RPG" : state == "victory" ? "VITÓRIA!" : "VOCÊ CAIU", new Vector2(330, 260), 38, goldColor);
             Text("ENTER PARA COMEÇAR", new Vector2(355, 370), 18, text);
+            if (state == "title") Text("C PARA CARREGAR JOGO", new Vector2(350, 395), 16, text);
+            if (noticeTime > 0) Text(notice, new Vector2(300, 460), 15, text);
             Text("WASD mover  •  ESPAÇO atacar  •  SHIFT esquivar", new Vector2(240, 420), 16, text);
         }
     }
