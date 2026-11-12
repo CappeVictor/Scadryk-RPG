@@ -17,6 +17,7 @@ public partial class SmokeTest : Node
     {
         try {
             game = new Game(); AddChild(game); game.SetPhysicsProcess(false);
+            Set("savePath", "user://scadryk-smoketest.cfg");
             Call("StartGame");
             var enemies = (IList)Get("enemies");
             Check(enemies.Count == 3, "A primeira sala deve ter três inimigos.");
