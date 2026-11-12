@@ -2,14 +2,16 @@
 
 Protótipo de RPG de ação com visão de cima, fantasia sombria e exploração de masmorras. A base usa **Godot 4 e C#** e foi pensada para crescer aos poucos.
 
-> **Estado atual:** protótipo inicial. A versão em C# compila, mas ainda precisa ser testada jogando na Godot .NET. A arte é provisória e desenhada por código.
+> **Estado atual:** protótipo inicial. A versão em C# compila e possui verificações automatizadas básicas na Godot .NET; ainda precisa de testes completos de jogabilidade. A arte é provisória e desenhada por código.
 
 ## O que existe na base
 
 - Três salas em sequência, com porta liberada após derrotar os inimigos.
 - Movimento em oito direções, ataque corpo a corpo, esquiva e poções.
 - Inimigos que perseguem o jogador e um guardião na última sala.
-- Vida, experiência, níveis, ouro, uma arma rara e um baú de recompensa.\n- Ouro e poções coletáveis ao se aproximar dos itens deixados por inimigos.\n- Salvamento manual de atributos, ouro, poções, arma e sala atual. Salve após eliminar os inimigos; ao carregar um salvamento novo, a sala permanece limpa.
+- Vida, experiência, níveis, ouro, uma arma rara e um baú de recompensa.
+- Ouro e poções coletáveis ao se aproximar dos itens deixados por inimigos.
+- Salvamento manual de atributos, ouro, poções, arma e sala atual. Salve após eliminar os inimigos; ao carregar um salvamento novo, a sala permanece limpa.
 - Tela inicial, derrota e vitória.
 
 ## Como executar
@@ -31,7 +33,11 @@ Se ocorrer um erro de compilação, confira se instalou o **SDK** .NET, reinicie
 | Shift ou K | Esquivar |
 | Q | Usar poção |
 | E | Interagir com a porta ou o baú |
-| Enter ou Espaço | Começar ou reiniciar |\n| R | Redemoinho (dano em área) |\n| I | Ver arma e dano |\n| F5 após limpar a sala | Salvar progresso |\n| C na tela inicial | Carregar progresso |
+| Enter ou Espaço | Começar ou reiniciar |
+| R | Redemoinho (dano em área) |
+| I | Ver arma e dano |
+| F5 após limpar a sala | Salvar progresso |
+| C na tela inicial | Carregar progresso |
 
 Derrote todos os inimigos, recolha os itens no chão aproximando-se deles, aproxime-se da porta à direita e pressione **E**. Na última sala, vença o guardião, aproxime-se do baú e pressione **E** para concluir.
 
@@ -52,4 +58,15 @@ Derrote todos os inimigos, recolha os itens no chão aproximando-se deles, aprox
 6. **Expandir as masmorras:** acrescentar salas, armadilhas e, após validar o conteúdo manual, geração procedural.
 
 Otimizações devem ser guiadas por medições de desempenho, começando pelos pontos que realmente afetarem a experiência.
-\n## Direção do projeto\n\nScadryk busca a atmosfera sombria, o combate de ação e a busca por equipamentos presentes nos RPGs de ação modernos, incluindo Diablo como referência. A identidade, os personagens, os cenários e os itens serão próprios. A meta é evoluir por etapas: primeiro validar combate e progressão, depois criar classes, loot variado, habilidades e masmorras mais ricas.\n\nA arma rara é equipada automaticamente ao sair da segunda sala; I mostra a arma atual. O salvamento é manual e só está disponível após limpar a sala. Salvamentos antigos, criados antes dessa regra, ainda reiniciam os inimigos ao carregar. Não há inventário completo ainda.\n\nRecolha todos os itens da sala antes de salvar ou passar pela porta, para que nenhuma recompensa seja perdida.\n
+
+## Direção do projeto
+
+Scadryk busca a atmosfera sombria, o combate de ação e a busca por equipamentos presentes nos RPGs de ação modernos, incluindo Diablo como referência. A identidade, os personagens, os cenários e os itens serão próprios. A meta é evoluir por etapas: primeiro validar combate e progressão, depois criar classes, loot variado, habilidades e masmorras mais ricas.
+
+A arma rara é equipada automaticamente ao sair da segunda sala; I mostra a arma atual. O salvamento é manual e só está disponível após limpar a sala. Salvamentos antigos, criados antes dessa regra, ainda reiniciam os inimigos ao carregar. Não há inventário completo ainda.
+
+Recolha todos os itens da sala antes de salvar ou passar pela porta, para que nenhuma recompensa seja perdida.
+
+## Testes automatizados básicos
+
+Compile o projeto e execute a cena `Tests/SmokeTest.tscn` na Godot .NET. Ela verifica ataque, recarga da habilidade, coleta, limites da sala e salvamento. Os testes usam um arquivo de salvamento separado do jogo. Esses testes não substituem uma partida completa.
