@@ -70,17 +70,32 @@ public partial class Game : Node2D
         if (file.Load(savePath) != Error.Ok) { notice = "NENHUM SALVAMENTO ENCONTRADO"; noticeTime = 3; return; }
         string[] integers = { "room", "level", "xp", "gold", "potions", "damage", "weapon" };
         foreach (string key in integers) {
-            if (file.HasSectionKey("player", key) && file.GetValue("player", key).VariantType != Variant.Type.Int) {
+            if (!file.HasSectionKey("player", key) || file.GetValue("player", key).VariantType != Variant.Type.Int) {
                 notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return;
             }
         }
         foreach (string key in new[] { "health", "max_health" }) {
-            if (file.HasSectionKey("player", key)) {
-                var type = file.GetValue("player", key).VariantType;
-                if (type != Variant.Type.Float && type != Variant.Type.Int) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
-            }
+            if (!file.HasSectionKey("player", key)) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
+            var type = file.GetValue("player", key).VariantType;
+            if (type != Variant.Type.Float && type != Variant.Type.Int) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
         }
         if (file.HasSectionKey("player", "room_cleared") && file.GetValue("player", "room_cleared").VariantType != Variant.Type.Bool) {
+            notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return;
+        }
+        long savedRoom = file.GetValue("player", "room").AsInt64();
+        long savedLevel = file.GetValue("player", "level").AsInt64();
+        long savedXp = file.GetValue("player", "xp").AsInt64();
+        long savedGold = file.GetValue("player", "gold").AsInt64();
+        long savedPotions = file.GetValue("player", "potions").AsInt64();
+        long savedDamage = file.GetValue("player", "damage").AsInt64();
+        long savedWeapon = file.GetValue("player", "weapon").AsInt64();
+        double savedHealth = file.GetValue("player", "health").AsDouble();
+        double savedMaxHealth = file.GetValue("player", "max_health").AsDouble();
+        if (savedRoom < 0 || savedRoom > 2 || savedLevel < 1 || savedLevel > 10000 ||
+            savedXp < 0 || savedXp >= savedLevel * 60 || savedGold < 0 || savedGold > int.MaxValue ||
+            savedPotions < 0 || savedPotions > int.MaxValue || savedDamage < 1 || savedDamage > int.MaxValue ||
+            savedWeapon < 0 || savedWeapon > 1 || !double.IsFinite(savedHealth) || !double.IsFinite(savedMaxHealth) ||
+            savedMaxHealth < 1 || savedMaxHealth > 1000000 || savedHealth <= 0 || savedHealth > savedMaxHealth) {
             notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return;
         }
         StartGame();
