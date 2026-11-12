@@ -4,9 +4,9 @@ using System.Collections.Generic;
 
 public partial class Game : Node2D
 {
-    private class Enemy { public Vector2 Pos; public float Hp, MaxHp, Cooldown, Windup; public bool Boss, Archer; }
+    private class Enemy { public Vector2 Pos; public float Hp, MaxHp, Cooldown, Windup; public bool Boss, Archer, Elite; }
     private class Projectile { public Vector2 Pos, Velocity; public float Life = 3f; }
-    private class Loot { public Vector2 Pos; public bool Potion; public int Amount; }
+    private class Loot { public Vector2 Pos; public bool Potion; public int Amount; public int Weapon = -1; }
     private readonly List<Enemy> enemies = new();
     private readonly List<Projectile> projectiles = new();
     private readonly List<Loot> loot = new();
@@ -34,8 +34,9 @@ public partial class Game : Node2D
         player = new Vector2(150, 330); enemies.Clear(); projectiles.Clear(); loot.Clear();
         int count = room == 0 ? 3 : room == 1 ? 5 : 4;
         for (int i = 0; i < count; i++) {
-            bool boss = room == 2 && i == 0; bool archer = room > 0 && i == 1; float hp = boss ? 125 : archer ? 40 : 50 + room * 8;
-            enemies.Add(new Enemy { Pos = new Vector2(480 + i % 3 * 120, 220 + i / 3 * 170 + i % 2 * 60), Boss = boss, Archer = archer, Hp = hp, MaxHp = hp, Cooldown = 1 });
+            bool boss = room == 2 && i == 0; bool archer = room > 0 && i == 1; bool elite = room == 1 && i == count - 1;
+            float hp = boss ? 125 : elite ? 105 : archer ? 40 : 50 + room * 8;
+            enemies.Add(new Enemy { Pos = new Vector2(480 + i % 3 * 120, 220 + i / 3 * 170 + i % 2 * 60), Boss = boss, Archer = archer, Elite = elite, Hp = hp, MaxHp = hp, Cooldown = 1 });
         }
     }
     public override void _UnhandledInput(InputEvent e) {
@@ -57,7 +58,7 @@ public partial class Game : Node2D
             case Key.F5: SaveGame(); break;
             case Key.E:
                 if (enemies.Count == 0 && loot.Count > 0) { notice = "RECOLHA OS ITENS ANTES DE SAIR"; noticeTime = 3; }
-                else if (enemies.Count == 0 && room < 2 && player.DistanceTo(new Vector2(850, 330)) < 95) { int found = room == 0 ? 2 : 1; ownedWeapons |= 1 << found; notice = $"NOVA ARMA: {WeaponNames[found]} • I PARA VER"; noticeTime = 3; room++; SetupRoom(); }
+                else if (enemies.Count == 0 && room < 2 && player.DistanceTo(new Vector2(850, 330)) < 95) { room++; SetupRoom(); }
                 else if (enemies.Count == 0 && room == 2 && player.DistanceTo(new Vector2(750, 330)) < 100) { gold += 100; state = "victory"; }
                 break;
         }
@@ -176,7 +177,8 @@ public partial class Game : Node2D
         for (int i = loot.Count - 1; i >= 0; i--) {
             var item = loot[i];
             if (player.DistanceTo(item.Pos) < 30) {
-                if (item.Potion) { potions++; notice = "+1 POÇÃO"; }
+                if (item.Weapon >= 0) { ownedWeapons |= 1 << item.Weapon; notice = $"ARMA ENCONTRADA: {WeaponNames[item.Weapon]}"; }
+                else if (item.Potion) { potions++; notice = "+1 POÇÃO"; }
                 else { gold += item.Amount; notice = $"+{item.Amount} OURO"; }
                 noticeTime = 1.5f; loot.RemoveAt(i);
             }
@@ -192,11 +194,16 @@ public partial class Game : Node2D
         for (int i = enemies.Count - 1; i >= 0; i--) {
             var enemy = enemies[i];
             if (enemy.Hp <= 0) {
-                loot.Add(new Loot { Pos = enemy.Pos, Amount = enemy.Boss ? 20 : 6 });
-                xp += enemy.Boss ? 45 : 20;
+                loot.Add(new Loot { Pos = enemy.Pos, Amount = enemy.Boss ? 20 : enemy.Elite ? 15 : 6 });
+                xp += enemy.Boss ? 45 : enemy.Elite ? 30 : 20;
                 if (!enemy.Boss && GD.Randf() < 0.18f) loot.Add(new Loot { Pos = enemy.Pos + new Vector2(18, 0), Potion = true });
                 if (xp >= level * 60) { xp -= level * 60; level++; maxHealth += 15; health = Math.Min(maxHealth, health + 25); damage += 5; }
-                enemies.RemoveAt(i); continue;
+                enemies.RemoveAt(i);
+                if (enemies.Count == 0 && room < 2) {
+                    int found = room == 0 ? 2 : 1;
+                    if ((ownedWeapons & (1 << found)) == 0) loot.Add(new Loot { Pos = enemy.Pos + new Vector2(-18, 0), Weapon = found });
+                }
+                continue;
             }
             enemy.Cooldown -= dt; Vector2 offset = player - enemy.Pos;
             if (enemy.Archer) {
@@ -223,7 +230,7 @@ public partial class Game : Node2D
             if (offset.Length() > (enemy.Boss ? 39 : 30)) enemy.Pos += offset.Normalized() * (enemy.Boss ? 58 : 76 + room * 8) * dt;
             else if (enemy.Cooldown <= 0) {
                 enemy.Cooldown = enemy.Boss ? 1.1f : 1.35f;
-                if (invulnerable <= 0 && !dashing) { health -= enemy.Boss ? 18 : 10; invulnerable = 0.55f; hitFlash = 0.2f; if (health <= 0) { health = 0; state = "dead"; } }
+                if (invulnerable <= 0 && !dashing) { health -= enemy.Boss ? 18 : enemy.Elite ? 14 : 10; invulnerable = 0.55f; hitFlash = 0.2f; if (health <= 0) { health = 0; state = "dead"; } }
             }
             if (state != "playing") break;
         }
@@ -244,7 +251,8 @@ public partial class Game : Node2D
         foreach (var enemy in enemies) {
             float radius = enemy.Boss ? 23 : 15;
             if (enemy.Windup > 0) DrawArc(enemy.Pos, 90, 0, Mathf.Tau, 48, new Color("e67b58"), 3, true);
-            DrawCircle(enemy.Pos, radius, enemy.Boss ? new Color("8f6459") : enemy.Archer ? new Color("8b9f75") : new Color("b7b5a6"));
+            DrawCircle(enemy.Pos, radius, enemy.Boss ? new Color("8f6459") : enemy.Elite ? new Color("a67dc0") : enemy.Archer ? new Color("8b9f75") : new Color("b7b5a6"));
+            if (enemy.Elite) Text("ELITE", enemy.Pos + new Vector2(-18, -31), 10, new Color("d4a7e8"));
             DrawCircle(enemy.Pos + new Vector2(-5, -4), 2.5f, new Color("bc5145")); DrawCircle(enemy.Pos + new Vector2(5, -4), 2.5f, new Color("bc5145"));
             DrawRect(new Rect2(enemy.Pos.X - 22, enemy.Pos.Y - radius - 10, 44 * Math.Max(0, enemy.Hp / enemy.MaxHp), 4), new Color("b8584f"));
             if (enemy.Boss) {
@@ -255,8 +263,8 @@ public partial class Game : Node2D
         }
         foreach (var shot in projectiles) DrawCircle(shot.Pos, 5, new Color("e5ae69"));
         foreach (var item in loot) {
-            DrawCircle(item.Pos, 8, item.Potion ? new Color("d55857") : new Color("e6c181"));
-            Text(item.Potion ? "POÇÃO" : "OURO", item.Pos + new Vector2(-18, -12), 10, text);
+            DrawCircle(item.Pos, 8, item.Weapon >= 0 ? new Color("719ede") : item.Potion ? new Color("d55857") : new Color("e6c181"));
+            Text(item.Weapon >= 0 ? WeaponNames[item.Weapon] + " [RARO]" : item.Potion ? "POÇÃO" : "OURO", item.Pos + new Vector2(-18, -12), 10, text);
         }
         DrawCircle(player, 16, hitFlash > 0 ? new Color("e88975") : new Color("6c8b8a")); DrawCircle(player + new Vector2(0, -5), 8, new Color("dfbd94"));
         DrawLine(player + facing * 8, player + facing * 24, new Color("e7d7b9"), 4);
@@ -274,7 +282,8 @@ public partial class Game : Node2D
                 bool owned = (ownedWeapons & (1 << i)) != 0;
                 string status = !owned ? "NÃO ENCONTRADA" : i == weaponLevel ? "EQUIPADA" : "DISPONÍVEL";
                 string speed = i == 2 ? "RÁPIDA" : "NORMAL";
-                Text($"{i + 1}. {WeaponNames[i]}  |  +{WeaponBonuses[i]} DANO  |  {speed}  |  {status}", new Vector2(190, 245 + i * 53), 14, owned ? text : new Color("777777"));
+                int comparison = WeaponBonuses[i] - WeaponBonuses[weaponLevel];
+                Text($"{i + 1}. {WeaponNames[i]}  |  DANO {comparison:+#;-#;0}  |  {speed}  |  {status}", new Vector2(190, 245 + i * 53), 14, owned ? text : new Color("777777"));
             }
             Text($"DANO ATUAL: {damage}   OURO: {gold}", new Vector2(190, 435), 15, goldColor);
         }
