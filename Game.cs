@@ -4,8 +4,10 @@ using System.Collections.Generic;
 
 public partial class Game : Node2D
 {
-    private class Enemy { public Vector2 Pos; public float Hp, MaxHp, Cooldown, Windup; public bool Boss; }
+    private class Enemy { public Vector2 Pos; public float Hp, MaxHp, Cooldown, Windup; public bool Boss, Archer; }
+    private class Projectile { public Vector2 Pos, Velocity; public float Life = 3f; }
     private readonly List<Enemy> enemies = new();
+    private readonly List<Projectile> projectiles = new();
     private readonly string[] rooms = { "VESTÍBULO EM RUÍNAS", "SALÃO DOS OSSOS", "CÂMARA DO GUARDIÃO" };
     private Vector2 player = new(150, 330), facing = Vector2.Right;
     private int room, level = 1, xp, gold, potions = 2, damage = 25;
@@ -22,11 +24,11 @@ public partial class Game : Node2D
         state = "playing"; SetupRoom();
     }
     private void SetupRoom() {
-        player = new Vector2(150, 330); enemies.Clear();
+        player = new Vector2(150, 330); enemies.Clear(); projectiles.Clear();
         int count = room == 0 ? 3 : room == 1 ? 5 : 4;
         for (int i = 0; i < count; i++) {
-            bool boss = room == 2 && i == 0; float hp = boss ? 125 : 50 + room * 8;
-            enemies.Add(new Enemy { Pos = new Vector2(480 + i % 3 * 120, 220 + i / 3 * 170 + i % 2 * 60), Boss = boss, Hp = hp, MaxHp = hp, Cooldown = 1 });
+            bool boss = room == 2 && i == 0; bool archer = room > 0 && i == 1; float hp = boss ? 125 : archer ? 40 : 50 + room * 8;
+            enemies.Add(new Enemy { Pos = new Vector2(480 + i % 3 * 120, 220 + i / 3 * 170 + i % 2 * 60), Boss = boss, Archer = archer, Hp = hp, MaxHp = hp, Cooldown = 1 });
         }
     }
     public override void _UnhandledInput(InputEvent e) {
@@ -100,6 +102,13 @@ public partial class Game : Node2D
         bool dashing = dashTime > 0; player += (dashing ? facing : dir) * (dashing ? 530 : 190) * dt;
         dashTime = Math.Max(0, dashTime - dt);
         player.X = Mathf.Clamp(player.X, 85, 875); player.Y = Mathf.Clamp(player.Y, 128, 533);
+        for (int i = projectiles.Count - 1; i >= 0; i--) {
+            var shot = projectiles[i]; shot.Pos += shot.Velocity * dt; shot.Life -= dt;
+            if (shot.Pos.DistanceTo(player) < 18 && !dashing && invulnerable <= 0) {
+                health -= 9; invulnerable = 0.55f; hitFlash = 0.2f; projectiles.RemoveAt(i);
+                if (health <= 0) { health = 0; state = "dead"; }
+            } else if (shot.Life <= 0 || shot.Pos.X < 65 || shot.Pos.X > 895 || shot.Pos.Y < 108 || shot.Pos.Y > 553) projectiles.RemoveAt(i);
+        }
         for (int i = enemies.Count - 1; i >= 0; i--) {
             var enemy = enemies[i];
             if (enemy.Hp <= 0) {
@@ -109,6 +118,15 @@ public partial class Game : Node2D
                 enemies.RemoveAt(i); continue;
             }
             enemy.Cooldown -= dt; Vector2 offset = player - enemy.Pos;
+            if (enemy.Archer) {
+                if (offset.Length() > 250) enemy.Pos += offset.Normalized() * 60 * dt;
+                else if (offset.Length() < 150 && offset.LengthSquared() > 0) enemy.Pos -= offset.Normalized() * 60 * dt;
+                enemy.Pos.X = Mathf.Clamp(enemy.Pos.X, 85, 875); enemy.Pos.Y = Mathf.Clamp(enemy.Pos.Y, 128, 533);
+                if (enemy.Cooldown <= 0 && offset.LengthSquared() > 0) {
+                    projectiles.Add(new Projectile { Pos = enemy.Pos, Velocity = offset.Normalized() * 210 }); enemy.Cooldown = 1.8f;
+                }
+                continue;
+            }
             if (enemy.Windup > 0) {
                 enemy.Windup -= dt;
                 if (enemy.Windup <= 0 && offset.Length() < 90 && invulnerable <= 0 && !dashing) {
@@ -143,10 +161,11 @@ public partial class Game : Node2D
         foreach (var enemy in enemies) {
             float radius = enemy.Boss ? 23 : 15;
             if (enemy.Windup > 0) DrawArc(enemy.Pos, 90, 0, Mathf.Tau, 48, new Color("e67b58"), 3, true);
-            DrawCircle(enemy.Pos, radius, enemy.Boss ? new Color("8f6459") : new Color("b7b5a6"));
+            DrawCircle(enemy.Pos, radius, enemy.Boss ? new Color("8f6459") : enemy.Archer ? new Color("8b9f75") : new Color("b7b5a6"));
             DrawCircle(enemy.Pos + new Vector2(-5, -4), 2.5f, new Color("bc5145")); DrawCircle(enemy.Pos + new Vector2(5, -4), 2.5f, new Color("bc5145"));
             DrawRect(new Rect2(enemy.Pos.X - 22, enemy.Pos.Y - radius - 10, 44 * Math.Max(0, enemy.Hp / enemy.MaxHp), 4), new Color("b8584f"));
         }
+        foreach (var shot in projectiles) DrawCircle(shot.Pos, 5, new Color("e5ae69"));
         DrawCircle(player, 16, hitFlash > 0 ? new Color("e88975") : new Color("6c8b8a")); DrawCircle(player + new Vector2(0, -5), 8, new Color("dfbd94"));
         DrawLine(player + facing * 8, player + facing * 24, new Color("e7d7b9"), 4);
         if (attackEffect > 0) DrawArc(player, 56, facing.Angle() - 0.8f, facing.Angle() + 0.8f, 16, goldColor, 6, true);
