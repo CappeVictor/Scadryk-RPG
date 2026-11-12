@@ -1,7 +1,7 @@
 # História de Scadryk
 
 **Subtítulo de trabalho:** *Os Nomes do Rio Cego*  
-**Estado:** prólogo, cripta inicial, praça de Véspera, Arquivo Norte e duas etapas da investigação de Sileth jogáveis; o leito do Rio Cego e as escolhas da campanha estão planejados.
+**Estado:** prólogo, cripta inicial, praça de Véspera, Arquivo Norte, leito do Rio Cego e três etapas da investigação jogáveis; a descida ao Lume e as escolhas da campanha estão planejadas.
 
 ## Ideia central
 
@@ -40,7 +40,11 @@ As escolhas deste trecho devem mudar quais aliados ajudam na descida e quais lem
 
 ### Capítulo III — A corrente sob o farol
 
-O caminho segue o leito seco do Rio Cego até a câmara do Lume. Nara ajudou Sileth a manter a cidade protegida, mas passou a questionar o preço. Ela não está simplesmente presa e à espera de ser resgatada: seus rastros mostram uma decisão que muda o sentido da busca do protagonista.
+O começo deste capítulo já pode ser explorado. Ao sul da praça, o leito seco do Rio Cego conserva as palavras de quem atravessou a corrente. Na Capela Afogada, a Lembrança Afogada tenta manter intrusos longe do sino. O Barqueiro Oco guarda a passagem e alterna entre um impacto ao redor de si, uma marca projetada no chão e um golpe em linha. O Sino sem Badalo, recuperado após a luta, traz uma gravação de Nara: ela não foi capturada. Cruzou o rio para levar as memórias para longe de Véspera e pediu que ninguém a trouxesse de volta sem antes escutar o que a corrente guarda.
+
+Edda reconhece o sino como instrumento de travessia usado por seu pai. Ela confirma que Nara sabia o caminho e partiu por escolha própria. O jogador recebe uma recompensa e a próxima pista aponta para baixo do farol. A descida até o Lume ainda será construída.
+
+Nara ajudou Sileth a manter a cidade protegida, mas passou a questionar o preço. Ela não está simplesmente presa e à espera de ser resgatada: seus rastros mostram uma decisão que muda o sentido da busca do protagonista.
 
 No confronto final, o jogador decide o que fazer com o arquivo e com o Lume. Pode devolver à cidade as memórias apagadas e enfrentar o Silêncio sem a proteção antiga, ou sustentar o farol oferecendo uma lembrança própria. As consequências devem aparecer nos habitantes, nas áreas exploráveis e no epílogo, sem uma opção apresentada como perfeitamente correta.
 
@@ -48,8 +52,9 @@ No confronto final, o jogador decide o que fazer com o arquivo e com o Lume. Pod
 
 - A inspiração em Diablo fica no gênero e na ambição de combate, exploração, loot e progressão. Scadryk mantém mitologia, trama, personagens, criaturas, nomes e apresentação próprios.
 - O Guardião e a cripta já existem como protótipo de combate; as ligações com o Rio Cego e o Lume são ficção planejada para a campanha.
-- O prólogo, as duas inscrições da cripta, a praça, as missões de Sileth, o Arquivo Norte, os Ecos de Tinta, o Escriba Cego e a gravação no Selo da Vigília estão disponíveis no jogo; o Rio Cego, as escolhas e os finais são conteúdo planejado.
+- O prólogo, as duas inscrições da cripta, a praça, as missões de Sileth, o Arquivo Norte, o leito do Rio Cego, a Capela Afogada, os dois chefes de expedição e as gravações no Selo e no Sino estão disponíveis; a descida ao Lume, as escolhas e os finais são conteúdo planejado.
 - Novos itens e poderes devem ter origem no mundo de Scadryk e revelar algo sobre quem os criou, usou ou esqueceu.
+
 
 
 

@@ -2,7 +2,7 @@
 
 Scadryk é um RPG de ação 2D em fantasia sombria, feito em C# com .NET 8 e Windows Forms. O desenho usa GDI+; o projeto não depende de Godot nem de outro motor de jogo. Diablo é uma referência de ritmo, combate e progressão. O mundo, os nomes e os itens de Scadryk são próprios. A meta de longo prazo é alcançar uma aventura de ação e loot 2D rica e rejogável, construída em etapas e sem copiar a história ou os personagens de outros jogos.
 
-O protótipo tem cinco salas de combate e a praça segura de Véspera, com inimigos de funções distintas, dois chefes com fases de combate, loot, equipamentos, níveis e talentos. A campanha inclui prólogo, inscrições exploráveis, uma missão em Véspera e uma expedição jogável ao Arquivo Norte, onde o protagonista enfrenta o Escriba Cego e encontra o Selo da Vigília. O selo revela um novo fragmento da história de Nara e pode ser levado a Sileth. A próxima região, pelo leito do Rio Cego, continua em desenvolvimento.
+O protótipo tem sete salas de combate e a praça segura de Véspera, com inimigos de funções distintas, três chefes com ataques em fases, loot, equipamentos, níveis e talentos. A campanha inclui o prólogo, inscrições exploráveis, as missões de Sileth e Edda, a expedição ao Arquivo Norte e o início da travessia pelo Rio Cego. O Selo da Vigília revela que o Lume escolhe nomes para consumir; o Sino de Nara mostra que ela cruzou o rio por vontade própria. A descida ao farol continua em desenvolvimento.
 
 ## História de Scadryk
 
@@ -12,7 +12,7 @@ Na noite em que todos os sinos de Véspera se calaram, pessoas começaram a esqu
 
 As pistas apontam para a Curadora Sileth, responsável pelos arquivos de Véspera. Ela apaga nomes de propósito: acredita que manter a história incompleta é o preço necessário para alimentar o farol e conter o Silêncio. A jornada colocará o protagonista diante de uma escolha difícil: preservar a proteção construída sobre esquecimentos ou devolver à cidade a verdade e enfrentar o que ela mantinha afastado.
 
-O prólogo apresenta Véspera, o Escutador e a busca por Nara. Ao derrotar o Guardião e recolher o fragmento do relicário, o jogador ouve uma lembrança dela e segue até a praça de Véspera. Depois de falar com Sileth e investigar o Livro das Ausências, pode entrar no Arquivo Norte pelo portão ao norte. Atravesse a galeria, derrote o Escriba Cego no cofre e recolha o Selo da Vigília. Volte pela saída à direita e fale com Sileth para avançar a investigação. O caminho pelo Rio Cego e as escolhas sobre o Lume ainda serão implementados conforme o roadmap.
+O prólogo apresenta Véspera, o Escutador e a busca por Nara. Ao derrotar o Guardião e recolher o fragmento do relicário, o jogador ouve uma lembrança dela e segue até a praça. Fale com Sileth, investigue o Livro das Ausências e entre no Arquivo Norte pelo portão ao norte. Atravesse a galeria, derrote o Escriba Cego no cofre e leve o Selo da Vigília de volta a Sileth. Depois, desça pelo portão ao sul da praça, atravesse o leito do Rio Cego e enfrente o Barqueiro Oco na Capela Afogada. Leve o Sino de Nara a Edda para concluir essa etapa. A descida ao farol e as escolhas sobre o Lume ainda serão implementadas conforme o roadmap.
 
 O universo, os personagens e o arco planejado estão detalhados em [STORY.md](STORY.md).
 
@@ -42,7 +42,7 @@ Para compilar uma versão de produção:
 dotnet build --configuration Release
 ```
 
-Para verificar o prólogo, as inscrições, o Arquivo Norte, o Escriba Cego, a missão de Sileth, o save narrativo, movimento, avisos de ataque, esquiva e progressão:
+Para verificar o prólogo, as inscrições, o Arquivo Norte, o Rio Cego, os chefes, os itens de história, as missões, o save, movimento, avisos de ataque, esquiva e progressão:
 
 ```powershell
 dotnet run -- --self-test
@@ -76,11 +76,11 @@ dotnet publish --configuration Release --runtime win-x64 --self-contained true
 
 Os ataques corpo a corpo comuns agora mostram a área de impacto antes do golpe. Saia do círculo para evitar dano. O movimento também desliza pela quina dos obstáculos quando uma direção fica bloqueada.
 
-Depois de escolher a recompensa do baú da cripta, explore a praça de Véspera. Fale com Sileth, leia o Livro das Ausências e volte para conversar com ela. O portão no norte leva ao Arquivo Norte: limpe a galeria e o cofre, recolha o selo deixado pelo chefe e retorne a Sileth. A passagem à esquerda da praça retorna à cripta. Use **F5** em uma área segura para salvar seu progresso.
+Depois de escolher a recompensa do baú da cripta, explore a praça de Véspera. Fale com Sileth, leia o Livro das Ausências e volte para conversar com ela. O portão ao norte leva ao Arquivo Norte: limpe a galeria e o cofre, recolha o selo e retorne a Sileth. Quando ela liberar a trilha, use o portão ao sul para descer ao rio. Na Capela Afogada, vença o Barqueiro Oco, recolha o sino e mostre-o a Edda. A passagem à esquerda da praça retorna à cripta. Use **F5** em uma área segura para salvar seu progresso.
 
 ## Salvamento
 
-O save JSON fica em `%LOCALAPPDATA%\Scadryk\save.json` e guarda inscrições, etapa da missão e o Selo da Vigília. Na tela inicial, pressione **C** para carregar. Se não houver um save novo, o jogo também procura o ConfigFile da versão anterior em `%APPDATA%\Godot\app_userdata\Scadryk RPG\scadryk-save.cfg` e migra os dados encontrados para o formato JSON.
+O save JSON fica em `%LOCALAPPDATA%\Scadryk\save.json` e guarda inscrições, etapas das missões, o Selo da Vigília e o Sino de Nara. Na tela inicial, pressione **C** para carregar. Se não houver um save novo, o jogo também procura o ConfigFile da versão anterior em `%APPDATA%\Godot\app_userdata\Scadryk RPG\scadryk-save.cfg` e migra os dados encontrados para o formato JSON.
 
 ## Estrutura
 
@@ -93,7 +93,8 @@ O save JSON fica em `%LOCALAPPDATA%\Scadryk\save.json` e guarda inscrições, et
 
 ## Limites atuais
 
-Este é um protótipo com cinco salas de combate e arte procedural desenhada em formas 2D. Ainda faltam campanha longa, mais regiões, chefes e builds, arte e áudio originais, animações, balanceamento amplo e testes manuais em diferentes resoluções. Não há medição de desempenho em máquinas variadas.
+Este é um protótipo com sete salas de combate e arte procedural desenhada em formas 2D. Ainda faltam a descida ao Lume, uma campanha longa, mais regiões, chefes e builds, arte e áudio originais, animações, balanceamento amplo e testes manuais em diferentes resoluções. Não há medição de desempenho em máquinas variadas.
+
 
 
 
