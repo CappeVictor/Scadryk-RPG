@@ -45,6 +45,10 @@ public partial class SmokeTest : Node
             Check((string)Get("notice") == "PROGRESSO SALVO", "Falha ao salvar.");
             Set("gold", 0); Call("LoadGame");
             Check((int)Get("gold") == 123 && enemies.Count == 0, "Salvamento não restaurou ouro ou sala limpa.");
+            var invalid = new ConfigFile(); invalid.SetValue("player", "gold", "inválido");
+            Check(invalid.Save("user://scadryk-smoketest.cfg") == Error.Ok, "Falha ao criar teste de arquivo inválido.");
+            Call("LoadGame");
+            Check((string)Get("notice") == "SALVAMENTO INVÁLIDO" && (int)Get("gold") == 123, "Dados inválidos alteraram o progresso atual.");
             Call("StartGame");
             first = enemies[0];
             first.GetType().GetField("Pos").SetValue(first, new Vector2(870, 330));
