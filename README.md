@@ -42,7 +42,7 @@ Para compilar uma versão de produção:
 dotnet build --configuration Release
 ```
 
-Para verificar o prólogo, a lembrança do relicário, movimento, avisos de ataque, esquiva e progressão:
+Para verificar o prólogo, as inscrições exploráveis, a lembrança do relicário, movimento, avisos de ataque, esquiva e progressão:
 
 ```powershell
 dotnet run -- --self-test
@@ -63,7 +63,7 @@ dotnet publish --configuration Release --runtime win-x64 --self-contained true
 | Shift ou K | Esquivar |
 | R ou clique direito | Redemoinho |
 | Q | Usar poção |
-| E | Abrir passagem ou interagir com o baú |
+| E | Escutar inscrições, abrir passagem ou interagir com o baú |
 | I | Abrir ou fechar inventário |
 | 1–3 no inventário | Equipar arma |
 | 4–5 no inventário | Alternar armadura e relíquia |
@@ -78,7 +78,7 @@ Os ataques corpo a corpo comuns agora mostram a área de impacto antes do golpe.
 
 ## Salvamento
 
-O save JSON fica em `%LOCALAPPDATA%\Scadryk\save.json`. Na tela inicial, pressione **C** para carregar. Se não houver um save novo, o jogo também procura o ConfigFile da versão anterior em `%APPDATA%\Godot\app_userdata\Scadryk RPG\scadryk-save.cfg` e migra os dados encontrados para o formato JSON.
+O save JSON fica em `%LOCALAPPDATA%\Scadryk\save.json` e guarda também as inscrições encontradas na masmorra. Na tela inicial, pressione **C** para carregar. Se não houver um save novo, o jogo também procura o ConfigFile da versão anterior em `%APPDATA%\Godot\app_userdata\Scadryk RPG\scadryk-save.cfg` e migra os dados encontrados para o formato JSON.
 
 ## Estrutura
 
@@ -92,6 +92,7 @@ O save JSON fica em `%LOCALAPPDATA%\Scadryk\save.json`. Na tela inicial, pressio
 ## Limites atuais
 
 Este é um protótipo com três salas e arte procedural desenhada em formas 2D. Ainda faltam campanha longa, mais chefes e builds, arte e áudio originais, animações, balanceamento amplo e testes manuais em diferentes resoluções. Não há medição de desempenho em máquinas variadas.
+
 
 
 

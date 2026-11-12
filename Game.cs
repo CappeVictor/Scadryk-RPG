@@ -40,9 +40,15 @@ public sealed class Game : Form
         public int DodgeTalent { get; set; }
         public bool RoomCleared { get; set; }
         public bool Completed { get; set; }
+        public int MemoriesFound { get; set; }
     }
 
     private static readonly RectangleF[] Walls = { new(345, 235, 48, 90), new(565, 375, 58, 80) };
+    private static readonly PointF[] MemoryStonePositions = { new(260, 165), new(270, 485) };
+    private static readonly string[] MemoryStoneTexts = {
+        "Nara: “Se os sinos calarem, siga o leito do Rio Cego. A Curadora fechou os arquivos antes da noite começar.”",
+        "Registro de Vigília: “O Guardião entregou seu nome ao Lume. A Curadora apagou o registro para que a cidade esquecesse o preço.”"
+    };
     private readonly List<Enemy> enemies = new();
     private readonly List<Drop> drops = new();
     private readonly HashSet<Keys> down = new();
@@ -59,10 +65,13 @@ public sealed class Game : Form
     private PointF player = new(150, 330), facing = new(1, 0), mouseAim = new(1, 0);
     private int room, level = 1, xp, gold, potions = 2, damage = 25, weapon, ownedWeapons = 1;
     private int healthTalent, skillTalent, dodgeTalent, pendingTalents, enemiesDefeated;
+    private int memoriesFound;
     private float health = 100, maxHealth = 100, attackCd, skillCd, dashCd, dashTime, invulnerable, noticeTime, windupPulse;
     private bool armor, armorOn, relic, relicOn, inventoryOpen, title = true, dead, victory, talentChoice, chestChoice, storyOverlay, memoryOverlay;
     private int storyPage;
     private string notice = "";
+    private string memoryTitle = "";
+    private string memoryText = "";
     private string SavePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Scadryk", "save.json");
 
     public Game()
@@ -88,7 +97,7 @@ public sealed class Game : Form
     {
         room = 0; level = 1; xp = gold = damage = 0; damage = 25; potions = 2; weapon = 0; ownedWeapons = 1;
         armor = armorOn = relic = relicOn = inventoryOpen = dead = victory = chestChoice = talentChoice = memoryOverlay = false;
-        healthTalent = skillTalent = dodgeTalent = pendingTalents = enemiesDefeated = 0;
+        healthTalent = skillTalent = dodgeTalent = pendingTalents = enemiesDefeated = memoriesFound = 0;
         health = maxHealth = 100; attackCd = skillCd = dashCd = dashTime = invulnerable = 0; title = false; storyPage = 0; storyOverlay = true; SetupRoom();
     }
 
@@ -222,12 +231,25 @@ public sealed class Game : Form
     private void HitPlayer(float value) { health = Math.Max(0, health - value * (armorOn ? 0.7f : 1)); invulnerable = 0.6f; if (health <= 0) dead = true; }
     private void Collect(Drop item)
     {
-        switch (item.Kind) { case "gold": gold += item.Amount; notice = $"+{item.Amount} OURO"; break; case "potion": potions++; notice = "+1 POÇÃO"; break; case "weapon": ownedWeapons |= 1 << item.Amount; notice = $"ARMA: {weaponNames[item.Amount]}"; break; case "armor": armor = true; notice = "PEITORAL DE PEDRA ENCONTRADO"; break; case "relic": relic = true; notice = "FRAGMENTO DE VOZ ENCONTRADO"; memoryOverlay = true; break; }
+        switch (item.Kind) { case "gold": gold += item.Amount; notice = $"+{item.Amount} OURO"; break; case "potion": potions++; notice = "+1 POÇÃO"; break; case "weapon": ownedWeapons |= 1 << item.Amount; notice = $"ARMA: {weaponNames[item.Amount]}"; break; case "armor": armor = true; notice = "PEITORAL DE PEDRA ENCONTRADO"; break; case "relic": relic = true; notice = "FRAGMENTO DE VOZ ENCONTRADO"; ShowMemory("ECO PRESO NO RELICÁRIO", "Nara: “Eu vim por vontade própria. Se encontrou esta lembrança, procure o arquivo de Sileth.”"); break; }
         drops.Remove(item); noticeTime = 1.7f;
     }
 
     private void UsePotion() { if (potions > 0 && health < maxHealth) { potions--; health = Math.Min(maxHealth, health + 45); notice = "+45 VIDA"; noticeTime = 1.3f; } else { notice = potions == 0 ? "SEM POÇÕES" : "VIDA JÁ ESTÁ CHEIA"; noticeTime = 1.3f; } }
-    private void Interact() { if (enemies.Count != 0) { notice = "DERROTE OS INIMIGOS PRIMEIRO"; noticeTime = 1.2f; } else if (drops.Count != 0) { notice = "RECOLHA O LOOT ANTES DE AVANÇAR"; noticeTime = 1.5f; } else if (room < 2 && player.X > 790) { room++; SetupRoom(); } else if (room == 2 && Distance(player, new PointF(750, 330)) < 110) chestChoice = true; }
+    private void Interact()
+    {
+        if (enemies.Count != 0) { notice = "DERROTE OS INIMIGOS PRIMEIRO"; noticeTime = 1.2f; return; }
+        if (drops.Count != 0) { notice = "RECOLHA O LOOT ANTES DE AVANÇAR"; noticeTime = 1.5f; return; }
+        if (room < MemoryStonePositions.Length && (memoriesFound & (1 << room)) == 0 && Distance(player, MemoryStonePositions[room]) < 52)
+        {
+            memoriesFound |= 1 << room;
+            ShowMemory(room == 0 ? "INSCRIÇÃO NO VESTÍBULO" : "REGISTRO NO SALÃO DOS OSSOS", MemoryStoneTexts[room]);
+            return;
+        }
+        if (room < 2 && player.X > 790) { room++; SetupRoom(); }
+        else if (room == 2 && Distance(player, new PointF(750, 330)) < 110) chestChoice = true;
+    }
+    private void ShowMemory(string titleText, string bodyText) { memoryTitle = titleText; memoryText = bodyText; memoryOverlay = true; }
     private Enemy? lockedTarget;
     private void CycleTarget() { if (enemies.Count == 0) { lockedTarget = null; return; } int i = lockedTarget is null ? -1 : enemies.IndexOf(lockedTarget); lockedTarget = enemies[(i + 1) % enemies.Count]; notice = lockedTarget.Boss ? "ALVO: GUARDIÃO DA CRIPTA" : $"ALVO: {EnemyName(lockedTarget)}"; noticeTime = 1.4f; }
     private void EquipWeapon(int index) { if ((ownedWeapons & (1 << index)) == 0) { notice = "ARMA AINDA NÃO ENCONTRADA"; noticeTime = 1.4f; return; } damage += weaponDamage[index] - weaponDamage[weapon]; weapon = index; }
@@ -242,7 +264,7 @@ public sealed class Game : Form
         return false;
     }
 
-    private void SaveGame() { Directory.CreateDirectory(Path.GetDirectoryName(SavePath)!); var data = new SaveData { Room = room, Level = level, Xp = xp, Gold = gold, Potions = potions, Damage = damage, Health = health, MaxHealth = maxHealth, Weapon = weapon, OwnedWeapons = ownedWeapons, Armor = armor, Relic = relic, HealthTalent = healthTalent, SkillTalent = skillTalent, DodgeTalent = dodgeTalent, RoomCleared = true, Completed = victory }; File.WriteAllText(SavePath, JsonSerializer.Serialize(data)); notice = "PROGRESSO SALVO"; noticeTime = 2; }
+    private void SaveGame() { Directory.CreateDirectory(Path.GetDirectoryName(SavePath)!); var data = new SaveData { Room = room, Level = level, Xp = xp, Gold = gold, Potions = potions, Damage = damage, Health = health, MaxHealth = maxHealth, Weapon = weapon, OwnedWeapons = ownedWeapons, Armor = armor, Relic = relic, HealthTalent = healthTalent, SkillTalent = skillTalent, DodgeTalent = dodgeTalent, RoomCleared = true, Completed = victory, MemoriesFound = memoriesFound }; File.WriteAllText(SavePath, JsonSerializer.Serialize(data)); notice = "PROGRESSO SALVO"; noticeTime = 2; }
     private string LegacySavePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Godot", "app_userdata", "Scadryk RPG", "scadryk-save.cfg");
     private SaveData ReadLegacySave()
     {
@@ -261,8 +283,8 @@ public sealed class Game : Form
         try
         {
             bool migrated = !File.Exists(SavePath); SaveData s = migrated ? ReadLegacySave() : JsonSerializer.Deserialize<SaveData>(File.ReadAllText(SavePath)) ?? throw new InvalidDataException();
-            if (s.Room is < 0 or > 2 || s.Level is < 1 or > 10000 || s.Xp < 0 || s.Xp >= s.Level * 60 || s.Weapon is < 0 or > 2 || s.OwnedWeapons < 1 || s.OwnedWeapons > 7 || (s.OwnedWeapons & (1 << s.Weapon)) == 0 || s.MaxHealth < 1 || s.Health <= 0 || s.Health > s.MaxHealth || s.Potions < 0 || s.Gold < 0 || s.Damage < 1 || s.Completed && s.Room != 2) throw new InvalidDataException();
-            StartGame(); room = s.Room; level = s.Level; xp = s.Xp; gold = s.Gold; potions = s.Potions; damage = s.Damage; health = s.Health; maxHealth = s.MaxHealth; weapon = s.Weapon; ownedWeapons = s.OwnedWeapons; armor = s.Armor; relic = s.Relic; healthTalent = s.HealthTalent; skillTalent = s.SkillTalent; dodgeTalent = s.DodgeTalent; SetupRoom(); if (s.RoomCleared) enemies.Clear(); victory = s.Completed; title = false; storyOverlay = false;
+            if (s.Room is < 0 or > 2 || s.Level is < 1 or > 10000 || s.Xp < 0 || s.Xp >= s.Level * 60 || s.Weapon is < 0 or > 2 || s.OwnedWeapons < 1 || s.OwnedWeapons > 7 || (s.OwnedWeapons & (1 << s.Weapon)) == 0 || s.MaxHealth < 1 || s.Health <= 0 || s.Health > s.MaxHealth || s.Potions < 0 || s.Gold < 0 || s.Damage < 1 || s.MemoriesFound is < 0 or > 3 || s.Completed && s.Room != 2) throw new InvalidDataException();
+            StartGame(); room = s.Room; level = s.Level; xp = s.Xp; gold = s.Gold; potions = s.Potions; damage = s.Damage; health = s.Health; maxHealth = s.MaxHealth; weapon = s.Weapon; ownedWeapons = s.OwnedWeapons; armor = s.Armor; relic = s.Relic; healthTalent = s.HealthTalent; skillTalent = s.SkillTalent; dodgeTalent = s.DodgeTalent; memoriesFound = s.MemoriesFound; SetupRoom(); if (s.RoomCleared) enemies.Clear(); victory = s.Completed; title = false; storyOverlay = false;
             if (migrated) SaveGame(); notice = migrated ? "SAVE ANTIGO MIGRADO" : "PROGRESSO CARREGADO"; noticeTime = 2;
         }
         catch { notice = "NENHUM SALVAMENTO VÁLIDO"; noticeTime = 2; }
@@ -285,7 +307,10 @@ public sealed class Game : Form
         foreach (Drop item in drops) DrawDrop(g, item);
         DrawPlayer(g);
         g.DrawString($"{room + 1} / 3   {roomNames[room]}", roomFont, goldBrush, 67, 572);
+        int memoriesRead = (memoriesFound & 1) + ((memoriesFound >> 1) & 1);
+        g.DrawString($"ECOS {memoriesRead} / 2", hudFont, goldBrush, 760, 572);
         g.DrawString("WASD mover   ESPAÇO/CLIQUE atacar   SHIFT esquivar   R redemoinho   Q poção   E interagir   I inventário", helpFont, textBrush, 67, 606);
+        if (room < MemoryStonePositions.Length && (memoriesFound & (1 << room)) == 0) DrawMemoryStone(g, MemoryStonePositions[room], Distance(player, MemoryStonePositions[room]) < 58);
         if (noticeTime > 0) DrawCentered(g, notice, 170, new Font("Segoe UI", 13, FontStyle.Bold), Color.FromArgb(230, 193, 129));
         if (title || dead || victory) DrawOverlay(g, title ? "SCADRYK" : victory ? "VITÓRIA" : "VOCÊ CAIU", title ? "ENTER PARA COMEÇAR    •    C CARREGAR SAVE" : "ENTER PARA RECOMEÇAR    •    F5 SALVAR");
         if (storyOverlay) DrawStoryOverlay(g);
@@ -353,9 +378,20 @@ public sealed class Game : Form
         g.FillRectangle(shade, 0, 0, 960, 640);
         g.FillRectangle(panelBrush, 86, 420, 788, 154);
         g.DrawRectangle(border, 86, 420, 788, 154);
-        g.DrawString("ECO PRESO NO RELICÁRIO", headingFont, headingBrush, 112, 440);
-        g.DrawString("Nara: “Eu vim por vontade própria. Se encontrou esta lembrança, procure o arquivo de Sileth.”", bodyFont, bodyBrush, new RectangleF(112, 472, 736, 64));
+        g.DrawString(memoryTitle, headingFont, headingBrush, 112, 440);
+        g.DrawString(memoryText, bodyFont, bodyBrush, new RectangleF(112, 472, 736, 64));
         g.DrawString("ENTER, ESPAÇO OU CLIQUE  •  FECHAR", hintFont, hintBrush, 112, 548);
+    }
+    private static void DrawMemoryStone(Graphics g, PointF pos, bool nearby)
+    {
+        float pulse = nearby ? 17 : 14;
+        PointF[] shard = { new(pos.X, pos.Y - pulse), new(pos.X + pulse * .7f, pos.Y), new(pos.X, pos.Y + pulse), new(pos.X - pulse * .7f, pos.Y) };
+        using var glow = new SolidBrush(Color.FromArgb(nearby ? 100 : 55, 119, 186, 188));
+        using var stone = new SolidBrush(Color.FromArgb(nearby ? 245 : 210, 120, 179, 181));
+        using var edge = new Pen(Color.FromArgb(235, 207, 224, 193), 2);
+        g.FillEllipse(glow, pos.X - 24, pos.Y - 24, 48, 48);
+        g.FillPolygon(stone, shard); g.DrawPolygon(edge, shard);
+        if (nearby) DrawCentered(g, "E  ESCUTAR", pos.Y + 23, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, pos.X);
     }
     private void DrawOverlay(Graphics g, string titleText, string instruction) { using var bg = new SolidBrush(Color.FromArgb(225, 8, 10, 12)); g.FillRectangle(bg, 0, 0, 960, 640); DrawCentered(g, titleText, 250, new Font("Georgia", 36, FontStyle.Bold), Color.FromArgb(230, 193, 129)); DrawCentered(g, instruction, 340, new Font("Segoe UI", 15, FontStyle.Bold), Color.AntiqueWhite); if (noticeTime > 0) DrawCentered(g, notice, 410, new Font("Segoe UI", 12), Color.Goldenrod); }
     private static void DrawCentered(Graphics g, string s, float y, Font f, Color color, float x = 480) { using (f) using (var brush = new SolidBrush(color)) { SizeF size = g.MeasureString(s, f); g.DrawString(s, f, brush, x - size.Width / 2, y); } }
@@ -378,6 +414,13 @@ public sealed class Game : Form
         game.Collect(new Drop { Pos = game.player, Kind = "relic" });
         if (!game.relic || !game.memoryOverlay) throw new InvalidOperationException("O fragmento do relicário não revelou a lembrança de Nara.");
         game.memoryOverlay = false;
+        game.player = MemoryStonePositions[0]; game.Interact();
+        if (game.memoriesFound != 0) throw new InvalidOperationException("Uma pista foi liberada sem limpar os inimigos.");
+        game.enemies.Clear(); game.Interact();
+        if (game.memoriesFound != 1 || !game.memoryOverlay || game.memoryTitle != "INSCRIÇÃO NO VESTÍBULO") throw new InvalidOperationException("A pista do vestíbulo não foi registrada ao interagir.");
+        game.memoryOverlay = false; game.room = 1; game.player = MemoryStonePositions[1]; game.Interact();
+        if (game.memoriesFound != 3 || !game.memoryOverlay) throw new InvalidOperationException("A pista do Salão dos Ossos não foi registrada.");
+        game.memoryOverlay = false; game.room = 0; game.SetupRoom(); game.storyOverlay = false;
         if (game.enemies.Count != 3) throw new InvalidOperationException("A primeira sala deve iniciar com três inimigos.");
         game.player = new PointF(320, 230); game.MovePlayer(new PointF(40, 40)); PointF movedPlayer = game.player;
         if (Math.Abs(movedPlayer.X - 320) > 0.01f || Math.Abs(movedPlayer.Y - 270) > 0.01f) throw new InvalidOperationException("O movimento não deslizou pela quina do obstáculo.");
@@ -387,9 +430,10 @@ public sealed class Game : Form
         if (game.health < game.maxHealth) throw new InvalidOperationException("A esquiva antes do golpe não evitou o dano.");
         game.AddXp(60);
         if (game.level != 2 || !game.talentChoice || game.pendingTalents != 1) throw new InvalidOperationException("A progressão por nível não concedeu uma escolha de talento.");
-        Console.WriteLine("TESTES OK: movimento, aviso de ataque, esquiva e progressão."); return 0;
+        Console.WriteLine("TESTES OK: prólogo, pistas exploráveis, movimento, aviso de ataque, esquiva e progressão."); return 0;
     }
 }
+
 
 
 

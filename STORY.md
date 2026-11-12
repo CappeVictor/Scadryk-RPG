@@ -27,7 +27,7 @@ O Lume protege a cidade, mas exige lembranças como combustível. A Curadora dos
 
 Na noite sem sinos, o protagonista segue a última lembrança de Nara até as ruínas abaixo de Véspera. O vestíbulo e o Salão dos Ossos ensinam a ler os ecos hostis e a sobreviver aos guardiões da cidade. Na câmara final, o Guardião sem Nome protege um fragmento do Relicário Vital, que conserva uma frase de Nara. A frase prova que ela desceu à cripta por vontade própria.
 
-Esse capítulo começa com três páginas de prólogo jogável. Depois da luta contra o Guardião, o jogador recolhe um fragmento do Relicário Vital e ouve Nara dizer que desceu por vontade própria e que o arquivo de Sileth guarda a próxima pista. As três salas já existem como espaços de combate; falta desenvolvê-las como locais narrativos completos.
+Esse capítulo começa com três páginas de prólogo jogável. Depois de limpar cada sala, o jogador pode investigar uma inscrição: no vestíbulo, Nara alerta que os arquivos foram fechados; no Salão dos Ossos, um registro revela que o Guardião ofereceu seu nome ao Lume. Após a luta contra o Guardião, o jogador recolhe um fragmento do Relicário Vital e ouve Nara dizer que desceu por vontade própria e que o arquivo de Sileth guarda a próxima pista. As duas inscrições opcionais ficam registradas no save. As três salas já existem como espaços de combate; falta desenvolvê-las como locais narrativos completos.
 
 ### Capítulo II — O arquivo das vidas ausentes
 
@@ -47,5 +47,6 @@ No confronto final, o jogador decide o que fazer com o arquivo e com o Lume. Pod
 - O Guardião e a cripta já existem como protótipo de combate; as ligações com o Rio Cego e o Lume são ficção planejada para a campanha.
 - Somente o prólogo e a lembrança da cripta estão disponíveis no jogo; os demais diálogos, escolhas e finais são conteúdo planejado.
 - Novos itens e poderes devem ter origem no mundo de Scadryk e revelar algo sobre quem os criou, usou ou esqueceu.
+
 
 

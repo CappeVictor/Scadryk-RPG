@@ -22,13 +22,14 @@ O documento de história com cenário, personagens e resumo dos três capítulos
 - Progressão: XP, níveis, escolhas de talentos, ouro, poções, três armas, armadura e relíquia.
 - Salvamento local em JSON com migração do save ConfigFile da versão Godot.
 - Movimento com colisão por eixo, permitindo deslizar pelas quinas.
-- Prólogo interativo e primeira lembrança de Nara ao recolher o fragmento do Relicário Vital após derrotar o Guardião.
+- Prólogo interativo, duas inscrições opcionais e lembrança de Nara ao recolher o fragmento do Relicário Vital após derrotar o Guardião.
+- Inscrições encontradas são persistidas no save e contadas na interface.
 - A cripta começa a história sobre memória, identidade e o custo de proteger Véspera.
 
 ## Próximas etapas
 
 1. **Consolidar a base C#** — manter compilação Windows e smoke tests, conferir save novo e migração do save antigo.
-2. **Transformar a premissa em campanha** — levar o prólogo à cripta com pistas ambientais, concretizar o Guardião sem Nome e apresentar as primeiras aparições de Nara.
+2. **Transformar a premissa em campanha** — ampliar as pistas ambientais da cripta, concretizar o Guardião sem Nome e apresentar as primeiras aparições de Nara.
 3. **Aprofundar combate** — mais ataques legíveis, esquiva consistente, inimigos com funções distintas e balanceamento por sala.
 4. **Expandir loot e builds** — raridades com efeitos reais, comparação de equipamento e escolhas de habilidades relevantes.
 5. **Criar masmorras e narrativa ambiental** — novas regiões, rotas, arquivos, eventos e chefes cujas mecânicas reforcem a história.
@@ -36,6 +37,7 @@ O documento de história com cenário, personagens e resumo dos três capítulos
 7. **Finalizar apresentação e distribuição** — arte e áudio originais, animações, acessibilidade, builds self-contained e testes em Windows.
 
 Cada etapa deve compilar, incluir uma validação adequada e registrar as limitações conhecidas. O protótipo atual ainda não tem o volume de conteúdo de Diablo; essa escala exige desenvolvimento continuado.
+
 
 
 
