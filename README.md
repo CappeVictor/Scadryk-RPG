@@ -43,7 +43,7 @@ Protótipo jogável de RPG de ação com visão superior e fantasia sombria, fei
 | Tab | Selecionar/ciclar alvo; ataques se voltam ao alvo marcado |
 | 1, 2 ou 3 no baú final | Escolher ouro, poções ou recuperar a vida |
 
-Recolha os itens que caem antes de sair da sala. Na última câmara, derrote os inimigos, aproxime-se do baú e pressione **E**. O progresso é salvo em `user://scadryk-save.cfg`.
+Recolha os itens que caem antes de sair da sala. Na última câmara, derrote os inimigos, aproxime-se do baú e pressione **E**. O progresso e as estatísticas da tentativa são salvos em `user://scadryk-save.cfg`.
 
 ## Validação
 
