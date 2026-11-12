@@ -67,6 +67,15 @@ public partial class SmokeTest : Node
             Call("LoadGame");
             Check((int)Get("weaponLevel") == 1 && (int)Get("ownedWeapons") == 7, "Salvamento antigo não migrou as armas.");
             Call("StartGame");
+            foreach (object enemy in enemies) enemy.GetType().GetField("Hp").SetValue(enemy, 0f);
+            game._PhysicsProcess(0.01);
+            object weaponDrop = null;
+            foreach (object item in loot) if ((int)item.GetType().GetField("Weapon").GetValue(item) == 2) weaponDrop = item;
+            Check(weaponDrop != null, "A sala não gerou a lâmina rápida no chão.");
+            Set("player", (Vector2)weaponDrop.GetType().GetField("Pos").GetValue(weaponDrop));
+            game._PhysicsProcess(0.01);
+            Check(((int)Get("ownedWeapons") & 4) != 0, "A arma coletada não entrou no inventário.");
+            Call("StartGame");
             first = enemies[0];
             first.GetType().GetField("Pos").SetValue(first, new Vector2(870, 330));
             Set("player", new Vector2(850, 330)); Set("facing", Vector2.Right);
