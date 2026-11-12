@@ -2,17 +2,17 @@
 
 Scadryk é um RPG de ação 2D em fantasia sombria, feito em C# com .NET 8 e Windows Forms. O desenho usa GDI+; o projeto não depende de Godot nem de outro motor de jogo. Diablo é uma referência de ritmo, combate e progressão. O mundo, os nomes e os itens de Scadryk são próprios. A meta de longo prazo é alcançar uma aventura de ação e loot 2D rica e rejogável, construída em etapas e sem copiar a história ou os personagens de outros jogos.
 
-O jogo atual é um protótipo curto com três salas, inimigos de funções distintas, um elite com afixação, um Guardião com duas fases, loot, equipamentos, níveis e talentos. A base está preparada para crescer por etapas.
+O protótipo tem três salas, inimigos de funções distintas, um elite com afixação, um Guardião com duas fases, loot, equipamentos, níveis e talentos. Agora inclui um prólogo jogável e uma lembrança de Nara ao encontrar o fragmento do relicário. A campanha continua em desenvolvimento.
 
 ## História de Scadryk
 
-**Premissa original — ainda não implementada no protótipo:** a cidade de Véspera foi erguida sobre o Rio Cego, cujas pedras guardam as últimas palavras dos mortos. Por gerações, os habitantes usaram fragmentos desse mineral para alimentar o Lume de Vigília, um farol subterrâneo que protege a região de uma presença conhecida como o Silêncio de Baixo.
+**Premissa original:** a cidade de Véspera foi erguida sobre o Rio Cego, cujas pedras guardam as últimas palavras dos mortos. Por gerações, os habitantes usaram fragmentos desse mineral para alimentar o Lume de Vigília, um farol subterrâneo que protege a região de uma presença conhecida como o Silêncio de Baixo.
 
 Na noite em que todos os sinos de Véspera se calaram, pessoas começaram a esquecer os nomes de quem amavam. Das lembranças apagadas surgiram ecos violentos, presos a lugares e gestos que já não compreendem. O protagonista é um Escutador, alguém capaz de ouvir as memórias presas na pedra. Ao descer à cripta da cidade, busca um fragmento da voz de sua irmã desaparecida e encontra o Guardião sem Nome, último protetor de um segredo que nem ele recorda por inteiro.
 
 As pistas apontam para a Curadora Sileth, responsável pelos arquivos de Véspera. Ela apaga nomes de propósito: acredita que manter a história incompleta é o preço necessário para alimentar o farol e conter o Silêncio. A jornada colocará o protagonista diante de uma escolha difícil: preservar a proteção construída sobre esquecimentos ou devolver à cidade a verdade e enfrentar o que ela mantinha afastado.
 
-Essa é a fundação narrativa planejada para a campanha. Os personagens, lugares, a causa dos eventos e as escolhas ainda serão introduzidos no jogo conforme as etapas do roadmap forem implementadas.
+O prólogo já apresenta Véspera, o Escutador e a busca por Nara. Ao derrotar o Guardião e recolher o fragmento do relicário, o jogador ouve uma lembrança dela. O restante da campanha, incluindo Véspera como região explorável, Sileth e as escolhas sobre o Lume, ainda será implementado conforme as etapas do roadmap.
 
 O universo, os personagens e o arco planejado estão detalhados em [STORY.md](STORY.md).
 
@@ -42,7 +42,7 @@ Para compilar uma versão de produção:
 dotnet build --configuration Release
 ```
 
-Para executar as verificações automatizadas incluídas:
+Para verificar o prólogo, a lembrança do relicário, movimento, avisos de ataque, esquiva e progressão:
 
 ```powershell
 dotnet run -- --self-test
@@ -69,6 +69,7 @@ dotnet publish --configuration Release --runtime win-x64 --self-contained true
 | 4–5 no inventário | Alternar armadura e relíquia |
 | 1–3 ao subir de nível | Escolher talento |
 | Tab | Trocar alvo |
+| Enter, Espaço ou clique na introdução | Avançar o prólogo e a lembrança |
 | F5 | Salvar depois de limpar a sala e recolher o loot |
 | C na tela inicial | Carregar o save |
 | Enter | Começar ou reiniciar |
@@ -91,5 +92,6 @@ O save JSON fica em `%LOCALAPPDATA%\Scadryk\save.json`. Na tela inicial, pressio
 ## Limites atuais
 
 Este é um protótipo com três salas e arte procedural desenhada em formas 2D. Ainda faltam campanha longa, mais chefes e builds, arte e áudio originais, animações, balanceamento amplo e testes manuais em diferentes resoluções. Não há medição de desempenho em máquinas variadas.
+
 
 

@@ -50,12 +50,18 @@ public sealed class Game : Form
     private readonly Random random = new();
     private readonly string[] roomNames = { "VESTÍBULO EM RUÍNAS", "SALÃO DOS OSSOS", "CÂMARA DO GUARDIÃO" };
     private readonly string[] weaponNames = { "ESPADA COMUM", "LÂMINA RARA", "LÂMINA DO CREPÚSCULO" };
+    private readonly string[] prologue = {
+        "Na noite sem sinos, Véspera começou a esquecer os nomes de seus mortos. Sob as ruas, o Rio Cego repetiu uma voz que ninguém mais conseguia ouvir.",
+        "Você é um Escutador: ouve as lembranças que a pedra não conseguiu guardar em silêncio. Entre elas reconheceu Nara, sua irmã, desaparecida quando os sinos pararam.",
+        "A memória dela chega partida: “Desça. Ele ainda lembra.” O Guardião sem Nome espera na cripta, diante da única pista que pode explicar por que Nara foi até lá."
+    };
     private readonly int[] weaponDamage = { 0, 10, 4 };
     private PointF player = new(150, 330), facing = new(1, 0), mouseAim = new(1, 0);
     private int room, level = 1, xp, gold, potions = 2, damage = 25, weapon, ownedWeapons = 1;
     private int healthTalent, skillTalent, dodgeTalent, pendingTalents, enemiesDefeated;
     private float health = 100, maxHealth = 100, attackCd, skillCd, dashCd, dashTime, invulnerable, noticeTime, windupPulse;
-    private bool armor, armorOn, relic, relicOn, inventoryOpen, title = true, dead, victory, talentChoice, chestChoice;
+    private bool armor, armorOn, relic, relicOn, inventoryOpen, title = true, dead, victory, talentChoice, chestChoice, storyOverlay, memoryOverlay;
+    private int storyPage;
     private string notice = "";
     private string SavePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Scadryk", "save.json");
 
@@ -67,15 +73,30 @@ public sealed class Game : Form
         timer.Tick += (_, _) => TickGame(); timer.Start();
         KeyDown += OnKeyDown; KeyUp += (_, e) => down.Remove(e.KeyCode);
         MouseMove += (_, e) => { mouseAim = Normalize(new PointF(e.X - player.X, e.Y - player.Y), facing); };
-        MouseDown += (_, e) => { if (title || dead || victory || chestChoice || talentChoice || inventoryOpen) return; mouseAim = Normalize(new PointF(e.X - player.X, e.Y - player.Y), facing); if (e.Button == MouseButtons.Left) Attack(); if (e.Button == MouseButtons.Right) Whirlwind(); };
+        MouseDown += (_, e) =>
+        {
+            if (storyOverlay) { if (e.Button == MouseButtons.Left) AdvanceStory(); return; }
+            if (memoryOverlay) { if (e.Button == MouseButtons.Left) memoryOverlay = false; return; }
+            if (title || dead || victory || chestChoice || talentChoice || inventoryOpen) return;
+            mouseAim = Normalize(new PointF(e.X - player.X, e.Y - player.Y), facing);
+            if (e.Button == MouseButtons.Left) Attack();
+            if (e.Button == MouseButtons.Right) Whirlwind();
+        };
     }
 
     private void StartGame()
     {
         room = 0; level = 1; xp = gold = damage = 0; damage = 25; potions = 2; weapon = 0; ownedWeapons = 1;
-        armor = armorOn = relic = relicOn = inventoryOpen = dead = victory = chestChoice = talentChoice = false;
+        armor = armorOn = relic = relicOn = inventoryOpen = dead = victory = chestChoice = talentChoice = memoryOverlay = false;
         healthTalent = skillTalent = dodgeTalent = pendingTalents = enemiesDefeated = 0;
-        health = maxHealth = 100; attackCd = skillCd = dashCd = dashTime = invulnerable = 0; title = false; SetupRoom();
+        health = maxHealth = 100; attackCd = skillCd = dashCd = dashTime = invulnerable = 0; title = false; storyPage = 0; storyOverlay = true; SetupRoom();
+    }
+
+    private void AdvanceStory()
+    {
+        if (!storyOverlay) return;
+        storyPage++;
+        if (storyPage >= prologue.Length) storyOverlay = false;
     }
 
     private void SetupRoom()
@@ -99,6 +120,8 @@ public sealed class Game : Form
         if (e.KeyCode == Keys.C && title) { LoadGame(); return; }
         if (e.KeyCode == Keys.F5 && victory) { SaveGame(); return; }
         if (title || dead || victory) return;
+        if (storyOverlay) { if (e.KeyCode is Keys.Enter or Keys.Space) AdvanceStory(); return; }
+        if (memoryOverlay) { if (e.KeyCode is Keys.Enter or Keys.Space) memoryOverlay = false; return; }
         if (chestChoice) { if (e.KeyCode == Keys.D1) gold += 75; else if (e.KeyCode == Keys.D2) potions += 2; else if (e.KeyCode == Keys.D3) health = maxHealth; else return; chestChoice = false; victory = true; return; }
         if (talentChoice) { SelectTalent(e.KeyCode); return; }
         if (e.KeyCode == Keys.I) { inventoryOpen = !inventoryOpen; return; }
@@ -152,7 +175,7 @@ public sealed class Game : Form
         else if (!enemy.Boss && random.NextDouble() < 0.2) drops.Add(new Drop { Pos = Offset(enemy.Pos, 16, 12), Kind = "potion" });
         if (relicOn) health = Math.Min(maxHealth, health + 5);
         if (enemies.Count == 0 && room < 2) { int next = room == 0 ? 2 : 1; if ((ownedWeapons & (1 << next)) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, -16, -8), Kind = "weapon", Amount = next }); }
-        if (enemies.Count == 0 && drops.Count == 0 && room == 2) chestChoice = true;
+        if (enemies.Count == 0 && drops.Count == 0 && room == 2 && !memoryOverlay) chestChoice = true;
     }
 
     private void AddXp(int amount)
@@ -165,13 +188,13 @@ public sealed class Game : Form
     private void TickGame()
     {
         float dt = timer.Interval / 1000f; noticeTime = Math.Max(0, noticeTime - dt); attackCd = Math.Max(0, attackCd - dt); skillCd = Math.Max(0, skillCd - dt); dashCd = Math.Max(0, dashCd - dt); dashTime = Math.Max(0, dashTime - dt); invulnerable = Math.Max(0, invulnerable - dt); windupPulse += dt;
-        if (title || dead || victory || inventoryOpen || talentChoice || chestChoice) { Invalidate(); return; }
+        if (title || dead || victory || storyOverlay || memoryOverlay || inventoryOpen || talentChoice || chestChoice) { Invalidate(); return; }
         PointF dir = new((down.Contains(Keys.D) || down.Contains(Keys.Right) ? 1 : 0) - (down.Contains(Keys.A) || down.Contains(Keys.Left) ? 1 : 0), (down.Contains(Keys.S) || down.Contains(Keys.Down) ? 1 : 0) - (down.Contains(Keys.W) || down.Contains(Keys.Up) ? 1 : 0));
         dir = Normalize(dir, PointF.Empty); if (dashTime > 0) dir = facing;
         MovePlayer(Scale(dir, (dashTime > 0 ? 530 : 190) * dt));
         for (int i = drops.Count - 1; i >= 0; i--) if (Distance(player, drops[i].Pos) < 30) Collect(drops[i]);
         foreach (Enemy enemy in enemies.ToArray()) { UpdateEnemy(enemy, dt); if (dead) break; }
-        if (enemies.Count == 0 && drops.Count == 0 && room == 2) chestChoice = true;
+        if (enemies.Count == 0 && drops.Count == 0 && room == 2 && !memoryOverlay) chestChoice = true;
         Invalidate();
     }
 
@@ -199,7 +222,7 @@ public sealed class Game : Form
     private void HitPlayer(float value) { health = Math.Max(0, health - value * (armorOn ? 0.7f : 1)); invulnerable = 0.6f; if (health <= 0) dead = true; }
     private void Collect(Drop item)
     {
-        switch (item.Kind) { case "gold": gold += item.Amount; notice = $"+{item.Amount} OURO"; break; case "potion": potions++; notice = "+1 POÇÃO"; break; case "weapon": ownedWeapons |= 1 << item.Amount; notice = $"ARMA: {weaponNames[item.Amount]}"; break; case "armor": armor = true; notice = "PEITORAL DE PEDRA ENCONTRADO"; break; case "relic": relic = true; notice = "RELÍQUIA VITAL ENCONTRADA"; break; }
+        switch (item.Kind) { case "gold": gold += item.Amount; notice = $"+{item.Amount} OURO"; break; case "potion": potions++; notice = "+1 POÇÃO"; break; case "weapon": ownedWeapons |= 1 << item.Amount; notice = $"ARMA: {weaponNames[item.Amount]}"; break; case "armor": armor = true; notice = "PEITORAL DE PEDRA ENCONTRADO"; break; case "relic": relic = true; notice = "FRAGMENTO DE VOZ ENCONTRADO"; memoryOverlay = true; break; }
         drops.Remove(item); noticeTime = 1.7f;
     }
 
@@ -239,7 +262,7 @@ public sealed class Game : Form
         {
             bool migrated = !File.Exists(SavePath); SaveData s = migrated ? ReadLegacySave() : JsonSerializer.Deserialize<SaveData>(File.ReadAllText(SavePath)) ?? throw new InvalidDataException();
             if (s.Room is < 0 or > 2 || s.Level is < 1 or > 10000 || s.Xp < 0 || s.Xp >= s.Level * 60 || s.Weapon is < 0 or > 2 || s.OwnedWeapons < 1 || s.OwnedWeapons > 7 || (s.OwnedWeapons & (1 << s.Weapon)) == 0 || s.MaxHealth < 1 || s.Health <= 0 || s.Health > s.MaxHealth || s.Potions < 0 || s.Gold < 0 || s.Damage < 1 || s.Completed && s.Room != 2) throw new InvalidDataException();
-            StartGame(); room = s.Room; level = s.Level; xp = s.Xp; gold = s.Gold; potions = s.Potions; damage = s.Damage; health = s.Health; maxHealth = s.MaxHealth; weapon = s.Weapon; ownedWeapons = s.OwnedWeapons; armor = s.Armor; relic = s.Relic; healthTalent = s.HealthTalent; skillTalent = s.SkillTalent; dodgeTalent = s.DodgeTalent; SetupRoom(); if (s.RoomCleared) enemies.Clear(); victory = s.Completed; title = false;
+            StartGame(); room = s.Room; level = s.Level; xp = s.Xp; gold = s.Gold; potions = s.Potions; damage = s.Damage; health = s.Health; maxHealth = s.MaxHealth; weapon = s.Weapon; ownedWeapons = s.OwnedWeapons; armor = s.Armor; relic = s.Relic; healthTalent = s.HealthTalent; skillTalent = s.SkillTalent; dodgeTalent = s.DodgeTalent; SetupRoom(); if (s.RoomCleared) enemies.Clear(); victory = s.Completed; title = false; storyOverlay = false;
             if (migrated) SaveGame(); notice = migrated ? "SAVE ANTIGO MIGRADO" : "PROGRESSO CARREGADO"; noticeTime = 2;
         }
         catch { notice = "NENHUM SALVAMENTO VÁLIDO"; noticeTime = 2; }
@@ -265,6 +288,8 @@ public sealed class Game : Form
         g.DrawString("WASD mover   ESPAÇO/CLIQUE atacar   SHIFT esquivar   R redemoinho   Q poção   E interagir   I inventário", helpFont, textBrush, 67, 606);
         if (noticeTime > 0) DrawCentered(g, notice, 170, new Font("Segoe UI", 13, FontStyle.Bold), Color.FromArgb(230, 193, 129));
         if (title || dead || victory) DrawOverlay(g, title ? "SCADRYK" : victory ? "VITÓRIA" : "VOCÊ CAIU", title ? "ENTER PARA COMEÇAR    •    C CARREGAR SAVE" : "ENTER PARA RECOMEÇAR    •    F5 SALVAR");
+        if (storyOverlay) DrawStoryOverlay(g);
+        if (memoryOverlay) DrawMemoryOverlay(g);
         if (inventoryOpen) DrawInventory(g);
         if (talentChoice) DrawChoice(g, $"SUBIU DE NÍVEL — ESCOLHA ({pendingTalents} PENDENTES)", "1. VIGOR  +20 VIDA MÁXIMA", "2. DOMÍNIO  Redemoinho recarrega mais rápido", "3. AGILIDADE  esquiva recarrega mais rápido");
         if (chestChoice) DrawChoice(g, "BAÚ DA CRIPTA — ESCOLHA UMA RECOMPENSA", "1. 75 OURO", "2. DUAS POÇÕES", "3. RECUPERAR TODA A VIDA");
@@ -296,6 +321,42 @@ public sealed class Game : Form
         DrawCentered(g, titleText, 238, new Font("Georgia", 15, FontStyle.Bold), Color.Goldenrod);
         g.DrawString(a, optionFont, Brushes.AntiqueWhite, 220, 286); g.DrawString(b, optionFont, Brushes.AntiqueWhite, 220, 330); g.DrawString(c, optionFont, Brushes.AntiqueWhite, 220, 374);
     }
+    private void DrawStoryOverlay(Graphics g)
+    {
+        using var shade = new SolidBrush(Color.FromArgb(145, 5, 7, 9));
+        using var panelBrush = new SolidBrush(Color.FromArgb(246, 19, 21, 22));
+        using var border = new Pen(Color.FromArgb(175, 143, 112, 73), 2);
+        using var headingFont = new Font("Georgia", 13, FontStyle.Bold);
+        using var bodyFont = new Font("Segoe UI", 14);
+        using var hintFont = new Font("Segoe UI", 9, FontStyle.Bold);
+        using var headingBrush = new SolidBrush(Color.FromArgb(230, 193, 129));
+        using var bodyBrush = new SolidBrush(Color.AntiqueWhite);
+        using var hintBrush = new SolidBrush(Color.FromArgb(170, 174, 168));
+        g.FillRectangle(shade, 0, 0, 960, 640);
+        g.FillRectangle(panelBrush, 86, 420, 788, 154);
+        g.DrawRectangle(border, 86, 420, 788, 154);
+        g.DrawString($"MEMÓRIA NA PEDRA   •   {storyPage + 1} / {prologue.Length}", headingFont, headingBrush, 112, 440);
+        g.DrawString(prologue[storyPage], bodyFont, bodyBrush, new RectangleF(112, 472, 736, 64));
+        g.DrawString("ENTER, ESPAÇO OU CLIQUE  •  CONTINUAR", hintFont, hintBrush, 112, 548);
+    }
+    private void DrawMemoryOverlay(Graphics g)
+    {
+        using var shade = new SolidBrush(Color.FromArgb(165, 5, 7, 9));
+        using var panelBrush = new SolidBrush(Color.FromArgb(246, 19, 21, 22));
+        using var border = new Pen(Color.FromArgb(175, 143, 112, 73), 2);
+        using var headingFont = new Font("Georgia", 13, FontStyle.Bold);
+        using var bodyFont = new Font("Segoe UI", 14, FontStyle.Italic);
+        using var hintFont = new Font("Segoe UI", 9, FontStyle.Bold);
+        using var headingBrush = new SolidBrush(Color.FromArgb(230, 193, 129));
+        using var bodyBrush = new SolidBrush(Color.AntiqueWhite);
+        using var hintBrush = new SolidBrush(Color.FromArgb(170, 174, 168));
+        g.FillRectangle(shade, 0, 0, 960, 640);
+        g.FillRectangle(panelBrush, 86, 420, 788, 154);
+        g.DrawRectangle(border, 86, 420, 788, 154);
+        g.DrawString("ECO PRESO NO RELICÁRIO", headingFont, headingBrush, 112, 440);
+        g.DrawString("Nara: “Eu vim por vontade própria. Se encontrou esta lembrança, procure o arquivo de Sileth.”", bodyFont, bodyBrush, new RectangleF(112, 472, 736, 64));
+        g.DrawString("ENTER, ESPAÇO OU CLIQUE  •  FECHAR", hintFont, hintBrush, 112, 548);
+    }
     private void DrawOverlay(Graphics g, string titleText, string instruction) { using var bg = new SolidBrush(Color.FromArgb(225, 8, 10, 12)); g.FillRectangle(bg, 0, 0, 960, 640); DrawCentered(g, titleText, 250, new Font("Georgia", 36, FontStyle.Bold), Color.FromArgb(230, 193, 129)); DrawCentered(g, instruction, 340, new Font("Segoe UI", 15, FontStyle.Bold), Color.AntiqueWhite); if (noticeTime > 0) DrawCentered(g, notice, 410, new Font("Segoe UI", 12), Color.Goldenrod); }
     private static void DrawCentered(Graphics g, string s, float y, Font f, Color color, float x = 480) { using (f) using (var brush = new SolidBrush(color)) { SizeF size = g.MeasureString(s, f); g.DrawString(s, f, brush, x - size.Width / 2, y); } }
     private static string EnemyName(Enemy e) => e.Boss ? "GUARDIÃO" : e.Kind switch { EnemyKind.Elite => e.Armored ? "ELITE • BLINDADO" : "ELITE • FRENÉTICO", EnemyKind.Archer => "ARQUEIRO", EnemyKind.Mage => "CONJURADOR", _ => "" };
@@ -311,6 +372,12 @@ public sealed class Game : Form
     public static int SelfTest()
     {
         using var game = new Game(); game.timer.Stop(); game.StartGame();
+        if (!game.storyOverlay || game.storyPage != 0) throw new InvalidOperationException("O novo jogo não iniciou no prólogo da história.");
+        for (int i = 0; i < game.prologue.Length; i++) game.AdvanceStory();
+        if (game.storyOverlay) throw new InvalidOperationException("O prólogo não liberou o início da partida.");
+        game.Collect(new Drop { Pos = game.player, Kind = "relic" });
+        if (!game.relic || !game.memoryOverlay) throw new InvalidOperationException("O fragmento do relicário não revelou a lembrança de Nara.");
+        game.memoryOverlay = false;
         if (game.enemies.Count != 3) throw new InvalidOperationException("A primeira sala deve iniciar com três inimigos.");
         game.player = new PointF(320, 230); game.MovePlayer(new PointF(40, 40)); PointF movedPlayer = game.player;
         if (Math.Abs(movedPlayer.X - 320) > 0.01f || Math.Abs(movedPlayer.Y - 270) > 0.01f) throw new InvalidOperationException("O movimento não deslizou pela quina do obstáculo.");
@@ -323,5 +390,6 @@ public sealed class Game : Form
         Console.WriteLine("TESTES OK: movimento, aviso de ataque, esquiva e progressão."); return 0;
     }
 }
+
 
 

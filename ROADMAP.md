@@ -10,7 +10,7 @@ Quando os sinos de Véspera se calam, seus moradores começam a esquecer nomes e
 
 A investigação leva à Curadora Sileth, guardiã dos arquivos. Ela remove nomes para manter o farol aceso e acredita que a verdade pode libertar a ameaça que dorme abaixo da cidade. O conflito central não será derrotar um mal sem rosto: será decidir se Véspera deve continuar protegida por uma história mutilada ou recuperar suas memórias e enfrentar as consequências.
 
-Essa narrativa é a direção criativa; ainda não aparece no protótipo jogável. O nome dos personagens, diálogos, cenas e a escolha final serão implementados e refinados junto com as regiões da campanha.
+O prólogo de três páginas e a lembrança de Nara após a luta contra o Guardião já iniciam essa narrativa no jogo. A cidade explorável, Sileth, as cenas seguintes e as escolhas ainda serão implementadas e refinadas junto com as regiões da campanha.
 
 O documento de história com cenário, personagens e resumo dos três capítulos está em [STORY.md](STORY.md).
 
@@ -22,12 +22,13 @@ O documento de história com cenário, personagens e resumo dos três capítulos
 - Progressão: XP, níveis, escolhas de talentos, ouro, poções, três armas, armadura e relíquia.
 - Salvamento local em JSON com migração do save ConfigFile da versão Godot.
 - Movimento com colisão por eixo, permitindo deslizar pelas quinas.
-- A direção narrativa foi definida: a cripta será a primeira pista de uma história sobre memória, identidade e o custo de proteger uma cidade.
+- Prólogo interativo e primeira lembrança de Nara ao recolher o fragmento do Relicário Vital após derrotar o Guardião.
+- A cripta começa a história sobre memória, identidade e o custo de proteger Véspera.
 
 ## Próximas etapas
 
 1. **Consolidar a base C#** — manter compilação Windows e smoke tests, conferir save novo e migração do save antigo.
-2. **Transformar a premissa em campanha** — introduzir Véspera, o Escutador, a irmã desaparecida, o Guardião sem Nome e as pistas sobre a Curadora Sileth por meio de cenas e diálogos jogáveis.
+2. **Transformar a premissa em campanha** — levar o prólogo à cripta com pistas ambientais, concretizar o Guardião sem Nome e apresentar as primeiras aparições de Nara.
 3. **Aprofundar combate** — mais ataques legíveis, esquiva consistente, inimigos com funções distintas e balanceamento por sala.
 4. **Expandir loot e builds** — raridades com efeitos reais, comparação de equipamento e escolhas de habilidades relevantes.
 5. **Criar masmorras e narrativa ambiental** — novas regiões, rotas, arquivos, eventos e chefes cujas mecânicas reforcem a história.
@@ -35,5 +36,6 @@ O documento de história com cenário, personagens e resumo dos três capítulos
 7. **Finalizar apresentação e distribuição** — arte e áudio originais, animações, acessibilidade, builds self-contained e testes em Windows.
 
 Cada etapa deve compilar, incluir uma validação adequada e registrar as limitações conhecidas. O protótipo atual ainda não tem o volume de conteúdo de Diablo; essa escala exige desenvolvimento continuado.
+
 
 
