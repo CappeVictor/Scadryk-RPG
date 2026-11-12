@@ -4,7 +4,8 @@ using System.Collections.Generic;
 
 public partial class Game : Node2D
 {
-    private class Enemy { public Vector2 Pos, AttackTarget; public float Hp, MaxHp, Cooldown, Windup, HitTextTime, BleedTime; public string HitText = ""; public int BossPattern; public bool Boss, Archer, Elite, Mage; }
+    private enum EnemyAffix { None, Frenzied, Armored }
+    private class Enemy { public Vector2 Pos, AttackTarget; public float Hp, MaxHp, Cooldown, Windup, HitTextTime, BleedTime; public string HitText = ""; public int BossPattern; public EnemyAffix Affix; public bool Boss, Archer, Elite, Mage; }
     private class Projectile { public Vector2 Pos, Velocity; public float Life = 3f; }
     private class Loot { public Vector2 Pos; public bool Potion; public int Amount; public int Weapon = -1; public bool Armor, Relic; }
     private readonly List<Enemy> enemies = new();
@@ -45,8 +46,9 @@ public partial class Game : Node2D
         int count = room == 0 ? 3 : room == 1 ? 5 : 4;
         for (int i = 0; i < count; i++) {
             bool boss = room == 2 && i == 0; bool archer = room > 0 && i == 1; bool mage = room == 2 && i == 2; bool elite = room == 1 && i == count - 1;
-            float hp = boss ? 125 : elite ? 105 : archer || mage ? 40 : 50 + room * 8;
-            enemies.Add(new Enemy { Pos = new Vector2(480 + i % 3 * 120, 220 + i / 3 * 170 + i % 2 * 60), Boss = boss, Archer = archer, Mage = mage, Elite = elite, Hp = hp, MaxHp = hp, Cooldown = 1 });
+            EnemyAffix affix = elite ? GD.Randf() < 0.5f ? EnemyAffix.Frenzied : EnemyAffix.Armored : EnemyAffix.None;
+            float hp = boss ? 125 : elite ? affix == EnemyAffix.Armored ? 145 : 105 : archer || mage ? 40 : 50 + room * 8;
+            enemies.Add(new Enemy { Pos = new Vector2(480 + i % 3 * 120, 220 + i / 3 * 170 + i % 2 * 60), Boss = boss, Archer = archer, Mage = mage, Elite = elite, Affix = affix, Hp = hp, MaxHp = hp, Cooldown = 1 });
         }
     }
     public override void _UnhandledInput(InputEvent e) {
@@ -111,7 +113,7 @@ public partial class Game : Node2D
             lockedTarget = enemies[0];
             foreach (Enemy enemy in enemies) if (enemy.Pos.DistanceSquaredTo(player) < lockedTarget.Pos.DistanceSquaredTo(player)) lockedTarget = enemy;
         }
-        string name = lockedTarget.Boss ? "GUARDIÃO DA CRIPTA" : lockedTarget.Elite ? "ELITE" : lockedTarget.Mage ? "CONJURADOR" : lockedTarget.Archer ? "ARQUEIRO" : "INIMIGO";
+        string name = lockedTarget.Boss ? "GUARDIÃO DA CRIPTA" : lockedTarget.Elite ? lockedTarget.Affix == EnemyAffix.Frenzied ? "ELITE FRENÉTICO" : "ELITE BLINDADO" : lockedTarget.Mage ? "CONJURADOR" : lockedTarget.Archer ? "ARQUEIRO" : "INIMIGO";
         notice = $"ALVO: {name}"; noticeTime = 1.5f;
     }
     private void EquipWeapon(int index) {
@@ -254,6 +256,7 @@ public partial class Game : Node2D
             Vector2 offset = enemy.Pos - player;
             if (offset.Length() < (enemy.Boss ? 95 : 78) && (offset.Length() < 20 || facing.Dot(offset.Normalized()) > 0.1f) && !ProjectileBlocked(player, enemy.Pos)) {
                 bool critical = GD.Randf() < (weaponLevel == 2 ? 0.25f : 0.12f); int dealt = critical ? damage * 2 : damage;
+                if (enemy.Affix == EnemyAffix.Armored) dealt = Mathf.RoundToInt(dealt * 0.75f);
                 if (critical) criticalHits++;
                 enemy.Hp -= dealt; enemy.HitText = critical ? $"CRÍTICO! -{dealt}" : $"-{dealt}"; enemy.HitTextTime = 0.65f;
                 if (weaponLevel == 1) enemy.BleedTime = 3f;
@@ -267,7 +270,7 @@ public partial class Game : Node2D
         foreach (var enemy in enemies) {
             Vector2 offset = enemy.Pos - player;
             if (offset.Length() < 110) {
-                enemy.Hp -= damage * 1.6f;
+                enemy.Hp -= damage * 1.6f * (enemy.Affix == EnemyAffix.Armored ? 0.75f : 1f);
                 if (offset.LengthSquared() > 0) PushEnemy(enemy, offset.Normalized() * 25);
             }
         }
@@ -388,14 +391,16 @@ public partial class Game : Node2D
                 float strikeDistance = enemy.Mage ? 52 : enemy.Elite ? 62 : enemy.BossPattern == 0 ? 90 : 42;
                 bool targetedStrike = enemy.Mage || enemy.Elite || enemy.BossPattern == 1;
                 if (enemy.Windup <= 0 && (targetedStrike ? player.DistanceTo(enemy.AttackTarget) < strikeDistance : offset.Length() < strikeDistance) && invulnerable <= 0 && !dashing) {
-                    float incomingDamage = enemy.Mage ? 16 : enemy.Elite ? 20 : enemy.BossPattern == 0 ? 22 : 30;
+                    float incomingDamage = enemy.Mage ? 16 : enemy.Elite ? enemy.Affix == EnemyAffix.Frenzied ? 23 : 20 : enemy.BossPattern == 0 ? 22 : 30;
                     TakeDamage(incomingDamage); invulnerable = 0.55f; hitFlash = 0.2f;
                 }
                 if (state != "playing") break;
                 continue;
             }
             if (enemy.Elite && enemy.Cooldown <= 0 && offset.Length() < 220) {
-                enemy.AttackTarget = player; enemy.Windup = 0.75f; enemy.Cooldown = 2.6f; continue;
+                enemy.AttackTarget = player;
+                enemy.Windup = enemy.Affix == EnemyAffix.Frenzied ? 0.52f : 0.75f;
+                enemy.Cooldown = enemy.Affix == EnemyAffix.Frenzied ? 2.1f : 2.6f; continue;
             }
             bool enraged = enemy.Boss && enemy.Hp <= enemy.MaxHp * 0.5f;
             if (enemy.Boss && enemy.Cooldown <= 0 && offset.Length() < 125) {
@@ -439,19 +444,20 @@ public partial class Game : Node2D
             if (enemy.Windup > 0) {
                 if (enemy.Mage || enemy.Elite) {
                     float baseRadius = enemy.Elite ? 62 : 52;
-                    float windupDuration = enemy.Elite ? 0.75f : 0.8f;
+                    float windupDuration = enemy.Elite ? enemy.Affix == EnemyAffix.Frenzied ? 0.52f : 0.75f : 0.8f;
                     float warningRadius = baseRadius * Mathf.Lerp(0.35f, 1f, Mathf.Clamp(enemy.Windup / windupDuration, 0, 1));
-                    Color warningColor = enemy.Elite ? new Color("e6a45e") : new Color("bd91e8");
+                    Color warningColor = enemy.Elite ? enemy.Affix == EnemyAffix.Frenzied ? new Color("ed7058") : new Color("e6a45e") : new Color("bd91e8");
                     DrawCircle(enemy.AttackTarget, warningRadius, new Color(warningColor.R, warningColor.G, warningColor.B, 0.2f));
                     DrawArc(enemy.AttackTarget, warningRadius, 0, Mathf.Tau, 40, warningColor, 4, true);
                 }
                 else if (enemy.BossPattern == 0) DrawArc(enemy.Pos, 90, 0, Mathf.Tau, 48, new Color("e67b58"), 3, true);
                 else { DrawLine(enemy.Pos, enemy.AttackTarget, new Color("e67b58"), 12); DrawCircle(enemy.AttackTarget, 42, new Color(0.9f, 0.35f, 0.25f, 0.35f)); }
             }
-            DrawCircle(enemy.Pos, radius, enemy.Boss ? new Color("8f6459") : enemy.Elite ? new Color("a67dc0") : enemy.Mage ? new Color("8d72c7") : enemy.Archer ? new Color("8b9f75") : new Color("b7b5a6"));
+            DrawCircle(enemy.Pos, radius, enemy.Boss ? new Color("8f6459") : enemy.Elite ? enemy.Affix == EnemyAffix.Frenzied ? new Color("b96050") : new Color("777b91") : enemy.Mage ? new Color("8d72c7") : enemy.Archer ? new Color("8b9f75") : new Color("b7b5a6"));
+            if (enemy.Affix == EnemyAffix.Armored) DrawArc(enemy.Pos, radius + 4, 0, Mathf.Tau, 24, new Color("b8c4d4"), 3, true);
             if (ReferenceEquals(enemy, lockedTarget)) DrawArc(enemy.Pos, radius + 8, 0, Mathf.Tau, 32, new Color("f3d477"), 3, true);
-            string role = enemy.Elite ? "ELITE" : enemy.Archer ? "ARQUEIRO" : enemy.Mage ? "CONJURADOR" : "";
-            if (role.Length > 0) Text(role, enemy.Pos + new Vector2(-28, -31), 10, enemy.Elite ? new Color("d4a7e8") : enemy.Mage ? new Color("d7b6f0") : new Color("b9cc9f"));
+            string role = enemy.Elite ? enemy.Affix == EnemyAffix.Frenzied ? "ELITE • FRENÉTICO" : "ELITE • BLINDADO" : enemy.Archer ? "ARQUEIRO" : enemy.Mage ? "CONJURADOR" : "";
+            if (role.Length > 0) Text(role, enemy.Pos + new Vector2(-35, -31), 10, enemy.Elite ? enemy.Affix == EnemyAffix.Frenzied ? new Color("f08b72") : new Color("c3c9d8") : enemy.Mage ? new Color("d7b6f0") : new Color("b9cc9f"));
             DrawCircle(enemy.Pos + new Vector2(-5, -4), 2.5f, new Color("bc5145")); DrawCircle(enemy.Pos + new Vector2(5, -4), 2.5f, new Color("bc5145"));
             if (enemy.HitTextTime > 0) Text(enemy.HitText, enemy.Pos + new Vector2(-22, -radius - 25), 11, enemy.HitText.StartsWith("CRÍTICO") ? new Color("ffd16f") : text);
             DrawRect(new Rect2(enemy.Pos.X - 22, enemy.Pos.Y - radius - 10, 44 * Math.Max(0, enemy.Hp / enemy.MaxHp), 4), new Color("b8584f"));
