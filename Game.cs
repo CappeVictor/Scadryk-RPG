@@ -42,7 +42,7 @@ public partial class Game : Node2D
     }
     public override void _UnhandledInput(InputEvent e) {
         if (e is not InputEventKey key || !key.Pressed || key.Echo) return;
-        if (state != "playing") { if (key.Keycode == Key.Enter || key.Keycode == Key.Space) StartGame(); else if (key.Keycode == Key.C && state == "title") LoadGame(); return; }
+        if (state != "playing") { if (key.Keycode == Key.F5 && state == "victory") SaveGame(); else if (key.Keycode == Key.Enter || key.Keycode == Key.Space) StartGame(); else if (key.Keycode == Key.C && state == "title") LoadGame(); return; }
         if (key.Keycode == Key.I) { inventoryOpen = !inventoryOpen; QueueRedraw(); return; }
         if (inventoryOpen) {
             if (key.Keycode == Key.Key1) EquipWeapon(0);
@@ -79,10 +79,11 @@ public partial class Game : Node2D
         noticeTime = 2;
     }
     private void SaveGame() {
-        if (enemies.Count != 0) { notice = "LIMPE A SALA ANTES DE SALVAR"; noticeTime = 3; return; }
+        if (state != "victory" && enemies.Count != 0) { notice = "LIMPE A SALA ANTES DE SALVAR"; noticeTime = 3; return; }
         if (loot.Count != 0) { notice = "RECOLHA OS ITENS ANTES DE SALVAR"; noticeTime = 3; return; }
         var file = new ConfigFile();
         file.SetValue("player", "room_cleared", true);
+        file.SetValue("player", "completed", state == "victory");
         file.SetValue("player", "room", room); file.SetValue("player", "level", level);
         file.SetValue("player", "xp", xp); file.SetValue("player", "gold", gold);
         file.SetValue("player", "potions", potions); file.SetValue("player", "damage", damage);
@@ -110,6 +111,7 @@ public partial class Game : Node2D
         if (file.HasSectionKey("player", "room_cleared") && file.GetValue("player", "room_cleared").VariantType != Variant.Type.Bool) {
             notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return;
         }
+        if (file.HasSectionKey("player", "completed") && file.GetValue("player", "completed").VariantType != Variant.Type.Bool) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
         foreach (string key in new[] { "has_armor", "armor_equipped" }) if (file.HasSectionKey("player", key) && file.GetValue("player", key).VariantType != Variant.Type.Bool) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
         bool savedHasArmor = (bool)file.GetValue("player", "has_armor", false);
         bool savedArmorEquipped = (bool)file.GetValue("player", "armor_equipped", false);
@@ -138,6 +140,8 @@ public partial class Game : Node2D
             savedOwned = value.AsInt64();
         }
         if (savedOwned < 1 || savedOwned > 7 || (savedOwned & 1) == 0 || (savedOwned & (1 << (int)savedWeapon)) == 0) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
+        bool completed = (bool)file.GetValue("player", "completed", false);
+        if (completed && savedRoom != 2) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
         StartGame();
         room = Mathf.Clamp((int)file.GetValue("player", "room", 0), 0, 2);
         level = Math.Max(1, (int)file.GetValue("player", "level", 1));
@@ -148,6 +152,7 @@ public partial class Game : Node2D
         health = Mathf.Clamp((float)file.GetValue("player", "health", 100f), 1, maxHealth);
         SetupRoom();
         if ((bool)file.GetValue("player", "room_cleared", false)) enemies.Clear();
+        state = completed ? "victory" : "playing";
         notice = "PROGRESSO CARREGADO"; noticeTime = 3;
     }
     private void Attack() {
@@ -200,7 +205,7 @@ public partial class Game : Node2D
         for (int i = projectiles.Count - 1; i >= 0; i--) {
             var shot = projectiles[i]; shot.Pos += shot.Velocity * dt; shot.Life -= dt;
             if (shot.Pos.DistanceTo(player) < 18 && !dashing && invulnerable <= 0) {
-                health -= 9; invulnerable = 0.55f; hitFlash = 0.2f; projectiles.RemoveAt(i);
+                health -= MitigatedDamage(9); invulnerable = 0.55f; hitFlash = 0.2f; projectiles.RemoveAt(i);
                 if (health <= 0) { health = 0; state = "dead"; }
             } else if (shot.Life <= 0 || shot.Pos.X < 65 || shot.Pos.X > 895 || shot.Pos.Y < 108 || shot.Pos.Y > 553) projectiles.RemoveAt(i);
         }
@@ -293,7 +298,7 @@ public partial class Game : Node2D
         if (state == "playing") Text($"R: redemoinho {(skillCooldown > 0 ? skillCooldown.ToString("0.0") + "s" : "pronto")}   I: arma   F5: salvar", new Vector2(570, 590), 12, text);
         if (enemies.Count == 0 && state == "playing") Text(loot.Count > 0 ? "RECOLHA OS ITENS NO CHÃO" : room == 2 ? "APROXIME-SE DO BAÚ E PRESSIONE E" : "SALA LIMPA: PORTA ABERTA", new Vector2(300, 145), 16, goldColor);
         if (inventoryOpen && state == "playing") {
-            DrawRect(new Rect2(150, 155, 660, 330), new Color(0.04f, 0.05f, 0.05f, 0.96f));
+            DrawRect(new Rect2(150, 145, 660, 360), new Color(0.04f, 0.05f, 0.05f, 0.96f));
             Text("INVENTÁRIO  •  1–3 ARMAS  •  4 ARMADURA  •  I FECHAR", new Vector2(190, 195), 16, goldColor);
             for (int i = 0; i < WeaponNames.Length; i++) {
                 bool owned = (ownedWeapons & (1 << i)) != 0;
@@ -302,9 +307,9 @@ public partial class Game : Node2D
                 int comparison = WeaponBonuses[i] - WeaponBonuses[weaponLevel];
                 Text($"{i + 1}. {WeaponNames[i]}  |  DANO {comparison:+#;-#;0}  |  {speed}  |  {status}", new Vector2(190, 245 + i * 53), 14, owned ? text : new Color("777777"));
             }
-            Text($"DANO ATUAL: {damage}   OURO: {gold}", new Vector2(190, 435), 15, goldColor);
             Text($"4. PEITORAL DE PEDRA  |  REDUZ DANO EM 30%  |  {(hasArmor ? armorEquipped ? "EQUIPADO" : "DISPONÍVEL" : "NÃO ENCONTRADO")}", new Vector2(190, 410), 14, hasArmor ? text : new Color("777777"));
-            Text($"PROTEÇÃO ATUAL: {(armorEquipped ? "30%" : "0%")}", new Vector2(190, 460), 14, new Color("9fd0bb"));
+            Text($"PROTEÇÃO ATUAL: {(armorEquipped ? "30%" : "0%")}", new Vector2(190, 445), 14, new Color("9fd0bb"));
+            Text($"DANO ATUAL: {damage}   OURO: {gold}", new Vector2(190, 480), 15, goldColor);
         }
         if (state != "playing") {
             DrawRect(new Rect2(0, 0, 960, 640), new Color(0.025f, 0.03f, 0.035f, 0.92f));
