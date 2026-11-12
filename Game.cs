@@ -185,8 +185,8 @@ public sealed class Game : Form
             if (e.Windup <= 0 && (targeted ? Distance(player, e.Target) < reach : dist < reach) && invulnerable <= 0 && dashTime <= 0) HitPlayer(e.Boss ? 26 : e.Kind == EnemyKind.Elite ? 20 : e.Kind == EnemyKind.Mage ? 16 : 10);
             return;
         }
-        if (e.Kind == EnemyKind.Archer) { if (dist < 170) e.Pos = MoveEnemy(e, Scale(Normalize(Offset(e.Pos, player), PointF.Empty), 55 * dt)); else if (e.Cooldown <= 0) { BeginWindup(e, player, 0.6f); e.Cooldown = 1.8f; } SeparateFromPack(e, dt); return; }
-        if (e.Kind == EnemyKind.Mage && dist < 165) e.Pos = MoveEnemy(e, Scale(Normalize(Offset(e.Pos, player), PointF.Empty), 42 * dt));
+        if (e.Kind == EnemyKind.Archer) { if (dist < 170) e.Pos = MoveEnemy(e, Scale(Normalize(Sub(e.Pos, player), PointF.Empty), 55 * dt)); else if (e.Cooldown <= 0) { BeginWindup(e, player, 0.6f); e.Cooldown = 1.8f; } SeparateFromPack(e, dt); return; }
+        if (e.Kind == EnemyKind.Mage && dist < 165) e.Pos = MoveEnemy(e, Scale(Normalize(Sub(e.Pos, player), PointF.Empty), 42 * dt));
         if (e.Kind == EnemyKind.Elite && e.Cooldown <= 0 && dist < 220) { BeginWindup(e, player, e.Armored ? 0.72f : 0.5f); e.Cooldown = e.Armored ? 2.5f : 2f; return; }
         if (e.Boss && e.Cooldown <= 0 && dist < 135) { e.BossPattern = 1 - e.BossPattern; BeginWindup(e, player, e.Hp < e.MaxHp * 0.5f ? 0.52f : 0.8f); e.Cooldown = e.Hp < e.MaxHp * 0.5f ? 1.3f : 2.1f; return; }
         if (e.Kind == EnemyKind.Mage && e.Cooldown <= 0) { BeginWindup(e, player, 0.8f); e.Cooldown = 2.2f; SeparateFromPack(e, dt); return; }
@@ -312,8 +312,8 @@ public sealed class Game : Form
     {
         using var game = new Game(); game.timer.Stop(); game.StartGame();
         if (game.enemies.Count != 3) throw new InvalidOperationException("A primeira sala deve iniciar com três inimigos.");
-        game.player = new PointF(320, 230); game.MovePlayer(new PointF(40, 40));
-        if (Math.Abs(game.player.X - 320) > 0.01f || Math.Abs(game.player.Y - 270) > 0.01f) throw new InvalidOperationException("O movimento não deslizou pela quina do obstáculo.");
+        game.player = new PointF(320, 230); game.MovePlayer(new PointF(40, 40)); PointF movedPlayer = game.player;
+        if (Math.Abs(movedPlayer.X - 320) > 0.01f || Math.Abs(movedPlayer.Y - 270) > 0.01f) throw new InvalidOperationException("O movimento não deslizou pela quina do obstáculo.");
         Enemy grunt = game.enemies[0]; game.player = new PointF(grunt.Pos.X - 22, grunt.Pos.Y); grunt.Cooldown = 0; game.UpdateEnemy(grunt, 0.01f);
         if (grunt.Windup <= 0 || game.health < game.maxHealth) throw new InvalidOperationException("Ataque corpo a corpo comum não foi anunciado.");
         game.player = new PointF(grunt.Pos.X - 100, grunt.Pos.Y); game.UpdateEnemy(grunt, 0.6f);
@@ -323,4 +323,5 @@ public sealed class Game : Form
         Console.WriteLine("TESTES OK: movimento, aviso de ataque, esquiva e progressão."); return 0;
     }
 }
+
 
