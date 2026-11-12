@@ -22,7 +22,7 @@ public partial class Game : Node2D
     private bool hasArmor, armorEquipped;
     private bool talentChoice;
     private int healthTalent, skillTalent, dodgeTalent;
-    private readonly Rect2[] obstacles = { new Rect2(345, 235, 48, 90), new Rect2(565, 375, 58, 80) };
+    private static readonly Rect2[] obstacles = { new Rect2(345, 235, 48, 90), new Rect2(565, 375, 58, 80) };
     private static readonly string[] WeaponNames = { "ESPADA COMUM", "LÂMINA RARA", "LÂMINA DO CREPÚSCULO" };
     private static readonly int[] WeaponBonuses = { 0, 10, 4 };
     private string notice = "";
@@ -124,6 +124,9 @@ public partial class Game : Node2D
         }
         if (file.HasSectionKey("player", "completed") && file.GetValue("player", "completed").VariantType != Variant.Type.Bool) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
         foreach (string key in new[] { "has_armor", "armor_equipped" }) if (file.HasSectionKey("player", key) && file.GetValue("player", key).VariantType != Variant.Type.Bool) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
+        foreach (string key in new[] { "health_talent", "skill_talent", "dodge_talent" }) {
+            if (file.HasSectionKey("player", key) && (file.GetValue("player", key).VariantType != Variant.Type.Int || file.GetValue("player", key).AsInt64() < 0 || file.GetValue("player", key).AsInt64() > 20)) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
+        }
         bool savedHasArmor = (bool)file.GetValue("player", "has_armor", false);
         bool savedArmorEquipped = (bool)file.GetValue("player", "armor_equipped", false);
         if (savedArmorEquipped && !savedHasArmor) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
@@ -170,8 +173,7 @@ public partial class Game : Node2D
     }
     private static int ReadTalent(ConfigFile file, string key) {
         if (!file.HasSectionKey("player", key)) return 0;
-        Variant value = file.GetValue("player", key);
-        return value.VariantType == Variant.Type.Int ? Mathf.Clamp((int)value, 0, 20) : 0;
+        return (int)file.GetValue("player", key);
     }
     private void Attack() {
         if (attackCooldown > 0) return;
@@ -193,9 +195,28 @@ public partial class Game : Node2D
         }
     }
     private static void PushEnemy(Enemy enemy, Vector2 displacement) {
-        enemy.Pos += displacement;
-        enemy.Pos.X = Mathf.Clamp(enemy.Pos.X, 85, 875);
-        enemy.Pos.Y = Mathf.Clamp(enemy.Pos.Y, 128, 533);
+        MoveEnemy(enemy, displacement);
+    }
+    private static bool Blocked(Vector2 position) {
+        Rect2 body = new(position - new Vector2(12, 12), new Vector2(24, 24));
+        foreach (Rect2 obstacle in obstacles) if (body.Intersects(obstacle)) return true;
+        return false;
+    }
+    private static void MoveEnemy(Enemy enemy, Vector2 displacement) {
+        Vector2 next = enemy.Pos + displacement;
+        if (!Blocked(new Vector2(next.X, enemy.Pos.Y))) enemy.Pos.X = next.X;
+        if (!Blocked(new Vector2(enemy.Pos.X, next.Y))) enemy.Pos.Y = next.Y;
+        enemy.Pos.X = Mathf.Clamp(enemy.Pos.X, 85, 875); enemy.Pos.Y = Mathf.Clamp(enemy.Pos.Y, 128, 533);
+    }
+    private bool ProjectileBlocked(Vector2 from, Vector2 to) {
+        foreach (Rect2 obstacle in obstacles) {
+            Rect2 hitbox = new(obstacle.Position - new Vector2(4, 4), obstacle.Size + new Vector2(8, 8));
+            if (hitbox.HasPoint(to) || hitbox.HasPoint(from)) return true;
+            Vector2 a = hitbox.Position, b = hitbox.Position + new Vector2(hitbox.Size.X, 0);
+            Vector2 c = hitbox.Position + hitbox.Size, d = hitbox.Position + new Vector2(0, hitbox.Size.Y);
+            if (Geometry2D.SegmentIntersectsSegment(from, to, a, b).VariantType != Variant.Type.Nil || Geometry2D.SegmentIntersectsSegment(from, to, b, c).VariantType != Variant.Type.Nil || Geometry2D.SegmentIntersectsSegment(from, to, c, d).VariantType != Variant.Type.Nil || Geometry2D.SegmentIntersectsSegment(from, to, d, a).VariantType != Variant.Type.Nil) return true;
+        }
+        return false;
     }
     public override void _PhysicsProcess(double delta) {
         noticeTime = Math.Max(0, noticeTime - (float)delta);
@@ -225,7 +246,8 @@ public partial class Game : Node2D
             }
         }
         for (int i = projectiles.Count - 1; i >= 0; i--) {
-            var shot = projectiles[i]; shot.Pos += shot.Velocity * dt; shot.Life -= dt;
+            var shot = projectiles[i]; Vector2 previous = shot.Pos; shot.Pos += shot.Velocity * dt; shot.Life -= dt;
+            if (ProjectileBlocked(previous, shot.Pos)) { projectiles.RemoveAt(i); continue; }
             if (shot.Pos.DistanceTo(player) < 18 && !dashing && invulnerable <= 0) {
                 health -= MitigatedDamage(9); invulnerable = 0.55f; hitFlash = 0.2f; projectiles.RemoveAt(i);
                 if (health <= 0) { health = 0; state = "dead"; }
@@ -250,8 +272,8 @@ public partial class Game : Node2D
             }
             enemy.Cooldown -= dt; Vector2 offset = player - enemy.Pos;
             if (enemy.Archer) {
-                if (offset.Length() > 250) enemy.Pos += offset.Normalized() * 60 * dt;
-                else if (offset.Length() < 150 && offset.LengthSquared() > 0) enemy.Pos -= offset.Normalized() * 60 * dt;
+                if (offset.Length() > 250) MoveEnemy(enemy, offset.Normalized() * 60 * dt);
+                else if (offset.Length() < 150 && offset.LengthSquared() > 0) MoveEnemy(enemy, -offset.Normalized() * 60 * dt);
                 enemy.Pos.X = Mathf.Clamp(enemy.Pos.X, 85, 875); enemy.Pos.Y = Mathf.Clamp(enemy.Pos.Y, 128, 533);
                 if (enemy.Cooldown <= 0 && offset.LengthSquared() > 0) {
                     projectiles.Add(new Projectile { Pos = enemy.Pos, Velocity = offset.Normalized() * 210 }); enemy.Cooldown = 1.8f;
@@ -273,7 +295,7 @@ public partial class Game : Node2D
                 enemy.AttackTarget = player;
                 enemy.Windup = 0.85f; enemy.Cooldown = 2.2f; continue;
             }
-            if (offset.Length() > (enemy.Boss ? 39 : 30)) enemy.Pos += offset.Normalized() * (enemy.Boss ? 58 : 76 + room * 8) * dt;
+            if (offset.Length() > (enemy.Boss ? 39 : 30)) MoveEnemy(enemy, offset.Normalized() * (enemy.Boss ? 58 : 76 + room * 8) * dt);
             else if (enemy.Cooldown <= 0) {
                 enemy.Cooldown = enemy.Boss ? 1.1f : 1.35f;
                 if (invulnerable <= 0 && !dashing) { health -= MitigatedDamage(enemy.Boss ? 18 : enemy.Elite ? 14 : 10); invulnerable = 0.55f; hitFlash = 0.2f; if (health <= 0) { health = 0; state = "dead"; } }
