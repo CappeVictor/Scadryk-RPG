@@ -347,6 +347,8 @@ public partial class Game : Node2D
         DrawRect(new Rect2(0, 0, 960, 83), new Color("1c2023"));
         Text("SCADRYK RPG", new Vector2(25, 45), 22, goldColor);
         Text($"VIDA {health:0}/{maxHealth:0}   NÍVEL {level}   XP {xp}/{level * 60}   OURO {gold}   POÇÕES {potions}", new Vector2(240, 45), 15, text);
+        DrawRect(new Rect2(25, 61, 185, 9), new Color("292929"));
+        DrawRect(new Rect2(25, 61, 185 * Mathf.Clamp(health / maxHealth, 0, 1), 9), health / maxHealth <= 0.25f ? new Color("d84f49") : new Color("7eb77d"));
         DrawRect(new Rect2(45, 95, 870, 472), new Color("3c3e3a")); DrawRect(new Rect2(65, 108, 830, 445), new Color("303530"));
         for (int y = 0; y < 7; y++) for (int x = 0; x < 12; x++) DrawRect(new Rect2(70 + x * 68, 112 + y * 62, 67, 61), new Color("39403a"), false);
         foreach (Rect2 obstacle in obstacles) { DrawRect(obstacle, new Color("514c40")); DrawRect(obstacle, new Color("82765f"), false, 3); }
@@ -366,9 +368,10 @@ public partial class Game : Node2D
             if (enemy.HitTextTime > 0) Text(enemy.HitText, enemy.Pos + new Vector2(-22, -radius - 25), 11, enemy.HitText.StartsWith("CRÍTICO") ? new Color("ffd16f") : text);
             DrawRect(new Rect2(enemy.Pos.X - 22, enemy.Pos.Y - radius - 10, 44 * Math.Max(0, enemy.Hp / enemy.MaxHp), 4), new Color("b8584f"));
             if (enemy.Boss) {
-                Text("GUARDIÃO DA CRIPTA", new Vector2(373, 104), 13, goldColor);
+                bool enraged = enemy.Hp <= enemy.MaxHp * 0.5f;
+                Text(enraged ? "GUARDIÃO DA CRIPTA • ENFURECIDO" : "GUARDIÃO DA CRIPTA", new Vector2(enraged ? 340 : 373, 104), 13, enraged ? new Color("ed725d") : goldColor);
                 DrawRect(new Rect2(360, 112, 240, 7), new Color("191919"));
-                DrawRect(new Rect2(360, 112, 240 * Mathf.Clamp(enemy.Hp / enemy.MaxHp, 0, 1), 7), new Color("b8584f"));
+                DrawRect(new Rect2(360, 112, 240 * Mathf.Clamp(enemy.Hp / enemy.MaxHp, 0, 1), 7), enraged ? new Color("e3654d") : new Color("b8584f"));
             }
         }
         foreach (var shot in projectiles) DrawCircle(shot.Pos, 5, new Color("e5ae69"));
