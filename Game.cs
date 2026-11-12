@@ -6,8 +6,10 @@ public partial class Game : Node2D
 {
     private class Enemy { public Vector2 Pos; public float Hp, MaxHp, Cooldown, Windup; public bool Boss, Archer; }
     private class Projectile { public Vector2 Pos, Velocity; public float Life = 3f; }
+    private class Loot { public Vector2 Pos; public bool Potion; public int Amount; }
     private readonly List<Enemy> enemies = new();
     private readonly List<Projectile> projectiles = new();
+    private readonly List<Loot> loot = new();
     private readonly string[] rooms = { "VESTÍBULO EM RUÍNAS", "SALÃO DOS OSSOS", "CÂMARA DO GUARDIÃO" };
     private Vector2 player = new(150, 330), facing = Vector2.Right;
     private int room, level = 1, xp, gold, potions = 2, damage = 25;
@@ -24,7 +26,7 @@ public partial class Game : Node2D
         state = "playing"; SetupRoom();
     }
     private void SetupRoom() {
-        player = new Vector2(150, 330); enemies.Clear(); projectiles.Clear();
+        player = new Vector2(150, 330); enemies.Clear(); projectiles.Clear(); loot.Clear();
         int count = room == 0 ? 3 : room == 1 ? 5 : 4;
         for (int i = 0; i < count; i++) {
             bool boss = room == 2 && i == 0; bool archer = room > 0 && i == 1; float hp = boss ? 125 : archer ? 40 : 50 + room * 8;
@@ -42,7 +44,8 @@ public partial class Game : Node2D
             case Key.F5: SaveGame(); break;
             case Key.I: notice = $"ARMA: {(weaponLevel == 0 ? "ESPADA COMUM" : "LÂMINA RARA")}  |  DANO {damage}  |  OURO {gold}"; noticeTime = 3; break;
             case Key.E:
-                if (enemies.Count == 0 && room < 2 && player.DistanceTo(new Vector2(850, 330)) < 95) { if (room == 1 && weaponLevel == 0) { weaponLevel = 1; damage += 10; notice = "LÂMINA RARA EQUIPADA: +10 DANO"; noticeTime = 3; } room++; SetupRoom(); }
+                if (enemies.Count == 0 && loot.Count > 0) { notice = "RECOLHA OS ITENS ANTES DE SAIR"; noticeTime = 3; }
+                else if (enemies.Count == 0 && room < 2 && player.DistanceTo(new Vector2(850, 330)) < 95) { if (room == 1 && weaponLevel == 0) { weaponLevel = 1; damage += 10; notice = "LÂMINA RARA EQUIPADA: +10 DANO"; noticeTime = 3; } room++; SetupRoom(); }
                 else if (enemies.Count == 0 && room == 2 && player.DistanceTo(new Vector2(750, 330)) < 100) { gold += 100; state = "victory"; }
                 break;
         }
@@ -50,6 +53,7 @@ public partial class Game : Node2D
     }
     private void SaveGame() {
         if (enemies.Count != 0) { notice = "LIMPE A SALA ANTES DE SALVAR"; noticeTime = 3; return; }
+        if (loot.Count != 0) { notice = "RECOLHA OS ITENS ANTES DE SALVAR"; noticeTime = 3; return; }
         var file = new ConfigFile();
         file.SetValue("player", "room_cleared", true);
         file.SetValue("player", "room", room); file.SetValue("player", "level", level);
@@ -106,6 +110,14 @@ public partial class Game : Node2D
         bool dashing = dashTime > 0; player += (dashing ? facing : dir) * (dashing ? 530 : 190) * dt;
         dashTime = Math.Max(0, dashTime - dt);
         player.X = Mathf.Clamp(player.X, 85, 875); player.Y = Mathf.Clamp(player.Y, 128, 533);
+        for (int i = loot.Count - 1; i >= 0; i--) {
+            var item = loot[i];
+            if (player.DistanceTo(item.Pos) < 30) {
+                if (item.Potion) { potions++; notice = "+1 POÇÃO"; }
+                else { gold += item.Amount; notice = $"+{item.Amount} OURO"; }
+                noticeTime = 1.5f; loot.RemoveAt(i);
+            }
+        }
         for (int i = projectiles.Count - 1; i >= 0; i--) {
             var shot = projectiles[i]; shot.Pos += shot.Velocity * dt; shot.Life -= dt;
             if (shot.Pos.DistanceTo(player) < 18 && !dashing && invulnerable <= 0) {
@@ -117,8 +129,9 @@ public partial class Game : Node2D
         for (int i = enemies.Count - 1; i >= 0; i--) {
             var enemy = enemies[i];
             if (enemy.Hp <= 0) {
-                gold += enemy.Boss ? 20 : 6; xp += enemy.Boss ? 45 : 20;
-                if (!enemy.Boss && GD.Randf() < 0.18f) potions++;
+                loot.Add(new Loot { Pos = enemy.Pos, Amount = enemy.Boss ? 20 : 6 });
+                xp += enemy.Boss ? 45 : 20;
+                if (!enemy.Boss && GD.Randf() < 0.18f) loot.Add(new Loot { Pos = enemy.Pos + new Vector2(18, 0), Potion = true });
                 if (xp >= level * 60) { xp -= level * 60; level++; maxHealth += 15; health = Math.Min(maxHealth, health + 25); damage += 5; }
                 enemies.RemoveAt(i); continue;
             }
@@ -173,6 +186,10 @@ public partial class Game : Node2D
             DrawRect(new Rect2(enemy.Pos.X - 22, enemy.Pos.Y - radius - 10, 44 * Math.Max(0, enemy.Hp / enemy.MaxHp), 4), new Color("b8584f"));
         }
         foreach (var shot in projectiles) DrawCircle(shot.Pos, 5, new Color("e5ae69"));
+        foreach (var item in loot) {
+            DrawCircle(item.Pos, 8, item.Potion ? new Color("d55857") : new Color("e6c181"));
+            Text(item.Potion ? "POÇÃO" : "OURO", item.Pos + new Vector2(-18, -12), 10, text);
+        }
         DrawCircle(player, 16, hitFlash > 0 ? new Color("e88975") : new Color("6c8b8a")); DrawCircle(player + new Vector2(0, -5), 8, new Color("dfbd94"));
         DrawLine(player + facing * 8, player + facing * 24, new Color("e7d7b9"), 4);
         if (attackEffect > 0) DrawArc(player, 56, facing.Angle() - 0.8f, facing.Angle() + 0.8f, 16, goldColor, 6, true);
