@@ -17,12 +17,16 @@ public partial class Game : Node2D
     private string state = "title";
     private string savePath = "user://scadryk-save.cfg";
     private int weaponLevel;
+    private int ownedWeapons = 1;
+    private bool inventoryOpen;
+    private static readonly string[] WeaponNames = { "ESPADA COMUM", "LÂMINA RARA", "LÂMINA DO CREPÚSCULO" };
+    private static readonly int[] WeaponBonuses = { 0, 10, 4 };
     private string notice = "";
     private float noticeTime;
     private float skillCooldown, skillEffect;
     public override void _Ready() => QueueRedraw();
     private void StartGame() {
-        room = 0; level = 1; xp = 0; gold = 0; potions = 2; damage = 25; weaponLevel = 0;
+        room = 0; level = 1; xp = 0; gold = 0; potions = 2; damage = 25; weaponLevel = 0; ownedWeapons = 1; inventoryOpen = false;
         health = maxHealth = 100; attackCooldown = attackEffect = dashCooldown = dashTime = invulnerable = hitFlash = skillCooldown = skillEffect = 0;
         state = "playing"; SetupRoom();
     }
@@ -37,20 +41,33 @@ public partial class Game : Node2D
     public override void _UnhandledInput(InputEvent e) {
         if (e is not InputEventKey key || !key.Pressed || key.Echo) return;
         if (state != "playing") { if (key.Keycode == Key.Enter || key.Keycode == Key.Space) StartGame(); else if (key.Keycode == Key.C && state == "title") LoadGame(); return; }
+        if (key.Keycode == Key.I) { inventoryOpen = !inventoryOpen; QueueRedraw(); return; }
+        if (inventoryOpen) {
+            if (key.Keycode == Key.Key1) EquipWeapon(0);
+            else if (key.Keycode == Key.Key2) EquipWeapon(1);
+            else if (key.Keycode == Key.Key3) EquipWeapon(2);
+            else if (key.Keycode == Key.Escape) inventoryOpen = false;
+            QueueRedraw(); return;
+        }
         switch (key.Keycode) {
             case Key.Space: case Key.J: Attack(); break;
             case Key.Shift: case Key.K: if (dashCooldown <= 0) { dashTime = 0.17f; dashCooldown = 1.15f; } break;
             case Key.Q: if (potions > 0 && health < maxHealth) { potions--; health = Math.Min(maxHealth, health + 45); } break;
             case Key.R: UseWhirlwind(); break;
             case Key.F5: SaveGame(); break;
-            case Key.I: notice = $"ARMA: {(weaponLevel == 0 ? "ESPADA COMUM" : "LÂMINA RARA")}  |  DANO {damage}  |  OURO {gold}"; noticeTime = 3; break;
             case Key.E:
                 if (enemies.Count == 0 && loot.Count > 0) { notice = "RECOLHA OS ITENS ANTES DE SAIR"; noticeTime = 3; }
-                else if (enemies.Count == 0 && room < 2 && player.DistanceTo(new Vector2(850, 330)) < 95) { if (room == 1 && weaponLevel == 0) { weaponLevel = 1; damage += 10; notice = "LÂMINA RARA EQUIPADA: +10 DANO"; noticeTime = 3; } room++; SetupRoom(); }
+                else if (enemies.Count == 0 && room < 2 && player.DistanceTo(new Vector2(850, 330)) < 95) { int found = room == 0 ? 2 : 1; ownedWeapons |= 1 << found; notice = $"NOVA ARMA: {WeaponNames[found]} • I PARA VER"; noticeTime = 3; room++; SetupRoom(); }
                 else if (enemies.Count == 0 && room == 2 && player.DistanceTo(new Vector2(750, 330)) < 100) { gold += 100; state = "victory"; }
                 break;
         }
         QueueRedraw();
+    }
+    private void EquipWeapon(int index) {
+        if (index < 0 || index >= WeaponNames.Length || (ownedWeapons & (1 << index)) == 0) { notice = "ARMA AINDA NÃO ENCONTRADA"; noticeTime = 2; return; }
+        damage += WeaponBonuses[index] - WeaponBonuses[weaponLevel];
+        weaponLevel = index;
+        notice = $"EQUIPADA: {WeaponNames[index]}"; noticeTime = 2;
     }
     private void SaveGame() {
         if (enemies.Count != 0) { notice = "LIMPE A SALA ANTES DE SALVAR"; noticeTime = 3; return; }
@@ -61,6 +78,7 @@ public partial class Game : Node2D
         file.SetValue("player", "xp", xp); file.SetValue("player", "gold", gold);
         file.SetValue("player", "potions", potions); file.SetValue("player", "damage", damage);
         file.SetValue("player", "weapon", weaponLevel); file.SetValue("player", "health", health);
+        file.SetValue("player", "owned_weapons", ownedWeapons);
         file.SetValue("player", "max_health", maxHealth);
         Error error = file.Save(savePath);
         notice = error == Error.Ok ? "PROGRESSO SALVO" : "ERRO AO SALVAR"; noticeTime = 3;
@@ -94,16 +112,24 @@ public partial class Game : Node2D
         if (savedRoom < 0 || savedRoom > 2 || savedLevel < 1 || savedLevel > 10000 ||
             savedXp < 0 || savedXp >= savedLevel * 60 || savedGold < 0 || savedGold > int.MaxValue ||
             savedPotions < 0 || savedPotions > int.MaxValue || savedDamage < 1 || savedDamage > int.MaxValue ||
-            savedWeapon < 0 || savedWeapon > 1 || !double.IsFinite(savedHealth) || !double.IsFinite(savedMaxHealth) ||
+            savedWeapon < 0 || savedWeapon > 2 || !double.IsFinite(savedHealth) || !double.IsFinite(savedMaxHealth) ||
             savedMaxHealth < 1 || savedMaxHealth > 1000000 || savedHealth <= 0 || savedHealth > savedMaxHealth) {
             notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return;
         }
+        // Salvamentos anteriores não tinham inventário; conceder armas já ultrapassadas.
+        long savedOwned = (savedWeapon == 1 ? 3 : 1) | (savedRoom >= 1 ? 4 : 0);
+        if (file.HasSectionKey("player", "owned_weapons")) {
+            Variant value = file.GetValue("player", "owned_weapons");
+            if (value.VariantType != Variant.Type.Int) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
+            savedOwned = value.AsInt64();
+        }
+        if (savedOwned < 1 || savedOwned > 7 || (savedOwned & 1) == 0 || (savedOwned & (1 << (int)savedWeapon)) == 0) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
         StartGame();
         room = Mathf.Clamp((int)file.GetValue("player", "room", 0), 0, 2);
         level = Math.Max(1, (int)file.GetValue("player", "level", 1));
         xp = Math.Max(0, (int)file.GetValue("player", "xp", 0)); gold = Math.Max(0, (int)file.GetValue("player", "gold", 0));
         potions = Math.Max(0, (int)file.GetValue("player", "potions", 2)); damage = Math.Max(1, (int)file.GetValue("player", "damage", 25));
-        weaponLevel = Mathf.Clamp((int)file.GetValue("player", "weapon", 0), 0, 1);
+        weaponLevel = (int)savedWeapon; ownedWeapons = (int)savedOwned;
         maxHealth = Math.Max(1, (float)file.GetValue("player", "max_health", 100f));
         health = Mathf.Clamp((float)file.GetValue("player", "health", 100f), 1, maxHealth);
         SetupRoom();
@@ -112,7 +138,7 @@ public partial class Game : Node2D
     }
     private void Attack() {
         if (attackCooldown > 0) return;
-        attackCooldown = 0.33f; attackEffect = 0.17f;
+        attackCooldown = weaponLevel == 2 ? 0.23f : 0.33f; attackEffect = 0.17f;
         foreach (var enemy in enemies) {
             Vector2 offset = enemy.Pos - player;
             if (offset.Length() < (enemy.Boss ? 95 : 78) && (offset.Length() < 20 || facing.Dot(offset.Normalized()) > 0.1f)) { enemy.Hp -= damage; PushEnemy(enemy, facing * 15); }
@@ -137,6 +163,7 @@ public partial class Game : Node2D
     public override void _PhysicsProcess(double delta) {
         noticeTime = Math.Max(0, noticeTime - (float)delta);
         if (state != "playing") { QueueRedraw(); return; }
+        if (inventoryOpen) { QueueRedraw(); return; }
         float dt = (float)delta;
         skillCooldown = Math.Max(0, skillCooldown - dt); skillEffect = Math.Max(0, skillEffect - dt);
         attackCooldown = Math.Max(0, attackCooldown - dt); attackEffect = Math.Max(0, attackEffect - dt);
@@ -240,6 +267,17 @@ public partial class Game : Node2D
         if (noticeTime > 0) Text(notice, new Vector2(260, 175), 15, goldColor);
         if (state == "playing") Text($"R: redemoinho {(skillCooldown > 0 ? skillCooldown.ToString("0.0") + "s" : "pronto")}   I: arma   F5: salvar", new Vector2(570, 590), 12, text);
         if (enemies.Count == 0 && state == "playing") Text(loot.Count > 0 ? "RECOLHA OS ITENS NO CHÃO" : room == 2 ? "APROXIME-SE DO BAÚ E PRESSIONE E" : "SALA LIMPA: PORTA ABERTA", new Vector2(300, 145), 16, goldColor);
+        if (inventoryOpen && state == "playing") {
+            DrawRect(new Rect2(150, 155, 660, 330), new Color(0.04f, 0.05f, 0.05f, 0.96f));
+            Text("INVENTÁRIO  •  1–3 EQUIPAR  •  I FECHAR", new Vector2(190, 195), 18, goldColor);
+            for (int i = 0; i < WeaponNames.Length; i++) {
+                bool owned = (ownedWeapons & (1 << i)) != 0;
+                string status = !owned ? "NÃO ENCONTRADA" : i == weaponLevel ? "EQUIPADA" : "DISPONÍVEL";
+                string speed = i == 2 ? "RÁPIDA" : "NORMAL";
+                Text($"{i + 1}. {WeaponNames[i]}  |  +{WeaponBonuses[i]} DANO  |  {speed}  |  {status}", new Vector2(190, 245 + i * 53), 14, owned ? text : new Color("777777"));
+            }
+            Text($"DANO ATUAL: {damage}   OURO: {gold}", new Vector2(190, 435), 15, goldColor);
+        }
         if (state != "playing") {
             DrawRect(new Rect2(0, 0, 960, 640), new Color(0.025f, 0.03f, 0.035f, 0.92f));
             Text(state == "title" ? "SCADRYK RPG" : state == "victory" ? "VITÓRIA!" : "VOCÊ CAIU", new Vector2(330, 260), 38, goldColor);
