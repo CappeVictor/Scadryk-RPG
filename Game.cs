@@ -17,6 +17,7 @@ public partial class Game : Node2D
     private float runTime, damageTaken;
     private float health = 100, maxHealth = 100, attackCooldown, attackEffect, dashCooldown, dashTime, invulnerable, hitFlash;
     private string state = "title";
+    private Enemy lockedTarget;
     private string savePath = "user://scadryk-save.cfg";
     private int weaponLevel;
     private int ownedWeapons = 1;
@@ -40,7 +41,7 @@ public partial class Game : Node2D
         state = "playing"; SetupRoom();
     }
     private void SetupRoom() {
-        player = new Vector2(150, 330); enemies.Clear(); projectiles.Clear(); loot.Clear();
+        player = new Vector2(150, 330); enemies.Clear(); projectiles.Clear(); loot.Clear(); lockedTarget = null;
         int count = room == 0 ? 3 : room == 1 ? 5 : 4;
         for (int i = 0; i < count; i++) {
             bool boss = room == 2 && i == 0; bool archer = room > 0 && i == 1; bool mage = room == 2 && i == 2; bool elite = room == 1 && i == count - 1;
@@ -49,6 +50,14 @@ public partial class Game : Node2D
         }
     }
     public override void _UnhandledInput(InputEvent e) {
+        if (e is InputEventMouseButton mouse && mouse.Pressed && state == "playing" && !inventoryOpen && !talentChoice) {
+            Vector2 aim = GetGlobalMousePosition() - player;
+            if (aim.LengthSquared() > 0.001f) facing = aim.Normalized();
+            if (mouse.ButtonIndex == MouseButton.Left) Attack();
+            else if (mouse.ButtonIndex == MouseButton.Right) UseWhirlwind();
+            else return;
+            QueueRedraw(); return;
+        }
         if (e is not InputEventKey key || !key.Pressed || key.Echo) return;
         if (state == "chest_choice") {
             if (key.Keycode == Key.Key1) gold += 75;
@@ -85,6 +94,7 @@ public partial class Game : Node2D
                 break;
             case Key.R: UseWhirlwind(); break;
             case Key.F5: SaveGame(); break;
+            case Key.Tab: CycleTarget(); break;
             case Key.E:
                 if (enemies.Count == 0 && loot.Count > 0) { notice = "RECOLHA OS ITENS ANTES DE SAIR"; noticeTime = 3; }
                 else if (enemies.Count == 0 && room < 2 && player.DistanceTo(new Vector2(850, 330)) < 95) { room++; SetupRoom(); }
@@ -92,6 +102,17 @@ public partial class Game : Node2D
                 break;
         }
         QueueRedraw();
+    }
+    private void CycleTarget() {
+        if (enemies.Count == 0) { lockedTarget = null; notice = "NENHUM ALVO NA SALA"; noticeTime = 1.5f; return; }
+        int current = enemies.IndexOf(lockedTarget);
+        if (current >= 0) lockedTarget = enemies[(current + 1) % enemies.Count];
+        else {
+            lockedTarget = enemies[0];
+            foreach (Enemy enemy in enemies) if (enemy.Pos.DistanceSquaredTo(player) < lockedTarget.Pos.DistanceSquaredTo(player)) lockedTarget = enemy;
+        }
+        string name = lockedTarget.Boss ? "GUARDIÃO DA CRIPTA" : lockedTarget.Elite ? "ELITE" : lockedTarget.Mage ? "CONJURADOR" : lockedTarget.Archer ? "ARQUEIRO" : "INIMIGO";
+        notice = $"ALVO: {name}"; noticeTime = 1.5f;
     }
     private void EquipWeapon(int index) {
         if (index < 0 || index >= WeaponNames.Length || (ownedWeapons & (1 << index)) == 0) { notice = "ARMA AINDA NÃO ENCONTRADA"; noticeTime = 2; return; }
@@ -205,6 +226,10 @@ public partial class Game : Node2D
     }
     private void Attack() {
         if (attackCooldown > 0) return;
+        if (lockedTarget != null && enemies.Contains(lockedTarget)) {
+            Vector2 targetDirection = lockedTarget.Pos - player;
+            if (targetDirection.LengthSquared() > 0.001f) facing = targetDirection.Normalized();
+        }
         attackCooldown = weaponLevel == 2 ? 0.23f : 0.33f; attackEffect = 0.17f;
         foreach (var enemy in enemies) {
             Vector2 offset = enemy.Pos - player;
@@ -404,6 +429,7 @@ public partial class Game : Node2D
                 else { DrawLine(enemy.Pos, enemy.AttackTarget, new Color("e67b58"), 12); DrawCircle(enemy.AttackTarget, 42, new Color(0.9f, 0.35f, 0.25f, 0.35f)); }
             }
             DrawCircle(enemy.Pos, radius, enemy.Boss ? new Color("8f6459") : enemy.Elite ? new Color("a67dc0") : enemy.Mage ? new Color("8d72c7") : enemy.Archer ? new Color("8b9f75") : new Color("b7b5a6"));
+            if (ReferenceEquals(enemy, lockedTarget)) DrawArc(enemy.Pos, radius + 8, 0, Mathf.Tau, 32, new Color("f3d477"), 3, true);
             string role = enemy.Elite ? "ELITE" : enemy.Archer ? "ARQUEIRO" : enemy.Mage ? "CONJURADOR" : "";
             if (role.Length > 0) Text(role, enemy.Pos + new Vector2(-28, -31), 10, enemy.Elite ? new Color("d4a7e8") : enemy.Mage ? new Color("d7b6f0") : new Color("b9cc9f"));
             DrawCircle(enemy.Pos + new Vector2(-5, -4), 2.5f, new Color("bc5145")); DrawCircle(enemy.Pos + new Vector2(5, -4), 2.5f, new Color("bc5145"));
@@ -417,9 +443,15 @@ public partial class Game : Node2D
             }
         }
         foreach (var shot in projectiles) DrawCircle(shot.Pos, 5, new Color("e5ae69"));
-        foreach (var item in loot) {
-            DrawCircle(item.Pos, 8, item.Relic ? new Color("e7a4ed") : item.Armor ? new Color("72b9a3") : item.Weapon >= 0 ? new Color("719ede") : item.Potion ? new Color("d55857") : new Color("e6c181"));
-            Text(item.Relic ? "RELICÁRIO" : item.Armor ? "PEITORAL" : item.Weapon >= 0 ? WeaponNames[item.Weapon] + " [RARO]" : item.Potion ? "POÇÃO" : "OURO", item.Pos + new Vector2(-18, -12), 10, text);
+        for (int i = 0; i < loot.Count; i++) {
+            var item = loot[i];
+            Color itemColor = item.Relic ? new Color("e7a4ed") : item.Armor ? new Color("72b9a3") : item.Weapon >= 0 ? new Color("719ede") : item.Potion ? new Color("d55857") : new Color("e6c181");
+            int stack = 0;
+            for (int j = 0; j < i; j++) if (loot[j].Pos.DistanceTo(item.Pos) < 34) stack++;
+            DrawLine(item.Pos, item.Pos + new Vector2(0, -19), itemColor, 3);
+            DrawCircle(item.Pos, 8, itemColor);
+            string label = item.Relic ? "RELICÁRIO" : item.Armor ? "PEITORAL" : item.Weapon >= 0 ? WeaponNames[item.Weapon] + " [RARO]" : item.Potion ? "POÇÃO" : "OURO";
+            Text(label, item.Pos + new Vector2(-18, -15 - stack * 13), 10, itemColor);
         }
         DrawCircle(player, 16, hitFlash > 0 ? new Color("e88975") : new Color("6c8b8a")); DrawCircle(player + new Vector2(0, -5), 8, new Color("dfbd94"));
         DrawLine(player + facing * 8, player + facing * 24, new Color("e7d7b9"), 4);
@@ -427,9 +459,9 @@ public partial class Game : Node2D
         if (skillEffect > 0) DrawArc(player, 110, 0, Mathf.Tau, 48, new Color("edb96d"), 5, true);
         Text($"{room + 1} / 3    {rooms[room]}", new Vector2(68, 590), 14, text);
         string dashStatus = dashCooldown > 0 ? $"{dashCooldown:0.0}s" : "PRONTA";
-        Text($"WASD: mover   ESPAÇO: atacar   SHIFT: esquivar [{dashStatus}]   Q: poção   E: interagir", new Vector2(68, 618), 13, text);
+        Text($"WASD: mover   ESPAÇO/CLIQUE: atacar   SHIFT: esquivar [{dashStatus}]   Q: poção   E: interagir", new Vector2(68, 618), 12, text);
         if (noticeTime > 0) Text(notice, new Vector2(260, 175), 15, goldColor);
-        if (state == "playing") Text($"R: redemoinho {(skillCooldown > 0 ? skillCooldown.ToString("0.0") + "s" : "pronto")}   I: arma   F5: salvar", new Vector2(570, 590), 12, text);
+        if (state == "playing") Text($"R/CLIQUE DIREITO: redemoinho {(skillCooldown > 0 ? skillCooldown.ToString("0.0") + "s" : "pronto")}   TAB: alvo   I: inventário", new Vector2(438, 590), 11, text);
         if (enemies.Count == 0 && state == "playing") Text(loot.Count > 0 ? "RECOLHA OS ITENS NO CHÃO" : room == 2 ? "APROXIME-SE DO BAÚ E PRESSIONE E" : "SALA LIMPA: PORTA ABERTA", new Vector2(300, 145), 16, goldColor);
         if (inventoryOpen && state == "playing") {
             DrawRect(new Rect2(150, 145, 660, 360), new Color(0.04f, 0.05f, 0.05f, 0.96f));
