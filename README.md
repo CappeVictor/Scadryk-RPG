@@ -2,7 +2,7 @@
 
 Scadryk é um RPG de ação 2D em fantasia sombria, feito em C# com .NET 8 e Windows Forms. O desenho usa GDI+; o projeto não depende de Godot nem de outro motor de jogo. Diablo é uma referência de ritmo, combate e progressão. O mundo, os nomes e os itens de Scadryk são próprios. A meta de longo prazo é alcançar uma aventura de ação e loot 2D rica e rejogável, construída em etapas e sem copiar a história ou os personagens de outros jogos.
 
-O protótipo tem três salas, inimigos de funções distintas, um elite com afixação, um Guardião com duas fases, loot, equipamentos, níveis e talentos. Agora inclui um prólogo jogável e uma lembrança de Nara ao encontrar o fragmento do relicário. A campanha continua em desenvolvimento.
+O protótipo tem três salas de combate e a praça segura de Véspera, com inimigos de funções distintas, um elite com afixação, um Guardião com duas fases, loot, equipamentos, níveis e talentos. A campanha inclui prólogo, inscrições exploráveis, a primeira missão de Sileth e uma lembrança de Nara. As regiões seguintes continuam em desenvolvimento.
 
 ## História de Scadryk
 
@@ -12,7 +12,7 @@ Na noite em que todos os sinos de Véspera se calaram, pessoas começaram a esqu
 
 As pistas apontam para a Curadora Sileth, responsável pelos arquivos de Véspera. Ela apaga nomes de propósito: acredita que manter a história incompleta é o preço necessário para alimentar o farol e conter o Silêncio. A jornada colocará o protagonista diante de uma escolha difícil: preservar a proteção construída sobre esquecimentos ou devolver à cidade a verdade e enfrentar o que ela mantinha afastado.
 
-O prólogo já apresenta Véspera, o Escutador e a busca por Nara. Ao derrotar o Guardião e recolher o fragmento do relicário, o jogador ouve uma lembrança dela. O restante da campanha, incluindo Véspera como região explorável, Sileth e as escolhas sobre o Lume, ainda será implementado conforme as etapas do roadmap.
+O prólogo apresenta Véspera, o Escutador e a busca por Nara. Ao derrotar o Guardião e recolher o fragmento do relicário, o jogador ouve uma lembrança dela e segue até a praça de Véspera. Ali pode falar com Sileth, investigar o Livro das Ausências e receber a pista do Arquivo Norte. As próximas regiões e as escolhas sobre o Lume ainda serão implementadas conforme as etapas do roadmap.
 
 O universo, os personagens e o arco planejado estão detalhados em [STORY.md](STORY.md).
 
@@ -42,7 +42,7 @@ Para compilar uma versão de produção:
 dotnet build --configuration Release
 ```
 
-Para verificar o prólogo, as inscrições exploráveis, a lembrança do relicário, movimento, avisos de ataque, esquiva e progressão:
+Para verificar o prólogo, as inscrições, a missão em Véspera, o save narrativo, movimento, avisos de ataque, esquiva e progressão:
 
 ```powershell
 dotnet run -- --self-test
@@ -63,7 +63,7 @@ dotnet publish --configuration Release --runtime win-x64 --self-contained true
 | Shift ou K | Esquivar |
 | R ou clique direito | Redemoinho |
 | Q | Usar poção |
-| E | Escutar inscrições, abrir passagem ou interagir com o baú |
+| E | Escutar inscrições, falar/investigar em Véspera, abrir passagem ou interagir com o baú |
 | I | Abrir ou fechar inventário |
 | 1–3 no inventário | Equipar arma |
 | 4–5 no inventário | Alternar armadura e relíquia |
@@ -75,6 +75,8 @@ dotnet publish --configuration Release --runtime win-x64 --self-contained true
 | Enter | Começar ou reiniciar |
 
 Os ataques corpo a corpo comuns agora mostram a área de impacto antes do golpe. Saia do círculo para evitar dano. O movimento também desliza pela quina dos obstáculos quando uma direção fica bloqueada.
+
+Depois de escolher a recompensa do baú final, explore a praça de Véspera. Fale com Sileth, procure o Livro das Ausências e volte para conversar com ela. A passagem à esquerda retorna à cripta. Use **F5** na praça para salvar a etapa da missão.
 
 ## Salvamento
 
@@ -92,6 +94,7 @@ O save JSON fica em `%LOCALAPPDATA%\Scadryk\save.json` e guarda também as inscr
 ## Limites atuais
 
 Este é um protótipo com três salas e arte procedural desenhada em formas 2D. Ainda faltam campanha longa, mais chefes e builds, arte e áudio originais, animações, balanceamento amplo e testes manuais em diferentes resoluções. Não há medição de desempenho em máquinas variadas.
+
 
 
 

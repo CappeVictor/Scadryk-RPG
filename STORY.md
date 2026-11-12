@@ -1,7 +1,7 @@
 # História de Scadryk
 
 **Subtítulo de trabalho:** *Os Nomes do Rio Cego*  
-**Estado:** prólogo jogável e lembrança da cripta implementados; o restante da campanha está planejado.
+**Estado:** prólogo, masmorra inicial, praça de Véspera e missão introdutória de Sileth jogáveis; as próximas regiões e escolhas da campanha estão planejadas.
 
 ## Ideia central
 
@@ -19,6 +19,7 @@ O Lume protege a cidade, mas exige lembranças como combustível. A Curadora dos
 - **Nara:** irmã do protagonista. Sua lembrança aparece em fragmentos contraditórios; cada região revela algo sobre quem ela era e sobre o que escolheu fazer.
 - **O Guardião sem Nome:** protetor da cripta e antigo responsável por vigiar o Lume. Continua defendendo a passagem porque seu juramento sobreviveu à memória de seu próprio nome.
 - **Curadora Sileth:** arquivista que apaga nomes para manter o farol aceso. Não acredita estar fazendo o bem sem custo; acredita que todas as alternativas são piores.
+- **Edda:** tocadora dos sinos de Véspera. Percebeu que os nomes desapareceram das inscrições, embora os sinos continuem inteiros.
 - **O Silêncio de Baixo:** presença que se espalha quando uma memória é apagada. Não busca conquistar reinos: transforma pessoas em espaços vazios, incapazes de reconhecer a si mesmas ou umas às outras.
 
 ## Arco da campanha
@@ -31,7 +32,9 @@ Esse capítulo começa com três páginas de prólogo jogável. Depois de limpar
 
 ### Capítulo II — O arquivo das vidas ausentes
 
-De volta a Véspera, o jogador encontra moradores que recordam o afeto por alguém, mas não conseguem dizer quem era essa pessoa. Os registros oficiais contradizem as memórias das famílias. Ao reunir testemunhos e fragmentos de pedra, o protagonista descobre a função real do Lume e o papel de Sileth.
+Depois de sair da cripta, o jogador chega à praça segura de Véspera. Edda conta que os nomes sumiram dos sinos; Sileth pede que o protagonista examine o Livro das Ausências no posto da praça. O registro confirma que o Guardião entregou seu nome ao Lume e que Sileth assinou o fechamento do arquivo. Ao confrontá-la, ela admite ter escondido os registros e aponta o Arquivo Norte, além do Rio Cego, como próxima pista.
+
+Esse início do capítulo já é jogável: falar com Sileth, ler o livro e voltar a ela conclui uma missão curta e concede ouro e uma poção. A praça funciona como área segura e permite retornar à cripta. As regiões do Arquivo Norte e o restante da investigação ainda serão construídos.
 
 As escolhas deste trecho devem mudar quais aliados ajudam na descida e quais lembranças o jogador consegue recuperar. O combate acompanha a história: inimigos imitam rotinas interrompidas, em vez de apenas aumentarem de tamanho e vida.
 
@@ -45,8 +48,9 @@ No confronto final, o jogador decide o que fazer com o arquivo e com o Lume. Pod
 
 - A inspiração em Diablo fica no gênero e na ambição de combate, exploração, loot e progressão. Scadryk mantém mitologia, trama, personagens, criaturas, nomes e apresentação próprios.
 - O Guardião e a cripta já existem como protótipo de combate; as ligações com o Rio Cego e o Lume são ficção planejada para a campanha.
-- Somente o prólogo e a lembrança da cripta estão disponíveis no jogo; os demais diálogos, escolhas e finais são conteúdo planejado.
+- O prólogo, as duas inscrições da cripta, a praça, a missão inicial de Sileth e a lembrança do relicário estão disponíveis no jogo; o restante da campanha, as escolhas e os finais são conteúdo planejado.
 - Novos itens e poderes devem ter origem no mundo de Scadryk e revelar algo sobre quem os criou, usou ou esqueceu.
+
 
 
 
