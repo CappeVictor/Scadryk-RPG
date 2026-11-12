@@ -22,6 +22,7 @@ public partial class Game : Node2D
     private bool hasArmor, armorEquipped;
     private bool hasRelic, relicEquipped;
     private bool talentChoice;
+    private int pendingTalentChoices;
     private int healthTalent, skillTalent, dodgeTalent;
     private static readonly Rect2[] obstacles = { new Rect2(345, 235, 48, 90), new Rect2(565, 375, 58, 80) };
     private static readonly string[] WeaponNames = { "ESPADA COMUM", "LÂMINA RARA", "LÂMINA DO CREPÚSCULO" };
@@ -31,7 +32,7 @@ public partial class Game : Node2D
     private float skillCooldown, skillEffect;
     public override void _Ready() => QueueRedraw();
     private void StartGame() {
-        room = 0; level = 1; xp = 0; gold = 0; potions = 2; damage = 25; weaponLevel = 0; ownedWeapons = 1; inventoryOpen = false; hasArmor = armorEquipped = hasRelic = relicEquipped = false; talentChoice = false; healthTalent = skillTalent = dodgeTalent = 0;
+        room = 0; level = 1; xp = 0; gold = 0; potions = 2; damage = 25; weaponLevel = 0; ownedWeapons = 1; inventoryOpen = false; hasArmor = armorEquipped = hasRelic = relicEquipped = false; talentChoice = false; pendingTalentChoices = 0; healthTalent = skillTalent = dodgeTalent = 0;
         health = maxHealth = 100; attackCooldown = attackEffect = dashCooldown = dashTime = invulnerable = hitFlash = skillCooldown = skillEffect = 0;
         state = "playing"; SetupRoom();
     }
@@ -59,7 +60,8 @@ public partial class Game : Node2D
             else if (key.Keycode == Key.Key2) skillTalent++;
             else if (key.Keycode == Key.Key3) dodgeTalent++;
             else return;
-            talentChoice = false; QueueRedraw(); return;
+            pendingTalentChoices = Math.Max(0, pendingTalentChoices - 1);
+            talentChoice = pendingTalentChoices > 0; QueueRedraw(); return;
         }
         if (key.Keycode == Key.I) { inventoryOpen = !inventoryOpen; QueueRedraw(); return; }
         if (inventoryOpen) {
@@ -104,6 +106,7 @@ public partial class Game : Node2D
         noticeTime = 2;
     }
     private void SaveGame() {
+        if (talentChoice) { notice = "ESCOLHA SEU TALENTO ANTES DE SALVAR"; noticeTime = 3; return; }
         if (state != "victory" && enemies.Count != 0) { notice = "LIMPE A SALA ANTES DE SALVAR"; noticeTime = 3; return; }
         if (loot.Count != 0) { notice = "RECOLHA OS ITENS ANTES DE SALVAR"; noticeTime = 3; return; }
         var file = new ConfigFile();
@@ -182,7 +185,7 @@ public partial class Game : Node2D
         xp = Math.Max(0, (int)file.GetValue("player", "xp", 0)); gold = Math.Max(0, (int)file.GetValue("player", "gold", 0));
         potions = Math.Max(0, (int)file.GetValue("player", "potions", 2)); damage = Math.Max(1, (int)file.GetValue("player", "damage", 25));
         weaponLevel = (int)savedWeapon; ownedWeapons = (int)savedOwned; hasArmor = savedHasArmor; armorEquipped = savedArmorEquipped;
-        healthTalent = savedHealthTalent; skillTalent = savedSkillTalent; dodgeTalent = savedDodgeTalent; talentChoice = false; hasRelic = savedHasRelic; relicEquipped = savedRelicEquipped;
+        healthTalent = savedHealthTalent; skillTalent = savedSkillTalent; dodgeTalent = savedDodgeTalent; talentChoice = false; pendingTalentChoices = 0; hasRelic = savedHasRelic; relicEquipped = savedRelicEquipped;
         maxHealth = Math.Max(1, (float)file.GetValue("player", "max_health", 100f));
         health = Mathf.Clamp((float)file.GetValue("player", "health", 100f), 1, maxHealth);
         SetupRoom();
@@ -199,7 +202,7 @@ public partial class Game : Node2D
         attackCooldown = weaponLevel == 2 ? 0.23f : 0.33f; attackEffect = 0.17f;
         foreach (var enemy in enemies) {
             Vector2 offset = enemy.Pos - player;
-            if (offset.Length() < (enemy.Boss ? 95 : 78) && (offset.Length() < 20 || facing.Dot(offset.Normalized()) > 0.1f)) {
+            if (offset.Length() < (enemy.Boss ? 95 : 78) && (offset.Length() < 20 || facing.Dot(offset.Normalized()) > 0.1f) && !ProjectileBlocked(player, enemy.Pos)) {
                 bool critical = GD.Randf() < (weaponLevel == 2 ? 0.25f : 0.12f); int dealt = critical ? damage * 2 : damage;
                 enemy.Hp -= dealt; enemy.HitText = critical ? $"CRÍTICO! -{dealt}" : $"-{dealt}"; enemy.HitTextTime = 0.65f;
                 if (weaponLevel == 1) enemy.BleedTime = 3f;
@@ -231,6 +234,16 @@ public partial class Game : Node2D
         if (!Blocked(new Vector2(next.X, enemy.Pos.Y))) enemy.Pos.X = next.X;
         if (!Blocked(new Vector2(enemy.Pos.X, next.Y))) enemy.Pos.Y = next.Y;
         enemy.Pos.X = Mathf.Clamp(enemy.Pos.X, 85, 875); enemy.Pos.Y = Mathf.Clamp(enemy.Pos.Y, 128, 533);
+    }
+    private void SeparateFromPack(Enemy enemy, float dt) {
+        Vector2 separation = Vector2.Zero;
+        foreach (Enemy other in enemies) {
+            if (ReferenceEquals(enemy, other)) continue;
+            Vector2 away = enemy.Pos - other.Pos;
+            float distance = away.Length();
+            if (distance > 0.01f && distance < 44f) separation += away / distance * ((44f - distance) / 44f);
+        }
+        if (separation.LengthSquared() > 0.001f) MoveEnemy(enemy, separation.Normalized() * 58f * dt);
     }
     private bool ProjectileBlocked(Vector2 from, Vector2 to) {
         foreach (Rect2 obstacle in obstacles) {
@@ -291,14 +304,17 @@ public partial class Game : Node2D
                 if (enemy.Boss && !hasRelic) loot.Add(new Loot { Pos = enemy.Pos + new Vector2(-20, 0), Relic = true });
                 if (enemy.Elite && !hasArmor) loot.Add(new Loot { Pos = enemy.Pos + new Vector2(20, 0), Armor = true });
                 else if (!enemy.Boss && GD.Randf() < 0.18f) loot.Add(new Loot { Pos = enemy.Pos + new Vector2(18, 0), Potion = true });
-                if (xp >= level * 60) { xp -= level * 60; level++; damage += 5; talentChoice = true; }
+                while (xp >= level * 60) { xp -= level * 60; level++; damage += 5; pendingTalentChoices++; }
+                talentChoice = pendingTalentChoices > 0;
                 enemies.RemoveAt(i);
                 if (enemies.Count == 0 && room < 2) {
                     int found = room == 0 ? 2 : 1;
                     if ((ownedWeapons & (1 << found)) == 0) loot.Add(new Loot { Pos = enemy.Pos + new Vector2(-18, 0), Weapon = found });
                 }
+                if (talentChoice) { QueueRedraw(); return; }
                 continue;
             }
+            if (!enemy.Boss && enemy.Windup <= 0) SeparateFromPack(enemy, dt);
             enemy.Cooldown -= dt; Vector2 offset = player - enemy.Pos;
             if (enemy.Mage && enemy.Windup <= 0) {
                 if (offset.Length() < 170 && offset.LengthSquared() > 0) MoveEnemy(enemy, -offset.Normalized() * 48 * dt);
@@ -375,7 +391,8 @@ public partial class Game : Node2D
                 else { DrawLine(enemy.Pos, enemy.AttackTarget, new Color("e67b58"), 12); DrawCircle(enemy.AttackTarget, 42, new Color(0.9f, 0.35f, 0.25f, 0.35f)); }
             }
             DrawCircle(enemy.Pos, radius, enemy.Boss ? new Color("8f6459") : enemy.Elite ? new Color("a67dc0") : enemy.Mage ? new Color("8d72c7") : enemy.Archer ? new Color("8b9f75") : new Color("b7b5a6"));
-            if (enemy.Elite) Text("ELITE", enemy.Pos + new Vector2(-18, -31), 10, new Color("d4a7e8"));
+            string role = enemy.Elite ? "ELITE" : enemy.Archer ? "ARQUEIRO" : enemy.Mage ? "CONJURADOR" : "";
+            if (role.Length > 0) Text(role, enemy.Pos + new Vector2(-28, -31), 10, enemy.Elite ? new Color("d4a7e8") : enemy.Mage ? new Color("d7b6f0") : new Color("b9cc9f"));
             DrawCircle(enemy.Pos + new Vector2(-5, -4), 2.5f, new Color("bc5145")); DrawCircle(enemy.Pos + new Vector2(5, -4), 2.5f, new Color("bc5145"));
             if (enemy.HitTextTime > 0) Text(enemy.HitText, enemy.Pos + new Vector2(-22, -radius - 25), 11, enemy.HitText.StartsWith("CRÍTICO") ? new Color("ffd16f") : text);
             DrawRect(new Rect2(enemy.Pos.X - 22, enemy.Pos.Y - radius - 10, 44 * Math.Max(0, enemy.Hp / enemy.MaxHp), 4), new Color("b8584f"));
@@ -418,7 +435,7 @@ public partial class Game : Node2D
         }
         if (talentChoice && state == "playing") {
             DrawRect(new Rect2(185, 200, 590, 225), new Color(0.04f, 0.05f, 0.05f, 0.97f));
-            Text("SUBIU DE NÍVEL — ESCOLHA UMA MELHORIA", new Vector2(220, 238), 18, goldColor);
+            Text(pendingTalentChoices > 1 ? $"SUBIU DE NÍVEL — ESCOLHA UMA MELHORIA ({pendingTalentChoices} PENDENTES)" : "SUBIU DE NÍVEL — ESCOLHA UMA MELHORIA", new Vector2(220, 238), 18, goldColor);
             Text($"1. VIGOR  +20 VIDA MÁXIMA  (nível {healthTalent})", new Vector2(220, 290), 15, text);
             Text($"2. DOMÍNIO  Redemoinho recarrega mais rápido  (nível {skillTalent})", new Vector2(220, 330), 15, text);
             Text($"3. AGILIDADE  esquiva recarrega mais rápido  (nível {dodgeTalent})", new Vector2(220, 370), 15, text);
