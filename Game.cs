@@ -148,6 +148,8 @@ public partial class Game : Node2D
         file.SetValue("player", "has_relic", hasRelic); file.SetValue("player", "relic_equipped", relicEquipped);
         file.SetValue("player", "health_talent", healthTalent); file.SetValue("player", "skill_talent", skillTalent); file.SetValue("player", "dodge_talent", dodgeTalent);
         file.SetValue("player", "max_health", maxHealth);
+        file.SetValue("run", "enemies_defeated", enemiesDefeated); file.SetValue("run", "critical_hits", criticalHits);
+        file.SetValue("run", "potions_used", potionsUsed); file.SetValue("run", "elapsed", runTime); file.SetValue("run", "damage_taken", damageTaken);
         Error error = file.Save(savePath);
         notice = error == Error.Ok ? "PROGRESSO SALVO" : "ERRO AO SALVAR"; noticeTime = 3;
     }
@@ -169,6 +171,19 @@ public partial class Game : Node2D
             notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return;
         }
         if (file.HasSectionKey("player", "completed") && file.GetValue("player", "completed").VariantType != Variant.Type.Bool) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
+        string[] runCounters = { "enemies_defeated", "critical_hits", "potions_used" };
+        string[] runTotals = { "elapsed", "damage_taken" };
+        bool hasRunData = file.HasSectionKey("run", "enemies_defeated") || file.HasSectionKey("run", "critical_hits") || file.HasSectionKey("run", "potions_used") || file.HasSectionKey("run", "elapsed") || file.HasSectionKey("run", "damage_taken");
+        if (hasRunData) {
+            foreach (string key in runCounters) {
+                if (!file.HasSectionKey("run", key) || file.GetValue("run", key).VariantType != Variant.Type.Int || file.GetValue("run", key).AsInt64() < 0 || file.GetValue("run", key).AsInt64() > 1000000) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
+            }
+            foreach (string key in runTotals) {
+                if (!file.HasSectionKey("run", key)) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
+                Variant value = file.GetValue("run", key);
+                if ((value.VariantType != Variant.Type.Float && value.VariantType != Variant.Type.Int) || !double.IsFinite(value.AsDouble()) || value.AsDouble() < 0 || value.AsDouble() > 1000000000) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
+            }
+        }
         foreach (string key in new[] { "has_armor", "armor_equipped" }) if (file.HasSectionKey("player", key) && file.GetValue("player", key).VariantType != Variant.Type.Bool) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
         foreach (string key in new[] { "health_talent", "skill_talent", "dodge_talent" }) {
             if (file.HasSectionKey("player", key) && (file.GetValue("player", key).VariantType != Variant.Type.Int || file.GetValue("player", key).AsInt64() < 0 || file.GetValue("player", key).AsInt64() > 20)) { notice = "SALVAMENTO INVÁLIDO"; noticeTime = 3; return; }
@@ -210,6 +225,10 @@ public partial class Game : Node2D
         room = Mathf.Clamp((int)file.GetValue("player", "room", 0), 0, 2);
         level = Math.Max(1, (int)file.GetValue("player", "level", 1));
         xp = Math.Max(0, (int)file.GetValue("player", "xp", 0)); gold = Math.Max(0, (int)file.GetValue("player", "gold", 0));
+        if (hasRunData) {
+            enemiesDefeated = (int)file.GetValue("run", "enemies_defeated"); criticalHits = (int)file.GetValue("run", "critical_hits");
+            potionsUsed = (int)file.GetValue("run", "potions_used"); runTime = (float)file.GetValue("run", "elapsed").AsDouble(); damageTaken = (float)file.GetValue("run", "damage_taken").AsDouble();
+        }
         potions = Math.Max(0, (int)file.GetValue("player", "potions", 2)); damage = Math.Max(1, (int)file.GetValue("player", "damage", 25));
         weaponLevel = (int)savedWeapon; ownedWeapons = (int)savedOwned; hasArmor = savedHasArmor; armorEquipped = savedArmorEquipped;
         healthTalent = savedHealthTalent; skillTalent = savedSkillTalent; dodgeTalent = savedDodgeTalent; talentChoice = false; pendingTalentChoices = 0; hasRelic = savedHasRelic; relicEquipped = savedRelicEquipped;
@@ -340,6 +359,7 @@ public partial class Game : Node2D
                 while (xp >= level * 60) { xp -= level * 60; level++; damage += 5; pendingTalentChoices++; }
                 talentChoice = pendingTalentChoices > 0;
                 enemies.RemoveAt(i);
+                if (ReferenceEquals(enemy, lockedTarget)) lockedTarget = null;
                 if (enemies.Count == 0 && room < 2) {
                     int found = room == 0 ? 2 : 1;
                     if ((ownedWeapons & (1 << found)) == 0) loot.Add(new Loot { Pos = enemy.Pos + new Vector2(-18, 0), Weapon = found });
