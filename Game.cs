@@ -49,7 +49,9 @@ public partial class Game : Node2D
         QueueRedraw();
     }
     private void SaveGame() {
+        if (enemies.Count != 0) { notice = "LIMPE A SALA ANTES DE SALVAR"; noticeTime = 3; return; }
         var file = new ConfigFile();
+        file.SetValue("player", "room_cleared", true);
         file.SetValue("player", "room", room); file.SetValue("player", "level", level);
         file.SetValue("player", "xp", xp); file.SetValue("player", "gold", gold);
         file.SetValue("player", "potions", potions); file.SetValue("player", "damage", damage);
@@ -69,7 +71,9 @@ public partial class Game : Node2D
         weaponLevel = Mathf.Clamp((int)file.GetValue("player", "weapon", 0), 0, 1);
         maxHealth = Math.Max(1, (float)file.GetValue("player", "max_health", 100f));
         health = Mathf.Clamp((float)file.GetValue("player", "health", 100f), 1, maxHealth);
-        SetupRoom(); notice = "PROGRESSO CARREGADO: SALA REINICIADA"; noticeTime = 3;
+        SetupRoom();
+        if ((bool)file.GetValue("player", "room_cleared", false)) enemies.Clear();
+        notice = "PROGRESSO CARREGADO"; noticeTime = 3;
     }
     private void Attack() {
         if (attackCooldown > 0) return;
@@ -109,6 +113,7 @@ public partial class Game : Node2D
                 if (health <= 0) { health = 0; state = "dead"; }
             } else if (shot.Life <= 0 || shot.Pos.X < 65 || shot.Pos.X > 895 || shot.Pos.Y < 108 || shot.Pos.Y > 553) projectiles.RemoveAt(i);
         }
+        if (state != "playing") { QueueRedraw(); return; }
         for (int i = enemies.Count - 1; i >= 0; i--) {
             var enemy = enemies[i];
             if (enemy.Hp <= 0) {
@@ -133,6 +138,7 @@ public partial class Game : Node2D
                     health -= 22; invulnerable = 0.55f; hitFlash = 0.2f;
                     if (health <= 0) { health = 0; state = "dead"; }
                 }
+                if (state != "playing") break;
                 continue;
             }
             if (enemy.Boss && enemy.Cooldown <= 0 && offset.Length() < 100) {
@@ -143,6 +149,7 @@ public partial class Game : Node2D
                 enemy.Cooldown = enemy.Boss ? 1.1f : 1.35f;
                 if (invulnerable <= 0 && !dashing) { health -= enemy.Boss ? 18 : 10; invulnerable = 0.55f; hitFlash = 0.2f; if (health <= 0) { health = 0; state = "dead"; } }
             }
+            if (state != "playing") break;
         }
         QueueRedraw();
     }
