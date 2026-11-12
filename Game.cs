@@ -287,7 +287,8 @@ public partial class Game : Node2D
         if (attackEffect > 0) DrawArc(player, 56, facing.Angle() - 0.8f, facing.Angle() + 0.8f, 16, goldColor, 6, true);
         if (skillEffect > 0) DrawArc(player, 110, 0, Mathf.Tau, 48, new Color("edb96d"), 5, true);
         Text($"{room + 1} / 3    {rooms[room]}", new Vector2(68, 590), 14, text);
-        Text("WASD: mover   ESPAÇO: atacar   SHIFT: esquivar   Q: poção   E: interagir", new Vector2(68, 618), 13, text);
+        string dashStatus = dashCooldown > 0 ? $"{dashCooldown:0.0}s" : "PRONTA";
+        Text($"WASD: mover   ESPAÇO: atacar   SHIFT: esquivar [{dashStatus}]   Q: poção   E: interagir", new Vector2(68, 618), 13, text);
         if (noticeTime > 0) Text(notice, new Vector2(260, 175), 15, goldColor);
         if (state == "playing") Text($"R: redemoinho {(skillCooldown > 0 ? skillCooldown.ToString("0.0") + "s" : "pronto")}   I: arma   F5: salvar", new Vector2(570, 590), 12, text);
         if (enemies.Count == 0 && state == "playing") Text(loot.Count > 0 ? "RECOLHA OS ITENS NO CHÃO" : room == 2 ? "APROXIME-SE DO BAÚ E PRESSIONE E" : "SALA LIMPA: PORTA ABERTA", new Vector2(300, 145), 16, goldColor);
@@ -303,6 +304,7 @@ public partial class Game : Node2D
             }
             Text($"DANO ATUAL: {damage}   OURO: {gold}", new Vector2(190, 435), 15, goldColor);
             Text($"4. PEITORAL DE PEDRA  |  REDUZ DANO EM 30%  |  {(hasArmor ? armorEquipped ? "EQUIPADO" : "DISPONÍVEL" : "NÃO ENCONTRADO")}", new Vector2(190, 410), 14, hasArmor ? text : new Color("777777"));
+            Text($"PROTEÇÃO ATUAL: {(armorEquipped ? "30%" : "0%")}", new Vector2(190, 460), 14, new Color("9fd0bb"));
         }
         if (state != "playing") {
             DrawRect(new Rect2(0, 0, 960, 640), new Color(0.025f, 0.03f, 0.035f, 0.92f));
