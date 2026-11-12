@@ -5,6 +5,7 @@ Protótipo jogável de RPG de ação com visão superior e fantasia sombria, fei
 ## Conteúdo atual
 
 - Três salas de combate com inimigos comuns, arqueiros, elite, conjurador e Guardião da Cripta.
+- O elite usa um golpe de área anunciado por um marcador que encolhe durante a preparação, dando tempo para esquivar.
 - Combate corpo a corpo, acertos críticos, esquiva e habilidade Redemoinho.
 - Segunda fase do guardião abaixo de metade da vida, com ataques mais rápidos.
 - Barra de vida com alerta visual em vida baixa e indicador explícito da fase enfurecida do guardião.
