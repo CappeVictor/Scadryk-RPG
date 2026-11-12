@@ -31,14 +31,16 @@ Protótipo jogável de RPG de ação com visão superior e fantasia sombria, fei
 | --- | --- |
 | WASD ou setas | Mover |
 | Espaço ou J | Atacar |
+| Clique esquerdo | Atacar mirando na posição do cursor |
 | Shift ou K | Esquivar |
-| R | Redemoinho |
+| R ou clique direito | Redemoinho |
 | Q | Usar poção |
 | E | Abrir passagem ou interagir com o baú |
 | I | Abrir/fechar inventário |
 | 1–5 no inventário | Equipar arma, armadura ou relíquia |
 | F5 | Salvar progresso |
 | C na tela inicial | Carregar progresso salvo |
+| Tab | Selecionar/ciclar alvo; ataques se voltam ao alvo marcado |
 | 1, 2 ou 3 no baú final | Escolher ouro, poções ou recuperar a vida |
 
 Recolha os itens que caem antes de sair da sala. Na última câmara, derrote os inimigos, aproxime-se do baú e pressione **E**. O progresso é salvo em `user://scadryk-save.cfg`.
