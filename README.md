@@ -6,6 +6,7 @@ Protótipo jogável de RPG de ação com visão superior e fantasia sombria, fei
 
 - Três salas de combate com inimigos comuns, arqueiros, elite, conjurador e Guardião da Cripta.
 - O elite usa um golpe de área anunciado por um marcador que encolhe durante a preparação, dando tempo para esquivar.
+- O elite recebe uma afixação aleatória por partida: Frenético ataca mais rápido; Blindado suporta mais dano e aparece com um aro de proteção.
 - Combate corpo a corpo, acertos críticos, esquiva e habilidade Redemoinho.
 - Segunda fase do guardião abaixo de metade da vida, com ataques mais rápidos.
 - Barra de vida com alerta visual em vida baixa e indicador explícito da fase enfurecida do guardião.
@@ -65,6 +66,7 @@ Separar os sistemas em cenas e classes, substituir os gráficos provisórios por
 - [Diablo IV: leitura visual dos efeitos e ataques](https://news.blizzard.com/en-gb/article/23746639/diablo-iv-quarterly-updatedecember-2021): os sinais de combate devem continuar claros em meio aos efeitos.
 - [Diablo IV: ajustes de masmorras e redução de retrocesso](https://news.blizzard.com/en-us/article/24009151/descend-into-the-diablo-iv-developer-update-livestream): objetivos e rotas mais diretos ajudam a manter o ritmo da exploração.
 - [Diablo IV: identidade e comportamento dos inimigos](https://news.blizzard.com/en-us/article/24243142/sanctuary-ignites-with-itemization-systems-changes): cada tipo de inimigo ganha um papel reconhecível.
+- [Diablo IV: afixações de monstros](https://news.blizzard.com/en-us/article/23189677/diablo-iv-feature-overview): modificadores devem alterar a estratégia contra o inimigo, não apenas seus números; isso inspirou as variantes do elite.
 - [Last Epoch: melhorias de qualidade de vida e filtros de loot](https://forum.lastepoch.com/t/harbingers-of-ruin-quality-of-life-more/71756): informação de equipamento e filtros claros são boas referências para uma futura expansão do inventário.
 
 Essas referências orientam princípios gerais; Scadryk mantém personagens, mundo, itens e apresentação próprios.
