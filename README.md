@@ -7,6 +7,7 @@ Protótipo jogável de RPG de ação com visão superior e fantasia sombria, fei
 - Três salas de combate com inimigos comuns, arqueiros, elite, conjurador e Guardião da Cripta.
 - Combate corpo a corpo, acertos críticos, esquiva e habilidade Redemoinho.
 - Segunda fase do guardião abaixo de metade da vida, com ataques mais rápidos.
+- Barra de vida com alerta visual em vida baixa e indicador explícito da fase enfurecida do guardião.
 - Ouro, poções, experiência, níveis e escolhas de talentos.
 - Armas com atributos e efeitos próprios, armadura e relíquia equipáveis.
 - Itens deixados no chão, baú final com escolha de recompensa e salvamento local.
