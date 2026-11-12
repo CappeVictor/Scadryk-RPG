@@ -13,6 +13,8 @@ public partial class Game : Node2D
     private readonly string[] rooms = { "VESTÍBULO EM RUÍNAS", "SALÃO DOS OSSOS", "CÂMARA DO GUARDIÃO" };
     private Vector2 player = new(150, 330), facing = Vector2.Right;
     private int room, level = 1, xp, gold, potions = 2, damage = 25;
+    private int enemiesDefeated, criticalHits, potionsUsed;
+    private float runTime, damageTaken;
     private float health = 100, maxHealth = 100, attackCooldown, attackEffect, dashCooldown, dashTime, invulnerable, hitFlash;
     private string state = "title";
     private string savePath = "user://scadryk-save.cfg";
@@ -33,6 +35,7 @@ public partial class Game : Node2D
     public override void _Ready() => QueueRedraw();
     private void StartGame() {
         room = 0; level = 1; xp = 0; gold = 0; potions = 2; damage = 25; weaponLevel = 0; ownedWeapons = 1; inventoryOpen = false; hasArmor = armorEquipped = hasRelic = relicEquipped = false; talentChoice = false; pendingTalentChoices = 0; healthTalent = skillTalent = dodgeTalent = 0;
+        enemiesDefeated = criticalHits = potionsUsed = 0; runTime = damageTaken = 0;
         health = maxHealth = 100; attackCooldown = attackEffect = dashCooldown = dashTime = invulnerable = hitFlash = skillCooldown = skillEffect = 0;
         state = "playing"; SetupRoom();
     }
@@ -76,7 +79,10 @@ public partial class Game : Node2D
         switch (key.Keycode) {
             case Key.Space: case Key.J: Attack(); break;
             case Key.Shift: case Key.K: if (dashCooldown <= 0) { dashTime = 0.17f; dashCooldown = Math.Max(0.35f, 1.15f - dodgeTalent * 0.12f); } break;
-            case Key.Q: if (potions > 0 && health < maxHealth) { potions--; health = Math.Min(maxHealth, health + 45); } break;
+            case Key.Q:
+                if (potions > 0 && health < maxHealth) { potions--; potionsUsed++; health = Math.Min(maxHealth, health + 45); notice = "+45 VIDA"; noticeTime = 1.2f; }
+                else if (potions <= 0) { notice = "SEM POÇÕES"; noticeTime = 1.5f; }
+                break;
             case Key.R: UseWhirlwind(); break;
             case Key.F5: SaveGame(); break;
             case Key.E:
@@ -204,6 +210,7 @@ public partial class Game : Node2D
             Vector2 offset = enemy.Pos - player;
             if (offset.Length() < (enemy.Boss ? 95 : 78) && (offset.Length() < 20 || facing.Dot(offset.Normalized()) > 0.1f) && !ProjectileBlocked(player, enemy.Pos)) {
                 bool critical = GD.Randf() < (weaponLevel == 2 ? 0.25f : 0.12f); int dealt = critical ? damage * 2 : damage;
+                if (critical) criticalHits++;
                 enemy.Hp -= dealt; enemy.HitText = critical ? $"CRÍTICO! -{dealt}" : $"-{dealt}"; enemy.HitTextTime = 0.65f;
                 if (weaponLevel == 1) enemy.BleedTime = 3f;
                 PushEnemy(enemy, facing * 15);
@@ -287,17 +294,18 @@ public partial class Game : Node2D
             var shot = projectiles[i]; Vector2 previous = shot.Pos; shot.Pos += shot.Velocity * dt; shot.Life -= dt;
             if (ProjectileBlocked(previous, shot.Pos)) { projectiles.RemoveAt(i); continue; }
             if (shot.Pos.DistanceTo(player) < 18 && !dashing && invulnerable <= 0) {
-                health -= MitigatedDamage(9); invulnerable = 0.55f; hitFlash = 0.2f; projectiles.RemoveAt(i);
-                if (health <= 0) { health = 0; state = "dead"; }
+                TakeDamage(9); invulnerable = 0.55f; hitFlash = 0.2f; projectiles.RemoveAt(i);
             } else if (shot.Life <= 0 || shot.Pos.X < 65 || shot.Pos.X > 895 || shot.Pos.Y < 108 || shot.Pos.Y > 553) projectiles.RemoveAt(i);
         }
         if (talentChoice) { QueueRedraw(); return; }
         if (state != "playing") { QueueRedraw(); return; }
+        runTime += dt;
         for (int i = enemies.Count - 1; i >= 0; i--) {
             var enemy = enemies[i];
             enemy.HitTextTime = Math.Max(0, enemy.HitTextTime - dt);
             if (enemy.BleedTime > 0) { enemy.BleedTime = Math.Max(0, enemy.BleedTime - dt); enemy.Hp -= 2f * dt; }
             if (enemy.Hp <= 0) {
+                enemiesDefeated++;
                 loot.Add(new Loot { Pos = enemy.Pos, Amount = enemy.Boss ? 20 : enemy.Elite ? 15 : 6 });
                 if (relicEquipped) health = Math.Min(maxHealth, health + 5);
                 xp += enemy.Boss ? 45 : enemy.Elite ? 30 : 20;
@@ -336,8 +344,7 @@ public partial class Game : Node2D
                 bool targetedStrike = enemy.Mage || enemy.Elite || enemy.BossPattern == 1;
                 if (enemy.Windup <= 0 && (targetedStrike ? player.DistanceTo(enemy.AttackTarget) < strikeDistance : offset.Length() < strikeDistance) && invulnerable <= 0 && !dashing) {
                     float incomingDamage = enemy.Mage ? 16 : enemy.Elite ? 20 : enemy.BossPattern == 0 ? 22 : 30;
-                    health -= MitigatedDamage(incomingDamage); invulnerable = 0.55f; hitFlash = 0.2f;
-                    if (health <= 0) { health = 0; state = "dead"; }
+                    TakeDamage(incomingDamage); invulnerable = 0.55f; hitFlash = 0.2f;
                 }
                 if (state != "playing") break;
                 continue;
@@ -354,13 +361,19 @@ public partial class Game : Node2D
             if (offset.Length() > (enemy.Boss ? 39 : 30)) MoveEnemy(enemy, offset.Normalized() * (enemy.Boss ? 58 : 76 + room * 8) * dt);
             else if (enemy.Cooldown <= 0) {
                 enemy.Cooldown = enemy.Boss ? 1.1f : 1.35f;
-                if (invulnerable <= 0 && !dashing) { health -= MitigatedDamage(enemy.Boss ? 18 : enemy.Elite ? 14 : 10); invulnerable = 0.55f; hitFlash = 0.2f; if (health <= 0) { health = 0; state = "dead"; } }
+                if (invulnerable <= 0 && !dashing) { TakeDamage(enemy.Boss ? 18 : enemy.Elite ? 14 : 10); invulnerable = 0.55f; hitFlash = 0.2f; }
             }
             if (state != "playing") break;
         }
         QueueRedraw();
     }
     private float MitigatedDamage(float incoming) => armorEquipped ? incoming * 0.7f : incoming;
+    private void TakeDamage(float incoming) {
+        float applied = Math.Min(health, MitigatedDamage(incoming));
+        damageTaken += applied;
+        health = Math.Max(0, health - applied);
+        if (health <= 0) state = "dead";
+    }
     private void Text(string s, Vector2 p, int size, Color c) => DrawString(ThemeDB.FallbackFont, p, s, HorizontalAlignment.Left, -1, size, c);
     public override void _Draw() {
         Color goldColor = new("e6c181"), text = new("ded8c9");
@@ -450,6 +463,11 @@ public partial class Game : Node2D
         if (state != "playing" && state != "chest_choice") {
             DrawRect(new Rect2(0, 0, 960, 640), new Color(0.025f, 0.03f, 0.035f, 0.92f));
             Text(state == "title" ? "SCADRYK RPG" : state == "victory" ? "VITÓRIA!" : "VOCÊ CAIU", new Vector2(330, 260), 38, goldColor);
+            if (state == "victory" || state == "dead") {
+                int elapsed = (int)runTime;
+                Text($"INIMIGOS {enemiesDefeated}   CRÍTICOS {criticalHits}   POÇÕES {potionsUsed}", new Vector2(300, 320), 16, text);
+                Text($"TEMPO {elapsed / 60:00}:{elapsed % 60:00}   DANO RECEBIDO {damageTaken:0}", new Vector2(315, 350), 15, text);
+            }
             Text(state == "victory" ? "F5 PARA SALVAR • ENTER PARA RECOMEÇAR" : "ENTER PARA COMEÇAR", new Vector2(300, 370), 18, text);
             if (state == "title") Text("C PARA CARREGAR JOGO", new Vector2(350, 395), 16, text);
             if (noticeTime > 0) Text(notice, new Vector2(300, 460), 15, text);
