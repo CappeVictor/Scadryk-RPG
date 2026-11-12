@@ -35,7 +35,8 @@ Se ocorrer um erro de compilação, confira se instalou o **SDK** .NET, reinicie
 | E | Interagir com a porta ou o baú |
 | Enter ou Espaço | Começar ou reiniciar |
 | R | Redemoinho (dano em área) |
-| I | Ver arma e dano |
+| I | Abrir ou fechar inventário |
+| 1, 2 ou 3 no inventário | Equipar uma arma encontrada |
 | F5 após limpar a sala | Salvar progresso |
 | C na tela inicial | Carregar progresso |
 
@@ -63,7 +64,7 @@ Otimizações devem ser guiadas por medições de desempenho, começando pelos p
 
 Scadryk busca a atmosfera sombria, o combate de ação e a busca por equipamentos presentes nos RPGs de ação modernos, incluindo Diablo como referência. A identidade, os personagens, os cenários e os itens serão próprios. A meta é evoluir por etapas: primeiro validar combate e progressão, depois criar classes, loot variado, habilidades e masmorras mais ricas.
 
-A arma rara é equipada automaticamente ao sair da segunda sala; I mostra a arma atual. O salvamento é manual e só está disponível após limpar a sala. Salvamentos antigos, criados antes dessa regra, ainda reiniciam os inimigos ao carregar. Não há inventário completo ainda.
+Ao sair das duas primeiras salas, o jogador encontra novas armas. Pressione I para abrir o inventário e 1, 2 ou 3 para equipar uma arma encontrada. A lâmina do crepúsculo ataca mais rápido; a lâmina rara oferece mais dano. O jogo pausa enquanto o inventário está aberto. O salvamento é manual e só está disponível após limpar a sala. Salvamentos antigos, criados antes dessa regra, ainda reiniciam os inimigos ao carregar. O inventário inicial contém três armas; armaduras, descarte e itens aleatórios ainda não foram implementados.
 
 Recolha todos os itens da sala antes de salvar ou passar pela porta, para que nenhuma recompensa seja perdida.
 
