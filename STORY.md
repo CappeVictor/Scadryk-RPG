@@ -1,7 +1,7 @@
 # História de Scadryk
 
 **Subtítulo de trabalho:** *Os Nomes do Rio Cego*  
-**Estado:** prólogo, cripta, Véspera, Arquivo Norte, Rio Cego, Lume, Margem sem Reflexo, Reservatório, costa, Claustro, Bacia do Primeiro Nome, Vau, Refúgio, Cisterna, Várzea, Ponte da Maré Invertida, Cotovelo dos Juncais, Pátio das Amarras Livres, Moinhos da Vazante, Câmara do Veio Preso, Escarpa do Contrafluxo e Coração das Duas Margens, Cantaria das Vozes Livres, Câmara da Contravoz, Garganta do Vidro Mudo e Fonte sob a Pedra jogáveis. O paradeiro atual de Nara, o nome que ela escolheu e o destino final do Lume continuam sem resposta.
+**Estado:** prólogo, cripta, Véspera, Arquivo Norte, Rio Cego, Lume, Margem sem Reflexo, Reservatório, costa, Claustro, Bacia do Primeiro Nome, Vau, Refúgio, Cisterna, Várzea, Ponte da Maré Invertida, Cotovelo dos Juncais, Pátio das Amarras Livres, Moinhos da Vazante, Câmara do Veio Preso, Escarpa do Contrafluxo e Coração das Duas Margens, Cantaria das Vozes Livres, Câmara da Contravoz, Garganta do Vidro Mudo e Fonte sob a Pedra, Passagem das Lanternas Baixas e Observatório da Maré Interior jogáveis. O paradeiro atual de Nara, o nome que ela escolheu e o destino final do Lume continuam sem resposta.
 
 ## Ideia central
 
@@ -160,3 +160,11 @@ Depois de aprender o Coro de Retorno, o Escutador ouve uma resposta sob a corren
 A Garganta do Vidro Mudo conduz à Fonte sob a Pedra. O Arauto de Vidro tenta reunir os sons num único compasso e protege a nascente como se toda passagem precisasse deixar um registro. Seu ciclo anuncia três ataques: uma expansão circular ao redor do próprio corpo, uma marca curta que acompanha o Escutador e um golpe comprido em linha reta. Ler o aviso e mudar de posição abre espaço para contra-atacar.
 
 Quando o Arauto cai, a fonte devolve os passos sem nomes, rostos ou direções. A lembrança pode ser compartilhada com Aven, que oferece ouro, sal vítreo e provisões à comunidade. A fissura não pertence ao mapa de Nara e não revela sua identidade atual, seu paradeiro ou se deseja voltar. O Capítulo XIII acrescenta duas salas de combate, um chefe com três padrões, uma memória persistente e uma nova etapa de história original.
+
+### Capítulo XIV — A luz que espera
+
+O relato da fonte não fecha a trilha. Quando Aven o guarda, percebe um som antigo sob o Refúgio: a Passagem das Lanternas Baixas leva a um observatório construído em torno de uma maré subterrânea. As lanternas foram viradas para dentro e agora refletem lembranças como se fossem destinos fixos. Essa fissura não aparece no mapa de Nara e não prova que ela ou seu grupo passaram por ali.
+
+O Regente das Lanternas protege o espelho interior. Seus três avisos de ataque pedem respostas diferentes: afastar-se da expansão em torno do chefe, sair da marca que segue o Escutador e cruzar a linha comprida antes que ela se feche. Ao cair, o Regente deixa um sinal e sal vítreo. A memória mostra apenas uma luz mantida acesa para quem, um dia, decida voltar; não revela nomes, rostos, rotas ou destinos.
+
+Aven guarda o sinal sem acrescentar uma direção ao mapa comunitário. Como recompensa, ensina o Farol de Vigília: uma chama portátil que permanece no lugar por alguns segundos e pulsa contra ecos próximos. Ela ajuda a sustentar uma posição durante o combate, mas não persegue alvos nem escolhe um caminho pelo jogador. O capítulo acrescenta duas salas, um chefe de três padrões, uma lembrança persistente e uma sexta técnica equipável; a vontade e o paradeiro de Nara continuam desconhecidos.
