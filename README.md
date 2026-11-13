@@ -2,7 +2,7 @@
 
 Scadryk é um RPG de ação 2D em fantasia sombria, feito em C# com .NET 8 e Windows Forms. O desenho usa GDI+; o projeto não depende de Godot nem de outro motor de jogo. Diablo é uma referência de ritmo, combate e progressão. O mundo, os nomes e os itens de Scadryk são próprios. A meta de longo prazo é alcançar uma aventura de ação e loot 2D rica e rejogável, construída em etapas e sem copiar a história ou os personagens de outros jogos.
 
-O protótipo tem onze salas de combate e a praça segura de Véspera, com inimigos de funções distintas, cinco chefes com ataques em fases, loot, equipamentos, níveis e talentos. A campanha jogável inclui o prólogo, inscrições exploráveis, missões de Sileth e Edda, o Arquivo Norte, o Rio Cego, a Câmara do Lume e o Reservatório das Vozes. O Selo revela que o farol escolhe nomes para consumir; o Sino confirma que Nara cruzou o rio por vontade própria; o Prisma mostra que ela aceitou carregar lembranças recusadas; além do Lume, o Nome Vazio protege uma memória que ela deixou para Véspera. A busca por Nara e as escolhas finais continuam em desenvolvimento.
+O protótipo tem onze salas de combate e a praça segura de Véspera, com inimigos de funções distintas, cinco chefes com ataques em fases, loot, equipamentos, níveis e talentos. A campanha jogável inclui o prólogo, inscrições exploráveis, missões de Sileth e Edda, o Arquivo Norte, o Rio Cego, a Câmara do Lume e o Reservatório das Vozes. O Selo revela que o farol escolhe nomes para consumir; o Sino confirma que Nara cruzou o rio por vontade própria; o Prisma mostra que ela aceitou carregar lembranças recusadas; além do Lume, o Nome Vazio protege uma memória que ela deixou para Véspera. A busca por Nara além do reservatório e a escolha final continuam em desenvolvimento; uma primeira decisão que muda Véspera e a progressão já está jogável.
 
 ## História de Scadryk
 
@@ -12,7 +12,7 @@ Na noite em que todos os sinos de Véspera se calaram, pessoas começaram a esqu
 
 As pistas apontam para a Curadora Sileth, responsável pelos arquivos de Véspera. Ela apaga nomes de propósito: acredita que manter a história incompleta é o preço necessário para alimentar o farol e conter o Silêncio. A jornada colocará o protagonista diante de uma escolha difícil: preservar a proteção construída sobre esquecimentos ou devolver à cidade a verdade e enfrentar o que ela mantinha afastado.
 
-O prólogo apresenta Véspera, o Escutador e a busca por Nara. Ao derrotar o Guardião e recolher o fragmento do relicário, siga até a praça. Fale com Sileth, investigue o Livro das Ausências e entre no Arquivo Norte pelo portão ao norte. Derrote o Escriba Cego e leve o selo a Sileth. Depois, desça pelo portão ao sul, vença o Barqueiro Oco e mostre o Sino de Nara a Edda. Volte à mesma passagem para descer pela escada de cinzas. Atravesse a galeria, enfrente o Guardião das Cinzas na Câmara do Lume e leve o prisma de volta a Sileth. Retorne à câmara e procure a passagem no chão abaixo do prisma. Cruze a Margem sem Reflexo, derrote O Nome Vazio e recolha a lembrança. Volte a Véspera pelo portão à direita e conte a Sileth o que Nara deixou. A busca e as escolhas sobre o Lume continuam em desenvolvimento.
+O prólogo apresenta Véspera, o Escutador e a busca por Nara. Ao derrotar o Guardião e recolher o fragmento do relicário, siga até a praça. Fale com Sileth, investigue o Livro das Ausências e entre no Arquivo Norte pelo portão ao norte. Derrote o Escriba Cego e leve o selo a Sileth. Depois, desça pelo portão ao sul, vença o Barqueiro Oco e mostre o Sino de Nara a Edda. Volte à mesma passagem para descer pela escada de cinzas. Atravesse a galeria, enfrente o Guardião das Cinzas na Câmara do Lume e leve o prisma de volta a Sileth. Retorne à câmara e procure a passagem no chão abaixo do prisma. Cruze a Margem sem Reflexo, derrote O Nome Vazio e recolha a lembrança. Volte a Véspera pelo portão à direita e conte a Sileth o que Nara deixou. Depois, fale com ela novamente para escolher o futuro imediato da cidade. Escolha **1** para devolver os nomes à cidade ou **2** para manter o Lume; **3** adia a decisão. Cada caminho altera a praça, concede um bônus próprio e fica registrado no save. Esta é a primeira decisão da campanha; a busca por Nara e o destino final do Lume continuam em desenvolvimento.
 
 O universo, os personagens e o arco planejado estão detalhados em [STORY.md](STORY.md).
 
@@ -68,7 +68,7 @@ dotnet publish --configuration Release --runtime win-x64 --self-contained true
 | 1–3 no inventário | Equipar arma |
 | 4–5 no inventário | Alternar armadura e relíquia |
 | 6 no inventário | Alternar talismãs encontrados |
-| 1–3 ao subir de nível | Escolher talento |
+| 1–3 ao subir de nível | Escolher talento ou responder quando Sileth apresentar uma decisão |
 | Tab | Trocar alvo |
 | Enter, Espaço ou clique na introdução | Avançar o prólogo e a lembrança |
 | F5 | Salvar depois de limpar a sala e recolher o loot |
@@ -83,7 +83,7 @@ Depois de escolher a recompensa do baú da cripta, explore a praça de Véspera.
 
 ## Salvamento
 
-O save JSON fica em `%LOCALAPPDATA%\Scadryk\save.json` e guarda inscrições, etapas das missões, o Selo da Vigília, o Sino de Nara, o Prisma do Lume, os talismãs encontrados e o talismã equipado. Na tela inicial, pressione **C** para carregar. Se não houver um save novo, o jogo também procura o ConfigFile da versão anterior em `%APPDATA%\Godot\app_userdata\Scadryk RPG\scadryk-save.cfg` e migra os dados encontrados para o formato JSON.
+O save JSON fica em `%LOCALAPPDATA%\Scadryk\save.json` e guarda inscrições, etapas das missões, o Selo da Vigília, o Sino de Nara, o Prisma do Lume, os talismãs encontrados, o talismã equipado e a primeira decisão de Véspera. Na tela inicial, pressione **C** para carregar. Se não houver um save novo, o jogo também procura o ConfigFile da versão anterior em `%APPDATA%\Godot\app_userdata\Scadryk RPG\scadryk-save.cfg` e migra os dados encontrados para o formato JSON.
 
 ## Estrutura
 

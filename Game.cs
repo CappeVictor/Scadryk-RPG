@@ -49,6 +49,7 @@ public sealed class Game : Form
         public bool NaraTrace { get; set; }
         public int OwnedCharms { get; set; }
         public int EquippedCharm { get; set; }
+        public int TownEnding { get; set; }
     }
 
     private static readonly RectangleF[] Walls = { new(345, 235, 48, 90), new(565, 375, 58, 80) };
@@ -91,7 +92,8 @@ public sealed class Game : Form
     private bool lumeLens;
     private bool naraTrace;
     private float health = 100, maxHealth = 100, attackCd, skillCd, dashCd, dashTime, invulnerable, noticeTime, windupPulse;
-    private bool armor, armorOn, relic, relicOn, inventoryOpen, title = true, dead, victory, talentChoice, chestChoice, storyOverlay, memoryOverlay;
+    private bool armor, armorOn, relic, relicOn, inventoryOpen, title = true, dead, victory, talentChoice, chestChoice, storyOverlay, memoryOverlay, endingChoiceOpen;
+    private int townEnding;
     private int storyPage;
     private string notice = "";
     private string memoryTitle = "";
@@ -120,7 +122,8 @@ public sealed class Game : Form
     private void StartGame()
     {
         room = 0; level = 1; xp = gold = damage = 0; damage = 25; potions = 2; weapon = 0; ownedWeapons = 1;
-        armor = armorOn = relic = relicOn = archiveSeal = riverBell = lumeLens = naraTrace = inventoryOpen = dead = victory = chestChoice = talentChoice = memoryOverlay = false;
+        armor = armorOn = relic = relicOn = archiveSeal = riverBell = lumeLens = naraTrace = inventoryOpen = dead = victory = chestChoice = talentChoice = memoryOverlay = endingChoiceOpen = false;
+        townEnding = 0;
         healthTalent = skillTalent = dodgeTalent = pendingTalents = enemiesDefeated = memoriesFound = questStage = 0;
         clearedRooms = 0;
         ownedCharms = equippedCharm = 0;
@@ -156,6 +159,23 @@ public sealed class Game : Form
         notice = questStage == 0 ? "NOVO OBJETIVO: FALE COM SILETH" : "OBJETIVO ATUALIZADO"; noticeTime = 3.5f;
     }
 
+    private void ChooseTownEnding(int choice)
+    {
+        if (questStage < 12 || townEnding != 0 || choice is < 1 or > 2) return;
+        townEnding = choice; questStage = 13; endingChoiceOpen = false;
+        if (choice == 1)
+        {
+            maxHealth += 20; health = maxHealth;
+            ShowMemory("VÉSPERA DEVOLVE OS NOMES", "Sileth abre os arquivos e lê cada nome em voz alta. Os sinos respondem um a um. O Lume enfraquece, e o Silêncio volta a se mover sob o rio; ninguém mais enfrentará essa ameaça sozinho. Edda promete manter os nomes nos sinos. A praça oferece abrigo e coragem: vida máxima +20.");
+        }
+        else
+        {
+            damage += 10;
+            ShowMemory("VÉSPERA MANTÉM O LUME", "Sileth conserva a barreira e registra o preço sem apagar o que foi perdido. Edda toca os sinos para que a cidade não confunda proteção com esquecimento. A luz do Lume marca a arma do Escutador: dano +10. Os arquivos ficam abertos, mesmo sob a luz antiga.");
+        }
+        notice = "DECISÃO DE VÉSPERA REGISTRADA • SALVE COM F5"; noticeTime = 4;
+    }
+
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
         down.Add(e.KeyCode);
@@ -165,6 +185,7 @@ public sealed class Game : Form
         if (title || dead || victory) return;
         if (storyOverlay) { if (e.KeyCode is Keys.Enter or Keys.Space) AdvanceStory(); return; }
         if (memoryOverlay) { if (e.KeyCode is Keys.Enter or Keys.Space) memoryOverlay = false; return; }
+        if (endingChoiceOpen) { if (e.KeyCode == Keys.D1) ChooseTownEnding(1); else if (e.KeyCode == Keys.D2) ChooseTownEnding(2); else if (e.KeyCode == Keys.D3) endingChoiceOpen = false; return; }
         if (chestChoice) { if (e.KeyCode == Keys.D1) gold += 75; else if (e.KeyCode == Keys.D2) potions += 2; else if (e.KeyCode == Keys.D3) health = maxHealth; else return; chestChoice = false; EnterVesper(); return; }
         if (talentChoice) { SelectTalent(e.KeyCode); return; }
         if (e.KeyCode == Keys.I) { inventoryOpen = !inventoryOpen; return; }
@@ -240,7 +261,7 @@ public sealed class Game : Form
     private void TickGame()
     {
         float dt = timer.Interval / 1000f; noticeTime = Math.Max(0, noticeTime - dt); attackCd = Math.Max(0, attackCd - dt); skillCd = Math.Max(0, skillCd - dt); dashCd = Math.Max(0, dashCd - dt); dashTime = Math.Max(0, dashTime - dt); invulnerable = Math.Max(0, invulnerable - dt); windupPulse += dt;
-        if (title || dead || victory || storyOverlay || memoryOverlay || inventoryOpen || talentChoice || chestChoice) { Invalidate(); return; }
+        if (title || dead || victory || storyOverlay || memoryOverlay || inventoryOpen || talentChoice || chestChoice || endingChoiceOpen) { Invalidate(); return; }
         PointF dir = new((down.Contains(Keys.D) || down.Contains(Keys.Right) ? 1 : 0) - (down.Contains(Keys.A) || down.Contains(Keys.Left) ? 1 : 0), (down.Contains(Keys.S) || down.Contains(Keys.Down) ? 1 : 0) - (down.Contains(Keys.W) || down.Contains(Keys.Up) ? 1 : 0));
         dir = Normalize(dir, PointF.Empty); if (dashTime > 0) dir = facing;
         MovePlayer(Scale(dir, (dashTime > 0 ? 530 : 190) * dt));
@@ -333,14 +354,16 @@ public sealed class Game : Form
             else if (questStage == 4) { questStage = 5; gold += 65; potions++; ShowMemory("A VOZ QUE ESCOLHE", "Nara deixou uma prova de que o Lume não é apenas uma defesa. Ele começou a escolher quais nomes consome. Não posso mais esconder isso. Vou reunir a cidade; você precisa seguir o rastro dela até o leito do Rio Cego."); notice = "MISSÃO CONCLUÍDA: 65 OURO E 1 POÇÃO"; noticeTime = 3; }
             else if (questStage == 9) { questStage = 10; gold += 120; potions++; ShowMemory("O NOME QUE O LUME GUARDA", "O prisma confirma que Nara aceitou ser portadora das lembranças recusadas pelo Lume. Os arquivos não dizem se ela está viva, morta ou fundida à luz. Não vamos decidir seu destino com base em mais uma página incompleta. Reúna as memórias que faltam; quando chegar a hora, Véspera precisa escolher sabendo o preço."); notice = "MISSÃO CONCLUÍDA: 120 OURO E 1 POÇÃO"; noticeTime = 3; }
             else if (questStage == 11 && naraTrace) { questStage = 12; gold += 150; potions++; ShowMemory("A VOZ DE QUEM AINDA LEMBRA", "Nara deixou uma memória fora do alcance do farol. Ela ensinava os esquecidos a dizer os nomes uns dos outros, sem pedir que alguém a salvasse. Sileth: “Passei a vida escolhendo o que Véspera podia lembrar. Agora a cidade terá de escolher por si. Ainda faltam vozes; não vou fechar o arquivo outra vez.”"); notice = "MISSÃO CONCLUÍDA: 150 OURO E 1 POÇÃO"; noticeTime = 3; }
-            else if (questStage >= 12) ShowMemory("CURADORA SILETH", "O rastro de Nara segue além do reservatório, para terras que os mapas de Véspera não registram. Encontre as vozes que faltam antes de decidir o destino do Lume.");
+            else if (questStage >= 12 && townEnding == 0) { endingChoiceOpen = true; notice = "VÉSPERA ESPERA SUA DECISÃO • 1 OU 2"; noticeTime = 3; }
+            else if (townEnding == 1) ShowMemory("CURADORA SILETH", "Os nomes voltaram aos sinos. A praça está com você, mas as vozes além do reservatório ainda faltam. Vamos procurá-las sem fechar o arquivo outra vez.");
+            else if (townEnding == 2) ShowMemory("CURADORA SILETH", "O Lume continua aceso e os arquivos permanecem abertos. O Silêncio não desapareceu; siga o rastro para além do reservatório antes que a cidade dependa de novo de nomes apagados.");
             else ShowMemory("CURADORA SILETH", "O rastro de Nara segue pelo leito do Rio Cego. Com o sino de Edda, a passagem abaixo da capela pode ser aberta.");
             return;
         }
         if (Distance(player, BellKeeperPosition) < 58)
         {
             if (questStage == 6 && riverBell) { questStage = 7; gold += 100; potions++; ShowMemory("EDDA RECONHECE O SINO", "Esse era o sino de travessia do meu pai. Nara o levou quando desceu ao rio; ela conhecia o caminho e decidiu cruzá-lo. Não foi capturada. Guarde o sino: se ela voltar, vai saber que ainda lembramos seu nome."); notice = "MISSÃO CONCLUÍDA: 100 OURO E 1 POÇÃO"; noticeTime = 3; }
-            else ShowMemory("EDDA, TOCADORA DE SINOS", "Os sinos continuam inteiros. O que sumiu foram os nomes gravados neles. Quando tento lembrar quem os fundiu, só escuto água debaixo da praça.");
+            else if (townEnding == 1) ShowMemory("EDDA, TOCADORA DE SINOS", "Os nomes voltaram às badaladas. Vou ensinar as crianças a ler cada sino, para que ninguém precise adivinhar quem foi esquecido."); else if (townEnding == 2) ShowMemory("EDDA, TOCADORA DE SINOS", "Os sinos agora marcam as horas do Lume. Não vou deixar que a luz transforme proteção em silêncio outra vez."); else ShowMemory("EDDA, TOCADORA DE SINOS", "Os sinos continuam inteiros. O que sumiu foram os nomes gravados neles. Quando tento lembrar quem os fundiu, só escuto água debaixo da praça.");
             return;
         }
         if (Distance(player, ArchiveBookPosition) < 58)
@@ -405,7 +428,7 @@ public sealed class Game : Form
         return false;
     }
 
-    private SaveData CaptureSaveData() => new() { Room = room, Level = level, Xp = xp, Gold = gold, Potions = potions, Damage = damage, Health = health, MaxHealth = maxHealth, Weapon = weapon, OwnedWeapons = ownedWeapons, Armor = armor, Relic = relic, HealthTalent = healthTalent, SkillTalent = skillTalent, DodgeTalent = dodgeTalent, RoomCleared = room == 3 || enemies.Count == 0 && drops.Count == 0, Completed = victory, MemoriesFound = memoriesFound, QuestStage = questStage, ClearedRooms = clearedRooms | (room != 3 && enemies.Count == 0 && drops.Count == 0 ? 1 << room : 0), ArchiveSeal = archiveSeal, RiverBell = riverBell, LumeLens = lumeLens, NaraTrace = naraTrace, OwnedCharms = ownedCharms, EquippedCharm = equippedCharm };
+    private SaveData CaptureSaveData() => new() { Room = room, Level = level, Xp = xp, Gold = gold, Potions = potions, Damage = damage, Health = health, MaxHealth = maxHealth, Weapon = weapon, OwnedWeapons = ownedWeapons, Armor = armor, Relic = relic, HealthTalent = healthTalent, SkillTalent = skillTalent, DodgeTalent = dodgeTalent, RoomCleared = room == 3 || enemies.Count == 0 && drops.Count == 0, Completed = victory, MemoriesFound = memoriesFound, QuestStage = questStage, ClearedRooms = clearedRooms | (room != 3 && enemies.Count == 0 && drops.Count == 0 ? 1 << room : 0), ArchiveSeal = archiveSeal, RiverBell = riverBell, LumeLens = lumeLens, NaraTrace = naraTrace, OwnedCharms = ownedCharms, EquippedCharm = equippedCharm, TownEnding = townEnding };
     private void SaveGame() { Directory.CreateDirectory(Path.GetDirectoryName(SavePath)!); File.WriteAllText(SavePath, JsonSerializer.Serialize(CaptureSaveData())); notice = "PROGRESSO SALVO"; noticeTime = 2; }
     private string LegacySavePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Godot", "app_userdata", "Scadryk RPG", "scadryk-save.cfg");
     private SaveData ReadLegacySave()
@@ -425,8 +448,8 @@ public sealed class Game : Form
         try
         {
             bool migrated = !File.Exists(SavePath); SaveData s = migrated ? ReadLegacySave() : JsonSerializer.Deserialize<SaveData>(File.ReadAllText(SavePath)) ?? throw new InvalidDataException();
-            if (s.Room is < 0 or > 11 || s.Level is < 1 or > 10000 || s.Xp < 0 || s.Xp >= s.Level * 60 || s.Weapon is < 0 or > 2 || s.OwnedWeapons < 1 || s.OwnedWeapons > 7 || (s.OwnedWeapons & (1 << s.Weapon)) == 0 || s.MaxHealth < 1 || s.Health <= 0 || s.Health > s.MaxHealth || s.Potions < 0 || s.Gold < 0 || s.Damage < 1 || s.MemoriesFound is < 0 or > 3 || s.QuestStage is < 0 or > 12 || s.ClearedRooms is < 0 or > 4095 || s.Completed && s.Room != 2 || s.OwnedCharms is < 0 or > 7 || s.EquippedCharm is < 0 or > 3 || s.EquippedCharm > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm - 1))) == 0) throw new InvalidDataException();
-            StartGame(); room = s.Room; level = s.Level; xp = s.Xp; gold = s.Gold; potions = s.Potions; damage = s.Damage; health = s.Health; maxHealth = s.MaxHealth; weapon = s.Weapon; ownedWeapons = s.OwnedWeapons; armor = s.Armor; relic = s.Relic; healthTalent = s.HealthTalent; skillTalent = s.SkillTalent; dodgeTalent = s.DodgeTalent; memoriesFound = s.MemoriesFound; questStage = s.QuestStage; clearedRooms = s.ClearedRooms | (s.RoomCleared && s.Room != 3 ? 1 << s.Room : 0); archiveSeal = s.ArchiveSeal; riverBell = s.RiverBell; lumeLens = s.LumeLens; naraTrace = s.NaraTrace; ownedCharms = s.OwnedCharms; equippedCharm = s.EquippedCharm; SetupRoom(); if (s.RoomCleared) enemies.Clear(); victory = s.Completed; title = false; storyOverlay = false;
+            if (s.Room is < 0 or > 11 || s.Level is < 1 or > 10000 || s.Xp < 0 || s.Xp >= s.Level * 60 || s.Weapon is < 0 or > 2 || s.OwnedWeapons < 1 || s.OwnedWeapons > 7 || (s.OwnedWeapons & (1 << s.Weapon)) == 0 || s.MaxHealth < 1 || s.Health <= 0 || s.Health > s.MaxHealth || s.Potions < 0 || s.Gold < 0 || s.Damage < 1 || s.MemoriesFound is < 0 or > 3 || s.QuestStage is < 0 or > 13 || s.ClearedRooms is < 0 or > 4095 || s.Completed && s.Room != 2 || s.OwnedCharms is < 0 or > 7 || s.EquippedCharm is < 0 or > 3 || s.EquippedCharm > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm - 1))) == 0 || s.TownEnding is < 0 or > 2 || s.QuestStage == 13 && s.TownEnding == 0) throw new InvalidDataException();
+            StartGame(); room = s.Room; level = s.Level; xp = s.Xp; gold = s.Gold; potions = s.Potions; damage = s.Damage; health = s.Health; maxHealth = s.MaxHealth; weapon = s.Weapon; ownedWeapons = s.OwnedWeapons; armor = s.Armor; relic = s.Relic; healthTalent = s.HealthTalent; skillTalent = s.SkillTalent; dodgeTalent = s.DodgeTalent; memoriesFound = s.MemoriesFound; questStage = s.QuestStage; clearedRooms = s.ClearedRooms | (s.RoomCleared && s.Room != 3 ? 1 << s.Room : 0); archiveSeal = s.ArchiveSeal; riverBell = s.RiverBell; lumeLens = s.LumeLens; naraTrace = s.NaraTrace; ownedCharms = s.OwnedCharms; equippedCharm = s.EquippedCharm; townEnding = s.TownEnding; SetupRoom(); if (s.RoomCleared) enemies.Clear(); victory = s.Completed; title = false; storyOverlay = false;
             if (migrated) SaveGame(); notice = migrated ? "SAVE ANTIGO MIGRADO" : "PROGRESSO CARREGADO"; noticeTime = 2;
         }
         catch { notice = "NENHUM SALVAMENTO VÁLIDO"; noticeTime = 2; }
@@ -470,6 +493,7 @@ public sealed class Game : Form
         if (inventoryOpen) DrawInventory(g);
         if (talentChoice) DrawChoice(g, $"SUBIU DE NÍVEL — ESCOLHA ({pendingTalents} PENDENTES)", "1. VIGOR  +20 VIDA MÁXIMA", "2. DOMÍNIO  Redemoinho recarrega mais rápido", "3. AGILIDADE  esquiva recarrega mais rápido");
         if (chestChoice) DrawChoice(g, "BAÚ DA CRIPTA — ESCOLHA UMA RECOMPENSA", "1. 75 OURO", "2. DUAS POÇÕES", "3. RECUPERAR TODA A VIDA");
+        if (endingChoiceOpen) DrawChoice(g, "O QUE VÉSPERA DEVE LEMBRAR?", "1. DEVOLVER OS NOMES  •  +20 VIDA MÁXIMA", "2. MANTER O LUME  •  +10 DANO", "3. ADIAR A DECISÃO");
         if (storyOverlay) DrawStoryOverlay(g);
         if (memoryOverlay) DrawMemoryOverlay(g);
     }
@@ -487,7 +511,8 @@ public sealed class Game : Form
         9 => "OBJETIVO: MOSTRE O PRISMA DO LUME A SILETH",
         10 => "OBJETIVO: DESÇA ALÉM DO PRISMA",
         11 => "OBJETIVO: MOSTRE A NOVA MEMÓRIA A SILETH",
-        12 => "PRÓXIMO DESTINO: ENCONTRE AS VOZES QUE FALTAM",
+        12 => "OBJETIVO: DECIDA COM SILETH O QUE VÉSPERA DEVE LEMBRAR",
+        13 => townEnding == 1 ? "OS NOMES VOLTARAM • A BUSCA SEGUE ALÉM DO RESERVATÓRIO" : "O LUME PERMANECE • A BUSCA SEGUE ALÉM DO RESERVATÓRIO",
         _ => "PRÓXIMO DESTINO: REÚNA AS MEMÓRIAS QUE FALTAM"
     };
 
@@ -500,8 +525,9 @@ public sealed class Game : Form
         using var trim = new Pen(Color.FromArgb(159, 139, 101), 2);
         g.FillRectangle(road, 345, 274, 315, 118); g.FillRectangle(road, 430, 242, 116, 210);
         g.FillEllipse(plaza, 424, 290, 128, 92); g.DrawEllipse(trim, 424, 290, 128, 92);
-        using var water = new SolidBrush(Color.FromArgb(88, 142, 145));
+        using var water = new SolidBrush(townEnding == 1 ? Color.FromArgb(123, 180, 153) : townEnding == 2 ? Color.FromArgb(183, 132, 77) : Color.FromArgb(88, 142, 145));
         g.FillEllipse(water, 458, 315, 60, 42); g.DrawEllipse(trim, 458, 315, 60, 42);
+        if (townEnding != 0) DrawCentered(g, townEnding == 1 ? "OS NOMES VOLTARAM" : "O LUME PERMANECE", 402, new Font("Segoe UI", 9, FontStyle.Bold), townEnding == 1 ? Color.LightGreen : Color.PeachPuff);
         DrawTownHouse(g, TownBuildings[0], "FERRARIA"); DrawTownHouse(g, TownBuildings[1], "ARQUIVO");
         DrawTownHouse(g, TownBuildings[2], "CASAS"); DrawTownHouse(g, TownBuildings[3], "ARMAZÉM");
         using var gateBrush = new SolidBrush(Color.FromArgb(116, 100, 70)); using var gatePen = new Pen(Color.FromArgb(220, 189, 125), 3);
@@ -847,6 +873,18 @@ public sealed class Game : Form
         if (lootGame.equippedCharm != 3 || lootGame.CriticalChance() <= 0.12f || lootGame.CriticalMultiplier() <= 2f || lootGame.BasicAttackCooldown() <= 0.33f) throw new InvalidOperationException("O Vidro de Vigília não alterou os ataques críticos.");
         SaveData charmSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(lootGame.CaptureSaveData()))!;
         if (charmSave.OwnedCharms != 7 || charmSave.EquippedCharm != 3) throw new InvalidOperationException("Os talismãs não foram serializados no save.");
+        using var restoreGame = new Game(); restoreGame.timer.Stop(); restoreGame.StartGame(); restoreGame.storyOverlay = false; restoreGame.room = 3; restoreGame.questStage = 12; restoreGame.naraTrace = true; restoreGame.player = CuratorPosition;
+        restoreGame.InteractTown(); if (!restoreGame.endingChoiceOpen) throw new InvalidOperationException("Sileth não abriu a primeira decisão de Véspera.");
+        restoreGame.OnKeyDown(null, new KeyEventArgs(Keys.D3)); if (restoreGame.endingChoiceOpen) throw new InvalidOperationException("A decisão não pôde ser adiada.");
+        restoreGame.InteractTown(); restoreGame.OnKeyDown(null, new KeyEventArgs(Keys.D1));
+        if (restoreGame.townEnding != 1 || restoreGame.questStage != 13 || restoreGame.maxHealth != 120 || !restoreGame.memoryOverlay) throw new InvalidOperationException("Restituir os nomes não alterou a praça e a progressão.");
+        SaveData restoreSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(restoreGame.CaptureSaveData()))!;
+        if (restoreSave.TownEnding != 1 || restoreSave.QuestStage != 13) throw new InvalidOperationException("A decisão de devolver os nomes não foi salva.");
+        using var lumeGame = new Game(); lumeGame.timer.Stop(); lumeGame.StartGame(); lumeGame.storyOverlay = false; lumeGame.room = 3; lumeGame.questStage = 12; lumeGame.naraTrace = true; lumeGame.player = CuratorPosition;
+        lumeGame.InteractTown(); lumeGame.OnKeyDown(null, new KeyEventArgs(Keys.D2));
+        if (lumeGame.townEnding != 2 || lumeGame.questStage != 13 || lumeGame.damage != 35 || !lumeGame.memoryOverlay) throw new InvalidOperationException("Manter o Lume não criou seu ramo e seu bônus próprios.");
+        SaveData lumeSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(lumeGame.CaptureSaveData()))!;
+        if (lumeSave.TownEnding != 2 || lumeSave.QuestStage != 13) throw new InvalidOperationException("A decisão de manter o Lume não foi salva.");
         game.room = 11; game.SetupRoom();
         if (game.enemies.Count != 0 || game.drops.Count != 0) throw new InvalidOperationException("O Reservatório foi recriado após ter sido limpo.");
         game.room = 3; game.SetupRoom();

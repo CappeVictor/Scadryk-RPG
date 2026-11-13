@@ -10,7 +10,7 @@ Quando os sinos de Véspera se calam, seus moradores começam a esquecer nomes e
 
 A investigação leva à Curadora Sileth, guardiã dos arquivos. Ela remove nomes para manter o farol aceso e acredita que a verdade pode libertar a ameaça que dorme abaixo da cidade. O conflito central não será derrotar um mal sem rosto: será decidir se Véspera deve continuar protegida por uma história mutilada ou recuperar suas memórias e enfrentar as consequências.
 
-O prólogo, a cripta inicial e sua lembrança já iniciam essa narrativa. A praça segura de Véspera é explorável e leva ao Arquivo Norte, ao leito do Rio Cego e à escada de cinzas sob a Capela Afogada. O Selo da Vigília revela que o Lume escolhe nomes para consumir; o sino mostra que Nara atravessou o rio por vontade própria. Na Câmara do Lume, o prisma confirma que ela aceitou carregar as lembranças que o farol não consegue guardar. Sua localização e o destino da cidade seguem sem resposta; as escolhas ainda serão implementadas junto com a campanha.
+O prólogo, a cripta inicial e sua lembrança já iniciam essa narrativa. A praça segura de Véspera é explorável e leva ao Arquivo Norte, ao leito do Rio Cego e à escada de cinzas sob a Capela Afogada. O Selo da Vigília revela que o Lume escolhe nomes para consumir; o sino mostra que Nara atravessou o rio por vontade própria. Na Câmara do Lume, o prisma confirma que ela aceitou carregar as lembranças que o farol não consegue guardar. Sua localização e o destino da cidade seguem sem resposta. A primeira decisão da cidade agora é jogável: devolver os nomes ou sustentar o Lume, alterando a praça, um bônus de progressão e os diálogos de Sileth e Edda; a escolha fica no save.
 
 O documento de história com cenário, personagens e resumo dos três capítulos está em [STORY.md](STORY.md).
 
@@ -34,14 +34,14 @@ O documento de história com cenário, personagens e resumo dos três capítulos
 ## Próximas etapas
 
 1. **Consolidar a base C#** — manter compilação Windows e smoke tests, conferir save novo e migração do save antigo.
-2. **Transformar a premissa em campanha** — seguir o rastro de Nara além do reservatório, revelar por que o Silêncio de Baixo cresce e dar ao jogador escolhas que afetem Nara, Sileth, Edda e Véspera.
+2. **Transformar a premissa em campanha** — expandir a primeira decisão de Véspera, seguir o rastro de Nara além do reservatório e revelar por que o Silêncio de Baixo cresce.
 3. **Aprofundar combate** — mais ataques legíveis, esquiva consistente, inimigos com funções distintas e balanceamento por sala.
 4. **Expandir loot e builds** — adicionar níveis de raridade, comparação de equipamento, mais espaços e efeitos que combinem entre si.
 5. **Criar masmorras e narrativa ambiental** — novas regiões, rotas, arquivos, eventos e chefes cujas mecânicas reforcem a história.
-6. **Dar forma à escolha final** — permitir que as decisões do jogador alterem Véspera e o destino do Lume de Vigília.
+6. **Concluir a escolha final** — mostrar como as decisões acumuladas alteram Véspera, Nara, aliados e o destino do Lume de Vigília.
 7. **Finalizar apresentação e distribuição** — arte e áudio originais, animações, acessibilidade, builds self-contained e testes em Windows.
 
-Cada etapa deve compilar, incluir uma validação adequada e registrar as limitações conhecidas. O protótipo atual já tem cinco expedições jogáveis, mas ainda não tem o volume de conteúdo de Diablo; essa escala exige desenvolvimento continuado.
+Cada etapa deve compilar, incluir uma validação adequada e registrar as limitações conhecidas. A primeira decisão ramificada da campanha já muda o estado persistente de Véspera. O protótipo atual tem cinco expedições jogáveis, mas ainda precisa de regiões, builds e conteúdo no volume de um RPG de ação longo; essa escala exige desenvolvimento continuado.
 
 
 
