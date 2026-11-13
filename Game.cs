@@ -123,7 +123,7 @@ public sealed class Game : Form
     private PointF beaconPos;
     private readonly string[] roomNames = { "VESTÍBULO EM RUÍNAS", "SALÃO DOS OSSOS", "CÂMARA DO GUARDIÃO", "VÉSPERA • PRAÇA DO FAROL", "ARQUIVO NORTE • GALERIA", "ARQUIVO NORTE • COFRE", "RIO CEGO • LEITO SECO", "RIO CEGO • CAPELA AFOGADA", "FAROL • ESCADA DE CINZAS", "FAROL • CÂMARA DO LUME", "ALÉM DO LUME • MARGEM SEM REFLEXO", "RESERVATÓRIO • VOZES RETIDAS", "COSTA DAS VOZES TARDIAS", "CLAUSTRO DO CORO PARTIDO", "BACIA DO PRIMEIRO NOME", "SALA DA PRIMEIRA VIGÍLIA", "VAU DOS NOMES ESCOLHIDOS", "PÁTIO DAS TESTEMUNHAS", "REFÚGIO DO VEIO CALMO", "TRILHA DOS LUMINÁRIOS", "CISTERNA DO REGISTRO VAZIO", "VÁRZEA DAS VOZES SOPRADAS", "PONTE DA MARÉ INVERTIDA", "COTOVELO DOS JUNCAIS", "PÁTIO DAS AMARRAS LIVRES", "MOINHOS DA VAZANTE", "CÂMARA DO VEIO PRESO", "ESCARPA DO CONTRAFLUXO", "CORAÇÃO DAS DUAS MARGENS", "CANTARIA DAS VOZES LIVRES", "CÂMARA DA CONTRAVOZ", "GARGANTA DO VIDRO MUDO", "FONTE SOB A PEDRA", "PASSAGEM DAS LANTERNAS BAIXAS", "OBSERVATÓRIO DA MARÉ INTERIOR" };
     private readonly string[] weaponNames = { "ESPADA DE PEDRA", "LÂMINA DO ARQUIVO", "FACA DO CREPÚSCULO" };
-    private readonly string[] charmNames = { "", "NÓ DE BRASA", "FIO DE TRAVESSIA", "VIDRO DE VIGÍLIA", "MARCA DA VIGÍLIA", "FIO DA MARGEM" };
+    private readonly string[] charmNames = { "", "NÓ DE BRASA", "FIO DE TRAVESSIA", "VIDRO DE VIGÍLIA", "MARCA DA VIGÍLIA", "FIO DA MARGEM", "NÓ DE LUME" };
     private readonly string[] skillNames = { "Vazio", "Estilhaço de Voz", "Ressonância do Sino", "Vazante", "Manto de Lastro", "Coro de Retorno", "Farol de Vigília" };
     private readonly string[] skillDescriptions = { "", "Projétil perfurante de longo alcance", "Onda que fere e interrompe ecos", "Agrupa ecos próximos", "Reduz o dano recebido por 2,5 s", "Onda que fere e interrompe ecos", "Planta um farol que pulsa contra inimigos próximos" };
     private readonly string[] prologue = {
@@ -427,19 +427,20 @@ public sealed class Game : Form
     }
 
     private float BeaconCooldown() => Math.Max(13f, 22f - skillTalent * 0.9f) * WeaponCooldownMultiplier();
+    private float BeaconTotalCooldown() => BeaconCooldown() + (HasCharm(6) ? 3.5f : 0f);
     private void CastBeacon()
     {
         if (!beaconLight) { notice = "O FAROL DE VIGÍLIA AINDA NÃO FOI APRENDIDO"; noticeTime = 1.5f; return; }
         if (room is 3 or 18 || enemies.Count == 0 || beaconCd > 0) return;
-        beaconPos = player; beaconTime = 6f; beaconPulseCd = 0.15f; beaconWaveTime = 0;
-        beaconCd = BeaconCooldown(); notice = "FAROL DE VIGÍLIA • LUZ PORTÁTIL ATIVA"; noticeTime = 1.6f;
+        beaconPos = player; beaconTime = HasCharm(6) ? 8f : 6f; beaconPulseCd = 0.15f; beaconWaveTime = 0;
+        beaconCd = BeaconTotalCooldown(); notice = HasCharm(6) ? "FAROL DE VIGÍLIA • PAVIO REFORÇADO" : "FAROL DE VIGÍLIA • LUZ PORTÁTIL ATIVA"; noticeTime = 1.6f;
     }
     private void TickBeacon(float dt)
     {
         if (beaconTime <= 0) return;
         beaconTime = Math.Max(0, beaconTime - dt); beaconPulseCd -= dt; beaconWaveTime = Math.Max(0, beaconWaveTime - dt);
         if (beaconPulseCd > 0) return;
-        beaconPulseCd = 1.1f; beaconWaveTime = 0.38f;
+        beaconPulseCd = HasCharm(6) ? 0.85f : 1.1f; beaconWaveTime = 0.38f;
         foreach (Enemy enemy in enemies.ToArray())
         {
             if (Distance(beaconPos, enemy.Pos) > 128) continue;
@@ -531,6 +532,7 @@ public sealed class Game : Form
         if (enemy.Kind == EnemyKind.RiftCantor && !riftVerse) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "verse" });
         if (enemy.Kind == EnemyKind.GlassHerald && !deepTrace) { drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "deep" }); drops.Add(new Drop { Pos = Offset(enemy.Pos, 24, 0), Kind = "glass", Amount = 5 }); }
         if (enemy.Kind == EnemyKind.LanternRegent && !lanternSignal) { drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "signal" }); drops.Add(new Drop { Pos = Offset(enemy.Pos, 24, 0), Kind = "glass", Amount = 6 }); }
+        if (enemy.Kind == EnemyKind.LanternRegent && (ownedCharms & 32) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 0, -26), Kind = "charm", Amount = 6 });
         if (enemy.Kind == EnemyKind.SaltEcho && random.NextDouble() < 0.2) drops.Add(new Drop { Pos = Offset(enemy.Pos, 18, 14), Kind = "glass", Amount = 1 });
         if (enemy.Kind == EnemyKind.FirstKeeper && (ownedCharms & 8) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 24, -12), Kind = "charm", Amount = 4 });
         if (enemy.Kind == EnemyKind.OathCartographer && (ownedCharms & 16) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 24, -12), Kind = "charm", Amount = 5 });
@@ -599,7 +601,7 @@ public sealed class Game : Form
     {
         if (item.Kind == "deep") { deepTrace = true; questStage = 42; notice = "MEMÓRIA: A PEDRA QUE NÃO GUARDA NOMES"; ShowMemory("A PEDRA QUE NÃO GUARDA NOMES", "A fonte não ecoa nenhuma voz antiga. Ela repete o som de passos que chegaram até aqui e escolheram partir sem deixar registro. O Guardião tentava reunir os sons numa única história; a pedra se abre quando cada passo volta a ter seu próprio ritmo. A lembrança não identifica quem passou nem para onde foi."); drops.Remove(item); return; }
         if (item.Kind == "signal") { lanternSignal = true; questStage = 45; notice = "SINAL: A LUZ QUE ESPERA"; ShowMemory("A LUZ QUE ESPERA", "O Regente mantinha as lanternas voltadas para dentro, prendendo cada viajante ao reflexo de quem já foi. Quando a luz se abre, elas não revelam rostos nem caminhos: apenas deixam uma chama acesa para quem decidir voltar. A fonte guarda a promessa, não a identidade nem o destino de quem passou."); drops.Remove(item); return; }
-        switch (item.Kind) { case "gold": gold += item.Amount; notice = $"+{item.Amount} OURO"; break; case "potion": potions++; notice = "+1 POÇÃO"; break; case "glass": tideGlass = Math.Min(999, tideGlass + item.Amount); notice = $"+{item.Amount} SAL VÍTREO"; break; case "weapon": if (item.Amount is < 1 or > 2) { drops.Remove(item); return; } weaponRarities[item.Amount] = item.Rarity; weaponBonuses[item.Amount] = item.Bonus; weaponAffixes[item.Amount] = item.Affix; ownedWeapons |= 1 << item.Amount; notice = $"ARMA {WeaponRarityName(weaponRarities[item.Amount])}: {WeaponDisplayName(item.Amount)}"; break; case "ebb": questStage = 32; notice = "MEMÓRIA: O VEIO LIVRE"; ShowMemory("A CORRENTE NÃO É UMA ROTA", "O vigia mantinha o fluxo preso num único giro. Quando o canal se abre, a água volta a mudar de direção conforme a cheia. Aven poderá ensinar o Escutador a chamar a vazante sem obrigar ninguém a segui-la. A gravação termina antes de indicar para onde foram os viajantes."); break; case "counter": counterTrace = true; questStage = 35; notice = "MEMÓRIA: O COMPASSO DAS MARGENS"; ShowMemory("O AFINADOR DAS MARGENS", "O Afinador não guardava um mapa. Regulava a força que mantém os dois lados do rio em equilíbrio; alguém o convenceu de que só um fluxo constante poderia proteger a comunidade. Ao ceder, o mecanismo volta a alternar entre impulso e retorno. A gravação não contém nome, rota nem notícia de Nara."); break; case "verse": riftVerse = true; questStage = 39; notice = "MEMÓRIA: A NOTA QUE NÃO MANDA"; ShowMemory("A NOTA QUE NÃO MANDA", "O eco mostra vozes diferentes sustentando a mesma ponte sonora sem se fundirem. Uma contravoz tenta fixá-las numa nota só; quando cede, a cantaria volta a responder com intervalos próprios. A lembrança não contém nome, rota nem notícia de Nara."); break; case "beyond": beyondTrace = true; questStage = 29; notice = "SINAL DE PASSAGEM RECUPERADO"; ShowMemory("NÓS QUE PODEM SER DESFEITOS", "O sinal foi deixado por viajantes que passaram pela margem durante a cheia. Ele confirma apenas que o grupo cruzou junto e escolheu para onde seguir ao chegar à outra margem. Não indica qual margem, nome ou destino pertence a Nara."); break; case "witness": upstreamTrace = true; questStage = 26; notice = "MEMÓRIA: A TESTEMUNHA DA MARÉ"; ShowMemory("A ÚLTIMA CURVA DE NARA", "A testemunha não guarda um mapa nem um nome. Guarda a passagem de um grupo que atravessou o rio contra a corrente. Quando alguém a chamou pelo nome escrito no registro de Véspera, Nara respondeu com outro nome e pediu que o grupo o aprendesse. Eles aceitaram e seguiram juntos para além das águas. O eco se encerra antes de revelar a palavra escolhida ou o lugar a que chegaram."); break; case "register": questStage = 23; notice = "REGISTRO DE PASSAGEM RECUPERADO"; ShowMemory("OS NOMES QUE NÃO SÃO POSSE", "O livro contém rotas e relatos escritos por viajantes diferentes. Aven lê em voz alta apenas o trecho assinado por quem escolheu compartilhá-lo. Uma anotação de Nara confirma que ela seguiu adiante com o grupo, mas não revela seu nome atual nem seu paradeiro. O registro fica com a comunidade, não com Véspera."); break; case "chorus": chorusMemory = true; questStage = 14; notice = "MEMÓRIA: CORO DOS NOMES CONSUMIDOS"; ShowMemory("A TECELÃ DE NOMES", "Quando o fio se rompe, as vozes não se calam. O Coro: “Não somos uma coisa que veio de fora. Somos todos os nomes que o Lume tomou e não conseguiu guardar. Nara carregou parte de nós para longe, mas o farol continua nos chamando.” O Silêncio de Baixo é a pressão dessas memórias tentando voltar juntas."); break; case "first": firstMemory = true; questStage = 16; notice = "MEMÓRIA: O PRIMEIRO NOME"; ShowMemory("A PRIMEIRA VIGÍLIA", "A guardiã recorda seu nome: Ilyra, a primeira Escutadora. Ela não acendeu o Lume para apagar as vozes, mas para que toda memória encontrasse um lugar onde ser ouvida. Séculos depois, os guardiões inverteram o propósito e transformaram lembrança em combustível. Ilyra entregou o próprio nome para impedir que o farol esquecesse sua origem. No último eco, viu Nara atravessar a corrente levando vozes que o Lume não comportava. Não sabe o que aconteceu com ela depois, mas deixa um aviso: se alguém a encontrar, não deve chamá-la pelo nome que o farol escolheu."); break; case "west": westTrace = true; questStage = 19; notice = "MEMÓRIA: MAPA DA MARGEM ESCOLHIDA"; ShowMemory("O MAPA DE NARA", "A Cartógrafa guardava um registro de quem atravessou o Vau. Entre os traços recentes, você reconhece a letra de Nara: “Aqui, ninguém precisa conservar o nome que o Lume escolheu. Ajudei a levantar um abrigo e segui com os que queriam continuar a oeste. Se veio atrás de mim, não use o parentesco como resposta. Pergunte primeiro quem escolhi ser.” A tinta e o caminho são seus, mas o mapa não diz quando ela partiu nem onde está agora."); break; case "charm": if (item.Amount is < 1 or > 5) { drops.Remove(item); return; } bool newCharm = (ownedCharms & (1 << (item.Amount - 1))) == 0; ownedCharms |= 1 << (item.Amount - 1); if (equippedCharm == 0 && equippedCharm2 != item.Amount) equippedCharm = item.Amount; else if (equippedCharm2 == 0 && equippedCharm != item.Amount) equippedCharm2 = item.Amount; notice = newCharm ? $"TALISMÃ: {charmNames[item.Amount]}" : $"ECO DUPLICADO: {charmNames[item.Amount]}"; break; case "armor": armor = true; notice = "PEITORAL DE PEDRA ENCONTRADO"; break; case "relic": relic = true; notice = "FRAGMENTO DE VOZ ENCONTRADO"; ShowMemory("ECO PRESO NO RELICÁRIO", "Nara: “Eu vim por vontade própria. Se encontrou esta lembrança, procure o arquivo de Sileth.”"); break; case "seal": archiveSeal = true; damage += 8; questStage = 4; notice = "SELO DA VIGÍLIA • DANO +8"; ShowMemory("SELO DA VIGÍLIA", "O selo guarda a última gravação de Nara: “Sileth não apagou os nomes para alimentar o Lume. Ela tentou esconder que o próprio farol está aprendendo a escolher quem esquecer.” Leve esta prova de volta à Curadora."); break; case "bell": riverBell = true; maxHealth += 20; health = Math.Min(maxHealth, health + 20); questStage = 6; notice = "SINO DE NARA • VIDA MÁXIMA +20"; ShowMemory("O SINO SEM BADALO", "A marca no bronze pertence a Nara. A voz gravada é de uma mulher que atravessou o rio: “Não estou presa. O farol me escuta porque eu aceitei levar as memórias para longe da cidade. Se ainda me procura, não tente me trazer de volta antes de ouvir o que o rio guarda.”"); break; case "lens": lumeLens = true; damage += 12; questStage = 9; notice = "PRISMA DO LUME • DANO +12"; ShowMemory("O PRISMA DA PRIMEIRA VIGÍLIA", "A luz projeta Nara ao lado de Sileth, anos antes da noite dos sinos. Nara escolheu ser a portadora das lembranças que o Lume não conseguia guardar. A imagem se rompe antes de mostrar onde ela está agora."); break; case "trace": naraTrace = true; questStage = 11; notice = "RASTRO DE NARA • NOVA MEMÓRIA"; ShowMemory("A LEMBRANÇA QUE SOBROU", "O eco não mostra um rosto. Mostra Nara ensinando alguém, do outro lado do rio, a pronunciar um nome que Véspera apagou. Sua última frase não pede resgate: “Se a cidade ainda lembrar de nós, eu saberei voltar.”"); break; }
+        switch (item.Kind) { case "gold": gold += item.Amount; notice = $"+{item.Amount} OURO"; break; case "potion": potions++; notice = "+1 POÇÃO"; break; case "glass": tideGlass = Math.Min(999, tideGlass + item.Amount); notice = $"+{item.Amount} SAL VÍTREO"; break; case "weapon": if (item.Amount is < 1 or > 2) { drops.Remove(item); return; } weaponRarities[item.Amount] = item.Rarity; weaponBonuses[item.Amount] = item.Bonus; weaponAffixes[item.Amount] = item.Affix; ownedWeapons |= 1 << item.Amount; notice = $"ARMA {WeaponRarityName(weaponRarities[item.Amount])}: {WeaponDisplayName(item.Amount)}"; break; case "ebb": questStage = 32; notice = "MEMÓRIA: O VEIO LIVRE"; ShowMemory("A CORRENTE NÃO É UMA ROTA", "O vigia mantinha o fluxo preso num único giro. Quando o canal se abre, a água volta a mudar de direção conforme a cheia. Aven poderá ensinar o Escutador a chamar a vazante sem obrigar ninguém a segui-la. A gravação termina antes de indicar para onde foram os viajantes."); break; case "counter": counterTrace = true; questStage = 35; notice = "MEMÓRIA: O COMPASSO DAS MARGENS"; ShowMemory("O AFINADOR DAS MARGENS", "O Afinador não guardava um mapa. Regulava a força que mantém os dois lados do rio em equilíbrio; alguém o convenceu de que só um fluxo constante poderia proteger a comunidade. Ao ceder, o mecanismo volta a alternar entre impulso e retorno. A gravação não contém nome, rota nem notícia de Nara."); break; case "verse": riftVerse = true; questStage = 39; notice = "MEMÓRIA: A NOTA QUE NÃO MANDA"; ShowMemory("A NOTA QUE NÃO MANDA", "O eco mostra vozes diferentes sustentando a mesma ponte sonora sem se fundirem. Uma contravoz tenta fixá-las numa nota só; quando cede, a cantaria volta a responder com intervalos próprios. A lembrança não contém nome, rota nem notícia de Nara."); break; case "beyond": beyondTrace = true; questStage = 29; notice = "SINAL DE PASSAGEM RECUPERADO"; ShowMemory("NÓS QUE PODEM SER DESFEITOS", "O sinal foi deixado por viajantes que passaram pela margem durante a cheia. Ele confirma apenas que o grupo cruzou junto e escolheu para onde seguir ao chegar à outra margem. Não indica qual margem, nome ou destino pertence a Nara."); break; case "witness": upstreamTrace = true; questStage = 26; notice = "MEMÓRIA: A TESTEMUNHA DA MARÉ"; ShowMemory("A ÚLTIMA CURVA DE NARA", "A testemunha não guarda um mapa nem um nome. Guarda a passagem de um grupo que atravessou o rio contra a corrente. Quando alguém a chamou pelo nome escrito no registro de Véspera, Nara respondeu com outro nome e pediu que o grupo o aprendesse. Eles aceitaram e seguiram juntos para além das águas. O eco se encerra antes de revelar a palavra escolhida ou o lugar a que chegaram."); break; case "register": questStage = 23; notice = "REGISTRO DE PASSAGEM RECUPERADO"; ShowMemory("OS NOMES QUE NÃO SÃO POSSE", "O livro contém rotas e relatos escritos por viajantes diferentes. Aven lê em voz alta apenas o trecho assinado por quem escolheu compartilhá-lo. Uma anotação de Nara confirma que ela seguiu adiante com o grupo, mas não revela seu nome atual nem seu paradeiro. O registro fica com a comunidade, não com Véspera."); break; case "chorus": chorusMemory = true; questStage = 14; notice = "MEMÓRIA: CORO DOS NOMES CONSUMIDOS"; ShowMemory("A TECELÃ DE NOMES", "Quando o fio se rompe, as vozes não se calam. O Coro: “Não somos uma coisa que veio de fora. Somos todos os nomes que o Lume tomou e não conseguiu guardar. Nara carregou parte de nós para longe, mas o farol continua nos chamando.” O Silêncio de Baixo é a pressão dessas memórias tentando voltar juntas."); break; case "first": firstMemory = true; questStage = 16; notice = "MEMÓRIA: O PRIMEIRO NOME"; ShowMemory("A PRIMEIRA VIGÍLIA", "A guardiã recorda seu nome: Ilyra, a primeira Escutadora. Ela não acendeu o Lume para apagar as vozes, mas para que toda memória encontrasse um lugar onde ser ouvida. Séculos depois, os guardiões inverteram o propósito e transformaram lembrança em combustível. Ilyra entregou o próprio nome para impedir que o farol esquecesse sua origem. No último eco, viu Nara atravessar a corrente levando vozes que o Lume não comportava. Não sabe o que aconteceu com ela depois, mas deixa um aviso: se alguém a encontrar, não deve chamá-la pelo nome que o farol escolheu."); break; case "west": westTrace = true; questStage = 19; notice = "MEMÓRIA: MAPA DA MARGEM ESCOLHIDA"; ShowMemory("O MAPA DE NARA", "A Cartógrafa guardava um registro de quem atravessou o Vau. Entre os traços recentes, você reconhece a letra de Nara: “Aqui, ninguém precisa conservar o nome que o Lume escolheu. Ajudei a levantar um abrigo e segui com os que queriam continuar a oeste. Se veio atrás de mim, não use o parentesco como resposta. Pergunte primeiro quem escolhi ser.” A tinta e o caminho são seus, mas o mapa não diz quando ela partiu nem onde está agora."); break; case "charm": if (item.Amount is < 1 or > 6) { drops.Remove(item); return; } bool newCharm = (ownedCharms & (1 << (item.Amount - 1))) == 0; ownedCharms |= 1 << (item.Amount - 1); if (equippedCharm == 0 && equippedCharm2 != item.Amount) equippedCharm = item.Amount; else if (equippedCharm2 == 0 && equippedCharm != item.Amount) equippedCharm2 = item.Amount; notice = newCharm ? $"TALISMÃ: {charmNames[item.Amount]}" : $"ECO DUPLICADO: {charmNames[item.Amount]}"; break; case "armor": armor = true; notice = "PEITORAL DE PEDRA ENCONTRADO"; break; case "relic": relic = true; notice = "FRAGMENTO DE VOZ ENCONTRADO"; ShowMemory("ECO PRESO NO RELICÁRIO", "Nara: “Eu vim por vontade própria. Se encontrou esta lembrança, procure o arquivo de Sileth.”"); break; case "seal": archiveSeal = true; damage += 8; questStage = 4; notice = "SELO DA VIGÍLIA • DANO +8"; ShowMemory("SELO DA VIGÍLIA", "O selo guarda a última gravação de Nara: “Sileth não apagou os nomes para alimentar o Lume. Ela tentou esconder que o próprio farol está aprendendo a escolher quem esquecer.” Leve esta prova de volta à Curadora."); break; case "bell": riverBell = true; maxHealth += 20; health = Math.Min(maxHealth, health + 20); questStage = 6; notice = "SINO DE NARA • VIDA MÁXIMA +20"; ShowMemory("O SINO SEM BADALO", "A marca no bronze pertence a Nara. A voz gravada é de uma mulher que atravessou o rio: “Não estou presa. O farol me escuta porque eu aceitei levar as memórias para longe de Véspera. Se ainda me procura, não tente me trazer de volta antes de ouvir o que o rio guarda.”"); break; case "lens": lumeLens = true; damage += 12; questStage = 9; notice = "PRISMA DO LUME • DANO +12"; ShowMemory("O PRISMA DA PRIMEIRA VIGÍLIA", "A luz projeta Nara ao lado de Sileth, anos antes da noite dos sinos. Nara escolheu ser a portadora das lembranças que o Lume não conseguia guardar. A imagem se rompe antes de mostrar onde ela está agora."); break; case "trace": naraTrace = true; questStage = 11; notice = "RASTRO DE NARA • NOVA MEMÓRIA"; ShowMemory("A LEMBRANÇA QUE SOBROU", "O eco não mostra um rosto. Mostra Nara ensinando alguém, do outro lado do rio, a pronunciar um nome que Véspera apagou. Sua última frase não pede resgate: “Se a cidade ainda lembrar de nós, eu saberei voltar.”"); break; }
         drops.Remove(item); noticeTime = 1.7f;
     }
 
@@ -825,9 +827,10 @@ public sealed class Game : Form
     {
         int current = slot == 1 ? equippedCharm : equippedCharm2;
         int other = slot == 1 ? equippedCharm2 : equippedCharm;
-        for (int i = 1; i <= 5; i++)
+        int charmCount = charmNames.Length - 1;
+        for (int i = 1; i <= charmCount; i++)
         {
-            int candidate = ((current - 1 + i + 5) % 5) + 1;
+            int candidate = ((current - 1 + i + charmCount) % charmCount) + 1;
             if (candidate == current || candidate == other || (ownedCharms & (1 << (candidate - 1))) == 0) continue;
             if (slot == 1) equippedCharm = candidate; else equippedCharm2 = candidate;
             notice = $"ESPAÇO {slot}: {charmNames[candidate]}";
@@ -907,12 +910,83 @@ public sealed class Game : Form
         int savedWeapon = Int("weapon"); int savedRoom = Int("room");
         return new SaveData { Room = savedRoom, Level = Int("level", 1), Xp = Int("xp"), Gold = Int("gold"), Potions = Int("potions", 2), Damage = Int("damage", 25), Health = Float("health", 100), MaxHealth = Float("max_health", 100), Weapon = savedWeapon, OwnedWeapons = Int("owned_weapons", savedWeapon == 1 ? 3 : savedRoom > 0 ? 5 : 1), Armor = Bool("has_armor"), Relic = Bool("has_relic"), HealthTalent = Int("health_talent"), SkillTalent = Int("skill_talent"), DodgeTalent = Int("dodge_talent"), RoomCleared = Bool("room_cleared", true), Completed = Bool("completed") };
     }
+    private static bool ValidSaveData(SaveData s) => !(
+            !ValidWeaponData(s)
+            || !ValidSkillLoadout(s)
+            || s.Room is < 0 or > 34
+            || s.Level is < 1 or > 10000
+            || s.Xp < 0
+            || s.Xp >= s.Level * 60
+            || s.Weapon is < 0 or > 2
+            || s.OwnedWeapons < 1
+            || s.OwnedWeapons > 7
+            || (s.OwnedWeapons & (1 << s.Weapon)) == 0
+            || s.MaxHealth < 1
+            || s.Health <= 0
+            || s.Health > s.MaxHealth
+            || s.Potions < 0
+            || s.Gold < 0
+            || s.TideGlass is < 0 or > 999
+            || s.Damage < 1
+            || s.TechniqueTalent is < 0 or > 10000
+            || s.MemoriesFound is < 0 or > 3
+            || s.QuestStage is < 0 or > 46
+            || s.ClearedRooms < 0
+            || s.ClearedRooms > 34359738367L
+            || s.Completed && s.Room != 2
+            || s.OwnedCharms is < 0 or > 63
+            || s.EquippedCharm is < 0 or > 6
+            || s.EquippedCharm2 is < 0 or > 6
+            || s.EquippedCharm > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm - 1))) == 0
+            || s.EquippedCharm2 > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm2 - 1))) == 0
+            || s.EquippedCharm > 0 && s.EquippedCharm == s.EquippedCharm2
+            || s.TownEnding is < 0 or > 2
+            || s.QuestStage == 13 && s.TownEnding == 0
+            || s.QuestStage >= 14 && !s.ChorusMemory
+            || s.QuestStage >= 16 && !s.FirstMemory
+            || s.QuestStage >= 19 && !s.WestTrace
+            || s.WestTrace && s.QuestStage < 19
+            || s.UpstreamTrace && s.QuestStage < 26
+            || s.QuestStage >= 26 && !s.UpstreamTrace
+            || s.BeyondTrace && s.QuestStage < 29
+            || s.QuestStage >= 29 && !s.BeyondTrace
+            || s.EbbSeal && s.QuestStage < 33
+            || s.QuestStage >= 33 && !s.EbbSeal
+            || s.CounterTrace && s.QuestStage < 35
+            || s.QuestStage >= 35 && !s.CounterTrace
+            || s.AnchorWard && s.QuestStage < 36
+            || s.RiftVerse && s.QuestStage < 39
+            || s.QuestStage >= 39 && !s.RiftVerse
+            || s.RefrainSong && s.QuestStage < 40
+            || s.QuestStage >= 40 && !s.RefrainSong
+            || s.DeepTrace && s.QuestStage < 42
+            || s.QuestStage >= 42 && !s.DeepTrace
+            || s.LanternSignal && s.QuestStage < 45
+            || s.QuestStage >= 45 && !s.LanternSignal
+            || s.BeaconLight && s.QuestStage < 46
+            || s.QuestStage >= 46 && !s.BeaconLight
+            || s.Room >= 33 && s.QuestStage < 44
+            || s.Room >= 31 && s.QuestStage < 41
+            || s.Room >= 29 && s.QuestStage < 37
+            || s.Room >= 27 && s.QuestStage < 34
+            || s.Room >= 25 && s.QuestStage < 31
+            || s.Room >= 23 && s.QuestStage < 28
+            || s.Room >= 21 && s.QuestStage < 25
+            || s.Room >= 14 && s.QuestStage < 15
+            || s.Room >= 16 && s.QuestStage < 18
+            || s.Room >= 18 && s.QuestStage < 21
+            || s.Room >= 19 && s.QuestStage < 22
+            || s.Room == 20 && s.QuestStage < 22
+        );
+
     private void LoadGame()
     {
         try
         {
             bool migrated = !File.Exists(SavePath); SaveData s = migrated ? ReadLegacySave() : JsonSerializer.Deserialize<SaveData>(File.ReadAllText(SavePath)) ?? throw new InvalidDataException();
-            if (!ValidWeaponData(s) || !ValidSkillLoadout(s) || s.Room is < 0 or > 34 || s.Level is < 1 or > 10000 || s.Xp < 0 || s.Xp >= s.Level * 60 || s.Weapon is < 0 or > 2 || s.OwnedWeapons < 1 || s.OwnedWeapons > 7 || (s.OwnedWeapons & (1 << s.Weapon)) == 0 || s.MaxHealth < 1 || s.Health <= 0 || s.Health > s.MaxHealth || s.Potions < 0 || s.Gold < 0 || s.TideGlass is < 0 or > 999 || s.Damage < 1 || s.TechniqueTalent is < 0 or > 10000 || s.MemoriesFound is < 0 or > 3 || s.QuestStage is < 0 or > 46 || s.ClearedRooms < 0 || s.ClearedRooms > 34359738367L || s.Completed && s.Room != 2 || s.OwnedCharms is < 0 or > 31 || s.EquippedCharm is < 0 or > 5 || s.EquippedCharm2 is < 0 or > 5 || s.EquippedCharm > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm - 1))) == 0 || s.EquippedCharm2 > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm2 - 1))) == 0 || s.EquippedCharm > 0 && s.EquippedCharm == s.EquippedCharm2 || s.TownEnding is < 0 or > 2 || s.QuestStage == 13 && s.TownEnding == 0 || s.QuestStage >= 14 && !s.ChorusMemory || s.QuestStage >= 16 && !s.FirstMemory || s.QuestStage >= 19 && !s.WestTrace || s.WestTrace && s.QuestStage < 19 || s.UpstreamTrace && s.QuestStage < 26 || s.QuestStage >= 26 && !s.UpstreamTrace || s.BeyondTrace && s.QuestStage < 29 || s.QuestStage >= 29 && !s.BeyondTrace || s.EbbSeal && s.QuestStage < 33 || s.QuestStage >= 33 && !s.EbbSeal || s.CounterTrace && s.QuestStage < 35 || s.QuestStage >= 35 && !s.CounterTrace || s.AnchorWard && s.QuestStage < 36 || s.RiftVerse && s.QuestStage < 39 || s.QuestStage >= 39 && !s.RiftVerse || s.RefrainSong && s.QuestStage < 40 || s.QuestStage >= 40 && !s.RefrainSong || s.DeepTrace && s.QuestStage < 42 || s.QuestStage >= 42 && !s.DeepTrace || s.LanternSignal && s.QuestStage < 45 || s.QuestStage >= 45 && !s.LanternSignal || s.BeaconLight && s.QuestStage < 46 || s.QuestStage >= 46 && !s.BeaconLight || s.Room >= 33 && s.QuestStage < 44 || s.Room >= 31 && s.QuestStage < 41 || s.Room >= 29 && s.QuestStage < 37 || s.Room >= 27 && s.QuestStage < 34 || s.Room >= 25 && s.QuestStage < 31 || s.Room >= 23 && s.QuestStage < 28 || s.Room >= 21 && s.QuestStage < 25 || s.Room >= 14 && s.QuestStage < 15 || s.Room >= 16 && s.QuestStage < 18 || s.Room >= 18 && s.QuestStage < 21 || s.Room >= 19 && s.QuestStage < 22 || s.Room == 20 && s.QuestStage < 22) throw new InvalidDataException();
+
+
+            if (!ValidSaveData(s)) throw new InvalidDataException();
             StartGame(); room = s.Room; level = s.Level; xp = s.Xp; gold = s.Gold; potions = s.Potions; damage = s.Damage; health = s.Health; maxHealth = s.MaxHealth; weapon = s.Weapon; ownedWeapons = s.OwnedWeapons; RestoreWeaponData(s); armor = s.Armor; relic = s.Relic; healthTalent = s.HealthTalent; skillTalent = s.SkillTalent; dodgeTalent = s.DodgeTalent; techniqueTalent = s.TechniqueTalent; memoriesFound = s.MemoriesFound; questStage = s.QuestStage; clearedRooms = s.ClearedRooms | (s.RoomCleared && s.Room != 3 ? 1L << s.Room : 0); archiveSeal = s.ArchiveSeal; riverBell = s.RiverBell; lumeLens = s.LumeLens; naraTrace = s.NaraTrace; chorusMemory = s.ChorusMemory; firstMemory = s.FirstMemory; westTrace = s.WestTrace; upstreamTrace = s.UpstreamTrace; tideGlass = s.TideGlass; beyondTrace = s.BeyondTrace; ebbSeal = s.EbbSeal; counterTrace = s.CounterTrace; anchorWard = s.AnchorWard || s.QuestStage >= 36; riftVerse = s.RiftVerse; deepTrace = s.DeepTrace; lanternSignal = s.LanternSignal; beaconLight = s.BeaconLight; refrainSong = s.RefrainSong; ownedCharms = s.OwnedCharms; equippedCharm = s.EquippedCharm; equippedCharm2 = s.EquippedCharm2; equippedSkills = s.EquippedSkills.ToArray(); townEnding = s.TownEnding; SetupRoom(); if (s.RoomCleared) enemies.Clear(); victory = s.Completed; title = false; storyOverlay = false;
             if (migrated) SaveGame(); notice = migrated ? "SAVE ANTIGO MIGRADO" : "PROGRESSO CARREGADO"; noticeTime = 2;
         }
@@ -1491,7 +1565,7 @@ public sealed class Game : Form
             "lens" => Color.FromArgb(248, 185, 95), "trace" => Color.FromArgb(185, 231, 215), "chorus" => Color.Khaki,
             "first" => Color.Goldenrod, "west" => Color.LightSkyBlue, "register" => Color.LightSteelBlue,
             "deep" => Color.FromArgb(190, 225, 235), "glass" => Color.LightCyan, "beyond" => Color.PaleGreen, "ebb" => Color.DodgerBlue,
-            "counter" => Color.LightGoldenrodYellow, "verse" => Color.Orchid, "charm" => item.Amount == 4 ? Color.Goldenrod : item.Amount == 5 ? Color.LightSeaGreen : Color.Plum,
+            "counter" => Color.LightGoldenrodYellow, "verse" => Color.Orchid, "charm" => item.Amount == 4 ? Color.Goldenrod : item.Amount == 5 ? Color.LightSeaGreen : item.Amount == 6 ? Color.PaleGreen : Color.Plum,
             "armor" => Color.MediumAquamarine, "weapon" => item.Rarity == 2 ? Color.Turquoise : item.Rarity == 1 ? Color.Goldenrod : Color.CornflowerBlue,
             "potion" => Color.IndianRed, _ => Color.Goldenrod
         };
@@ -1539,7 +1613,7 @@ public sealed class Game : Form
         if (ebbSeal && pullCd > 0) { using var ebbCooldownPen = new Pen(Color.FromArgb(210, 115, 185, 211), 3); g.DrawArc(ebbCooldownPen, player.X - 49, player.Y - 49, 98, 98, 270, 360 * pullCd / EbbPullCooldown()); }
         if (anchorWard && wardCd > 0) { using var wardCooldownPen = new Pen(Color.FromArgb(210, 179, 215, 215), 3); g.DrawArc(wardCooldownPen, player.X - 57, player.Y - 57, 114, 114, 0, 360 * wardCd / AnchorWardCooldown()); }
         if (refrainSong && refrainCd > 0) { using var refrainCooldownPen = new Pen(Color.FromArgb(215, 205, 139, 225), 3); g.DrawArc(refrainCooldownPen, player.X - 65, player.Y - 65, 130, 130, 90, 360 * refrainCd / RefrainCooldown()); }
-        if (beaconLight && beaconCd > 0) { using var beaconCooldownPen = new Pen(Color.FromArgb(220, 182, 238, 220), 3); g.DrawArc(beaconCooldownPen, player.X - 73, player.Y - 73, 146, 146, 180, 360 * beaconCd / BeaconCooldown()); }
+        if (beaconLight && beaconCd > 0) { using var beaconCooldownPen = new Pen(Color.FromArgb(220, 182, 238, 220), 3); g.DrawArc(beaconCooldownPen, player.X - 73, player.Y - 73, 146, 146, 180, 360 * beaconCd / BeaconTotalCooldown()); }
     }
     private void DrawEbbWave(Graphics g) { float progress = 1f - pullWaveTime / 0.45f; float radius = 160 * progress; using var wave = new Pen(Color.FromArgb((int)(210 * pullWaveTime / 0.45f), 98, 190, 220), 4); using var glow = new Pen(Color.FromArgb((int)(65 * pullWaveTime / 0.45f), 98, 190, 220), 12); g.DrawEllipse(glow, player.X - radius, player.Y - radius, radius * 2, radius * 2); g.DrawEllipse(wave, player.X - radius, player.Y - radius, radius * 2, radius * 2); }
     private void DrawBellWave(Graphics g) { float progress = 1f - bellWaveTime / 0.42f; float radius = bellWaveRadius * progress; using var wave = new Pen(Color.FromArgb((int)(210 * bellWaveTime / 0.42f), 115, 208, 197), 4); using var glow = new Pen(Color.FromArgb((int)(65 * bellWaveTime / 0.42f), 115, 208, 197), 12); g.DrawEllipse(glow, player.X - radius, player.Y - radius, radius * 2, radius * 2); g.DrawEllipse(wave, player.X - radius, player.Y - radius, radius * 2, radius * 2); }
@@ -1600,16 +1674,18 @@ public sealed class Game : Form
         g.DrawString($"SINO DE NARA {(riverBell ? "ENCONTRADO • +20 VIDA MÁXIMA" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 490);
         g.DrawString($"PRISMA DO LUME {(lumeLens ? "ENCONTRADO • +12 DANO" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 525);
         g.DrawString($"RASTRO DE NARA {(naraTrace ? "RECUPERADO • MEMÓRIA PRESERVADA" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 560);
-        string availableCharms = string.Join(" • ", Enumerable.Range(1, 5).Where(i => (ownedCharms & (1 << (i - 1))) != 0).Select(i => charmNames[i]));
-        g.DrawString($"TALISMÃS: {(availableCharms.Length == 0 ? "NENHUM" : availableCharms)}   •   SAL VÍTREO: {tideGlass}", effectFont, Brushes.Plum, 205, 580);
+        string[] availableCharms = Enumerable.Range(1, 6).Where(i => (ownedCharms & (1 << (i - 1))) != 0).Select(i => charmNames[i]).ToArray();
+        string charmList = availableCharms.Length == 0 ? "NENHUM" : string.Join(" • ", availableCharms.Take(3)) + (availableCharms.Length > 3 ? "\n" + string.Join(" • ", availableCharms.Skip(3)) : "");
+        g.DrawString($"TALISMÃS: {charmList}   •   SAL VÍTREO: {tideGlass}", effectFont, Brushes.Plum, new RectangleF(205, 574, 560, 27));
         string firstCharm = equippedCharm == 0 ? "VAZIO" : charmNames[equippedCharm]; string secondCharm = equippedCharm2 == 0 ? "VAZIO" : charmNames[equippedCharm2];
-        g.DrawString($"6. ESPAÇO I: {firstCharm}    7. ESPAÇO II: {secondCharm}", effectFont, Brushes.Plum, 205, 596);
+        g.DrawString($"6. ESPAÇO I: {firstCharm}    7. ESPAÇO II: {secondCharm}", effectFont, Brushes.Plum, 205, 601);
         string effect = HasCharmPair(1, 2) ? "SINTONIA: Redemoinho +57% dano • penalidade cai para 0,5 s" : HasCharmPair(1, 3) ? "SINTONIA: +17 p.p. crítico • multiplicador 2,75x • ataque básico menos lento" : HasCharmPair(2, 3) ? "SINTONIA: esquiva longa sem acréscimo de recarga" : "Equipar dois talismãs únicos cria uma sintonia entre seus efeitos.";
         if (HasCharmPair(3, 5)) effect = "SINTONIA: Estilhaço +52% dano • alcance +44% • recarga +0,5 s";
         else if (HasCharm(5)) effect += " • Fio da Margem: alcance +44%, recarga +1,25 s";
         if (HasCharm(3) && !HasCharmPair(3, 5)) effect += " • Estilhaço +33% dano";
         if (HasCharm(4)) effect += " • Marca: +25% contra chefes, -20% contra outros inimigos";
-        g.DrawString(effect, effectFont, Brushes.AntiqueWhite, new RectangleF(205, 612, 560, 22));
+        if (HasCharm(6)) effect = "Nó de Lume: Farol dura 8 s e pulsa a cada 0,85 s; recarga +3,5 s";
+        g.DrawString(effect, effectFont, Brushes.AntiqueWhite, new RectangleF(205, 617, 560, 18));
     }
     private void DrawChoice(Graphics g, string titleText, string a, string b, string c)
     {
@@ -2248,7 +2324,7 @@ public sealed class Game : Form
         if (glassSave.Room != 32 || glassSave.QuestStage != 42 || !glassSave.DeepTrace || (glassSave.ClearedRooms & (1L << 32)) == 0 || JsonSerializer.Deserialize<SaveData>("{}")?.DeepTrace != false) throw new InvalidOperationException("O capítulo XIII ou a sala 32 não persistiu no save longo, ou incompatibilizou saves antigos.");
         glassExpedition.player = new PointF(850, 330); glassExpedition.Interact(); glassExpedition.player = AvenPosition; int glassRewardGold = glassExpedition.gold; glassExpedition.Interact();
         if (glassExpedition.room != 18 || glassExpedition.questStage != 43 || glassExpedition.gold != glassRewardGold + 820 || glassExpedition.tideGlass != 5) throw new InvalidOperationException("Aven não registrou o eco sem dono nem entregou a recompensa do capítulo XIII.");
-        using var lanternExpedition = new Game(); lanternExpedition.timer.Stop(); lanternExpedition.StartGame(); lanternExpedition.storyOverlay = false; lanternExpedition.room = 18; lanternExpedition.questStage = 43; lanternExpedition.deepTrace = true; lanternExpedition.townEnding = 1; lanternExpedition.player = AvenPosition; lanternExpedition.Interact();
+        using var lanternExpedition = new Game(); lanternExpedition.timer.Stop(); lanternExpedition.StartGame(); lanternExpedition.storyOverlay = false; lanternExpedition.room = 18; lanternExpedition.questStage = 43; lanternExpedition.chorusMemory = lanternExpedition.firstMemory = lanternExpedition.westTrace = lanternExpedition.upstreamTrace = lanternExpedition.beyondTrace = lanternExpedition.ebbSeal = lanternExpedition.counterTrace = lanternExpedition.refrainSong = lanternExpedition.riftVerse = lanternExpedition.deepTrace = true; lanternExpedition.townEnding = 1; lanternExpedition.player = AvenPosition; lanternExpedition.Interact();
         if (lanternExpedition.questStage != 44 || lanternExpedition.memoryTitle != "AS LANTERNAS QUE OLHAM PARA DENTRO") throw new InvalidOperationException("Aven não abriu o Capítulo XIV depois de registrar o eco sem dono.");
         lanternExpedition.player = new PointF(850, 330); lanternExpedition.InteractRefuge();
         if (lanternExpedition.room != 33 || lanternExpedition.enemies.Count != 6 || lanternExpedition.roomNames[33] != "PASSAGEM DAS LANTERNAS BAIXAS") throw new InvalidOperationException("A Passagem das Lanternas Baixas não abriu com seus encontros.");
@@ -2256,23 +2332,23 @@ public sealed class Game : Form
         if (lanternExpedition.room != 34 || lanternExpedition.enemies.Count != 5 || !lanternExpedition.enemies.Any(e => e.Kind == EnemyKind.LanternRegent)) throw new InvalidOperationException("O Observatório da Maré Interior não abriu com o Regente das Lanternas.");
         Enemy regent = lanternExpedition.enemies.Single(e => e.Kind == EnemyKind.LanternRegent); lanternExpedition.player = regent.Pos;
         foreach (int pattern in new[] { 1, 2, 0 }) { regent.Windup = 0; regent.Cooldown = 0; lanternExpedition.UpdateEnemy(regent, 0.01f); if (regent.BossPattern != pattern || regent.Windup <= 0) throw new InvalidOperationException("O Regente das Lanternas não anunciou os três padrões de ataque."); }
-        lanternExpedition.Defeat(regent); Drop signalDrop = lanternExpedition.drops.Single(d => d.Kind == "signal"); lanternExpedition.Collect(signalDrop);
-        if (!lanternExpedition.lanternSignal || lanternExpedition.questStage != 45 || lanternExpedition.memoryTitle != "A LUZ QUE ESPERA") throw new InvalidOperationException("O sinal do Regente não registrou a lembrança do Capítulo XIV.");
+        lanternExpedition.Defeat(regent); Drop signalDrop = lanternExpedition.drops.Single(d => d.Kind == "signal"); Drop lumenKnot = lanternExpedition.drops.Single(d => d.Kind == "charm" && d.Amount == 6); lanternExpedition.Collect(signalDrop); lanternExpedition.Collect(lumenKnot);
+        if (!lanternExpedition.lanternSignal || lanternExpedition.questStage != 45 || lanternExpedition.memoryTitle != "A LUZ QUE ESPERA" || (lanternExpedition.ownedCharms & 32) == 0 || lanternExpedition.equippedCharm != 6) throw new InvalidOperationException("O sinal ou o Nó de Lume do Regente não foi recuperado.");
         lanternExpedition.enemies.Clear(); lanternExpedition.drops.Clear(); lanternExpedition.MarkRoomCleared(); SaveData lanternSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(lanternExpedition.CaptureSaveData()))!;
-        if (lanternSave.Room != 34 || lanternSave.QuestStage != 45 || !lanternSave.LanternSignal || lanternSave.BeaconLight || (lanternSave.ClearedRooms & (1L << 34)) == 0 || JsonSerializer.Deserialize<SaveData>("{}")?.LanternSignal != false) throw new InvalidOperationException("A sala 34 ou o sinal das lanternas não persistiu com compatibilidade de saves antigos.");
+        if (lanternSave.Room != 34 || lanternSave.QuestStage != 45 || !lanternSave.LanternSignal || lanternSave.BeaconLight || lanternSave.OwnedCharms != 32 || lanternSave.EquippedCharm != 6 || (lanternSave.ClearedRooms & (1L << 34)) == 0 || !ValidSaveData(lanternSave) || JsonSerializer.Deserialize<SaveData>("{}")?.LanternSignal != false) throw new InvalidOperationException("A sala 34, o sinal ou o sexto talismã não persistiu ou falhou na validação de save.");
         lanternExpedition.player = new PointF(850, 330); lanternExpedition.Interact();
         if (lanternExpedition.room != 18) throw new InvalidOperationException("O Escutador não conseguiu retornar do Observatório ao Refúgio.");
         lanternExpedition.player = AvenPosition; int lanternRewardGold = lanternExpedition.gold; lanternExpedition.Interact();
         if (lanternExpedition.questStage != 46 || !lanternExpedition.beaconLight || lanternExpedition.gold != lanternRewardGold + 980 || lanternExpedition.tideGlass != 6 || lanternExpedition.potions != 5) throw new InvalidOperationException("Aven não ensinou o Farol de Vigília nem entregou as provisões do Capítulo XIV.");
         lanternExpedition.room = 34; lanternExpedition.SetupRoom(); lanternExpedition.enemies.Clear(); lanternExpedition.player = new PointF(430, 330); lanternExpedition.memoryOverlay = false; lanternExpedition.skillMenuOpen = true; lanternExpedition.OnKeyDown(lanternExpedition, new KeyEventArgs(Keys.D6)); lanternExpedition.skillMenuOpen = false; lanternExpedition.beaconCd = 0;
-        Enemy beaconTarget = new() { Pos = new PointF(470, 330), Kind = EnemyKind.Grunt, Hp = 1000, MaxHp = 1000 }; lanternExpedition.enemies.Add(beaconTarget); lanternExpedition.CastEquippedSkill(0); float beaconHp = beaconTarget.Hp; lanternExpedition.TickBeacon(0.2f);
+        Enemy beaconTarget = new() { Pos = new PointF(470, 330), Kind = EnemyKind.Grunt, Hp = 1000, MaxHp = 1000 }; lanternExpedition.enemies.Add(beaconTarget); lanternExpedition.CastEquippedSkill(0); float beaconHp = beaconTarget.Hp; lanternExpedition.TickBeacon(0.2f); float firstPulseHp = beaconTarget.Hp; lanternExpedition.TickBeacon(0.9f);
         SaveData beaconSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(lanternExpedition.CaptureSaveData()))!;
-        if (!lanternExpedition.beaconLight || lanternExpedition.beaconTime <= 0 || beaconTarget.Hp >= beaconHp || !ValidSkillLoadout(beaconSave) || !beaconSave.BeaconLight || !beaconSave.EquippedSkills.SequenceEqual(new[] { 6, 0, 0 }) || !lanternSave.EquippedSkills.SequenceEqual(new[] { 1, 0, 0 })) throw new InvalidOperationException($"O Farol falhou: desbloqueado={lanternExpedition.beaconLight}, ativo={lanternExpedition.beaconTime}, dano={(beaconHp - beaconTarget.Hp)}, loadout={ValidSkillLoadout(beaconSave)}, save={beaconSave.BeaconLight}, equip={string.Join(',', beaconSave.EquippedSkills)}, anterior={string.Join(',', lanternSave.EquippedSkills)}.");
+        if (!lanternExpedition.beaconLight || Math.Abs(lanternExpedition.beaconTime - 6.9f) > 0.001f || Math.Abs(lanternExpedition.beaconCd - 25.5f) > 0.001f || beaconTarget.Hp >= firstPulseHp || beaconTarget.Hp >= beaconHp || Math.Abs(lanternExpedition.beaconPulseCd - 0.85f) > 0.001f || !ValidSaveData(beaconSave) || !beaconSave.BeaconLight || !beaconSave.EquippedSkills.SequenceEqual(new[] { 6, 0, 0 }) || beaconSave.OwnedCharms != 32 || beaconSave.EquippedCharm != 6 || !lanternSave.EquippedSkills.SequenceEqual(new[] { 1, 0, 0 })) throw new InvalidOperationException("O Nó de Lume não estendeu a duração do Farol, acelerou os pulsos e preservou o talismã em um save válido.");
         game.room = 11; game.SetupRoom();
         if (game.enemies.Count != 0 || game.drops.Count != 0) throw new InvalidOperationException("O Reservatório foi recriado após ter sido limpo.");
         game.room = 3; game.SetupRoom();
         game.memoryOverlay = false; game.player = CryptGatePosition; game.Interact();
         if (game.room != 2 || game.enemies.Count != 4) throw new InvalidOperationException("A passagem da cidade não retornou à cripta.");
-        Console.WriteLine("TESTES OK: campanha até o Capítulo XIV, incluindo o Regente das Lanternas, três ataques anunciados, a memória e o save da sala 34, Farol de Vigília equipável e seus pulsos, técnicas, loot, progressão e compatibilidade de saves antigos."); return 0;
+        Console.WriteLine("TESTES OK: campanha até o Capítulo XIV, incluindo o Regente das Lanternas, três ataques anunciados, a memória e o save da sala 34, Nó de Lume e a build de Farol, técnicas, loot, progressão e compatibilidade de saves antigos."); return 0;
     }
 }
