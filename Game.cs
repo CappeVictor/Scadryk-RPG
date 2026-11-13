@@ -285,9 +285,11 @@ public sealed class Game : Form
         foreach (Enemy enemy in enemies.ToArray())
         {
             PointF offset = Sub(enemy.Pos, player); float distance = Length(offset);
-            if (distance > (enemy.Boss ? 95 : 78) || (distance >= 20 && Dot(facing, Normalize(offset, facing)) <= 0.1f) || BlockedLine(player, enemy.Pos)) continue;
-            bool critical = random.NextDouble() < CriticalChance(); int dealt = (int)(damage * OutgoingDamageMultiplier(enemy) * (critical ? CriticalMultiplier() : 1)); if (enemy.Armored) dealt = (int)(dealt * 0.75f);
-            enemy.Hp -= dealt; enemy.Flash = 0.2f; if (enemy.Hp <= 0) Defeat(enemy);
+            if (distance > BasicAttackReach(enemy) || (distance >= 20 && Dot(facing, Normalize(offset, facing)) <= BasicAttackArcThreshold()) || BlockedLine(player, enemy.Pos)) continue;
+            bool critical = random.NextDouble() < CriticalChance(); int dealt = (int)(damage * BasicAttackDamageMultiplier(enemy) * OutgoingDamageMultiplier(enemy) * (critical ? CriticalMultiplier() : 1));
+            enemy.Hp -= dealt; enemy.Flash = 0.2f;
+            if (weapon == 1 && !enemy.Boss) { enemy.Stagger = Math.Max(enemy.Stagger, 0.2f); enemy.Windup = 0; }
+            if (enemy.Hp <= 0) Defeat(enemy);
         }
     }
 
@@ -773,7 +775,16 @@ public sealed class Game : Form
     }
     private void RestoreWeaponData(SaveData s) { Array.Copy(s.WeaponBonuses, weaponBonuses, 3); Array.Copy(s.WeaponRarities, weaponRarities, 3); Array.Copy(s.WeaponAffixes, weaponAffixes, 3); }
     private float CriticalMultiplier() => HasCharm(3) ? HasCharmPair(1, 3) ? 2.75f : 2.5f : 2f;
-    private float BasicAttackCooldown() => (weapon == 2 ? 0.23f : 0.33f) + (HasCharm(3) ? HasCharmPair(1, 3) ? 0.03f : 0.06f : 0f);
+    private float BasicAttackCooldown() => (weapon == 1 ? 0.52f : weapon == 2 ? 0.23f : 0.33f) + (HasCharm(3) ? HasCharmPair(1, 3) ? 0.03f : 0.06f : 0f);
+    private float BasicAttackReach(Enemy enemy) => weapon == 1 ? (enemy.Boss ? 122f : 108f) : weapon == 2 ? (enemy.Boss ? 80f : 68f) : (enemy.Boss ? 95f : 78f);
+    private float BasicAttackArcThreshold() => weapon == 1 ? 0.28f : weapon == 2 ? -0.04f : 0.1f;
+    private float BasicAttackDamageMultiplier(Enemy enemy) => enemy.Armored ? weapon == 1 ? 0.9f : 0.75f : 1f;
+    private string WeaponTraitDescription(int index) => index switch
+    {
+        1 => "LÂMINA PESADA • ALCANCE LONGO • PERFURA ARMADURA • INTERROMPE ECOS",
+        2 => "FACA RÁPIDA • CURTO ALCANCE • 25% DE CRÍTICO",
+        _ => "ESPADA EQUILIBRADA • ALCANCE MÉDIO"
+    };
     private PointF MoveEnemy(Enemy e, PointF delta) { PointF p = e.Pos; PointF x = new(p.X + delta.X, p.Y), y = new(p.X, p.Y + delta.Y); if (!Blocked(x, e.Radius)) p.X = x.X; if (!Blocked(new PointF(p.X, y.Y), e.Radius)) p.Y = y.Y; return new PointF(Math.Clamp(p.X, 85, 875), Math.Clamp(p.Y, 128, 533)); }
     private void SeparateFromPack(Enemy enemy, float dt) { PointF push = PointF.Empty; foreach (Enemy other in enemies) { if (ReferenceEquals(enemy, other)) continue; PointF away = Sub(enemy.Pos, other.Pos); float d = Length(away); if (d > 0.01f && d < 40) push = Add(push, Scale(away, (40 - d) / (40 * d))); } if (Length(push) > 0.01f) enemy.Pos = MoveEnemy(enemy, Scale(Normalize(push, PointF.Empty), 52 * dt)); }
     private void MovePlayer(PointF delta) { PointF x = new(player.X + delta.X, player.Y), y = new(player.X, player.Y + delta.Y); if (!Blocked(x)) player.X = x.X; if (!Blocked(new PointF(player.X, y.Y))) player.Y = y.Y; player.X = Math.Clamp(player.X, 85, 875); player.Y = Math.Clamp(player.Y, 128, 533); }
@@ -1422,7 +1433,7 @@ public sealed class Game : Form
     {
         using var b = new SolidBrush(Color.FromArgb(245, 17, 19, 20)); using var itemFont = new Font("Segoe UI", 11); using var effectFont = new Font("Segoe UI", 9); g.FillRectangle(b, 150, 145, 660, 490);
         DrawCentered(g, "INVENTÁRIO   •   1–3 ARMAS   •   4 ARMADURA   •   5 RELÍQUIA   •   6/7 TALISMÃS   •   I FECHAR", 180, new Font("Segoe UI", 12, FontStyle.Bold), Color.Goldenrod);
-        for (int i = 0; i < 3; i++) { bool found = (ownedWeapons & (1 << i)) != 0; Brush rarityBrush = !found ? Brushes.Gray : weaponRarities[i] == 2 ? Brushes.MediumTurquoise : weaponRarities[i] == 1 ? Brushes.Goldenrod : Brushes.AntiqueWhite; g.DrawString($"{i + 1}. {WeaponDisplayName(i)}    DANO {WeaponPower(i) - WeaponPower(weapon):+#;-#;0}    {(weapon == i ? "EQUIPADA" : found ? "DISPONÍVEL" : "NÃO ENCONTRADA")}", itemFont, rarityBrush, 205, 225 + i * 54); if (found) g.DrawString(WeaponAffixDescription(i), effectFont, Brushes.DarkGray, 232, 248 + i * 54); }
+        for (int i = 0; i < 3; i++) { bool found = (ownedWeapons & (1 << i)) != 0; Brush rarityBrush = !found ? Brushes.Gray : weaponRarities[i] == 2 ? Brushes.MediumTurquoise : weaponRarities[i] == 1 ? Brushes.Goldenrod : Brushes.AntiqueWhite; g.DrawString($"{i + 1}. {WeaponDisplayName(i)}    DANO {WeaponPower(i) - WeaponPower(weapon):+#;-#;0}    {(weapon == i ? "EQUIPADA" : found ? "DISPONÍVEL" : "NÃO ENCONTRADA")}", itemFont, rarityBrush, 205, 225 + i * 54); if (found) g.DrawString($"{WeaponAffixDescription(i)}   •   {WeaponTraitDescription(i)}", effectFont, Brushes.DarkGray, 232, 248 + i * 54); }
         g.DrawString($"4. PEITORAL DE PEDRA {(armorOn ? "EQUIPADO" : armor ? "DISPONÍVEL" : "NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 385);
         g.DrawString($"5. RELICÁRIO VITAL {(relicOn ? "EQUIPADO" : relic ? "DISPONÍVEL" : "NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 420);
         g.DrawString($"SELO DA VIGÍLIA {(archiveSeal ? "ENCONTRADO • +8 DANO" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 455);
@@ -1522,6 +1533,18 @@ public sealed class Game : Form
 
     public static int SelfTest()
     {
+        using (var weaponCombat = new Game())
+        {
+            weaponCombat.timer.Stop(); weaponCombat.StartGame(); weaponCombat.storyOverlay = false; weaponCombat.room = 0; weaponCombat.SetupRoom(); weaponCombat.enemies.Clear(); weaponCombat.damage = 100; weaponCombat.player = new PointF(150, 330); weaponCombat.mouseAim = new PointF(1, 0); weaponCombat.weapon = 1;
+            Enemy platedEcho = new() { Pos = new PointF(245, 330), Kind = EnemyKind.Grunt, Hp = 1000, MaxHp = 1000, Armored = true };
+            weaponCombat.enemies.Add(platedEcho); weaponCombat.Attack();
+            if (platedEcho.Hp != 910 || platedEcho.Stagger <= 0 || weaponCombat.BasicAttackCooldown() != 0.52f || weaponCombat.BasicAttackReach(platedEcho) != 108f) throw new InvalidOperationException("A Lâmina do Arquivo não alcançou, perfurou a armadura e interrompeu o eco como arma pesada.");
+            weaponCombat.attackCd = 0; weaponCombat.weapon = 0; platedEcho.Hp = 1000; platedEcho.Stagger = 0; platedEcho.Pos = new PointF(245, 330); weaponCombat.Attack();
+            if (platedEcho.Hp != 1000 || weaponCombat.BasicAttackReach(platedEcho) != 78f) throw new InvalidOperationException("A Espada de Pedra não manteve seu alcance equilibrado.");
+            weaponCombat.attackCd = 0; weaponCombat.weapon = 2; platedEcho.Pos = new PointF(215, 330); weaponCombat.Attack();
+            if (platedEcho.Hp >= 1000 || weaponCombat.BasicAttackCooldown() != 0.23f || weaponCombat.CriticalChance() != 0.25f || weaponCombat.WeaponTraitDescription(2) != "FACA RÁPIDA • CURTO ALCANCE • 25% DE CRÍTICO") throw new InvalidOperationException("A Faca do Crepúsculo não manteve seu alcance curto, velocidade e crítico elevados.");
+            if (!weaponCombat.WeaponTraitDescription(1).Contains("PERFURA ARMADURA") || !weaponCombat.WeaponTraitDescription(0).Contains("EQUILIBRADA")) throw new InvalidOperationException("A descrição das especializações de arma não corresponde ao combate.");
+        }
         using (var shardGame = new Game())
         {
             shardGame.timer.Stop(); shardGame.StartGame(); shardGame.storyOverlay = false; shardGame.room = 0; shardGame.SetupRoom(); shardGame.enemies.Clear(); shardGame.player = new PointF(150, 320); shardGame.mouseAim = new PointF(1, 0);
@@ -2007,6 +2030,6 @@ public sealed class Game : Form
         game.room = 3; game.SetupRoom();
         game.memoryOverlay = false; game.player = CryptGatePosition; game.Interact();
         if (game.room != 2 || game.enemies.Count != 4) throw new InvalidOperationException("A passagem da cidade não retornou à cripta.");
-        Console.WriteLine("TESTES OK: campanha até o Capítulo XII, correntes alternadas, Manto de Lastro, Coro de Retorno, Sintonia e quatro talentos, saque identificado com rolagem persistente, Vazante, escolhas, regiões, chefes, ataques anunciados, loot, Ressonância do Sino, têmpera de armas, raridades e afixos, talismãs, builds, progressão e save."); return 0;
+        Console.WriteLine("TESTES OK: campanha até o Capítulo XII, três estilos de arma, correntes alternadas, Manto de Lastro, Coro de Retorno, Sintonia e quatro talentos, saque identificado com rolagem persistente, Vazante, escolhas, regiões, chefes, ataques anunciados, loot, Ressonância do Sino, têmpera de armas, raridades e afixos, talismãs, builds, progressão e save."); return 0;
     }
 }
