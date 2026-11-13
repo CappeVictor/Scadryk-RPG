@@ -2,7 +2,7 @@
 
 Scadryk é um RPG de ação 2D em fantasia sombria, feito em C# com .NET 8 e Windows Forms. O desenho usa GDI+; o projeto não depende de Godot nem de outro motor de jogo. Diablo é uma referência de ritmo, combate e progressão. O mundo, os nomes e os itens de Scadryk são próprios. A meta de longo prazo é alcançar uma aventura de ação e loot 2D rica e rejogável, construída em etapas e sem copiar a história ou os personagens de outros jogos.
 
-O protótipo tem dezessete salas de combate e a praça segura de Véspera, com inimigos de funções distintas, oito chefes com ataques em fases, loot, equipamentos, níveis e talentos. A campanha jogável inclui o prólogo, inscrições exploráveis, missões de Sileth e Edda, o Arquivo Norte, o Rio Cego, a Câmara do Lume, o Reservatório das Vozes, a Costa das Vozes Tardias, a Bacia do Primeiro Nome e o Vau dos Nomes Escolhidos. A memória da primeira Escutadora, Ilyra, revela que o Lume nasceu como abrigo para lembranças e depois foi transformado em combustível. Um mapa escrito por Nara revela que ela ajudou a criar um refúgio a oeste onde cada pessoa escolhe o próprio nome e partiu novamente com quem queria continuar a viagem; sua localização atual permanece desconhecida. As decisões de Véspera afetam a praça, a progressão e a força de chefes.
+O protótipo tem dezenove salas de combate e duas áreas seguras — a praça de Véspera e o Refúgio do Veio Calmo —, com inimigos de funções distintas, nove chefes com ataques em fases, loot, equipamentos, níveis e talentos. A campanha jogável inclui o prólogo, inscrições exploráveis, missões de Sileth e Edda, o Arquivo Norte, o Rio Cego, a Câmara do Lume, o Reservatório das Vozes, a Costa das Vozes Tardias, a Bacia do Primeiro Nome, o Vau dos Nomes Escolhidos e a trilha até o refúgio. A memória da primeira Escutadora, Ilyra, revela que o Lume nasceu como abrigo para lembranças e depois foi transformado em combustível. Um mapa escrito por Nara revela que ela ajudou a criar um refúgio a oeste onde cada pessoa escolhe o próprio nome e partiu novamente com quem queria continuar a viagem; sua localização atual permanece desconhecida. As decisões de Véspera afetam a praça, a progressão e a força de chefes.
 
 ## História de Scadryk
 
@@ -42,7 +42,7 @@ Para compilar uma versão de produção:
 dotnet build --configuration Release
 ```
 
-Para verificar o prólogo, as inscrições, as oito regiões de campanha, os chefes, os itens de história, as missões, o save, movimento, avisos de ataque, esquiva e progressão:
+Para verificar o prólogo, as inscrições, as nove regiões, as áreas seguras, os chefes, os itens de história, as missões, o save, movimento, avisos de ataque, esquiva e progressão:
 
 ```powershell
 dotnet run -- --self-test
@@ -81,11 +81,11 @@ Os ataques corpo a corpo comuns agora mostram a área de impacto antes do golpe.
 
 Elites deixam o Nó de Brasa; o Escriba Cego deixa o Vidro de Vigília; o Barqueiro Oco deixa o Fio de Travessia. Ilyra deixa a Marca da Vigília, que causa mais dano a chefes e menos dano a inimigos comuns. A Cartógrafa do Vão deixa o Fio da Margem, que amplia o alcance do Estilhaço de Voz à custa de uma recarga maior. Combine-o com o Vidro para fortalecer o Estilhaço e reduzir essa penalidade. Equipe dois dos cinco talismãs pelo inventário (**I**; teclas **6** e **7**). O Nó fortalece o Redemoinho; o Fio de Travessia prolonga a esquiva; o Vidro melhora os críticos e o Estilhaço. As sintonias, a coleção e os dois espaços equipados são salvos. Inimigos comuns também podem deixar os três talismãs encontrados nas primeiras regiões.
 
-Depois de escolher a recompensa do baú da cripta, explore a praça de Véspera. Fale com Sileth, leia o Livro das Ausências e volte para conversar com ela. Limpe a galeria e o cofre do Arquivo Norte, leve o selo a Sileth, derrote o Barqueiro Oco no Rio Cego e mostre o sino a Edda. Volte à passagem sul para alcançar o Lume. Derrote o Guardião das Cinzas e leve o prisma a Sileth. Depois, reentre na Câmara do Lume e procure a passagem abaixo do prisma. Atravesse a Margem sem Reflexo, vença O Nome Vazio e retorne a Sileth com a lembrança de Nara. Após as decisões de Véspera e do testemunho do Coro, explore o Claustro, desça à Bacia e leve a memória de Ilyra de volta a Sileth. Converse com Edda para iniciar a travessia oeste; vença a Cartógrafa no Pátio das Testemunhas e recolha o mapa de Nara. A passagem à esquerda da praça retorna à cripta. Use **F5** em uma área segura para salvar seu progresso.
+Depois de escolher a recompensa do baú da cripta, explore a praça de Véspera. Fale com Sileth, leia o Livro das Ausências e volte para conversar com ela. Limpe a galeria e o cofre do Arquivo Norte, leve o selo a Sileth, derrote o Barqueiro Oco no Rio Cego e mostre o sino a Edda. Volte à passagem sul para alcançar o Lume. Derrote o Guardião das Cinzas e leve o prisma a Sileth. Depois, reentre na Câmara do Lume e procure a passagem abaixo do prisma. Atravesse a Margem sem Reflexo, vença O Nome Vazio e retorne a Sileth com a lembrança de Nara. Após as decisões de Véspera e do testemunho do Coro, explore o Claustro, desça à Bacia e leve a memória de Ilyra de volta a Sileth. Converse com Edda para iniciar a travessia oeste; vença a Cartógrafa no Pátio das Testemunhas e recolha o mapa de Nara. Volte a Edda para chegar ao Refúgio do Veio Calmo e fale com Aven. Cruze a Trilha dos Luminários, derrote o Escrivão de Contrato e recolha o registro. Devolva-o à comunidade para receber provisões e abrir a continuação da trilha. A passagem à esquerda da praça retorna à cripta. Use **F5** em uma área segura para salvar seu progresso.
 
 ## Salvamento
 
-O save JSON fica em `%LOCALAPPDATA%\Scadryk\save.json` e guarda inscrições, etapas das missões, o Selo da Vigília, o Sino de Nara, o Prisma do Lume, os talismãs encontrados, os dois espaços equipados, a decisão de Véspera, o Coro dos Nomes Consumidos, a memória de Ilyra e o mapa de Nara. Saves anteriores sem os campos mais recentes carregam com valores vazios. Na tela inicial, pressione **C** para carregar. Se não houver um save novo, o jogo também procura o ConfigFile da versão anterior em `%APPDATA%\Godot\app_userdata\Scadryk RPG\scadryk-save.cfg` e migra os dados encontrados para o formato JSON.
+O save JSON fica em `%LOCALAPPDATA%\Scadryk\save.json` e guarda inscrições, etapas das missões, o Selo da Vigília, o Sino de Nara, o Prisma do Lume, os talismãs encontrados, os dois espaços equipados, a decisão de Véspera, o Coro dos Nomes Consumidos, a memória de Ilyra, o mapa de Nara, a etapa do Refúgio do Veio Calmo, o registro comunitário e as câmaras já limpas. Saves anteriores sem os campos mais recentes carregam com valores vazios. Na tela inicial, pressione **C** para carregar. Se não houver um save novo, o jogo também procura o ConfigFile da versão anterior em `%APPDATA%\Godot\app_userdata\Scadryk RPG\scadryk-save.cfg` e migra os dados encontrados para o formato JSON.
 
 ## Estrutura
 
@@ -98,7 +98,8 @@ O save JSON fica em `%LOCALAPPDATA%\Scadryk\save.json` e guarda inscrições, et
 
 ## Limites atuais
 
-Este é um protótipo com dezessete salas de combate e arte procedural desenhada em formas 2D. Ainda faltam conhecer a comunidade além do rio e a vontade atual de Nara, as escolhas e os finais da campanha, mais regiões, raridades e builds, arte e áudio originais, animações, balanceamento amplo e testes manuais em diferentes resoluções. Não há medição de desempenho em máquinas variadas.
+Este é um protótipo com dezenove salas de combate e arte procedural desenhada em formas 2D. Ainda faltam seguir além da próxima curva, conhecer a vontade atual de Nara, as escolhas e os finais da campanha, mais regiões, raridades e builds, arte e áudio originais, animações, balanceamento amplo e testes manuais em diferentes resoluções. Não há medição de desempenho em máquinas variadas.
+
 
 
 

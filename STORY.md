@@ -86,7 +86,7 @@ A recompensa pela travessia é paga por Edda, enquanto Sileth mantém o arquivo 
 
 - A inspiração em Diablo fica no gênero e na ambição de combate, exploração, loot e progressão. Scadryk mantém mitologia, trama, personagens, criaturas, nomes e apresentação próprios.
 - O Guardião e a cripta já existem como protótipo de combate; as ligações com o Rio Cego e o Lume são ficção planejada para a campanha.
-- O prólogo, as duas inscrições da cripta, a praça, as missões de Sileth e Edda, o Arquivo Norte, o Rio Cego, a Capela Afogada, a Câmara do Lume, a Margem sem Reflexo, o Reservatório das Vozes, a Costa das Vozes Tardias, o Claustro do Coro Partido, a Bacia do Primeiro Nome, Ilyra, o Coro dos Nomes Consumidos, o Vau dos Nomes Escolhidos, o Pátio das Testemunhas e o mapa de Nara estão jogáveis; a primeira escolha em Véspera altera a força de três chefes. A comunidade além do mapa, o destino atual de Nara, o confronto final e o epílogo continuam planejados.
+- O prólogo, as duas inscrições da cripta, a praça, as missões de Sileth e Edda, o Arquivo Norte, o Rio Cego, a Capela Afogada, a Câmara do Lume, a Margem sem Reflexo, o Reservatório das Vozes, a Costa das Vozes Tardias, o Claustro do Coro Partido, a Bacia do Primeiro Nome, Ilyra, o Coro dos Nomes Consumidos, o Vau dos Nomes Escolhidos, o Pátio das Testemunhas, o mapa de Nara, o Refúgio do Veio Calmo, a Trilha dos Luminários e a Cisterna do Registro Vazio estão jogáveis; a primeira escolha em Véspera altera a força de quatro chefes. A próxima curva além do mapa, o destino atual de Nara, o confronto final e o epílogo continuam planejados.
 - Novos itens e poderes devem ter origem no mundo de Scadryk e revelar algo sobre quem os criou, usou ou esqueceu.
 
 
@@ -96,4 +96,15 @@ A recompensa pela travessia é paga por Edda, enquanto Sileth mantém o arquivo 
 
 
 
+
+
+### Capítulo VII — O refúgio do Veio Calmo
+
+O mapa da Cartógrafa termina antes de um antigo barco encalhado, onde pessoas que deixaram Véspera construíram o Refúgio do Veio Calmo. Ali, nomes antigos não são apagados nem impostos: cada morador decide o que contar e o que escrever. Aven, antigo barqueiro, ajuda a comunidade a manter essa escolha coletiva sem transformar o abrigo em mais um arquivo controlado por uma pessoa só.
+
+Nara ajudou a mapear as primeiras rotas do refúgio e seguiu adiante com viajantes que escolheram continuar. O rastro não mostra que ela esteja esperando ser encontrada. Aven preserva o pedido dela: ninguém deve revelar o nome que escolheu nem prometer um reencontro em seu nome. Para seguir pela trilha, o protagonista terá de colaborar com quem vive ali e proteger os registros de passagem sem reivindicar posse sobre eles.
+
+Na Cisterna do Registro Vazio, um Escrivão de Contrato acredita que registrar todo nome é a única forma de impedir que o Lume volte a apagá-los. Ele prende nomes em contratos e os usa para dar forma a ecos de papel. O confronto não decide quem Nara é nem onde ela está; ele abre acesso a anotações de viagem incompletas, suficientes para indicar a próxima curva a oeste.
+
+Este capítulo já é jogável: Edda conduz o protagonista ao refúgio, Aven libera a trilha, os Espectros de Papel guardam a cisterna e o Escrivão de Contrato protege o registro comunitário. A missão e as câmaras limpas ficam no save. O próximo trecho da viagem continua além do mapa disponível.
 
