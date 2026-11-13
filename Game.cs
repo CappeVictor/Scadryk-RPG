@@ -49,6 +49,7 @@ public sealed class Game : Form
         public bool NaraTrace { get; set; }
         public int OwnedCharms { get; set; }
         public int EquippedCharm { get; set; }
+        public int EquippedCharm2 { get; set; }
         public int TownEnding { get; set; }
         public bool ChorusMemory { get; set; }
     }
@@ -90,7 +91,7 @@ public sealed class Game : Form
     private int healthTalent, skillTalent, dodgeTalent, pendingTalents, enemiesDefeated;
     private int memoriesFound, questStage, clearedRooms;
     private bool chorusMemory;
-    private int ownedCharms, equippedCharm;
+    private int ownedCharms, equippedCharm, equippedCharm2;
     private bool archiveSeal;
     private bool riverBell;
     private bool lumeLens;
@@ -130,7 +131,7 @@ public sealed class Game : Form
         townEnding = 0;
         healthTalent = skillTalent = dodgeTalent = pendingTalents = enemiesDefeated = memoriesFound = questStage = 0;
         clearedRooms = 0;
-        ownedCharms = equippedCharm = 0;
+        ownedCharms = equippedCharm = equippedCharm2 = 0;
         health = maxHealth = 100; attackCd = skillCd = dashCd = dashTime = invulnerable = 0; title = false; storyPage = 0; storyOverlay = true; SetupRoom();
     }
 
@@ -193,7 +194,7 @@ public sealed class Game : Form
         if (chestChoice) { if (e.KeyCode == Keys.D1) gold += 75; else if (e.KeyCode == Keys.D2) potions += 2; else if (e.KeyCode == Keys.D3) health = maxHealth; else return; chestChoice = false; EnterVesper(); return; }
         if (talentChoice) { SelectTalent(e.KeyCode); return; }
         if (e.KeyCode == Keys.I) { inventoryOpen = !inventoryOpen; return; }
-        if (inventoryOpen) { if (e.KeyCode >= Keys.D1 && e.KeyCode <= Keys.D3) EquipWeapon((int)e.KeyCode - (int)Keys.D1); else if (e.KeyCode == Keys.D4 && armor) armorOn = !armorOn; else if (e.KeyCode == Keys.D5 && relic) relicOn = !relicOn; else if (e.KeyCode == Keys.D6) CycleCharm(); return; }
+        if (inventoryOpen) { if (e.KeyCode >= Keys.D1 && e.KeyCode <= Keys.D3) EquipWeapon((int)e.KeyCode - (int)Keys.D1); else if (e.KeyCode == Keys.D4 && armor) armorOn = !armorOn; else if (e.KeyCode == Keys.D5 && relic) relicOn = !relicOn; else if (e.KeyCode == Keys.D6) CycleCharm(1); else if (e.KeyCode == Keys.D7) CycleCharm(2); return; }
         if (e.KeyCode == Keys.Space || e.KeyCode == Keys.J) Attack();
         else if ((e.KeyCode == Keys.ShiftKey || e.KeyCode == Keys.K) && dashCd <= 0) { dashTime = DashDuration(); dashCd = DashCooldown(); }
         else if (e.KeyCode == Keys.R) Whirlwind();
@@ -229,7 +230,7 @@ public sealed class Game : Form
     private void Whirlwind()
     {
         if (skillCd > 0 || talentChoice) return;
-        skillCd = Math.Max(1.5f, 6f - skillTalent * 0.5f) + (equippedCharm == 1 ? 1f : 0f);
+        skillCd = Math.Max(1.5f, 6f - skillTalent * 0.5f) + WhirlwindCooldownPenalty();
         foreach (Enemy enemy in enemies.ToArray()) if (Distance(player, enemy.Pos) < 110) { enemy.Hp -= (int)(damage * WhirlwindMultiplier() * (enemy.Armored ? 0.75f : 1)); if (enemy.Hp <= 0) Defeat(enemy); }
     }
 
@@ -303,7 +304,7 @@ public sealed class Game : Form
     private void HitPlayer(float value) { health = Math.Max(0, health - value * (armorOn ? 0.7f : 1)); invulnerable = 0.6f; if (health <= 0) dead = true; }
     private void Collect(Drop item)
     {
-        switch (item.Kind) { case "gold": gold += item.Amount; notice = $"+{item.Amount} OURO"; break; case "potion": potions++; notice = "+1 POÇÃO"; break; case "weapon": ownedWeapons |= 1 << item.Amount; notice = $"ARMA: {weaponNames[item.Amount]}"; break; case "chorus": chorusMemory = true; questStage = 14; notice = "MEMÓRIA: CORO DOS NOMES CONSUMIDOS"; ShowMemory("A TECELÃ DE NOMES", "Quando o fio se rompe, as vozes não se calam. O Coro: “Não somos uma coisa que veio de fora. Somos todos os nomes que o Lume tomou e não conseguiu guardar. Nara carregou parte de nós para longe, mas o farol continua nos chamando.” O Silêncio de Baixo é a pressão dessas memórias tentando voltar juntas."); break; case "charm": if (item.Amount is < 1 or > 3) { drops.Remove(item); return; } bool newCharm = (ownedCharms & (1 << (item.Amount - 1))) == 0; ownedCharms |= 1 << (item.Amount - 1); if (equippedCharm == 0) equippedCharm = item.Amount; notice = newCharm ? $"TALISMÃ: {charmNames[item.Amount]}" : $"ECO DUPLICADO: {charmNames[item.Amount]}"; break; case "armor": armor = true; notice = "PEITORAL DE PEDRA ENCONTRADO"; break; case "relic": relic = true; notice = "FRAGMENTO DE VOZ ENCONTRADO"; ShowMemory("ECO PRESO NO RELICÁRIO", "Nara: “Eu vim por vontade própria. Se encontrou esta lembrança, procure o arquivo de Sileth.”"); break; case "seal": archiveSeal = true; damage += 8; questStage = 4; notice = "SELO DA VIGÍLIA • DANO +8"; ShowMemory("SELO DA VIGÍLIA", "O selo guarda a última gravação de Nara: “Sileth não apagou os nomes para alimentar o Lume. Ela tentou esconder que o próprio farol está aprendendo a escolher quem esquecer.” Leve esta prova de volta à Curadora."); break; case "bell": riverBell = true; maxHealth += 20; health = Math.Min(maxHealth, health + 20); questStage = 6; notice = "SINO DE NARA • VIDA MÁXIMA +20"; ShowMemory("O SINO SEM BADALO", "A marca no bronze pertence a Nara. A voz gravada é de uma mulher que atravessou o rio: “Não estou presa. O farol me escuta porque eu aceitei levar as memórias para longe da cidade. Se ainda me procura, não tente me trazer de volta antes de ouvir o que o rio guarda.”"); break; case "lens": lumeLens = true; damage += 12; questStage = 9; notice = "PRISMA DO LUME • DANO +12"; ShowMemory("O PRISMA DA PRIMEIRA VIGÍLIA", "A luz projeta Nara ao lado de Sileth, anos antes da noite dos sinos. Nara escolheu ser a portadora das lembranças que o Lume não conseguia guardar. A imagem se rompe antes de mostrar onde ela está agora."); break; case "trace": naraTrace = true; questStage = 11; notice = "RASTRO DE NARA • NOVA MEMÓRIA"; ShowMemory("A LEMBRANÇA QUE SOBROU", "O eco não mostra um rosto. Mostra Nara ensinando alguém, do outro lado do rio, a pronunciar um nome que Véspera apagou. Sua última frase não pede resgate: “Se a cidade ainda lembrar de nós, eu saberei voltar.”"); break; }
+        switch (item.Kind) { case "gold": gold += item.Amount; notice = $"+{item.Amount} OURO"; break; case "potion": potions++; notice = "+1 POÇÃO"; break; case "weapon": ownedWeapons |= 1 << item.Amount; notice = $"ARMA: {weaponNames[item.Amount]}"; break; case "chorus": chorusMemory = true; questStage = 14; notice = "MEMÓRIA: CORO DOS NOMES CONSUMIDOS"; ShowMemory("A TECELÃ DE NOMES", "Quando o fio se rompe, as vozes não se calam. O Coro: “Não somos uma coisa que veio de fora. Somos todos os nomes que o Lume tomou e não conseguiu guardar. Nara carregou parte de nós para longe, mas o farol continua nos chamando.” O Silêncio de Baixo é a pressão dessas memórias tentando voltar juntas."); break; case "charm": if (item.Amount is < 1 or > 3) { drops.Remove(item); return; } bool newCharm = (ownedCharms & (1 << (item.Amount - 1))) == 0; ownedCharms |= 1 << (item.Amount - 1); if (equippedCharm == 0 && equippedCharm2 != item.Amount) equippedCharm = item.Amount; else if (equippedCharm2 == 0 && equippedCharm != item.Amount) equippedCharm2 = item.Amount; notice = newCharm ? $"TALISMÃ: {charmNames[item.Amount]}" : $"ECO DUPLICADO: {charmNames[item.Amount]}"; break; case "armor": armor = true; notice = "PEITORAL DE PEDRA ENCONTRADO"; break; case "relic": relic = true; notice = "FRAGMENTO DE VOZ ENCONTRADO"; ShowMemory("ECO PRESO NO RELICÁRIO", "Nara: “Eu vim por vontade própria. Se encontrou esta lembrança, procure o arquivo de Sileth.”"); break; case "seal": archiveSeal = true; damage += 8; questStage = 4; notice = "SELO DA VIGÍLIA • DANO +8"; ShowMemory("SELO DA VIGÍLIA", "O selo guarda a última gravação de Nara: “Sileth não apagou os nomes para alimentar o Lume. Ela tentou esconder que o próprio farol está aprendendo a escolher quem esquecer.” Leve esta prova de volta à Curadora."); break; case "bell": riverBell = true; maxHealth += 20; health = Math.Min(maxHealth, health + 20); questStage = 6; notice = "SINO DE NARA • VIDA MÁXIMA +20"; ShowMemory("O SINO SEM BADALO", "A marca no bronze pertence a Nara. A voz gravada é de uma mulher que atravessou o rio: “Não estou presa. O farol me escuta porque eu aceitei levar as memórias para longe da cidade. Se ainda me procura, não tente me trazer de volta antes de ouvir o que o rio guarda.”"); break; case "lens": lumeLens = true; damage += 12; questStage = 9; notice = "PRISMA DO LUME • DANO +12"; ShowMemory("O PRISMA DA PRIMEIRA VIGÍLIA", "A luz projeta Nara ao lado de Sileth, anos antes da noite dos sinos. Nara escolheu ser a portadora das lembranças que o Lume não conseguia guardar. A imagem se rompe antes de mostrar onde ela está agora."); break; case "trace": naraTrace = true; questStage = 11; notice = "RASTRO DE NARA • NOVA MEMÓRIA"; ShowMemory("A LEMBRANÇA QUE SOBROU", "O eco não mostra um rosto. Mostra Nara ensinando alguém, do outro lado do rio, a pronunciar um nome que Véspera apagou. Sua última frase não pede resgate: “Se a cidade ainda lembrar de nós, eu saberei voltar.”"); break; }
         drops.Remove(item); noticeTime = 1.7f;
     }
 
@@ -412,22 +413,31 @@ public sealed class Game : Form
     private Enemy? lockedTarget;
     private void CycleTarget() { if (enemies.Count == 0) { lockedTarget = null; return; } int i = lockedTarget is null ? -1 : enemies.IndexOf(lockedTarget); lockedTarget = enemies[(i + 1) % enemies.Count]; notice = $"ALVO: {EnemyName(lockedTarget)}"; noticeTime = 1.4f; }
     private void EquipWeapon(int index) { if ((ownedWeapons & (1 << index)) == 0) { notice = "ARMA AINDA NÃO ENCONTRADA"; noticeTime = 1.4f; return; } damage += weaponDamage[index] - weaponDamage[weapon]; weapon = index; }
-    private void CycleCharm()
+    private void CycleCharm(int slot)
     {
+        int current = slot == 1 ? equippedCharm : equippedCharm2;
+        int other = slot == 1 ? equippedCharm2 : equippedCharm;
         for (int i = 1; i <= 3; i++)
         {
-            int candidate = (equippedCharm + i) % 4;
-            if (candidate == 0 || (ownedCharms & (1 << (candidate - 1))) == 0) continue;
-            equippedCharm = candidate; notice = $"TALISMÃ EQUIPADO: {charmNames[candidate]}"; noticeTime = 1.6f; return;
+            int candidate = ((current - 1 + i + 3) % 3) + 1;
+            if (candidate == current || candidate == other || (ownedCharms & (1 << (candidate - 1))) == 0) continue;
+            if (slot == 1) equippedCharm = candidate; else equippedCharm2 = candidate;
+            notice = $"ESPAÇO {slot}: {charmNames[candidate]}";
+            noticeTime = 1.6f; return;
         }
-        equippedCharm = 0; notice = "NENHUM TALISMÃ ENCONTRADO"; noticeTime = 1.6f;
+        if (current != 0) { if (slot == 1) equippedCharm = 0; else equippedCharm2 = 0; notice = $"ESPAÇO {slot} DE TALISMÃ VAZIO"; }
+        else notice = "NENHUM TALISMÃ DISPONÍVEL PARA ESTE ESPAÇO";
+        noticeTime = 1.6f;
     }
-    private float WhirlwindMultiplier() => equippedCharm == 1 ? 2.16f : 1.6f;
-    private float DashDuration() => equippedCharm == 2 ? 0.29f : 0.17f;
-    private float DashCooldown() => Math.Max(0.35f, 1.15f - dodgeTalent * 0.12f) + (equippedCharm == 2 ? 0.3f : 0f);
-    private float CriticalChance() => (weapon == 2 ? 0.25f : 0.12f) + (equippedCharm == 3 ? 0.12f : 0f);
-    private float CriticalMultiplier() => equippedCharm == 3 ? 2.5f : 2f;
-    private float BasicAttackCooldown() => (weapon == 2 ? 0.23f : 0.33f) + (equippedCharm == 3 ? 0.06f : 0f);
+    private bool HasCharm(int charm) => equippedCharm == charm || equippedCharm2 == charm;
+    private bool HasCharmPair(int first, int second) => equippedCharm == first && equippedCharm2 == second || equippedCharm == second && equippedCharm2 == first;
+    private float WhirlwindMultiplier() => HasCharmPair(1, 2) ? 2.52f : HasCharm(1) ? 2.16f : 1.6f;
+    private float WhirlwindCooldownPenalty() => !HasCharm(1) ? 0f : HasCharmPair(1, 2) ? 0.5f : 1f;
+    private float DashDuration() => HasCharm(2) ? 0.29f : 0.17f;
+    private float DashCooldown() => Math.Max(0.35f, 1.15f - dodgeTalent * 0.12f) + (HasCharm(2) && !HasCharmPair(2, 3) ? 0.3f : 0f);
+    private float CriticalChance() => (weapon == 2 ? 0.25f : 0.12f) + (HasCharm(3) ? HasCharmPair(1, 3) ? 0.17f : 0.12f : 0f);
+    private float CriticalMultiplier() => HasCharm(3) ? HasCharmPair(1, 3) ? 2.75f : 2.5f : 2f;
+    private float BasicAttackCooldown() => (weapon == 2 ? 0.23f : 0.33f) + (HasCharm(3) ? HasCharmPair(1, 3) ? 0.03f : 0.06f : 0f);
     private PointF MoveEnemy(Enemy e, PointF delta) { PointF p = e.Pos; PointF x = new(p.X + delta.X, p.Y), y = new(p.X, p.Y + delta.Y); if (!Blocked(x, e.Radius)) p.X = x.X; if (!Blocked(new PointF(p.X, y.Y), e.Radius)) p.Y = y.Y; return new PointF(Math.Clamp(p.X, 85, 875), Math.Clamp(p.Y, 128, 533)); }
     private void SeparateFromPack(Enemy enemy, float dt) { PointF push = PointF.Empty; foreach (Enemy other in enemies) { if (ReferenceEquals(enemy, other)) continue; PointF away = Sub(enemy.Pos, other.Pos); float d = Length(away); if (d > 0.01f && d < 40) push = Add(push, Scale(away, (40 - d) / (40 * d))); } if (Length(push) > 0.01f) enemy.Pos = MoveEnemy(enemy, Scale(Normalize(push, PointF.Empty), 52 * dt)); }
     private void MovePlayer(PointF delta) { PointF x = new(player.X + delta.X, player.Y), y = new(player.X, player.Y + delta.Y); if (!Blocked(x)) player.X = x.X; if (!Blocked(new PointF(player.X, y.Y))) player.Y = y.Y; player.X = Math.Clamp(player.X, 85, 875); player.Y = Math.Clamp(player.Y, 128, 533); }
@@ -440,7 +450,7 @@ public sealed class Game : Form
         return false;
     }
 
-    private SaveData CaptureSaveData() => new() { Room = room, Level = level, Xp = xp, Gold = gold, Potions = potions, Damage = damage, Health = health, MaxHealth = maxHealth, Weapon = weapon, OwnedWeapons = ownedWeapons, Armor = armor, Relic = relic, HealthTalent = healthTalent, SkillTalent = skillTalent, DodgeTalent = dodgeTalent, RoomCleared = room == 3 || enemies.Count == 0 && drops.Count == 0, Completed = victory, MemoriesFound = memoriesFound, QuestStage = questStage, ClearedRooms = clearedRooms | (room != 3 && enemies.Count == 0 && drops.Count == 0 ? 1 << room : 0), ArchiveSeal = archiveSeal, RiverBell = riverBell, LumeLens = lumeLens, NaraTrace = naraTrace, ChorusMemory = chorusMemory, OwnedCharms = ownedCharms, EquippedCharm = equippedCharm, TownEnding = townEnding };
+    private SaveData CaptureSaveData() => new() { Room = room, Level = level, Xp = xp, Gold = gold, Potions = potions, Damage = damage, Health = health, MaxHealth = maxHealth, Weapon = weapon, OwnedWeapons = ownedWeapons, Armor = armor, Relic = relic, HealthTalent = healthTalent, SkillTalent = skillTalent, DodgeTalent = dodgeTalent, RoomCleared = room == 3 || enemies.Count == 0 && drops.Count == 0, Completed = victory, MemoriesFound = memoriesFound, QuestStage = questStage, ClearedRooms = clearedRooms | (room != 3 && enemies.Count == 0 && drops.Count == 0 ? 1 << room : 0), ArchiveSeal = archiveSeal, RiverBell = riverBell, LumeLens = lumeLens, NaraTrace = naraTrace, ChorusMemory = chorusMemory, OwnedCharms = ownedCharms, EquippedCharm = equippedCharm, EquippedCharm2 = equippedCharm2, TownEnding = townEnding };
     private void SaveGame() { Directory.CreateDirectory(Path.GetDirectoryName(SavePath)!); File.WriteAllText(SavePath, JsonSerializer.Serialize(CaptureSaveData())); notice = "PROGRESSO SALVO"; noticeTime = 2; }
     private string LegacySavePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Godot", "app_userdata", "Scadryk RPG", "scadryk-save.cfg");
     private SaveData ReadLegacySave()
@@ -460,8 +470,8 @@ public sealed class Game : Form
         try
         {
             bool migrated = !File.Exists(SavePath); SaveData s = migrated ? ReadLegacySave() : JsonSerializer.Deserialize<SaveData>(File.ReadAllText(SavePath)) ?? throw new InvalidDataException();
-            if (s.Room is < 0 or > 13 || s.Level is < 1 or > 10000 || s.Xp < 0 || s.Xp >= s.Level * 60 || s.Weapon is < 0 or > 2 || s.OwnedWeapons < 1 || s.OwnedWeapons > 7 || (s.OwnedWeapons & (1 << s.Weapon)) == 0 || s.MaxHealth < 1 || s.Health <= 0 || s.Health > s.MaxHealth || s.Potions < 0 || s.Gold < 0 || s.Damage < 1 || s.MemoriesFound is < 0 or > 3 || s.QuestStage is < 0 or > 15 || s.ClearedRooms is < 0 or > 16383 || s.Completed && s.Room != 2 || s.OwnedCharms is < 0 or > 7 || s.EquippedCharm is < 0 or > 3 || s.EquippedCharm > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm - 1))) == 0 || s.TownEnding is < 0 or > 2 || s.QuestStage == 13 && s.TownEnding == 0 || s.QuestStage >= 14 && !s.ChorusMemory) throw new InvalidDataException();
-            StartGame(); room = s.Room; level = s.Level; xp = s.Xp; gold = s.Gold; potions = s.Potions; damage = s.Damage; health = s.Health; maxHealth = s.MaxHealth; weapon = s.Weapon; ownedWeapons = s.OwnedWeapons; armor = s.Armor; relic = s.Relic; healthTalent = s.HealthTalent; skillTalent = s.SkillTalent; dodgeTalent = s.DodgeTalent; memoriesFound = s.MemoriesFound; questStage = s.QuestStage; clearedRooms = s.ClearedRooms | (s.RoomCleared && s.Room != 3 ? 1 << s.Room : 0); archiveSeal = s.ArchiveSeal; riverBell = s.RiverBell; lumeLens = s.LumeLens; naraTrace = s.NaraTrace; chorusMemory = s.ChorusMemory; ownedCharms = s.OwnedCharms; equippedCharm = s.EquippedCharm; townEnding = s.TownEnding; SetupRoom(); if (s.RoomCleared) enemies.Clear(); victory = s.Completed; title = false; storyOverlay = false;
+            if (s.Room is < 0 or > 13 || s.Level is < 1 or > 10000 || s.Xp < 0 || s.Xp >= s.Level * 60 || s.Weapon is < 0 or > 2 || s.OwnedWeapons < 1 || s.OwnedWeapons > 7 || (s.OwnedWeapons & (1 << s.Weapon)) == 0 || s.MaxHealth < 1 || s.Health <= 0 || s.Health > s.MaxHealth || s.Potions < 0 || s.Gold < 0 || s.Damage < 1 || s.MemoriesFound is < 0 or > 3 || s.QuestStage is < 0 or > 15 || s.ClearedRooms is < 0 or > 16383 || s.Completed && s.Room != 2 || s.OwnedCharms is < 0 or > 7 || s.EquippedCharm is < 0 or > 3 || s.EquippedCharm2 is < 0 or > 3 || s.EquippedCharm > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm - 1))) == 0 || s.EquippedCharm2 > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm2 - 1))) == 0 || s.EquippedCharm > 0 && s.EquippedCharm == s.EquippedCharm2 || s.TownEnding is < 0 or > 2 || s.QuestStage == 13 && s.TownEnding == 0 || s.QuestStage >= 14 && !s.ChorusMemory) throw new InvalidDataException();
+            StartGame(); room = s.Room; level = s.Level; xp = s.Xp; gold = s.Gold; potions = s.Potions; damage = s.Damage; health = s.Health; maxHealth = s.MaxHealth; weapon = s.Weapon; ownedWeapons = s.OwnedWeapons; armor = s.Armor; relic = s.Relic; healthTalent = s.HealthTalent; skillTalent = s.SkillTalent; dodgeTalent = s.DodgeTalent; memoriesFound = s.MemoriesFound; questStage = s.QuestStage; clearedRooms = s.ClearedRooms | (s.RoomCleared && s.Room != 3 ? 1 << s.Room : 0); archiveSeal = s.ArchiveSeal; riverBell = s.RiverBell; lumeLens = s.LumeLens; naraTrace = s.NaraTrace; chorusMemory = s.ChorusMemory; ownedCharms = s.OwnedCharms; equippedCharm = s.EquippedCharm; equippedCharm2 = s.EquippedCharm2; townEnding = s.TownEnding; SetupRoom(); if (s.RoomCleared) enemies.Clear(); victory = s.Completed; title = false; storyOverlay = false;
             if (migrated) SaveGame(); notice = migrated ? "SAVE ANTIGO MIGRADO" : "PROGRESSO CARREGADO"; noticeTime = 2;
         }
         catch { notice = "NENHUM SALVAMENTO VÁLIDO"; noticeTime = 2; }
@@ -705,8 +715,8 @@ public sealed class Game : Form
     private void DrawPlayer(Graphics g) { using var b = new SolidBrush(invulnerable > 0 ? Color.Salmon : Color.FromArgb(90, 143, 138)); using var face = new SolidBrush(Color.Bisque); g.FillEllipse(b, player.X - 16, player.Y - 16, 32, 32); g.FillEllipse(face, player.X - 8, player.Y - 11, 16, 16); using var p = new Pen(Color.AntiqueWhite, 4); g.DrawLine(p, player, Add(player, Scale(facing, 24))); if (skillCd > 0) { using var cooldownPen = new Pen(Color.FromArgb(190, 230, 193, 129), 3); g.DrawArc(cooldownPen, player.X - 25, player.Y - 25, 50, 50, -90, 360 * skillCd / Math.Max(1.5f, 6f - skillTalent * .5f)); } }
     private void DrawInventory(Graphics g)
     {
-        using var b = new SolidBrush(Color.FromArgb(245, 17, 19, 20)); using var itemFont = new Font("Segoe UI", 11); g.FillRectangle(b, 150, 145, 660, 490);
-        DrawCentered(g, "INVENTÁRIO   •   1–3 ARMAS   •   4 ARMADURA   •   5 RELÍQUIA   •   6 TALISMÃ   •   I FECHAR", 180, new Font("Segoe UI", 12, FontStyle.Bold), Color.Goldenrod);
+        using var b = new SolidBrush(Color.FromArgb(245, 17, 19, 20)); using var itemFont = new Font("Segoe UI", 11); using var effectFont = new Font("Segoe UI", 9); g.FillRectangle(b, 150, 145, 660, 490);
+        DrawCentered(g, "INVENTÁRIO   •   1–3 ARMAS   •   4 ARMADURA   •   5 RELÍQUIA   •   6/7 TALISMÃS   •   I FECHAR", 180, new Font("Segoe UI", 12, FontStyle.Bold), Color.Goldenrod);
         for (int i = 0; i < 3; i++) g.DrawString($"{i + 1}. {weaponNames[i]}    DANO {weaponDamage[i] - weaponDamage[weapon]:+#;-#;0}    {(weapon == i ? "EQUIPADA" : (ownedWeapons & (1 << i)) != 0 ? "DISPONÍVEL" : "NÃO ENCONTRADA")}", itemFont, (ownedWeapons & (1 << i)) != 0 ? Brushes.AntiqueWhite : Brushes.Gray, 205, 230 + i * 40);
         g.DrawString($"4. PEITORAL DE PEDRA {(armorOn ? "EQUIPADO" : armor ? "DISPONÍVEL" : "NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 360);
         g.DrawString($"5. RELICÁRIO VITAL {(relicOn ? "EQUIPADO" : relic ? "DISPONÍVEL" : "NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 400);
@@ -716,10 +726,10 @@ public sealed class Game : Form
         g.DrawString($"RASTRO DE NARA {(naraTrace ? "RECUPERADO • MEMÓRIA PRESERVADA" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 560);
         string availableCharms = string.Join(" • ", Enumerable.Range(1, 3).Where(i => (ownedCharms & (1 << (i - 1))) != 0).Select(i => charmNames[i]));
         g.DrawString($"TALISMÃS: {(availableCharms.Length == 0 ? "NENHUM" : availableCharms)}", itemFont, Brushes.Plum, 205, 582);
-        string equippedName = equippedCharm == 0 ? "NENHUM" : charmNames[equippedCharm];
-        g.DrawString($"6. EQUIPADO: {equippedName}", itemFont, Brushes.Plum, 205, 602);
-        string effect = equippedCharm switch { 1 => "Redemoinho +35% dano • recarga +1 s", 2 => "Esquiva mais longa • recarga +0,3 s", 3 => "+12 p.p. crítico • ataque básico mais lento", _ => "Elites e chefes deixam talismãs especiais" };
-        g.DrawString(effect, itemFont, Brushes.AntiqueWhite, 205, 622);
+        string firstCharm = equippedCharm == 0 ? "VAZIO" : charmNames[equippedCharm]; string secondCharm = equippedCharm2 == 0 ? "VAZIO" : charmNames[equippedCharm2];
+        g.DrawString($"6. ESPAÇO I: {firstCharm}    7. ESPAÇO II: {secondCharm}", itemFont, Brushes.Plum, 205, 602);
+        string effect = HasCharmPair(1, 2) ? "SINTONIA: Redemoinho +57% dano • penalidade de recarga cai para 0,5 s" : HasCharmPair(1, 3) ? "SINTONIA: +17 p.p. crítico • multiplicador 2,75x • ataque básico menos lento" : HasCharmPair(2, 3) ? "SINTONIA: esquiva longa sem o acréscimo de recarga" : "Equipar dois talismãs únicos cria uma sintonia entre seus efeitos.";
+        g.DrawString(effect, effectFont, Brushes.AntiqueWhite, 205, 622);
     }
     private void DrawChoice(Graphics g, string titleText, string a, string b, string c)
     {
@@ -915,12 +925,14 @@ public sealed class Game : Form
         if (firstCharm.Amount != 1) throw new InvalidOperationException("O Elite não deixou o Nó de Brasa.");
         lootGame.Collect(firstCharm);
         if (lootGame.equippedCharm != 1 || lootGame.WhirlwindMultiplier() <= 1.6f) throw new InvalidOperationException("O Nó de Brasa não alterou o Redemoinho.");
-        lootGame.Collect(new Drop { Pos = lootGame.player, Kind = "charm", Amount = 2 }); lootGame.CycleCharm();
-        if (lootGame.equippedCharm != 2 || lootGame.DashDuration() <= 0.17f || lootGame.DashCooldown() <= 1.15f) throw new InvalidOperationException("O Fio de Travessia não alterou a esquiva.");
-        lootGame.Collect(new Drop { Pos = lootGame.player, Kind = "charm", Amount = 3 }); lootGame.CycleCharm();
-        if (lootGame.equippedCharm != 3 || lootGame.CriticalChance() <= 0.12f || lootGame.CriticalMultiplier() <= 2f || lootGame.BasicAttackCooldown() <= 0.33f) throw new InvalidOperationException("O Vidro de Vigília não alterou os ataques críticos.");
+        lootGame.Collect(new Drop { Pos = lootGame.player, Kind = "charm", Amount = 2 });
+        if (lootGame.equippedCharm2 != 2 || lootGame.DashDuration() <= 0.17f || lootGame.DashCooldown() <= 1.15f || lootGame.WhirlwindMultiplier() <= 2.16f || lootGame.WhirlwindCooldownPenalty() >= 1f) throw new InvalidOperationException("A sintonia entre Brasa e Travessia não fortaleceu o Redemoinho.");
+        lootGame.Collect(new Drop { Pos = lootGame.player, Kind = "charm", Amount = 3 }); lootGame.CycleCharm(2);
+        if (lootGame.equippedCharm2 != 3 || lootGame.CriticalChance() < 0.29f || lootGame.CriticalMultiplier() <= 2.5f || lootGame.BasicAttackCooldown() >= 0.39f) throw new InvalidOperationException("A sintonia entre Brasa e Vidro não ampliou os críticos.");
+        lootGame.CycleCharm(1);
+        if (lootGame.equippedCharm != 2 || lootGame.equippedCharm2 != 3 || lootGame.DashCooldown() >= 1.45f) throw new InvalidOperationException("A sintonia entre Travessia e Vigília não removeu a recarga adicional da esquiva.");
         SaveData charmSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(lootGame.CaptureSaveData()))!;
-        if (charmSave.OwnedCharms != 7 || charmSave.EquippedCharm != 3) throw new InvalidOperationException("Os talismãs não foram serializados no save.");
+        if (charmSave.OwnedCharms != 7 || charmSave.EquippedCharm != 2 || charmSave.EquippedCharm2 != 3) throw new InvalidOperationException("Os espaços de talismã não foram serializados no save.");
         using var restoreGame = new Game(); restoreGame.timer.Stop(); restoreGame.StartGame(); restoreGame.storyOverlay = false; restoreGame.room = 3; restoreGame.questStage = 12; restoreGame.naraTrace = true; restoreGame.player = CuratorPosition;
         restoreGame.InteractTown(); if (!restoreGame.endingChoiceOpen) throw new InvalidOperationException("Sileth não abriu a primeira decisão de Véspera.");
         restoreGame.OnKeyDown(null, new KeyEventArgs(Keys.D3)); if (restoreGame.endingChoiceOpen) throw new InvalidOperationException("A decisão não pôde ser adiada.");

@@ -19,7 +19,7 @@ O documento de história com cenário, personagens e resumo dos quatro capítulo
 - A Godot foi removida do projeto. A janela e o desenho usam C#/.NET 8 Windows Forms e GDI+.
 - O protótipo mantém treze salas de combate, inimigos comuns, arqueiro, conjurador, elite, Guardião da Cripta, Ecos de Tinta, Escriba Cego, Lembranças Afogadas, Barqueiro Oco, Vestígios de Brasas, Guardião das Cinzas, Mariposas de Nomes, O Nome Vazio e a Tecelã de Nomes.
 - Combate: ataque corpo a corpo, ataque especial Redemoinho, esquiva, crítico, alvo marcado e golpes inimigos anunciados.
-- Progressão: XP, níveis, escolhas de talentos, ouro, poções, três armas, armadura, relíquia e três talismãs que alteram habilidades, esquiva ou ataques críticos.
+- Progressão: XP, níveis, escolhas de talentos, ouro, poções, três armas, armadura, relíquia e três talismãs que podem ocupar dois espaços de equipamento.
 - Salvamento local em JSON com migração do save ConfigFile da versão Godot.
 - Movimento com colisão por eixo, permitindo deslizar pelas quinas.
 - Prólogo interativo, duas inscrições opcionais e lembrança de Nara ao recolher o fragmento do Relicário Vital após derrotar o Guardião.
@@ -29,7 +29,7 @@ O documento de história com cenário, personagens e resumo dos quatro capítulo
 - Escada de Cinzas e Câmara do Lume exploráveis, Vestígios de Brasas, chefe com três ataques anunciados e Prisma da Primeira Vigília como revelação narrativa e melhoria de dano.
 - Expedição além do Lume: Margem sem Reflexo e Reservatório das Vozes, Mariposas de Nomes, O Nome Vazio com três ataques anunciados e lembrança de Nara.
 - Costa das Vozes Tardias e Claustro do Coro Partido, com a Tecelã de Nomes, três padrões anunciados, loot narrativo e revelação de que o Silêncio é o conjunto de nomes consumidos pelo Lume.
-- Elites e chefes deixam talismãs originais com efeitos e compensações diferentes; o inventário permite alternar o talismã equipado, e o save registra coleção e equipamento.
+- Elites e chefes deixam talismãs originais com efeitos e compensações diferentes; duas peças únicas podem ser combinadas, com sintonias próprias para Redemoinho, críticos e esquiva; coleção e ambos os espaços persistem no save.
 - A primeira escolha muda diálogos, a praça e a força da Tecelã; a nova memória, a etapa da missão e as treze câmaras já limpas ficam no save. Os ecos coletados aparecem na interface.
 
 ## Próximas etapas
@@ -37,12 +37,12 @@ O documento de história com cenário, personagens e resumo dos quatro capítulo
 1. **Consolidar a base C#** — manter compilação Windows e smoke tests, conferir save novo e migração do save antigo.
 2. **Transformar a premissa em campanha** — seguir a trilha do Coro para além do Claustro, revelar como o Lume começou a escolher nomes e continuar a busca por Nara.
 3. **Aprofundar combate** — mais ataques legíveis, esquiva consistente, inimigos com funções distintas e balanceamento por sala.
-4. **Expandir loot e builds** — adicionar níveis de raridade, comparação de equipamento, mais espaços e efeitos que combinem entre si.
+4. **Expandir loot e builds** — os dois espaços e as três primeiras sintonias já são jogáveis; adicionar raridades de equipamento, comparação mais rica, mais peças e combinações sem perder legibilidade.
 5. **Criar masmorras e narrativa ambiental** — novas regiões, rotas, arquivos, eventos e chefes cujas mecânicas reforcem a história.
 6. **Concluir a escolha final** — mostrar como as decisões acumuladas alteram Véspera, Nara, aliados e o destino do Lume de Vigília.
 7. **Finalizar apresentação e distribuição** — arte e áudio originais, animações, acessibilidade, builds self-contained e testes em Windows.
 
-Cada etapa deve compilar, incluir uma validação adequada e registrar as limitações conhecidas. A primeira decisão ramificada da campanha já muda o estado persistente de Véspera. O protótipo atual tem seis expedições jogáveis, mas ainda precisa de regiões, builds e conteúdo no volume de um RPG de ação longo; essa escala exige desenvolvimento continuado.
+Cada etapa deve compilar, incluir uma validação adequada e registrar as limitações conhecidas. A primeira decisão ramificada da campanha já muda o estado persistente de Véspera. As sintonias iniciais tornam a coleta de talismãs uma escolha de build; ainda são necessárias mais combinações, itens de raridade variável e regiões para alcançar o volume e a rejogabilidade de um RPG de ação longo.
 
 
 
