@@ -35,6 +35,7 @@ O documento de história com cenário, personagens e resumo dos dez capítulos e
 - Refúgio do Veio Calmo, Trilha dos Luminários e Cisterna do Registro Vazio: área segura com três moradores, rota com Espectros de Papel e chefe Escrivão de Contrato. A comunidade guarda o registro compartilhado sob suas próprias regras; o conteúdo confirma apenas que Nara continuou viagem, sem declarar seu nome atual nem seu paradeiro.
 - Várzea das Vozes Sopradas e Ponte da Maré Invertida: duas salas a oeste do refúgio, com Ecos Salinos à distância e a Testemunha da Maré, chefe de três ataques anunciados. Sua lembrança confirma que Nara respondeu pelo nome escolhido diante de um grupo que seguiu viagem por vontade própria; não revela o nome nem o destino.
 - Moinhos da Vazante e Câmara do Veio Preso: duas novas salas com corrente que altera o posicionamento, o Vigia do Veio Preso e a habilidade Vazante. A habilidade agrupa ecos comuns, reduz o dano contra chefes e fica desbloqueada no save após o relato a Aven.
+- Técnicas de combate: o Manto de Lastro é liberado ao devolver o compasso a Aven; a defesa curta reduz em 55% o dano recebido, sua recarga é afetada por Domínio e o desbloqueio persiste no save.
 - Escarpa do Contrafluxo e Coração das Duas Margens: duas novas salas, o Afinador das Margens com três avisos de ataque, uma corrente que alterna entre puxar e repelir, memória persistente e recompensa comunitária em sal vítreo, ouro e poções.
 - Têmpera do Veio Calmo: serviço de progressão de equipamento aberto após devolver a lembrança a Aven. Sal vítreo e ouro permitem escolher um afixo; armas comuns sobem a raras e armas raras ou relíquias podem mudar de afixo sem perder seu bônus. O material e as escolhas ficam no save.
 - Elites e chefes deixam cinco talismãs originais com efeitos e compensações diferentes; duas peças únicas podem ser combinadas, com sintonias para Redemoinho, críticos, esquiva e alcance; coleção e ambos os espaços persistem no save.
@@ -45,31 +46,10 @@ O documento de história com cenário, personagens e resumo dos dez capítulos e
 
 1. **Consolidar a base C#** — manter compilação Windows e smoke tests, conferir save novo e migração do save antigo.
 2. **Transformar a premissa em campanha** — Ilyra revela o propósito original do Lume; o Vau e o mapa de Nara introduzem o refúgio escolhido. O Refúgio, a trilha, a cisterna, a Várzea, a Ponte, o Cotovelo, o Pátio, os Moinhos, a Câmara do Veio, a Escarpa e o Coração das Duas Margens estão jogáveis. As correntes agora mudam o posicionamento e o sentido; a Vazante acrescenta controle de grupos. Continuar a história sem presumir que Nara quer reencontrar o protagonista nem revelar seu nome ou paradeiro antes que a campanha chegue a essa escolha.
-3. **Aprofundar combate** — Estilhaço e Ressonância do Sino ampliam as opções de alcance e controle, com sintonias próprias; evoluir animações, habilidades equipáveis, leitura de ataques, esquiva consistente e balanceamento por sala.
+3. **Aprofundar combate** — Estilhaço e Ressonância do Sino ampliam as opções de alcance e controle, e o Manto de Lastro acrescenta defesa ativa. Prosseguir com habilidades equipáveis, animações, leitura de ataques, esquiva consistente e balanceamento por sala.
 4. **Expandir loot e builds** — armas Comuns, Raras e Relíquias agora recebem bônus de dano e afixos de Trégua, Contracanto ou Maré; as rolagens persistem no save e aparecem no inventário. Cinco talismãs e dois espaços criam especializações; aprofundar famílias de equipamento, afixos combináveis, comparação de itens e habilidades alternativas sem perder legibilidade.
 5. **Criar masmorras e narrativa ambiental** — novas regiões, rotas, arquivos, eventos e chefes cujas mecânicas reforcem a história.
 6. **Concluir a escolha final** — mostrar como as decisões acumuladas alteram Véspera, Nara, aliados e o destino do Lume de Vigília.
 7. **Finalizar apresentação e distribuição** — arte e áudio originais, animações, acessibilidade, builds self-contained e testes em Windows.
 
-Cada etapa deve compilar, incluir uma validação adequada e registrar as limitações conhecidas. A decisão ramificada de Véspera muda o estado persistente da cidade e a dificuldade de cinco chefes. O sétimo capítulo apresenta a comunidade que Nara ajudou a formar; o oitavo acrescenta a nascente e o nono explora como a comunidade respeita rotas escolhidas e o décimo acrescenta travessia ambiental e controle de grupos, e o décimo primeiro acrescenta corrente alternada e um novo chefe, sem resolver a localização, a identidade atual ou a vontade de Nara voltar. O ataque à distância e a Ressonância do Sino já sustentam abordagens distintas, e as três raridades de arma mudam dano e afixos; ainda são necessários mais conjuntos de habilidades, famílias de itens, variedade de builds e regiões para alcançar o volume e a rejogabilidade de um RPG de ação longo.
-
-
-
-
-
-
-
-
-
-
-
-## Trabalho em andamento
-
-- Capítulo VIII: a Várzea das Vozes Sopradas e a Ponte da Maré Invertida estão jogáveis. A etapa adiciona os Ecos Salinos, a Testemunha da Maré com três ataques anunciados, a lembrança persistente da nascente, a Têmpera do Veio Calmo e o sal vítreo salvo; mantém em aberto o nome escolhido, o paradeiro e a vontade atual de Nara.
-
-
-
-- Capítulo IX: o Cotovelo dos Juncais e o Pátio das Amarras Livres estão jogáveis, com a Guardiã do Leito, novo testemunho persistente e recompensa comunitária em Aven.
-
-- Capítulo X: os Moinhos da Vazante e a Câmara do Veio Preso estão jogáveis, com corrente ambiental, o Vigia de três padrões, memória persistente, sal vítreo e a habilidade Vazante liberada por Aven.
-- Capítulo XI: a Escarpa do Contrafluxo e o Coração das Duas Margens estão jogáveis, com alternância de atração e repulsão, o Afinador de três padrões, memória persistente e recompensa comunitária registrada no save.
+Cada etapa deve compilar, incluir uma validação adequada e registrar as limitações conhecidas. A decisão ramificada de Véspera muda o estado persistente da cidade e a dificuldade de cinco chefes. O sétimo capítulo apresenta a comunidade que Nara ajudou a formar; o oitavo acrescenta a nascente e o nono explora como a comunidade respeita rotas escolhidas e o décimo acrescenta travessia ambiental e controle de grupos, e o décimo primeiro acrescenta corrente alternada e um novo chefe, sem resolver a localização, a identidade atual ou a vontade de Nara voltar. O ataque à distância e a Ressonância do Sino já sustentam abordagens distin

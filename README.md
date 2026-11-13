@@ -42,7 +42,7 @@ Para compilar uma versão de produção:
 dotnet build --configuration Release
 ```
 
-Para verificar o prólogo, as inscrições, as treze etapas da campanha, as áreas seguras, os chefes, os itens de história, as correntes alternadas, a Vazante, a nascente, as raridades e os afixos das armas, as missões, o save, movimento, avisos de ataque, esquiva e progressão:
+Para verificar o prólogo, as inscrições, as treze etapas da campanha, as áreas seguras, os chefes, os itens de história, as correntes alternadas, a Vazante, o Manto de Lastro, a nascente, as raridades e os afixos das armas, as missões, o save, movimento, avisos de ataque, esquiva e progressão:
 
 ```powershell
 dotnet run -- --self-test
@@ -79,7 +79,7 @@ dotnet publish --configuration Release --runtime win-x64 --self-contained true
 | C na tela inicial | Carregar o save |
 | Enter | Começar ou reiniciar |
 
-Os ataques corpo a corpo comuns agora mostram a área de impacto antes do golpe. Saia do círculo para evitar dano. O movimento também desliza pela quina dos obstáculos quando uma direção fica bloqueada. O Estilhaço de Voz oferece uma opção de ataque à distância que atravessa uma linha de inimigos e para na geometria da sala. O Sino de Nara libera a Ressonância, uma onda de área que interrompe ecos comuns; chefes recebem dano reduzido e mantêm seus ataques. Domínio reduz a recarga das três técnicas. O Vidro fortalece o Estilhaço e a Ressonância; o Fio de Travessia amplia a onda do Sino à custa de recarga adicional.
+Os ataques corpo a corpo comuns agora mostram a área de impacto antes do golpe. Saia do círculo para evitar dano. O movimento também desliza pela quina dos obstáculos quando uma direção fica bloqueada. O Estilhaço de Voz oferece uma opção de ataque à distância que atravessa uma linha de inimigos e para na geometria da sala. O Sino de Nara libera a Ressonância, uma onda de área que interrompe ecos comuns; chefes recebem dano reduzido e mantêm seus ataques. Domínio reduz a recarga das técnicas. Depois de devolver a memória do Afinador a Aven, o Manto de Lastro (H) reduz em 55% o dano recebido por 2,5 segundos; sua recarga base é de 20 segundos e também diminui com Domínio. O Vidro fortalece o Estilhaço e a Ressonância; o Fio de Travessia amplia a onda do Sino à custa de recarga adicional.
 
 Elites deixam o Nó de Brasa; o Escriba Cego deixa o Vidro de Vigília; o Barqueiro Oco deixa o Fio de Travessia. Ilyra deixa a Marca da Vigília, que causa mais dano a chefes e menos dano a inimigos comuns. A Cartógrafa do Vão deixa o Fio da Margem, que amplia o alcance do Estilhaço de Voz à custa de uma recarga maior. Combine-o com o Vidro para fortalecer o Estilhaço e reduzir essa penalidade. Equipe dois dos cinco talismãs pelo inventário (**I**; teclas **6** e **7**). O Nó fortalece o Redemoinho; o Fio de Travessia prolonga a esquiva e amplia a onda do Sino; o Vidro melhora os críticos e fortalece o Estilhaço e a Ressonância. As sintonias, a coleção e os dois espaços equipados são salvos. Inimigos comuns também podem deixar os três talismãs encontrados nas primeiras regiões. As armas encontradas têm raridade Comum, Rara ou Relíquia: raras e relíquias recebem um afixo original — cura por abate, chance crítica ou dano de técnica — além do bônus de dano indicado. Compare raridade, afixo e dano no inventário (**I**) antes de equipar com **1–3**; as rolagens são salvas e saves antigos recebem armas comuns sem afixos.
 
@@ -91,7 +91,7 @@ Depois de registrar a passagem coletiva com Aven e aprender a Vazante, siga pela
 
 ## Salvamento
 
-O save JSON fica em `%LOCALAPPDATA%\Scadryk\save.json` e guarda armas, bônus, raridades e afixos, a lembrança da nascente, inscrições, etapas das missões, o Selo da Vigília, o Sino de Nara, o Prisma do Lume, os talismãs encontrados, os dois espaços equipados, a decisão de Véspera, o Coro dos Nomes Consumidos, a memória de Ilyra, o mapa de Nara, a etapa do Refúgio do Veio Calmo, o registro comunitário, o testemunho do Pátio das Amarras Livres, a memória dos moinhos, a habilidade Vazante, o compasso das margens e as câmaras já limpas. Saves anteriores sem os campos mais recentes carregam com valores vazios. Na tela inicial, pressione **C** para carregar. Se não houver um save novo, o jogo também procura o ConfigFile da versão anterior em `%APPDATA%\Godot\app_userdata\Scadryk RPG\scadryk-save.cfg` e migra os dados encontrados para o formato JSON.
+O save JSON fica em `%LOCALAPPDATA%\Scadryk\save.json` e guarda armas, bônus, raridades e afixos, a lembrança da nascente, inscrições, etapas das missões, o Selo da Vigília, o Sino de Nara, o Prisma do Lume, os talismãs encontrados, os dois espaços equipados, a decisão de Véspera, o Coro dos Nomes Consumidos, a memória de Ilyra, o mapa de Nara, a etapa do Refúgio do Veio Calmo, o registro comunitário, o testemunho do Pátio das Amarras Livres, a memória dos moinhos, a habilidade Vazante, o compasso das margens, o Manto de Lastro e as câmaras já limpas. Saves anteriores sem os campos mais recentes carregam com valores vazios. Na tela inicial, pressione **C** para carregar. Se não houver um save novo, o jogo também procura o ConfigFile da versão anterior em `%APPDATA%\Godot\app_userdata\Scadryk RPG\scadryk-save.cfg` e migra os dados encontrados para o formato JSON.
 
 ## Estrutura
 

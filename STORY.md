@@ -132,18 +132,4 @@ Este capítulo é jogável: acrescenta duas salas, a Guardiã do Leito, seu padr
 
 Depois de guardar o sinal do grupo, Aven reconhece um som que não vinha das rodas quebradas do refúgio: os Moinhos da Vazante voltaram a girar. Eles regulavam as cheias para que qualquer pessoa pudesse atravessar sem depender de uma ponte ou de um guia. Alguém fechou o canal e prendeu a corrente num percurso único.
 
-Nos moinhos, a água corre por uma faixa larga que empurra o Escutador em direção à câmara. Resistir exige avançar contra o fluxo; esquivar-se permite atravessá-lo sem ser arrastado. Sob a casa das rodas, a Câmara do Veio Preso gira em torno de uma bacia. As correntes puxam para o centro, enquanto o Vigia do Veio Preso anuncia três ataques: um impacto próximo, uma marca que segue o Escutador e um corte longo pela câmara. A decisão de Véspera altera a força do Vigia.
-
-O Vigia não guarda um nome nem um mapa. Mantém o canal fechado porque acredita que qualquer vazante pode levar pessoas para longe de quem se importa com elas. Ao ser derrotado, deixa uma gravação sobre o custo de transformar uma passagem em rota obrigatória. O registro não confirma se Nara atravessou por ali nem revela onde ela está.
-
-Aven ouve a memória e entrega ao Escutador a Marca da Vazante: um selo de bronze que cria uma onda curta, reúne ecos comuns ao redor do jogador e os interrompe; contra chefes, causa dano reduzido e não os desloca de forma significativa. A marca, o progresso do capítulo e o sal vítreo ficam no save. A corrente volta a mudar com a cheia, e a comunidade mantém aberto o caminho para quem decidir atravessá-lo.
-
-### Capítulo XI — O compasso das duas margens
-
-Depois de aprender a Vazante, o Escutador segue a água que subiu para além dos moinhos. A Escarpa do Contrafluxo guarda duas inscrições opostas: uma aponta para o centro do rio; a outra, para fora. Elas não são instruções conflitantes. São o registro de uma passagem que muda com a cheia.
-
-No Coração das Duas Margens, a corrente alterna entre puxar para a bacia e repelir quem se aproxima. As setas ao redor do círculo anunciam o sentido atual. O Afinador das Margens protege o mecanismo e usa três padrões visíveis: um impacto próximo, uma marca que acompanha o Escutador e um corte em linha. A decisão anterior de Véspera muda a força do chefe.
-
-O Afinador não é um servo do Lume. A comunidade o construiu para impedir que as duas margens colapsassem uma sobre a outra. Depois, alguém convenceu o mecanismo de que uma única direção seria mais segura. Sua memória mostra o erro sem identificar quem o alterou, e não contém notícia de Nara. Ao ceder, o rio volta a alternar entre impulso e retorno.
-
-Aven recebe o compasso como um relato compartilhado, não como um mapa. A recompensa inclui sal vítreo e provisões. O capítulo acrescenta duas salas, um chefe com três ataques anunciados, uma corrente que troca de sentido durante o combate, memória persistente e uma nova etapa de missão. A viagem prossegue; o nome escolhido e o paradeiro de Nara continuam sem resposta.
+Nos moi
