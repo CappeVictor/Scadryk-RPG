@@ -21,6 +21,7 @@ public sealed class Game : Form
         public float Radius => Boss ? 23 : Kind == EnemyKind.Elite ? 18 : 14;
     }
     private sealed class Drop { public PointF Pos; public string Kind = "gold"; public int Amount; }
+    private sealed class EchoShard { public PointF Pos, Direction; public float Life, Damage; public HashSet<Enemy> Hit = new(); }
     private sealed class SaveData
     {
         public int Room { get; set; }
@@ -83,6 +84,7 @@ public sealed class Game : Form
     private readonly HashSet<Keys> down = new();
     private readonly System.Windows.Forms.Timer timer = new() { Interval = 16 };
     private readonly Random random = new();
+    private readonly List<EchoShard> echoShards = new();
     private readonly string[] roomNames = { "VESTÍBULO EM RUÍNAS", "SALÃO DOS OSSOS", "CÂMARA DO GUARDIÃO", "VÉSPERA • PRAÇA DO FAROL", "ARQUIVO NORTE • GALERIA", "ARQUIVO NORTE • COFRE", "RIO CEGO • LEITO SECO", "RIO CEGO • CAPELA AFOGADA", "FAROL • ESCADA DE CINZAS", "FAROL • CÂMARA DO LUME", "ALÉM DO LUME • MARGEM SEM REFLEXO", "RESERVATÓRIO • VOZES RETIDAS", "COSTA DAS VOZES TARDIAS", "CLAUSTRO DO CORO PARTIDO", "BACIA DO PRIMEIRO NOME", "SALA DA PRIMEIRA VIGÍLIA", "VAU DOS NOMES ESCOLHIDOS", "PÁTIO DAS TESTEMUNHAS" };
     private readonly string[] weaponNames = { "ESPADA COMUM", "LÂMINA RARA", "LÂMINA DO CREPÚSCULO" };
     private readonly string[] charmNames = { "", "NÓ DE BRASA", "FIO DE TRAVESSIA", "VIDRO DE VIGÍLIA" };
@@ -102,7 +104,7 @@ public sealed class Game : Form
     private bool riverBell;
     private bool lumeLens;
     private bool naraTrace;
-    private float health = 100, maxHealth = 100, attackCd, skillCd, dashCd, dashTime, invulnerable, noticeTime, windupPulse;
+    private float health = 100, maxHealth = 100, attackCd, skillCd, shardCd, dashCd, dashTime, invulnerable, noticeTime, windupPulse;
     private bool armor, armorOn, relic, relicOn, inventoryOpen, title = true, dead, victory, talentChoice, chestChoice, storyOverlay, memoryOverlay, endingChoiceOpen;
     private int townEnding;
     private int storyPage;
@@ -138,7 +140,7 @@ public sealed class Game : Form
         healthTalent = skillTalent = dodgeTalent = pendingTalents = enemiesDefeated = memoriesFound = questStage = 0;
         clearedRooms = 0;
         ownedCharms = equippedCharm = equippedCharm2 = 0;
-        health = maxHealth = 100; attackCd = skillCd = dashCd = dashTime = invulnerable = 0; title = false; storyPage = 0; storyOverlay = true; SetupRoom();
+        health = maxHealth = 100; attackCd = skillCd = shardCd = dashCd = dashTime = invulnerable = 0; echoShards.Clear(); title = false; storyPage = 0; storyOverlay = true; SetupRoom();
     }
 
     private void AdvanceStory()
@@ -150,7 +152,7 @@ public sealed class Game : Form
 
     private void SetupRoom()
     {
-        player = new PointF(150, 330); enemies.Clear(); drops.Clear(); lockedTarget = null;
+        player = new PointF(150, 330); enemies.Clear(); drops.Clear(); echoShards.Clear(); lockedTarget = null;
         if (room != 3 && (clearedRooms & (1 << room)) != 0) return;
         int count = room == 3 ? 0 : room == 0 ? 3 : room == 1 ? 5 : room == 4 ? 5 : room == 5 ? 4 : room == 6 ? 6 : (room is 7 or 9 or 11 or 15 or 17) ? 4 : room == 8 ? 5 : room is 10 or 12 or 14 or 16 ? 6 : room is 13 ? 4 : 4;
         for (int i = 0; i < count; i++)
@@ -204,6 +206,7 @@ public sealed class Game : Form
         if (e.KeyCode == Keys.Space || e.KeyCode == Keys.J) Attack();
         else if ((e.KeyCode == Keys.ShiftKey || e.KeyCode == Keys.K) && dashCd <= 0) { dashTime = DashDuration(); dashCd = DashCooldown(); }
         else if (e.KeyCode == Keys.R) Whirlwind();
+        else if (e.KeyCode == Keys.F) CastVoiceShard();
         else if (e.KeyCode == Keys.Q) UsePotion();
         else if (e.KeyCode == Keys.E) Interact();
         else if (e.KeyCode == Keys.F5) { if (enemies.Count == 0 && drops.Count == 0) SaveGame(); else { notice = "LIMPE A SALA E RECOLHA O LOOT ANTES DE SALVAR"; noticeTime = 2; } }
@@ -240,6 +243,36 @@ public sealed class Game : Form
         foreach (Enemy enemy in enemies.ToArray()) if (Distance(player, enemy.Pos) < 110) { enemy.Hp -= (int)(damage * WhirlwindMultiplier() * (enemy.Armored ? 0.75f : 1)); if (enemy.Hp <= 0) Defeat(enemy); }
     }
 
+    private void CastVoiceShard()
+    {
+        if (room == 3 || shardCd > 0 || enemies.Count == 0) return;
+        facing = lockedTarget is not null && enemies.Contains(lockedTarget) ? Normalize(Sub(lockedTarget.Pos, player), facing) : Normalize(mouseAim, facing);
+        echoShards.Add(new EchoShard { Pos = Add(player, Scale(facing, 23)), Direction = facing, Life = 1.25f, Damage = VoiceShardDamage() });
+        shardCd = VoiceShardCooldown(); notice = "ESTILHAÇO DE VOZ"; noticeTime = 0.75f;
+    }
+
+    private void AdvanceVoiceShards(float dt)
+    {
+        for (int i = echoShards.Count - 1; i >= 0; i--)
+        {
+            EchoShard shard = echoShards[i]; shard.Life -= dt;
+            float distance = 520 * dt; int steps = Math.Max(1, (int)MathF.Ceiling(distance / 6)); float step = distance / steps; bool blocked = false;
+            for (int n = 0; n < steps; n++)
+            {
+                PointF next = Add(shard.Pos, Scale(shard.Direction, step));
+                if (Blocked(next, 4)) { blocked = true; break; }
+                shard.Pos = next;
+                foreach (Enemy enemy in enemies.ToArray())
+                {
+                    if (shard.Hit.Contains(enemy) || DistanceToSegment(enemy.Pos, Sub(shard.Pos, Scale(shard.Direction, step)), shard.Pos) >= enemy.Radius + 8) continue;
+                    shard.Hit.Add(enemy); enemy.Hp -= shard.Damage * (enemy.Armored ? 0.75f : 1); enemy.Flash = 0.16f;
+                    if (enemy.Hp <= 0) Defeat(enemy);
+                }
+            }
+            if (blocked || shard.Life <= 0 || shard.Pos.X < 75 || shard.Pos.X > 885 || shard.Pos.Y < 110 || shard.Pos.Y > 550) echoShards.RemoveAt(i);
+        }
+    }
+
     private void Defeat(Enemy enemy)
     {
         if (!enemies.Remove(enemy)) return;
@@ -274,13 +307,14 @@ public sealed class Game : Form
 
     private void TickGame()
     {
-        float dt = timer.Interval / 1000f; noticeTime = Math.Max(0, noticeTime - dt); attackCd = Math.Max(0, attackCd - dt); skillCd = Math.Max(0, skillCd - dt); dashCd = Math.Max(0, dashCd - dt); dashTime = Math.Max(0, dashTime - dt); invulnerable = Math.Max(0, invulnerable - dt); windupPulse += dt;
+        float dt = timer.Interval / 1000f; noticeTime = Math.Max(0, noticeTime - dt); attackCd = Math.Max(0, attackCd - dt); skillCd = Math.Max(0, skillCd - dt); shardCd = Math.Max(0, shardCd - dt); dashCd = Math.Max(0, dashCd - dt); dashTime = Math.Max(0, dashTime - dt); invulnerable = Math.Max(0, invulnerable - dt); windupPulse += dt;
         if (title || dead || victory || storyOverlay || memoryOverlay || inventoryOpen || talentChoice || chestChoice || endingChoiceOpen) { Invalidate(); return; }
         PointF dir = new((down.Contains(Keys.D) || down.Contains(Keys.Right) ? 1 : 0) - (down.Contains(Keys.A) || down.Contains(Keys.Left) ? 1 : 0), (down.Contains(Keys.S) || down.Contains(Keys.Down) ? 1 : 0) - (down.Contains(Keys.W) || down.Contains(Keys.Up) ? 1 : 0));
         dir = Normalize(dir, PointF.Empty); if (dashTime > 0) dir = facing;
         MovePlayer(Scale(dir, (dashTime > 0 ? 530 : 190) * dt));
         for (int i = drops.Count - 1; i >= 0; i--) if (Distance(player, drops[i].Pos) < 30) Collect(drops[i]);
         foreach (Enemy enemy in enemies.ToArray()) { UpdateEnemy(enemy, dt); if (dead) break; }
+        AdvanceVoiceShards(dt);
         if (enemies.Count == 0 && drops.Count == 0 && room == 2 && !memoryOverlay) chestChoice = true;
         MarkRoomCleared();
         Invalidate();
@@ -456,6 +490,8 @@ public sealed class Game : Form
     private bool HasCharmPair(int first, int second) => equippedCharm == first && equippedCharm2 == second || equippedCharm == second && equippedCharm2 == first;
     private float WhirlwindMultiplier() => HasCharmPair(1, 2) ? 2.52f : HasCharm(1) ? 2.16f : 1.6f;
     private float WhirlwindCooldownPenalty() => !HasCharm(1) ? 0f : HasCharmPair(1, 2) ? 0.5f : 1f;
+    private float VoiceShardDamage() => damage * (HasCharm(3) ? 1.8f : 1.35f);
+    private float VoiceShardCooldown() => Math.Max(3.5f, 7f - skillTalent * 0.5f);
     private float DashDuration() => HasCharm(2) ? 0.29f : 0.17f;
     private float DashCooldown() => Math.Max(0.35f, 1.15f - dodgeTalent * 0.12f) + (HasCharm(2) && !HasCharmPair(2, 3) ? 0.3f : 0f);
     private float CriticalChance() => (weapon == 2 ? 0.25f : 0.12f) + (HasCharm(3) ? HasCharmPair(1, 3) ? 0.17f : 0.12f : 0f);
@@ -524,6 +560,7 @@ public sealed class Game : Form
             using var wallBrush = new SolidBrush(Color.FromArgb(90, 79, 62)); using var wallEdge = new Pen(Color.FromArgb(154, 132, 91), 3); foreach (RectangleF wall in Walls) { g.FillRectangle(wallBrush, wall); g.DrawRectangle(wallEdge, wall.X, wall.Y, wall.Width, wall.Height); }
             using var exitPen = new Pen(enemies.Count == 0 && drops.Count == 0 ? Color.LightGreen : Color.FromArgb(45, 48, 43), 8); g.DrawRectangle(exitPen, 882, 293, 3, 75);
         }
+        foreach (EchoShard shard in echoShards) DrawEchoShard(g, shard);
         foreach (Enemy enemy in enemies) DrawEnemy(g, enemy);
         foreach (Drop item in drops) DrawDrop(g, item);
         DrawPlayer(g);
@@ -534,12 +571,12 @@ public sealed class Game : Form
         else if (room >= 4 && room < 6) g.DrawString(ArchiveObjective(), hudFont, goldBrush, 67, 592);
         else if (room is 6 or 7) g.DrawString(RiverObjective(), hudFont, goldBrush, 67, 592);
         else if (room >= 8) g.DrawString(LumeObjective(), hudFont, goldBrush, 67, 592);
-        g.DrawString(room == 3 ? "WASD mover   E falar/investigar   F5 salvar   I inventário" : "WASD mover   ESPAÇO/CLIQUE atacar   SHIFT esquivar   R redemoinho   Q poção   E interagir   I inventário", helpFont, textBrush, 67, 619);
+        g.DrawString(room == 3 ? "WASD mover   E falar/investigar   F5 salvar   I inventário" : "WASD mover   ESPAÇO/CLIQUE atacar   SHIFT esquivar   R redemoinho   F estilhaço   Q poção   E interagir   I inventário", helpFont, textBrush, 67, 619);
         if (room < MemoryStonePositions.Length && (memoriesFound & (1 << room)) == 0) DrawMemoryStone(g, MemoryStonePositions[room], Distance(player, MemoryStonePositions[room]) < 58);
         if (noticeTime > 0) DrawCentered(g, notice, 170, new Font("Segoe UI", 13, FontStyle.Bold), Color.FromArgb(230, 193, 129));
         if (title || dead || victory) DrawOverlay(g, title ? "SCADRYK" : victory ? "VITÓRIA" : "VOCÊ CAIU", title ? "ENTER PARA COMEÇAR    •    C CARREGAR SAVE" : "ENTER PARA RECOMEÇAR    •    F5 SALVAR");
         if (inventoryOpen) DrawInventory(g);
-        if (talentChoice) DrawChoice(g, $"SUBIU DE NÍVEL — ESCOLHA ({pendingTalents} PENDENTES)", "1. VIGOR  +20 VIDA MÁXIMA", "2. DOMÍNIO  Redemoinho recarrega mais rápido", "3. AGILIDADE  esquiva recarrega mais rápido");
+        if (talentChoice) DrawChoice(g, $"SUBIU DE NÍVEL — ESCOLHA ({pendingTalents} PENDENTES)", "1. VIGOR  +20 VIDA MÁXIMA", "2. DOMÍNIO  técnicas recarregam mais rápido", "3. AGILIDADE  esquiva recarrega mais rápido");
         if (chestChoice) DrawChoice(g, "BAÚ DA CRIPTA — ESCOLHA UMA RECOMPENSA", "1. 75 OURO", "2. DUAS POÇÕES", "3. RECUPERAR TODA A VIDA");
         if (endingChoiceOpen) DrawChoice(g, "O QUE VÉSPERA DEVE LEMBRAR?", "1. DEVOLVER OS NOMES  •  +20 VIDA MÁXIMA", "2. MANTER O LUME  •  +10 DANO", "3. ADIAR A DECISÃO");
         if (storyOverlay) DrawStoryOverlay(g);
@@ -789,7 +826,16 @@ public sealed class Game : Form
         if (enemy.Boss) { using var bossBack = new SolidBrush(Color.FromArgb(40, 20, 20)); using var bossHp = new SolidBrush(enemy.Hp <= enemy.MaxHp * 0.5f ? Color.OrangeRed : enemy.Kind == EnemyKind.BlindScribe ? Color.Teal : enemy.Kind == EnemyKind.RiverFerryman ? Color.SteelBlue : enemy.Kind == EnemyKind.AshWarden ? Color.DarkOrange : enemy.Kind == EnemyKind.HollowName ? Color.LightSeaGreen : enemy.Kind == EnemyKind.NameWeaver ? Color.MediumPurple : enemy.Kind == EnemyKind.FirstKeeper ? Color.Goldenrod : enemy.Kind == EnemyKind.OathCartographer ? Color.DarkCyan : Color.Firebrick); g.FillRectangle(bossBack, 360, 112, 240, 8); g.FillRectangle(bossHp, 360, 112, 240 * Math.Clamp(enemy.Hp / enemy.MaxHp, 0, 1), 8); string bossName = enemy.Kind == EnemyKind.BlindScribe ? "ESCRIBA CEGO" : enemy.Kind == EnemyKind.RiverFerryman ? "BARQUEIRO OCO" : enemy.Kind == EnemyKind.AshWarden ? "GUARDIÃO DAS CINZAS" : enemy.Kind == EnemyKind.HollowName ? "O NOME VAZIO" : enemy.Kind == EnemyKind.NameWeaver ? "A TECELÃ DE NOMES" : enemy.Kind == EnemyKind.FirstKeeper ? "A PRIMEIRA VIGÍLIA" : enemy.Kind == EnemyKind.OathCartographer ? "CARTÓGRAFA DO VÃO" : "GUARDIÃO DA CRIPTA"; DrawCentered(g, enemy.Hp <= enemy.MaxHp * 0.5f ? $"{bossName} • SEGUNDA FASE" : bossName, 91, new Font("Georgia", 11, FontStyle.Bold), enemy.Hp <= enemy.MaxHp * 0.5f ? Color.OrangeRed : Color.Goldenrod); }
     }
     private void DrawDrop(Graphics g, Drop item) { Color c = item.Kind switch { "relic" => Color.Violet, "seal" => Color.LightSkyBlue, "bell" => Color.FromArgb(162, 212, 192), "lens" => Color.FromArgb(248, 185, 95), "trace" => Color.FromArgb(185, 231, 215), "chorus" => Color.Khaki, "first" => Color.Goldenrod, "west" => Color.LightSkyBlue, "charm" => Color.Plum, "armor" => Color.MediumAquamarine, "weapon" => Color.CornflowerBlue, "potion" => Color.IndianRed, _ => Color.Goldenrod }; using var b = new SolidBrush(c); using var p = new Pen(Color.FromArgb(230, 220, 190), 1); g.FillEllipse(b, item.Pos.X - 8, item.Pos.Y - 8, 16, 16); g.DrawEllipse(p, item.Pos.X - 8, item.Pos.Y - 8, 16, 16); }
-    private void DrawPlayer(Graphics g) { using var b = new SolidBrush(invulnerable > 0 ? Color.Salmon : Color.FromArgb(90, 143, 138)); using var face = new SolidBrush(Color.Bisque); g.FillEllipse(b, player.X - 16, player.Y - 16, 32, 32); g.FillEllipse(face, player.X - 8, player.Y - 11, 16, 16); using var p = new Pen(Color.AntiqueWhite, 4); g.DrawLine(p, player, Add(player, Scale(facing, 24))); if (skillCd > 0) { using var cooldownPen = new Pen(Color.FromArgb(190, 230, 193, 129), 3); g.DrawArc(cooldownPen, player.X - 25, player.Y - 25, 50, 50, -90, 360 * skillCd / Math.Max(1.5f, 6f - skillTalent * .5f)); } }
+    private void DrawPlayer(Graphics g) { using var b = new SolidBrush(invulnerable > 0 ? Color.Salmon : Color.FromArgb(90, 143, 138)); using var face = new SolidBrush(Color.Bisque); g.FillEllipse(b, player.X - 16, player.Y - 16, 32, 32); g.FillEllipse(face, player.X - 8, player.Y - 11, 16, 16); using var p = new Pen(Color.AntiqueWhite, 4); g.DrawLine(p, player, Add(player, Scale(facing, 24))); if (skillCd > 0) { using var cooldownPen = new Pen(Color.FromArgb(190, 230, 193, 129), 3); g.DrawArc(cooldownPen, player.X - 25, player.Y - 25, 50, 50, -90, 360 * skillCd / Math.Max(1.5f, 6f - skillTalent * .5f)); } if (shardCd > 0) { using var shardCooldownPen = new Pen(Color.FromArgb(205, 107, 202, 196), 3); g.DrawArc(shardCooldownPen, player.X - 33, player.Y - 33, 66, 66, 90, 360 * shardCd / VoiceShardCooldown()); } }
+    private static void DrawEchoShard(Graphics g, EchoShard shard)
+    {
+        PointF tail = Sub(shard.Pos, Scale(shard.Direction, 24));
+        using var trail = new Pen(Color.FromArgb(150, 73, 193, 183), 6); using var core = new Pen(Color.FromArgb(235, 211, 225, 180), 2);
+        using var glow = new SolidBrush(Color.FromArgb(82, 91, 225, 211)); using var crystal = new SolidBrush(Color.FromArgb(235, 115, 211, 195));
+        g.DrawLine(trail, tail, shard.Pos); g.FillEllipse(glow, shard.Pos.X - 12, shard.Pos.Y - 12, 24, 24);
+        PointF[] points = { Add(shard.Pos, Scale(shard.Direction, 10)), Add(shard.Pos, new PointF(-shard.Direction.Y * 5, shard.Direction.X * 5)), Add(shard.Pos, Scale(shard.Direction, -8)), Add(shard.Pos, new PointF(shard.Direction.Y * 5, -shard.Direction.X * 5)) };
+        g.FillPolygon(crystal, points); g.DrawPolygon(core, points);
+    }
     private void DrawInventory(Graphics g)
     {
         using var b = new SolidBrush(Color.FromArgb(245, 17, 19, 20)); using var itemFont = new Font("Segoe UI", 11); using var effectFont = new Font("Segoe UI", 9); g.FillRectangle(b, 150, 145, 660, 490);
@@ -805,7 +851,8 @@ public sealed class Game : Form
         g.DrawString($"TALISMÃS: {(availableCharms.Length == 0 ? "NENHUM" : availableCharms)}", itemFont, Brushes.Plum, 205, 582);
         string firstCharm = equippedCharm == 0 ? "VAZIO" : charmNames[equippedCharm]; string secondCharm = equippedCharm2 == 0 ? "VAZIO" : charmNames[equippedCharm2];
         g.DrawString($"6. ESPAÇO I: {firstCharm}    7. ESPAÇO II: {secondCharm}", itemFont, Brushes.Plum, 205, 602);
-        string effect = HasCharmPair(1, 2) ? "SINTONIA: Redemoinho +57% dano • penalidade de recarga cai para 0,5 s" : HasCharmPair(1, 3) ? "SINTONIA: +17 p.p. crítico • multiplicador 2,75x • ataque básico menos lento" : HasCharmPair(2, 3) ? "SINTONIA: esquiva longa sem o acréscimo de recarga" : "Equipar dois talismãs únicos cria uma sintonia entre seus efeitos.";
+        string effect = HasCharmPair(1, 2) ? "SINTONIA: Redemoinho +57% dano • penalidade de recarga cai para 0,5 s" : HasCharmPair(1, 3) ? "SINTONIA: +17 p.p. crítico • multiplicador 2,75x • ataque básico menos lento" : HasCharmPair(2, 3) ? "SINTONIA: esquiva longa sem acréscimo de recarga" : "Equipar dois talismãs únicos cria uma sintonia entre seus efeitos.";
+        if (HasCharm(3)) effect += " • Estilhaço de Voz +33% dano";
         g.DrawString(effect, effectFont, Brushes.AntiqueWhite, 205, 622);
     }
     private void DrawChoice(Graphics g, string titleText, string a, string b, string c)
@@ -876,6 +923,18 @@ public sealed class Game : Form
 
     public static int SelfTest()
     {
+        using (var shardGame = new Game())
+        {
+            shardGame.timer.Stop(); shardGame.StartGame(); shardGame.storyOverlay = false; shardGame.room = 0; shardGame.SetupRoom(); shardGame.enemies.Clear(); shardGame.player = new PointF(150, 320); shardGame.mouseAim = new PointF(1, 0);
+            var firstShardTarget = new Enemy { Pos = new PointF(230, 320), Kind = EnemyKind.Grunt, Hp = 300, MaxHp = 300 };
+            var secondShardTarget = new Enemy { Pos = new PointF(300, 320), Kind = EnemyKind.Grunt, Hp = 300, MaxHp = 300 };
+            shardGame.enemies.Add(firstShardTarget); shardGame.enemies.Add(secondShardTarget); shardGame.CastVoiceShard();
+            if (shardGame.echoShards.Count != 1 || shardGame.shardCd != 7f) throw new InvalidOperationException("O Estilhaço de Voz não iniciou ou não recebeu recarga.");
+            shardGame.AdvanceVoiceShards(0.4f);
+            if (firstShardTarget.Hp >= 300 || secondShardTarget.Hp >= 300 || shardGame.echoShards.Count != 0) throw new InvalidOperationException($"O Estilhaço de Voz não atravessou os alvos até atingir uma parede: vida {firstShardTarget.Hp:0}/{secondShardTarget.Hp:0}, projéteis {shardGame.echoShards.Count}.");
+            float shardDamage = shardGame.VoiceShardDamage(); shardGame.ownedCharms = 4; shardGame.equippedCharm = 3; shardGame.skillTalent = 2;
+            if (shardGame.VoiceShardDamage() <= shardDamage || shardGame.VoiceShardCooldown() != 6f) throw new InvalidOperationException("O Vidro de Vigília ou o Domínio não alteraram a nova técnica.");
+        }
         using var game = new Game(); game.timer.Stop(); game.StartGame();
         if (!game.storyOverlay || game.storyPage != 0) throw new InvalidOperationException("O novo jogo não iniciou no prólogo da história.");
         for (int i = 0; i < game.prologue.Length; i++) game.AdvanceStory();
@@ -1097,7 +1156,7 @@ public sealed class Game : Form
         game.room = 3; game.SetupRoom();
         game.memoryOverlay = false; game.player = CryptGatePosition; game.Interact();
         if (game.room != 2 || game.enemies.Count != 4) throw new InvalidOperationException("A passagem da cidade não retornou à cripta.");
-        Console.WriteLine("TESTES OK: campanha, escolhas, regiões, chefes, ataques anunciados, itens, talismãs, builds, progressão e save."); return 0;
+        Console.WriteLine("TESTES OK: campanha, escolhas, regiões, chefes, ataques anunciados, habilidades à distância, itens, talismãs, builds, progressão e save."); return 0;
     }
 }
 

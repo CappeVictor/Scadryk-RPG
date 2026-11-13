@@ -61,7 +61,8 @@ dotnet publish --configuration Release --runtime win-x64 --self-contained true
 | WASD ou setas | Mover |
 | Espaço, J ou clique esquerdo | Atacar |
 | Shift ou K | Esquivar |
-| R ou clique direito | Redemoinho |
+| R ou clique direito | Redemoinho, dano em área ao redor do personagem |
+| F | Estilhaço de Voz, projétil que atravessa inimigos e para em paredes; mira na direção do cursor ou do alvo marcado |
 | Q | Usar poção |
 | E | Escutar inscrições, falar/investigar em Véspera, abrir passagem ou interagir com o baú |
 | I | Abrir ou fechar inventário |
@@ -76,7 +77,7 @@ dotnet publish --configuration Release --runtime win-x64 --self-contained true
 | C na tela inicial | Carregar o save |
 | Enter | Começar ou reiniciar |
 
-Os ataques corpo a corpo comuns agora mostram a área de impacto antes do golpe. Saia do círculo para evitar dano. O movimento também desliza pela quina dos obstáculos quando uma direção fica bloqueada.
+Os ataques corpo a corpo comuns agora mostram a área de impacto antes do golpe. Saia do círculo para evitar dano. O movimento também desliza pela quina dos obstáculos quando uma direção fica bloqueada. O Estilhaço de Voz oferece uma opção de ataque à distância que atravessa uma linha de inimigos, para na geometria da sala e recebe bônus do Vidro de Vigília; Domínio reduz a recarga das duas técnicas.
 
 Elites deixam o Nó de Brasa; o Escriba Cego deixa o Vidro de Vigília; o Barqueiro Oco deixa o Fio de Travessia. Equipe dois talismãs diferentes pelo inventário (**I**; teclas **6** e **7**). O Nó fortalece o Redemoinho; o Fio prolonga a esquiva; o Vidro melhora os ataques críticos. Combinar Brasa com Travessia intensifica o Redemoinho e reduz sua penalidade de recarga; Brasa com Vidro amplia os críticos e reduz a lentidão do ataque básico; Travessia com Vidro prolonga a esquiva sem aumentar sua recarga. As sintonias e os dois espaços equipados são salvos. Inimigos comuns também podem deixar talismãs.
 
