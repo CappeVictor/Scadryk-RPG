@@ -1,7 +1,7 @@
 # História de Scadryk
 
 **Subtítulo de trabalho:** *Os Nomes do Rio Cego*  
-**Estado:** prólogo, cripta, Véspera, Arquivo Norte, Rio Cego, Lume, Margem sem Reflexo, Reservatório, costa, Claustro, Bacia do Primeiro Nome, Vau, Refúgio, Cisterna, Várzea, Ponte da Maré Invertida, Cotovelo dos Juncais e Pátio das Amarras Livres, Moinhos da Vazante e Câmara do Veio Preso jogáveis. O paradeiro atual de Nara, o nome que ela escolheu e o destino final do Lume continuam sem resposta.
+**Estado:** prólogo, cripta, Véspera, Arquivo Norte, Rio Cego, Lume, Margem sem Reflexo, Reservatório, costa, Claustro, Bacia do Primeiro Nome, Vau, Refúgio, Cisterna, Várzea, Ponte da Maré Invertida, Cotovelo dos Juncais, Pátio das Amarras Livres, Moinhos da Vazante, Câmara do Veio Preso, Escarpa do Contrafluxo e Coração das Duas Margens jogáveis. O paradeiro atual de Nara, o nome que ela escolheu e o destino final do Lume continuam sem resposta.
 
 ## Ideia central
 
@@ -86,7 +86,7 @@ A recompensa pela travessia é paga por Edda, enquanto Sileth mantém o arquivo 
 
 - A inspiração em Diablo fica no gênero e na ambição de combate, exploração, loot e progressão. Scadryk mantém mitologia, trama, personagens, criaturas, nomes e apresentação próprios.
 - O Guardião e a cripta já existem como protótipo de combate; as ligações com o Rio Cego e o Lume são ficção planejada para a campanha.
-- O prólogo, as duas inscrições da cripta, a praça, as missões de Sileth e Edda, o Arquivo Norte, o Rio Cego, a Capela Afogada, a Câmara do Lume, a Margem sem Reflexo, o Reservatório das Vozes, a Costa das Vozes Tardias, o Claustro do Coro Partido, a Bacia do Primeiro Nome, Ilyra, o Coro dos Nomes Consumidos, o Vau dos Nomes Escolhidos, o Pátio das Testemunhas, o mapa de Nara, o Refúgio do Veio Calmo, a Trilha dos Luminários, a Cisterna do Registro Vazio, a Várzea das Vozes Sopradas e a Ponte da Maré Invertida estão jogáveis; a primeira escolha em Véspera altera a força de cinco chefes. O território além da Câmara do Veio Preso, o destino atual de Nara, o confronto final e o epílogo continuam planejados.
+- O prólogo, as duas inscrições da cripta, a praça, as missões de Sileth e Edda, o Arquivo Norte, o Rio Cego, a Capela Afogada, a Câmara do Lume, a Margem sem Reflexo, o Reservatório das Vozes, a Costa das Vozes Tardias, o Claustro do Coro Partido, a Bacia do Primeiro Nome, Ilyra, o Coro dos Nomes Consumidos, o Vau dos Nomes Escolhidos, o Pátio das Testemunhas, o mapa de Nara, o Refúgio do Veio Calmo, a Trilha dos Luminários, a Cisterna do Registro Vazio, a Várzea das Vozes Sopradas e a Ponte da Maré Invertida estão jogáveis; a primeira escolha em Véspera altera a força de cinco chefes. A campanha além do Coração das Duas Margens, o destino atual de Nara, o confronto final e o epílogo continuam planejados.
 - Novos itens e poderes devem ter origem no mundo de Scadryk e revelar algo sobre quem os criou, usou ou esqueceu.
 
 
@@ -137,3 +137,13 @@ Nos moinhos, a água corre por uma faixa larga que empurra o Escutador em direç
 O Vigia não guarda um nome nem um mapa. Mantém o canal fechado porque acredita que qualquer vazante pode levar pessoas para longe de quem se importa com elas. Ao ser derrotado, deixa uma gravação sobre o custo de transformar uma passagem em rota obrigatória. O registro não confirma se Nara atravessou por ali nem revela onde ela está.
 
 Aven ouve a memória e entrega ao Escutador a Marca da Vazante: um selo de bronze que cria uma onda curta, reúne ecos comuns ao redor do jogador e os interrompe; contra chefes, causa dano reduzido e não os desloca de forma significativa. A marca, o progresso do capítulo e o sal vítreo ficam no save. A corrente volta a mudar com a cheia, e a comunidade mantém aberto o caminho para quem decidir atravessá-lo.
+
+### Capítulo XI — O compasso das duas margens
+
+Depois de aprender a Vazante, o Escutador segue a água que subiu para além dos moinhos. A Escarpa do Contrafluxo guarda duas inscrições opostas: uma aponta para o centro do rio; a outra, para fora. Elas não são instruções conflitantes. São o registro de uma passagem que muda com a cheia.
+
+No Coração das Duas Margens, a corrente alterna entre puxar para a bacia e repelir quem se aproxima. As setas ao redor do círculo anunciam o sentido atual. O Afinador das Margens protege o mecanismo e usa três padrões visíveis: um impacto próximo, uma marca que acompanha o Escutador e um corte em linha. A decisão anterior de Véspera muda a força do chefe.
+
+O Afinador não é um servo do Lume. A comunidade o construiu para impedir que as duas margens colapsassem uma sobre a outra. Depois, alguém convenceu o mecanismo de que uma única direção seria mais segura. Sua memória mostra o erro sem identificar quem o alterou, e não contém notícia de Nara. Ao ceder, o rio volta a alternar entre impulso e retorno.
+
+Aven recebe o compasso como um relato compartilhado, não como um mapa. A recompensa inclui sal vítreo e provisões. O capítulo acrescenta duas salas, um chefe com três ataques anunciados, uma corrente que troca de sentido durante o combate, memória persistente e uma nova etapa de missão. A viagem prossegue; o nome escolhido e o paradeiro de Nara continuam sem resposta.
