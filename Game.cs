@@ -247,7 +247,7 @@ public sealed class Game : Form
             if (e.KeyCode is >= Keys.D1 and <= Keys.D5) { EquipSkill(skillMenuSlot, (int)e.KeyCode - (int)Keys.D0); return; }
             return;
         }
-        if (forgeMenuOpen) { if (e.KeyCode is Keys.D1 or Keys.D2 or Keys.D3) ReforgeWeapon((int)e.KeyCode - (int)Keys.D0); else if (e.KeyCode == Keys.Escape) forgeMenuOpen = false; return; }
+        if (forgeMenuOpen) { if (e.KeyCode is >= Keys.D1 and <= Keys.D5) ReforgeWeapon((int)e.KeyCode - (int)Keys.D0); else if (e.KeyCode == Keys.Escape) forgeMenuOpen = false; return; }
         if (endingChoiceOpen) { if (e.KeyCode == Keys.D1) ChooseTownEnding(1); else if (e.KeyCode == Keys.D2) ChooseTownEnding(2); else if (e.KeyCode == Keys.D3) endingChoiceOpen = false; return; }
         if (chestChoice) { if (e.KeyCode == Keys.D1) gold += 75; else if (e.KeyCode == Keys.D2) potions += 2; else if (e.KeyCode == Keys.D3) health = maxHealth; else return; chestChoice = false; EnterVesper(); return; }
         if (talentChoice) { SelectTalent(e.KeyCode); return; }
@@ -269,7 +269,7 @@ public sealed class Game : Form
     private void ReforgeWeapon(int affix)
     {
         if (!forgeMenuOpen || room != 18 || questStage < 27 || Distance(player, AvenPosition) >= 60) { forgeMenuOpen = false; return; }
-        if (affix is < 1 or > 3) return;
+        if (affix is < 1 or > 5) return;
         if (gold < 75 || tideGlass < 1) { notice = "A TÊMPERA CUSTA 75 OURO E 1 SAL VÍTREO"; noticeTime = 2; return; }
         if (weaponAffixes[weapon] == affix) { notice = "ESSA ARMA JÁ GUARDA ESSE AFFIX"; noticeTime = 2; return; }
         int oldPower = WeaponPower(weapon);
@@ -309,7 +309,7 @@ public sealed class Game : Form
     private void Whirlwind()
     {
         if (skillCd > 0 || talentChoice) return;
-        skillCd = Math.Max(1.5f, 6f - skillTalent * 0.5f) + WhirlwindCooldownPenalty();
+        skillCd = (Math.Max(1.5f, 6f - skillTalent * 0.5f) + WhirlwindCooldownPenalty()) * WeaponCooldownMultiplier();
         foreach (Enemy enemy in enemies.ToArray()) if (Distance(player, enemy.Pos) < 110) { enemy.Hp -= (int)(damage * OutgoingDamageMultiplier(enemy) * WhirlwindMultiplier() * WeaponSkillMultiplier() * TechniqueDamageMultiplier() * (enemy.Armored ? 0.75f : 1)); if (enemy.Hp <= 0) Defeat(enemy); }
     }
 
@@ -342,14 +342,14 @@ public sealed class Game : Form
     }
 
     private float BellPulseRadius() => HasCharm(2) ? 190f : 155f;
-    private float BellPulseCooldown() => Math.Max(7f, 14f - skillTalent * 0.7f) + (HasCharm(2) ? 1.5f : 0f);
+    private float BellPulseCooldown() => (Math.Max(7f, 14f - skillTalent * 0.7f) + (HasCharm(2) ? 1.5f : 0f)) * WeaponCooldownMultiplier();
     private float WeaponSkillMultiplier() => weaponAffixes[weapon] == 3 ? weaponRarities[weapon] == 2 ? 1.18f : 1.12f : 1f;
     private float TechniqueDamageMultiplier() => 1f + techniqueTalent * 0.08f;
     private int WeaponPower(int index) => weaponDamage[index] + weaponBonuses[index];
     private static string WeaponRarityName(int index) => index == 0 ? "COMUM" : index == 1 ? "RARA" : "RELÍQUIA";
-    private string WeaponAffixName(int index) => weaponAffixes[index] switch { 1 => "da Trégua", 2 => "do Contracanto", 3 => "da Maré", _ => "sem afixo" };
+    private string WeaponAffixName(int index) => weaponAffixes[index] switch { 1 => "da Trégua", 2 => "do Contracanto", 3 => "da Maré", 4 => "do Passo Célere", 5 => "do Lastro", _ => "sem afixo" };
     private string WeaponDisplayName(int index) => weaponRarities[index] == 0 ? $"{weaponNames[index]} [COMUM]" : $"{weaponNames[index]} • {WeaponRarityName(index)} {WeaponAffixName(index)}";
-    private string WeaponAffixDescription(int index) => weaponAffixes[index] switch { 1 => $"da Trégua: recupera {(weaponRarities[index] == 2 ? 6 : 3)} vida por abate", 2 => $"do Contracanto: +{(weaponRarities[index] == 2 ? 11 : 7)} p.p. de crítico", 3 => $"da Maré: +{(weaponRarities[index] == 2 ? 18 : 12)}% de dano de técnica", _ => "Sem afixo" };
+    private string WeaponAffixDescription(int index) => weaponAffixes[index] switch { 1 => $"da Trégua: recupera {(weaponRarities[index] == 2 ? 6 : 3)} vida por abate", 2 => $"do Contracanto: +{(weaponRarities[index] == 2 ? 11 : 7)} p.p. de crítico", 3 => $"da Maré: +{(weaponRarities[index] == 2 ? 18 : 12)}% de dano de técnica", 4 => $"do Passo Célere: recarga de técnicas -{(weaponRarities[index] == 2 ? 16 : 10)}%", 5 => $"do Lastro: dano recebido -{(weaponRarities[index] == 2 ? 12 : 8)}%", _ => "Sem afixo" };
 
     private void CastBellPulse()
     {
@@ -369,7 +369,7 @@ public sealed class Game : Form
         notice = HasCharm(2) ? "SINO DE NARA • ONDA AMPLIADA" : "SINO DE NARA • RESSONÂNCIA"; noticeTime = 1.2f;
     }
 
-    private float EbbPullCooldown() => Math.Max(8f, 12f - skillTalent * 0.5f);
+    private float EbbPullCooldown() => Math.Max(8f, 12f - skillTalent * 0.5f) * WeaponCooldownMultiplier();
     private void CastEbbPull()
     {
         if (!ebbSeal) { notice = "A VAZANTE AINDA NÃO FOI APRENDIDA"; noticeTime = 1.5f; return; }
@@ -388,7 +388,7 @@ public sealed class Game : Form
         notice = "VAZANTE • ECOS REUNIDOS"; noticeTime = 1.2f;
     }
 
-    private float AnchorWardCooldown() => Math.Max(13f, 20f - skillTalent * 0.8f);
+    private float AnchorWardCooldown() => Math.Max(13f, 20f - skillTalent * 0.8f) * WeaponCooldownMultiplier();
     private void CastAnchorWard()
     {
         if (!anchorWard) { notice = "O MANTO DE LASTRO AINDA NÃO FOI APRENDIDO"; noticeTime = 1.5f; return; }
@@ -397,7 +397,7 @@ public sealed class Game : Form
         notice = "MANTO DE LASTRO • PROTEÇÃO ATIVA"; noticeTime = 1.2f;
     }
 
-    private float RefrainCooldown() => Math.Max(10f, 17f - skillTalent * 0.6f);
+    private float RefrainCooldown() => Math.Max(10f, 17f - skillTalent * 0.6f) * WeaponCooldownMultiplier();
     private void CastRefrain()
     {
         if (!refrainSong) { notice = "O CORO DE RETORNO AINDA NÃO FOI APRENDIDO"; noticeTime = 1.5f; return; }
@@ -556,7 +556,7 @@ public sealed class Game : Form
     }
 
     private static void BeginWindup(Enemy enemy, PointF target, float duration) { enemy.Target = target; enemy.Windup = enemy.WindupMax = duration; }
-    private void HitPlayer(float value) { float damageTaken = value * (armorOn ? 0.7f : 1) * (wardTime > 0 ? 0.45f : 1); health = Math.Max(0, health - damageTaken); invulnerable = 0.6f; if (health <= 0) dead = true; }
+    private void HitPlayer(float value) { float damageTaken = value * (armorOn ? 0.7f : 1) * (wardTime > 0 ? 0.45f : 1) * WeaponDamageTakenMultiplier(); health = Math.Max(0, health - damageTaken); invulnerable = 0.6f; if (health <= 0) dead = true; }
     private void Collect(Drop item)
     {
         switch (item.Kind) { case "gold": gold += item.Amount; notice = $"+{item.Amount} OURO"; break; case "potion": potions++; notice = "+1 POÇÃO"; break; case "glass": tideGlass = Math.Min(999, tideGlass + item.Amount); notice = $"+{item.Amount} SAL VÍTREO"; break; case "weapon": if (item.Amount is < 1 or > 2) { drops.Remove(item); return; } weaponRarities[item.Amount] = item.Rarity; weaponBonuses[item.Amount] = item.Bonus; weaponAffixes[item.Amount] = item.Affix; ownedWeapons |= 1 << item.Amount; notice = $"ARMA {WeaponRarityName(weaponRarities[item.Amount])}: {WeaponDisplayName(item.Amount)}"; break; case "ebb": questStage = 32; notice = "MEMÓRIA: O VEIO LIVRE"; ShowMemory("A CORRENTE NÃO É UMA ROTA", "O vigia mantinha o fluxo preso num único giro. Quando o canal se abre, a água volta a mudar de direção conforme a cheia. Aven poderá ensinar o Escutador a chamar a vazante sem obrigar ninguém a segui-la. A gravação termina antes de indicar para onde foram os viajantes."); break; case "counter": counterTrace = true; questStage = 35; notice = "MEMÓRIA: O COMPASSO DAS MARGENS"; ShowMemory("O AFINADOR DAS MARGENS", "O Afinador não guardava um mapa. Regulava a força que mantém os dois lados do rio em equilíbrio; alguém o convenceu de que só um fluxo constante poderia proteger a comunidade. Ao ceder, o mecanismo volta a alternar entre impulso e retorno. A gravação não contém nome, rota nem notícia de Nara."); break; case "verse": riftVerse = true; questStage = 39; notice = "MEMÓRIA: A NOTA QUE NÃO MANDA"; ShowMemory("A NOTA QUE NÃO MANDA", "O eco mostra vozes diferentes sustentando a mesma ponte sonora sem se fundirem. Uma contravoz tenta fixá-las numa nota só; quando cede, a cantaria volta a responder com intervalos próprios. A lembrança não contém nome, rota nem notícia de Nara."); break; case "beyond": beyondTrace = true; questStage = 29; notice = "SINAL DE PASSAGEM RECUPERADO"; ShowMemory("NÓS QUE PODEM SER DESFEITOS", "O sinal foi deixado por viajantes que passaram pela margem durante a cheia. Ele confirma apenas que o grupo cruzou junto e escolheu para onde seguir ao chegar à outra margem. Não indica qual margem, nome ou destino pertence a Nara."); break; case "witness": upstreamTrace = true; questStage = 26; notice = "MEMÓRIA: A TESTEMUNHA DA MARÉ"; ShowMemory("A ÚLTIMA CURVA DE NARA", "A testemunha não guarda um mapa nem um nome. Guarda a passagem de um grupo que atravessou o rio contra a corrente. Quando alguém a chamou pelo nome escrito no registro de Véspera, Nara respondeu com outro nome e pediu que o grupo o aprendesse. Eles aceitaram e seguiram juntos para além das águas. O eco se encerra antes de revelar a palavra escolhida ou o lugar a que chegaram."); break; case "register": questStage = 23; notice = "REGISTRO DE PASSAGEM RECUPERADO"; ShowMemory("OS NOMES QUE NÃO SÃO POSSE", "O livro contém rotas e relatos escritos por viajantes diferentes. Aven lê em voz alta apenas o trecho assinado por quem escolheu compartilhá-lo. Uma anotação de Nara confirma que ela seguiu adiante com o grupo, mas não revela seu nome atual nem seu paradeiro. O registro fica com a comunidade, não com Véspera."); break; case "chorus": chorusMemory = true; questStage = 14; notice = "MEMÓRIA: CORO DOS NOMES CONSUMIDOS"; ShowMemory("A TECELÃ DE NOMES", "Quando o fio se rompe, as vozes não se calam. O Coro: “Não somos uma coisa que veio de fora. Somos todos os nomes que o Lume tomou e não conseguiu guardar. Nara carregou parte de nós para longe, mas o farol continua nos chamando.” O Silêncio de Baixo é a pressão dessas memórias tentando voltar juntas."); break; case "first": firstMemory = true; questStage = 16; notice = "MEMÓRIA: O PRIMEIRO NOME"; ShowMemory("A PRIMEIRA VIGÍLIA", "A guardiã recorda seu nome: Ilyra, a primeira Escutadora. Ela não acendeu o Lume para apagar as vozes, mas para que toda memória encontrasse um lugar onde ser ouvida. Séculos depois, os guardiões inverteram o propósito e transformaram lembrança em combustível. Ilyra entregou o próprio nome para impedir que o farol esquecesse sua origem. No último eco, viu Nara atravessar a corrente levando vozes que o Lume não comportava. Não sabe o que aconteceu com ela depois, mas deixa um aviso: se alguém a encontrar, não deve chamá-la pelo nome que o farol escolheu."); break; case "west": westTrace = true; questStage = 19; notice = "MEMÓRIA: MAPA DA MARGEM ESCOLHIDA"; ShowMemory("O MAPA DE NARA", "A Cartógrafa guardava um registro de quem atravessou o Vau. Entre os traços recentes, você reconhece a letra de Nara: “Aqui, ninguém precisa conservar o nome que o Lume escolheu. Ajudei a levantar um abrigo e segui com os que queriam continuar a oeste. Se veio atrás de mim, não use o parentesco como resposta. Pergunte primeiro quem escolhi ser.” A tinta e o caminho são seus, mas o mapa não diz quando ela partiu nem onde está agora."); break; case "charm": if (item.Amount is < 1 or > 5) { drops.Remove(item); return; } bool newCharm = (ownedCharms & (1 << (item.Amount - 1))) == 0; ownedCharms |= 1 << (item.Amount - 1); if (equippedCharm == 0 && equippedCharm2 != item.Amount) equippedCharm = item.Amount; else if (equippedCharm2 == 0 && equippedCharm != item.Amount) equippedCharm2 = item.Amount; notice = newCharm ? $"TALISMÃ: {charmNames[item.Amount]}" : $"ECO DUPLICADO: {charmNames[item.Amount]}"; break; case "armor": armor = true; notice = "PEITORAL DE PEDRA ENCONTRADO"; break; case "relic": relic = true; notice = "FRAGMENTO DE VOZ ENCONTRADO"; ShowMemory("ECO PRESO NO RELICÁRIO", "Nara: “Eu vim por vontade própria. Se encontrou esta lembrança, procure o arquivo de Sileth.”"); break; case "seal": archiveSeal = true; damage += 8; questStage = 4; notice = "SELO DA VIGÍLIA • DANO +8"; ShowMemory("SELO DA VIGÍLIA", "O selo guarda a última gravação de Nara: “Sileth não apagou os nomes para alimentar o Lume. Ela tentou esconder que o próprio farol está aprendendo a escolher quem esquecer.” Leve esta prova de volta à Curadora."); break; case "bell": riverBell = true; maxHealth += 20; health = Math.Min(maxHealth, health + 20); questStage = 6; notice = "SINO DE NARA • VIDA MÁXIMA +20"; ShowMemory("O SINO SEM BADALO", "A marca no bronze pertence a Nara. A voz gravada é de uma mulher que atravessou o rio: “Não estou presa. O farol me escuta porque eu aceitei levar as memórias para longe da cidade. Se ainda me procura, não tente me trazer de volta antes de ouvir o que o rio guarda.”"); break; case "lens": lumeLens = true; damage += 12; questStage = 9; notice = "PRISMA DO LUME • DANO +12"; ShowMemory("O PRISMA DA PRIMEIRA VIGÍLIA", "A luz projeta Nara ao lado de Sileth, anos antes da noite dos sinos. Nara escolheu ser a portadora das lembranças que o Lume não conseguia guardar. A imagem se rompe antes de mostrar onde ela está agora."); break; case "trace": naraTrace = true; questStage = 11; notice = "RASTRO DE NARA • NOVA MEMÓRIA"; ShowMemory("A LEMBRANÇA QUE SOBROU", "O eco não mostra um rosto. Mostra Nara ensinando alguém, do outro lado do rio, a pronunciar um nome que Véspera apagou. Sua última frase não pede resgate: “Se a cidade ainda lembrar de nós, eu saberei voltar.”"); break; }
@@ -583,13 +583,13 @@ public sealed class Game : Form
     {
         int rarity = rarityRoll < 62 ? 0 : rarityRoll < 95 ? 1 : 2;
         int bonus = rarity switch { 0 => bonusRoll % 3, 1 => 3 + bonusRoll % 4, _ => 7 + bonusRoll % 5 };
-        int affix = rarity == 0 ? 0 : 1 + affixRoll % 3;
+        int affix = rarity == 0 ? 0 : 1 + affixRoll % 5;
         return (rarity, bonus, affix);
     }
 
     private Drop CreateWeaponDrop(PointF pos, int index)
     {
-        var roll = RollWeaponStats(random.Next(100), random.Next(5), random.Next(3));
+        var roll = RollWeaponStats(random.Next(100), random.Next(5), random.Next(5));
         return new Drop { Pos = pos, Kind = "weapon", Amount = index, Rarity = roll.Rarity, Bonus = roll.Bonus, Affix = roll.Affix };
     }
 
@@ -789,7 +789,9 @@ public sealed class Game : Form
     private float WhirlwindCooldownPenalty() => !HasCharm(1) ? 0f : HasCharmPair(1, 2) ? 0.5f : 1f;
     private float VoiceShardDamage() => damage * (HasCharmPair(3, 5) ? 2.05f : HasCharm(3) ? 1.8f : 1.35f) * WeaponSkillMultiplier() * TechniqueDamageMultiplier();
     private float VoiceShardLifetime() => HasCharm(5) ? 1.8f : 1.25f;
-    private float VoiceShardCooldown() => Math.Max(3.5f, 7f - skillTalent * 0.5f) + (HasCharm(5) ? HasCharmPair(3, 5) ? 0.5f : 1.25f : 0f);
+    private float VoiceShardCooldown() => (Math.Max(3.5f, 7f - skillTalent * 0.5f) + (HasCharm(5) ? HasCharmPair(3, 5) ? 0.5f : 1.25f : 0f)) * WeaponCooldownMultiplier();
+    private float WeaponCooldownMultiplier() => weaponAffixes[weapon] == 4 ? weaponRarities[weapon] == 2 ? 0.84f : 0.9f : 1f;
+    private float WeaponDamageTakenMultiplier() => weaponAffixes[weapon] == 5 ? weaponRarities[weapon] == 2 ? 0.88f : 0.92f : 1f;
     private float OutgoingDamageMultiplier(Enemy enemy) => !HasCharm(4) ? 1f : enemy.Boss ? 1.25f : 0.8f;
     private float DashDuration() => HasCharm(2) ? 0.29f : 0.17f;
     private float DashCooldown() => Math.Max(0.35f, 1.15f - dodgeTalent * 0.12f) + (HasCharm(2) && !HasCharmPair(2, 3) ? 0.3f : 0f);
@@ -801,7 +803,7 @@ public sealed class Game : Form
         for (int i = 0; i < 3; i++)
         {
             int rarity = s.WeaponRarities[i], bonus = s.WeaponBonuses[i], affix = s.WeaponAffixes[i];
-            if (rarity == 0 ? bonus is < 0 or > 2 || affix != 0 : rarity == 1 ? bonus is < 3 or > 6 || affix is < 1 or > 3 : rarity == 2 ? bonus is < 7 or > 11 || affix is < 1 or > 3 : true) return false;
+            if (rarity == 0 ? bonus is < 0 or > 2 || affix != 0 : rarity == 1 ? bonus is < 3 or > 6 || affix is < 1 or > 5 : rarity == 2 ? bonus is < 7 or > 11 || affix is < 1 or > 5 : true) return false;
             if ((s.OwnedWeapons & (1 << i)) == 0 && (rarity != 0 || bonus != 0 || affix != 0)) return false;
         }
         return true;
@@ -915,7 +917,7 @@ public sealed class Game : Form
         if (talentChoice) DrawTalentChoice(g, pendingTalents);
         if (chestChoice) DrawChoice(g, "BAÚ DA CRIPTA — ESCOLHA UMA RECOMPENSA", "1. 75 OURO", "2. DUAS POÇÕES", "3. RECUPERAR TODA A VIDA");
         if (endingChoiceOpen) DrawChoice(g, "O QUE VÉSPERA DEVE LEMBRAR?", "1. DEVOLVER OS NOMES  •  +20 VIDA MÁXIMA", "2. MANTER O LUME  •  +10 DANO", "3. ADIAR A DECISÃO");
-        if (forgeMenuOpen) DrawChoice(g, weaponRarities[weapon] == 0 ? $"TÊMPERA DO VEIO • {weaponNames[weapon]} VIRA RARA" : $"TÊMPERA DO VEIO • {weaponNames[weapon]}", $"1. TRÉGUA • CURA AO ABATER   ({gold} OURO / {tideGlass} SAL)", "2. CONTRACANTO • AUMENTA O CRÍTICO", "3. MARÉ • AUMENTA O DANO DE TÉCNICA  •  ESC PARA FECHAR");
+        if (forgeMenuOpen) DrawForgeMenu(g);
         if (storyOverlay) DrawStoryOverlay(g);
         if (memoryOverlay) DrawMemoryOverlay(g);
     }
@@ -1392,6 +1394,8 @@ public sealed class Game : Form
         1 => "Trégua • cura " + (item.Rarity == 2 ? 6 : 3) + " por abate",
         2 => "Contracanto • crítico +" + (item.Rarity == 2 ? 11 : 7) + " p.p.",
         3 => "Maré • técnica +" + (item.Rarity == 2 ? 18 : 12) + "%",
+        4 => "Passo Célere • recarga -" + (item.Rarity == 2 ? 16 : 10) + "%",
+        5 => "Lastro • dano recebido -" + (item.Rarity == 2 ? 12 : 8) + "%",
         _ => "sem afixo"
     };
 
@@ -1517,6 +1521,22 @@ public sealed class Game : Form
         using var bg = new SolidBrush(Color.FromArgb(248, 15, 17, 18)); using var optionFont = new Font("Segoe UI", 12); g.FillRectangle(bg, 170, 205, 620, 225);
         DrawCentered(g, titleText, 238, new Font("Georgia", 15, FontStyle.Bold), Color.Goldenrod);
         g.DrawString(a, optionFont, Brushes.AntiqueWhite, 220, 286); g.DrawString(b, optionFont, Brushes.AntiqueWhite, 220, 330); g.DrawString(c, optionFont, Brushes.AntiqueWhite, 220, 374);
+    }
+
+    private void DrawForgeMenu(Graphics g)
+    {
+        using var shade = new SolidBrush(Color.FromArgb(190, 5, 7, 9)); using var background = new SolidBrush(Color.FromArgb(248, 15, 17, 18)); using var border = new Pen(Color.FromArgb(175, 143, 112, 73), 2);
+        using var optionFont = new Font("Segoe UI", 11); using var hintFont = new Font("Segoe UI", 9);
+        g.FillRectangle(shade, 0, 83, 960, 557); g.FillRectangle(background, 120, 145, 720, 405); g.DrawRectangle(border, 120, 145, 720, 405);
+        DrawCentered(g, weaponRarities[weapon] == 0 ? $"TÊMPERA DO VEIO • {weaponNames[weapon]} VIRA RARA" : $"TÊMPERA DO VEIO • {weaponNames[weapon]}", 170, new Font("Georgia", 16, FontStyle.Bold), Color.Goldenrod);
+        g.DrawString("1. TRÉGUA • recupera 3/6 vida por abate", optionFont, Brushes.AntiqueWhite, 165, 225);
+        g.DrawString("2. CONTRACANTO • crítico +7/+11 pontos percentuais", optionFont, Brushes.AntiqueWhite, 165, 265);
+        g.DrawString("3. MARÉ • dano de técnica +12%/+18%", optionFont, Brushes.AntiqueWhite, 165, 305);
+        g.DrawString("4. PASSO CÉLERE • recarga de técnicas -10%/-16%", optionFont, Brushes.AntiqueWhite, 165, 345);
+        g.DrawString("5. LASTRO • dano recebido -8%/-12%", optionFont, Brushes.AntiqueWhite, 165, 385);
+        g.DrawString("Valores: RARA / RELÍQUIA.", hintFont, Brushes.DarkGray, 165, 440);
+        g.DrawString($"CUSTO: 75 OURO E 1 SAL VÍTREO   •   DISPONÍVEL: {gold} OURO / {tideGlass} SAL", hintFont, gold < 75 || tideGlass < 1 ? Brushes.IndianRed : Brushes.Goldenrod, 165, 467);
+        g.DrawString("1–5 escolhe o afixo • ESC fecha", hintFont, Brushes.DarkGray, 165, 494);
     }
 
     private void DrawTalentChoice(Graphics g, int pending)
@@ -1674,8 +1694,8 @@ public sealed class Game : Form
         using (var lootRollCheck = new Game())
         {
             lootRollCheck.timer.Stop(); lootRollCheck.StartGame(); lootRollCheck.storyOverlay = false;
-            var common = RollWeaponStats(0, 4, 2); var rare = RollWeaponStats(62, 4, 2); var relic = RollWeaponStats(95, 4, 2);
-            if (common.Rarity != 0 || common.Bonus != 1 || common.Affix != 0 || rare.Rarity != 1 || rare.Bonus != 3 || rare.Affix != 3 || relic.Rarity != 2 || relic.Bonus != 11 || relic.Affix != 3)
+            var common = RollWeaponStats(0, 4, 2); var rare = RollWeaponStats(62, 4, 2); var relic = RollWeaponStats(95, 4, 2); var swiftRelic = RollWeaponStats(95, 4, 3); var anchoredRelic = RollWeaponStats(95, 4, 4);
+            if (common.Rarity != 0 || common.Bonus != 1 || common.Affix != 0 || rare.Rarity != 1 || rare.Bonus != 3 || rare.Affix != 3 || relic.Rarity != 2 || relic.Bonus != 11 || relic.Affix != 3 || swiftRelic.Affix != 4 || anchoredRelic.Affix != 5)
                 throw new InvalidOperationException("As faixas de rolagem de raridade e afixo da arma mudaram.");
             Drop drop = lootRollCheck.CreateWeaponDrop(lootRollCheck.player, 1); int rarity = drop.Rarity, bonus = drop.Bonus, affix = drop.Affix;
             string label = lootRollCheck.DropLabel(drop); lootRollCheck.Collect(drop);
@@ -2006,6 +2026,21 @@ public sealed class Game : Form
         upstreamExpedition.OnKeyDown(upstreamExpedition, new KeyEventArgs(Keys.Escape));
         SaveData temperedSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(upstreamExpedition.CaptureSaveData()))!;
         if (!ValidWeaponData(temperedSave) || temperedSave.TideGlass != 1 || temperedSave.WeaponAffixes[0] != 2 || temperedSave.WeaponRarities[0] != 1) throw new InvalidOperationException("A têmpera ou o sal vítreo não foram preservados no save.");
+        using (var affixForge = new Game())
+        {
+            affixForge.timer.Stop(); affixForge.StartGame(); affixForge.storyOverlay = false; affixForge.room = 18; affixForge.questStage = 27; affixForge.player = AvenPosition; affixForge.gold = 150; affixForge.tideGlass = 2; affixForge.forgeMenuOpen = true;
+            affixForge.OnKeyDown(affixForge, new KeyEventArgs(Keys.D4));
+            if (affixForge.weaponAffixes[0] != 4 || Math.Abs(affixForge.VoiceShardCooldown() - 6.3f) > 0.01f || affixForge.WeaponAffixDescription(0) != "do Passo Célere: recarga de técnicas -10%") throw new InvalidOperationException("O Passo Célere não reduziu a recarga nem mostrou seu efeito raro.");
+            affixForge.forgeMenuOpen = true; affixForge.OnKeyDown(affixForge, new KeyEventArgs(Keys.D5));
+            float beforeGuardedHit = affixForge.health; affixForge.HitPlayer(100);
+            if (affixForge.weaponAffixes[0] != 5 || Math.Abs((beforeGuardedHit - affixForge.health) - 92) > 0.01f || affixForge.WeaponAffixDescription(0) != "do Lastro: dano recebido -8%") throw new InvalidOperationException("O Lastro não reduziu o dano recebido nem mostrou seu efeito raro.");
+            affixForge.weaponRarities[0] = 2; affixForge.weaponBonuses[0] = 7; affixForge.weaponAffixes[0] = 4;
+            if (Math.Abs(affixForge.VoiceShardCooldown() - 5.88f) > 0.01f || affixForge.WeaponAffixDescription(0) != "do Passo Célere: recarga de técnicas -16%") throw new InvalidOperationException("A força do Passo Célere não cresceu na raridade Relíquia.");
+            affixForge.weaponAffixes[0] = 5; affixForge.health = 100; affixForge.HitPlayer(100);
+            if (Math.Abs(affixForge.health - 12) > 0.01f || affixForge.WeaponAffixDescription(0) != "do Lastro: dano recebido -12%") throw new InvalidOperationException("A força do Lastro não cresceu na raridade Relíquia.");
+            SaveData newAffixesSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(affixForge.CaptureSaveData()))!;
+            if (!ValidWeaponData(newAffixesSave) || newAffixesSave.WeaponAffixes[0] != 5) throw new InvalidOperationException("Os novos afixos não passaram pela validação nem persistiram no save.");
+        }
         using var lumeUpstream = new Game(); lumeUpstream.timer.Stop(); lumeUpstream.StartGame(); lumeUpstream.room = 22; lumeUpstream.questStage = 25; lumeUpstream.townEnding = 2; lumeUpstream.SetupRoom();
         if (lumeUpstream.enemies.Single(e => e.Kind == EnemyKind.TideWitness).MaxHp != 920) throw new InvalidOperationException("Manter o Lume não alterou a força da Testemunha da Maré.");
         using var reedExpedition = new Game(); reedExpedition.timer.Stop(); reedExpedition.StartGame(); reedExpedition.storyOverlay = false; reedExpedition.room = 22; reedExpedition.questStage = 27; reedExpedition.upstreamTrace = true; reedExpedition.townEnding = 1; reedExpedition.enemies.Clear(); reedExpedition.drops.Clear(); reedExpedition.player = new PointF(850, 330); reedExpedition.Interact();
@@ -2109,6 +2144,6 @@ public sealed class Game : Form
         game.room = 3; game.SetupRoom();
         game.memoryOverlay = false; game.player = CryptGatePosition; game.Interact();
         if (game.room != 2 || game.enemies.Count != 4) throw new InvalidOperationException("A passagem da cidade não retornou à cripta.");
-        Console.WriteLine("TESTES OK: campanha até o Capítulo XII, cinco técnicas equipáveis em três espaços, saves antigos e loadouts persistentes, três estilos de arma, correntes alternadas, Manto de Lastro, Coro de Retorno, Sintonia e quatro talentos, loot, regiões, chefes, progressão e save."); return 0;
+        Console.WriteLine("TESTES OK: campanha até o Capítulo XII, técnicas equipáveis, cinco afixos com recarga e defesa por raridade, têmpera e save, três estilos de arma, correntes alternadas, chefes, loot, progressão e compatibilidade de saves antigos."); return 0;
     }
 }
