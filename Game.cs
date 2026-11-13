@@ -9,7 +9,7 @@ using System.Windows.Forms;
 
 public sealed class Game : Form
 {
-    private enum EnemyKind { Grunt, Archer, Mage, Elite, Guardian, InkEcho, BlindScribe, DrownedMemory, RiverFerryman, EmberWisp, AshWarden, NameMoth, HollowName }
+    private enum EnemyKind { Grunt, Archer, Mage, Elite, Guardian, InkEcho, BlindScribe, DrownedMemory, RiverFerryman, EmberWisp, AshWarden, NameMoth, HollowName, NameWeaver }
     private sealed class Enemy
     {
         public PointF Pos, Target;
@@ -17,7 +17,7 @@ public sealed class Game : Form
         public float Hp, MaxHp, Cooldown, Windup, WindupMax, Flash;
         public int BossPattern;
         public bool Armored;
-        public bool Boss => Kind is EnemyKind.Guardian or EnemyKind.BlindScribe or EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName;
+        public bool Boss => Kind is EnemyKind.Guardian or EnemyKind.BlindScribe or EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver;
         public float Radius => Boss ? 23 : Kind == EnemyKind.Elite ? 18 : 14;
     }
     private sealed class Drop { public PointF Pos; public string Kind = "gold"; public int Amount; }
@@ -50,6 +50,7 @@ public sealed class Game : Form
         public int OwnedCharms { get; set; }
         public int EquippedCharm { get; set; }
         public int TownEnding { get; set; }
+        public bool ChorusMemory { get; set; }
     }
 
     private static readonly RectangleF[] Walls = { new(345, 235, 48, 90), new(565, 375, 58, 80) };
@@ -61,6 +62,8 @@ public sealed class Game : Form
     private static readonly RectangleF[] LumeChamberWalls = { new(300, 150, 48, 140), new(612, 390, 48, 140), new(428, 260, 104, 44), new(428, 420, 104, 44) };
     private static readonly RectangleF[] NameShoreWalls = { new(248, 170, 54, 126), new(434, 395, 64, 128), new(640, 166, 56, 126), new(770, 394, 54, 126) };
     private static readonly RectangleF[] VoiceWellWalls = { new(270, 158, 64, 122), new(626, 158, 64, 122), new(270, 410, 64, 122), new(626, 410, 64, 122), new(438, 325, 84, 76) };
+    private static readonly RectangleF[] FarReachWalls = { new(242, 166, 62, 122), new(420, 390, 74, 130), new(650, 164, 58, 124), new(772, 391, 58, 128) };
+    private static readonly RectangleF[] NameCloisterWalls = { new(260, 155, 58, 145), new(646, 155, 58, 145), new(260, 405, 58, 145), new(646, 405, 58, 145), new(448, 296, 64, 105) };
     private static readonly RectangleF[] TownBuildings = { new(115, 128, 208, 128), new(677, 128, 208, 128), new(115, 426, 208, 120), new(677, 426, 208, 120) };
     private static readonly PointF CuratorPosition = new(625, 315), BellKeeperPosition = new(352, 347), ArchiveBookPosition = new(785, 355), CryptGatePosition = new(92, 330);
     private static readonly PointF[] MemoryStonePositions = { new(260, 165), new(270, 485) };
@@ -73,7 +76,7 @@ public sealed class Game : Form
     private readonly HashSet<Keys> down = new();
     private readonly System.Windows.Forms.Timer timer = new() { Interval = 16 };
     private readonly Random random = new();
-    private readonly string[] roomNames = { "VESTÍBULO EM RUÍNAS", "SALÃO DOS OSSOS", "CÂMARA DO GUARDIÃO", "VÉSPERA • PRAÇA DO FAROL", "ARQUIVO NORTE • GALERIA", "ARQUIVO NORTE • COFRE", "RIO CEGO • LEITO SECO", "RIO CEGO • CAPELA AFOGADA", "FAROL • ESCADA DE CINZAS", "FAROL • CÂMARA DO LUME", "ALÉM DO LUME • MARGEM SEM REFLEXO", "RESERVATÓRIO • VOZES RETIDAS" };
+    private readonly string[] roomNames = { "VESTÍBULO EM RUÍNAS", "SALÃO DOS OSSOS", "CÂMARA DO GUARDIÃO", "VÉSPERA • PRAÇA DO FAROL", "ARQUIVO NORTE • GALERIA", "ARQUIVO NORTE • COFRE", "RIO CEGO • LEITO SECO", "RIO CEGO • CAPELA AFOGADA", "FAROL • ESCADA DE CINZAS", "FAROL • CÂMARA DO LUME", "ALÉM DO LUME • MARGEM SEM REFLEXO", "RESERVATÓRIO • VOZES RETIDAS", "COSTA DAS VOZES TARDIAS", "CLAUSTRO DO CORO PARTIDO" };
     private readonly string[] weaponNames = { "ESPADA COMUM", "LÂMINA RARA", "LÂMINA DO CREPÚSCULO" };
     private readonly string[] charmNames = { "", "NÓ DE BRASA", "FIO DE TRAVESSIA", "VIDRO DE VIGÍLIA" };
     private readonly string[] prologue = {
@@ -86,6 +89,7 @@ public sealed class Game : Form
     private int room, level = 1, xp, gold, potions = 2, damage = 25, weapon, ownedWeapons = 1;
     private int healthTalent, skillTalent, dodgeTalent, pendingTalents, enemiesDefeated;
     private int memoriesFound, questStage, clearedRooms;
+    private bool chorusMemory;
     private int ownedCharms, equippedCharm;
     private bool archiveSeal;
     private bool riverBell;
@@ -122,7 +126,7 @@ public sealed class Game : Form
     private void StartGame()
     {
         room = 0; level = 1; xp = gold = damage = 0; damage = 25; potions = 2; weapon = 0; ownedWeapons = 1;
-        armor = armorOn = relic = relicOn = archiveSeal = riverBell = lumeLens = naraTrace = inventoryOpen = dead = victory = chestChoice = talentChoice = memoryOverlay = endingChoiceOpen = false;
+        armor = armorOn = relic = relicOn = archiveSeal = riverBell = lumeLens = naraTrace = chorusMemory = inventoryOpen = dead = victory = chestChoice = talentChoice = memoryOverlay = endingChoiceOpen = false;
         townEnding = 0;
         healthTalent = skillTalent = dodgeTalent = pendingTalents = enemiesDefeated = memoriesFound = questStage = 0;
         clearedRooms = 0;
@@ -141,11 +145,11 @@ public sealed class Game : Form
     {
         player = new PointF(150, 330); enemies.Clear(); drops.Clear(); lockedTarget = null;
         if (room != 3 && (clearedRooms & (1 << room)) != 0) return;
-        int count = room == 3 ? 0 : room == 0 ? 3 : room == 1 ? 5 : room == 4 ? 5 : room == 5 ? 4 : room == 6 ? 6 : (room is 7 or 9 or 11) ? 4 : room == 8 ? 5 : room == 10 ? 6 : 4;
+        int count = room == 3 ? 0 : room == 0 ? 3 : room == 1 ? 5 : room == 4 ? 5 : room == 5 ? 4 : room == 6 ? 6 : (room is 7 or 9 or 11) ? 4 : room == 8 ? 5 : room is 10 or 12 ? 6 : room == 13 ? 4 : 4;
         for (int i = 0; i < count; i++)
         {
-            EnemyKind kind = room == 2 && i == 0 ? EnemyKind.Guardian : room == 5 && i == 0 ? EnemyKind.BlindScribe : room == 7 && i == 0 ? EnemyKind.RiverFerryman : room == 9 && i == 0 ? EnemyKind.AshWarden : room == 11 && i == 0 ? EnemyKind.HollowName : room == 1 && i == count - 1 ? EnemyKind.Elite : room == 4 && (i is 1 or 4) ? EnemyKind.InkEcho : room == 5 && i == 2 ? EnemyKind.InkEcho : room == 6 && (i is 1 or 4) ? EnemyKind.DrownedMemory : room == 7 && i == 2 ? EnemyKind.DrownedMemory : room == 8 && (i is 1 or 4) ? EnemyKind.EmberWisp : room == 9 && i == 2 ? EnemyKind.EmberWisp : room == 10 && (i is 1 or 4) ? EnemyKind.NameMoth : room == 11 && i == 2 ? EnemyKind.NameMoth : room > 0 && i == 1 ? EnemyKind.Archer : (room is 2 or 5 or 7 or 9 or 11) && i == 2 ? EnemyKind.Mage : EnemyKind.Grunt;
-            float hp = kind switch { EnemyKind.Guardian => 160, EnemyKind.BlindScribe => 245, EnemyKind.RiverFerryman => 285, EnemyKind.AshWarden => 340, EnemyKind.HollowName => 390, EnemyKind.Elite => 120, EnemyKind.Archer or EnemyKind.Mage or EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth => 56, _ => 58 + room * 8 };
+            EnemyKind kind = room == 2 && i == 0 ? EnemyKind.Guardian : room == 5 && i == 0 ? EnemyKind.BlindScribe : room == 7 && i == 0 ? EnemyKind.RiverFerryman : room == 9 && i == 0 ? EnemyKind.AshWarden : room == 13 && i == 0 ? EnemyKind.NameWeaver : room == 11 && i == 0 ? EnemyKind.HollowName : room == 1 && i == count - 1 ? EnemyKind.Elite : room == 4 && (i is 1 or 4) ? EnemyKind.InkEcho : room == 5 && i == 2 ? EnemyKind.InkEcho : room == 6 && (i is 1 or 4) ? EnemyKind.DrownedMemory : room == 7 && i == 2 ? EnemyKind.DrownedMemory : room == 8 && (i is 1 or 4) ? EnemyKind.EmberWisp : room == 9 && i == 2 ? EnemyKind.EmberWisp : room == 10 && (i is 1 or 4) ? EnemyKind.NameMoth : room is 12 && (i is 1 or 4) ? EnemyKind.NameMoth : room is 11 or 13 && i == 2 ? EnemyKind.NameMoth : room is 12 or 13 && i == 1 ? EnemyKind.NameMoth : room > 0 && i == 1 ? EnemyKind.Archer : (room is 2 or 5 or 7 or 9 or 11) && i == 2 ? EnemyKind.Mage : EnemyKind.Grunt;
+            float hp = kind switch { EnemyKind.Guardian => 160, EnemyKind.BlindScribe => 245, EnemyKind.RiverFerryman => 285, EnemyKind.AshWarden => 340, EnemyKind.HollowName => 390, EnemyKind.NameWeaver => townEnding == 1 ? 410 : 455, EnemyKind.Elite => 120, EnemyKind.Archer or EnemyKind.Mage or EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth => 56, _ => 58 + room * 8 };
             var enemy = new Enemy { Pos = new PointF(485 + i % 3 * 120, 215 + i / 3 * 165), Kind = kind, Hp = hp, MaxHp = hp, Cooldown = 0.7f + (float)random.NextDouble(), Armored = kind == EnemyKind.Elite && random.Next(2) == 0 };
             if (Blocked(enemy.Pos, enemy.Radius)) enemy.Pos = new PointF(660 + i * 12, 480 - i * 8);
             enemies.Add(enemy);
@@ -239,6 +243,7 @@ public sealed class Game : Form
         if (enemy.Kind == EnemyKind.RiverFerryman && !riverBell) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "bell" });
         if (enemy.Kind == EnemyKind.AshWarden && !lumeLens) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "lens" });
         if (enemy.Kind == EnemyKind.HollowName && !naraTrace) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "trace" });
+        if (enemy.Kind == EnemyKind.NameWeaver && !chorusMemory) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "chorus" });
         if (enemy.Kind == EnemyKind.Elite && (ownedCharms & 1) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 24, -12), Kind = "charm", Amount = 1 });
         if (enemy.Kind == EnemyKind.RiverFerryman && (ownedCharms & 2) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, -12), Kind = "charm", Amount = 2 });
         if (enemy.Kind == EnemyKind.BlindScribe && (ownedCharms & 4) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, -12), Kind = "charm", Amount = 3 });
@@ -277,16 +282,17 @@ public sealed class Game : Form
         e.Cooldown -= dt; e.Flash = Math.Max(0, e.Flash - dt); PointF offset = Sub(player, e.Pos); float dist = Length(offset);
         if (e.Windup > 0) {
             e.Windup -= dt;
-            float reach = e.Boss ? e.BossPattern == 0 ? 90 : e.Kind == EnemyKind.RiverFerryman && e.BossPattern == 2 ? 85 : e.Kind == EnemyKind.AshWarden && e.BossPattern == 2 ? 68 : e.Kind == EnemyKind.HollowName && e.BossPattern == 2 ? 85 : 42 : e.Kind == EnemyKind.Elite ? 62 : e.Kind == EnemyKind.Mage ? 52 : e.Kind is EnemyKind.Archer or EnemyKind.InkEcho ? 230 : e.Kind == EnemyKind.DrownedMemory ? 195 : e.Kind is EnemyKind.EmberWisp or EnemyKind.NameMoth ? 210 : 38;
+            float reach = e.Boss ? e.BossPattern == 0 ? 90 : e.Kind == EnemyKind.RiverFerryman && e.BossPattern == 2 ? 85 : e.Kind == EnemyKind.AshWarden && e.BossPattern == 2 ? 68 : e.Kind == EnemyKind.HollowName && e.BossPattern == 2 ? 85 : e.Kind == EnemyKind.NameWeaver && e.BossPattern == 2 ? 230 : 42 : e.Kind == EnemyKind.Elite ? 62 : e.Kind == EnemyKind.Mage ? 52 : e.Kind is EnemyKind.Archer or EnemyKind.InkEcho ? 230 : e.Kind == EnemyKind.DrownedMemory ? 195 : e.Kind is EnemyKind.EmberWisp or EnemyKind.NameMoth ? 210 : 38;
             bool targeted = (e.Boss && (e.BossPattern is 1 or 2)) || (e.Kind is EnemyKind.Mage or EnemyKind.Elite or EnemyKind.Archer or EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth);
-            if (e.Windup <= 0 && (targeted ? Distance(player, e.Target) < reach : dist < reach) && invulnerable <= 0 && dashTime <= 0) HitPlayer(e.Boss ? e.Kind == EnemyKind.BlindScribe ? 23 : e.Kind == EnemyKind.RiverFerryman ? 28 : e.Kind == EnemyKind.AshWarden ? 31 : e.Kind == EnemyKind.HollowName ? 36 : 26 : e.Kind == EnemyKind.Elite ? 20 : e.Kind == EnemyKind.Mage ? 16 : e.Kind is EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth ? 16 : 10);
+            bool inAttack = e.Kind == EnemyKind.NameWeaver && e.BossPattern == 2 ? DistanceToSegment(player, e.Pos, e.Target) < 24 : targeted ? Distance(player, e.Target) < reach : dist < reach;
+            if (e.Windup <= 0 && inAttack && invulnerable <= 0 && dashTime <= 0) HitPlayer(e.Boss ? e.Kind == EnemyKind.BlindScribe ? 23 : e.Kind == EnemyKind.RiverFerryman ? 28 : e.Kind == EnemyKind.AshWarden ? 31 : e.Kind == EnemyKind.HollowName ? 36 : e.Kind == EnemyKind.NameWeaver ? 39 : 26 : e.Kind == EnemyKind.Elite ? 20 : e.Kind == EnemyKind.Mage ? 16 : e.Kind is EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth ? 16 : 10);
             return;
         }
         if (e.Kind is EnemyKind.Archer or EnemyKind.InkEcho) { float preferred = e.Kind == EnemyKind.InkEcho ? 135 : 170; if (dist < preferred) e.Pos = MoveEnemy(e, Scale(Normalize(Sub(e.Pos, player), PointF.Empty), (e.Kind == EnemyKind.InkEcho ? 68 : 55) * dt)); else if (e.Cooldown <= 0) { BeginWindup(e, player, e.Kind == EnemyKind.InkEcho ? 0.75f : 0.6f); e.Cooldown = e.Kind == EnemyKind.InkEcho ? 2.0f : 1.8f; } SeparateFromPack(e, dt); return; }
         if (e.Kind is EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth) { float preferred = e.Kind == EnemyKind.EmberWisp ? 145 : e.Kind == EnemyKind.NameMoth ? 175 : 110; if (dist < preferred) e.Pos = MoveEnemy(e, Scale(Normalize(Sub(e.Pos, player), PointF.Empty), 72 * dt)); else if (e.Cooldown <= 0) { BeginWindup(e, player, e.Kind == EnemyKind.EmberWisp ? 0.7f : e.Kind == EnemyKind.NameMoth ? 0.62f : 0.9f); e.Cooldown = e.Kind == EnemyKind.EmberWisp ? 1.9f : e.Kind == EnemyKind.NameMoth ? 1.7f : 2.25f; } SeparateFromPack(e, dt); return; }
         if (e.Kind == EnemyKind.Mage && dist < 165) e.Pos = MoveEnemy(e, Scale(Normalize(Sub(e.Pos, player), PointF.Empty), 42 * dt));
         if (e.Kind == EnemyKind.Elite && e.Cooldown <= 0 && dist < 220) { BeginWindup(e, player, e.Armored ? 0.72f : 0.5f); e.Cooldown = e.Armored ? 2.5f : 2f; return; }
-        if (e.Boss && e.Cooldown <= 0 && (dist < 135 || (e.Kind is EnemyKind.BlindScribe or EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName))) { e.BossPattern = (e.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName) ? (e.BossPattern + 1) % 3 : 1 - e.BossPattern; bool aimed = (e.Kind == EnemyKind.BlindScribe && e.BossPattern == 1) || ((e.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden) && (e.BossPattern is 1 or 2)) || (e.Kind == EnemyKind.HollowName && e.BossPattern is 1 or 2); BeginWindup(e, aimed ? player : e.Pos, e.Hp < e.MaxHp * 0.5f ? 0.52f : 0.78f); e.Cooldown = e.Hp < e.MaxHp * 0.5f ? 1.25f : 2.0f; return; }
+        if (e.Boss && e.Cooldown <= 0 && (dist < 135 || (e.Kind is EnemyKind.BlindScribe or EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver))) { e.BossPattern = (e.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver) ? (e.BossPattern + 1) % 3 : 1 - e.BossPattern; bool aimed = (e.Kind == EnemyKind.BlindScribe && e.BossPattern == 1) || ((e.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden) && (e.BossPattern is 1 or 2)) || (e.Kind is EnemyKind.HollowName or EnemyKind.NameWeaver) && e.BossPattern is 1 or 2; BeginWindup(e, aimed ? player : e.Pos, e.Hp < e.MaxHp * 0.5f ? 0.52f : 0.78f); e.Cooldown = e.Hp < e.MaxHp * 0.5f ? 1.25f : 2.0f; return; }
         if (e.Kind == EnemyKind.Mage && e.Cooldown <= 0) { BeginWindup(e, player, 0.8f); e.Cooldown = 2.2f; SeparateFromPack(e, dt); return; }
         if (dist > (e.Boss ? 40 : 30)) e.Pos = MoveEnemy(e, Scale(Normalize(offset, PointF.Empty), (e.Boss ? 55 : 74 + room * 7) * dt));
         else if (e.Cooldown <= 0) { BeginWindup(e, player, 0.45f); e.Cooldown = 1.35f; }
@@ -297,7 +303,7 @@ public sealed class Game : Form
     private void HitPlayer(float value) { health = Math.Max(0, health - value * (armorOn ? 0.7f : 1)); invulnerable = 0.6f; if (health <= 0) dead = true; }
     private void Collect(Drop item)
     {
-        switch (item.Kind) { case "gold": gold += item.Amount; notice = $"+{item.Amount} OURO"; break; case "potion": potions++; notice = "+1 POÇÃO"; break; case "weapon": ownedWeapons |= 1 << item.Amount; notice = $"ARMA: {weaponNames[item.Amount]}"; break; case "charm": if (item.Amount is < 1 or > 3) { drops.Remove(item); return; } bool newCharm = (ownedCharms & (1 << (item.Amount - 1))) == 0; ownedCharms |= 1 << (item.Amount - 1); if (equippedCharm == 0) equippedCharm = item.Amount; notice = newCharm ? $"TALISMÃ: {charmNames[item.Amount]}" : $"ECO DUPLICADO: {charmNames[item.Amount]}"; break; case "armor": armor = true; notice = "PEITORAL DE PEDRA ENCONTRADO"; break; case "relic": relic = true; notice = "FRAGMENTO DE VOZ ENCONTRADO"; ShowMemory("ECO PRESO NO RELICÁRIO", "Nara: “Eu vim por vontade própria. Se encontrou esta lembrança, procure o arquivo de Sileth.”"); break; case "seal": archiveSeal = true; damage += 8; questStage = 4; notice = "SELO DA VIGÍLIA • DANO +8"; ShowMemory("SELO DA VIGÍLIA", "O selo guarda a última gravação de Nara: “Sileth não apagou os nomes para alimentar o Lume. Ela tentou esconder que o próprio farol está aprendendo a escolher quem esquecer.” Leve esta prova de volta à Curadora."); break; case "bell": riverBell = true; maxHealth += 20; health = Math.Min(maxHealth, health + 20); questStage = 6; notice = "SINO DE NARA • VIDA MÁXIMA +20"; ShowMemory("O SINO SEM BADALO", "A marca no bronze pertence a Nara. A voz gravada é de uma mulher que atravessou o rio: “Não estou presa. O farol me escuta porque eu aceitei levar as memórias para longe da cidade. Se ainda me procura, não tente me trazer de volta antes de ouvir o que o rio guarda.”"); break; case "lens": lumeLens = true; damage += 12; questStage = 9; notice = "PRISMA DO LUME • DANO +12"; ShowMemory("O PRISMA DA PRIMEIRA VIGÍLIA", "A luz projeta Nara ao lado de Sileth, anos antes da noite dos sinos. Nara escolheu ser a portadora das lembranças que o Lume não conseguia guardar. A imagem se rompe antes de mostrar onde ela está agora."); break; case "trace": naraTrace = true; questStage = 11; notice = "RASTRO DE NARA • NOVA MEMÓRIA"; ShowMemory("A LEMBRANÇA QUE SOBROU", "O eco não mostra um rosto. Mostra Nara ensinando alguém, do outro lado do rio, a pronunciar um nome que Véspera apagou. Sua última frase não pede resgate: “Se a cidade ainda lembrar de nós, eu saberei voltar.”"); break; }
+        switch (item.Kind) { case "gold": gold += item.Amount; notice = $"+{item.Amount} OURO"; break; case "potion": potions++; notice = "+1 POÇÃO"; break; case "weapon": ownedWeapons |= 1 << item.Amount; notice = $"ARMA: {weaponNames[item.Amount]}"; break; case "chorus": chorusMemory = true; questStage = 14; notice = "MEMÓRIA: CORO DOS NOMES CONSUMIDOS"; ShowMemory("A TECELÃ DE NOMES", "Quando o fio se rompe, as vozes não se calam. O Coro: “Não somos uma coisa que veio de fora. Somos todos os nomes que o Lume tomou e não conseguiu guardar. Nara carregou parte de nós para longe, mas o farol continua nos chamando.” O Silêncio de Baixo é a pressão dessas memórias tentando voltar juntas."); break; case "charm": if (item.Amount is < 1 or > 3) { drops.Remove(item); return; } bool newCharm = (ownedCharms & (1 << (item.Amount - 1))) == 0; ownedCharms |= 1 << (item.Amount - 1); if (equippedCharm == 0) equippedCharm = item.Amount; notice = newCharm ? $"TALISMÃ: {charmNames[item.Amount]}" : $"ECO DUPLICADO: {charmNames[item.Amount]}"; break; case "armor": armor = true; notice = "PEITORAL DE PEDRA ENCONTRADO"; break; case "relic": relic = true; notice = "FRAGMENTO DE VOZ ENCONTRADO"; ShowMemory("ECO PRESO NO RELICÁRIO", "Nara: “Eu vim por vontade própria. Se encontrou esta lembrança, procure o arquivo de Sileth.”"); break; case "seal": archiveSeal = true; damage += 8; questStage = 4; notice = "SELO DA VIGÍLIA • DANO +8"; ShowMemory("SELO DA VIGÍLIA", "O selo guarda a última gravação de Nara: “Sileth não apagou os nomes para alimentar o Lume. Ela tentou esconder que o próprio farol está aprendendo a escolher quem esquecer.” Leve esta prova de volta à Curadora."); break; case "bell": riverBell = true; maxHealth += 20; health = Math.Min(maxHealth, health + 20); questStage = 6; notice = "SINO DE NARA • VIDA MÁXIMA +20"; ShowMemory("O SINO SEM BADALO", "A marca no bronze pertence a Nara. A voz gravada é de uma mulher que atravessou o rio: “Não estou presa. O farol me escuta porque eu aceitei levar as memórias para longe da cidade. Se ainda me procura, não tente me trazer de volta antes de ouvir o que o rio guarda.”"); break; case "lens": lumeLens = true; damage += 12; questStage = 9; notice = "PRISMA DO LUME • DANO +12"; ShowMemory("O PRISMA DA PRIMEIRA VIGÍLIA", "A luz projeta Nara ao lado de Sileth, anos antes da noite dos sinos. Nara escolheu ser a portadora das lembranças que o Lume não conseguia guardar. A imagem se rompe antes de mostrar onde ela está agora."); break; case "trace": naraTrace = true; questStage = 11; notice = "RASTRO DE NARA • NOVA MEMÓRIA"; ShowMemory("A LEMBRANÇA QUE SOBROU", "O eco não mostra um rosto. Mostra Nara ensinando alguém, do outro lado do rio, a pronunciar um nome que Véspera apagou. Sua última frase não pede resgate: “Se a cidade ainda lembrar de nós, eu saberei voltar.”"); break; }
         drops.Remove(item); noticeTime = 1.7f;
     }
 
@@ -332,6 +338,11 @@ public sealed class Game : Form
         else if (room == 10 && player.X < 115) { room = 9; SetupRoom(); }
         else if (room == 10 && player.X > 790) { room = 11; SetupRoom(); ShowMemory("RESERVATÓRIO DAS VOZES", "As lembranças recusadas convergem para um poço. Algo se move entre elas, usando nomes esquecidos como armadura."); }
         else if (room == 11 && player.X < 115) { room = 10; SetupRoom(); }
+        else if (room == 12 && player.X < 115) { room = 11; SetupRoom(); }
+        else if (room == 12 && player.X > 790) { room = 13; SetupRoom(); ShowMemory("CLAUSTRO DO CORO PARTIDO", "As vozes da costa convergem para uma abadia sem teto. No centro, uma figura costura nomes apagados com fios de água escura."); }
+        else if (room == 13 && player.X < 115) { room = 12; SetupRoom(); }
+        else if (room == 13 && player.X > 790 && chorusMemory) { room = 3; SetupRoom(); ShowMemory("REGRESSO A VÉSPERA", "Você traz um coro inteiro, mas não uma voz única. Sileth precisa ouvi-lo para descobrir por que os nomes consumidos continuam chamando do fundo."); }
+        else if (room == 11 && player.X > 790 && questStage >= 13) { room = 12; SetupRoom(); ShowMemory("COSTA DAS VOZES TARDIAS", townEnding == 1 ? "As badaladas com os nomes de Véspera atravessam o rio. Ecos se afastam da trilha; a cidade devolveu força a estas vozes." : "O Lume permanece aceso atrás de você. Sua luz atravessa as águas sem reflexo e atrai para a costa tudo o que foi esquecido."); }
         else if (room == 11 && player.X > 790 && naraTrace) { room = 3; SetupRoom(); ShowMemory("REGRESSO A VÉSPERA", "Você carrega uma lembrança que o Lume não conseguiu apagar. Sileth precisa ouvi-la antes de decidir o que fazer com os arquivos."); }
     }
     private void InteractTown()
@@ -354,6 +365,7 @@ public sealed class Game : Form
             else if (questStage == 4) { questStage = 5; gold += 65; potions++; ShowMemory("A VOZ QUE ESCOLHE", "Nara deixou uma prova de que o Lume não é apenas uma defesa. Ele começou a escolher quais nomes consome. Não posso mais esconder isso. Vou reunir a cidade; você precisa seguir o rastro dela até o leito do Rio Cego."); notice = "MISSÃO CONCLUÍDA: 65 OURO E 1 POÇÃO"; noticeTime = 3; }
             else if (questStage == 9) { questStage = 10; gold += 120; potions++; ShowMemory("O NOME QUE O LUME GUARDA", "O prisma confirma que Nara aceitou ser portadora das lembranças recusadas pelo Lume. Os arquivos não dizem se ela está viva, morta ou fundida à luz. Não vamos decidir seu destino com base em mais uma página incompleta. Reúna as memórias que faltam; quando chegar a hora, Véspera precisa escolher sabendo o preço."); notice = "MISSÃO CONCLUÍDA: 120 OURO E 1 POÇÃO"; noticeTime = 3; }
             else if (questStage == 11 && naraTrace) { questStage = 12; gold += 150; potions++; ShowMemory("A VOZ DE QUEM AINDA LEMBRA", "Nara deixou uma memória fora do alcance do farol. Ela ensinava os esquecidos a dizer os nomes uns dos outros, sem pedir que alguém a salvasse. Sileth: “Passei a vida escolhendo o que Véspera podia lembrar. Agora a cidade terá de escolher por si. Ainda faltam vozes; não vou fechar o arquivo outra vez.”"); notice = "MISSÃO CONCLUÍDA: 150 OURO E 1 POÇÃO"; noticeTime = 3; }
+            else if (questStage == 14 && chorusMemory) { questStage = 15; gold += 200; potions++; ShowMemory("O CORO CHEGA À PRAÇA", "As vozes não são uma criatura que possa ser destruída. Cada nome que o Lume consome aumenta a pressão sob a cidade. Sileth registra o Coro sem apagar nenhuma versão: “Se Nara ainda está entre essas vozes, temos de escutar antes de decidir como chamá-la de volta.” O rastro aponta para além dos mapas de Véspera."); notice = "MISSÃO CONCLUÍDA: 200 OURO E 1 POÇÃO"; noticeTime = 3; }
             else if (questStage >= 12 && townEnding == 0) { endingChoiceOpen = true; notice = "VÉSPERA ESPERA SUA DECISÃO • 1 OU 2"; noticeTime = 3; }
             else if (townEnding == 1) ShowMemory("CURADORA SILETH", "Os nomes voltaram aos sinos. A praça está com você, mas as vozes além do reservatório ainda faltam. Vamos procurá-las sem fechar o arquivo outra vez.");
             else if (townEnding == 2) ShowMemory("CURADORA SILETH", "O Lume continua aceso e os arquivos permanecem abertos. O Silêncio não desapareceu; siga o rastro para além do reservatório antes que a cidade dependa de novo de nomes apagados.");
@@ -419,16 +431,16 @@ public sealed class Game : Form
     private PointF MoveEnemy(Enemy e, PointF delta) { PointF p = e.Pos; PointF x = new(p.X + delta.X, p.Y), y = new(p.X, p.Y + delta.Y); if (!Blocked(x, e.Radius)) p.X = x.X; if (!Blocked(new PointF(p.X, y.Y), e.Radius)) p.Y = y.Y; return new PointF(Math.Clamp(p.X, 85, 875), Math.Clamp(p.Y, 128, 533)); }
     private void SeparateFromPack(Enemy enemy, float dt) { PointF push = PointF.Empty; foreach (Enemy other in enemies) { if (ReferenceEquals(enemy, other)) continue; PointF away = Sub(enemy.Pos, other.Pos); float d = Length(away); if (d > 0.01f && d < 40) push = Add(push, Scale(away, (40 - d) / (40 * d))); } if (Length(push) > 0.01f) enemy.Pos = MoveEnemy(enemy, Scale(Normalize(push, PointF.Empty), 52 * dt)); }
     private void MovePlayer(PointF delta) { PointF x = new(player.X + delta.X, player.Y), y = new(player.X, player.Y + delta.Y); if (!Blocked(x)) player.X = x.X; if (!Blocked(new PointF(player.X, y.Y))) player.Y = y.Y; player.X = Math.Clamp(player.X, 85, 875); player.Y = Math.Clamp(player.Y, 128, 533); }
-    private bool Blocked(PointF p, float radius = 12) { RectangleF body = new(p.X - radius, p.Y - radius, radius * 2, radius * 2); RectangleF[] obstacles = room == 3 ? TownBuildings : room == 4 ? ArchiveWalls : room == 5 ? VaultWalls : room == 6 ? RiverWalls : room == 7 ? BellChamberWalls : room == 8 ? AshGalleryWalls : room == 9 ? LumeChamberWalls : room == 10 ? NameShoreWalls : room == 11 ? VoiceWellWalls : Walls; return obstacles.Any(w => w.IntersectsWith(body)); }
+    private bool Blocked(PointF p, float radius = 12) { RectangleF body = new(p.X - radius, p.Y - radius, radius * 2, radius * 2); RectangleF[] obstacles = room == 3 ? TownBuildings : room == 4 ? ArchiveWalls : room == 5 ? VaultWalls : room == 6 ? RiverWalls : room == 7 ? BellChamberWalls : room == 8 ? AshGalleryWalls : room == 9 ? LumeChamberWalls : room == 10 ? NameShoreWalls : room == 11 ? VoiceWellWalls : room == 12 ? FarReachWalls : room == 13 ? NameCloisterWalls : Walls; return obstacles.Any(w => w.IntersectsWith(body)); }
     private bool BlockedLine(PointF a, PointF b)
     {
         int steps = Math.Max(1, (int)(Distance(a, b) / 6));
-        RectangleF[] obstacles = room == 4 ? ArchiveWalls : room == 5 ? VaultWalls : room == 6 ? RiverWalls : room == 7 ? BellChamberWalls : room == 8 ? AshGalleryWalls : room == 9 ? LumeChamberWalls : room == 10 ? NameShoreWalls : room == 11 ? VoiceWellWalls : Walls;
+        RectangleF[] obstacles = room == 4 ? ArchiveWalls : room == 5 ? VaultWalls : room == 6 ? RiverWalls : room == 7 ? BellChamberWalls : room == 8 ? AshGalleryWalls : room == 9 ? LumeChamberWalls : room == 10 ? NameShoreWalls : room == 11 ? VoiceWellWalls : room == 12 ? FarReachWalls : room == 13 ? NameCloisterWalls : Walls;
         for (int i = 0; i <= steps; i++) { float t = i / (float)steps; PointF p = new(a.X + (b.X - a.X) * t, a.Y + (b.Y - a.Y) * t); if (obstacles.Any(w => w.Contains(p))) return true; }
         return false;
     }
 
-    private SaveData CaptureSaveData() => new() { Room = room, Level = level, Xp = xp, Gold = gold, Potions = potions, Damage = damage, Health = health, MaxHealth = maxHealth, Weapon = weapon, OwnedWeapons = ownedWeapons, Armor = armor, Relic = relic, HealthTalent = healthTalent, SkillTalent = skillTalent, DodgeTalent = dodgeTalent, RoomCleared = room == 3 || enemies.Count == 0 && drops.Count == 0, Completed = victory, MemoriesFound = memoriesFound, QuestStage = questStage, ClearedRooms = clearedRooms | (room != 3 && enemies.Count == 0 && drops.Count == 0 ? 1 << room : 0), ArchiveSeal = archiveSeal, RiverBell = riverBell, LumeLens = lumeLens, NaraTrace = naraTrace, OwnedCharms = ownedCharms, EquippedCharm = equippedCharm, TownEnding = townEnding };
+    private SaveData CaptureSaveData() => new() { Room = room, Level = level, Xp = xp, Gold = gold, Potions = potions, Damage = damage, Health = health, MaxHealth = maxHealth, Weapon = weapon, OwnedWeapons = ownedWeapons, Armor = armor, Relic = relic, HealthTalent = healthTalent, SkillTalent = skillTalent, DodgeTalent = dodgeTalent, RoomCleared = room == 3 || enemies.Count == 0 && drops.Count == 0, Completed = victory, MemoriesFound = memoriesFound, QuestStage = questStage, ClearedRooms = clearedRooms | (room != 3 && enemies.Count == 0 && drops.Count == 0 ? 1 << room : 0), ArchiveSeal = archiveSeal, RiverBell = riverBell, LumeLens = lumeLens, NaraTrace = naraTrace, ChorusMemory = chorusMemory, OwnedCharms = ownedCharms, EquippedCharm = equippedCharm, TownEnding = townEnding };
     private void SaveGame() { Directory.CreateDirectory(Path.GetDirectoryName(SavePath)!); File.WriteAllText(SavePath, JsonSerializer.Serialize(CaptureSaveData())); notice = "PROGRESSO SALVO"; noticeTime = 2; }
     private string LegacySavePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Godot", "app_userdata", "Scadryk RPG", "scadryk-save.cfg");
     private SaveData ReadLegacySave()
@@ -448,8 +460,8 @@ public sealed class Game : Form
         try
         {
             bool migrated = !File.Exists(SavePath); SaveData s = migrated ? ReadLegacySave() : JsonSerializer.Deserialize<SaveData>(File.ReadAllText(SavePath)) ?? throw new InvalidDataException();
-            if (s.Room is < 0 or > 11 || s.Level is < 1 or > 10000 || s.Xp < 0 || s.Xp >= s.Level * 60 || s.Weapon is < 0 or > 2 || s.OwnedWeapons < 1 || s.OwnedWeapons > 7 || (s.OwnedWeapons & (1 << s.Weapon)) == 0 || s.MaxHealth < 1 || s.Health <= 0 || s.Health > s.MaxHealth || s.Potions < 0 || s.Gold < 0 || s.Damage < 1 || s.MemoriesFound is < 0 or > 3 || s.QuestStage is < 0 or > 13 || s.ClearedRooms is < 0 or > 4095 || s.Completed && s.Room != 2 || s.OwnedCharms is < 0 or > 7 || s.EquippedCharm is < 0 or > 3 || s.EquippedCharm > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm - 1))) == 0 || s.TownEnding is < 0 or > 2 || s.QuestStage == 13 && s.TownEnding == 0) throw new InvalidDataException();
-            StartGame(); room = s.Room; level = s.Level; xp = s.Xp; gold = s.Gold; potions = s.Potions; damage = s.Damage; health = s.Health; maxHealth = s.MaxHealth; weapon = s.Weapon; ownedWeapons = s.OwnedWeapons; armor = s.Armor; relic = s.Relic; healthTalent = s.HealthTalent; skillTalent = s.SkillTalent; dodgeTalent = s.DodgeTalent; memoriesFound = s.MemoriesFound; questStage = s.QuestStage; clearedRooms = s.ClearedRooms | (s.RoomCleared && s.Room != 3 ? 1 << s.Room : 0); archiveSeal = s.ArchiveSeal; riverBell = s.RiverBell; lumeLens = s.LumeLens; naraTrace = s.NaraTrace; ownedCharms = s.OwnedCharms; equippedCharm = s.EquippedCharm; townEnding = s.TownEnding; SetupRoom(); if (s.RoomCleared) enemies.Clear(); victory = s.Completed; title = false; storyOverlay = false;
+            if (s.Room is < 0 or > 13 || s.Level is < 1 or > 10000 || s.Xp < 0 || s.Xp >= s.Level * 60 || s.Weapon is < 0 or > 2 || s.OwnedWeapons < 1 || s.OwnedWeapons > 7 || (s.OwnedWeapons & (1 << s.Weapon)) == 0 || s.MaxHealth < 1 || s.Health <= 0 || s.Health > s.MaxHealth || s.Potions < 0 || s.Gold < 0 || s.Damage < 1 || s.MemoriesFound is < 0 or > 3 || s.QuestStage is < 0 or > 15 || s.ClearedRooms is < 0 or > 16383 || s.Completed && s.Room != 2 || s.OwnedCharms is < 0 or > 7 || s.EquippedCharm is < 0 or > 3 || s.EquippedCharm > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm - 1))) == 0 || s.TownEnding is < 0 or > 2 || s.QuestStage == 13 && s.TownEnding == 0 || s.QuestStage >= 14 && !s.ChorusMemory) throw new InvalidDataException();
+            StartGame(); room = s.Room; level = s.Level; xp = s.Xp; gold = s.Gold; potions = s.Potions; damage = s.Damage; health = s.Health; maxHealth = s.MaxHealth; weapon = s.Weapon; ownedWeapons = s.OwnedWeapons; armor = s.Armor; relic = s.Relic; healthTalent = s.HealthTalent; skillTalent = s.SkillTalent; dodgeTalent = s.DodgeTalent; memoriesFound = s.MemoriesFound; questStage = s.QuestStage; clearedRooms = s.ClearedRooms | (s.RoomCleared && s.Room != 3 ? 1 << s.Room : 0); archiveSeal = s.ArchiveSeal; riverBell = s.RiverBell; lumeLens = s.LumeLens; naraTrace = s.NaraTrace; chorusMemory = s.ChorusMemory; ownedCharms = s.OwnedCharms; equippedCharm = s.EquippedCharm; townEnding = s.TownEnding; SetupRoom(); if (s.RoomCleared) enemies.Clear(); victory = s.Completed; title = false; storyOverlay = false;
             if (migrated) SaveGame(); notice = migrated ? "SAVE ANTIGO MIGRADO" : "PROGRESSO CARREGADO"; noticeTime = 2;
         }
         catch { notice = "NENHUM SALVAMENTO VÁLIDO"; noticeTime = 2; }
@@ -468,6 +480,7 @@ public sealed class Game : Form
         if (room == 3) DrawTownEnvironment(g, floor, tile);
         else if (room is 4 or 5) DrawArchiveEnvironment(g, floor, tile);
         else if (room is 6 or 7) DrawRiverEnvironment(g, floor, tile);
+        else if (room is 12 or 13) DrawFarReachEnvironment(g, floor, tile);
         else if (room >= 10) DrawNameShoreEnvironment(g, floor, tile);
         else if (room >= 8) DrawLumeEnvironment(g, floor, tile);
         else
@@ -479,7 +492,7 @@ public sealed class Game : Form
         foreach (Enemy enemy in enemies) DrawEnemy(g, enemy);
         foreach (Drop item in drops) DrawDrop(g, item);
         DrawPlayer(g);
-        g.DrawString(room == 3 ? roomNames[room] : room < 3 ? $"{room + 1} / 3   {roomNames[room]}" : room < 6 ? $"{room - 3} / 2   {roomNames[room]}" : room < 8 ? $"{room - 5} / 2   {roomNames[room]}" : room < 10 ? $"{room - 7} / 2   {roomNames[room]}" : $"{room - 9} / 2   {roomNames[room]}", roomFont, goldBrush, 67, 572);
+        g.DrawString(room == 3 ? roomNames[room] : room < 3 ? $"{room + 1} / 3   {roomNames[room]}" : room < 6 ? $"{room - 3} / 2   {roomNames[room]}" : room < 8 ? $"{room - 5} / 2   {roomNames[room]}" : room < 10 ? $"{room - 7} / 2   {roomNames[room]}" : room < 12 ? $"{room - 9} / 2   {roomNames[room]}" : $"{room - 11} / 2   {roomNames[room]}", roomFont, goldBrush, 67, 572);
         int memoriesRead = (memoriesFound & 1) + ((memoriesFound >> 1) & 1);
         g.DrawString($"ECOS {memoriesRead} / 2", hudFont, goldBrush, 760, 572);
         if (room == 3) g.DrawString(TownObjective(), hudFont, goldBrush, 67, 592);
@@ -512,7 +525,9 @@ public sealed class Game : Form
         10 => "OBJETIVO: DESÇA ALÉM DO PRISMA",
         11 => "OBJETIVO: MOSTRE A NOVA MEMÓRIA A SILETH",
         12 => "OBJETIVO: DECIDA COM SILETH O QUE VÉSPERA DEVE LEMBRAR",
-        13 => townEnding == 1 ? "OS NOMES VOLTARAM • A BUSCA SEGUE ALÉM DO RESERVATÓRIO" : "O LUME PERMANECE • A BUSCA SEGUE ALÉM DO RESERVATÓRIO",
+        13 => townEnding == 1 ? "OS NOMES VOLTARAM • ATRAVESSE O RESERVATÓRIO" : "O LUME PERMANECE • ATRAVESSE O RESERVATÓRIO",
+        14 => "OBJETIVO: LEVE O CORO DOS NOMES A SILETH",
+        15 => "O CORO APONTA ALÉM DOS MAPAS DE VÉSPERA",
         _ => "PRÓXIMO DESTINO: REÚNA AS MEMÓRIAS QUE FALTAM"
     };
 
@@ -552,7 +567,7 @@ public sealed class Game : Form
 
     private string ArchiveObjective() => room == 4 ? "OBJETIVO: CRUZE A GALERIA E ENCONTRE O COFRE" : archiveSeal ? "OBJETIVO: VOLTE A VÉSPERA COM O SELO" : "OBJETIVO: RECUPERE O REGISTRO NO COFRE";
     private string RiverObjective() => room == 6 ? "OBJETIVO: SIGA A CORRENTE ATÉ A CAPELA" : riverBell ? "OBJETIVO: RETORNE E MOSTRE O SINO A EDDA" : "OBJETIVO: ENCONTRE O SINO DE TRAVESSIA";
-    private string LumeObjective() => room == 8 ? "OBJETIVO: SIGA A ESCADA ATÉ A CÂMARA DO LUME" : room == 9 && questStage >= 10 && !naraTrace ? "OBJETIVO: INVESTIGUE A PASSAGEM SOB O PRISMA" : room == 10 ? "OBJETIVO: ATRAVESSE A MARGEM SEM REFLEXO" : room == 11 && !naraTrace ? "OBJETIVO: ENFRENTE O QUE DEVORA NOMES" : room >= 10 && naraTrace ? "OBJETIVO: LEVE O RASTRO DE NARA A SILETH" : lumeLens ? "OBJETIVO: RETORNE E MOSTRE O PRISMA A SILETH" : "OBJETIVO: RECUPERE O PRISMA DA PRIMEIRA VIGÍLIA";
+    private string LumeObjective() => room == 8 ? "OBJETIVO: SIGA A ESCADA ATÉ A CÂMARA DO LUME" : room == 9 && questStage >= 10 && !naraTrace ? "OBJETIVO: INVESTIGUE A PASSAGEM SOB O PRISMA" : room == 10 ? "OBJETIVO: ATRAVESSE A MARGEM SEM REFLEXO" : room == 11 && !naraTrace ? "OBJETIVO: ENFRENTE O QUE DEVORA NOMES" : room == 11 && questStage >= 13 ? "OBJETIVO: CRUZE A COSTA ALÉM DO RESERVATÓRIO" : room == 12 ? "OBJETIVO: SIGA O CORO ATÉ O CLAUSTRO" : room == 13 && !chorusMemory ? "OBJETIVO: DERROTE A TECELÃ E RECUPERE AS VOZES" : room == 13 ? "OBJETIVO: LEVE O CORO DE VOLTA A SILETH" : room >= 10 && naraTrace ? "OBJETIVO: LEVE O RASTRO DE NARA A SILETH" : lumeLens ? "OBJETIVO: RETORNE E MOSTRE O PRISMA A SILETH" : "OBJETIVO: RECUPERE O PRISMA DA PRIMEIRA VIGÍLIA";
 
     private void DrawArchiveEnvironment(Graphics g, Brush ground, Pen tile)
     {
@@ -622,6 +637,38 @@ public sealed class Game : Form
         if (room == 11) { using var core = new SolidBrush(Color.FromArgb(185, 210, 227, 188)); g.FillEllipse(core, 462, 338, 36, 36); }
         using var gate = new Pen(enemies.Count == 0 && drops.Count == 0 ? Color.LightGreen : Color.FromArgb(66, 82, 77), 7);
         g.DrawLine(gate, 885, 290, 885, 370); g.DrawLine(gate, 75, 290, 75, 370);
+        if (room == 11 && questStage >= 13) DrawCentered(g, "COSTA DAS VOZES TARDIAS", 382, new Font("Segoe UI", 9, FontStyle.Bold), townEnding == 1 ? Color.LightGreen : Color.PeachPuff);
+    }
+
+    private void DrawFarReachEnvironment(Graphics g, Brush ground, Pen tile)
+    {
+        using var deep = new SolidBrush(room == 12 ? Color.FromArgb(29, 46, 51) : Color.FromArgb(38, 35, 48));
+        using var stone = new SolidBrush(room == 12 ? Color.FromArgb(70, 83, 78) : Color.FromArgb(78, 67, 83));
+        using var edge = new Pen(room == 12 ? Color.FromArgb(142, 177, 155) : Color.FromArgb(179, 147, 190), 2);
+        using var current = new Pen(Color.FromArgb(70, 160, 201, 188), 3);
+        g.FillRectangle(deep, 65, 108, 830, 445); g.FillRectangle(ground, 94, 132, 772, 397);
+        for (int y = 0; y < 7; y++) for (int x = 0; x < 12; x++) g.DrawRectangle(tile, 70 + x * 68, 112 + y * 62, 67, 61);
+        RectangleF[] walls = room == 12 ? FarReachWalls : NameCloisterWalls;
+        foreach (RectangleF wall in walls) { g.FillRectangle(stone, wall); g.DrawRectangle(edge, wall.X, wall.Y, wall.Width, wall.Height); }
+        for (int i = 0; i < 5; i++)
+        {
+            float x = 152 + i * 152;
+            g.DrawBezier(current, x, 155, x + 58, 210 + i % 2 * 18, x - 52, 268 + i % 2 * 14, x + 12, 320);
+            g.DrawBezier(current, x + 12, 320, x + 68, 374, x - 34, 444, x + 18, 520);
+        }
+        using var pool = new SolidBrush(Color.FromArgb(room == 13 ? 56 : 32, 128, 181, 177));
+        g.FillEllipse(pool, room == 13 ? 377 : 327, room == 13 ? 224 : 193, room == 13 ? 206 : 306, room == 13 ? 200 : 268);
+        if (room == 13)
+        {
+            using var knot = new SolidBrush(Color.FromArgb(180, 176, 119, 188));
+            using var thread = new Pen(Color.FromArgb(210, 213, 178, 218), 3);
+            g.FillEllipse(knot, 451, 292, 58, 58);
+            for (int i = 0; i < 8; i++) { double a = i * Math.PI / 4; g.DrawLine(thread, 480, 321, 480 + (float)Math.Cos(a) * 82, 321 + (float)Math.Sin(a) * 82); }
+        }
+        using var gate = new Pen(enemies.Count == 0 && drops.Count == 0 ? Color.LightGreen : Color.FromArgb(76, 78, 85), 7);
+        g.DrawLine(gate, 885, 290, 885, 370); g.DrawLine(gate, 75, 290, 75, 370);
+        if (room == 12 && Distance(player, new PointF(842, 330)) < 80) DrawCentered(g, "E  ENTRAR NO CLAUSTRO", 382, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, 820);
+        if (room == 13 && chorusMemory && Distance(player, new PointF(842, 330)) < 80) DrawCentered(g, "E  VOLTAR A VÉSPERA", 382, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, 820);
     }
 
     private static void DrawTownHouse(Graphics g, RectangleF area, string sign)
@@ -646,15 +693,15 @@ public sealed class Game : Form
 
     private void DrawEnemy(Graphics g, Enemy enemy)
     {
-        float r = enemy.Radius; Color color = enemy.Kind == EnemyKind.BlindScribe ? Color.FromArgb(89, 128, 135) : enemy.Kind == EnemyKind.RiverFerryman ? Color.FromArgb(69, 120, 124) : enemy.Kind == EnemyKind.AshWarden ? Color.FromArgb(169, 91, 53) : enemy.Kind == EnemyKind.HollowName ? Color.FromArgb(120, 165, 155) : enemy.Boss ? Color.FromArgb(145, 87, 77) : enemy.Kind switch { EnemyKind.Elite => enemy.Armored ? Color.SlateGray : Color.IndianRed, EnemyKind.Archer => Color.FromArgb(128, 151, 106), EnemyKind.Mage => Color.MediumPurple, EnemyKind.InkEcho => Color.FromArgb(113, 98, 143), EnemyKind.DrownedMemory => Color.FromArgb(95, 145, 142), EnemyKind.EmberWisp => Color.FromArgb(212, 126, 61), EnemyKind.NameMoth => Color.FromArgb(126, 170, 156), _ => Color.FromArgb(183, 181, 166) };
-        if (enemy.Windup > 0) { float baseWarn = enemy.Kind == EnemyKind.Elite ? 62 : enemy.Kind == EnemyKind.Mage ? 52 : enemy.Boss && enemy.BossPattern == 0 ? 90 : enemy.Kind == EnemyKind.Archer ? 26 : enemy.Kind == EnemyKind.InkEcho ? 30 : enemy.Kind == EnemyKind.DrownedMemory ? 28 : (enemy.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName) && enemy.BossPattern == 2 ? 85 : enemy.Kind is EnemyKind.EmberWisp or EnemyKind.NameMoth ? 28 : 36; float progress = Math.Clamp(enemy.Windup / Math.Max(0.01f, enemy.WindupMax), 0, 1); float warn = baseWarn * (0.4f + progress * 0.6f); using var p = new Pen(Color.FromArgb(235, 115, 75), 3); using var b = new SolidBrush(Color.FromArgb(35, 235, 115, 75)); if ((enemy.Kind is EnemyKind.Archer or EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth) || ((enemy.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName) && enemy.BossPattern == 2)) g.DrawLine(p, enemy.Pos, enemy.Target); g.FillEllipse(b, enemy.Target.X - warn, enemy.Target.Y - warn, warn * 2, warn * 2); g.DrawEllipse(p, enemy.Target.X - warn, enemy.Target.Y - warn, warn * 2, warn * 2); }
+        float r = enemy.Radius; Color color = enemy.Kind == EnemyKind.BlindScribe ? Color.FromArgb(89, 128, 135) : enemy.Kind == EnemyKind.RiverFerryman ? Color.FromArgb(69, 120, 124) : enemy.Kind == EnemyKind.AshWarden ? Color.FromArgb(169, 91, 53) : enemy.Kind == EnemyKind.HollowName ? Color.FromArgb(120, 165, 155) : enemy.Kind == EnemyKind.NameWeaver ? Color.FromArgb(139, 108, 162) : enemy.Boss ? Color.FromArgb(145, 87, 77) : enemy.Kind switch { EnemyKind.Elite => enemy.Armored ? Color.SlateGray : Color.IndianRed, EnemyKind.Archer => Color.FromArgb(128, 151, 106), EnemyKind.Mage => Color.MediumPurple, EnemyKind.InkEcho => Color.FromArgb(113, 98, 143), EnemyKind.DrownedMemory => Color.FromArgb(95, 145, 142), EnemyKind.EmberWisp => Color.FromArgb(212, 126, 61), EnemyKind.NameMoth => Color.FromArgb(126, 170, 156), _ => Color.FromArgb(183, 181, 166) };
+        if (enemy.Windup > 0) { float baseWarn = enemy.Kind == EnemyKind.Elite ? 62 : enemy.Kind == EnemyKind.Mage ? 52 : enemy.Boss && enemy.BossPattern == 0 ? 90 : enemy.Kind == EnemyKind.Archer ? 26 : enemy.Kind == EnemyKind.InkEcho ? 30 : enemy.Kind == EnemyKind.DrownedMemory ? 28 : (enemy.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName) && enemy.BossPattern == 2 ? 85 : enemy.Kind == EnemyKind.NameWeaver && enemy.BossPattern == 2 ? 38 : enemy.Kind is EnemyKind.EmberWisp or EnemyKind.NameMoth ? 28 : 36; float progress = Math.Clamp(enemy.Windup / Math.Max(0.01f, enemy.WindupMax), 0, 1); float warn = baseWarn * (0.4f + progress * 0.6f); using var p = new Pen(Color.FromArgb(235, 115, 75), 3); using var b = new SolidBrush(Color.FromArgb(35, 235, 115, 75)); if ((enemy.Kind is EnemyKind.Archer or EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth) || ((enemy.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver) && enemy.BossPattern == 2)) g.DrawLine(p, enemy.Pos, enemy.Target); g.FillEllipse(b, enemy.Target.X - warn, enemy.Target.Y - warn, warn * 2, warn * 2); g.DrawEllipse(p, enemy.Target.X - warn, enemy.Target.Y - warn, warn * 2, warn * 2); }
         using var body = new SolidBrush(enemy.Flash > 0 ? Color.White : color); using var edge = new Pen(enemy == lockedTarget ? Color.Gold : enemy.Armored ? Color.LightSteelBlue : Color.FromArgb(35, 25, 22), enemy == lockedTarget ? 4 : 2);
         g.FillEllipse(body, enemy.Pos.X - r, enemy.Pos.Y - r, r * 2, r * 2); g.DrawEllipse(edge, enemy.Pos.X - r, enemy.Pos.Y - r, r * 2, r * 2);
         using var hpBack = new SolidBrush(Color.FromArgb(40, 20, 20)); using var hpBar = new SolidBrush(Color.FromArgb(188, 76, 70)); g.FillRectangle(hpBack, enemy.Pos.X - 22, enemy.Pos.Y - r - 10, 44, 5); g.FillRectangle(hpBar, enemy.Pos.X - 22, enemy.Pos.Y - r - 10, 44 * Math.Max(0, enemy.Hp / enemy.MaxHp), 5);
         string name = EnemyName(enemy); if (name.Length > 0) DrawCentered(g, name, enemy.Pos.Y - r - 28, new Font("Segoe UI", 8, FontStyle.Bold), Color.FromArgb(233, 198, 151), enemy.Pos.X);
-        if (enemy.Boss) { using var bossBack = new SolidBrush(Color.FromArgb(40, 20, 20)); using var bossHp = new SolidBrush(enemy.Hp <= enemy.MaxHp * 0.5f ? Color.OrangeRed : enemy.Kind == EnemyKind.BlindScribe ? Color.Teal : enemy.Kind == EnemyKind.RiverFerryman ? Color.SteelBlue : enemy.Kind == EnemyKind.AshWarden ? Color.DarkOrange : enemy.Kind == EnemyKind.HollowName ? Color.LightSeaGreen : Color.Firebrick); g.FillRectangle(bossBack, 360, 112, 240, 8); g.FillRectangle(bossHp, 360, 112, 240 * Math.Clamp(enemy.Hp / enemy.MaxHp, 0, 1), 8); string bossName = enemy.Kind == EnemyKind.BlindScribe ? "ESCRIBA CEGO" : enemy.Kind == EnemyKind.RiverFerryman ? "BARQUEIRO OCO" : enemy.Kind == EnemyKind.AshWarden ? "GUARDIÃO DAS CINZAS" : enemy.Kind == EnemyKind.HollowName ? "O NOME VAZIO" : "GUARDIÃO DA CRIPTA"; DrawCentered(g, enemy.Hp <= enemy.MaxHp * 0.5f ? $"{bossName} • SEGUNDA FASE" : bossName, 91, new Font("Georgia", 11, FontStyle.Bold), enemy.Hp <= enemy.MaxHp * 0.5f ? Color.OrangeRed : Color.Goldenrod); }
+        if (enemy.Boss) { using var bossBack = new SolidBrush(Color.FromArgb(40, 20, 20)); using var bossHp = new SolidBrush(enemy.Hp <= enemy.MaxHp * 0.5f ? Color.OrangeRed : enemy.Kind == EnemyKind.BlindScribe ? Color.Teal : enemy.Kind == EnemyKind.RiverFerryman ? Color.SteelBlue : enemy.Kind == EnemyKind.AshWarden ? Color.DarkOrange : enemy.Kind == EnemyKind.HollowName ? Color.LightSeaGreen : enemy.Kind == EnemyKind.NameWeaver ? Color.MediumPurple : Color.Firebrick); g.FillRectangle(bossBack, 360, 112, 240, 8); g.FillRectangle(bossHp, 360, 112, 240 * Math.Clamp(enemy.Hp / enemy.MaxHp, 0, 1), 8); string bossName = enemy.Kind == EnemyKind.BlindScribe ? "ESCRIBA CEGO" : enemy.Kind == EnemyKind.RiverFerryman ? "BARQUEIRO OCO" : enemy.Kind == EnemyKind.AshWarden ? "GUARDIÃO DAS CINZAS" : enemy.Kind == EnemyKind.HollowName ? "O NOME VAZIO" : enemy.Kind == EnemyKind.NameWeaver ? "A TECELÃ DE NOMES" : "GUARDIÃO DA CRIPTA"; DrawCentered(g, enemy.Hp <= enemy.MaxHp * 0.5f ? $"{bossName} • SEGUNDA FASE" : bossName, 91, new Font("Georgia", 11, FontStyle.Bold), enemy.Hp <= enemy.MaxHp * 0.5f ? Color.OrangeRed : Color.Goldenrod); }
     }
-    private void DrawDrop(Graphics g, Drop item) { Color c = item.Kind switch { "relic" => Color.Violet, "seal" => Color.LightSkyBlue, "bell" => Color.FromArgb(162, 212, 192), "lens" => Color.FromArgb(248, 185, 95), "trace" => Color.FromArgb(185, 231, 215), "charm" => Color.Plum, "armor" => Color.MediumAquamarine, "weapon" => Color.CornflowerBlue, "potion" => Color.IndianRed, _ => Color.Goldenrod }; using var b = new SolidBrush(c); using var p = new Pen(Color.FromArgb(230, 220, 190), 1); g.FillEllipse(b, item.Pos.X - 8, item.Pos.Y - 8, 16, 16); g.DrawEllipse(p, item.Pos.X - 8, item.Pos.Y - 8, 16, 16); }
+    private void DrawDrop(Graphics g, Drop item) { Color c = item.Kind switch { "relic" => Color.Violet, "seal" => Color.LightSkyBlue, "bell" => Color.FromArgb(162, 212, 192), "lens" => Color.FromArgb(248, 185, 95), "trace" => Color.FromArgb(185, 231, 215), "chorus" => Color.Khaki, "charm" => Color.Plum, "armor" => Color.MediumAquamarine, "weapon" => Color.CornflowerBlue, "potion" => Color.IndianRed, _ => Color.Goldenrod }; using var b = new SolidBrush(c); using var p = new Pen(Color.FromArgb(230, 220, 190), 1); g.FillEllipse(b, item.Pos.X - 8, item.Pos.Y - 8, 16, 16); g.DrawEllipse(p, item.Pos.X - 8, item.Pos.Y - 8, 16, 16); }
     private void DrawPlayer(Graphics g) { using var b = new SolidBrush(invulnerable > 0 ? Color.Salmon : Color.FromArgb(90, 143, 138)); using var face = new SolidBrush(Color.Bisque); g.FillEllipse(b, player.X - 16, player.Y - 16, 32, 32); g.FillEllipse(face, player.X - 8, player.Y - 11, 16, 16); using var p = new Pen(Color.AntiqueWhite, 4); g.DrawLine(p, player, Add(player, Scale(facing, 24))); if (skillCd > 0) { using var cooldownPen = new Pen(Color.FromArgb(190, 230, 193, 129), 3); g.DrawArc(cooldownPen, player.X - 25, player.Y - 25, 50, 50, -90, 360 * skillCd / Math.Max(1.5f, 6f - skillTalent * .5f)); } }
     private void DrawInventory(Graphics g)
     {
@@ -729,10 +776,11 @@ public sealed class Game : Form
     }
     private void DrawOverlay(Graphics g, string titleText, string instruction) { using var bg = new SolidBrush(Color.FromArgb(225, 8, 10, 12)); g.FillRectangle(bg, 0, 0, 960, 640); DrawCentered(g, titleText, 250, new Font("Georgia", 36, FontStyle.Bold), Color.FromArgb(230, 193, 129)); DrawCentered(g, instruction, 340, new Font("Segoe UI", 15, FontStyle.Bold), Color.AntiqueWhite); if (noticeTime > 0) DrawCentered(g, notice, 410, new Font("Segoe UI", 12), Color.Goldenrod); }
     private static void DrawCentered(Graphics g, string s, float y, Font f, Color color, float x = 480) { using (f) using (var brush = new SolidBrush(color)) { SizeF size = g.MeasureString(s, f); g.DrawString(s, f, brush, x - size.Width / 2, y); } }
-    private static string EnemyName(Enemy e) => e.Kind switch { EnemyKind.Guardian => "GUARDIÃO SEM NOME", EnemyKind.BlindScribe => "ESCRIBA CEGO", EnemyKind.RiverFerryman => "BARQUEIRO OCO", EnemyKind.AshWarden => "GUARDIÃO DAS CINZAS", EnemyKind.HollowName => "O NOME VAZIO", EnemyKind.DrownedMemory => "LEMBRANÇA AFOGADA", EnemyKind.EmberWisp => "VESTÍGIO DE BRASAS", EnemyKind.NameMoth => "MARIPOSA DE NOMES", EnemyKind.Elite => e.Armored ? "ELITE • BLINDADO" : "ELITE • FRENÉTICO", EnemyKind.Archer => "ARQUEIRO", EnemyKind.Mage => "CONJURADOR", EnemyKind.InkEcho => "ECO DE TINTA", _ => "" };
+    private static string EnemyName(Enemy e) => e.Kind switch { EnemyKind.Guardian => "GUARDIÃO SEM NOME", EnemyKind.BlindScribe => "ESCRIBA CEGO", EnemyKind.RiverFerryman => "BARQUEIRO OCO", EnemyKind.AshWarden => "GUARDIÃO DAS CINZAS", EnemyKind.HollowName => "O NOME VAZIO", EnemyKind.NameWeaver => "A TECELÃ DE NOMES", EnemyKind.DrownedMemory => "LEMBRANÇA AFOGADA", EnemyKind.EmberWisp => "VESTÍGIO DE BRASAS", EnemyKind.NameMoth => "MARIPOSA DE NOMES", EnemyKind.Elite => e.Armored ? "ELITE • BLINDADO" : "ELITE • FRENÉTICO", EnemyKind.Archer => "ARQUEIRO", EnemyKind.Mage => "CONJURADOR", EnemyKind.InkEcho => "ECO DE TINTA", _ => "" };
     private static PointF Normalize(PointF p, PointF fallback) { float n = Length(p); return n > 0.001f ? new PointF(p.X / n, p.Y / n) : fallback; }
     private static float Length(PointF p) => MathF.Sqrt(p.X * p.X + p.Y * p.Y);
     private static float Distance(PointF a, PointF b) => Length(Sub(a, b));
+    private static float DistanceToSegment(PointF point, PointF start, PointF end) { PointF line = Sub(end, start); float lengthSquared = Dot(line, line); float t = lengthSquared > 0.001f ? Math.Clamp(Dot(Sub(point, start), line) / lengthSquared, 0, 1) : 0; return Distance(point, Add(start, Scale(line, t))); }
     private static PointF Sub(PointF a, PointF b) => new(a.X - b.X, a.Y - b.Y);
     private static PointF Offset(PointF a, float x, float y) => new(a.X + x, a.Y + y);
     private static PointF Add(PointF a, PointF b) => new(a.X + b.X, a.Y + b.Y);
@@ -885,12 +933,35 @@ public sealed class Game : Form
         if (lumeGame.townEnding != 2 || lumeGame.questStage != 13 || lumeGame.damage != 35 || !lumeGame.memoryOverlay) throw new InvalidOperationException("Manter o Lume não criou seu ramo e seu bônus próprios.");
         SaveData lumeSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(lumeGame.CaptureSaveData()))!;
         if (lumeSave.TownEnding != 2 || lumeSave.QuestStage != 13) throw new InvalidOperationException("A decisão de manter o Lume não foi salva.");
+        using var beyondGame = new Game(); beyondGame.timer.Stop(); beyondGame.StartGame(); beyondGame.storyOverlay = false; beyondGame.questStage = 13; beyondGame.townEnding = 1; beyondGame.naraTrace = true; beyondGame.room = 11; beyondGame.clearedRooms = 1 << 11; beyondGame.SetupRoom();
+        beyondGame.player = new PointF(850, 330); beyondGame.Interact();
+        if (beyondGame.room != 12 || beyondGame.enemies.Count != 6 || !beyondGame.enemies.Any(e => e.Kind == EnemyKind.NameMoth)) throw new InvalidOperationException("A decisão não abriu a Costa das Vozes Tardias.");
+        beyondGame.enemies.Clear(); beyondGame.drops.Clear(); beyondGame.player = new PointF(850, 330); beyondGame.Interact();
+        if (beyondGame.room != 13 || !beyondGame.enemies.Any(e => e.Kind == EnemyKind.NameWeaver)) throw new InvalidOperationException("O Claustro do Coro Partido não apresentou sua chefe.");
+        Enemy weaver = beyondGame.enemies.Single(e => e.Kind == EnemyKind.NameWeaver);
+        if (weaver.MaxHp != 410) throw new InvalidOperationException("Os nomes restaurados não enfraqueceram a Tecelã.");
+        weaver.Cooldown = 0; beyondGame.UpdateEnemy(weaver, 0.01f);
+        if (weaver.Windup <= 0 || weaver.BossPattern != 1) throw new InvalidOperationException("A Tecelã não anunciou a primeira marca dirigida.");
+        weaver.Windup = 0; weaver.Cooldown = 0; beyondGame.UpdateEnemy(weaver, 0.01f);
+        if (weaver.Windup <= 0 || weaver.BossPattern != 2) throw new InvalidOperationException("A Tecelã não anunciou seu fio em linha.");
+        weaver.Windup = 0; weaver.Cooldown = 0; beyondGame.UpdateEnemy(weaver, 0.01f);
+        if (weaver.Windup <= 0 || weaver.BossPattern != 0) throw new InvalidOperationException("A Tecelã não concluiu seu ciclo de três ataques.");
+        beyondGame.enemies.Clear(); beyondGame.enemies.Add(weaver); beyondGame.drops.Clear(); beyondGame.Defeat(weaver);
+        if (!beyondGame.drops.Any(d => d.Kind == "chorus")) throw new InvalidOperationException("A Tecelã não deixou o Coro dos nomes consumidos.");
+        foreach (Drop drop in beyondGame.drops.ToArray()) beyondGame.Collect(drop);
+        if (!beyondGame.chorusMemory || beyondGame.questStage != 14 || !beyondGame.memoryOverlay) throw new InvalidOperationException("O Coro não revelou a origem do Silêncio de Baixo.");
+        SaveData chorusSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(beyondGame.CaptureSaveData()))!;
+        if (chorusSave.Room != 13 || !chorusSave.ChorusMemory || (chorusSave.ClearedRooms & (1 << 13)) == 0) throw new InvalidOperationException("A nova expedição e o Coro não foram registrados no save.");
+        beyondGame.memoryOverlay = false; beyondGame.player = new PointF(850, 330); beyondGame.Interact(); beyondGame.player = CuratorPosition; beyondGame.InteractTown();
+        if (beyondGame.room != 3 || beyondGame.questStage != 15 || !beyondGame.chorusMemory) throw new InvalidOperationException("Sileth não recebeu o Coro ao voltar à praça.");
+        using var lumeExpedition = new Game(); lumeExpedition.timer.Stop(); lumeExpedition.StartGame(); lumeExpedition.room = 13; lumeExpedition.townEnding = 2; lumeExpedition.questStage = 13; lumeExpedition.SetupRoom();
+        if (lumeExpedition.enemies.Single(e => e.Kind == EnemyKind.NameWeaver).MaxHp != 455) throw new InvalidOperationException("Manter o Lume não alterou o perigo da expedição.");
         game.room = 11; game.SetupRoom();
         if (game.enemies.Count != 0 || game.drops.Count != 0) throw new InvalidOperationException("O Reservatório foi recriado após ter sido limpo.");
         game.room = 3; game.SetupRoom();
         game.memoryOverlay = false; game.player = CryptGatePosition; game.Interact();
         if (game.room != 2 || game.enemies.Count != 4) throw new InvalidOperationException("A passagem da cidade não retornou à cripta.");
-        Console.WriteLine("TESTES OK: campanha, chefes, itens, talismãs e builds, progressão, save e retorno à cripta."); return 0;
+        Console.WriteLine("TESTES OK: campanha, escolhas, nova expedição, chefes, itens, talismãs, builds, progressão e save."); return 0;
     }
 }
 

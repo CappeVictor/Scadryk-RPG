@@ -1,7 +1,7 @@
 # História de Scadryk
 
 **Subtítulo de trabalho:** *Os Nomes do Rio Cego*  
-**Estado:** prólogo, cripta inicial, praça de Véspera, Arquivo Norte, Rio Cego, Câmara do Lume, Margem sem Reflexo, Reservatório das Vozes e cinco etapas da investigação jogáveis; o rastro de Nara foi recuperado, mas sua localização e as escolhas da campanha continuam em desenvolvimento.
+**Estado:** prólogo, cripta inicial, praça de Véspera, Arquivo Norte, Rio Cego, Câmara do Lume, Margem sem Reflexo, Reservatório das Vozes e seis etapas da investigação jogáveis; o Coro revelou a origem do Silêncio de Baixo, enquanto Nara e o destino final do Lume permanecem sem resposta.
 
 ## Ideia central
 
@@ -48,7 +48,15 @@ Sileth confirma que os arquivos não dizem se Nara está viva, morta ou ligada �
 
 Depois de mostrar o prisma à Curadora, o Escutador percebe uma passagem sob o pedestal. Ela leva à Margem sem Reflexo, um leito escondido onde as vozes recusadas pelo Lume se acumulam. Mariposas de Nomes protegem o caminho até o Reservatório das Vozes. Lá, O Nome Vazio usa nomes esquecidos como armadura e alterna entre uma marca no chão, um golpe próximo e uma faixa de energia dirigida. Ao cair, revela a última lembrança que Nara conseguiu preservar fora do farol: ela ensinava outra pessoa a pronunciar nomes apagados e acreditava que a lembrança mútua permitiria que encontrasse o caminho de volta. A gravação não mostra onde ela está.
 
-Sileth ouve a lembrança e admite que não pode continuar escolhendo sozinha o que a cidade deve recordar. Ela abre novamente os arquivos e pede que o Escutador procure as vozes que ainda faltam. A expedição e a nova etapa da investigação já são jogáveis. Ao voltar para falar com Sileth novamente, o Escutador deve escolher entre devolver os nomes a Véspera ou manter o Lume aceso; pode também adiar a decisão. A primeira escolha muda o diálogo de Edda e Sileth, o aspecto da praça, a recompensa e fica no save. Ela define a política inicial da cidade, mas não resolve o destino de Nara nem a ameaça além do reservatório.
+Sileth ouve a lembrança e admite que não pode continuar escolhendo sozinha o que a cidade deve recordar. Antes de atravessar o reservatório, o Escutador pode pedir que ela leia os nomes perdidos ou mantenha o Lume aceso; também pode adiar a escolha. A decisão muda os diálogos, o aspecto da praça, a recompensa e a força de um inimigo da próxima região, e fica no save. Ela define a política inicial da cidade, mas não resolve o destino de Nara.
+
+### Capítulo IV — A costa das vozes tardias
+
+Depois de Véspera decidir, uma passagem se abre na margem leste do Reservatório. A Costa das Vozes Tardias é um leito de pedra onde o mar não reflete a luz: as ondas repetem nomes antes de quebrar. Mariposas de Nomes guardam a trilha até o Claustro do Coro Partido, uma abadia aberta ao céu.
+
+A Tecelã de Nomes costura os nomes consumidos pelo Lume em fios de água escura. Ela não é a origem do Silêncio, mas mantém as vozes comprimidas para que não retornem juntas. Alterna entre um golpe ao redor do corpo, uma marca que persegue o Escutador e um fio em linha reta. Devolver os nomes a Véspera enfraquece a Tecelã: o coro da cidade afrouxa seus fios. Manter o Lume dá mais força ao nó, pois a luz continua chamando os nomes para si.
+
+Ao romper o nó, o jogador recolhe o Coro dos Nomes Consumidos. As vozes explicam que o Silêncio de Baixo não veio de fora: é a pressão acumulada de todos que o farol tomou e não conseguiu guardar. Sileth registra o testemunho sem escolher uma versão para apagar; a cidade recebe as vozes de volta, mas a gravação não mostra onde Nara está. O rastro segue para além dos mapas de Véspera.
 
 Nara ajudou Sileth a manter a cidade protegida, mas passou a questionar o preço. Ela não está simplesmente presa e à espera de ser resgatada: seus rastros mostram uma decisão que muda o sentido da busca do protagonista.
 
@@ -60,7 +68,7 @@ A decisão de Véspera é apenas o primeiro passo de uma escolha maior. No confr
 
 - A inspiração em Diablo fica no gênero e na ambição de combate, exploração, loot e progressão. Scadryk mantém mitologia, trama, personagens, criaturas, nomes e apresentação próprios.
 - O Guardião e a cripta já existem como protótipo de combate; as ligações com o Rio Cego e o Lume são ficção planejada para a campanha.
-- O prólogo, as duas inscrições da cripta, a praça, as missões de Sileth e Edda, o Arquivo Norte, o Rio Cego, a Capela Afogada, a Câmara do Lume, a Margem sem Reflexo, o Reservatório das Vozes, os chefes e as gravações no Selo, Sino, Prisma e lembrança de Nara estão disponíveis; a primeira escolha em Véspera já tem efeitos persistentes. A campanha além do reservatório, o confronto final e o epílogo continuam planejados.
+- O prólogo, as duas inscrições da cripta, a praça, as missões de Sileth e Edda, o Arquivo Norte, o Rio Cego, a Capela Afogada, a Câmara do Lume, a Margem sem Reflexo, o Reservatório das Vozes, a Costa das Vozes Tardias, o Claustro do Coro Partido, a Tecelã e o Coro dos Nomes Consumidos estão jogáveis; a primeira escolha em Véspera já tem efeitos persistentes. As terras além do Claustro, o destino de Nara, o confronto final e o epílogo continuam planejados.
 - Novos itens e poderes devem ter origem no mundo de Scadryk e revelar algo sobre quem os criou, usou ou esqueceu.
 
 

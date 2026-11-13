@@ -12,12 +12,12 @@ A investigação leva à Curadora Sileth, guardiã dos arquivos. Ela remove nome
 
 O prólogo, a cripta inicial e sua lembrança já iniciam essa narrativa. A praça segura de Véspera é explorável e leva ao Arquivo Norte, ao leito do Rio Cego e à escada de cinzas sob a Capela Afogada. O Selo da Vigília revela que o Lume escolhe nomes para consumir; o sino mostra que Nara atravessou o rio por vontade própria. Na Câmara do Lume, o prisma confirma que ela aceitou carregar as lembranças que o farol não consegue guardar. Sua localização e o destino da cidade seguem sem resposta. A primeira decisão da cidade agora é jogável: devolver os nomes ou sustentar o Lume, alterando a praça, um bônus de progressão e os diálogos de Sileth e Edda; a escolha fica no save.
 
-O documento de história com cenário, personagens e resumo dos três capítulos está em [STORY.md](STORY.md).
+O documento de história com cenário, personagens e resumo dos quatro capítulos está em [STORY.md](STORY.md).
 
 ## Estado atual
 
 - A Godot foi removida do projeto. A janela e o desenho usam C#/.NET 8 Windows Forms e GDI+.
-- O protótipo mantém onze salas de combate, inimigos comuns, arqueiro, conjurador, elite, Guardião da Cripta, Ecos de Tinta, Escriba Cego, Lembranças Afogadas, Barqueiro Oco, Vestígios de Brasas, Guardião das Cinzas, Mariposas de Nomes e O Nome Vazio.
+- O protótipo mantém treze salas de combate, inimigos comuns, arqueiro, conjurador, elite, Guardião da Cripta, Ecos de Tinta, Escriba Cego, Lembranças Afogadas, Barqueiro Oco, Vestígios de Brasas, Guardião das Cinzas, Mariposas de Nomes, O Nome Vazio e a Tecelã de Nomes.
 - Combate: ataque corpo a corpo, ataque especial Redemoinho, esquiva, crítico, alvo marcado e golpes inimigos anunciados.
 - Progressão: XP, níveis, escolhas de talentos, ouro, poções, três armas, armadura, relíquia e três talismãs que alteram habilidades, esquiva ou ataques críticos.
 - Salvamento local em JSON com migração do save ConfigFile da versão Godot.
@@ -27,21 +27,22 @@ O documento de história com cenário, personagens e resumo dos três capítulos
 - Arquivo Norte com galeria e cofre exploráveis, inimigo à distância original, chefe com duas fases e Selo da Vigília como item de história e melhoria de dano.
 - Leito do Rio Cego e Capela Afogada exploráveis, novo inimigo à distância, chefe com três ataques anunciados e Sino de Nara como item de história e melhoria de vida.
 - Escada de Cinzas e Câmara do Lume exploráveis, Vestígios de Brasas, chefe com três ataques anunciados e Prisma da Primeira Vigília como revelação narrativa e melhoria de dano.
-- Nova expedição além do Lume: Margem sem Reflexo e Reservatório das Vozes, Mariposas de Nomes, chefe O Nome Vazio com três ataques anunciados e lembrança de Nara como item de história.
+- Expedição além do Lume: Margem sem Reflexo e Reservatório das Vozes, Mariposas de Nomes, O Nome Vazio com três ataques anunciados e lembrança de Nara.
+- Costa das Vozes Tardias e Claustro do Coro Partido, com a Tecelã de Nomes, três padrões anunciados, loot narrativo e revelação de que o Silêncio é o conjunto de nomes consumidos pelo Lume.
 - Elites e chefes deixam talismãs originais com efeitos e compensações diferentes; o inventário permite alternar o talismã equipado, e o save registra coleção e equipamento.
-- Inscrições, etapa da missão, selo, sino, prisma, rastro de Nara e câmaras já limpas ficam no save; os ecos coletados aparecem na interface.
+- A primeira escolha muda diálogos, a praça e a força da Tecelã; a nova memória, a etapa da missão e as treze câmaras já limpas ficam no save. Os ecos coletados aparecem na interface.
 
 ## Próximas etapas
 
 1. **Consolidar a base C#** — manter compilação Windows e smoke tests, conferir save novo e migração do save antigo.
-2. **Transformar a premissa em campanha** — expandir a primeira decisão de Véspera, seguir o rastro de Nara além do reservatório e revelar por que o Silêncio de Baixo cresce.
+2. **Transformar a premissa em campanha** — seguir a trilha do Coro para além do Claustro, revelar como o Lume começou a escolher nomes e continuar a busca por Nara.
 3. **Aprofundar combate** — mais ataques legíveis, esquiva consistente, inimigos com funções distintas e balanceamento por sala.
 4. **Expandir loot e builds** — adicionar níveis de raridade, comparação de equipamento, mais espaços e efeitos que combinem entre si.
 5. **Criar masmorras e narrativa ambiental** — novas regiões, rotas, arquivos, eventos e chefes cujas mecânicas reforcem a história.
 6. **Concluir a escolha final** — mostrar como as decisões acumuladas alteram Véspera, Nara, aliados e o destino do Lume de Vigília.
 7. **Finalizar apresentação e distribuição** — arte e áudio originais, animações, acessibilidade, builds self-contained e testes em Windows.
 
-Cada etapa deve compilar, incluir uma validação adequada e registrar as limitações conhecidas. A primeira decisão ramificada da campanha já muda o estado persistente de Véspera. O protótipo atual tem cinco expedições jogáveis, mas ainda precisa de regiões, builds e conteúdo no volume de um RPG de ação longo; essa escala exige desenvolvimento continuado.
+Cada etapa deve compilar, incluir uma validação adequada e registrar as limitações conhecidas. A primeira decisão ramificada da campanha já muda o estado persistente de Véspera. O protótipo atual tem seis expedições jogáveis, mas ainda precisa de regiões, builds e conteúdo no volume de um RPG de ação longo; essa escala exige desenvolvimento continuado.
 
 
 
