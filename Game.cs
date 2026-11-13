@@ -21,7 +21,7 @@ public sealed class Game : Form
         public bool Boss => Kind is EnemyKind.Guardian or EnemyKind.BlindScribe or EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent;
         public float Radius => Boss ? 23 : Kind == EnemyKind.Elite ? 18 : 14;
     }
-    private sealed class Drop { public PointF Pos; public string Kind = "gold"; public int Amount; }
+    private sealed class Drop { public PointF Pos; public string Kind = "gold"; public int Amount, Rarity, Bonus, Affix; }
     private sealed class EchoShard { public PointF Pos, Direction; public float Life, Damage; public HashSet<Enemy> Hit = new(); }
     private sealed class SaveData
     {
@@ -439,7 +439,7 @@ public sealed class Game : Form
         if (enemy.Kind == EnemyKind.Elite && !armor) drops.Add(new Drop { Pos = Offset(enemy.Pos, 24, 0), Kind = "armor" });
         else if (!enemy.Boss && random.NextDouble() < 0.2) drops.Add(new Drop { Pos = Offset(enemy.Pos, 16, 12), Kind = "potion" });
         if (relicOn) health = Math.Min(maxHealth, health + 5);
-        if (enemies.Count == 0 && room < 2) { int next = room == 0 ? 2 : 1; if ((ownedWeapons & (1 << next)) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, -16, -8), Kind = "weapon", Amount = next }); }
+        if (enemies.Count == 0 && room < 2) { int next = room == 0 ? 2 : 1; if ((ownedWeapons & (1 << next)) == 0) drops.Add(CreateWeaponDrop(Offset(enemy.Pos, -16, -8), next)); }
         if (enemies.Count == 0 && drops.Count == 0 && room == 2 && !memoryOverlay) chestChoice = true;
     }
 
@@ -494,7 +494,7 @@ public sealed class Game : Form
     private void HitPlayer(float value) { float damageTaken = value * (armorOn ? 0.7f : 1) * (wardTime > 0 ? 0.45f : 1); health = Math.Max(0, health - damageTaken); invulnerable = 0.6f; if (health <= 0) dead = true; }
     private void Collect(Drop item)
     {
-        switch (item.Kind) { case "gold": gold += item.Amount; notice = $"+{item.Amount} OURO"; break; case "potion": potions++; notice = "+1 POÇÃO"; break; case "glass": tideGlass = Math.Min(999, tideGlass + item.Amount); notice = $"+{item.Amount} SAL VÍTREO"; break; case "weapon": if (item.Amount is < 1 or > 2) { drops.Remove(item); return; } RollWeapon(item.Amount); ownedWeapons |= 1 << item.Amount; notice = $"ARMA {WeaponRarityName(weaponRarities[item.Amount])}: {WeaponDisplayName(item.Amount)}"; break; case "ebb": questStage = 32; notice = "MEMÓRIA: O VEIO LIVRE"; ShowMemory("A CORRENTE NÃO É UMA ROTA", "O vigia mantinha o fluxo preso num único giro. Quando o canal se abre, a água volta a mudar de direção conforme a cheia. Aven poderá ensinar o Escutador a chamar a vazante sem obrigar ninguém a segui-la. A gravação termina antes de indicar para onde foram os viajantes."); break; case "counter": counterTrace = true; questStage = 35; notice = "MEMÓRIA: O COMPASSO DAS MARGENS"; ShowMemory("O AFINADOR DAS MARGENS", "O Afinador não guardava um mapa. Regulava a força que mantém os dois lados do rio em equilíbrio; alguém o convenceu de que só um fluxo constante poderia proteger a comunidade. Ao ceder, o mecanismo volta a alternar entre impulso e retorno. A gravação não contém nome, rota nem notícia de Nara."); break; case "beyond": beyondTrace = true; questStage = 29; notice = "SINAL DE PASSAGEM RECUPERADO"; ShowMemory("NÓS QUE PODEM SER DESFEITOS", "O sinal foi deixado por viajantes que passaram pela margem durante a cheia. Ele confirma apenas que o grupo cruzou junto e escolheu para onde seguir ao chegar à outra margem. Não indica qual margem, nome ou destino pertence a Nara."); break; case "witness": upstreamTrace = true; questStage = 26; notice = "MEMÓRIA: A TESTEMUNHA DA MARÉ"; ShowMemory("A ÚLTIMA CURVA DE NARA", "A testemunha não guarda um mapa nem um nome. Guarda a passagem de um grupo que atravessou o rio contra a corrente. Quando alguém a chamou pelo nome escrito no registro de Véspera, Nara respondeu com outro nome e pediu que o grupo o aprendesse. Eles aceitaram e seguiram juntos para além das águas. O eco se encerra antes de revelar a palavra escolhida ou o lugar a que chegaram."); break; case "register": questStage = 23; notice = "REGISTRO DE PASSAGEM RECUPERADO"; ShowMemory("OS NOMES QUE NÃO SÃO POSSE", "O livro contém rotas e relatos escritos por viajantes diferentes. Aven lê em voz alta apenas o trecho assinado por quem escolheu compartilhá-lo. Uma anotação de Nara confirma que ela seguiu adiante com o grupo, mas não revela seu nome atual nem seu paradeiro. O registro fica com a comunidade, não com Véspera."); break; case "chorus": chorusMemory = true; questStage = 14; notice = "MEMÓRIA: CORO DOS NOMES CONSUMIDOS"; ShowMemory("A TECELÃ DE NOMES", "Quando o fio se rompe, as vozes não se calam. O Coro: “Não somos uma coisa que veio de fora. Somos todos os nomes que o Lume tomou e não conseguiu guardar. Nara carregou parte de nós para longe, mas o farol continua nos chamando.” O Silêncio de Baixo é a pressão dessas memórias tentando voltar juntas."); break; case "first": firstMemory = true; questStage = 16; notice = "MEMÓRIA: O PRIMEIRO NOME"; ShowMemory("A PRIMEIRA VIGÍLIA", "A guardiã recorda seu nome: Ilyra, a primeira Escutadora. Ela não acendeu o Lume para apagar as vozes, mas para que toda memória encontrasse um lugar onde ser ouvida. Séculos depois, os guardiões inverteram o propósito e transformaram lembrança em combustível. Ilyra entregou o próprio nome para impedir que o farol esquecesse sua origem. No último eco, viu Nara atravessar a corrente levando vozes que o Lume não comportava. Não sabe o que aconteceu com ela depois, mas deixa um aviso: se alguém a encontrar, não deve chamá-la pelo nome que o farol escolheu."); break; case "west": westTrace = true; questStage = 19; notice = "MEMÓRIA: MAPA DA MARGEM ESCOLHIDA"; ShowMemory("O MAPA DE NARA", "A Cartógrafa guardava um registro de quem atravessou o Vau. Entre os traços recentes, você reconhece a letra de Nara: “Aqui, ninguém precisa conservar o nome que o Lume escolheu. Ajudei a levantar um abrigo e segui com os que queriam continuar a oeste. Se veio atrás de mim, não use o parentesco como resposta. Pergunte primeiro quem escolhi ser.” A tinta e o caminho são seus, mas o mapa não diz quando ela partiu nem onde está agora."); break; case "charm": if (item.Amount is < 1 or > 5) { drops.Remove(item); return; } bool newCharm = (ownedCharms & (1 << (item.Amount - 1))) == 0; ownedCharms |= 1 << (item.Amount - 1); if (equippedCharm == 0 && equippedCharm2 != item.Amount) equippedCharm = item.Amount; else if (equippedCharm2 == 0 && equippedCharm != item.Amount) equippedCharm2 = item.Amount; notice = newCharm ? $"TALISMÃ: {charmNames[item.Amount]}" : $"ECO DUPLICADO: {charmNames[item.Amount]}"; break; case "armor": armor = true; notice = "PEITORAL DE PEDRA ENCONTRADO"; break; case "relic": relic = true; notice = "FRAGMENTO DE VOZ ENCONTRADO"; ShowMemory("ECO PRESO NO RELICÁRIO", "Nara: “Eu vim por vontade própria. Se encontrou esta lembrança, procure o arquivo de Sileth.”"); break; case "seal": archiveSeal = true; damage += 8; questStage = 4; notice = "SELO DA VIGÍLIA • DANO +8"; ShowMemory("SELO DA VIGÍLIA", "O selo guarda a última gravação de Nara: “Sileth não apagou os nomes para alimentar o Lume. Ela tentou esconder que o próprio farol está aprendendo a escolher quem esquecer.” Leve esta prova de volta à Curadora."); break; case "bell": riverBell = true; maxHealth += 20; health = Math.Min(maxHealth, health + 20); questStage = 6; notice = "SINO DE NARA • VIDA MÁXIMA +20"; ShowMemory("O SINO SEM BADALO", "A marca no bronze pertence a Nara. A voz gravada é de uma mulher que atravessou o rio: “Não estou presa. O farol me escuta porque eu aceitei levar as memórias para longe da cidade. Se ainda me procura, não tente me trazer de volta antes de ouvir o que o rio guarda.”"); break; case "lens": lumeLens = true; damage += 12; questStage = 9; notice = "PRISMA DO LUME • DANO +12"; ShowMemory("O PRISMA DA PRIMEIRA VIGÍLIA", "A luz projeta Nara ao lado de Sileth, anos antes da noite dos sinos. Nara escolheu ser a portadora das lembranças que o Lume não conseguia guardar. A imagem se rompe antes de mostrar onde ela está agora."); break; case "trace": naraTrace = true; questStage = 11; notice = "RASTRO DE NARA • NOVA MEMÓRIA"; ShowMemory("A LEMBRANÇA QUE SOBROU", "O eco não mostra um rosto. Mostra Nara ensinando alguém, do outro lado do rio, a pronunciar um nome que Véspera apagou. Sua última frase não pede resgate: “Se a cidade ainda lembrar de nós, eu saberei voltar.”"); break; }
+        switch (item.Kind) { case "gold": gold += item.Amount; notice = $"+{item.Amount} OURO"; break; case "potion": potions++; notice = "+1 POÇÃO"; break; case "glass": tideGlass = Math.Min(999, tideGlass + item.Amount); notice = $"+{item.Amount} SAL VÍTREO"; break; case "weapon": if (item.Amount is < 1 or > 2) { drops.Remove(item); return; } weaponRarities[item.Amount] = item.Rarity; weaponBonuses[item.Amount] = item.Bonus; weaponAffixes[item.Amount] = item.Affix; ownedWeapons |= 1 << item.Amount; notice = $"ARMA {WeaponRarityName(weaponRarities[item.Amount])}: {WeaponDisplayName(item.Amount)}"; break; case "ebb": questStage = 32; notice = "MEMÓRIA: O VEIO LIVRE"; ShowMemory("A CORRENTE NÃO É UMA ROTA", "O vigia mantinha o fluxo preso num único giro. Quando o canal se abre, a água volta a mudar de direção conforme a cheia. Aven poderá ensinar o Escutador a chamar a vazante sem obrigar ninguém a segui-la. A gravação termina antes de indicar para onde foram os viajantes."); break; case "counter": counterTrace = true; questStage = 35; notice = "MEMÓRIA: O COMPASSO DAS MARGENS"; ShowMemory("O AFINADOR DAS MARGENS", "O Afinador não guardava um mapa. Regulava a força que mantém os dois lados do rio em equilíbrio; alguém o convenceu de que só um fluxo constante poderia proteger a comunidade. Ao ceder, o mecanismo volta a alternar entre impulso e retorno. A gravação não contém nome, rota nem notícia de Nara."); break; case "beyond": beyondTrace = true; questStage = 29; notice = "SINAL DE PASSAGEM RECUPERADO"; ShowMemory("NÓS QUE PODEM SER DESFEITOS", "O sinal foi deixado por viajantes que passaram pela margem durante a cheia. Ele confirma apenas que o grupo cruzou junto e escolheu para onde seguir ao chegar à outra margem. Não indica qual margem, nome ou destino pertence a Nara."); break; case "witness": upstreamTrace = true; questStage = 26; notice = "MEMÓRIA: A TESTEMUNHA DA MARÉ"; ShowMemory("A ÚLTIMA CURVA DE NARA", "A testemunha não guarda um mapa nem um nome. Guarda a passagem de um grupo que atravessou o rio contra a corrente. Quando alguém a chamou pelo nome escrito no registro de Véspera, Nara respondeu com outro nome e pediu que o grupo o aprendesse. Eles aceitaram e seguiram juntos para além das águas. O eco se encerra antes de revelar a palavra escolhida ou o lugar a que chegaram."); break; case "register": questStage = 23; notice = "REGISTRO DE PASSAGEM RECUPERADO"; ShowMemory("OS NOMES QUE NÃO SÃO POSSE", "O livro contém rotas e relatos escritos por viajantes diferentes. Aven lê em voz alta apenas o trecho assinado por quem escolheu compartilhá-lo. Uma anotação de Nara confirma que ela seguiu adiante com o grupo, mas não revela seu nome atual nem seu paradeiro. O registro fica com a comunidade, não com Véspera."); break; case "chorus": chorusMemory = true; questStage = 14; notice = "MEMÓRIA: CORO DOS NOMES CONSUMIDOS"; ShowMemory("A TECELÃ DE NOMES", "Quando o fio se rompe, as vozes não se calam. O Coro: “Não somos uma coisa que veio de fora. Somos todos os nomes que o Lume tomou e não conseguiu guardar. Nara carregou parte de nós para longe, mas o farol continua nos chamando.” O Silêncio de Baixo é a pressão dessas memórias tentando voltar juntas."); break; case "first": firstMemory = true; questStage = 16; notice = "MEMÓRIA: O PRIMEIRO NOME"; ShowMemory("A PRIMEIRA VIGÍLIA", "A guardiã recorda seu nome: Ilyra, a primeira Escutadora. Ela não acendeu o Lume para apagar as vozes, mas para que toda memória encontrasse um lugar onde ser ouvida. Séculos depois, os guardiões inverteram o propósito e transformaram lembrança em combustível. Ilyra entregou o próprio nome para impedir que o farol esquecesse sua origem. No último eco, viu Nara atravessar a corrente levando vozes que o Lume não comportava. Não sabe o que aconteceu com ela depois, mas deixa um aviso: se alguém a encontrar, não deve chamá-la pelo nome que o farol escolheu."); break; case "west": westTrace = true; questStage = 19; notice = "MEMÓRIA: MAPA DA MARGEM ESCOLHIDA"; ShowMemory("O MAPA DE NARA", "A Cartógrafa guardava um registro de quem atravessou o Vau. Entre os traços recentes, você reconhece a letra de Nara: “Aqui, ninguém precisa conservar o nome que o Lume escolheu. Ajudei a levantar um abrigo e segui com os que queriam continuar a oeste. Se veio atrás de mim, não use o parentesco como resposta. Pergunte primeiro quem escolhi ser.” A tinta e o caminho são seus, mas o mapa não diz quando ela partiu nem onde está agora."); break; case "charm": if (item.Amount is < 1 or > 5) { drops.Remove(item); return; } bool newCharm = (ownedCharms & (1 << (item.Amount - 1))) == 0; ownedCharms |= 1 << (item.Amount - 1); if (equippedCharm == 0 && equippedCharm2 != item.Amount) equippedCharm = item.Amount; else if (equippedCharm2 == 0 && equippedCharm != item.Amount) equippedCharm2 = item.Amount; notice = newCharm ? $"TALISMÃ: {charmNames[item.Amount]}" : $"ECO DUPLICADO: {charmNames[item.Amount]}"; break; case "armor": armor = true; notice = "PEITORAL DE PEDRA ENCONTRADO"; break; case "relic": relic = true; notice = "FRAGMENTO DE VOZ ENCONTRADO"; ShowMemory("ECO PRESO NO RELICÁRIO", "Nara: “Eu vim por vontade própria. Se encontrou esta lembrança, procure o arquivo de Sileth.”"); break; case "seal": archiveSeal = true; damage += 8; questStage = 4; notice = "SELO DA VIGÍLIA • DANO +8"; ShowMemory("SELO DA VIGÍLIA", "O selo guarda a última gravação de Nara: “Sileth não apagou os nomes para alimentar o Lume. Ela tentou esconder que o próprio farol está aprendendo a escolher quem esquecer.” Leve esta prova de volta à Curadora."); break; case "bell": riverBell = true; maxHealth += 20; health = Math.Min(maxHealth, health + 20); questStage = 6; notice = "SINO DE NARA • VIDA MÁXIMA +20"; ShowMemory("O SINO SEM BADALO", "A marca no bronze pertence a Nara. A voz gravada é de uma mulher que atravessou o rio: “Não estou presa. O farol me escuta porque eu aceitei levar as memórias para longe da cidade. Se ainda me procura, não tente me trazer de volta antes de ouvir o que o rio guarda.”"); break; case "lens": lumeLens = true; damage += 12; questStage = 9; notice = "PRISMA DO LUME • DANO +12"; ShowMemory("O PRISMA DA PRIMEIRA VIGÍLIA", "A luz projeta Nara ao lado de Sileth, anos antes da noite dos sinos. Nara escolheu ser a portadora das lembranças que o Lume não conseguia guardar. A imagem se rompe antes de mostrar onde ela está agora."); break; case "trace": naraTrace = true; questStage = 11; notice = "RASTRO DE NARA • NOVA MEMÓRIA"; ShowMemory("A LEMBRANÇA QUE SOBROU", "O eco não mostra um rosto. Mostra Nara ensinando alguém, do outro lado do rio, a pronunciar um nome que Véspera apagou. Sua última frase não pede resgate: “Se a cidade ainda lembrar de nós, eu saberei voltar.”"); break; }
         drops.Remove(item); noticeTime = 1.7f;
     }
 
@@ -510,9 +510,22 @@ public sealed class Game : Form
 
     private void RollWeapon(int index, int rarityRoll, int bonusRoll, int affixRoll)
     {
-        weaponRarities[index] = rarityRoll < 62 ? 0 : rarityRoll < 95 ? 1 : 2;
-        weaponBonuses[index] = weaponRarities[index] switch { 0 => bonusRoll % 3, 1 => 3 + bonusRoll % 4, _ => 7 + bonusRoll % 5 };
-        weaponAffixes[index] = weaponRarities[index] == 0 ? 0 : 1 + affixRoll % 3;
+        var roll = RollWeaponStats(rarityRoll, bonusRoll, affixRoll);
+        weaponRarities[index] = roll.Rarity; weaponBonuses[index] = roll.Bonus; weaponAffixes[index] = roll.Affix;
+    }
+
+    private static (int Rarity, int Bonus, int Affix) RollWeaponStats(int rarityRoll, int bonusRoll, int affixRoll)
+    {
+        int rarity = rarityRoll < 62 ? 0 : rarityRoll < 95 ? 1 : 2;
+        int bonus = rarity switch { 0 => bonusRoll % 3, 1 => 3 + bonusRoll % 4, _ => 7 + bonusRoll % 5 };
+        int affix = rarity == 0 ? 0 : 1 + affixRoll % 3;
+        return (rarity, bonus, affix);
+    }
+
+    private Drop CreateWeaponDrop(PointF pos, int index)
+    {
+        var roll = RollWeaponStats(random.Next(100), random.Next(5), random.Next(3));
+        return new Drop { Pos = pos, Kind = "weapon", Amount = index, Rarity = roll.Rarity, Bonus = roll.Bonus, Affix = roll.Affix };
     }
 
     private void UsePotion() { if (potions > 0 && health < maxHealth) { potions--; health = Math.Min(maxHealth, health + 45); notice = "+45 VIDA"; noticeTime = 1.3f; } else { notice = potions == 0 ? "SEM POÇÕES" : "VIDA JÁ ESTÁ CHEIA"; noticeTime = 1.3f; } }
@@ -661,7 +674,7 @@ public sealed class Game : Form
             else if (questStage == 26 && upstreamTrace) { questStage = 27; gold += 320; potions++; ShowMemory("A TESTEMUNHA SEM REGISTRO", "Aven ouve a lembrança sem perguntar qual era o nome anterior nem o escolhido por Nara. Ele registra apenas que um grupo chegou junto à nascente e continuou viagem por vontade própria. “Se você ainda quer encontrá-la, a próxima pergunta precisa ser feita a ela. A nossa comunidade não vai responder em seu lugar.” A trilha segue além do alcance das lanternas."); notice = "RECOMPENSA: 320 OURO E 1 POÇÃO"; noticeTime = 3; }
             else if (questStage == 29 && beyondTrace) { questStage = 30; gold += 420; potions++; ShowMemory("AVEN GUARDA O SINAL", "A marca confirma que o grupo de Nara cruzou a cheia e escolheu o próprio rumo ao chegar à margem. Aven a prende à mesa comunitária sem copiar o trajeto: “Esse relato diz que escolheram. Não diz que alguém precisa segui-los.” Ele oferece provisões e mantém o caminho aberto para quem vier depois."); notice = "RECOMPENSA: 420 OURO E 1 POÇÃO"; noticeTime = 3; }
         else if (questStage == 32) { questStage = 33; ebbSeal = true; gold += 480; potions += 2; ShowMemory("A MARCA DA VAZANTE", "Aven entrega um selo de bronze que abre uma passagem curta na água ao redor do Escutador. Ele não controla a corrente: por um instante, reúne os ecos próximos para que possam ser enfrentados juntos. “Use para abrir espaço, não para escolher o rumo de alguém.” A habilidade Vazante foi liberada."); notice = "RECOMPENSA: 480 OURO • VAZANTE LIBERADA"; noticeTime = 3; }
-            else if (questStage == 35 && counterTrace) { questStage = 36; anchorWard = true; gold += 560; tideGlass += 3; potions += 2; ShowMemory("A CORRENTE TEM DUAS MARGENS", "Aven escuta o relato do Coração e acrescenta ao mapa comunitário apenas isto: a passagem pode mudar de sentido sem deixar de ser passagem. Ele ensina o Manto de Lastro, que fecha a corrente ao redor do Escutador por um instante e reduz o dano recebido. Entrega também sal vítreo e provisões; nenhuma direção é marcada em nome de quem não está aqui."); notice = "RECOMPENSA: MANTO DE LASTRO • 560 OURO • 3 SAL"; noticeTime = 3; }
+            else if (questStage == 35 && counterTrace) { questStage = 36; anchorWard = true; gold += 560; tideGlass += 3; potions += 2; ShowMemory("A CORRENTE TEM DUAS MARGENS", "Aven escuta o relato do Coração e acrescenta ao mapa comunitário apenas isto: a passagem pode mudar de sentido sem deixar de ser passagem. Ele ensina o Manto de Lastro: por um breve instante, o corpo acompanha a firmeza das duas margens e amortece os golpes. Ele entrega sal vítreo e provisões para a próxima jornada; nenhuma direção é marcada em nome de quem não está aqui."); notice = "RECOMPENSA: MANTO DE LASTRO • 560 OURO • 3 SAL VÍTREO • 2 POÇÕES"; noticeTime = 3; }
             else if (questStage >= 27) { forgeMenuOpen = true; return; }
             else if (questStage >= 24) ShowMemory("AVEN, O BARQUEIRO", "A mesa continua aberta a quem escolhe deixar um relato. A próxima curva fica a oeste; os viajantes que passaram por aqui decidiram compartilhar apenas o início da trilha.");
             else ShowMemory("AVEN, O BARQUEIRO", "Este barco encalhado virou abrigo. Ninguém precisa escrever um nome para ficar aqui.");
@@ -755,8 +768,8 @@ public sealed class Game : Form
         try
         {
             bool migrated = !File.Exists(SavePath); SaveData s = migrated ? ReadLegacySave() : JsonSerializer.Deserialize<SaveData>(File.ReadAllText(SavePath)) ?? throw new InvalidDataException();
-            if (!ValidWeaponData(s) || s.Room is < 0 or > 28 || s.Level is < 1 or > 10000 || s.Xp < 0 || s.Xp >= s.Level * 60 || s.Weapon is < 0 or > 2 || s.OwnedWeapons < 1 || s.OwnedWeapons > 7 || (s.OwnedWeapons & (1 << s.Weapon)) == 0 || s.MaxHealth < 1 || s.Health <= 0 || s.Health > s.MaxHealth || s.Potions < 0 || s.Gold < 0 || s.TideGlass is < 0 or > 999 || s.Damage < 1 || s.MemoriesFound is < 0 or > 3 || s.QuestStage is < 0 or > 36 || s.ClearedRooms is < 0 or > 536870911 || s.Completed && s.Room != 2 || s.OwnedCharms is < 0 or > 31 || s.EquippedCharm is < 0 or > 5 || s.EquippedCharm2 is < 0 or > 5 || s.EquippedCharm > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm - 1))) == 0 || s.EquippedCharm2 > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm2 - 1))) == 0 || s.EquippedCharm > 0 && s.EquippedCharm == s.EquippedCharm2 || s.TownEnding is < 0 or > 2 || s.QuestStage == 13 && s.TownEnding == 0 || s.QuestStage >= 14 && !s.ChorusMemory || s.QuestStage >= 16 && !s.FirstMemory || s.QuestStage >= 19 && !s.WestTrace || s.WestTrace && s.QuestStage < 19 || s.UpstreamTrace && s.QuestStage < 26 || s.QuestStage >= 26 && !s.UpstreamTrace || s.BeyondTrace && s.QuestStage < 29 || s.QuestStage >= 29 && !s.BeyondTrace || s.EbbSeal && s.QuestStage < 33 || s.QuestStage >= 33 && !s.EbbSeal || s.CounterTrace && s.QuestStage < 35 || s.QuestStage >= 35 && !s.CounterTrace || s.AnchorWard && s.QuestStage < 36 || s.QuestStage >= 36 && !s.AnchorWard || s.Room >= 27 && s.QuestStage < 34 || s.Room >= 25 && s.QuestStage < 31 || s.Room >= 23 && s.QuestStage < 28 || s.Room >= 21 && s.QuestStage < 25 || s.Room >= 14 && s.QuestStage < 15 || s.Room >= 16 && s.QuestStage < 18 || s.Room >= 18 && s.QuestStage < 21 || s.Room >= 19 && s.QuestStage < 22 || s.Room == 20 && s.QuestStage < 22) throw new InvalidDataException();
-            StartGame(); room = s.Room; level = s.Level; xp = s.Xp; gold = s.Gold; potions = s.Potions; damage = s.Damage; health = s.Health; maxHealth = s.MaxHealth; weapon = s.Weapon; ownedWeapons = s.OwnedWeapons; RestoreWeaponData(s); armor = s.Armor; relic = s.Relic; healthTalent = s.HealthTalent; skillTalent = s.SkillTalent; dodgeTalent = s.DodgeTalent; memoriesFound = s.MemoriesFound; questStage = s.QuestStage; clearedRooms = s.ClearedRooms | (s.RoomCleared && s.Room != 3 ? 1 << s.Room : 0); archiveSeal = s.ArchiveSeal; riverBell = s.RiverBell; lumeLens = s.LumeLens; naraTrace = s.NaraTrace; chorusMemory = s.ChorusMemory; firstMemory = s.FirstMemory; westTrace = s.WestTrace; upstreamTrace = s.UpstreamTrace; tideGlass = s.TideGlass; beyondTrace = s.BeyondTrace; ebbSeal = s.EbbSeal; counterTrace = s.CounterTrace; anchorWard = s.AnchorWard; ownedCharms = s.OwnedCharms; equippedCharm = s.EquippedCharm; equippedCharm2 = s.EquippedCharm2; townEnding = s.TownEnding; SetupRoom(); if (s.RoomCleared) enemies.Clear(); victory = s.Completed; title = false; storyOverlay = false;
+            if (!ValidWeaponData(s) || s.Room is < 0 or > 28 || s.Level is < 1 or > 10000 || s.Xp < 0 || s.Xp >= s.Level * 60 || s.Weapon is < 0 or > 2 || s.OwnedWeapons < 1 || s.OwnedWeapons > 7 || (s.OwnedWeapons & (1 << s.Weapon)) == 0 || s.MaxHealth < 1 || s.Health <= 0 || s.Health > s.MaxHealth || s.Potions < 0 || s.Gold < 0 || s.TideGlass is < 0 or > 999 || s.Damage < 1 || s.MemoriesFound is < 0 or > 3 || s.QuestStage is < 0 or > 36 || s.ClearedRooms is < 0 or > 536870911 || s.Completed && s.Room != 2 || s.OwnedCharms is < 0 or > 31 || s.EquippedCharm is < 0 or > 5 || s.EquippedCharm2 is < 0 or > 5 || s.EquippedCharm > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm - 1))) == 0 || s.EquippedCharm2 > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm2 - 1))) == 0 || s.EquippedCharm > 0 && s.EquippedCharm == s.EquippedCharm2 || s.TownEnding is < 0 or > 2 || s.QuestStage == 13 && s.TownEnding == 0 || s.QuestStage >= 14 && !s.ChorusMemory || s.QuestStage >= 16 && !s.FirstMemory || s.QuestStage >= 19 && !s.WestTrace || s.WestTrace && s.QuestStage < 19 || s.UpstreamTrace && s.QuestStage < 26 || s.QuestStage >= 26 && !s.UpstreamTrace || s.BeyondTrace && s.QuestStage < 29 || s.QuestStage >= 29 && !s.BeyondTrace || s.EbbSeal && s.QuestStage < 33 || s.QuestStage >= 33 && !s.EbbSeal || s.CounterTrace && s.QuestStage < 35 || s.QuestStage >= 35 && !s.CounterTrace || s.AnchorWard && s.QuestStage < 36 || s.Room >= 27 && s.QuestStage < 34 || s.Room >= 25 && s.QuestStage < 31 || s.Room >= 23 && s.QuestStage < 28 || s.Room >= 21 && s.QuestStage < 25 || s.Room >= 14 && s.QuestStage < 15 || s.Room >= 16 && s.QuestStage < 18 || s.Room >= 18 && s.QuestStage < 21 || s.Room >= 19 && s.QuestStage < 22 || s.Room == 20 && s.QuestStage < 22) throw new InvalidDataException();
+            StartGame(); room = s.Room; level = s.Level; xp = s.Xp; gold = s.Gold; potions = s.Potions; damage = s.Damage; health = s.Health; maxHealth = s.MaxHealth; weapon = s.Weapon; ownedWeapons = s.OwnedWeapons; RestoreWeaponData(s); armor = s.Armor; relic = s.Relic; healthTalent = s.HealthTalent; skillTalent = s.SkillTalent; dodgeTalent = s.DodgeTalent; memoriesFound = s.MemoriesFound; questStage = s.QuestStage; clearedRooms = s.ClearedRooms | (s.RoomCleared && s.Room != 3 ? 1 << s.Room : 0); archiveSeal = s.ArchiveSeal; riverBell = s.RiverBell; lumeLens = s.LumeLens; naraTrace = s.NaraTrace; chorusMemory = s.ChorusMemory; firstMemory = s.FirstMemory; westTrace = s.WestTrace; upstreamTrace = s.UpstreamTrace; tideGlass = s.TideGlass; beyondTrace = s.BeyondTrace; ebbSeal = s.EbbSeal; counterTrace = s.CounterTrace; anchorWard = s.AnchorWard || s.QuestStage >= 36; ownedCharms = s.OwnedCharms; equippedCharm = s.EquippedCharm; equippedCharm2 = s.EquippedCharm2; townEnding = s.TownEnding; SetupRoom(); if (s.RoomCleared) enemies.Clear(); victory = s.Completed; title = false; storyOverlay = false;
             if (migrated) SaveGame(); notice = migrated ? "SAVE ANTIGO MIGRADO" : "PROGRESSO CARREGADO"; noticeTime = 2;
         }
         catch { notice = "NENHUM SALVAMENTO VÁLIDO"; noticeTime = 2; }
@@ -1228,17 +1241,90 @@ public sealed class Game : Form
         string name = EnemyName(enemy); if (name.Length > 0) DrawCentered(g, name, enemy.Pos.Y - r - 28, new Font("Segoe UI", 8, FontStyle.Bold), Color.FromArgb(233, 198, 151), enemy.Pos.X);
         if (enemy.Boss) { using var bossBack = new SolidBrush(Color.FromArgb(40, 20, 20)); using var bossHp = new SolidBrush(enemy.Hp <= enemy.MaxHp * 0.5f ? Color.OrangeRed : enemy.Kind == EnemyKind.BlindScribe ? Color.Teal : enemy.Kind == EnemyKind.RiverFerryman ? Color.SteelBlue : enemy.Kind == EnemyKind.AshWarden ? Color.DarkOrange : enemy.Kind == EnemyKind.HollowName ? Color.LightSeaGreen : enemy.Kind == EnemyKind.NameWeaver ? Color.MediumPurple : enemy.Kind == EnemyKind.FirstKeeper ? Color.Goldenrod : enemy.Kind == EnemyKind.OathCartographer ? Color.DarkCyan : enemy.Kind == EnemyKind.ReedKeeper ? Color.DarkOliveGreen : enemy.Kind == EnemyKind.CounterCurrent ? Color.CadetBlue : enemy.Kind == EnemyKind.FlowKeeper ? Color.DeepSkyBlue : enemy.Kind is EnemyKind.NameBroker or EnemyKind.TideWitness ? Color.MediumPurple : Color.Firebrick); g.FillRectangle(bossBack, 360, 112, 240, 8); g.FillRectangle(bossHp, 360, 112, 240 * Math.Clamp(enemy.Hp / enemy.MaxHp, 0, 1), 8); string bossName = enemy.Kind == EnemyKind.BlindScribe ? "ESCRIBA CEGO" : enemy.Kind == EnemyKind.RiverFerryman ? "BARQUEIRO OCO" : enemy.Kind == EnemyKind.AshWarden ? "GUARDIÃO DAS CINZAS" : enemy.Kind == EnemyKind.HollowName ? "O NOME VAZIO" : enemy.Kind == EnemyKind.NameWeaver ? "A TECELÃ DE NOMES" : enemy.Kind == EnemyKind.FirstKeeper ? "A PRIMEIRA VIGÍLIA" : enemy.Kind == EnemyKind.OathCartographer ? "CARTÓGRAFA DO VÃO" : enemy.Kind == EnemyKind.NameBroker ? "ESCRIVÃO DE CONTRATO" : enemy.Kind == EnemyKind.TideWitness ? "TESTEMUNHA DA MARÉ" : enemy.Kind == EnemyKind.ReedKeeper ? "GUARDIÃ DO LEITO" : enemy.Kind == EnemyKind.CounterCurrent ? "AFINADOR DAS MARGENS" : enemy.Kind == EnemyKind.FlowKeeper ? "VIGIA DO VEIO PRESO" : "GUARDIÃO DA CRIPTA"; DrawCentered(g, enemy.Hp <= enemy.MaxHp * 0.5f ? $"{bossName} • SEGUNDA FASE" : bossName, 91, new Font("Georgia", 11, FontStyle.Bold), enemy.Hp <= enemy.MaxHp * 0.5f ? Color.OrangeRed : Color.Goldenrod); }
     }
-    private void DrawDrop(Graphics g, Drop item) { Color c = item.Kind switch { "relic" => Color.Violet, "seal" => Color.LightSkyBlue, "bell" => Color.FromArgb(162, 212, 192), "lens" => Color.FromArgb(248, 185, 95), "trace" => Color.FromArgb(185, 231, 215), "chorus" => Color.Khaki, "first" => Color.Goldenrod, "west" => Color.LightSkyBlue, "register" => Color.LightSteelBlue, "glass" => Color.LightCyan, "beyond" => Color.PaleGreen, "ebb" => Color.DodgerBlue, "counter" => Color.LightGoldenrodYellow, "charm" => item.Amount == 4 ? Color.Goldenrod : item.Amount == 5 ? Color.LightSeaGreen : Color.Plum, "armor" => Color.MediumAquamarine, "weapon" => Color.CornflowerBlue, "potion" => Color.IndianRed, _ => Color.Goldenrod }; using var b = new SolidBrush(c); using var p = new Pen(Color.FromArgb(230, 220, 190), 1); g.FillEllipse(b, item.Pos.X - 8, item.Pos.Y - 8, 16, 16); g.DrawEllipse(p, item.Pos.X - 8, item.Pos.Y - 8, 16, 16); }
+    private string DropLabel(Drop item)
+    {
+        return item.Kind switch
+        {
+            "gold" => item.Amount + " OURO",
+            "potion" => "POÇÃO DE VÉSPERA",
+            "glass" => item.Amount + " SAL VÍTREO",
+            "weapon" => WeaponRarityName(item.Rarity) + " " + weaponNames[item.Amount] + "\nDANO " + (damage + weaponDamage[item.Amount] + item.Bonus) + " • " + WeaponGroundAffix(item),
+            "charm" => charmNames[item.Amount],
+            "armor" => "PEITORAL DE PEDRA",
+            "relic" => "FRAGMENTO DO RELICÁRIO",
+            "seal" => "SELO DA VIGÍLIA",
+            "bell" => "SINO DE NARA",
+            "lens" => "PRISMA DO LUME",
+            "trace" => "LEMBRANÇA DE NARA",
+            "chorus" => "CORO DOS NOMES",
+            "first" => "MEMÓRIA DE ILYRA",
+            "west" => "MAPA DE NARA",
+            "register" => "REGISTRO COMPARTILHADO",
+            "witness" => "TESTEMUNHO DA MARÉ",
+            "ebb" => "MEMÓRIA DA VAZANTE",
+            "counter" => "COMPASSO DAS MARGENS",
+            "beyond" => "SINAL DE PASSAGEM",
+            _ => "ECO"
+        };
+    }
+
+    private static string WeaponGroundAffix(Drop item) => item.Affix switch
+    {
+        1 => "Trégua • cura " + (item.Rarity == 2 ? 6 : 3) + " por abate",
+        2 => "Contracanto • crítico +" + (item.Rarity == 2 ? 11 : 7) + " p.p.",
+        3 => "Maré • técnica +" + (item.Rarity == 2 ? 18 : 12) + "%",
+        _ => "sem afixo"
+    };
+
+    private void DrawDrop(Graphics g, Drop item)
+    {
+        Color color = item.Kind switch
+        {
+            "relic" => Color.Violet, "seal" => Color.LightSkyBlue, "bell" => Color.FromArgb(162, 212, 192),
+            "lens" => Color.FromArgb(248, 185, 95), "trace" => Color.FromArgb(185, 231, 215), "chorus" => Color.Khaki,
+            "first" => Color.Goldenrod, "west" => Color.LightSkyBlue, "register" => Color.LightSteelBlue,
+            "glass" => Color.LightCyan, "beyond" => Color.PaleGreen, "ebb" => Color.DodgerBlue,
+            "counter" => Color.LightGoldenrodYellow, "charm" => item.Amount == 4 ? Color.Goldenrod : item.Amount == 5 ? Color.LightSeaGreen : Color.Plum,
+            "armor" => Color.MediumAquamarine, "weapon" => item.Rarity == 2 ? Color.Turquoise : item.Rarity == 1 ? Color.Goldenrod : Color.CornflowerBlue,
+            "potion" => Color.IndianRed, _ => Color.Goldenrod
+        };
+        using var icon = new SolidBrush(color);
+        using var edge = new Pen(Color.FromArgb(230, 220, 190), 1);
+        g.FillEllipse(icon, item.Pos.X - 8, item.Pos.Y - 8, 16, 16);
+        g.DrawEllipse(edge, item.Pos.X - 8, item.Pos.Y - 8, 16, 16);
+
+        if (Distance(player, item.Pos) > 150) return;
+        using var font = new Font("Segoe UI", 8.5f, FontStyle.Bold);
+        using var labelBrush = new SolidBrush(item.Kind == "weapon" && item.Rarity == 0 ? Color.AntiqueWhite : color);
+        using var background = new SolidBrush(Color.FromArgb(225, 14, 17, 18));
+        using var border = new Pen(Color.FromArgb(210, color), 1);
+        using var format = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+        string label = DropLabel(item);
+        SizeF measured = g.MeasureString(label, font, 184);
+        float width = Math.Clamp(measured.Width + 12, 94, 196);
+        float height = measured.Height + 5;
+        float x = Math.Clamp(item.Pos.X - width / 2, 6, 954 - width);
+        float y = Math.Clamp(item.Pos.Y > 180 ? item.Pos.Y - height - 15 : item.Pos.Y + 16, 108, 550 - height);
+        var bounds = new RectangleF(x, y, width, height);
+        g.FillRectangle(background, bounds);
+        g.DrawRectangle(border, bounds.X, bounds.Y, bounds.Width, bounds.Height);
+        g.DrawString(label, font, labelBrush, bounds, format);
+    }
     private void DrawPlayer(Graphics g)
     {
-        using var body = new SolidBrush(invulnerable > 0 ? Color.Salmon : Color.FromArgb(90, 143, 138)); using var face = new SolidBrush(Color.Bisque);
-        g.FillEllipse(body, player.X - 16, player.Y - 16, 32, 32); g.FillEllipse(face, player.X - 8, player.Y - 11, 16, 16);
-        using var facingLine = new Pen(Color.AntiqueWhite, 4); g.DrawLine(facingLine, player, Add(player, Scale(facing, 24)));
+        using var body = new SolidBrush(invulnerable > 0 ? Color.Salmon : Color.FromArgb(90, 143, 138));
+        using var face = new SolidBrush(Color.Bisque);
+        g.FillEllipse(body, player.X - 16, player.Y - 16, 32, 32);
+        g.FillEllipse(face, player.X - 8, player.Y - 11, 16, 16);
+        using var facingLine = new Pen(Color.AntiqueWhite, 4);
+        g.DrawLine(facingLine, player, Add(player, Scale(facing, 24)));
         if (wardTime > 0)
         {
             int alpha = Math.Clamp((int)(112 + 70 * MathF.Sin(windupPulse * 8)), 35, 190);
-            using var wardGlow = new Pen(Color.FromArgb(alpha, 179, 215, 215), 4); using var wardCore = new Pen(Color.FromArgb(Math.Min(235, alpha + 45), 215, 231, 213), 1);
-            g.DrawEllipse(wardGlow, player.X - 25, player.Y - 25, 50, 50); g.DrawEllipse(wardCore, player.X - 20, player.Y - 20, 40, 40);
+            using var wardGlow = new Pen(Color.FromArgb(alpha, 179, 215, 215), 4);
+            using var wardCore = new Pen(Color.FromArgb(Math.Min(235, alpha + 45), 215, 231, 213), 1);
+            g.DrawEllipse(wardGlow, player.X - 25, player.Y - 25, 50, 50);
+            g.DrawEllipse(wardCore, player.X - 20, player.Y - 20, 40, 40);
         }
         if (skillCd > 0) { using var cooldownPen = new Pen(Color.FromArgb(190, 230, 193, 129), 3); g.DrawArc(cooldownPen, player.X - 25, player.Y - 25, 50, 50, -90, 360 * skillCd / Math.Max(1.5f, 6f - skillTalent * .5f)); }
         if (shardCd > 0) { using var shardCooldownPen = new Pen(Color.FromArgb(205, 107, 202, 196), 3); g.DrawArc(shardCooldownPen, player.X - 33, player.Y - 33, 66, 66, 90, 360 * shardCd / VoiceShardCooldown()); }
@@ -1378,6 +1464,33 @@ public sealed class Game : Form
             lockedBellGame.timer.Stop(); lockedBellGame.StartGame(); lockedBellGame.storyOverlay = false; lockedBellGame.room = 6; lockedBellGame.enemies.Add(new Enemy { Pos = new PointF(260, 330), Kind = EnemyKind.Grunt, Hp = 100, MaxHp = 100 }); lockedBellGame.CastBellPulse();
             if (lockedBellGame.bellCd != 0 || lockedBellGame.memoryOverlay || !lockedBellGame.notice.Contains("SINO DE NARA")) throw new InvalidOperationException("A habilidade do Sino ficou disponível antes da descoberta narrativa.");
         }
+        using (var wardGame = new Game())
+        {
+            wardGame.timer.Stop(); wardGame.StartGame(); wardGame.storyOverlay = false; wardGame.room = 6; wardGame.enemies.Clear();
+            wardGame.enemies.Add(new Enemy { Pos = new PointF(300, 320), Kind = EnemyKind.Grunt, Hp = 100, MaxHp = 100 });
+            wardGame.CastAnchorWard();
+            if (wardGame.wardTime != 0 || !wardGame.notice.Contains("AINDA NÃO")) throw new InvalidOperationException("O Manto de Lastro ficou disponível antes do registro de Aven.");
+            wardGame.anchorWard = true; wardGame.health = 100; wardGame.CastAnchorWard(); wardGame.HitPlayer(40);
+            if (wardGame.wardTime != 2.5f || Math.Abs(wardGame.health - 82) > 0.01f || wardGame.wardCd != 20f) throw new InvalidOperationException("O Manto de Lastro não aplicou defesa ou recarga corretas.");
+            wardGame.wardTime = 0; wardGame.health = 100; wardGame.HitPlayer(40);
+            if (wardGame.health != 60) throw new InvalidOperationException("A proteção do Manto de Lastro continuou ativa após expirar.");
+            wardGame.wardCd = 0; wardGame.skillTalent = 5; wardGame.CastAnchorWard();
+            if (wardGame.wardCd != 16f) throw new InvalidOperationException("Domínio não reduziu a recarga do Manto de Lastro.");
+            wardGame.questStage = 36; wardGame.counterTrace = true; wardGame.anchorWard = true;
+            SaveData savedWard = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(wardGame.CaptureSaveData())) ?? throw new InvalidOperationException("O Manto de Lastro não foi serializado.");
+            if (!savedWard.AnchorWard) throw new InvalidOperationException("O desbloqueio do Manto de Lastro não persistiu no save.");
+        }
+        using (var lootRollCheck = new Game())
+        {
+            lootRollCheck.timer.Stop(); lootRollCheck.StartGame(); lootRollCheck.storyOverlay = false;
+            var common = RollWeaponStats(0, 4, 2); var rare = RollWeaponStats(62, 4, 2); var relic = RollWeaponStats(95, 4, 2);
+            if (common.Rarity != 0 || common.Bonus != 1 || common.Affix != 0 || rare.Rarity != 1 || rare.Bonus != 3 || rare.Affix != 3 || relic.Rarity != 2 || relic.Bonus != 11 || relic.Affix != 3)
+                throw new InvalidOperationException("As faixas de rolagem de raridade e afixo da arma mudaram.");
+            Drop drop = lootRollCheck.CreateWeaponDrop(lootRollCheck.player, 1); int rarity = drop.Rarity, bonus = drop.Bonus, affix = drop.Affix;
+            string label = lootRollCheck.DropLabel(drop); lootRollCheck.Collect(drop);
+            if (lootRollCheck.weaponRarities[1] != rarity || lootRollCheck.weaponBonuses[1] != bonus || lootRollCheck.weaponAffixes[1] != affix || !label.Contains(WeaponRarityName(rarity)) || !label.Contains(WeaponGroundAffix(drop)))
+                throw new InvalidOperationException("A arma mudou ao ser recolhida ou não foi identificada no chão.");
+        }
         using var game = new Game(); game.timer.Stop(); game.StartGame();
         if (!game.storyOverlay || game.storyPage != 0) throw new InvalidOperationException("O novo jogo não iniciou no prólogo da história.");
         for (int i = 0; i < game.prologue.Length; i++) game.AdvanceStory();
@@ -1477,4 +1590,300 @@ public sealed class Game : Form
         game.memoryOverlay = false; game.room = 9; game.SetupRoom(); game.player = new PointF(480, 500); game.Interact();
         if (game.room != 10 || game.enemies.Count != 6 || !game.enemies.Any(e => e.Kind == EnemyKind.NameMoth)) throw new InvalidOperationException("A passagem além do prisma não abriu a Margem sem Reflexo.");
         Enemy nameMoth = game.enemies.First(e => e.Kind == EnemyKind.NameMoth); nameMoth.Cooldown = 0; game.UpdateEnemy(nameMoth, 0.01f);
-        if (nameMoth
+        if (nameMoth.Windup <= 0) throw new InvalidOperationException("A Mariposa de Nomes não anunciou seu ataque à distância.");
+        game.enemies.Clear(); game.drops.Clear(); game.player = new PointF(850, 330); game.Interact();
+        if (game.room != 11 || game.enemies.Count != 4 || !game.enemies.Any(e => e.Kind == EnemyKind.HollowName)) throw new InvalidOperationException("O Reservatório não apresentou O Nome Vazio.");
+        Enemy hollowName = game.enemies.Single(e => e.Kind == EnemyKind.HollowName); game.enemies.Clear(); game.enemies.Add(hollowName);
+        hollowName.Cooldown = 0; game.UpdateEnemy(hollowName, 0.01f);
+        if (hollowName.Windup <= 0 || hollowName.BossPattern != 1) throw new InvalidOperationException("O Nome Vazio não anunciou o primeiro golpe marcado.");
+        game.player = new PointF(840, 330); game.UpdateEnemy(hollowName, 1f); hollowName.Hp = 145; hollowName.Cooldown = 0; game.UpdateEnemy(hollowName, 0.01f);
+        if (hollowName.BossPattern != 2) throw new InvalidOperationException("O Nome Vazio não alternou para seu golpe em linha.");
+        game.player = new PointF(150, 330); game.UpdateEnemy(hollowName, 1f); hollowName.Cooldown = 0; game.UpdateEnemy(hollowName, 0.01f);
+        if (hollowName.BossPattern != 0) throw new InvalidOperationException("O Nome Vazio não concluiu o ciclo de três ataques.");
+        game.Defeat(hollowName); game.talentChoice = false;
+        if (!game.drops.Any(d => d.Kind == "trace")) throw new InvalidOperationException("O Nome Vazio não deixou a lembrança preservada de Nara.");
+        foreach (Drop drop in game.drops.ToArray()) game.Collect(drop);
+        if (!game.naraTrace || game.questStage != 11 || !game.memoryOverlay) throw new InvalidOperationException("O rastro de Nara não foi recuperado no reservatório.");
+        game.memoryOverlay = false; game.player = new PointF(850, 330); game.Interact();
+        if (game.room != 3) throw new InvalidOperationException("A saída do Reservatório não retornou a Véspera.");
+        game.player = CuratorPosition; game.Interact();
+        if (game.questStage != 12 || game.gold != goldBeforeTown + 615 || game.potions != potionsBeforeTown + 5) throw new InvalidOperationException("Sileth não reconheceu a memória que escapou do Lume.");
+        SaveData saved = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(game.CaptureSaveData()))!;
+        if (saved.Room != 3 || saved.QuestStage != 12 || saved.MemoriesFound != 3 || !saved.ArchiveSeal || !saved.RiverBell || !saved.LumeLens || !saved.NaraTrace || saved.MaxHealth < 120 || (saved.ClearedRooms & (1 << 9)) == 0 || (saved.ClearedRooms & (1 << 11)) == 0) throw new InvalidOperationException("O progresso da campanha, as câmaras limpas e os itens não foram serializados no save.");
+        using var lootGame = new Game(); lootGame.timer.Stop(); lootGame.StartGame(); lootGame.enemies.Clear(); lootGame.room = 1;
+        using var rarityGame = new Game(); rarityGame.timer.Stop(); rarityGame.StartGame(); rarityGame.damage = 25; rarityGame.ownedWeapons = 7;
+        rarityGame.RollWeapon(1, 0, 4, 2);
+        if (rarityGame.weaponRarities[1] != 0 || rarityGame.weaponBonuses[1] != 1 || rarityGame.weaponAffixes[1] != 0) throw new InvalidOperationException("A arma comum recebeu valores fora da faixa esperada.");
+        rarityGame.RollWeapon(1, 62, 3, 0);
+        if (rarityGame.weaponRarities[1] != 1 || rarityGame.weaponBonuses[1] != 6 || rarityGame.weaponAffixes[1] != 1 || !ValidWeaponData(rarityGame.CaptureSaveData())) throw new InvalidOperationException("A arma rara não recebeu bônus e afixo válidos.");
+        rarityGame.EquipWeapon(1);
+        if (rarityGame.damage != 41) throw new InvalidOperationException("O bônus de dano da arma não foi aplicado ao equipar.");
+        rarityGame.health = 50; var healingDummy = new Enemy { Pos = rarityGame.player, Kind = EnemyKind.Grunt, Hp = 1, MaxHp = 1 }; rarityGame.enemies.Add(healingDummy); rarityGame.Defeat(healingDummy);
+        if (rarityGame.health != 53) throw new InvalidOperationException("O afixo da Trégua não recuperou vida ao derrotar um inimigo.");
+        rarityGame.RollWeapon(2, 95, 4, 2);
+        rarityGame.EquipWeapon(2);
+        if (rarityGame.weaponRarities[2] != 2 || rarityGame.weaponBonuses[2] != 11 || rarityGame.weaponAffixes[2] != 3 || Math.Abs(rarityGame.WeaponSkillMultiplier() - 1.18f) > 0.001f) throw new InvalidOperationException($"A relíquia da Maré não aplicou o bônus de técnica ({rarityGame.weaponRarities[2]}, {rarityGame.weaponBonuses[2]}, {rarityGame.weaponAffixes[2]}, arma {rarityGame.weapon}, x{rarityGame.WeaponSkillMultiplier()}).");
+        if (rarityGame.damage != 40) throw new InvalidOperationException("A troca entre armas com bônus não preservou o dano corretamente.");
+        rarityGame.damage = 100;
+        if (Math.Abs(rarityGame.VoiceShardDamage() - 159.3f) > 0.01f) throw new InvalidOperationException("O afixo da Maré não fortaleceu o Estilhaço de Voz.");
+        rarityGame.weaponAffixes[2] = 2;
+        if (Math.Abs(rarityGame.CriticalChance() - 0.36f) > 0.001f) throw new InvalidOperationException("O afixo do Contracanto não aumentou o crítico da relíquia.");
+        SaveData raritySave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(rarityGame.CaptureSaveData()))!;
+        if (!raritySave.WeaponBonuses.SequenceEqual(rarityGame.weaponBonuses) || !raritySave.WeaponRarities.SequenceEqual(rarityGame.weaponRarities) || !raritySave.WeaponAffixes.SequenceEqual(rarityGame.weaponAffixes)) throw new InvalidOperationException("A raridade e os afixos não foram preservados no save.");
+        using var restoredGear = new Game(); restoredGear.timer.Stop(); restoredGear.RestoreWeaponData(raritySave);
+        if (!restoredGear.weaponBonuses.SequenceEqual(rarityGame.weaponBonuses) || !restoredGear.weaponRarities.SequenceEqual(rarityGame.weaponRarities) || !restoredGear.weaponAffixes.SequenceEqual(rarityGame.weaponAffixes)) throw new InvalidOperationException("O carregamento não restaurou as rolagens das armas.");
+        SaveData legacyLootSave = JsonSerializer.Deserialize<SaveData>("{\"Room\":0}")!;
+        if (!ValidWeaponData(legacyLootSave) || legacyLootSave.WeaponBonuses.Length != 3 || legacyLootSave.WeaponRarities.Length != 3 || legacyLootSave.WeaponAffixes.Length != 3) throw new InvalidOperationException("Um save antigo sem raridade não recebeu valores padrão compatíveis.");
+        rarityGame.Collect(new Drop { Pos = rarityGame.player, Kind = "weapon", Amount = 1 });
+        if ((rarityGame.ownedWeapons & 2) == 0 || rarityGame.weaponRarities[1] is < 0 or > 2 || !ValidWeaponData(rarityGame.CaptureSaveData())) throw new InvalidOperationException("A coleta de arma não gerou uma configuração de loot válida.");
+        var elite = new Enemy { Pos = new PointF(500, 330), Kind = EnemyKind.Elite, Hp = 1, MaxHp = 1 };
+        lootGame.enemies.Add(elite); lootGame.Defeat(elite);
+        Drop firstCharm = lootGame.drops.Single(d => d.Kind == "charm");
+        if (firstCharm.Amount != 1) throw new InvalidOperationException("O Elite não deixou o Nó de Brasa.");
+        lootGame.Collect(firstCharm);
+        if (lootGame.equippedCharm != 1 || lootGame.WhirlwindMultiplier() <= 1.6f) throw new InvalidOperationException("O Nó de Brasa não alterou o Redemoinho.");
+        lootGame.Collect(new Drop { Pos = lootGame.player, Kind = "charm", Amount = 2 });
+        if (lootGame.equippedCharm2 != 2 || lootGame.DashDuration() <= 0.17f || lootGame.DashCooldown() <= 1.15f || lootGame.WhirlwindMultiplier() <= 2.16f || lootGame.WhirlwindCooldownPenalty() >= 1f) throw new InvalidOperationException("A sintonia entre Brasa e Travessia não fortaleceu o Redemoinho.");
+        lootGame.Collect(new Drop { Pos = lootGame.player, Kind = "charm", Amount = 3 }); lootGame.CycleCharm(2);
+        if (lootGame.equippedCharm2 != 3 || lootGame.CriticalChance() < 0.29f || lootGame.CriticalMultiplier() <= 2.5f || lootGame.BasicAttackCooldown() >= 0.39f) throw new InvalidOperationException("A sintonia entre Brasa e Vidro não ampliou os críticos.");
+        lootGame.CycleCharm(1);
+        if (lootGame.equippedCharm != 2 || lootGame.equippedCharm2 != 3 || lootGame.DashCooldown() >= 1.45f) throw new InvalidOperationException("A sintonia entre Travessia e Vigília não removeu a recarga adicional da esquiva.");
+        SaveData charmSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(lootGame.CaptureSaveData()))!;
+        if (charmSave.OwnedCharms != 7 || charmSave.EquippedCharm != 2 || charmSave.EquippedCharm2 != 3) throw new InvalidOperationException("Os espaços de talismã não foram serializados no save.");
+        using var advancedCharmGame = new Game(); advancedCharmGame.timer.Stop(); advancedCharmGame.StartGame(); advancedCharmGame.damage = 100; advancedCharmGame.ownedCharms = 24; advancedCharmGame.equippedCharm = 4; advancedCharmGame.equippedCharm2 = 5;
+        var bossDummy = new Enemy { Kind = EnemyKind.OathCartographer, Hp = 500, MaxHp = 500 }; var commonDummy = new Enemy { Kind = EnemyKind.Grunt, Hp = 500, MaxHp = 500 };
+        if (advancedCharmGame.OutgoingDamageMultiplier(bossDummy) != 1.25f || advancedCharmGame.OutgoingDamageMultiplier(commonDummy) != 0.8f || advancedCharmGame.VoiceShardLifetime() != 1.8f || advancedCharmGame.VoiceShardCooldown() != 8.25f) throw new InvalidOperationException("A Marca da Vigília ou o Fio da Margem não aplicou seus bônus e custo.");
+        advancedCharmGame.equippedCharm = 3; advancedCharmGame.equippedCharm2 = 5;
+        if (advancedCharmGame.VoiceShardDamage() != 205f || advancedCharmGame.VoiceShardCooldown() != 7.5f) throw new InvalidOperationException("A sintonia entre Vidro e Margem não fortaleceu o Estilhaço de Voz.");
+        SaveData expandedCharmSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(advancedCharmGame.CaptureSaveData()))!;
+        if (expandedCharmSave.OwnedCharms != 24 || expandedCharmSave.EquippedCharm != 3 || expandedCharmSave.EquippedCharm2 != 5) throw new InvalidOperationException("Os novos talismãs não foram mantidos no save.");
+        using var restoreGame = new Game(); restoreGame.timer.Stop(); restoreGame.StartGame(); restoreGame.storyOverlay = false; restoreGame.room = 3; restoreGame.questStage = 12; restoreGame.naraTrace = true; restoreGame.player = CuratorPosition;
+        restoreGame.InteractTown(); if (!restoreGame.endingChoiceOpen) throw new InvalidOperationException("Sileth não abriu a primeira decisão de Véspera.");
+        restoreGame.OnKeyDown(null, new KeyEventArgs(Keys.D3)); if (restoreGame.endingChoiceOpen) throw new InvalidOperationException("A decisão não pôde ser adiada.");
+        restoreGame.InteractTown(); restoreGame.OnKeyDown(null, new KeyEventArgs(Keys.D1));
+        if (restoreGame.townEnding != 1 || restoreGame.questStage != 13 || restoreGame.maxHealth != 120 || !restoreGame.memoryOverlay) throw new InvalidOperationException("Restituir os nomes não alterou a praça e a progressão.");
+        SaveData restoreSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(restoreGame.CaptureSaveData()))!;
+        if (restoreSave.TownEnding != 1 || restoreSave.QuestStage != 13) throw new InvalidOperationException("A decisão de devolver os nomes não foi salva.");
+        using var lumeGame = new Game(); lumeGame.timer.Stop(); lumeGame.StartGame(); lumeGame.storyOverlay = false; lumeGame.room = 3; lumeGame.questStage = 12; lumeGame.naraTrace = true; lumeGame.player = CuratorPosition;
+        lumeGame.InteractTown(); lumeGame.OnKeyDown(null, new KeyEventArgs(Keys.D2));
+        if (lumeGame.townEnding != 2 || lumeGame.questStage != 13 || lumeGame.damage != 35 || !lumeGame.memoryOverlay) throw new InvalidOperationException("Manter o Lume não criou seu ramo e seu bônus próprios.");
+        SaveData lumeSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(lumeGame.CaptureSaveData()))!;
+        if (lumeSave.TownEnding != 2 || lumeSave.QuestStage != 13) throw new InvalidOperationException("A decisão de manter o Lume não foi salva.");
+        using var beyondGame = new Game(); beyondGame.timer.Stop(); beyondGame.StartGame(); beyondGame.storyOverlay = false; beyondGame.questStage = 13; beyondGame.townEnding = 1; beyondGame.naraTrace = true; beyondGame.room = 11; beyondGame.clearedRooms = 1 << 11; beyondGame.SetupRoom();
+        beyondGame.player = new PointF(850, 330); beyondGame.Interact();
+        if (beyondGame.room != 12 || beyondGame.enemies.Count != 6 || !beyondGame.enemies.Any(e => e.Kind == EnemyKind.NameMoth)) throw new InvalidOperationException("A decisão não abriu a Costa das Vozes Tardias.");
+        beyondGame.enemies.Clear(); beyondGame.drops.Clear(); beyondGame.player = new PointF(850, 330); beyondGame.Interact();
+        if (beyondGame.room != 13 || !beyondGame.enemies.Any(e => e.Kind == EnemyKind.NameWeaver)) throw new InvalidOperationException("O Claustro do Coro Partido não apresentou sua chefe.");
+        Enemy weaver = beyondGame.enemies.Single(e => e.Kind == EnemyKind.NameWeaver);
+        if (weaver.MaxHp != 410) throw new InvalidOperationException("Os nomes restaurados não enfraqueceram a Tecelã.");
+        weaver.Cooldown = 0; beyondGame.UpdateEnemy(weaver, 0.01f);
+        if (weaver.Windup <= 0 || weaver.BossPattern != 1) throw new InvalidOperationException("A Tecelã não anunciou a primeira marca dirigida.");
+        weaver.Windup = 0; weaver.Cooldown = 0; beyondGame.UpdateEnemy(weaver, 0.01f);
+        if (weaver.Windup <= 0 || weaver.BossPattern != 2) throw new InvalidOperationException("A Tecelã não anunciou seu fio em linha.");
+        weaver.Windup = 0; weaver.Cooldown = 0; beyondGame.UpdateEnemy(weaver, 0.01f);
+        if (weaver.Windup <= 0 || weaver.BossPattern != 0) throw new InvalidOperationException("A Tecelã não concluiu seu ciclo de três ataques.");
+        beyondGame.enemies.Clear(); beyondGame.enemies.Add(weaver); beyondGame.drops.Clear(); beyondGame.Defeat(weaver);
+        if (!beyondGame.drops.Any(d => d.Kind == "chorus")) throw new InvalidOperationException("A Tecelã não deixou o Coro dos nomes consumidos.");
+        foreach (Drop drop in beyondGame.drops.ToArray()) beyondGame.Collect(drop);
+        if (!beyondGame.chorusMemory || beyondGame.questStage != 14 || !beyondGame.memoryOverlay) throw new InvalidOperationException("O Coro não revelou a origem do Silêncio de Baixo.");
+        SaveData chorusSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(beyondGame.CaptureSaveData()))!;
+        if (chorusSave.Room != 13 || !chorusSave.ChorusMemory || (chorusSave.ClearedRooms & (1 << 13)) == 0) throw new InvalidOperationException("A nova expedição e o Coro não foram registrados no save.");
+        beyondGame.memoryOverlay = false; beyondGame.player = new PointF(850, 330); beyondGame.Interact(); beyondGame.player = CuratorPosition; beyondGame.InteractTown();
+        if (beyondGame.room != 3 || beyondGame.questStage != 15 || !beyondGame.chorusMemory) throw new InvalidOperationException("Sileth não recebeu o Coro ao voltar à praça.");
+        using var lumeExpedition = new Game(); lumeExpedition.timer.Stop(); lumeExpedition.StartGame(); lumeExpedition.room = 13; lumeExpedition.townEnding = 2; lumeExpedition.questStage = 13; lumeExpedition.SetupRoom();
+        if (lumeExpedition.enemies.Single(e => e.Kind == EnemyKind.NameWeaver).MaxHp != 455) throw new InvalidOperationException("Manter o Lume não alterou o perigo da expedição.");
+        using var firstExpedition = new Game(); firstExpedition.timer.Stop(); firstExpedition.StartGame(); firstExpedition.storyOverlay = false; firstExpedition.room = 13; firstExpedition.townEnding = 1; firstExpedition.questStage = 15; firstExpedition.chorusMemory = true; firstExpedition.clearedRooms = 1 << 13; firstExpedition.SetupRoom();
+        firstExpedition.player = new PointF(480, 500); firstExpedition.Interact();
+        if (firstExpedition.room != 14 || firstExpedition.enemies.Count != 6) throw new InvalidOperationException("O Coro não abriu a Bacia do Primeiro Nome sob o Claustro.");
+        firstExpedition.enemies.Clear(); firstExpedition.drops.Clear(); firstExpedition.player = new PointF(850, 330); firstExpedition.Interact();
+        if (firstExpedition.room != 15 || firstExpedition.enemies.Single(e => e.Kind == EnemyKind.FirstKeeper).MaxHp != 560) throw new InvalidOperationException("A Sala da Primeira Vigília não respondeu à escolha de devolver os nomes.");
+        Enemy firstKeeper = firstExpedition.enemies.Single(e => e.Kind == EnemyKind.FirstKeeper); firstKeeper.Cooldown = 0; firstExpedition.UpdateEnemy(firstKeeper, 0.01f);
+        if (firstKeeper.BossPattern != 1 || firstKeeper.Windup <= 0) throw new InvalidOperationException("A Primeira Vigília não anunciou a marca de memória.");
+        firstKeeper.Windup = 0; firstKeeper.Cooldown = 0; firstExpedition.UpdateEnemy(firstKeeper, 0.01f);
+        if (firstKeeper.BossPattern != 2 || firstKeeper.Target2 == PointF.Empty || firstKeeper.Target2Start == PointF.Empty || DistanceToSegment(firstExpedition.player, firstKeeper.Target2Start, firstKeeper.Target2) >= 25) throw new InvalidOperationException("A Primeira Vigília não anunciou o cruzamento de vozes sobre o jogador.");
+        firstKeeper.Windup = 0.01f; firstExpedition.health = 100; firstExpedition.player = new PointF(150, 330); firstExpedition.UpdateEnemy(firstKeeper, 0.02f);
+        if (firstExpedition.health >= 100) throw new InvalidOperationException("O cruzamento anunciado não atingiu a posição marcada.");
+        firstKeeper.Windup = 0.01f; firstExpedition.health = 100; firstExpedition.dead = false; firstExpedition.dashTime = 0.2f; firstExpedition.UpdateEnemy(firstKeeper, 0.02f);
+        if (firstExpedition.health != 100) throw new InvalidOperationException("A esquiva não evitou o cruzamento da Primeira Vigília.");
+        firstExpedition.dashTime = 0; firstKeeper.Windup = 0; firstKeeper.Cooldown = 0; firstExpedition.UpdateEnemy(firstKeeper, 0.01f);
+        if (firstKeeper.BossPattern != 0 || firstKeeper.Windup <= 0) throw new InvalidOperationException("A Primeira Vigília não concluiu seus três ataques anunciados.");
+        firstExpedition.enemies.Clear(); firstExpedition.enemies.Add(firstKeeper); firstKeeper.Hp = 1; firstKeeper.Windup = 0; firstExpedition.Defeat(firstKeeper);
+        if (!firstExpedition.drops.Any(d => d.Kind == "first") || !firstExpedition.drops.Any(d => d.Kind == "charm" && d.Amount == 4)) throw new InvalidOperationException("A guardiã não deixou a memória de Ilyra e a Marca da Vigília.");
+        foreach (Drop drop in firstExpedition.drops.ToArray()) firstExpedition.Collect(drop);
+        if (!firstExpedition.firstMemory || (firstExpedition.ownedCharms & 8) == 0 || firstExpedition.questStage != 16 || !firstExpedition.memoryOverlay) throw new InvalidOperationException("A primeira memória ou a Marca da Vigília não foi recuperada.");
+        SaveData firstSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(firstExpedition.CaptureSaveData()))!;
+        if (!firstSave.FirstMemory || firstSave.Room != 15 || (firstSave.ClearedRooms & (1 << 15)) == 0) throw new InvalidOperationException("A nova região e a memória de Ilyra não foram salvas.");
+        firstExpedition.memoryOverlay = false; firstExpedition.player = new PointF(850, 330); firstExpedition.Interact(); firstExpedition.player = CuratorPosition; firstExpedition.InteractTown();
+        if (firstExpedition.room != 3 || firstExpedition.questStage != 17) throw new InvalidOperationException("Sileth não registrou o testemunho da Primeira Vigília.");
+        firstExpedition.player = BellKeeperPosition; firstExpedition.InteractTown();
+        if (firstExpedition.memoryTitle != "A TRAVESSIA DO CONTRA-RIO" || firstExpedition.questStage != 18 || firstExpedition.room != 16 || firstExpedition.enemies.Count != 6 || !firstExpedition.enemies.Any(e => e.Kind == EnemyKind.MudCantor)) throw new InvalidOperationException("Edda não iniciou a travessia jogável para oeste.");
+        firstExpedition.enemies.Clear(); firstExpedition.drops.Clear(); firstExpedition.player = new PointF(850, 330); firstExpedition.Interact();
+        if (firstExpedition.room != 17 || firstExpedition.enemies.Count != 4) throw new InvalidOperationException("O Vau não levou ao Pátio das Testemunhas.");
+        Enemy cartographer = firstExpedition.enemies.Single(e => e.Kind == EnemyKind.OathCartographer);
+        if (cartographer.MaxHp != 610) throw new InvalidOperationException("Devolver os nomes não enfraqueceu a Cartógrafa do Vão.");
+        cartographer.Cooldown = 0; firstExpedition.UpdateEnemy(cartographer, 0.01f);
+        if (cartographer.BossPattern != 1 || cartographer.Windup <= 0) throw new InvalidOperationException("A Cartógrafa não anunciou a marca de testemunho.");
+        cartographer.Windup = 0; cartographer.Cooldown = 0; firstExpedition.UpdateEnemy(cartographer, 0.01f);
+        if (cartographer.BossPattern != 2 || cartographer.Windup <= 0 || cartographer.Target == PointF.Empty) throw new InvalidOperationException("A Cartógrafa não anunciou o traço em linha.");
+        firstExpedition.enemies.Clear(); firstExpedition.enemies.Add(cartographer); cartographer.Hp = 1; cartographer.Windup = 0; firstExpedition.Defeat(cartographer);
+        if (!firstExpedition.drops.Any(d => d.Kind == "west") || !firstExpedition.drops.Any(d => d.Kind == "charm" && d.Amount == 5)) throw new InvalidOperationException("A Cartógrafa não deixou o mapa e o Fio da Margem.");
+        foreach (Drop drop in firstExpedition.drops.ToArray()) firstExpedition.Collect(drop);
+        if (!firstExpedition.westTrace || (firstExpedition.ownedCharms & 16) == 0 || firstExpedition.questStage != 19 || !firstExpedition.memoryOverlay) throw new InvalidOperationException("O mapa e o Fio da Margem não foram recuperados.");
+        SaveData westSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(firstExpedition.CaptureSaveData()))!;
+        if (!westSave.WestTrace || westSave.QuestStage != 19 || westSave.Room != 17 || (westSave.ClearedRooms & (1 << 17)) == 0) throw new InvalidOperationException("O progresso no Vau não foi registrado no save.");
+        firstExpedition.memoryOverlay = false; firstExpedition.drops.Clear(); firstExpedition.player = new PointF(850, 330); firstExpedition.Interact();
+        if (firstExpedition.room != 3) throw new InvalidOperationException("O caminho de volta do refúgio não foi aberto.");
+        firstExpedition.player = BellKeeperPosition; firstExpedition.InteractTown();
+        if (firstExpedition.questStage != 20 || firstExpedition.memoryTitle != "A CARTA DO REFÚGIO" || firstExpedition.gold < 375) throw new InvalidOperationException("Edda não reconheceu o mapa nem recompensou a travessia.");
+        using var lumeFirstExpedition = new Game(); lumeFirstExpedition.timer.Stop(); lumeFirstExpedition.StartGame(); lumeFirstExpedition.room = 15; lumeFirstExpedition.townEnding = 2; lumeFirstExpedition.questStage = 15; lumeFirstExpedition.chorusMemory = true; lumeFirstExpedition.SetupRoom();
+        if (lumeFirstExpedition.enemies.Single(e => e.Kind == EnemyKind.FirstKeeper).MaxHp != 620) throw new InvalidOperationException("Manter o Lume não alterou a força da Primeira Vigília.");
+        using var lumeWestExpedition = new Game(); lumeWestExpedition.timer.Stop(); lumeWestExpedition.StartGame(); lumeWestExpedition.room = 17; lumeWestExpedition.townEnding = 2; lumeWestExpedition.questStage = 18; lumeWestExpedition.firstMemory = true; lumeWestExpedition.SetupRoom();
+        if (lumeWestExpedition.enemies.Single(e => e.Kind == EnemyKind.OathCartographer).MaxHp != 690) throw new InvalidOperationException("Manter o Lume não alterou a força da Cartógrafa do Vão.");
+        using var refugeExpedition = new Game(); refugeExpedition.timer.Stop(); refugeExpedition.StartGame(); refugeExpedition.storyOverlay = false; refugeExpedition.room = 3; refugeExpedition.questStage = 20; refugeExpedition.westTrace = true; refugeExpedition.townEnding = 1; refugeExpedition.player = BellKeeperPosition;
+        refugeExpedition.InteractTown();
+        if (refugeExpedition.room != 18 || refugeExpedition.questStage != 21 || refugeExpedition.enemies.Count != 0) throw new InvalidOperationException("Edda não abriu o refúgio seguro após a carta de Nara.");
+        refugeExpedition.player = AvenPosition; refugeExpedition.Interact();
+        if (refugeExpedition.questStage != 22 || refugeExpedition.memoryOverlay) { refugeExpedition.memoryOverlay = false; if (refugeExpedition.questStage != 22) throw new InvalidOperationException("Aven não abriu a trilha após explicar as regras da comunidade."); }
+        refugeExpedition.player = new PointF(850, 330); refugeExpedition.Interact();
+        if (refugeExpedition.room != 19 || refugeExpedition.enemies.Count != 6 || !refugeExpedition.enemies.Any(e => e.Kind == EnemyKind.PaperWraith)) throw new InvalidOperationException("A Trilha dos Luminários não abriu ou não apresentou os Espectros de Papel.");
+        refugeExpedition.enemies.Clear(); refugeExpedition.drops.Clear(); refugeExpedition.player = new PointF(850, 330); refugeExpedition.Interact();
+        if (refugeExpedition.room != 20 || refugeExpedition.enemies.Count != 4 || !refugeExpedition.enemies.Any(e => e.Kind == EnemyKind.NameBroker)) throw new InvalidOperationException("A cisterna não apresentou o Escrivão de Contrato e sua guarda.");
+        Enemy broker = refugeExpedition.enemies.Single(e => e.Kind == EnemyKind.NameBroker);
+        if (broker.MaxHp != 720 || refugeExpedition.Blocked(broker.Pos, broker.Radius)) throw new InvalidOperationException("O chefe do registro não respeitou o ramo de Véspera ou surgiu dentro de uma parede.");
+        broker.Cooldown = 0; refugeExpedition.UpdateEnemy(broker, 0.01f);
+        if (broker.BossPattern != 1 || broker.Windup <= 0) throw new InvalidOperationException("O Escrivão não anunciou a primeira marca contratual.");
+        broker.Windup = 0; broker.Cooldown = 0; refugeExpedition.UpdateEnemy(broker, 0.01f);
+        if (broker.BossPattern != 2 || broker.Windup <= 0 || broker.Target == PointF.Empty) throw new InvalidOperationException("O Escrivão não anunciou o traço de contrato em linha.");
+        broker.Windup = 0; broker.Cooldown = 0; refugeExpedition.UpdateEnemy(broker, 0.01f);
+        if (broker.BossPattern != 0 || broker.Windup <= 0) throw new InvalidOperationException("O Escrivão não concluiu seu ciclo de três ataques.");
+        refugeExpedition.enemies.Clear(); refugeExpedition.enemies.Add(broker); refugeExpedition.drops.Clear(); broker.Hp = 1; broker.Windup = 0; refugeExpedition.Defeat(broker);
+        if (!refugeExpedition.drops.Any(d => d.Kind == "register")) throw new InvalidOperationException("O Escrivão não deixou o registro de passagem.");
+        foreach (Drop drop in refugeExpedition.drops.ToArray()) refugeExpedition.Collect(drop);
+        if (refugeExpedition.questStage != 23 || !refugeExpedition.memoryOverlay || refugeExpedition.drops.Count != 0) throw new InvalidOperationException("O registro não respeitou o consentimento dos viajantes nem atualizou a missão.");
+        SaveData refugeSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(refugeExpedition.CaptureSaveData()))!;
+        if (refugeSave.Room != 20 || refugeSave.QuestStage != 23 || (refugeSave.ClearedRooms & (1 << 20)) == 0) throw new InvalidOperationException("A etapa nova e a cisterna não foram persistidas no save.");
+        refugeExpedition.memoryOverlay = false; refugeExpedition.player = new PointF(90, 330); refugeExpedition.Interact();
+        refugeExpedition.player = new PointF(90, 330); refugeExpedition.Interact();
+        if (refugeExpedition.room != 18) throw new InvalidOperationException("O retorno da cisterna não levou de volta ao refúgio.");
+        int refugeGold = refugeExpedition.gold; refugeExpedition.player = AvenPosition; refugeExpedition.Interact();
+        if (refugeExpedition.questStage != 24 || refugeExpedition.gold != refugeGold + 240 || refugeExpedition.potions < 4) throw new InvalidOperationException("Aven não reconheceu o registro nem forneceu provisões.");
+        using var lumeRefuge = new Game(); lumeRefuge.timer.Stop(); lumeRefuge.StartGame(); lumeRefuge.room = 20; lumeRefuge.townEnding = 2; lumeRefuge.questStage = 22; lumeRefuge.westTrace = true; lumeRefuge.firstMemory = true; lumeRefuge.chorusMemory = true; lumeRefuge.SetupRoom();
+        if (lumeRefuge.enemies.Single(e => e.Kind == EnemyKind.NameBroker).MaxHp != 790) throw new InvalidOperationException("Manter o Lume não alterou a força do Escrivão de Contrato.");
+        using var upstreamExpedition = new Game(); upstreamExpedition.timer.Stop(); upstreamExpedition.StartGame(); upstreamExpedition.storyOverlay = false; upstreamExpedition.room = 18; upstreamExpedition.questStage = 24; upstreamExpedition.westTrace = true; upstreamExpedition.townEnding = 1; upstreamExpedition.player = new PointF(850, 330); upstreamExpedition.Interact();
+        if (upstreamExpedition.room != 21 || upstreamExpedition.questStage != 25 || upstreamExpedition.enemies.Count != 6 || !upstreamExpedition.enemies.Any(e => e.Kind == EnemyKind.SaltEcho)) throw new InvalidOperationException($"A nova trilha falhou: sala {upstreamExpedition.room}, etapa {upstreamExpedition.questStage}, inimigos {upstreamExpedition.enemies.Count}, salinos {upstreamExpedition.enemies.Count(e => e.Kind == EnemyKind.SaltEcho)}.");
+        upstreamExpedition.enemies.Clear(); upstreamExpedition.drops.Clear(); upstreamExpedition.player = new PointF(850, 330); upstreamExpedition.Interact();
+        if (upstreamExpedition.room != 22 || upstreamExpedition.enemies.Count != 5 || upstreamExpedition.memoryTitle != "PONTE DA MARÉ INVERTIDA") throw new InvalidOperationException("A Várzea não levou à Ponte da Maré Invertida.");
+        Enemy tideWitness = upstreamExpedition.enemies.Single(e => e.Kind == EnemyKind.TideWitness);
+        if (tideWitness.MaxHp != 820 || upstreamExpedition.Blocked(tideWitness.Pos, tideWitness.Radius)) throw new InvalidOperationException("A Testemunha da Maré não respeitou a escolha da cidade ou surgiu dentro da ponte.");
+        tideWitness.Cooldown = 0; upstreamExpedition.player = new PointF(150, 330); upstreamExpedition.UpdateEnemy(tideWitness, 0.01f);
+        if (tideWitness.BossPattern != 1 || tideWitness.Windup <= 0 || tideWitness.Target != upstreamExpedition.player) throw new InvalidOperationException("A Testemunha não anunciou a marca d'água.");
+        tideWitness.Windup = 0; tideWitness.Cooldown = 0; upstreamExpedition.UpdateEnemy(tideWitness, 0.01f);
+        if (tideWitness.BossPattern != 2 || tideWitness.Windup <= 0 || tideWitness.Target == PointF.Empty) throw new InvalidOperationException("A Testemunha não anunciou o corte ao longo da corrente.");
+        tideWitness.Windup = 0; tideWitness.Cooldown = 0; upstreamExpedition.UpdateEnemy(tideWitness, 0.01f);
+        if (tideWitness.BossPattern != 0 || tideWitness.Windup <= 0) throw new InvalidOperationException("A Testemunha não concluiu o ciclo de três ataques.");
+        upstreamExpedition.enemies.Clear(); upstreamExpedition.enemies.Add(tideWitness); upstreamExpedition.drops.Clear(); tideWitness.Hp = 1; tideWitness.Windup = 0; upstreamExpedition.Defeat(tideWitness);
+        if (!upstreamExpedition.drops.Any(d => d.Kind == "witness") || !upstreamExpedition.drops.Any(d => d.Kind == "glass" && d.Amount == 3)) throw new InvalidOperationException("A Testemunha da Maré não deixou a memória e o sal vítreo para a comunidade.");
+        foreach (Drop drop in upstreamExpedition.drops.ToArray()) upstreamExpedition.Collect(drop);
+        if (!upstreamExpedition.upstreamTrace || upstreamExpedition.questStage != 26 || upstreamExpedition.memoryTitle != "A ÚLTIMA CURVA DE NARA" || upstreamExpedition.tideGlass != 3) throw new InvalidOperationException("A lembrança da nascente alterou o destino de Nara ou perdeu o material de têmpera.");
+        SaveData upstreamSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(upstreamExpedition.CaptureSaveData()))!;
+        if (!upstreamSave.UpstreamTrace || upstreamSave.QuestStage != 26 || upstreamSave.Room != 22 || (upstreamSave.ClearedRooms & (1 << 22)) == 0) throw new InvalidOperationException("A nova região e a lembrança da nascente não foram salvas.");
+        upstreamExpedition.memoryOverlay = false; upstreamExpedition.player = new PointF(850, 330); upstreamExpedition.Interact(); upstreamExpedition.player = AvenPosition; upstreamExpedition.Interact();
+        if (upstreamExpedition.room != 18 || upstreamExpedition.questStage != 27 || upstreamExpedition.memoryTitle != "A TESTEMUNHA SEM REGISTRO" || upstreamExpedition.gold < 320) throw new InvalidOperationException("Aven não registrou o testemunho preservando a escolha de Nara.");
+        upstreamExpedition.memoryOverlay = false; upstreamExpedition.Interact();
+        if (!upstreamExpedition.forgeMenuOpen) throw new InvalidOperationException("Aven não abriu a têmpera comunitária após receber o testemunho.");
+        int goldBeforeTempering = upstreamExpedition.gold, damageBeforeTempering = upstreamExpedition.damage;
+        upstreamExpedition.OnKeyDown(upstreamExpedition, new KeyEventArgs(Keys.D3));
+        if (upstreamExpedition.forgeMenuOpen || upstreamExpedition.gold != goldBeforeTempering - 75 || upstreamExpedition.tideGlass != 2 || upstreamExpedition.weaponRarities[0] != 1 || upstreamExpedition.weaponBonuses[0] is < 3 or > 6 || upstreamExpedition.weaponAffixes[0] != 3 || upstreamExpedition.damage != damageBeforeTempering + upstreamExpedition.weaponBonuses[0]) throw new InvalidOperationException("A têmpera não aprimorou a arma comum com o afixo escolhido e os custos corretos.");
+        int temperedBonus = upstreamExpedition.weaponBonuses[0], goldAfterFirstTempering = upstreamExpedition.gold;
+        upstreamExpedition.Interact(); upstreamExpedition.OnKeyDown(upstreamExpedition, new KeyEventArgs(Keys.D2));
+        if (upstreamExpedition.weaponRarities[0] != 1 || upstreamExpedition.weaponBonuses[0] != temperedBonus || upstreamExpedition.weaponAffixes[0] != 2 || upstreamExpedition.gold != goldAfterFirstTempering - 75 || upstreamExpedition.tideGlass != 1) throw new InvalidOperationException("A têmpera não substituiu o afixo sem apagar a raridade já obtida.");
+        int goldBeforeDuplicate = upstreamExpedition.gold;
+        upstreamExpedition.Interact(); upstreamExpedition.OnKeyDown(upstreamExpedition, new KeyEventArgs(Keys.D2));
+        if (upstreamExpedition.gold != goldBeforeDuplicate || upstreamExpedition.tideGlass != 1 || !upstreamExpedition.forgeMenuOpen) throw new InvalidOperationException("Um afixo repetido consumiu recursos sem alterar a arma.");
+        upstreamExpedition.OnKeyDown(upstreamExpedition, new KeyEventArgs(Keys.Escape));
+        SaveData temperedSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(upstreamExpedition.CaptureSaveData()))!;
+        if (!ValidWeaponData(temperedSave) || temperedSave.TideGlass != 1 || temperedSave.WeaponAffixes[0] != 2 || temperedSave.WeaponRarities[0] != 1) throw new InvalidOperationException("A têmpera ou o sal vítreo não foram preservados no save.");
+        using var lumeUpstream = new Game(); lumeUpstream.timer.Stop(); lumeUpstream.StartGame(); lumeUpstream.room = 22; lumeUpstream.questStage = 25; lumeUpstream.townEnding = 2; lumeUpstream.SetupRoom();
+        if (lumeUpstream.enemies.Single(e => e.Kind == EnemyKind.TideWitness).MaxHp != 920) throw new InvalidOperationException("Manter o Lume não alterou a força da Testemunha da Maré.");
+        using var reedExpedition = new Game(); reedExpedition.timer.Stop(); reedExpedition.StartGame(); reedExpedition.storyOverlay = false; reedExpedition.room = 22; reedExpedition.questStage = 27; reedExpedition.upstreamTrace = true; reedExpedition.townEnding = 1; reedExpedition.enemies.Clear(); reedExpedition.drops.Clear(); reedExpedition.player = new PointF(850, 330); reedExpedition.Interact();
+        if (reedExpedition.room != 23 || reedExpedition.questStage != 28 || reedExpedition.enemies.Count != 6 || reedExpedition.memoryTitle != "COTOVELO DOS JUNCAIS") throw new InvalidOperationException("A ponte não abriu a nova curva do rio após registrar a nascente.");
+        reedExpedition.enemies.Clear(); reedExpedition.drops.Clear(); reedExpedition.player = new PointF(850, 330); reedExpedition.Interact();
+        if (reedExpedition.room != 24 || reedExpedition.enemies.Count != 5 || reedExpedition.memoryTitle != "PÁTIO DAS AMARRAS LIVRES") throw new InvalidOperationException("O Cotovelo não levou ao Pátio das Amarras Livres.");
+        Enemy reedKeeper = reedExpedition.enemies.Single(e => e.Kind == EnemyKind.ReedKeeper);
+        if (reedKeeper.MaxHp != 970 || reedExpedition.Blocked(reedKeeper.Pos, reedKeeper.Radius)) throw new InvalidOperationException("A Guardiã do Leito não respeitou a escolha da cidade ou surgiu dentro de um obstáculo.");
+        reedKeeper.Cooldown = 0; reedExpedition.player = new PointF(150, 330); reedExpedition.UpdateEnemy(reedKeeper, 0.01f);
+        if (reedKeeper.BossPattern != 1 || reedKeeper.Windup <= 0 || reedKeeper.Target != reedExpedition.player) throw new InvalidOperationException("A Guardiã não anunciou a marca que segue o Escutador.");
+        reedKeeper.Windup = 0; reedKeeper.Cooldown = 0; reedExpedition.UpdateEnemy(reedKeeper, 0.01f);
+        if (reedKeeper.BossPattern != 2 || reedKeeper.Windup <= 0 || reedKeeper.Target == PointF.Empty) throw new InvalidOperationException("A Guardiã não anunciou o corte pelo pátio.");
+        reedKeeper.Windup = 0; reedKeeper.Cooldown = 0; reedExpedition.UpdateEnemy(reedKeeper, 0.01f);
+        if (reedKeeper.BossPattern != 0 || reedKeeper.Windup <= 0) throw new InvalidOperationException("A Guardiã não concluiu o ciclo de três ataques.");
+        reedExpedition.enemies.Clear(); reedExpedition.enemies.Add(reedKeeper); reedExpedition.drops.Clear(); reedKeeper.Hp = 1; reedKeeper.Windup = 0; reedExpedition.Defeat(reedKeeper);
+        if (!reedExpedition.drops.Any(d => d.Kind == "beyond") || !reedExpedition.drops.Any(d => d.Kind == "glass" && d.Amount == 2)) throw new InvalidOperationException("A Guardiã não deixou o testemunho e o sal vítreo.");
+        foreach (Drop drop in reedExpedition.drops.ToArray()) reedExpedition.Collect(drop);
+        if (!reedExpedition.beyondTrace || reedExpedition.questStage != 29 || reedExpedition.memoryTitle != "NÓS QUE PODEM SER DESFEITOS" || reedExpedition.tideGlass != 2) throw new InvalidOperationException("O testemunho tornou-se uma ordem ou perdeu o material comunitário.");
+        SaveData reedSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(reedExpedition.CaptureSaveData()))!;
+        if (!reedSave.BeyondTrace || reedSave.QuestStage != 29 || reedSave.Room != 24 || (reedSave.ClearedRooms & (1 << 24)) == 0) throw new InvalidOperationException("A nova região e o testemunho não foram salvos.");
+        reedExpedition.memoryOverlay = false; reedExpedition.player = new PointF(850, 330); reedExpedition.Interact(); reedExpedition.player = AvenPosition; int reedGold = reedExpedition.gold; reedExpedition.Interact();
+        if (reedExpedition.room != 18 || reedExpedition.questStage != 30 || reedExpedition.gold != reedGold + 420 || reedExpedition.potions < 3 || reedExpedition.memoryTitle != "AVEN GUARDA O SINAL") throw new InvalidOperationException($"Aven não registrou a passagem coletiva e forneceu provisões: sala {reedExpedition.room}, etapa {reedExpedition.questStage}, ouro {reedExpedition.gold - reedGold}, poções {reedExpedition.potions}, memória {reedExpedition.memoryTitle}.");
+        using var lumeReed = new Game(); lumeReed.timer.Stop(); lumeReed.StartGame(); lumeReed.room = 24; lumeReed.townEnding = 2; lumeReed.SetupRoom();
+        if (lumeReed.enemies.Single(e => e.Kind == EnemyKind.ReedKeeper).MaxHp != 1060) throw new InvalidOperationException("Manter o Lume não alterou a força da Guardiã do Leito.");
+        using var floodExpedition = new Game(); floodExpedition.timer.Stop(); floodExpedition.StartGame(); floodExpedition.storyOverlay = false; floodExpedition.room = 18; floodExpedition.questStage = 30; floodExpedition.beyondTrace = true; floodExpedition.upstreamTrace = true; floodExpedition.westTrace = true; floodExpedition.townEnding = 1; floodExpedition.player = new PointF(850, 330); floodExpedition.Interact();
+        if (floodExpedition.room != 25 || floodExpedition.questStage != 31 || floodExpedition.enemies.Count != 6 || floodExpedition.memoryTitle != "MOINHOS DA VAZANTE") throw new InvalidOperationException("Aven não abriu a rota dos Moinhos da Vazante após registrar o testemunho.");
+        floodExpedition.player = new PointF(480, 330); if (floodExpedition.CurrentDrift() != new PointF(58, 0)) throw new InvalidOperationException("A corrente dos moinhos não alterou o posicionamento no canal.");
+        floodExpedition.player = new PointF(180, 330); if (floodExpedition.CurrentDrift() != PointF.Empty) throw new InvalidOperationException("A corrente afetou o caminho seco fora do canal.");
+        floodExpedition.enemies.Clear(); floodExpedition.drops.Clear(); floodExpedition.player = new PointF(850, 330); floodExpedition.Interact();
+        if (floodExpedition.room != 26 || floodExpedition.enemies.Count != 5 || floodExpedition.memoryTitle != "CÂMARA DO VEIO PRESO") throw new InvalidOperationException("Os moinhos não levaram à Câmara do Veio Preso.");
+        Enemy flowKeeper = floodExpedition.enemies.Single(e => e.Kind == EnemyKind.FlowKeeper);
+        if (flowKeeper.MaxHp != 1120 || floodExpedition.Blocked(flowKeeper.Pos, flowKeeper.Radius)) throw new InvalidOperationException("O Vigia do Veio Preso não respeitou o ramo de Véspera ou surgiu dentro de um obstáculo.");
+        flowKeeper.Cooldown = 0; floodExpedition.player = new PointF(150, 330); floodExpedition.UpdateEnemy(flowKeeper, 0.01f);
+        if (flowKeeper.BossPattern != 1 || flowKeeper.Windup <= 0 || flowKeeper.Target != floodExpedition.player) throw new InvalidOperationException("O Vigia não anunciou a marca de retorno.");
+        flowKeeper.Windup = 0; flowKeeper.Cooldown = 0; floodExpedition.UpdateEnemy(flowKeeper, 0.01f);
+        if (flowKeeper.BossPattern != 2 || flowKeeper.Windup <= 0 || flowKeeper.Target == PointF.Empty) throw new InvalidOperationException("O Vigia não anunciou o corte pela corrente.");
+        flowKeeper.Windup = 0; flowKeeper.Cooldown = 0; floodExpedition.UpdateEnemy(flowKeeper, 0.01f);
+        if (flowKeeper.BossPattern != 0 || flowKeeper.Windup <= 0) throw new InvalidOperationException("O Vigia não concluiu o ciclo de três ataques.");
+        floodExpedition.enemies.Clear(); floodExpedition.enemies.Add(flowKeeper); floodExpedition.drops.Clear(); flowKeeper.Hp = 1; flowKeeper.Windup = 0; floodExpedition.Defeat(flowKeeper);
+        if (!floodExpedition.drops.Any(d => d.Kind == "ebb") || !floodExpedition.drops.Any(d => d.Kind == "glass" && d.Amount == 3)) throw new InvalidOperationException("O Vigia não deixou a memória e o sal vítreo.");
+        foreach (Drop drop in floodExpedition.drops.ToArray()) floodExpedition.Collect(drop);
+        if (floodExpedition.questStage != 32 || floodExpedition.tideGlass != 3 || floodExpedition.memoryTitle != "A CORRENTE NÃO É UMA ROTA") throw new InvalidOperationException("A memória do veio ou o sal vítreo não foram recuperados.");
+        SaveData flowSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(floodExpedition.CaptureSaveData()))!;
+        if (flowSave.Room != 26 || flowSave.QuestStage != 32 || flowSave.EbbSeal || (flowSave.ClearedRooms & (1 << 26)) == 0) throw new InvalidOperationException("O progresso do veio não foi salvo antes da recompensa de Aven.");
+        floodExpedition.memoryOverlay = false; floodExpedition.player = new PointF(850, 330); floodExpedition.Interact(); floodExpedition.player = AvenPosition; floodExpedition.gold = 0; floodExpedition.potions = 0; floodExpedition.Interact();
+        if (floodExpedition.room != 18 || floodExpedition.questStage != 33 || !floodExpedition.ebbSeal || floodExpedition.gold != 480 || floodExpedition.potions != 2 || floodExpedition.memoryTitle != "A MARCA DA VAZANTE") throw new InvalidOperationException("Aven não liberou a Vazante e as provisões da comunidade.");
+        SaveData ebbSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(floodExpedition.CaptureSaveData()))!;
+        if (!ebbSave.EbbSeal || ebbSave.QuestStage != 33 || ebbSave.Room != 18) throw new InvalidOperationException("A habilidade Vazante não persistiu no save.");
+        floodExpedition.room = 26; floodExpedition.enemies.Clear(); floodExpedition.drops.Clear(); floodExpedition.ebbSeal = true; floodExpedition.pullCd = 0; floodExpedition.player = new PointF(300, 330);
+        Enemy pulledEcho = new() { Pos = new PointF(400, 330), Kind = EnemyKind.Grunt, Hp = 1000, MaxHp = 1000, Cooldown = 5 }; floodExpedition.enemies.Add(pulledEcho); floodExpedition.CastEbbPull();
+        if (pulledEcho.Hp >= 1000 || pulledEcho.Pos.X >= 400 || pulledEcho.Stagger <= 0 || floodExpedition.pullCd != 12) throw new InvalidOperationException("A Vazante não reuniu, feriu e interrompeu o eco ou respeitou sua recarga.");
+        using var ebbBuild = new Game(); ebbBuild.timer.Stop(); ebbBuild.StartGame(); ebbBuild.room = 26; ebbBuild.ebbSeal = true; ebbBuild.ownedCharms = 4; ebbBuild.equippedCharm = 3; ebbBuild.weaponRarities[0] = 1; ebbBuild.weaponAffixes[0] = 3; ebbBuild.enemies.Clear(); ebbBuild.player = new PointF(300, 330);
+        Enemy tunedEcho = new() { Pos = new PointF(400, 330), Kind = EnemyKind.Grunt, Hp = 1000, MaxHp = 1000, Cooldown = 5 }; ebbBuild.enemies.Add(tunedEcho); ebbBuild.CastEbbPull();
+        if (1000 - tunedEcho.Hp <= 15) throw new InvalidOperationException("O Vidro de Vigília e o afixo da Maré não fortaleceram a Vazante.");
+        floodExpedition.pullCd = 0; floodExpedition.enemies.Clear(); Enemy pulledBoss = new() { Pos = new PointF(500, 230), Kind = EnemyKind.FlowKeeper, Hp = 1000, MaxHp = 1000 }; floodExpedition.enemies.Add(pulledBoss); floodExpedition.player = new PointF(400, 230); floodExpedition.CastEbbPull();
+        if (pulledBoss.Hp >= 1000 || pulledBoss.Pos.X >= 500 || pulledBoss.Stagger > 0) throw new InvalidOperationException("A Vazante não teve efeito reduzido e sem interrupção contra chefes.");
+        using var lumeFlow = new Game(); lumeFlow.timer.Stop(); lumeFlow.StartGame(); lumeFlow.room = 26; lumeFlow.questStage = 31; lumeFlow.beyondTrace = true; lumeFlow.upstreamTrace = true; lumeFlow.townEnding = 2; lumeFlow.SetupRoom();
+        if (lumeFlow.enemies.Single(e => e.Kind == EnemyKind.FlowKeeper).MaxHp != 1230) throw new InvalidOperationException("Manter o Lume não alterou a força do Vigia do Veio Preso.");
+        using var counterExpedition = new Game(); counterExpedition.timer.Stop(); counterExpedition.StartGame(); counterExpedition.storyOverlay = false; counterExpedition.room = 18; counterExpedition.questStage = 33; counterExpedition.ebbSeal = true; counterExpedition.player = new PointF(850, 330); counterExpedition.Interact();
+        if (counterExpedition.room != 27 || counterExpedition.questStage != 34 || counterExpedition.enemies.Count != 6 || counterExpedition.memoryTitle != "ESCARPA DO CONTRAFLUXO") throw new InvalidOperationException("Aven não abriu o Capítulo XI após ensinar a Vazante.");
+        counterExpedition.enemies.Clear(); counterExpedition.drops.Clear(); counterExpedition.player = new PointF(850, 330); counterExpedition.Interact();
+        if (counterExpedition.room != 28 || counterExpedition.enemies.Count != 5 || !counterExpedition.enemies.Any(e => e.Kind == EnemyKind.CounterCurrent)) throw new InvalidOperationException("A escarpa não abriu o Coração das Duas Margens e seu chefe.");
+        counterExpedition.player = new PointF(600, 330); counterExpedition.windupPulse = 0; PointF inwardDrift = counterExpedition.CurrentDrift(); counterExpedition.windupPulse = 3.5f / 1.35f; PointF outwardDrift = counterExpedition.CurrentDrift();
+        if (inwardDrift.X >= 0 || outwardDrift.X <= 0 || inwardDrift.X != -outwardDrift.X) throw new InvalidOperationException("A corrente do Coração não alternou de atração para repulsão.");
+        Enemy tuner = counterExpedition.enemies.Single(e => e.Kind == EnemyKind.CounterCurrent);
+        tuner.Cooldown = 0; counterExpedition.player = new PointF(150, 330); counterExpedition.UpdateEnemy(tuner, 0.01f); if (tuner.BossPattern != 1 || tuner.Windup <= 0) throw new InvalidOperationException("O Afinador não anunciou a primeira marca de corrente.");
+        tuner.Windup = 0; tuner.Cooldown = 0; counterExpedition.UpdateEnemy(tuner, 0.01f); if (tuner.BossPattern != 2 || tuner.Windup <= 0) throw new InvalidOperationException("O Afinador não anunciou seu corte em linha.");
+        tuner.Windup = 0; tuner.Cooldown = 0; counterExpedition.UpdateEnemy(tuner, 0.01f); if (tuner.BossPattern != 0 || tuner.Windup <= 0) throw new InvalidOperationException("O Afinador não completou o ciclo de três ataques.");
+        counterExpedition.enemies.Clear(); counterExpedition.enemies.Add(tuner); counterExpedition.drops.Clear(); tuner.Hp = 1; tuner.Windup = 0; counterExpedition.Defeat(tuner);
+        if (!counterExpedition.drops.Any(d => d.Kind == "counter") || !counterExpedition.drops.Any(d => d.Kind == "glass" && d.Amount == 3)) throw new InvalidOperationException("O Afinador não deixou sua memória e o sal vítreo.");
+        foreach (Drop drop in counterExpedition.drops.ToArray()) counterExpedition.Collect(drop);
+        if (!counterExpedition.counterTrace || counterExpedition.questStage != 35 || counterExpedition.tideGlass != 3 || counterExpedition.memoryTitle != "O AFINADOR DAS MARGENS") throw new InvalidOperationException("A memória do Afinador ou o material não foram recuperados.");
+        SaveData counterSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(counterExpedition.CaptureSaveData()))!;
+        if (counterSave.Room != 28 || counterSave.QuestStage != 35 || !counterSave.CounterTrace || (counterSave.ClearedRooms & (1 << 28)) == 0) throw new InvalidOperationException("O novo capítulo não persistiu a sala, a memória e a conclusão do chefe.");
+        counterExpedition.memoryOverlay = false; counterExpedition.player = new PointF(850, 330); counterExpedition.Interact(); counterExpedition.player = AvenPosition; int counterGold = counterExpedition.gold; counterExpedition.Interact();
+        if (counterExpedition.room != 18 || counterExpedition.questStage != 36 || counterExpedition.gold != counterGold + 560 || counterExpedition.tideGlass != 6 || counterExpedition.potions < 2) throw new InvalidOperationException("Aven não registrou o novo relato nem entregou as provisões.");
+        game.room = 11; game.SetupRoom();
+        if (game.enemies.Count != 0 || game.drops.Count != 0) throw new InvalidOperationException("O Reservatório foi recriado após ter sido limpo.");
+        game.room = 3; game.SetupRoom();
+        game.memoryOverlay = false; game.player = CryptGatePosition; game.Interact();
+        if (game.room != 2 || game.enemies.Count != 4) throw new InvalidOperationException("A passagem da cidade não retornou à cripta.");
+        Console.WriteLine("TESTES OK: campanha até o Capítulo XI, correntes alternadas, Manto de Lastro, saque identificado com rolagem persistente, Vazante, escolhas, regiões, chefes, ataques anunciados, loot, Ressonância do Sino, têmpera de armas, raridades e afixos, talismãs, builds, progressão e save."); return 0;
+    }
+}
