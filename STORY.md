@@ -1,7 +1,7 @@
 # História de Scadryk
 
 **Subtítulo de trabalho:** *Os Nomes do Rio Cego*  
-**Estado:** prólogo, cripta inicial, praça de Véspera, Arquivo Norte, Rio Cego, Câmara do Lume, Margem sem Reflexo, Reservatório das Vozes e seis etapas da investigação jogáveis; o Coro revelou a origem do Silêncio de Baixo, enquanto Nara e o destino final do Lume permanecem sem resposta.
+**Estado:** prólogo, cripta inicial, praça de Véspera, Arquivo Norte, Rio Cego, Câmara do Lume, Margem sem Reflexo, Reservatório das Vozes, costa, Claustro e Bacia do Primeiro Nome jogáveis; o Coro revelou a origem do Silêncio e Ilyra revelou o propósito original do Lume. O paradeiro de Nara e o destino final do farol permanecem sem resposta.
 
 ## Ideia central
 
@@ -64,11 +64,19 @@ O loot também oferece três talismãs com origens em Véspera. O Nó de Brasa v
 
 A decisão de Véspera é apenas o primeiro passo de uma escolha maior. No confronto final, o jogador ainda decidirá o que fazer com o arquivo e com o Lume: devolver as memórias apagadas e enfrentar o Silêncio sem a proteção antiga, ou sustentar o farol oferecendo uma lembrança própria. As consequências finais devem mudar habitantes, áreas exploráveis e epílogo; nenhuma opção será perfeitamente correta.
 
+### Capítulo V — A Bacia do Primeiro Nome
+
+Depois de registrar o Coro, Sileth percebe que as ondas de vozes apontam para baixo do Claustro. Uma escadaria surge sob o nó rompido e desce até a Bacia do Primeiro Nome, um santuário circular construído antes das muralhas de Véspera. O lugar não guarda túmulos: guarda a primeira memória que alguém confiou ao Lume.
+
+Na Sala da Primeira Vigília, a guardiã Ilyra surge como um eco preso ao dever, não como uma inimiga que escolheu servir ao Silêncio. Ela alterna uma onda ao redor do corpo, uma marca de memória no chão e duas linhas de voz que se cruzam na posição do Escutador; mover-se durante o aviso permite escapar do cruzamento. Devolver os nomes a Véspera enfraquece a guardiã, enquanto manter o Lume preserva a força de sua função.
+
+Ao ceder, Ilyra revela que foi a primeira Escutadora. Ela construiu o Lume para que nenhuma lembrança ficasse sem lugar, mas os guardiões posteriores inverteram esse propósito e transformaram memórias em combustível. Ilyra entregou o próprio nome para que o farol não esquecesse sua origem. Seu último eco mostra Nara atravessando a corrente com as vozes que o Lume não comportava; Ilyra não sabe o que aconteceu depois e alerta o protagonista a não chamar a irmã pelo nome escolhido pelo farol. A lembrança amplia as pistas sem confirmar o destino de Nara. Sileth registra o testemunho, e Edda ouve o Coro seguir para oeste, contra a corrente.
+
 ## Regras de continuidade
 
 - A inspiração em Diablo fica no gênero e na ambição de combate, exploração, loot e progressão. Scadryk mantém mitologia, trama, personagens, criaturas, nomes e apresentação próprios.
 - O Guardião e a cripta já existem como protótipo de combate; as ligações com o Rio Cego e o Lume são ficção planejada para a campanha.
-- O prólogo, as duas inscrições da cripta, a praça, as missões de Sileth e Edda, o Arquivo Norte, o Rio Cego, a Capela Afogada, a Câmara do Lume, a Margem sem Reflexo, o Reservatório das Vozes, a Costa das Vozes Tardias, o Claustro do Coro Partido, a Tecelã e o Coro dos Nomes Consumidos estão jogáveis; a primeira escolha em Véspera já tem efeitos persistentes. As terras além do Claustro, o destino de Nara, o confronto final e o epílogo continuam planejados.
+- O prólogo, as duas inscrições da cripta, a praça, as missões de Sileth e Edda, o Arquivo Norte, o Rio Cego, a Capela Afogada, a Câmara do Lume, a Margem sem Reflexo, o Reservatório das Vozes, a Costa das Vozes Tardias, o Claustro do Coro Partido, a Bacia do Primeiro Nome, Ilyra e o Coro dos Nomes Consumidos estão jogáveis; a primeira escolha em Véspera altera a força de duas guardiãs. O caminho a oeste, o destino de Nara, o confronto final e o epílogo continuam planejados.
 - Novos itens e poderes devem ter origem no mundo de Scadryk e revelar algo sobre quem os criou, usou ou esqueceu.
 
 
