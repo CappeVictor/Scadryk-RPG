@@ -1,7 +1,7 @@
 # História de Scadryk
 
 **Subtítulo de trabalho:** *Os Nomes do Rio Cego*  
-**Estado:** prólogo, cripta, Véspera, Arquivo Norte, Rio Cego, Lume, Margem sem Reflexo, Reservatório, costa, Claustro, Bacia do Primeiro Nome, Vau, Refúgio, Cisterna, Várzea, Ponte da Maré Invertida, Cotovelo dos Juncais, Pátio das Amarras Livres, Moinhos da Vazante, Câmara do Veio Preso, Escarpa do Contrafluxo e Coração das Duas Margens jogáveis. O paradeiro atual de Nara, o nome que ela escolheu e o destino final do Lume continuam sem resposta.
+**Estado:** prólogo, cripta, Véspera, Arquivo Norte, Rio Cego, Lume, Margem sem Reflexo, Reservatório, costa, Claustro, Bacia do Primeiro Nome, Vau, Refúgio, Cisterna, Várzea, Ponte da Maré Invertida, Cotovelo dos Juncais, Pátio das Amarras Livres, Moinhos da Vazante, Câmara do Veio Preso, Escarpa do Contrafluxo e Coração das Duas Margens, Cantaria das Vozes Livres, Câmara da Contravoz, Garganta do Vidro Mudo e Fonte sob a Pedra jogáveis. O paradeiro atual de Nara, o nome que ela escolheu e o destino final do Lume continuam sem resposta.
 
 ## Ideia central
 
@@ -153,3 +153,10 @@ Na Câmara da Contravoz, o eco que conduz essa tentativa alterna três ataques l
 Ao ceder, a Contravoz deixa uma nota de memória. Ela mostra viajantes sustentando a mesma ponte sonora sem fundir suas vozes. Ninguém conduz as outras vozes nem escolhe o que elas devem revelar. Aven recebe a lembrança e ensina o Coro de Retorno, uma onda que fere e interrompe ecos comuns próximos, mas causa dano menor e não cancela ataques de chefes. Ouro, sal vítreo e provisões mantêm aberta a próxima etapa da jornada.
 
 O capítulo XII acrescenta duas salas, um chefe de três padrões, uma nova habilidade ativa e uma lembrança persistente. O eco não registra nome, rota, destino ou vontade atual de Nara; essas respostas continuam pertencendo a ela.
+### Capítulo XIII — Os passos que o vidro não guarda
+
+Depois de aprender o Coro de Retorno, o Escutador ouve uma resposta sob a corrente, distante das notas da Cantaria. Aven reconhece uma fissura recém-aberta no leito e deixa claro que ela não consta do mapa de Nara. O som não prova que ela passou por ali; são apenas passos que a pedra não consegue atribuir a ninguém.
+
+A Garganta do Vidro Mudo conduz à Fonte sob a Pedra. O Arauto de Vidro tenta reunir os sons num único compasso e protege a nascente como se toda passagem precisasse deixar um registro. Seu ciclo anuncia três ataques: uma expansão circular ao redor do próprio corpo, uma marca curta que acompanha o Escutador e um golpe comprido em linha reta. Ler o aviso e mudar de posição abre espaço para contra-atacar.
+
+Quando o Arauto cai, a fonte devolve os passos sem nomes, rostos ou direções. A lembrança pode ser compartilhada com Aven, que oferece ouro, sal vítreo e provisões à comunidade. A fissura não pertence ao mapa de Nara e não revela sua identidade atual, seu paradeiro ou se deseja voltar. O Capítulo XIII acrescenta duas salas de combate, um chefe com três padrões, uma memória persistente e uma nova etapa de história original.
