@@ -1,7 +1,7 @@
 # História de Scadryk
 
 **Subtítulo de trabalho:** *Os Nomes do Rio Cego*  
-**Estado:** prólogo, cripta inicial, praça de Véspera, Arquivo Norte, Rio Cego, Câmara do Lume, Margem sem Reflexo, Reservatório das Vozes, costa, Claustro e Bacia do Primeiro Nome jogáveis; o Coro revelou a origem do Silêncio e Ilyra revelou o propósito original do Lume. O paradeiro de Nara e o destino final do farol permanecem sem resposta.
+**Estado:** prólogo, cripta, Véspera, Arquivo Norte, Rio Cego, Lume, Margem sem Reflexo, Reservatório, costa, Claustro, Bacia do Primeiro Nome, Vau, Refúgio, Cisterna, Várzea e Ponte da Maré Invertida jogáveis. O paradeiro atual de Nara, o nome que ela escolheu e o destino final do Lume continuam sem resposta.
 
 ## Ideia central
 
@@ -80,13 +80,13 @@ A Cartógrafa do Vão protege o pátio. Ela não serve ao Lume; acredita que um 
 
 O mapa deixado no pátio tem a letra de Nara. Ela escreveu que ajudou a levantar um abrigo onde ninguém precisa conservar o nome que o Lume escolheu e que seguiu para oeste com as pessoas que quiseram continuar. Ela pede que, se o protagonista a encontrar, não trate parentesco como resposta: primeiro pergunte quem ela escolheu ser. O mapa confirma uma decisão e a existência de uma comunidade, mas não diz quando Nara partiu, onde está agora ou se quer reencontrar a família. Edda reconhece o caminho até a próxima curva do rio; além dela, a trilha ainda precisa ser descoberta.
 
-A recompensa pela travessia é paga por Edda, enquanto Sileth mantém o arquivo de Véspera aberto para registrar a carta sem convertê-la em uma ordem de resgate. O capítulo amplia a campanha para além das terras mapeadas pela cidade e prepara a próxima região, onde o Escutador terá de conhecer a comunidade antes de procurar Nara.
+A recompensa pela travessia é paga por Edda, enquanto Sileth mantém o arquivo de Véspera aberto para registrar a carta sem convertê-la em uma ordem de resgate. O capítulo amplia a campanha para além das terras mapeadas pela cidade. O Escutador precisa conhecer a comunidade antes de seguir qualquer pista sobre Nara.
 
 ## Regras de continuidade
 
 - A inspiração em Diablo fica no gênero e na ambição de combate, exploração, loot e progressão. Scadryk mantém mitologia, trama, personagens, criaturas, nomes e apresentação próprios.
 - O Guardião e a cripta já existem como protótipo de combate; as ligações com o Rio Cego e o Lume são ficção planejada para a campanha.
-- O prólogo, as duas inscrições da cripta, a praça, as missões de Sileth e Edda, o Arquivo Norte, o Rio Cego, a Capela Afogada, a Câmara do Lume, a Margem sem Reflexo, o Reservatório das Vozes, a Costa das Vozes Tardias, o Claustro do Coro Partido, a Bacia do Primeiro Nome, Ilyra, o Coro dos Nomes Consumidos, o Vau dos Nomes Escolhidos, o Pátio das Testemunhas, o mapa de Nara, o Refúgio do Veio Calmo, a Trilha dos Luminários e a Cisterna do Registro Vazio estão jogáveis; a primeira escolha em Véspera altera a força de quatro chefes. A próxima curva além do mapa, o destino atual de Nara, o confronto final e o epílogo continuam planejados.
+- O prólogo, as duas inscrições da cripta, a praça, as missões de Sileth e Edda, o Arquivo Norte, o Rio Cego, a Capela Afogada, a Câmara do Lume, a Margem sem Reflexo, o Reservatório das Vozes, a Costa das Vozes Tardias, o Claustro do Coro Partido, a Bacia do Primeiro Nome, Ilyra, o Coro dos Nomes Consumidos, o Vau dos Nomes Escolhidos, o Pátio das Testemunhas, o mapa de Nara, o Refúgio do Veio Calmo, a Trilha dos Luminários, a Cisterna do Registro Vazio, a Várzea das Vozes Sopradas e a Ponte da Maré Invertida estão jogáveis; a primeira escolha em Véspera altera a força de cinco chefes. A trilha além da nascente, o destino atual de Nara, o confronto final e o epílogo continuam planejados.
 - Novos itens e poderes devem ter origem no mundo de Scadryk e revelar algo sobre quem os criou, usou ou esqueceu.
 
 
@@ -106,6 +106,14 @@ Nara ajudou a mapear as primeiras rotas do refúgio e seguiu adiante com viajant
 
 Na Cisterna do Registro Vazio, um Escrivão de Contrato acredita que registrar todo nome é a única forma de impedir que o Lume volte a apagá-los. Ele prende nomes em contratos e os usa para dar forma a ecos de papel. O confronto não decide quem Nara é nem onde ela está; ele abre acesso a anotações de viagem incompletas, suficientes para indicar a próxima curva a oeste.
 
-Este capítulo já é jogável: Edda conduz o protagonista ao refúgio, Aven libera a trilha, os Espectros de Papel guardam a cisterna e o Escrivão de Contrato protege o registro comunitário. A missão e as câmaras limpas ficam no save. O próximo trecho da viagem continua além do mapa disponível.
+Este capítulo já é jogável: Edda conduz o protagonista ao refúgio, Aven libera a trilha, os Espectros de Papel guardam a cisterna e o Escrivão de Contrato protege o registro comunitário. A missão e as câmaras limpas ficam no save. O registro abre caminho para a nascente, onde a próxima pista continua incompleta.
 
+### Capítulo VIII — A nascente que não registra nomes
 
+Depois de devolver o registro à mesa comunitária, o Escutador segue a corrente além da Cisterna. A Várzea das Vozes Sopradas é uma faixa de sal, pedra lisa e água rasa. Ecos Salinos recuam para lançar estilhaços de água mineralizada, forçando o jogador a avançar entre o curso do rio e os bancos de sal. As lanternas do refúgio acabam antes da próxima margem; ninguém deixou um mapa do que vem depois.
+
+A Ponte da Maré Invertida cruza a nascente. A Testemunha da Maré protege a passagem porque seus ecos foram usados durante anos para reconstruir nomes a partir de registros incompletos. Seus três avisos são distintos: uma marca de água que persegue o Escutador, um impacto ao redor da guardiã e um corte comprido lançado pela ponte. Ela não pertence ao Lume e não tenta decidir quem Nara deve ser; reage ao hábito do protagonista de tratar um registro como resposta completa.
+
+Ao ceder, a Testemunha entrega uma lembrança incompleta. Um grupo chegou à nascente com Nara. Alguém a chamou pelo nome que constava no livro de Véspera; ela respondeu com o nome que escolheu, e o grupo o aprendeu antes de seguir viagem. O eco não revela essa palavra, o destino do grupo ou se Nara está esperando por alguém.
+
+Aven recebe o testemunho sem perguntar qual era o nome anterior ou qual foi o escolhido. Registra somente que o grupo cruzou a nascente por vontade própria. O capítulo abre duas novas salas, introduz os Ecos Salinos e a Testemunha da Maré, e guarda a lembrança no save. A trilha continua para oeste, fora do mapa atual.

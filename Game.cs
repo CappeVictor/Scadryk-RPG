@@ -1,937 +1,58 @@
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.IO;
-using System.Linq;
-using System.Text.Json;
-using System.Windows.Forms;
-
-public sealed class Game : Form
-{
-    private enum EnemyKind { Grunt, Archer, Mage, Elite, Guardian, InkEcho, BlindScribe, DrownedMemory, RiverFerryman, EmberWisp, AshWarden, NameMoth, HollowName, NameWeaver, FirstKeeper, MudCantor, OathCartographer, PaperWraith, NameBroker }
-    private sealed class Enemy
-    {
-        public PointF Pos, Target, Target2, Target2Start;
-        public EnemyKind Kind;
-        public float Hp, MaxHp, Cooldown, Windup, WindupMax, Flash;
-        public int BossPattern;
-        public bool Armored;
-        public float Stagger;
-        public bool Boss => Kind is EnemyKind.Guardian or EnemyKind.BlindScribe or EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker;
-        public float Radius => Boss ? 23 : Kind == EnemyKind.Elite ? 18 : 14;
-    }
-    private sealed class Drop { public PointF Pos; public string Kind = "gold"; public int Amount; }
-    private sealed class EchoShard { public PointF Pos, Direction; public float Life, Damage; public HashSet<Enemy> Hit = new(); }
-    private sealed class SaveData
-    {
-        public int Room { get; set; }
-        public int Level { get; set; } = 1;
-        public int Xp { get; set; }
-        public int Gold { get; set; }
-        public int Potions { get; set; } = 2;
-        public int Damage { get; set; } = 25;
-        public float Health { get; set; } = 100;
-        public float MaxHealth { get; set; } = 100;
-        public int Weapon { get; set; }
-        public int OwnedWeapons { get; set; } = 1;
-        public int[] WeaponBonuses { get; set; } = new int[3];
-        public int[] WeaponRarities { get; set; } = new int[3];
-        public int[] WeaponAffixes { get; set; } = new int[3];
-        public bool Armor { get; set; }
-        public bool Relic { get; set; }
-        public int HealthTalent { get; set; }
-        public int SkillTalent { get; set; }
-        public int DodgeTalent { get; set; }
-        public bool RoomCleared { get; set; }
-        public bool Completed { get; set; }
-        public int MemoriesFound { get; set; }
-        public int QuestStage { get; set; }
-        public int ClearedRooms { get; set; }
-        public bool ArchiveSeal { get; set; }
-        public bool RiverBell { get; set; }
-        public bool LumeLens { get; set; }
-        public bool NaraTrace { get; set; }
-        public int OwnedCharms { get; set; }
-        public int EquippedCharm { get; set; }
-        public int EquippedCharm2 { get; set; }
-        public int TownEnding { get; set; }
-        public bool ChorusMemory { get; set; }
-        public bool FirstMemory { get; set; }
-        public bool WestTrace { get; set; }
-    }
-
-    private static readonly RectangleF[] Walls = { new(345, 235, 48, 90), new(565, 375, 58, 80) };
-    private static readonly RectangleF[] ArchiveWalls = { new(275, 155, 38, 155), new(437, 365, 48, 165), new(626, 150, 42, 165), new(765, 374, 42, 150) };
-    private static readonly RectangleF[] VaultWalls = { new(280, 170, 58, 118), new(625, 170, 58, 118), new(280, 410, 58, 118), new(625, 410, 58, 118) };
-    private static readonly RectangleF[] RiverWalls = { new(250, 175, 80, 48), new(410, 390, 96, 52), new(645, 170, 70, 48), new(760, 390, 75, 55) };
-    private static readonly RectangleF[] BellChamberWalls = { new(285, 150, 46, 180), new(630, 345, 48, 180), new(423, 435, 112, 42) };
-    private static readonly RectangleF[] AshGalleryWalls = { new(250, 165, 58, 145), new(440, 380, 78, 130), new(640, 165, 52, 145), new(770, 380, 55, 130) };
-    private static readonly RectangleF[] LumeChamberWalls = { new(300, 150, 48, 140), new(612, 390, 48, 140), new(428, 260, 104, 44), new(428, 420, 104, 44) };
-    private static readonly RectangleF[] NameShoreWalls = { new(248, 170, 54, 126), new(434, 395, 64, 128), new(640, 166, 56, 126), new(770, 394, 54, 126) };
-    private static readonly RectangleF[] VoiceWellWalls = { new(270, 158, 64, 122), new(626, 158, 64, 122), new(270, 410, 64, 122), new(626, 410, 64, 122), new(438, 325, 84, 76) };
-    private static readonly RectangleF[] FarReachWalls = { new(242, 166, 62, 122), new(420, 390, 74, 130), new(650, 164, 58, 124), new(772, 391, 58, 128) };
-    private static readonly RectangleF[] NameCloisterWalls = { new(260, 155, 58, 145), new(646, 155, 58, 145), new(260, 405, 58, 145), new(646, 405, 58, 145), new(448, 296, 64, 105) };
-    private static readonly RectangleF[] FirstBasinWalls = { new(262, 158, 56, 138), new(645, 158, 56, 138), new(262, 405, 56, 138), new(645, 405, 56, 138), new(448, 188, 64, 78) };
-    private static readonly RectangleF[] FirstVigilWalls = { new(246, 168, 52, 138), new(662, 168, 52, 138), new(246, 400, 52, 138), new(662, 400, 52, 138), new(425, 310, 110, 32), new(425, 378, 110, 32) };
-    private static readonly RectangleF[] WestFordWalls = { new(244, 158, 58, 126), new(656, 158, 58, 126), new(244, 410, 58, 126), new(656, 410, 58, 126), new(433, 291, 94, 38) };
-    private static readonly RectangleF[] WitnessYardWalls = { new(258, 154, 60, 136), new(642, 154, 60, 136), new(258, 405, 60, 136), new(642, 405, 60, 136), new(428, 255, 40, 64), new(492, 341, 40, 64) };
-    private static readonly RectangleF[] RefugeWalls = { new(114, 145, 185, 93), new(662, 145, 185, 93), new(121, 430, 176, 85), new(666, 430, 176, 85), new(412, 254, 36, 88), new(514, 370, 36, 82) };
-    private static readonly RectangleF[] RidgeWalls = { new(246, 158, 58, 126), new(656, 158, 58, 126), new(246, 410, 58, 126), new(656, 410, 58, 126), new(429, 289, 96, 42) };
-    private static readonly RectangleF[] LedgerWalls = { new(256, 154, 54, 146), new(650, 154, 54, 146), new(256, 399, 54, 146), new(650, 399, 54, 146), new(425, 154, 110, 30), new(425, 416, 110, 30) };
-    private static readonly RectangleF[] TownBuildings = { new(115, 128, 208, 128), new(677, 128, 208, 128), new(115, 426, 208, 120), new(677, 426, 208, 120) };
-    private static readonly PointF CuratorPosition = new(625, 315), BellKeeperPosition = new(352, 347), ArchiveBookPosition = new(785, 355), CryptGatePosition = new(92, 330);
-    private static readonly PointF AvenPosition = new(490, 335), SeraPosition = new(350, 340), NoaPosition = new(640, 360);
-    private static readonly PointF[] MemoryStonePositions = { new(260, 165), new(270, 485) };
-    private static readonly string[] MemoryStoneTexts = {
-        "Nara: ‚ÄúSe os sinos calarem, siga o leito do Rio Cego. A Curadora fechou os arquivos antes da noite come√ßar.‚Äù",
-        "Registro de Vig√≠lia: ‚ÄúO Guardi√£o entregou seu nome ao Lume. A Curadora apagou o registro para que a cidade esquecesse o pre√ßo.‚Äù"
-    };
-    private readonly List<Enemy> enemies = new();
-    private readonly List<Drop> drops = new();
-    private readonly HashSet<Keys> down = new();
-    private readonly System.Windows.Forms.Timer timer = new() { Interval = 16 };
-    private readonly Random random = new();
-    private readonly List<EchoShard> echoShards = new();
-    private readonly string[] roomNames = { "VEST√çBULO EM RU√çNAS", "SAL√ÉO DOS OSSOS", "C√ÇMARA DO GUARDI√ÉO", "V√âSPERA ‚Ä¢ PRA√áA DO FAROL", "ARQUIVO NORTE ‚Ä¢ GALERIA", "ARQUIVO NORTE ‚Ä¢ COFRE", "RIO CEGO ‚Ä¢ LEITO SECO", "RIO CEGO ‚Ä¢ CAPELA AFOGADA", "FAROL ‚Ä¢ ESCADA DE CINZAS", "FAROL ‚Ä¢ C√ÇMARA DO LUME", "AL√âM DO LUME ‚Ä¢ MARGEM SEM REFLEXO", "RESERVAT√ìRIO ‚Ä¢ VOZES RETIDAS", "COSTA DAS VOZES TARDIAS", "CLAUSTRO DO CORO PARTIDO", "BACIA DO PRIMEIRO NOME", "SALA DA PRIMEIRA VIG√çLIA", "VAU DOS NOMES ESCOLHIDOS", "P√ÅTIO DAS TESTEMUNHAS", "REF√öGIO DO VEIO CALMO", "TRILHA DOS LUMIN√ÅRIOS", "CISTERNA DO REGISTRO VAZIO" };
-    private readonly string[] weaponNames = { "ESPADA DE PEDRA", "L√ÇMINA DO ARQUIVO", "FACA DO CREP√öSCULO" };
-    private readonly string[] charmNames = { "", "N√ì DE BRASA", "FIO DE TRAVESSIA", "VIDRO DE VIG√çLIA", "MARCA DA VIG√çLIA", "FIO DA MARGEM" };
-    private readonly string[] prologue = {
-        "Na noite sem sinos, V√©spera come√ßou a esquecer os nomes de seus mortos. Sob as ruas, o Rio Cego repetiu uma voz que ningu√©m mais conseguia ouvir.",
-        "Voc√™ √© um Escutador: ouve as lembran√ßas que a pedra n√£o conseguiu guardar em sil√™ncio. Entre elas reconheceu Nara, sua irm√£, desaparecida quando os sinos pararam.",
-        "A mem√≥ria dela chega partida: ‚ÄúDes√ßa. Ele ainda lembra.‚Äù O Guardi√£o sem Nome espera na cripta, diante da √∫nica pista que pode explicar por que Nara foi at√© l√°."
-    };
-    private readonly int[] weaponDamage = { 0, 10, 4 };
-    private readonly int[] weaponBonuses = new int[3], weaponRarities = new int[3], weaponAffixes = new int[3];
-    private PointF player = new(150, 330), facing = new(1, 0), mouseAim = new(1, 0);
-    private int room, level = 1, xp, gold, potions = 2, damage = 25, weapon, ownedWeapons = 1;
-    private int healthTalent, skillTalent, dodgeTalent, pendingTalents, enemiesDefeated;
-    private int memoriesFound, questStage, clearedRooms;
-    private bool chorusMemory, firstMemory, westTrace;
-    private int ownedCharms, equippedCharm, equippedCharm2;
-    private bool archiveSeal;
-    private bool riverBell;
-    private bool lumeLens;
-    private bool naraTrace;
-    private float health = 100, maxHealth = 100, attackCd, skillCd, shardCd, bellCd, bellWaveTime, bellWaveRadius, dashCd, dashTime, invulnerable, noticeTime, windupPulse;
-    private bool armor, armorOn, relic, relicOn, inventoryOpen, title = true, dead, victory, talentChoice, chestChoice, storyOverlay, memoryOverlay, endingChoiceOpen;
-    private int townEnding;
-    private int storyPage;
-    private string notice = "";
-    private string memoryTitle = "";
-    private string memoryText = "";
-    private string SavePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Scadryk", "save.json");
-
-    public Game()
-    {
-        Text = "Scadryk ‚Äî RPG de a√ß√£o 2D"; ClientSize = new Size(960, 640); MinimumSize = MaximumSize = new Size(976, 679);
-        FormBorderStyle = FormBorderStyle.FixedSingle; MaximizeBox = false; StartPosition = FormStartPosition.CenterScreen;
-        DoubleBuffered = true; KeyPreview = true; BackColor = Color.FromArgb(16, 19, 23);
-        timer.Tick += (_, _) => TickGame(); timer.Start();
-        KeyDown += OnKeyDown; KeyUp += (_, e) => down.Remove(e.KeyCode);
-        MouseMove += (_, e) => { mouseAim = Normalize(new PointF(e.X - player.X, e.Y - player.Y), facing); };
-        MouseDown += (_, e) =>
-        {
-            if (storyOverlay) { if (e.Button == MouseButtons.Left) AdvanceStory(); return; }
-            if (memoryOverlay) { if (e.Button == MouseButtons.Left) memoryOverlay = false; return; }
-            if (title || dead || victory || chestChoice || talentChoice || inventoryOpen) return;
-            mouseAim = Normalize(new PointF(e.X - player.X, e.Y - player.Y), facing);
-            if (e.Button == MouseButtons.Left) Attack();
-            if (e.Button == MouseButtons.Right) Whirlwind();
-        };
-    }
-
-    private void StartGame()
-    {
-        room = 0; level = 1; xp = gold = damage = 0; damage = 25; potions = 2; weapon = 0; ownedWeapons = 1; Array.Clear(weaponBonuses); Array.Clear(weaponRarities); Array.Clear(weaponAffixes);
-        armor = armorOn = relic = relicOn = archiveSeal = riverBell = lumeLens = naraTrace = chorusMemory = firstMemory = westTrace = inventoryOpen = dead = victory = chestChoice = talentChoice = memoryOverlay = endingChoiceOpen = false;
-        townEnding = 0;
-        healthTalent = skillTalent = dodgeTalent = pendingTalents = enemiesDefeated = memoriesFound = questStage = 0;
-        clearedRooms = 0;
-        ownedCharms = equippedCharm = equippedCharm2 = 0;
-        health = maxHealth = 100; attackCd = skillCd = shardCd = bellCd = bellWaveTime = bellWaveRadius = dashCd = dashTime = invulnerable = 0; echoShards.Clear(); title = false; storyPage = 0; storyOverlay = true; SetupRoom();
-    }
-
-    private void AdvanceStory()
-    {
-        if (!storyOverlay) return;
-        storyPage++;
-        if (storyPage >= prologue.Length) storyOverlay = false;
-    }
-
-    private void SetupRoom()
-    {
-        player = new PointF(150, 330); enemies.Clear(); drops.Clear(); echoShards.Clear(); lockedTarget = null;
-        if (room != 3 && (clearedRooms & (1 << room)) != 0) return;
-        int count = room is 3 or 18 ? 0 : room == 0 ? 3 : room == 1 ? 5 : room == 4 ? 5 : room == 5 ? 4 : room == 6 ? 6 : (room is 7 or 9 or 11 or 15 or 17 or 20) ? 4 : room == 8 ? 5 : room is 10 or 12 or 14 or 16 or 19 ? 6 : room == 13 ? 4 : 4;
-        for (int i = 0; i < count; i++)
-        {
-            EnemyKind kind = room == 2 && i == 0 ? EnemyKind.Guardian : room == 5 && i == 0 ? EnemyKind.BlindScribe : room == 7 && i == 0 ? EnemyKind.RiverFerryman : room == 9 && i == 0 ? EnemyKind.AshWarden : room == 13 && i == 0 ? EnemyKind.NameWeaver : room == 15 && i == 0 ? EnemyKind.FirstKeeper : room == 17 && i == 0 ? EnemyKind.OathCartographer : room == 20 && i == 0 ? EnemyKind.NameBroker : room == 11 && i == 0 ? EnemyKind.HollowName : room == 1 && i == count - 1 ? EnemyKind.Elite : room == 4 && (i is 1 or 4) ? EnemyKind.InkEcho : room == 5 && i == 2 ? EnemyKind.InkEcho : room == 6 && (i is 1 or 4) ? EnemyKind.DrownedMemory : room == 7 && i == 2 ? EnemyKind.DrownedMemory : room == 8 && (i is 1 or 4) ? EnemyKind.EmberWisp : room == 9 && i == 2 ? EnemyKind.EmberWisp : room == 10 && (i is 1 or 4) ? EnemyKind.NameMoth : room is 12 && (i is 1 or 4) ? EnemyKind.NameMoth : (room is 11 or 13 or 14 or 15 or 16 or 17 or 19 or 20) && i == 2 ? EnemyKind.NameMoth : (room is 12 or 13 or 14 or 15 or 16 or 17 or 19 or 20) && i == 1 ? EnemyKind.NameMoth : room == 16 && i == 4 ? EnemyKind.MudCantor : room == 17 && i == 3 ? EnemyKind.MudCantor : (room is 19 or 20) && i == 3 ? EnemyKind.PaperWraith : room > 0 && i == 1 ? EnemyKind.Archer : (room is 2 or 5 or 7 or 9 or 11 or 14 or 16 or 19) && i == 2 ? EnemyKind.Mage : EnemyKind.Grunt;
-            float hp = kind switch { EnemyKind.Guardian => 160, EnemyKind.BlindScribe => 245, EnemyKind.RiverFerryman => 285, EnemyKind.AshWarden => 340, EnemyKind.HollowName => 390, EnemyKind.NameWeaver => townEnding == 1 ? 410 : 455, EnemyKind.FirstKeeper => townEnding == 1 ? 560 : 620, EnemyKind.OathCartographer => townEnding == 1 ? 610 : 690, EnemyKind.NameBroker => townEnding == 1 ? 720 : 790, EnemyKind.Elite => 120, EnemyKind.Archer or EnemyKind.Mage or EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth or EnemyKind.MudCantor or EnemyKind.PaperWraith => 64, _ => 58 + room * 8 };
-            var enemy = new Enemy { Pos = new PointF(485 + i % 3 * 120, 215 + i / 3 * 165), Kind = kind, Hp = hp, MaxHp = hp, Cooldown = 0.7f + (float)random.NextDouble(), Armored = kind == EnemyKind.Elite && random.Next(2) == 0 };
-            if (Blocked(enemy.Pos, enemy.Radius)) enemy.Pos = new PointF(660 + i * 12, 480 - i * 8);
-            enemies.Add(enemy);
-        }
-    }
-
-    private void EnterVesper()
-    {
-        room = 3; title = false; victory = false; SetupRoom();
-        ShowMemory("V√âSPERA", "A pra√ßa do farol ainda vive, embora seus moradores evitem falar dos sinos. Sileth espera perto do arquivo; talvez reconhe√ßa a voz de Nara.");
-        notice = questStage == 0 ? "NOVO OBJETIVO: FALE COM SILETH" : "OBJETIVO ATUALIZADO"; noticeTime = 3.5f;
-    }
-
-    private void ChooseTownEnding(int choice)
-    {
-        if (questStage < 12 || townEnding != 0 || choice is < 1 or > 2) return;
-        townEnding = choice; questStage = 13; endingChoiceOpen = false;
-        if (choice == 1)
-        {
-            maxHealth += 20; health = maxHealth;
-            ShowMemory("V√âSPERA DEVOLVE OS NOMES", "Sileth abre os arquivos e l√™ cada nome em voz alta. Os sinos respondem um a um. O Lume enfraquece, e o Sil√™ncio volta a se mover sob o rio; ningu√©m mais enfrentar√° essa amea√ßa sozinho. Edda promete manter os nomes nos sinos. A pra√ßa oferece abrigo e coragem: vida m√°xima +20.");
-        }
-        else
-        {
-            damage += 10;
-            ShowMemory("V√âSPERA MANT√âM O LUME", "Sileth conserva a barreira e registra o pre√ßo sem apagar o que foi perdido. Edda toca os sinos para que a cidade n√£o confunda prote√ß√£o com esquecimento. A luz do Lume marca a arma do Escutador: dano +10. Os arquivos ficam abertos, mesmo sob a luz antiga.");
-        }
-        notice = "DECIS√ÉO DE V√âSPERA REGISTRADA ‚Ä¢ SALVE COM F5"; noticeTime = 4;
-    }
-
-    private void OnKeyDown(object? sender, KeyEventArgs e)
-    {
-        down.Add(e.KeyCode);
-        if (e.KeyCode == Keys.Enter && (title || dead || victory)) { StartGame(); return; }
-        if (e.KeyCode == Keys.C && title) { LoadGame(); return; }
-        if (e.KeyCode == Keys.F5 && victory) { SaveGame(); return; }
-        if (title || dead || victory) return;
-        if (storyOverlay) { if (e.KeyCode is Keys.Enter or Keys.Space) AdvanceStory(); return; }
-        if (memoryOverlay) { if (e.KeyCode is Keys.Enter or Keys.Space) memoryOverlay = false; return; }
-        if (endingChoiceOpen) { if (e.KeyCode == Keys.D1) ChooseTownEnding(1); else if (e.KeyCode == Keys.D2) ChooseTownEnding(2); else if (e.KeyCode == Keys.D3) endingChoiceOpen = false; return; }
-        if (chestChoice) { if (e.KeyCode == Keys.D1) gold += 75; else if (e.KeyCode == Keys.D2) potions += 2; else if (e.KeyCode == Keys.D3) health = maxHealth; else return; chestChoice = false; EnterVesper(); return; }
-        if (talentChoice) { SelectTalent(e.KeyCode); return; }
-        if (e.KeyCode == Keys.I) { inventoryOpen = !inventoryOpen; return; }
-        if (inventoryOpen) { if (e.KeyCode >= Keys.D1 && e.KeyCode <= Keys.D3) EquipWeapon((int)e.KeyCode - (int)Keys.D1); else if (e.KeyCode == Keys.D4 && armor) armorOn = !armorOn; else if (e.KeyCode == Keys.D5 && relic) relicOn = !relicOn; else if (e.KeyCode == Keys.D6) CycleCharm(1); else if (e.KeyCode == Keys.D7) CycleCharm(2); return; }
-        if (e.KeyCode == Keys.Space || e.KeyCode == Keys.J) Attack();
-        else if ((e.KeyCode == Keys.ShiftKey || e.KeyCode == Keys.K) && dashCd <= 0) { dashTime = DashDuration(); dashCd = DashCooldown(); }
-        else if (e.KeyCode == Keys.R) Whirlwind();
-        else if (e.KeyCode == Keys.F) CastVoiceShard();
-        else if (e.KeyCode == Keys.V) CastBellPulse();
-        else if (e.KeyCode == Keys.Q) UsePotion();
-        else if (e.KeyCode == Keys.E) Interact();
-        else if (e.KeyCode == Keys.F5) { if (enemies.Count == 0 && drops.Count == 0) SaveGame(); else { notice = "LIMPE A SALA E RECOLHA O LOOT ANTES DE SALVAR"; noticeTime = 2; } }
-        else if (e.KeyCode == Keys.Tab) CycleTarget();
-    }
-
-    private void SelectTalent(Keys key)
-    {
-        if (key == Keys.D1) { healthTalent++; maxHealth += 20; health = Math.Min(maxHealth, health + 20); }
-        else if (key == Keys.D2) skillTalent++;
-        else if (key == Keys.D3) dodgeTalent++;
-        else return;
-        pendingTalents--; talentChoice = pendingTalents > 0;
-    }
-
-    private void Attack()
-    {
-        if (attackCd > 0) return;
-        facing = lockedTarget is not null && enemies.Contains(lockedTarget) ? Normalize(Sub(lockedTarget.Pos, player), facing) : mouseAim;
-        attackCd = BasicAttackCooldown();
-        foreach (Enemy enemy in enemies.ToArray())
-        {
-            PointF offset = Sub(enemy.Pos, player); float distance = Length(offset);
-            if (distance > (enemy.Boss ? 95 : 78) || (distance >= 20 && Dot(facing, Normalize(offset, facing)) <= 0.1f) || BlockedLine(player, enemy.Pos)) continue;
-            bool critical = random.NextDouble() < CriticalChance(); int dealt = (int)(damage * OutgoingDamageMultiplier(enemy) * (critical ? CriticalMultiplier() : 1)); if (enemy.Armored) dealt = (int)(dealt * 0.75f);
-            enemy.Hp -= dealt; enemy.Flash = 0.2f; if (enemy.Hp <= 0) Defeat(enemy);
-        }
-    }
-
-    private void Whirlwind()
-    {
-        if (skillCd > 0 || talentChoice) return;
-        skillCd = Math.Max(1.5f, 6f - skillTalent * 0.5f) + WhirlwindCooldownPenalty();
-        foreach (Enemy enemy in enemies.ToArray()) if (Distance(player, enemy.Pos) < 110) { enemy.Hp -= (int)(damage * OutgoingDamageMultiplier(enemy) * WhirlwindMultiplier() * WeaponSkillMultiplier() * (enemy.Armored ? 0.75f : 1)); if (enemy.Hp <= 0) Defeat(enemy); }
-    }
-
-    private void CastVoiceShard()
-    {
-        if (room == 3 || shardCd > 0 || enemies.Count == 0) return;
-        facing = lockedTarget is not null && enemies.Contains(lockedTarget) ? Normalize(Sub(lockedTarget.Pos, player), facing) : Normalize(mouseAim, facing);
-        echoShards.Add(new EchoShard { Pos = Add(player, Scale(facing, 23)), Direction = facing, Life = VoiceShardLifetime(), Damage = VoiceShardDamage() });
-        shardCd = VoiceShardCooldown(); notice = "ESTILHA√áO DE VOZ"; noticeTime = 0.75f;
-    }
-
-    private float BellPulseRadius() => HasCharm(2) ? 190f : 155f;
-    private float BellPulseCooldown() => Math.Max(7f, 14f - skillTalent * 0.7f) + (HasCharm(2) ? 1.5f : 0f);
-    private float WeaponSkillMultiplier() => weaponAffixes[weapon] == 3 ? weaponRarities[weapon] == 2 ? 1.18f : 1.12f : 1f;
-    private int WeaponPower(int index) => weaponDamage[index] + weaponBonuses[index];
-    private static string WeaponRarityName(int index) => index == 0 ? "COMUM" : index == 1 ? "RARA" : "REL√çQUIA";
-    private string WeaponAffixName(int index) => weaponAffixes[index] switch { 1 => "da Tr√©gua", 2 => "do Contracanto", 3 => "da Mar√©", _ => "sem afixo" };
-    private string WeaponDisplayName(int index) => weaponRarities[index] == 0 ? $"{weaponNames[index]} [COMUM]" : $"{weaponNames[index]} ‚Ä¢ {WeaponRarityName(index)} {WeaponAffixName(index)}";
-    private string WeaponAffixDescription(int index) => weaponAffixes[index] switch { 1 => $"da Tr√©gua: recupera {(weaponRarities[index] == 2 ? 6 : 3)} vida por abate", 2 => $"do Contracanto: +{(weaponRarities[index] == 2 ? 11 : 7)} p.p. de cr√≠tico", 3 => $"da Mar√©: +{(weaponRarities[index] == 2 ? 18 : 12)}% de dano de t√©cnica", _ => "Sem afixo" };
-
-    private void CastBellPulse()
-    {
-        if (!riverBell) { notice = "O SINO DE NARA AINDA N√ÉO FOI ENCONTRADO"; noticeTime = 1.6f; return; }
-        if (room is 3 or 18 || enemies.Count == 0 || bellCd > 0) return;
-        bellCd = BellPulseCooldown(); bellWaveTime = 0.42f; bellWaveRadius = BellPulseRadius();
-        foreach (Enemy enemy in enemies.ToArray())
-        {
-            if (Distance(player, enemy.Pos) > bellWaveRadius) continue;
-            float multiplier = (HasCharm(3) ? 1.25f : 1f) * WeaponSkillMultiplier();
-            float power = enemy.Boss ? 0.55f : 0.95f;
-            enemy.Hp -= (int)(damage * power * multiplier * OutgoingDamageMultiplier(enemy) * (enemy.Armored ? 0.75f : 1));
-            enemy.Flash = 0.2f;
-            if (!enemy.Boss) { enemy.Stagger = 0.95f; enemy.Windup = 0; enemy.Cooldown = Math.Max(enemy.Cooldown, 1.8f); }
-            if (enemy.Hp <= 0) Defeat(enemy);
-        }
-        notice = HasCharm(2) ? "SINO DE NARA ‚Ä¢ ONDA AMPLIADA" : "SINO DE NARA ‚Ä¢ RESSON√ÇNCIA"; noticeTime = 1.2f;
-    }
-
-    private void AdvanceVoiceShards(float dt)
-    {
-        for (int i = echoShards.Count - 1; i >= 0; i--)
-        {
-            EchoShard shard = echoShards[i]; shard.Life -= dt;
-            float distance = 520 * dt; int steps = Math.Max(1, (int)MathF.Ceiling(distance / 6)); float step = distance / steps; bool blocked = false;
-            for (int n = 0; n < steps; n++)
-            {
-                PointF next = Add(shard.Pos, Scale(shard.Direction, step));
-                if (Blocked(next, 4)) { blocked = true; break; }
-                shard.Pos = next;
-                foreach (Enemy enemy in enemies.ToArray())
-                {
-                    if (shard.Hit.Contains(enemy) || DistanceToSegment(enemy.Pos, Sub(shard.Pos, Scale(shard.Direction, step)), shard.Pos) >= enemy.Radius + 8) continue;
-                    shard.Hit.Add(enemy); enemy.Hp -= shard.Damage * OutgoingDamageMultiplier(enemy) * (enemy.Armored ? 0.75f : 1); enemy.Flash = 0.16f;
-                    if (enemy.Hp <= 0) Defeat(enemy);
-                }
-            }
-            if (blocked || shard.Life <= 0 || shard.Pos.X < 75 || shard.Pos.X > 885 || shard.Pos.Y < 110 || shard.Pos.Y > 550) echoShards.RemoveAt(i);
-        }
-    }
-
-    private void Defeat(Enemy enemy)
-    {
-        if (!enemies.Remove(enemy)) return;
-        enemiesDefeated++; drops.Add(new Drop { Pos = enemy.Pos, Kind = "gold", Amount = enemy.Boss ? 35 : enemy.Kind == EnemyKind.Elite ? 20 : 8 });
-        AddXp(enemy.Boss ? 75 : enemy.Kind == EnemyKind.Elite ? 40 : 22);
-        if (weaponAffixes[weapon] == 1) health = Math.Min(maxHealth, health + (weaponRarities[weapon] == 2 ? 6 : 3));
-        if (enemy.Kind == EnemyKind.Guardian && !relic) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "relic" });
-        if (enemy.Kind == EnemyKind.BlindScribe && !archiveSeal) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "seal" });
-        if (enemy.Kind == EnemyKind.RiverFerryman && !riverBell) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "bell" });
-        if (enemy.Kind == EnemyKind.AshWarden && !lumeLens) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "lens" });
-        if (enemy.Kind == EnemyKind.HollowName && !naraTrace) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "trace" });
-        if (enemy.Kind == EnemyKind.NameWeaver && !chorusMemory) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "chorus" });
-        if (enemy.Kind == EnemyKind.FirstKeeper && !firstMemory) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "first" });
-        if (enemy.Kind == EnemyKind.OathCartographer && !westTrace) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "west" });
-        if (enemy.Kind == EnemyKind.NameBroker && questStage == 22) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "register" });
-        if (enemy.Kind == EnemyKind.FirstKeeper && (ownedCharms & 8) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 24, -12), Kind = "charm", Amount = 4 });
-        if (enemy.Kind == EnemyKind.OathCartographer && (ownedCharms & 16) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 24, -12), Kind = "charm", Amount = 5 });
-        if (enemy.Kind == EnemyKind.Elite && (ownedCharms & 1) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 24, -12), Kind = "charm", Amount = 1 });
-        if (enemy.Kind == EnemyKind.RiverFerryman && (ownedCharms & 2) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, -12), Kind = "charm", Amount = 2 });
-        if (enemy.Kind == EnemyKind.BlindScribe && (ownedCharms & 4) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, -12), Kind = "charm", Amount = 3 });
-        if (!enemy.Boss && enemy.Kind != EnemyKind.Elite && random.NextDouble() < 0.06)
-            drops.Add(new Drop { Pos = Offset(enemy.Pos, 18, 14), Kind = "charm", Amount = random.Next(1, 4) });
-        if (enemy.Kind == EnemyKind.Elite && !armor) drops.Add(new Drop { Pos = Offset(enemy.Pos, 24, 0), Kind = "armor" });
-        else if (!enemy.Boss && random.NextDouble() < 0.2) drops.Add(new Drop { Pos = Offset(enemy.Pos, 16, 12), Kind = "potion" });
-        if (relicOn) health = Math.Min(maxHealth, health + 5);
-        if (enemies.Count == 0 && room < 2) { int next = room == 0 ? 2 : 1; if ((ownedWeapons & (1 << next)) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, -16, -8), Kind = "weapon", Amount = next }); }
-        if (enemies.Count == 0 && drops.Count == 0 && room == 2 && !memoryOverlay) chestChoice = true;
-    }
-
-    private void AddXp(int amount)
-    {
-        xp += amount;
-        while (xp >= level * 60) { xp -= level * 60; level++; damage += 5; pendingTalents++; }
-        if (pendingTalents > 0) talentChoice = true;
-    }
-
-    private void TickGame()
-    {
-        float dt = timer.Interval / 1000f; noticeTime = Math.Max(0, noticeTime - dt); attackCd = Math.Max(0, attackCd - dt); skillCd = Math.Max(0, skillCd - dt); shardCd = Math.Max(0, shardCd - dt); bellCd = Math.Max(0, bellCd - dt); bellWaveTime = Math.Max(0, bellWaveTime - dt); dashCd = Math.Max(0, dashCd - dt); dashTime = Math.Max(0, dashTime - dt); invulnerable = Math.Max(0, invulnerable - dt); windupPulse += dt;
-        if (title || dead || victory || storyOverlay || memoryOverlay || inventoryOpen || talentChoice || chestChoice || endingChoiceOpen) { Invalidate(); return; }
-        PointF dir = new((down.Contains(Keys.D) || down.Contains(Keys.Right) ? 1 : 0) - (down.Contains(Keys.A) || down.Contains(Keys.Left) ? 1 : 0), (down.Contains(Keys.S) || down.Contains(Keys.Down) ? 1 : 0) - (down.Contains(Keys.W) || down.Contains(Keys.Up) ? 1 : 0));
-        dir = Normalize(dir, PointF.Empty); if (dashTime > 0) dir = facing;
-        MovePlayer(Scale(dir, (dashTime > 0 ? 530 : 190) * dt));
-        for (int i = drops.Count - 1; i >= 0; i--) if (Distance(player, drops[i].Pos) < 30) Collect(drops[i]);
-        foreach (Enemy enemy in enemies.ToArray()) { UpdateEnemy(enemy, dt); if (dead) break; }
-        AdvanceVoiceShards(dt);
-        if (enemies.Count == 0 && drops.Count == 0 && room == 2 && !memoryOverlay) chestChoice = true;
-        MarkRoomCleared();
-        Invalidate();
-    }
-
-    private void UpdateEnemy(Enemy e, float dt)
-    {
-        e.Cooldown -= dt; e.Flash = Math.Max(0, e.Flash - dt); PointF offset = Sub(player, e.Pos); float dist = Length(offset);
-        if (e.Stagger > 0) { e.Stagger = Math.Max(0, e.Stagger - dt); return; }
-        if (e.Windup > 0) {
-            e.Windup -= dt;
-            float reach = e.Boss ? e.BossPattern == 0 ? 90 : e.Kind == EnemyKind.RiverFerryman && e.BossPattern == 2 ? 85 : e.Kind == EnemyKind.AshWarden && e.BossPattern == 2 ? 68 : e.Kind == EnemyKind.HollowName && e.BossPattern == 2 ? 85 : (e.Kind is EnemyKind.NameWeaver or EnemyKind.OathCartographer or EnemyKind.NameBroker) && e.BossPattern == 2 ? 230 : 42 : e.Kind == EnemyKind.Elite ? 62 : e.Kind == EnemyKind.Mage ? 52 : e.Kind is EnemyKind.Archer or EnemyKind.InkEcho or EnemyKind.PaperWraith ? 230 : e.Kind == EnemyKind.DrownedMemory ? 195 : e.Kind is EnemyKind.EmberWisp or EnemyKind.NameMoth or EnemyKind.MudCantor ? 210 : 38;
-            bool targeted = (e.Boss && (e.BossPattern is 1 or 2)) || (e.Kind is EnemyKind.Mage or EnemyKind.Elite or EnemyKind.Archer or EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth or EnemyKind.MudCantor or EnemyKind.PaperWraith);
-            bool inFirstVoiceLine = e.Kind == EnemyKind.FirstKeeper && e.BossPattern == 2 && (DistanceToSegment(player, e.Pos, e.Target) < 25 || DistanceToSegment(player, e.Target2Start, e.Target2) < 25);
-            bool inAttack = inFirstVoiceLine || ((e.Kind is EnemyKind.NameWeaver or EnemyKind.OathCartographer or EnemyKind.NameBroker) && e.BossPattern == 2 ? DistanceToSegment(player, e.Pos, e.Target) < 24 : targeted ? Distance(player, e.Target) < reach : dist < reach);
-            if (e.Windup <= 0 && inAttack && invulnerable <= 0 && dashTime <= 0) HitPlayer(e.Boss ? e.Kind == EnemyKind.BlindScribe ? 23 : e.Kind == EnemyKind.RiverFerryman ? 28 : e.Kind == EnemyKind.AshWarden ? 31 : e.Kind == EnemyKind.HollowName ? 36 : e.Kind == EnemyKind.NameWeaver ? 39 : e.Kind == EnemyKind.FirstKeeper ? 44 : e.Kind == EnemyKind.OathCartographer ? 42 : e.Kind == EnemyKind.NameBroker ? 48 : 26 : e.Kind == EnemyKind.Elite ? 20 : e.Kind == EnemyKind.Mage ? 16 : e.Kind is EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth or EnemyKind.MudCantor or EnemyKind.PaperWraith ? 18 : 10);
-            return;
-        }
-        if (e.Kind is EnemyKind.Archer or EnemyKind.InkEcho) { float preferred = e.Kind == EnemyKind.InkEcho ? 135 : 170; if (dist < preferred) e.Pos = MoveEnemy(e, Scale(Normalize(Sub(e.Pos, player), PointF.Empty), (e.Kind == EnemyKind.InkEcho ? 68 : 55) * dt)); else if (e.Cooldown <= 0) { BeginWindup(e, player, e.Kind == EnemyKind.InkEcho ? 0.75f : 0.6f); e.Cooldown = e.Kind == EnemyKind.InkEcho ? 2.0f : 1.8f; } SeparateFromPack(e, dt); return; }
-        if (e.Kind is EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth or EnemyKind.MudCantor or EnemyKind.PaperWraith) { float preferred = e.Kind == EnemyKind.EmberWisp ? 145 : e.Kind == EnemyKind.NameMoth ? 175 : e.Kind == EnemyKind.MudCantor ? 215 : e.Kind == EnemyKind.PaperWraith ? 185 : 110; if (dist < preferred) e.Pos = MoveEnemy(e, Scale(Normalize(Sub(e.Pos, player), PointF.Empty), (e.Kind is EnemyKind.MudCantor or EnemyKind.PaperWraith ? 52 : 72) * dt)); else if (e.Cooldown <= 0) { BeginWindup(e, player, e.Kind == EnemyKind.EmberWisp ? 0.7f : e.Kind == EnemyKind.NameMoth ? 0.62f : e.Kind == EnemyKind.MudCantor ? 0.82f : e.Kind == EnemyKind.PaperWraith ? 0.68f : 0.9f); e.Cooldown = e.Kind == EnemyKind.EmberWisp ? 1.9f : e.Kind == EnemyKind.NameMoth ? 1.7f : e.Kind == EnemyKind.MudCantor ? 2.15f : e.Kind == EnemyKind.PaperWraith ? 1.95f : 2.25f; } SeparateFromPack(e, dt); return; }
-        if (e.Kind == EnemyKind.Mage && dist < 165) e.Pos = MoveEnemy(e, Scale(Normalize(Sub(e.Pos, player), PointF.Empty), 42 * dt));
-        if (e.Kind == EnemyKind.Elite && e.Cooldown <= 0 && dist < 220) { BeginWindup(e, player, e.Armored ? 0.72f : 0.5f); e.Cooldown = e.Armored ? 2.5f : 2f; return; }
-        if (e.Boss && e.Cooldown <= 0 && (dist < 135 || (e.Kind is EnemyKind.BlindScribe or EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker))) { e.BossPattern = (e.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker) ? (e.BossPattern + 1) % 3 : 1 - e.BossPattern; bool aimed = (e.Kind == EnemyKind.BlindScribe && e.BossPattern == 1) || ((e.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden) && (e.BossPattern is 1 or 2)) || (e.Kind is EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker) && e.BossPattern is 1 or 2; float windup = e.Hp < e.MaxHp * 0.5f ? 0.52f : 0.78f; if (e.Kind == EnemyKind.FirstKeeper && e.BossPattern == 2) { PointF axis = Normalize(Sub(player, e.Pos), new PointF(1, 0)); PointF side = new(-axis.Y, axis.X); e.Target = Add(e.Pos, Scale(axis, 920)); e.Target2Start = Add(player, Scale(side, -460)); e.Target2 = Add(player, Scale(side, 460)); e.Windup = e.WindupMax = windup; } else BeginWindup(e, aimed ? player : e.Pos, windup); e.Cooldown = e.Hp < e.MaxHp * 0.5f ? 1.25f : 2.0f; return; }
-        if (e.Kind == EnemyKind.Mage && e.Cooldown <= 0) { BeginWindup(e, player, 0.8f); e.Cooldown = 2.2f; SeparateFromPack(e, dt); return; }
-        if (dist > (e.Boss ? 40 : 30)) e.Pos = MoveEnemy(e, Scale(Normalize(offset, PointF.Empty), (e.Boss ? 55 : 74 + room * 7) * dt));
-        else if (e.Cooldown <= 0) { BeginWindup(e, player, 0.45f); e.Cooldown = 1.35f; }
-        if (!e.Boss) SeparateFromPack(e, dt);
-    }
-
-    private static void BeginWindup(Enemy enemy, PointF target, float duration) { enemy.Target = target; enemy.Windup = enemy.WindupMax = duration; }
-    private void HitPlayer(float value) { health = Math.Max(0, health - value * (armorOn ? 0.7f : 1)); invulnerable = 0.6f; if (health <= 0) dead = true; }
-    private void Collect(Drop item)
-    {
-        switch (item.Kind) { case "gold": gold += item.Amount; notice = $"+{item.Amount} OURO"; break; case "potion": potions++; notice = "+1 PO√á√ÉO"; break; case "weapon": if (item.Amount is < 1 or > 2) { drops.Remove(item); return; } RollWeapon(item.Amount); ownedWeapons |= 1 << item.Amount; notice = $"ARMA {WeaponRarityName(weaponRarities[item.Amount])}: {WeaponDisplayName(item.Amount)}"; break; case "register": questStage = 23; notice = "REGISTRO DE PASSAGEM RECUPERADO"; ShowMemory("OS NOMES QUE N√ÉO S√ÉO POSSE", "O livro cont√©m rotas e relatos escritos por viajantes diferentes. Aven l√™ em voz alta apenas o trecho assinado por quem escolheu compartilh√°-lo. Uma anota√ß√£o de Nara confirma que ela seguiu adiante com o grupo, mas n√£o revela seu nome atual nem seu paradeiro. O registro fica com a comunidade, n√£o com V√©spera."); break; case "chorus": chorusMemory = true; questStage = 14; notice = "MEM√ìRIA: CORO DOS NOMES CONSUMIDOS"; ShowMemory("A TECEL√É DE NOMES", "Quando o fio se rompe, as vozes n√£o se calam. O Coro: ‚ÄúN√£o somos uma coisa que veio de fora. Somos todos os nomes que o Lume tomou e n√£o conseguiu guardar. Nara carregou parte de n√≥s para longe, mas o farol continua nos chamando.‚Äù O Sil√™ncio de Baixo √© a press√£o dessas mem√≥rias tentando voltar juntas."); break; case "first": firstMemory = true; questStage = 16; notice = "MEM√ìRIA: O PRIMEIRO NOME"; ShowMemory("A PRIMEIRA VIG√çLIA", "A guardi√£ recorda seu nome: Ilyra, a primeira Escutadora. Ela n√£o acendeu o Lume para apagar as vozes, mas para que toda mem√≥ria encontrasse um lugar onde ser ouvida. S√©culos depois, os guardi√µes inverteram o prop√≥sito e transformaram lembran√ßa em combust√≠vel. Ilyra entregou o pr√≥prio nome para impedir que o farol esquecesse sua origem. No √∫ltimo eco, viu Nara atravessar a corrente levando vozes que o Lume n√£o comportava. N√£o sabe o que aconteceu com ela depois, mas deixa um aviso: se algu√©m a encontrar, n√£o deve cham√°-la pelo nome que o farol escolheu."); break; case "west": westTrace = true; questStage = 19; notice = "MEM√ìRIA: MAPA DA MARGEM ESCOLHIDA"; ShowMemory("O MAPA DE NARA", "A Cart√≥grafa guardava um registro de quem atravessou o Vau. Entre os tra√ßos recentes, voc√™ reconhece a letra de Nara: ‚ÄúAqui, ningu√©m precisa conservar o nome que o Lume escolheu. Ajudei a levantar um abrigo e segui com os que queriam continuar a oeste. Se veio atr√°s de mim, n√£o use o parentesco como resposta. Pergunte primeiro quem escolhi ser.‚Äù A tinta e o caminho s√£o seus, mas o mapa n√£o diz quando ela partiu nem onde est√° agora."); break; case "charm": if (item.Amount is < 1 or > 5) { drops.Remove(item); return; } bool newCharm = (ownedCharms & (1 << (item.Amount - 1))) == 0; ownedCharms |= 1 << (item.Amount - 1); if (equippedCharm == 0 && equippedCharm2 != item.Amount) equippedCharm = item.Amount; else if (equippedCharm2 == 0 && equippedCharm != item.Amount) equippedCharm2 = item.Amount; notice = newCharm ? $"TALISM√É: {charmNames[item.Amount]}" : $"ECO DUPLICADO: {charmNames[item.Amount]}"; break; case "armor": armor = true; notice = "PEITORAL DE PEDRA ENCONTRADO"; break; case "relic": relic = true; notice = "FRAGMENTO DE VOZ ENCONTRADO"; ShowMemory("ECO PRESO NO RELIC√ÅRIO", "Nara: ‚ÄúEu vim por vontade pr√≥pria. Se encontrou esta lembran√ßa, procure o arquivo de Sileth.‚Äù"); break; case "seal": archiveSeal = true; damage += 8; questStage = 4; notice = "SELO DA VIG√çLIA ‚Ä¢ DANO +8"; ShowMemory("SELO DA VIG√çLIA", "O selo guarda a √∫ltima grava√ß√£o de Nara: ‚ÄúSileth n√£o apagou os nomes para alimentar o Lume. Ela tentou esconder que o pr√≥prio farol est√° aprendendo a escolher quem esquecer.‚Äù Leve esta prova de volta √† Curadora."); break; case "bell": riverBell = true; maxHealth += 20; health = Math.Min(maxHealth, health + 20); questStage = 6; notice = "SINO DE NARA ‚Ä¢ VIDA M√ÅXIMA +20"; ShowMemory("O SINO SEM BADALO", "A marca no bronze pertence a Nara. A voz gravada √© de uma mulher que atravessou o rio: ‚ÄúN√£o estou presa. O farol me escuta porque eu aceitei levar as mem√≥rias para longe da cidade. Se ainda me procura, n√£o tente me trazer de volta antes de ouvir o que o rio guarda.‚Äù"); break; case "lens": lumeLens = true; damage += 12; questStage = 9; notice = "PRISMA DO LUME ‚Ä¢ DANO +12"; ShowMemory("O PRISMA DA PRIMEIRA VIG√çLIA", "A luz projeta Nara ao lado de Sileth, anos antes da noite dos sinos. Nara escolheu ser a portadora das lembran√ßas que o Lume n√£o conseguia guardar. A imagem se rompe antes de mostrar onde ela est√° agora."); break; case "trace": naraTrace = true; questStage = 11; notice = "RASTRO DE NARA ‚Ä¢ NOVA MEM√ìRIA"; ShowMemory("A LEMBRAN√áA QUE SOBROU", "O eco n√£o mostra um rosto. Mostra Nara ensinando algu√©m, do outro lado do rio, a pronunciar um nome que V√©spera apagou. Sua √∫ltima frase n√£o pede resgate: ‚ÄúSe a cidade ainda lembrar de n√≥s, eu saberei voltar.‚Äù"); break; }
-        drops.Remove(item); noticeTime = 1.7f;
-    }
-
-    private void RollWeapon(int index)
-    {
-        int rarityRoll = random.Next(100);
-        int bonusRoll = random.Next(5);
-        int affixRoll = random.Next(3);
-        weaponRarities[index] = rarityRoll < 62 ? 0 : rarityRoll < 95 ? 1 : 2;
-        weaponBonuses[index] = weaponRarities[index] switch { 0 => bonusRoll % 3, 1 => 3 + bonusRoll % 4, _ => 7 + bonusRoll % 5 };
-        weaponAffixes[index] = weaponRarities[index] == 0 ? 0 : 1 + affixRoll;
-    }
-
-    private void RollWeapon(int index, int rarityRoll, int bonusRoll, int affixRoll)
-    {
-        weaponRarities[index] = rarityRoll < 62 ? 0 : rarityRoll < 95 ? 1 : 2;
-        weaponBonuses[index] = weaponRarities[index] switch { 0 => bonusRoll % 3, 1 => 3 + bonusRoll % 4, _ => 7 + bonusRoll % 5 };
-        weaponAffixes[index] = weaponRarities[index] == 0 ? 0 : 1 + affixRoll % 3;
-    }
-
-    private void UsePotion() { if (potions > 0 && health < maxHealth) { potions--; health = Math.Min(maxHealth, health + 45); notice = "+45 VIDA"; noticeTime = 1.3f; } else { notice = potions == 0 ? "SEM PO√á√ïES" : "VIDA J√Å EST√Å CHEIA"; noticeTime = 1.3f; } }
-    private void Interact()
-    {
-        if (room == 3) { InteractTown(); return; }
-        if (room == 18) { InteractRefuge(); return; }
-        if (enemies.Count != 0) { notice = "DERROTE OS INIMIGOS PRIMEIRO"; noticeTime = 1.2f; return; }
-        if (drops.Count != 0) { notice = "RECOLHA O LOOT ANTES DE AVAN√áAR"; noticeTime = 1.5f; return; }
-        MarkRoomCleared();
-        if (room < MemoryStonePositions.Length && (memoriesFound & (1 << room)) == 0 && Distance(player, MemoryStonePositions[room]) < 52)
-        {
-            memoriesFound |= 1 << room;
-            ShowMemory(room == 0 ? "INSCRI√á√ÉO NO VEST√çBULO" : "REGISTRO NO SAL√ÉO DOS OSSOS", MemoryStoneTexts[room]);
-            return;
-        }
-        if (room < 2 && player.X > 790) { room++; SetupRoom(); }
-        else if (room == 2 && Distance(player, new PointF(750, 330)) < 110) chestChoice = true;
-        else if (room == 4 && player.X > 790) { room = 5; SetupRoom(); ShowMemory("COFRE DO ARQUIVO", "As p√°ginas finais foram seladas por dentro. O guardi√£o que as protege j√° n√£o distingue o nome de quem jurou salvar."); }
-        else if (room == 4 && player.X < 115) { room = 3; SetupRoom(); }
-        else if (room == 5 && player.X < 115) { room = 4; SetupRoom(); }
-        else if (room == 5 && player.X > 790) { room = 3; SetupRoom(); ShowMemory("REGRESSO A V√âSPERA", "O selo do Arquivo Norte pesa na m√£o. Sileth precisa ver a grava√ß√£o de Nara."); }
-        else if (room == 6 && player.X > 790) { room = 7; SetupRoom(); ShowMemory("CAPELA AFOGADA", "Sob as pedras do rio, um sino toca sem badalo. Uma figura bloqueia a passagem e repete os nomes que a corrente levou."); }
-        else if (room == 6 && player.X < 115) { room = 3; SetupRoom(); }
-        else if (room == 7 && player.X < 115) { room = 6; SetupRoom(); }
-        else if (room == 7 && player.X > 790) { room = 3; SetupRoom(); ShowMemory("REGRESSO A V√âSPERA", "O bronze marcado com o nome de Nara ainda vibra. Edda reconhecer√° o sino."); }
-        else if (room == 8 && player.X < 115) { room = 3; SetupRoom(); }
-        else if (room == 8 && player.X > 790) { room = 9; SetupRoom(); ShowMemory("C√ÇMARA DO LUME", "O farol est√° aceso, mas sua luz n√£o se espalha: ela converge para um prisma suspenso sobre um po√ßo sem fundo."); }
-        else if (room == 9 && player.X < 115) { room = 8; SetupRoom(); }
-        else if (room == 9 && player.X > 790) { room = 3; SetupRoom(); ShowMemory("REGRESSO √Ä PRA√áA", "A imagem de Nara no prisma n√£o esclarece se ela ainda pode ser encontrada. Sileth precisa ver o que voc√™ descobriu."); }
-        else if (room == 9 && questStage >= 10 && Distance(player, new PointF(480, 500)) < 64) { room = 10; SetupRoom(); ShowMemory("A MARGEM SEM REFLEXO", "Atr√°s do prisma existe um leito que n√£o aparece em nenhum mapa. As pedras guardam vozes recusadas pelo Lume, mas nenhuma delas repete o nome de Nara."); }
-        else if (room == 10 && player.X < 115) { room = 9; SetupRoom(); }
-        else if (room == 10 && player.X > 790) { room = 11; SetupRoom(); ShowMemory("RESERVAT√ìRIO DAS VOZES", "As lembran√ßas recusadas convergem para um po√ßo. Algo se move entre elas, usando nomes esquecidos como armadura."); }
-        else if (room == 11 && player.X < 115) { room = 10; SetupRoom(); }
-        else if (room == 12 && player.X < 115) { room = 11; SetupRoom(); }
-        else if (room == 12 && player.X > 790) { room = 13; SetupRoom(); ShowMemory("CLAUSTRO DO CORO PARTIDO", "As vozes da costa convergem para uma abadia sem teto. No centro, uma figura costura nomes apagados com fios de √°gua escura."); }
-        else if (room == 13 && player.X < 115) { room = 12; SetupRoom(); }
-        else if (room == 13 && questStage >= 15 && Distance(player, new PointF(480, 500)) < 64) { room = 14; SetupRoom(); ShowMemory("BACIA DO PRIMEIRO NOME", townEnding == 1 ? "Os nomes devolvidos aos sinos fazem a pedra responder. Uma escadaria escondida desce at√© uma bacia constru√≠da antes do Lume." : "A luz do Lume atravessa o piso do Claustro e revela degraus para uma bacia que n√£o aparece nos mapas."); }
-        else if (room == 13 && player.X > 790 && chorusMemory) { room = 3; SetupRoom(); ShowMemory("REGRESSO A V√âSPERA", "Voc√™ traz um coro inteiro, mas n√£o uma voz √∫nica. Sileth precisa ouvi-lo para descobrir por que os nomes consumidos continuam chamando do fundo."); }
-        else if (room == 14 && player.X < 115) { room = 13; SetupRoom(); }
-        else if (room == 14 && player.X > 790) { room = 15; SetupRoom(); ShowMemory("SALA DA PRIMEIRA VIG√çLIA", "A bacia d√° lugar a uma c√¢mara circular. Uma guardi√£ sem rosto protege o primeiro nome que o Lume recebeu."); }
-        else if (room == 15 && player.X < 115) { room = 14; SetupRoom(); }
-        else if (room == 15 && player.X > 790 && firstMemory) { room = 3; SetupRoom(); ShowMemory("REGRESSO A V√âSPERA", "A guardi√£ n√£o era a origem do Lume, mas guardava a lembran√ßa de quem o acendeu. Sileth precisa ouvir o primeiro nome antes que a hist√≥ria avance."); }
-        else if (room == 16 && player.X < 115) { room = 3; SetupRoom(); ShowMemory("REGRESSO A V√âSPERA", "Edda espera no cais da pra√ßa. O Vau pode ser cruzado novamente quando quiser seguir o mapa."); }
-        else if (room == 16 && player.X > 790) { room = 17; SetupRoom(); ShowMemory("P√ÅTIO DAS TESTEMUNHAS", "As margens do Vau formam um p√°tio de t√°buas. Uma cart√≥grafa apagou as placas dos caminhos; ela observa quem chega antes de decidir se a passagem continua aberta."); }
-        else if (room == 17 && player.X < 115) { room = 16; SetupRoom(); }
-        else if (room == 17 && player.X > 790 && westTrace) { room = 3; SetupRoom(); ShowMemory("REGRESSO A V√âSPERA", "O mapa de Nara aponta al√©m do abrigo, mas a letra n√£o revela quando ela partiu. Edda saber√° levar voc√™s contra a corrente."); }
-        else if (room == 19 && player.X < 115) { room = 18; SetupRoom(); }
-        else if (room == 19 && player.X > 790) { room = 20; SetupRoom(); ShowMemory("CISTERNA DO REGISTRO VAZIO", "A cisterna foi constru√≠da para guardar √°gua, mas algu√©m a cobriu de contratos. Um Escriv√£o de Contrato protege o volume e ataca qualquer pessoa cujo nome consiga ler."); }
-        else if (room == 20 && player.X < 115) { room = 19; SetupRoom(); }
-        else if (room == 20 && player.X > 790 && questStage >= 23) { room = 18; SetupRoom(); }
-        else if (room == 11 && player.X > 790 && questStage >= 13) { room = 12; SetupRoom(); ShowMemory("COSTA DAS VOZES TARDIAS", townEnding == 1 ? "As badaladas com os nomes de V√©spera atravessam o rio. Ecos se afastam da trilha; a cidade devolveu for√ßa a estas vozes." : "O Lume permanece aceso atr√°s de voc√™. Sua luz atravessa as √°guas sem reflexo e atrai para a costa tudo o que foi esquecido."); }
-        else if (room == 11 && player.X > 790 && naraTrace) { room = 3; SetupRoom(); ShowMemory("REGRESSO A V√âSPERA", "Voc√™ carrega uma lembran√ßa que o Lume n√£o conseguiu apagar. Sileth precisa ouvi-la antes de decidir o que fazer com os arquivos."); }
-    }
-    private void InteractTown()
-    {
-        if (Distance(player, CuratorPosition) < 58)
-        {
-            if (questStage == 0)
-            {
-                questStage = 1;
-                ShowMemory("CURADORA SILETH", "Voc√™ trouxe uma lembran√ßa de Nara. Os registros oficiais n√£o contam por que ela desceu √† cripta. Leia o Livro das Aus√™ncias no posto antigo da pra√ßa; depois conversaremos sobre o que ele prova.");
-            }
-            else if (questStage == 1) ShowMemory("CURADORA SILETH", "O Livro das Aus√™ncias ficava no posto junto ao po√ßo. Procure a mesa marcada com o selo do farol.");
-            else if (questStage == 2)
-            {
-                questStage = 3; gold += 40; potions++;
-                ShowMemory("A CONFISS√ÉO DE SILETH", "Nara descobriu que o Lume consumia nomes, n√£o apenas lembran√ßas. Eu fechei o arquivo para impedir o p√¢nico. Ela procurava uma prova que pudesse convencer a cidade. Leve o registro ao Arquivo Norte, al√©m do rio.");
-                notice = "RECOMPENSA: 40 OURO E 1 PO√á√ÉO"; noticeTime = 3;
-            }
-            else if (questStage == 3) ShowMemory("CURADORA SILETH", "O Arquivo Norte fica al√©m do Rio Cego, pelo port√£o de pedra ao norte da pra√ßa. Traga o selo que Nara encontrou.");
-            else if (questStage == 4) { questStage = 5; gold += 65; potions++; ShowMemory("A VOZ QUE ESCOLHE", "Nara deixou uma prova de que o Lume n√£o √© apenas uma defesa. Ele come√ßou a escolher quais nomes consome. N√£o posso mais esconder isso. Vou reunir a cidade; voc√™ precisa seguir o rastro dela at√© o leito do Rio Cego."); notice = "MISS√ÉO CONCLU√çDA: 65 OURO E 1 PO√á√ÉO"; noticeTime = 3; }
-            else if (questStage == 9) { questStage = 10; gold += 120; potions++; ShowMemory("O NOME QUE O LUME GUARDA", "O prisma confirma que Nara aceitou ser portadora das lembran√ßas recusadas pelo Lume. Os arquivos n√£o dizem se ela est√° viva, morta ou fundida √† luz. N√£o vamos decidir seu destino com base em mais uma p√°gina incompleta. Re√∫na as mem√≥rias que faltam; quando chegar a hora, V√©spera precisa escolher sabendo o pre√ßo."); notice = "MISS√ÉO CONCLU√çDA: 120 OURO E 1 PO√á√ÉO"; noticeTime = 3; }
-            else if (questStage == 11 && naraTrace) { questStage = 12; gold += 150; potions++; ShowMemory("A VOZ DE QUEM AINDA LEMBRA", "Nara deixou uma mem√≥ria fora do alcance do farol. Ela ensinava os esquecidos a dizer os nomes uns dos outros, sem pedir que algu√©m a salvasse. Sileth: ‚ÄúPassei a vida escolhendo o que V√©spera podia lembrar. Agora a cidade ter√° de escolher por si. Ainda faltam vozes; n√£o vou fechar o arquivo outra vez.‚Äù"); notice = "MISS√ÉO CONCLU√çDA: 150 OURO E 1 PO√á√ÉO"; noticeTime = 3; }
-            else if (questStage == 14 && chorusMemory) { questStage = 15; gold += 200; potions++; ShowMemory("O CORO CHEGA √Ä PRA√áA", "As vozes n√£o s√£o uma criatura que possa ser destru√≠da. Cada nome que o Lume consome aumenta a press√£o sob a cidade. Sileth registra o Coro sem apagar nenhuma vers√£o: ‚ÄúSe Nara ainda est√° entre essas vozes, temos de escutar antes de decidir como cham√°-la de volta.‚Äù O rastro aponta para al√©m dos mapas de V√©spera."); notice = "MISS√ÉO CONCLU√çDA: 200 OURO E 1 PO√á√ÉO"; noticeTime = 3; }
-            else if (questStage == 16 && firstMemory) { questStage = 17; gold += 260; potions++; ShowMemory("O NOME DE ILYRA", "A primeira mem√≥ria devolve um prop√≥sito ao Lume, mas n√£o desfaz s√©culos de escolhas. Sileth anota a vers√£o de Ilyra ao lado das demais, sem fechar o arquivo: ‚ÄúNara atravessou o rio por vontade pr√≥pria. Se a encontrarmos, teremos de escutar o nome que ela escolheu para si.‚Äù Edda ouviu o Coro seguir para o oeste, contra a corrente, em dire√ß√£o a terras que V√©spera nunca registrou."); notice = "MISS√ÉO CONCLU√çDA: 260 OURO E 1 PO√á√ÉO"; noticeTime = 3; }
-            else if (questStage >= 17) ShowMemory("CURADORA SILETH", "O arquivo permanece aberto. Ilyra aponta para o oeste, contra a corrente do Rio Cego. Edda prepara um barco; quando a trilha estiver pronta, seguiremos para al√©m das terras conhecidas.");
-            else if (questStage >= 12 && townEnding == 0) { endingChoiceOpen = true; notice = "V√âSPERA ESPERA SUA DECIS√ÉO ‚Ä¢ 1 OU 2"; noticeTime = 3; }
-            else if (townEnding == 1) ShowMemory("CURADORA SILETH", "Os nomes voltaram aos sinos. A pra√ßa est√° com voc√™, mas as vozes al√©m do reservat√≥rio ainda faltam. Vamos procur√°-las sem fechar o arquivo outra vez.");
-            else if (townEnding == 2) ShowMemory("CURADORA SILETH", "O Lume continua aceso e os arquivos permanecem abertos. O Sil√™ncio n√£o desapareceu; siga o rastro para al√©m do reservat√≥rio antes que a cidade dependa de novo de nomes apagados.");
-            else ShowMemory("CURADORA SILETH", "O rastro de Nara segue pelo leito do Rio Cego. Com o sino de Edda, a passagem abaixo da capela pode ser aberta.");
-            return;
-        }
-        if (Distance(player, BellKeeperPosition) < 58)
-        {
-            if (questStage == 6 && riverBell) { questStage = 7; gold += 100; potions++; ShowMemory("EDDA RECONHECE O SINO", "Esse era o sino de travessia do meu pai. Nara o levou quando desceu ao rio; ela conhecia o caminho e decidiu cruz√°-lo. N√£o foi capturada. Guarde o sino: se ela voltar, vai saber que ainda lembramos seu nome."); notice = "MISS√ÉO CONCLU√çDA: 100 OURO E 1 PO√á√ÉO"; noticeTime = 3; }
-            else if (questStage == 19 && westTrace) { questStage = 20; gold += 375; potions++; ShowMemory("A CARTA DO REF√öGIO", "Nara construiu um lugar onde cada pessoa escolhe como ser√° chamada e partiu para oeste com quem pediu para atravessar. Edda reconhece as marcas do mapa: ‚ÄúConsigo levar voc√™s at√© a pr√≥xima curva, mas dali em diante ser√° preciso seguir a √°gua.‚Äù Sileth deixa o arquivo aberto para a volta do grupo. A not√≠cia n√£o prova onde Nara est√° agora."); notice = "RECOMPENSA: 375 OURO E 1 PO√á√ÉO"; noticeTime = 3; }
-            else if (questStage is 17 or 18) { questStage = 18; room = 16; SetupRoom(); ShowMemory("A TRAVESSIA DO CONTRA-RIO", "Edda solta o barco de fundo largo. Os nomes devolvidos aos sinos ajudam a encontrar a passagem entre as pedras; o Lume mantido aceso ilumina os marcos submersos, mas chama ecos para o Vau. A cart√≥grafa da margem guarda a entrada do ref√∫gio de Nara."); }
-            else if (questStage == 20) { questStage = 21; room = 18; SetupRoom(); ShowMemory("REF√öGIO DO VEIO CALMO", "O barco de Edda segue as lanternas at√© uma embarca√ß√£o antiga, encalhada entre as pedras. Pessoas que partiram de V√©spera constru√≠ram ali um abrigo. Nara ajudou a tra√ßar as primeiras rotas, mas continuou viagem com quem escolheu partir. Aven, o antigo barqueiro, espera junto √† mesa comunit√°ria."); }
-            else if (questStage >= 21) ShowMemory("EDDA, NO CAIS", "O mapa de Nara marca outra curva a oeste, al√©m do ref√∫gio. Ainda n√£o sabemos onde ela est√°; a trilha continua aberta.");
-            else if (townEnding == 1) ShowMemory("EDDA, TOCADORA DE SINOS", "Os nomes voltaram √†s badaladas. Vou ensinar as crian√ßas a ler cada sino, para que ningu√©m precise adivinhar quem foi esquecido."); else if (townEnding == 2) ShowMemory("EDDA, TOCADORA DE SINOS", "Os sinos agora marcam as horas do Lume. N√£o vou deixar que a luz transforme prote√ß√£o em sil√™ncio outra vez."); else ShowMemory("EDDA, TOCADORA DE SINOS", "Os sinos continuam inteiros. O que sumiu foram os nomes gravados neles. Quando tento lembrar quem os fundiu, s√≥ escuto √°gua debaixo da pra√ßa.");
-            return;
-        }
-        if (Distance(player, ArchiveBookPosition) < 58)
-        {
-            if (questStage == 0) ShowMemory("LIVRO DAS AUS√äNCIAS", "O volume est√° lacrado com o selo da Curadora. Fale com Sileth antes de tentar abri-lo.");
-            else if (questStage == 1)
-            {
-                questStage = 2;
-                ShowMemory("LIVRO DAS AUS√äNCIAS", "Registro de Vig√≠lia: o Guardi√£o entregou seu nome ao Lume. Quatorze nomes foram usados para mant√™-lo aceso. A ordem de encerramento do arquivo leva a assinatura de Sileth.");
-            }
-            else ShowMemory("LIVRO DAS AUS√äNCIAS", "As p√°ginas registram os nomes entregues ao Lume. A assinatura de Sileth fecha o √∫ltimo volume.");
-            return;
-        }
-        if (Distance(player, new PointF(480, 135)) < 64)
-        {
-            if (questStage >= 3) { room = 4; SetupRoom(); ShowMemory("ARQUIVO NORTE", "O port√£o cede. Entre as estantes, ecos repetem trechos de depoimentos que foram removidos do registro oficial."); }
-            else ShowMemory("PORT√ÉO DO ARQUIVO NORTE", "O selo da Curadora mant√©m o port√£o fechado. Descubra o que o Livro das Aus√™ncias prova e fale com Sileth.");
-            return;
-        }
-        if (Distance(player, new PointF(480, 520)) < 64)
-        {
-            if (questStage >= 7) { room = 8; SetupRoom(); ShowMemory("ESCADA DE CINZAS", "O sino abre uma passagem abaixo da Capela Afogada. A cada degrau, o ar fica mais quente e as lembran√ßas parecem chegar antes de voc√™."); }
-            else if (questStage >= 5) { room = 6; SetupRoom(); ShowMemory("LEITO DO RIO CEGO", "A √°gua desapareceu da superf√≠cie, mas as pedras ainda guardam as √∫ltimas palavras de quem cruzou o rio. O sino de Nara aponta para baixo da corrente."); }
-            else ShowMemory("PASSAGEM DO RIO", "Edda n√£o reconhece o caminho para o leito seco. Conclua sua investiga√ß√£o com Sileth antes de descer.");
-            return;
-        }
-        if (Distance(player, CryptGatePosition) < 58)
-        {
-            room = 2; SetupRoom(); ShowMemory("A CRIPTA", "A passagem continua aberta. O Guardi√£o protege o relic√°rio, mas a pr√≥xima pista est√° nos arquivos de V√©spera.");
-        }
-    }
-    private void InteractRefuge()
-    {
-        if (Distance(player, AvenPosition) < 60)
-        {
-            if (questStage == 21) { questStage = 22; ShowMemory("AVEN, O BARQUEIRO", "N√£o mantemos um livro de nomes. Cada viajante decide o que quer deixar na mesa e quem pode ler. Nara ajudou a marcar a Trilha dos Lumin√°rios e seguiu adiante com outras pessoas. Ela pediu que n√£o cont√°ssemos o nome que escolheu nem promet√™ssemos que voltaria. Se quiser continuar, proteja os avisos que cada pessoa decidiu compartilhar."); }
-            else if (questStage == 23) { questStage = 24; gold += 240; potions += 2; ShowMemory("A MESA CONTINUA ABERTA", "A comunidade escolhe guardar os registros de passagem aqui. A nota de Nara termina antes da pr√≥xima curva; ningu√©m vai preencher a lacuna por ela. Aven oferece provis√µes para a viagem e aponta as lanternas mais recentes para oeste. Se um dia ela voltar, ser√° ela quem decidir√° o que contar."); notice = "REF√öGIO: 240 OURO E 2 PO√á√ïES"; noticeTime = 3; }
-            else if (questStage >= 24) ShowMemory("AVEN, O BARQUEIRO", "A mesa continua aberta a quem escolhe deixar um relato. A pr√≥xima curva fica a oeste; os viajantes que passaram por aqui decidiram compartilhar apenas o in√≠cio da trilha.");
-            else ShowMemory("AVEN, O BARQUEIRO", "Este barco encalhado virou abrigo. Ningu√©m precisa escrever um nome para ficar aqui.");
-            return;
-        }
-        if (Distance(player, SeraPosition) < 58) { ShowMemory("SERA, REPARADORA DE LANTERNAS", "As lanternas n√£o marcam uma rota para tomar posse dela. Cada pessoa acende uma s√≥ quando quer deixar um aviso para quem vier depois."); return; }
-        if (Distance(player, NoaPosition) < 58) { ShowMemory("NOA, APRENDIZ DE CART√ìGRAFA", "Aprendi a desenhar os trechos que meus amigos me deixam ver. O resto do mapa fica em branco por escolha deles."); return; }
-        if (player.X < 150) { room = 3; SetupRoom(); return; }
-        if (player.X > 790 && questStage >= 22) { room = 19; SetupRoom(); ShowMemory("TRILHA DOS LUMIN√ÅRIOS", "Pequenas lanternas indicam os pontos onde viajantes aceitaram deixar um aviso. As marcas n√£o formam um mapa completo: cada pessoa decidiu quanto do caminho compartilhar."); return; }
-        notice = questStage < 22 ? "FALE COM AVEN PARA CONHECER A COMUNIDADE" : "E  SEGUIR A TRILHA DOS LUMIN√ÅRIOS"; noticeTime = 1.5f;
-    }
-    private void ShowMemory(string titleText, string bodyText) { memoryTitle = titleText; memoryText = bodyText; memoryOverlay = true; }
-    private void MarkRoomCleared() { if (room != 3 && enemies.Count == 0 && drops.Count == 0) clearedRooms |= 1 << room; }
-    private Enemy? lockedTarget;
-    private void CycleTarget() { if (enemies.Count == 0) { lockedTarget = null; return; } int i = lockedTarget is null ? -1 : enemies.IndexOf(lockedTarget); lockedTarget = enemies[(i + 1) % enemies.Count]; notice = $"ALVO: {EnemyName(lockedTarget)}"; noticeTime = 1.4f; }
-    private void EquipWeapon(int index) { if ((ownedWeapons & (1 << index)) == 0) { notice = "ARMA AINDA N√ÉO ENCONTRADA"; noticeTime = 1.4f; return; } damage += WeaponPower(index) - WeaponPower(weapon); weapon = index; }
-    private void CycleCharm(int slot)
-    {
-        int current = slot == 1 ? equippedCharm : equippedCharm2;
-        int other = slot == 1 ? equippedCharm2 : equippedCharm;
-        for (int i = 1; i <= 5; i++)
-        {
-            int candidate = ((current - 1 + i + 5) % 5) + 1;
-            if (candidate == current || candidate == other || (ownedCharms & (1 << (candidate - 1))) == 0) continue;
-            if (slot == 1) equippedCharm = candidate; else equippedCharm2 = candidate;
-            notice = $"ESPA√áO {slot}: {charmNames[candidate]}";
-            noticeTime = 1.6f; return;
-        }
-        if (current != 0) { if (slot == 1) equippedCharm = 0; else equippedCharm2 = 0; notice = $"ESPA√áO {slot} DE TALISM√É VAZIO"; }
-        else notice = "NENHUM TALISM√É DISPON√çVEL PARA ESTE ESPA√áO";
-        noticeTime = 1.6f;
-    }
-    private bool HasCharm(int charm) => equippedCharm == charm || equippedCharm2 == charm;
-    private bool HasCharmPair(int first, int second) => equippedCharm == first && equippedCharm2 == second || equippedCharm == second && equippedCharm2 == first;
-    private float WhirlwindMultiplier() => HasCharmPair(1, 2) ? 2.52f : HasCharm(1) ? 2.16f : 1.6f;
-    private float WhirlwindCooldownPenalty() => !HasCharm(1) ? 0f : HasCharmPair(1, 2) ? 0.5f : 1f;
-    private float VoiceShardDamage() => damage * (HasCharmPair(3, 5) ? 2.05f : HasCharm(3) ? 1.8f : 1.35f) * WeaponSkillMultiplier();
-    private float VoiceShardLifetime() => HasCharm(5) ? 1.8f : 1.25f;
-    private float VoiceShardCooldown() => Math.Max(3.5f, 7f - skillTalent * 0.5f) + (HasCharm(5) ? HasCharmPair(3, 5) ? 0.5f : 1.25f : 0f);
-    private float OutgoingDamageMultiplier(Enemy enemy) => !HasCharm(4) ? 1f : enemy.Boss ? 1.25f : 0.8f;
-    private float DashDuration() => HasCharm(2) ? 0.29f : 0.17f;
-    private float DashCooldown() => Math.Max(0.35f, 1.15f - dodgeTalent * 0.12f) + (HasCharm(2) && !HasCharmPair(2, 3) ? 0.3f : 0f);
-    private float CriticalChance() => (weapon == 2 ? 0.25f : 0.12f) + (HasCharm(3) ? HasCharmPair(1, 3) ? 0.17f : 0.12f : 0f) + (weaponAffixes[weapon] == 2 ? weaponRarities[weapon] == 2 ? 0.11f : 0.07f : 0f);
-
-    private static bool ValidWeaponData(SaveData s)
-    {
-        if (s.WeaponBonuses is null || s.WeaponBonuses.Length != 3 || s.WeaponRarities is null || s.WeaponRarities.Length != 3 || s.WeaponAffixes is null || s.WeaponAffixes.Length != 3) return false;
-        for (int i = 0; i < 3; i++)
-        {
-            int rarity = s.WeaponRarities[i], bonus = s.WeaponBonuses[i], affix = s.WeaponAffixes[i];
-            if (rarity == 0 ? bonus is < 0 or > 2 || affix != 0 : rarity == 1 ? bonus is < 3 or > 6 || affix is < 1 or > 3 : rarity == 2 ? bonus is < 7 or > 11 || affix is < 1 or > 3 : true) return false;
-            if ((s.OwnedWeapons & (1 << i)) == 0 && (rarity != 0 || bonus != 0 || affix != 0)) return false;
-        }
-        return true;
-    }
-    private void RestoreWeaponData(SaveData s) { Array.Copy(s.WeaponBonuses, weaponBonuses, 3); Array.Copy(s.WeaponRarities, weaponRarities, 3); Array.Copy(s.WeaponAffixes, weaponAffixes, 3); }
-    private float CriticalMultiplier() => HasCharm(3) ? HasCharmPair(1, 3) ? 2.75f : 2.5f : 2f;
-    private float BasicAttackCooldown() => (weapon == 2 ? 0.23f : 0.33f) + (HasCharm(3) ? HasCharmPair(1, 3) ? 0.03f : 0.06f : 0f);
-    private PointF MoveEnemy(Enemy e, PointF delta) { PointF p = e.Pos; PointF x = new(p.X + delta.X, p.Y), y = new(p.X, p.Y + delta.Y); if (!Blocked(x, e.Radius)) p.X = x.X; if (!Blocked(new PointF(p.X, y.Y), e.Radius)) p.Y = y.Y; return new PointF(Math.Clamp(p.X, 85, 875), Math.Clamp(p.Y, 128, 533)); }
-    private void SeparateFromPack(Enemy enemy, float dt) { PointF push = PointF.Empty; foreach (Enemy other in enemies) { if (ReferenceEquals(enemy, other)) continue; PointF away = Sub(enemy.Pos, other.Pos); float d = Length(away); if (d > 0.01f && d < 40) push = Add(push, Scale(away, (40 - d) / (40 * d))); } if (Length(push) > 0.01f) enemy.Pos = MoveEnemy(enemy, Scale(Normalize(push, PointF.Empty), 52 * dt)); }
-    private void MovePlayer(PointF delta) { PointF x = new(player.X + delta.X, player.Y), y = new(player.X, player.Y + delta.Y); if (!Blocked(x)) player.X = x.X; if (!Blocked(new PointF(player.X, y.Y))) player.Y = y.Y; player.X = Math.Clamp(player.X, 85, 875); player.Y = Math.Clamp(player.Y, 128, 533); }
-    private bool Blocked(PointF p, float radius = 12) { RectangleF body = new(p.X - radius, p.Y - radius, radius * 2, radius * 2); RectangleF[] obstacles = room == 3 ? TownBuildings : room == 18 ? RefugeWalls : room == 19 ? RidgeWalls : room == 20 ? LedgerWalls : room == 4 ? ArchiveWalls : room == 5 ? VaultWalls : room == 6 ? RiverWalls : room == 7 ? BellChamberWalls : room == 8 ? AshGalleryWalls : room == 9 ? LumeChamberWalls : room == 10 ? NameShoreWalls : room == 11 ? VoiceWellWalls : room == 12 ? FarReachWalls : room == 13 ? NameCloisterWalls : room == 14 ? FirstBasinWalls : room == 15 ? FirstVigilWalls : room == 16 ? WestFordWalls : room == 17 ? WitnessYardWalls : Walls; return obstacles.Any(w => w.IntersectsWith(body)); }
-    private bool BlockedLine(PointF a, PointF b)
-    {
-        int steps = Math.Max(1, (int)(Distance(a, b) / 6));
-        RectangleF[] obstacles = room == 18 ? RefugeWalls : room == 19 ? RidgeWalls : room == 20 ? LedgerWalls : room == 4 ? ArchiveWalls : room == 5 ? VaultWalls : room == 6 ? RiverWalls : room == 7 ? BellChamberWalls : room == 8 ? AshGalleryWalls : room == 9 ? LumeChamberWalls : room == 10 ? NameShoreWalls : room == 11 ? VoiceWellWalls : room == 12 ? FarReachWalls : room == 13 ? NameCloisterWalls : Walls;
-        for (int i = 0; i <= steps; i++) { float t = i / (float)steps; PointF p = new(a.X + (b.X - a.X) * t, a.Y + (b.Y - a.Y) * t); if (obstacles.Any(w => w.Contains(p))) return true; }
-        return false;
-    }
-
-    private SaveData CaptureSaveData() => new() { Room = room, Level = level, Xp = xp, Gold = gold, Potions = potions, Damage = damage, Health = health, MaxHealth = maxHealth, Weapon = weapon, OwnedWeapons = ownedWeapons, Armor = armor, Relic = relic, HealthTalent = healthTalent, SkillTalent = skillTalent, DodgeTalent = dodgeTalent, RoomCleared = room == 3 || enemies.Count == 0 && drops.Count == 0, Completed = victory, MemoriesFound = memoriesFound, QuestStage = questStage, ClearedRooms = clearedRooms | (room != 3 && enemies.Count == 0 && drops.Count == 0 ? 1 << room : 0), ArchiveSeal = archiveSeal, RiverBell = riverBell, LumeLens = lumeLens, NaraTrace = naraTrace, ChorusMemory = chorusMemory, FirstMemory = firstMemory, WestTrace = westTrace, OwnedCharms = ownedCharms, EquippedCharm = equippedCharm, EquippedCharm2 = equippedCharm2, TownEnding = townEnding, WeaponBonuses = weaponBonuses.ToArray(), WeaponRarities = weaponRarities.ToArray(), WeaponAffixes = weaponAffixes.ToArray() };
-    private void SaveGame() { Directory.CreateDirectory(Path.GetDirectoryName(SavePath)!); File.WriteAllText(SavePath, JsonSerializer.Serialize(CaptureSaveData())); notice = "PROGRESSO SALVO"; noticeTime = 2; }
-    private string LegacySavePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Godot", "app_userdata", "Scadryk RPG", "scadryk-save.cfg");
-    private SaveData ReadLegacySave()
-    {
-        if (!File.Exists(LegacySavePath)) throw new FileNotFoundException();
-        string section = ""; var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (string raw in File.ReadLines(LegacySavePath)) { string line = raw.Trim(); if (line.StartsWith('[') && line.EndsWith(']')) { section = line[1..^1]; continue; } int split = line.IndexOf('='); if (split > 0) values[section + "." + line[..split].Trim()] = line[(split + 1)..].Trim().Trim('"'); }
-        string Get(string key, string fallback = "") => values.GetValueOrDefault("player." + key, fallback);
-        int Int(string key, int fallback = 0) => int.TryParse(Get(key), out int n) ? n : fallback;
-        float Float(string key, float fallback) => float.TryParse(Get(key), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float n) ? n : fallback;
-        bool Bool(string key, bool fallback = false) => bool.TryParse(Get(key), out bool b) ? b : fallback;
-        int savedWeapon = Int("weapon"); int savedRoom = Int("room");
-        return new SaveData { Room = savedRoom, Level = Int("level", 1), Xp = Int("xp"), Gold = Int("gold"), Potions = Int("potions", 2), Damage = Int("damage", 25), Health = Float("health", 100), MaxHealth = Float("max_health", 100), Weapon = savedWeapon, OwnedWeapons = Int("owned_weapons", savedWeapon == 1 ? 3 : savedRoom > 0 ? 5 : 1), Armor = Bool("has_armor"), Relic = Bool("has_relic"), HealthTalent = Int("health_talent"), SkillTalent = Int("skill_talent"), DodgeTalent = Int("dodge_talent"), RoomCleared = Bool("room_cleared", true), Completed = Bool("completed") };
-    }
-    private void LoadGame()
-    {
-        try
-        {
-            bool migrated = !File.Exists(SavePath); SaveData s = migrated ? ReadLegacySave() : JsonSerializer.Deserialize<SaveData>(File.ReadAllText(SavePath)) ?? throw new InvalidDataException();
-            if (!ValidWeaponData(s) || s.Room is < 0 or > 20 || s.Level is < 1 or > 10000 || s.Xp < 0 || s.Xp >= s.Level * 60 || s.Weapon is < 0 or > 2 || s.OwnedWeapons < 1 || s.OwnedWeapons > 7 || (s.OwnedWeapons & (1 << s.Weapon)) == 0 || s.MaxHealth < 1 || s.Health <= 0 || s.Health > s.MaxHealth || s.Potions < 0 || s.Gold < 0 || s.Damage < 1 || s.MemoriesFound is < 0 or > 3 || s.QuestStage is < 0 or > 24 || s.ClearedRooms is < 0 or > 2097151 || s.Completed && s.Room != 2 || s.OwnedCharms is < 0 or > 31 || s.EquippedCharm is < 0 or > 5 || s.EquippedCharm2 is < 0 or > 5 || s.EquippedCharm > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm - 1))) == 0 || s.EquippedCharm2 > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm2 - 1))) == 0 || s.EquippedCharm > 0 && s.EquippedCharm == s.EquippedCharm2 || s.TownEnding is < 0 or > 2 || s.QuestStage == 13 && s.TownEnding == 0 || s.QuestStage >= 14 && !s.ChorusMemory || s.QuestStage >= 16 && !s.FirstMemory || s.QuestStage >= 19 && !s.WestTrace || s.WestTrace && s.QuestStage < 19 || s.Room >= 14 && s.QuestStage < 15 || s.Room >= 16 && s.QuestStage < 18 || s.Room >= 18 && s.QuestStage < 21 || s.Room >= 19 && s.QuestStage < 22 || s.Room == 20 && s.QuestStage < 22) throw new InvalidDataException();
-            StartGame(); room = s.Room; level = s.Level; xp = s.Xp; gold = s.Gold; potions = s.Potions; damage = s.Damage; health = s.Health; maxHealth = s.MaxHealth; weapon = s.Weapon; ownedWeapons = s.OwnedWeapons; RestoreWeaponData(s); armor = s.Armor; relic = s.Relic; healthTalent = s.HealthTalent; skillTalent = s.SkillTalent; dodgeTalent = s.DodgeTalent; memoriesFound = s.MemoriesFound; questStage = s.QuestStage; clearedRooms = s.ClearedRooms | (s.RoomCleared && s.Room != 3 ? 1 << s.Room : 0); archiveSeal = s.ArchiveSeal; riverBell = s.RiverBell; lumeLens = s.LumeLens; naraTrace = s.NaraTrace; chorusMemory = s.ChorusMemory; firstMemory = s.FirstMemory; westTrace = s.WestTrace; ownedCharms = s.OwnedCharms; equippedCharm = s.EquippedCharm; equippedCharm2 = s.EquippedCharm2; townEnding = s.TownEnding; SetupRoom(); if (s.RoomCleared) enemies.Clear(); victory = s.Completed; title = false; storyOverlay = false;
-            if (migrated) SaveGame(); notice = migrated ? "SAVE ANTIGO MIGRADO" : "PROGRESSO CARREGADO"; noticeTime = 2;
-        }
-        catch { notice = "NENHUM SALVAMENTO V√ÅLIDO"; noticeTime = 2; }
-    }
-
-    protected override void OnPaint(PaintEventArgs e)
-    {
-        Graphics g = e.Graphics; g.SmoothingMode = SmoothingMode.AntiAlias; g.Clear(Color.FromArgb(16, 19, 23));
-        using var goldBrush = new SolidBrush(Color.FromArgb(230, 193, 129)); using var textBrush = new SolidBrush(Color.FromArgb(222, 216, 201));
-        using var panel = new SolidBrush(Color.FromArgb(28, 32, 35)); using var floor = new SolidBrush(Color.FromArgb(54, 60, 53)); using var tile = new Pen(Color.FromArgb(70, 78, 68));
-        using var headerFont = new Font("Georgia", 22, FontStyle.Bold); using var hudFont = new Font("Segoe UI", 12, FontStyle.Bold); using var roomFont = new Font("Georgia", 13, FontStyle.Bold); using var helpFont = new Font("Segoe UI", 10);
-        g.FillRectangle(panel, 0, 0, 960, 83); g.DrawString("SCADRYK", headerFont, goldBrush, 24, 18);
-        g.DrawString($"VIDA {health:0}/{maxHealth:0}     N√çVEL {level}     XP {xp}/{level * 60}     OURO {gold}     PO√á√ïES {potions}", hudFont, textBrush, 255, 29);
-        using var healthBack = new SolidBrush(Color.FromArgb(52, 56, 51)); using var healthBar = new SolidBrush(health / maxHealth < .25f ? Color.IndianRed : Color.FromArgb(112, 171, 123));
-        g.FillRectangle(healthBack, 25, 58, 190, 11); g.FillRectangle(healthBar, 25, 58, 190 * health / maxHealth, 11);
-        if (room == 3) DrawTownEnvironment(g, floor, tile);
-        else if (room == 18) DrawRefugeEnvironment(g, floor, tile);
-        else if (room is 19 or 20) DrawLedgerTrailEnvironment(g, floor, tile);
-        else if (room is 4 or 5) DrawArchiveEnvironment(g, floor, tile);
-        else if (room is 6 or 7) DrawRiverEnvironment(g, floor, tile);
-        else if (room is 16 or 17) DrawWestWitnessEnvironment(g, floor, tile);
-        else if (room is 14 or 15) DrawFirstVigilEnvironment(g, floor, tile);
-        else if (room is 12 or 13) DrawFarReachEnvironment(g, floor, tile);
-        else if (room >= 10) DrawNameShoreEnvironment(g, floor, tile);
-        else if (room >= 8) DrawLumeEnvironment(g, floor, tile);
-        else
-        {
-            g.FillRectangle(floor, 65, 108, 830, 445); for (int y = 0; y < 7; y++) for (int x = 0; x < 12; x++) g.DrawRectangle(tile, 70 + x * 68, 112 + y * 62, 67, 61);
-            using var wallBrush = new SolidBrush(Color.FromArgb(90, 79, 62)); using var wallEdge = new Pen(Color.FromArgb(154, 132, 91), 3); foreach (RectangleF wall in Walls) { g.FillRectangle(wallBrush, wall); g.DrawRectangle(wallEdge, wall.X, wall.Y, wall.Width, wall.Height); }
-            using var exitPen = new Pen(enemies.Count == 0 && drops.Count == 0 ? Color.LightGreen : Color.FromArgb(45, 48, 43), 8); g.DrawRectangle(exitPen, 882, 293, 3, 75);
-        }
-        if (bellWaveTime > 0) DrawBellWave(g);
-        foreach (EchoShard shard in echoShards) DrawEchoShard(g, shard);
-        foreach (Enemy enemy in enemies) DrawEnemy(g, enemy);
-        foreach (Drop item in drops) DrawDrop(g, item);
-        DrawPlayer(g);
-        g.DrawString(room == 3 || room == 18 ? roomNames[room] : room < 3 ? $"{room + 1} / 3   {roomNames[room]}" : room < 6 ? $"{room - 3} / 2   {roomNames[room]}" : room < 8 ? $"{room - 5} / 2   {roomNames[room]}" : room < 10 ? $"{room - 7} / 2   {roomNames[room]}" : room < 12 ? $"{room - 9} / 2   {roomNames[room]}" : room < 14 ? $"{room - 11} / 2   {roomNames[room]}" : room < 16 ? $"{room - 13} / 2   {roomNames[room]}" : room < 18 ? $"{room - 15} / 2   {roomNames[room]}" : $"{room - 18} / 2   {roomNames[room]}", roomFont, goldBrush, 67, 572);
-        int memoriesRead = (memoriesFound & 1) + ((memoriesFound >> 1) & 1);
-        g.DrawString($"ECOS {memoriesRead} / 2", hudFont, goldBrush, 760, 572);
-        if (room == 3) g.DrawString(TownObjective(), hudFont, goldBrush, 67, 592);
-        else if (room == 18) g.DrawString("OBJETIVO: " + (questStage < 22 ? "CONHE√áA A COMUNIDADE E FALE COM AVEN" : questStage == 22 ? "SIGA A TRILHA E RECUPERE O REGISTRO COMPARTILHADO" : questStage == 23 ? "LEVE O REGISTRO DE VOLTA A AVEN" : "SIGA A PR√ìXIMA CURVA A OESTE"), hudFont, goldBrush, 67, 592);
-        else if (room >= 4 && room < 6) g.DrawString(ArchiveObjective(), hudFont, goldBrush, 67, 592);
-        else if (room is 6 or 7) g.DrawString(RiverObjective(), hudFont, goldBrush, 67, 592);
-        else if (room >= 8) g.DrawString(LumeObjective(), hudFont, goldBrush, 67, 592);
-        g.DrawString(room is 3 or 18 ? "WASD mover   E falar/investigar   F5 salvar   I invent√°rio" : "WASD mover   ESPA√áO/CLIQUE atacar   SHIFT esquivar   R redemoinho   F estilha√ßo   V sino   Q po√ß√£o   E interagir   I invent√°rio", helpFont, textBrush, 67, 619);
-        if (room < MemoryStonePositions.Length && (memoriesFound & (1 << room)) == 0) DrawMemoryStone(g, MemoryStonePositions[room], Distance(player, MemoryStonePositions[room]) < 58);
-        if (noticeTime > 0) DrawCentered(g, notice, 170, new Font("Segoe UI", 13, FontStyle.Bold), Color.FromArgb(230, 193, 129));
-        if (title || dead || victory) DrawOverlay(g, title ? "SCADRYK" : victory ? "VIT√ìRIA" : "VOC√ä CAIU", title ? "ENTER PARA COME√áAR    ‚Ä¢    C CARREGAR SAVE" : "ENTER PARA RECOME√áAR    ‚Ä¢    F5 SALVAR");
-        if (inventoryOpen) DrawInventory(g);
-        if (talentChoice) DrawChoice(g, $"SUBIU DE N√çVEL ‚Äî ESCOLHA ({pendingTalents} PENDENTES)", "1. VIGOR  +20 VIDA M√ÅXIMA", "2. DOM√çNIO  t√©cnicas recarregam mais r√°pido", "3. AGILIDADE  esquiva recarrega mais r√°pido");
-        if (chestChoice) DrawChoice(g, "BA√ö DA CRIPTA ‚Äî ESCOLHA UMA RECOMPENSA", "1. 75 OURO", "2. DUAS PO√á√ïES", "3. RECUPERAR TODA A VIDA");
-        if (endingChoiceOpen) DrawChoice(g, "O QUE V√âSPERA DEVE LEMBRAR?", "1. DEVOLVER OS NOMES  ‚Ä¢  +20 VIDA M√ÅXIMA", "2. MANTER O LUME  ‚Ä¢  +10 DANO", "3. ADIAR A DECIS√ÉO");
-        if (storyOverlay) DrawStoryOverlay(g);
-        if (memoryOverlay) DrawMemoryOverlay(g);
-    }
-
-    private string TownObjective() => questStage switch
-    {
-        0 => "OBJETIVO: ENCONTRE A CURADORA SILETH",
-        1 => "OBJETIVO: LEIA O LIVRO DAS AUS√äNCIAS",
-        2 => "OBJETIVO: VOLTE E FALE COM SILETH",
-        3 => "OBJETIVO: ENTRE NO ARQUIVO NORTE AO NORTE",
-        4 => "OBJETIVO: MOSTRE O SELO DA VIG√çLIA A SILETH",
-        5 => "OBJETIVO: DES√áA AO LEITO DO RIO CEGO AO SUL",
-        6 => "OBJETIVO: MOSTRE A EDDA O SINO DE NARA",
-        7 => "OBJETIVO: DES√áA A ESCADA ABERTA PELO SINO",
-        9 => "OBJETIVO: MOSTRE O PRISMA DO LUME A SILETH",
-        10 => "OBJETIVO: DES√áA AL√âM DO PRISMA",
-        11 => "OBJETIVO: MOSTRE A NOVA MEM√ìRIA A SILETH",
-        12 => "OBJETIVO: DECIDA COM SILETH O QUE V√âSPERA DEVE LEMBRAR",
-        13 => townEnding == 1 ? "OS NOMES VOLTARAM ‚Ä¢ ATRAVESSE O RESERVAT√ìRIO" : "O LUME PERMANECE ‚Ä¢ ATRAVESSE O RESERVAT√ìRIO",
-        14 => "OBJETIVO: LEVE O CORO DOS NOMES A SILETH",
-        15 => "OBJETIVO: INVESTIGUE A PASSAGEM SOB O CLAUSTRO",
-        16 => "OBJETIVO: LEVE A MEM√ìRIA DE ILYRA A SILETH",
-        17 => "OBJETIVO: PE√áA A EDDA PARA CRUZAR O RIO",
-        18 => "OBJETIVO: ATRAVESSE O VAU DOS NOMES ESCOLHIDOS",
-        19 => "OBJETIVO: LEVE O MAPA DE NARA A EDDA",
-        20 => "OBJETIVO: FALE COM EDDA PARA SEGUIR A OESTE",
-        21 => "OBJETIVO: FALE COM AVEN NO REF√öGIO",
-        22 => "OBJETIVO: ATRAVESSE A TRILHA E RECUPERE O REGISTRO",
-        23 => "OBJETIVO: DEVOLVA O REGISTRO √Ä COMUNIDADE",
-        24 => "A PR√ìXIMA CURVA SEGUE A OESTE ‚Ä¢ SEM RASTRO ATUAL",
-        _ => "PR√ìXIMO DESTINO: RE√öNA AS MEM√ìRIAS QUE FALTAM"
-    };
-
-    private void DrawTownEnvironment(Graphics g, Brush ground, Pen tile)
-    {
-        g.FillRectangle(ground, 65, 108, 830, 445);
-        for (int y = 0; y < 7; y++) for (int x = 0; x < 12; x++) g.DrawRectangle(tile, 70 + x * 68, 112 + y * 62, 67, 61);
-        using var road = new SolidBrush(Color.FromArgb(94, 84, 68));
-        using var plaza = new SolidBrush(Color.FromArgb(105, 96, 78));
-        using var trim = new Pen(Color.FromArgb(159, 139, 101), 2);
-        g.FillRectangle(road, 345, 274, 315, 118); g.FillRectangle(road, 430, 242, 116, 210);
-        g.FillEllipse(plaza, 424, 290, 128, 92); g.DrawEllipse(trim, 424, 290, 128, 92);
-        using var water = new SolidBrush(townEnding == 1 ? Color.FromArgb(123, 180, 153) : townEnding == 2 ? Color.FromArgb(183, 132, 77) : Color.FromArgb(88, 142, 145));
-        g.FillEllipse(water, 458, 315, 60, 42); g.DrawEllipse(trim, 458, 315, 60, 42);
-        if (townEnding != 0) DrawCentered(g, townEnding == 1 ? "OS NOMES VOLTARAM" : "O LUME PERMANECE", 402, new Font("Segoe UI", 9, FontStyle.Bold), townEnding == 1 ? Color.LightGreen : Color.PeachPuff);
-        DrawTownHouse(g, TownBuildings[0], "FERRARIA"); DrawTownHouse(g, TownBuildings[1], "ARQUIVO");
-        DrawTownHouse(g, TownBuildings[2], "CASAS"); DrawTownHouse(g, TownBuildings[3], "ARMAZ√âM");
-        using var gateBrush = new SolidBrush(Color.FromArgb(116, 100, 70)); using var gatePen = new Pen(Color.FromArgb(220, 189, 125), 3);
-        g.FillRectangle(gateBrush, 70, 298, 30, 64); g.DrawRectangle(gatePen, 70, 298, 30, 64);
-        using var bookBrush = new SolidBrush(Color.FromArgb(107, 56, 43)); using var bookEdge = new Pen(Color.FromArgb(234, 204, 133), 2);
-        g.FillRectangle(bookBrush, ArchiveBookPosition.X - 13, ArchiveBookPosition.Y - 7, 26, 18); g.DrawRectangle(bookEdge, ArchiveBookPosition.X - 13, ArchiveBookPosition.Y - 7, 26, 18);
-        DrawTownPerson(g, CuratorPosition, "SILETH", Color.FromArgb(117, 73, 104), Distance(player, CuratorPosition) < 72);
-        DrawTownPerson(g, BellKeeperPosition, "EDDA", Color.FromArgb(111, 137, 124), Distance(player, BellKeeperPosition) < 72);
-        if (Distance(player, ArchiveBookPosition) < 72) DrawCentered(g, "E  LER", ArchiveBookPosition.Y + 22, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, ArchiveBookPosition.X);
-        if (Distance(player, CryptGatePosition) < 72) DrawCentered(g, "E  CRIPTA", CryptGatePosition.Y + 42, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, CryptGatePosition.X + 15);
-        PointF archiveGate = new(480, 135);
-        using var portal = new Pen(questStage >= 3 ? Color.FromArgb(219, 178, 112) : Color.FromArgb(88, 75, 61), 5);
-        g.DrawArc(portal, archiveGate.X - 28, archiveGate.Y - 24, 56, 52, 180, 180);
-        DrawCentered(g, questStage >= 3 ? "ARQUIVO NORTE" : "PORT√ÉO SELADO", archiveGate.Y - 38, new Font("Segoe UI", 8, FontStyle.Bold), Color.FromArgb(230, 193, 129), archiveGate.X);
-        if (Distance(player, archiveGate) < 72) DrawCentered(g, "E  ENTRAR", archiveGate.Y + 28, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, archiveGate.X);
-        PointF riverGate = new(480, 520);
-        using var riverPortal = new Pen(questStage >= 5 ? Color.FromArgb(112, 179, 185) : Color.FromArgb(72, 85, 82), 5);
-        g.DrawArc(riverPortal, riverGate.X - 28, riverGate.Y - 22, 56, 50, 0, 180);
-        DrawCentered(g, questStage >= 7 ? "ESCADA DO LUME" : questStage >= 5 ? "RIO CEGO" : "LEITO SELADO", riverGate.Y - 4, new Font("Segoe UI", 8, FontStyle.Bold), Color.FromArgb(190, 211, 196), riverGate.X);
-        if (Distance(player, riverGate) < 72) DrawCentered(g, "E  DESCER", riverGate.Y - 38, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, riverGate.X);
-    }
-
-    private string ArchiveObjective() => room == 4 ? "OBJETIVO: CRUZE A GALERIA E ENCONTRE O COFRE" : archiveSeal ? "OBJETIVO: VOLTE A V√âSPERA COM O SELO" : "OBJETIVO: RECUPERE O REGISTRO NO COFRE";
-    private string RiverObjective() => room == 6 ? "OBJETIVO: SIGA A CORRENTE AT√â A CAPELA" : riverBell ? "OBJETIVO: RETORNE E MOSTRE O SINO A EDDA" : "OBJETIVO: ENCONTRE O SINO DE TRAVESSIA";
-    private string LumeObjective() => room == 8 ? "OBJETIVO: SIGA A ESCADA AT√â A C√ÇMARA DO LUME" : room == 9 && questStage >= 10 && !naraTrace ? "OBJETIVO: INVESTIGUE A PASSAGEM SOB O PRISMA" : room == 10 ? "OBJETIVO: ATRAVESSE A MARGEM SEM REFLEXO" : room == 11 && !naraTrace ? "OBJETIVO: ENFRENTE O QUE DEVORA NOMES" : room == 11 && questStage >= 13 ? "OBJETIVO: CRUZE A COSTA AL√âM DO RESERVAT√ìRIO" : room == 12 ? "OBJETIVO: SIGA O CORO AT√â O CLAUSTRO" : room == 13 && !chorusMemory ? "OBJETIVO: DERROTE A TECEL√É E RECUPERE AS VOZES" : room == 13 && questStage < 15 ? "OBJETIVO: LEVE O CORO DE VOLTA A SILETH" : room == 13 ? "OBJETIVO: DES√áA PELA BACIA SOB O CORO" : room == 14 ? "OBJETIVO: ATRAVESSE A BACIA DO PRIMEIRO NOME" : room == 15 ? "OBJETIVO: DERROTE A PRIMEIRA VIG√çLIA" : room == 16 ? "OBJETIVO: CRUZE O VAU DOS NOMES ESCOLHIDOS" : room == 17 ? "OBJETIVO: DERROTE A CART√ìGRAFA E RECUPERE O MAPA" : room == 19 ? "OBJETIVO: SIGA AS LANTERNAS AT√â A CISTERNA" : room == 20 ? "OBJETIVO: DERROTE O ESCRIV√ÉO E RECOLHA O REGISTRO" : room >= 10 && naraTrace ? "OBJETIVO: LEVE O RASTRO DE NARA A SILETH" : lumeLens ? "OBJETIVO: RETORNE E MOSTRE O PRISMA A SILETH" : "OBJETIVO: RECUPERE O PRISMA DA PRIMEIRA VIG√çLIA";
-
-    private void DrawArchiveEnvironment(Graphics g, Brush ground, Pen tile)
-    {
-        g.FillRectangle(ground, 65, 108, 830, 445);
-        for (int y = 0; y < 7; y++) for (int x = 0; x < 12; x++) g.DrawRectangle(tile, 70 + x * 68, 112 + y * 62, 67, 61);
-        RectangleF[] shelves = room == 4 ? ArchiveWalls : VaultWalls;
-        using var shelf = new SolidBrush(Color.FromArgb(69, 52, 43)); using var spine = new Pen(Color.FromArgb(162, 126, 79), 2); using var edge = new Pen(Color.FromArgb(184, 145, 94), 3);
-        foreach (RectangleF area in shelves)
-        {
-            g.FillRectangle(shelf, area); g.DrawRectangle(edge, area.X, area.Y, area.Width, area.Height);
-            for (float y = area.Y + 18; y < area.Bottom - 8; y += 25) { g.DrawLine(spine, area.X + 5, y, area.Right - 5, y); for (float x = area.X + 8; x < area.Right - 6; x += 12) g.DrawLine(Pens.SaddleBrown, x, y - 15, x, y - 2); }
-        }
-        using var threshold = new Pen(enemies.Count == 0 && drops.Count == 0 ? Color.LightGreen : Color.FromArgb(60, 71, 66), 7);
-        g.DrawLine(threshold, 885, 290, 885, 370); g.DrawLine(threshold, 75, 290, 75, 370);
-        using var glow = new SolidBrush(Color.FromArgb(34, 144, 194, 181));
-        g.FillEllipse(glow, 464, 290, 64, 64);
-    }
-
-    private void DrawRiverEnvironment(Graphics g, Brush ground, Pen tile)
-    {
-        using var riverbed = new SolidBrush(Color.FromArgb(71, 76, 65)); using var stones = new SolidBrush(Color.FromArgb(91, 96, 80)); using var bank = new Pen(Color.FromArgb(124, 130, 105), 3);
-        g.FillRectangle(ground, 65, 108, 830, 445);
-        for (int y = 0; y < 7; y++) for (int x = 0; x < 12; x++) g.DrawRectangle(tile, 70 + x * 68, 112 + y * 62, 67, 61);
-        g.FillPolygon(riverbed, new[] { new PointF(65, 272), new PointF(330, 306), new PointF(570, 285), new PointF(895, 317), new PointF(895, 407), new PointF(580, 374), new PointF(315, 408), new PointF(65, 380) });
-        g.DrawLine(bank, 70, 272, 330, 306); g.DrawLine(bank, 330, 306, 570, 285); g.DrawLine(bank, 570, 285, 890, 317);
-        g.DrawLine(bank, 70, 380, 315, 408); g.DrawLine(bank, 315, 408, 580, 374); g.DrawLine(bank, 580, 374, 890, 407);
-        using var rock = new SolidBrush(Color.FromArgb(103, 103, 86)); using var slate = new SolidBrush(Color.FromArgb(72, 86, 87));
-        for (int i = 0; i < 14; i++) { float x = 105 + i * 57; float y = 321 + (i % 3) * 18; g.FillEllipse(i % 4 == 0 ? slate : stones, x, y, 22 + i % 3 * 5, 12 + i % 2 * 4); }
-        RectangleF[] obstacles = room == 6 ? RiverWalls : BellChamberWalls;
-        using var edge = new Pen(Color.FromArgb(159, 146, 112), 3);
-        foreach (RectangleF area in obstacles) { g.FillEllipse(rock, area); g.DrawEllipse(edge, area); }
-        using var gate = new Pen(enemies.Count == 0 && drops.Count == 0 ? Color.LightGreen : Color.FromArgb(53, 70, 72), 7);
-        g.DrawLine(gate, 885, 290, 885, 370); g.DrawLine(gate, 75, 290, 75, 370);
-        if (room == 7) { using var glow = new SolidBrush(Color.FromArgb(44, 116, 190, 197)); g.FillEllipse(glow, 444, 250, 80, 80); }
-    }
-
-    private void DrawLumeEnvironment(Graphics g, Brush ground, Pen tile)
-    {
-        using var ash = new SolidBrush(Color.FromArgb(43, 42, 40)); using var seam = new Pen(Color.FromArgb(96, 83, 64), 2); using var gold = new Pen(Color.FromArgb(171, 126, 67), 3);
-        g.FillRectangle(ash, 65, 108, 830, 445);
-        for (int y = 0; y < 7; y++) for (int x = 0; x < 12; x++) g.DrawRectangle(tile, 70 + x * 68, 112 + y * 62, 67, 61);
-        RectangleF[] pillars = room == 8 ? AshGalleryWalls : LumeChamberWalls;
-        using var pillarBrush = new SolidBrush(Color.FromArgb(73, 69, 59));
-        foreach (RectangleF pillar in pillars) { g.FillRectangle(pillarBrush, pillar); g.DrawRectangle(gold, pillar.X, pillar.Y, pillar.Width, pillar.Height); }
-        for (int i = 0; i < 5; i++) { float x = 170 + i * 150; g.DrawLine(seam, x, 115, x - 26, 212); g.DrawLine(seam, x - 26, 212, x + 14, 304); }
-        if (room == 9)
-        {
-            using var glow = new SolidBrush(Color.FromArgb(42, 255, 178, 76)); using var core = new SolidBrush(Color.FromArgb(190, 248, 191, 104));
-            g.FillEllipse(glow, 410, 205, 140, 140); g.FillEllipse(core, 462, 257, 36, 36); g.DrawEllipse(gold, 430, 225, 100, 100); g.DrawEllipse(gold, 445, 240, 70, 70);
-        }
-        using var gate = new Pen(enemies.Count == 0 && drops.Count == 0 ? Color.LightGreen : Color.FromArgb(66, 63, 51), 7);
-        g.DrawLine(gate, 885, 290, 885, 370); g.DrawLine(gate, 75, 290, 75, 370);
-        if (room == 9 && questStage >= 10) { DrawCentered(g, "PASSAGEM SOB O PRISMA", 480, new Font("Segoe UI", 9, FontStyle.Bold), Color.FromArgb(187, 218, 205)); if (Distance(player, new PointF(480, 500)) < 72) DrawCentered(g, "E  DESCER", 510, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite); }
-    }
-
-    private void DrawNameShoreEnvironment(Graphics g, Brush ground, Pen tile)
-    {
-        using var depth = new SolidBrush(Color.FromArgb(34, 43, 48)); using var stone = new SolidBrush(Color.FromArgb(63, 74, 74));
-        using var edge = new Pen(Color.FromArgb(113, 143, 137), 2); using var seam = new Pen(Color.FromArgb(66, 111, 111), 2);
-        g.FillRectangle(depth, 65, 108, 830, 445); g.FillRectangle(ground, 94, 132, 772, 397);
-        for (int y = 0; y < 7; y++) for (int x = 0; x < 12; x++) g.DrawRectangle(tile, 70 + x * 68, 112 + y * 62, 67, 61);
-        RectangleF[] pillars = room == 10 ? NameShoreWalls : VoiceWellWalls;
-        foreach (RectangleF pillar in pillars) { g.FillRectangle(stone, pillar); g.DrawRectangle(edge, pillar.X, pillar.Y, pillar.Width, pillar.Height); }
-        for (int i = 0; i < 6; i++) { float x = 155 + i * 126; g.DrawLine(seam, x, 128, x + 32, 254); g.DrawLine(seam, x + 32, 254, x - 20, 382); g.DrawLine(seam, x - 20, 382, x + 18, 520); }
-        using var pool = new SolidBrush(Color.FromArgb(room == 11 ? 54 : 28, 125, 193, 185));
-        g.FillEllipse(pool, room == 11 ? 370 : 345, room == 11 ? 235 : 185, room == 11 ? 220 : 270, room == 11 ? 190 : 280);
-        if (room == 11) { using var core = new SolidBrush(Color.FromArgb(185, 210, 227, 188)); g.FillEllipse(core, 462, 338, 36, 36); }
-        using var gate = new Pen(enemies.Count == 0 && drops.Count == 0 ? Color.LightGreen : Color.FromArgb(66, 82, 77), 7);
-        g.DrawLine(gate, 885, 290, 885, 370); g.DrawLine(gate, 75, 290, 75, 370);
-        if (room == 11 && questStage >= 13) DrawCentered(g, "COSTA DAS VOZES TARDIAS", 382, new Font("Segoe UI", 9, FontStyle.Bold), townEnding == 1 ? Color.LightGreen : Color.PeachPuff);
-    }
-
-    private void DrawFarReachEnvironment(Graphics g, Brush ground, Pen tile)
-    {
-        using var deep = new SolidBrush(room == 12 ? Color.FromArgb(29, 46, 51) : Color.FromArgb(38, 35, 48));
-        using var stone = new SolidBrush(room == 12 ? Color.FromArgb(70, 83, 78) : Color.FromArgb(78, 67, 83));
-        using var edge = new Pen(room == 12 ? Color.FromArgb(142, 177, 155) : Color.FromArgb(179, 147, 190), 2);
-        using var current = new Pen(Color.FromArgb(70, 160, 201, 188), 3);
-        g.FillRectangle(deep, 65, 108, 830, 445); g.FillRectangle(ground, 94, 132, 772, 397);
-        for (int y = 0; y < 7; y++) for (int x = 0; x < 12; x++) g.DrawRectangle(tile, 70 + x * 68, 112 + y * 62, 67, 61);
-        RectangleF[] walls = room == 12 ? FarReachWalls : NameCloisterWalls;
-        foreach (RectangleF wall in walls) { g.FillRectangle(stone, wall); g.DrawRectangle(edge, wall.X, wall.Y, wall.Width, wall.Height); }
-        for (int i = 0; i < 5; i++)
-        {
-            float x = 152 + i * 152;
-            g.DrawBezier(current, x, 155, x + 58, 210 + i % 2 * 18, x - 52, 268 + i % 2 * 14, x + 12, 320);
-            g.DrawBezier(current, x + 12, 320, x + 68, 374, x - 34, 444, x + 18, 520);
-        }
-        using var pool = new SolidBrush(Color.FromArgb(room == 13 ? 56 : 32, 128, 181, 177));
-        g.FillEllipse(pool, room == 13 ? 377 : 327, room == 13 ? 224 : 193, room == 13 ? 206 : 306, room == 13 ? 200 : 268);
-        if (room == 13)
-        {
-            using var knot = new SolidBrush(Color.FromArgb(180, 176, 119, 188));
-            using var thread = new Pen(Color.FromArgb(210, 213, 178, 218), 3);
-            g.FillEllipse(knot, 451, 292, 58, 58);
-            for (int i = 0; i < 8; i++) { double a = i * Math.PI / 4; g.DrawLine(thread, 480, 321, 480 + (float)Math.Cos(a) * 82, 321 + (float)Math.Sin(a) * 82); }
-        }
-        using var gate = new Pen(enemies.Count == 0 && drops.Count == 0 ? Color.LightGreen : Color.FromArgb(76, 78, 85), 7);
-        g.DrawLine(gate, 885, 290, 885, 370); g.DrawLine(gate, 75, 290, 75, 370);
-        if (room == 12 && Distance(player, new PointF(842, 330)) < 80) DrawCentered(g, "E  ENTRAR NO CLAUSTRO", 382, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, 820);
-        if (room == 13 && chorusMemory && Distance(player, new PointF(842, 330)) < 80) DrawCentered(g, "E  VOLTAR A V√âSPERA", 382, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, 820);
-        if (room == 13 && questStage >= 15) { using var stair = new Pen(Color.FromArgb(220, 208, 178, 123), 5); g.DrawArc(stair, 447, 459, 66, 66, 15, 150); if (Distance(player, new PointF(480, 500)) < 78) DrawCentered(g, "E  DESCER √Ä BACIA", 535, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, 480); }
-    }
-
-    private void DrawFirstVigilEnvironment(Graphics g, Brush ground, Pen tile)
-    {
-        using var deep = new SolidBrush(Color.FromArgb(24, 30, 39)); using var stone = new SolidBrush(Color.FromArgb(72, 70, 64));
-        using var edge = new Pen(room == 14 ? Color.FromArgb(133, 172, 166) : Color.FromArgb(196, 159, 106), 2);
-        using var echo = new Pen(Color.FromArgb(88, 191, 178, 133), 3); using var basin = new SolidBrush(Color.FromArgb(42, 115, 155, 160));
-        g.FillRectangle(deep, 65, 108, 830, 445); g.FillRectangle(ground, 94, 132, 772, 397);
-        for (int y = 0; y < 7; y++) for (int x = 0; x < 12; x++) g.DrawRectangle(tile, 70 + x * 68, 112 + y * 62, 67, 61);
-        RectangleF[] walls = room == 14 ? FirstBasinWalls : FirstVigilWalls;
-        foreach (RectangleF wall in walls) { g.FillRectangle(stone, wall); g.DrawRectangle(edge, wall.X, wall.Y, wall.Width, wall.Height); }
-        for (int i = 0; i < 4; i++) { int inset = i * 19; g.DrawEllipse(echo, 383 + inset, 232 + inset, 194 - inset * 2, 194 - inset * 2); }
-        if (room == 14) { g.FillEllipse(basin, 415, 278, 130, 104); DrawCentered(g, "ILYRA", 319, new Font("Georgia", 10, FontStyle.Bold), Color.FromArgb(202, 187, 148)); }
-        else { using var firstLight = new SolidBrush(Color.FromArgb(120, 208, 174, 111)); g.FillEllipse(firstLight, 454, 292, 52, 52); }
-        using var gate = new Pen(enemies.Count == 0 && drops.Count == 0 ? Color.LightGreen : Color.FromArgb(76, 78, 85), 7);
-        g.DrawLine(gate, 885, 290, 885, 370); g.DrawLine(gate, 75, 290, 75, 370);
-        if (room == 14 && Distance(player, new PointF(842, 330)) < 80) DrawCentered(g, "E  IR √Ä PRIMEIRA VIG√çLIA", 382, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, 820);
-        if (room == 15 && firstMemory && Distance(player, new PointF(842, 330)) < 80) DrawCentered(g, "E  VOLTAR A V√âSPERA", 382, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, 820);
-    }
-
-    private void DrawWestWitnessEnvironment(Graphics g, Brush ground, Pen tile)
-    {
-        using var deep = new SolidBrush(Color.FromArgb(22, 34, 39)); using var wood = new SolidBrush(Color.FromArgb(91, 77, 57));
-        using var edge = new Pen(room == 16 ? Color.FromArgb(119, 160, 153) : Color.FromArgb(193, 172, 127), 2);
-        using var water = new SolidBrush(Color.FromArgb(62, 70, 135, 139)); using var chalk = new Pen(Color.FromArgb(132, 218, 201, 160), 3);
-        g.FillRectangle(deep, 65, 108, 830, 445); g.FillRectangle(ground, 94, 132, 772, 397);
-        for (int y = 0; y < 7; y++) for (int x = 0; x < 12; x++) g.DrawRectangle(tile, 70 + x * 68, 112 + y * 62, 67, 61);
-        RectangleF[] walls = room == 16 ? WestFordWalls : WitnessYardWalls;
-        foreach (RectangleF wall in walls) { g.FillRectangle(wood, wall); g.DrawRectangle(edge, wall.X, wall.Y, wall.Width, wall.Height); }
-        if (room == 16)
-        {
-            g.FillRectangle(water, 328, 125, 80, 424); g.FillRectangle(water, 558, 125, 78, 424);
-            for (int y = 148; y < 520; y += 52) { g.DrawLine(edge, 408, y, 558, y + 12); g.DrawLine(edge, 408, y + 14, 558, y + 26); }
-            for (int i = 0; i < 6; i++) g.DrawLine(chalk, 138 + i * 126, 145, 138 + i * 126, 191);
-        }
-        else
-        {
-            using var table = new SolidBrush(Color.FromArgb(110, 125, 112, 83)); g.FillEllipse(table, 401, 262, 158, 114);
-            for (int i = 0; i < 5; i++) { float x = 435 + i * 22; g.DrawLine(chalk, x, 286, 466 + (i % 2) * 19, 350); }
-        }
-        using var gate = new Pen(enemies.Count == 0 && drops.Count == 0 ? Color.LightGreen : Color.FromArgb(76, 78, 85), 7);
-        g.DrawLine(gate, 885, 290, 885, 370); g.DrawLine(gate, 75, 290, 75, 370);
-        if (room == 16 && Distance(player, new PointF(118, 330)) < 78) DrawCentered(g, "E  VOLTAR A V√âSPERA", 382, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, 146);
-        if (room == 16 && Distance(player, new PointF(842, 330)) < 80) DrawCentered(g, "E  IR AO P√ÅTIO", 382, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, 820);
-        if (room == 17 && westTrace && Distance(player, new PointF(842, 330)) < 80) DrawCentered(g, "E  VOLTAR A V√âSPERA", 382, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, 820);
-    }
-
-    private void DrawRefugeEnvironment(Graphics g, Brush ground, Pen tile)
-    {
-        using var deep = new SolidBrush(Color.FromArgb(24, 37, 39)); using var wood = new SolidBrush(Color.FromArgb(93, 83, 61));
-        using var edge = new Pen(Color.FromArgb(165, 153, 116), 2); using var path = new Pen(Color.FromArgb(121, 135, 103), 8);
-        g.FillRectangle(deep, 65, 108, 830, 445); g.FillRectangle(ground, 94, 132, 772, 397);
-        for (int y = 0; y < 7; y++) for (int x = 0; x < 12; x++) g.DrawRectangle(tile, 70 + x * 68, 112 + y * 62, 67, 61);
-        foreach (RectangleF wall in RefugeWalls) { g.FillRectangle(wood, wall); g.DrawRectangle(edge, wall.X, wall.Y, wall.Width, wall.Height); }
-        g.DrawLine(path, 302, 330, 412, 330); g.DrawLine(path, 550, 330, 662, 330);
-        using var table = new SolidBrush(Color.FromArgb(119, 99, 73)); using var ledger = new SolidBrush(Color.FromArgb(47, 62, 58));
-        g.FillEllipse(table, 427, 292, 106, 75); g.FillRectangle(ledger, 458, 309, 44, 27); g.DrawEllipse(edge, 427, 292, 106, 75);
-        DrawTownPerson(g, AvenPosition, "AVEN", Color.FromArgb(88, 112, 102), Distance(player, AvenPosition) < 72);
-        DrawTownPerson(g, SeraPosition, "SERA", Color.FromArgb(144, 103, 78), Distance(player, SeraPosition) < 72);
-        DrawTownPerson(g, NoaPosition, "NOA", Color.FromArgb(102, 111, 145), Distance(player, NoaPosition) < 72);
-        using var gate = new Pen(Color.FromArgb(111, 191, 163), 5); g.DrawLine(gate, 75, 296, 75, 364);
-        using var trail = new Pen(questStage >= 22 ? Color.FromArgb(179, 208, 151) : Color.FromArgb(70, 83, 77), 5); g.DrawLine(trail, 885, 296, 885, 364);
-        if (player.X < 150) DrawCentered(g, "E  VOLTAR A V√âSPERA", 382, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, 146);
-        if (questStage >= 22 && player.X > 790) DrawCentered(g, "E  SEGUIR AS LANTERNAS", 382, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, 820);
-    }
-
-    private void DrawLedgerTrailEnvironment(Graphics g, Brush ground, Pen tile)
-    {
-        using var deep = new SolidBrush(Color.FromArgb(21, 32, 37)); using var stone = new SolidBrush(Color.FromArgb(78, 79, 70));
-        using var edge = new Pen(room == 19 ? Color.FromArgb(172, 179, 133) : Color.FromArgb(183, 145, 119), 2);
-        using var water = new SolidBrush(Color.FromArgb(54, 56, 113, 118));
-        g.FillRectangle(deep, 65, 108, 830, 445); g.FillRectangle(ground, 94, 132, 772, 397);
-        for (int y = 0; y < 7; y++) for (int x = 0; x < 12; x++) g.DrawRectangle(tile, 70 + x * 68, 112 + y * 62, 67, 61);
-        RectangleF[] walls = room == 19 ? RidgeWalls : LedgerWalls;
-        foreach (RectangleF wall in walls) { g.FillRectangle(stone, wall); g.DrawRectangle(edge, wall.X, wall.Y, wall.Width, wall.Height); }
-        if (room == 19) { g.FillRectangle(water, 330, 128, 74, 420); g.FillRectangle(water, 558, 128, 74, 420); for (int i = 0; i < 8; i++) { float x = 150 + i * 94; g.DrawLine(edge, x, 152, x, 187); g.FillEllipse(Brushes.PaleGoldenrod, x - 4, 148, 8, 8); } }
-        else { using var basin = new SolidBrush(Color.FromArgb(60, 104, 131, 125)); using var ink = new Pen(Color.FromArgb(205, 181, 128, 109), 3); g.FillEllipse(basin, 350, 206, 260, 260); g.DrawEllipse(edge, 350, 206, 260, 260); for (int i = 0; i < 7; i++) g.DrawLine(ink, 382 + i * 27, 245, 410 + i * 20, 425); }
-        using var gate = new Pen(enemies.Count == 0 && drops.Count == 0 ? Color.LightGreen : Color.FromArgb(76, 78, 85), 7); g.DrawLine(gate, 885, 290, 885, 370); g.DrawLine(gate, 75, 290, 75, 370);
+Y™Áäx-ÆÈ‹j◊ù¢Îi∫⁄+äßj[hëÈ‹¢ÈÌÎO;Â:-jZ.∂õ≠ñ)ﬁ≥WW6ñÊr7ó7FV”∞ßW6ñÊr7ó7FV“‰6ˆ∆∆V7FñˆÁ2‰vVÊW&ñ3∞ßW6ñÊr7ó7FV“‰G&vñÊs∞ßW6ñÊr7ó7FV“‰G&vñÊr‰G&vñÊs$C∞ßW6ñÊr7ó7FV“‰îÛ∞ßW6ñÊr7ó7FV“‰∆ñÁ∞ßW6ñÊr7ó7FV“ÂFWáB‰ß6ˆ„∞ßW6ñÊr7ó7FV“ÂvñÊF˜w2‰f˜&◊3∞†ßV&∆ñ26V∆VB6∆72v÷R¢f˜&–ß∞¢&ófFRVÁV“VÊV◊î∂ñÊB≤w'VÁB¬&6ÜW"¬÷vR¬V∆óFR¬wV&Fñ‚¬ñÊ¥V6ÜÚ¬&∆ñÊE67&ñ&R¬G&˜vÊVD÷V÷˜'í¬&ófW$fW''ñ÷‚¬V÷&W%vó7¬6Öv&FV‚¬Ê÷T÷˜FÇ¬Üˆ∆∆˜tÊ÷R¬Ê÷UvVfW"¬fó'7D∂VWW"¬◊VD6ÁF˜"¬ˆFÑ6'Fˆw&ÜW"¬W%w&óFÇ¬Ê÷T'&ˆ∂W"¬6«DV6ÜÚ¬FñFUvóFÊW72–¢&ófFR6V∆VB6∆72VÊV◊ê¢∞¢V&∆ñ2ˆñÁDb˜2¬F&vWB¬F&vWC"¬F&vWC%7F'C∞¢V&∆ñ2VÊV◊î∂ñÊB∂ñÊC∞¢V&∆ñ2f∆ˆBá¬÷Ñá¬6ˆˆ∆F˜v‚¬vñÊGW¬vñÊGW÷Ç¬f∆6É∞¢V&∆ñ2ñÁB&˜75GFW&„∞¢V&∆ñ2&ˆˆ¬&÷˜&VC∞¢V&∆ñ2f∆ˆB7FvvW#∞¢V&∆ñ2&ˆˆ¬&˜72”‚∂ñÊBó2VÊV◊î∂ñÊB‰wV&Fñ‚˜"VÊV◊î∂ñÊB‰&∆ñÊE67&ñ&R˜"VÊV◊î∂ñÊBÂ&ófW$fW''ñ÷‚˜"VÊV◊î∂ñÊB‰6Öv&FV‚˜"VÊV◊î∂ñÊB‰Üˆ∆∆˜tÊ÷R˜"VÊV◊î∂ñÊB‰Ê÷UvVfW"˜"VÊV◊î∂ñÊB‰fó'7D∂VWW"˜"VÊV◊î∂ñÊB‰ˆFÑ6'Fˆw&ÜW"˜"VÊV◊î∂ñÊB‰Ê÷T'&ˆ∂W"˜"VÊV◊î∂ñÊBÂFñFUvóFÊW73∞¢V&∆ñ2f∆ˆB&FóW2”‚&˜72Ú#2¢∂ñÊB”“VÊV◊î∂ñÊB‰V∆óFRÚÇ¢C∞¢–¢&ófFR6V∆VB6∆72G&˜≤V&∆ñ2ˆñÁDb˜3≤V&∆ñ27G&ñÊr∂ñÊB“&vˆ∆B#≤V&∆ñ2ñÁB÷˜VÁC≤–¢&ófFR6V∆VB6∆72V6Üı6Ü&B≤V&∆ñ2ˆñÁDb˜2¬Fó&V7Fñˆ„≤V&∆ñ2f∆ˆB∆ñfR¬F÷vS≤V&∆ñ2Ü6Ö6WCƒVÊV◊ì‚ÜóB“ÊWrÇì≤–¢&ófFR6V∆VB6∆726fTFF¢∞¢V&∆ñ2ñÁB&ˆˆ“≤vWC≤6WC≤–¢V&∆ñ2ñÁB∆WfV¬≤vWC≤6WC≤““∞¢V&∆ñ2ñÁBá≤vWC≤6WC≤–¢V&∆ñ2ñÁBvˆ∆B≤vWC≤6WC≤–¢V&∆ñ2ñÁB˜FñˆÁ2≤vWC≤6WC≤““#∞¢V&∆ñ2ñÁBF÷vR≤vWC≤6WC≤““#S∞¢V&∆ñ2f∆ˆBÜV«FÇ≤vWC≤6WC≤““∞¢V&∆ñ2f∆ˆB÷ÑÜV«FÇ≤vWC≤6WC≤““∞¢V&∆ñ2ñÁBvVˆ‚≤vWC≤6WC≤–¢V&∆ñ2ñÁB˜vÊVEvVˆÁ2≤vWC≤6WC≤““∞¢V&∆ñ2ñÁEµ“vVˆ‰&ˆÁW6W2≤vWC≤6WC≤““ÊWrñÁE≥5”∞¢V&∆ñ2ñÁEµ“vVˆÂ&&óFñW2≤vWC≤6WC≤““ÊWrñÁE≥5”∞¢V&∆ñ2ñÁEµ“vVˆ‰ffóÜW2≤vWC≤6WC≤““ÊWrñÁE≥5”∞¢V&∆ñ2&ˆˆ¬&÷˜"≤vWC≤6WC≤–¢V&∆ñ2&ˆˆ¬&V∆ñ2≤vWC≤6WC≤–¢V&∆ñ2ñÁBÜV«FÖF∆VÁB≤vWC≤6WC≤–¢V&∆ñ2ñÁB6∂ñ∆≈F∆VÁB≤vWC≤6WC≤–¢V&∆ñ2ñÁBFˆFvUF∆VÁB≤vWC≤6WC≤–¢V&∆ñ2&ˆˆ¬&ˆˆ‘6∆V&VB≤vWC≤6WC≤–¢V&∆ñ2&ˆˆ¬6ˆ◊∆WFVB≤vWC≤6WC≤–¢V&∆ñ2ñÁB÷V÷˜&ñW4f˜VÊB≤vWC≤6WC≤–¢V&∆ñ2ñÁBVW7E7FvR≤vWC≤6WC≤–¢V&∆ñ2ñÁB6∆V&VE&ˆˆ◊2≤vWC≤6WC≤–¢V&∆ñ2&ˆˆ¬&6ÜófU6V¬≤vWC≤6WC≤–¢V&∆ñ2&ˆˆ¬&ófW$&V∆¬≤vWC≤6WC≤–¢V&∆ñ2&ˆˆ¬«V÷T∆VÁ2≤vWC≤6WC≤–¢V&∆ñ2&ˆˆ¬Ê&G&6R≤vWC≤6WC≤–¢V&∆ñ2ñÁB˜vÊVD6Ü&◊2≤vWC≤6WC≤–¢V&∆ñ2ñÁBWVóVD6Ü&“≤vWC≤6WC≤–¢V&∆ñ2ñÁBWVóVD6Ü&”"≤vWC≤6WC≤–¢V&∆ñ2ñÁBF˜v‰VÊFñÊr≤vWC≤6WC≤–¢V&∆ñ2&ˆˆ¬6Ü˜'W4÷V÷˜'í≤vWC≤6WC≤–¢V&∆ñ2&ˆˆ¬fó'7D÷V÷˜'í≤vWC≤6WC≤–¢V&∆ñ2&ˆˆ¬vW7EG&6R≤vWC≤6WC≤–¢V&∆ñ2&ˆˆ¬W7G&V’G&6R≤vWC≤6WC≤–¢–†¢&ófFR7FFñ2&VFˆÊ«í&V7FÊv∆Teµ“v∆«2“≤ÊWrÉ3CR¬#3R¬CÇ¬ìí¬ÊWrÉScR¬3sR¬SÇ¬Éí”∞¢&ófFR7FFñ2&VFˆÊ«í&V7FÊv∆Teµ“&6ÜófUv∆«2“≤ÊWrÉ#sR¬SR¬3Ç¬SRí¬ÊWrÉC3r¬3cR¬CÇ¬cRí¬ÊWrÉc#b¬S¬C"¬cRí¬ÊWrÉscR¬3sB¬C"¬Sí”∞¢&ófFR7FFñ2&VFˆÊ«í&V7FÊv∆Teµ“fV«Ev∆«2“≤ÊWrÉ#É¬s¬SÇ¬Çí¬ÊWrÉc#R¬s¬SÇ¬Çí¬ÊWrÉ#É¬C¬SÇ¬Çí¬ÊWrÉc#R¬C¬SÇ¬Çí”∞¢&ófFR7FFñ2&VFˆÊ«í&V7FÊv∆Teµ“&ófW%v∆«2“≤ÊWrÉ#S¬sR¬É¬CÇí¬ÊWrÉC¬3ì¬ìb¬S"í¬ÊWrÉcCR¬s¬s¬CÇí¬ÊWrÉsc¬3ì¬sR¬SRí”∞¢&ófFR7FFñ2&VFˆÊ«í&V7FÊv∆Teµ“&V∆ƒ6Ü÷&W%v∆«2“≤ÊWrÉ#ÉR¬S¬Cb¬Éí¬ÊWrÉc3¬3CR¬CÇ¬Éí¬ÊWrÉC#2¬C3R¬"¬C"í”∞¢&ófFR7FFñ2&VFˆÊ«í&V7FÊv∆Teµ“6Ñv∆∆W'ïv∆«2“≤ÊWrÉ#S¬cR¬SÇ¬CRí¬ÊWrÉCC¬3É¬sÇ¬3í¬ÊWrÉcC¬cR¬S"¬CRí¬ÊWrÉss¬3É¬SR¬3í”∞¢&ófFR7FFñ2&VFˆÊ«í&V7FÊv∆Teµ“«V÷T6Ü÷&W%v∆«2“≤ÊWrÉ3¬S¬CÇ¬Cí¬ÊWrÉc"¬3ì¬CÇ¬Cí¬ÊWrÉC#Ç¬#c¬B¬CBí¬ÊWrÉC#Ç¬C#¬B¬CBí”∞¢&ófFR7FFñ2&VFˆÊ«í&V7FÊv∆Teµ“Ê÷U6Ü˜&Uv∆«2“≤ÊWrÉ#CÇ¬s¬SB¬#bí¬ÊWrÉC3B¬3ìR¬cB¬#Çí¬ÊWrÉcC¬cb¬Sb¬#bí¬ÊWrÉss¬3ìB¬SB¬#bí”∞¢&ófFR7FFñ2&VFˆÊ«í&V7FÊv∆Teµ“fˆñ6UvV∆≈v∆«2“≤ÊWrÉ#s¬SÇ¬cB¬#"í¬ÊWrÉc#b¬SÇ¬cB¬#"í¬ÊWrÉ#s¬C¬cB¬#"í¬ÊWrÉc#b¬C¬cB¬#"í¬ÊWrÉC3Ç¬3#R¬ÉB¬sbí”∞¢&ófFR7FFñ2&VFˆÊ«í&V7FÊv∆Teµ“f%&V6Öv∆«2“≤ÊWrÉ#C"¬cb¬c"¬#"í¬ÊWrÉC#¬3ì¬sB¬3í¬ÊWrÉcS¬cB¬SÇ¬#Bí¬ÊWrÉss"¬3ì¬SÇ¬#Çí”∞¢&ófFR7FFñ2&VFˆÊ«í&V7FÊv∆Teµ“Ê÷T6∆ˆó7FW%v∆«2“≤ÊWrÉ#c¬SR¬SÇ¬CRí¬ÊWrÉcCb¬SR¬SÇ¬CRí¬ÊWrÉ#c¬CR¬SÇ¬CRí¬ÊWrÉcCb¬CR¬SÇ¬CRí¬ÊWrÉCCÇ¬#ìb¬cB¬Rí”∞¢&ófFR7FFñ2&VFˆÊ«í&V7FÊv∆Teµ“fó'7D&6ñÂv∆«2“≤ÊWrÉ#c"¬SÇ¬Sb¬3Çí¬ÊWrÉcCR¬SÇ¬Sb¬3Çí¬ÊWrÉ#c"¬CR¬Sb¬3Çí¬ÊWrÉcCR¬CR¬Sb¬3Çí¬ÊWrÉCCÇ¬ÉÇ¬cB¬sÇí”∞¢&ófFR7FFñ2&VFˆÊ«í&V7FÊv∆Teµ“fó'7Efñvñ≈v∆«2“≤ÊWrÉ#Cb¬cÇ¬S"¬3Çí¬ÊWrÉcc"¬cÇ¬S"¬3Çí¬ÊWrÉ#Cb¬C¬S"¬3Çí¬ÊWrÉcc"¬C¬S"¬3Çí¬ÊWrÉC#R¬3¬¬3"í¬ÊWrÉC#R¬3sÇ¬¬3"í”∞¢&ófFR7FFñ2&VFˆÊ«í&V7FÊv∆Teµ“vW7Df˜&Ev∆«2“≤ÊWrÉ#CB¬SÇ¬SÇ¬#bí¬ÊWrÉcSb¬SÇ¬SÇ¬#bí¬ÊWrÉ#CB¬C¬SÇ¬#bí¬ÊWrÉcSb¬C¬SÇ¬#bí¬ÊWrÉC32¬#ì¬ìB¬3Çí”∞¢&ófFR7FFñ2&VFˆÊ«í&V7FÊv∆Teµ“vóFÊW75ñ&Ev∆«2“≤ÊWrÉ#SÇ¬SB¬c¬3bí¬ÊWrÉcC"¬SB¬c¬3bí¬ÊWrÉ#SÇ¬CR¬c¬3bí¬ÊWrÉcC"¬CR¬c¬3bí¬ÊWrÉC#Ç¬#SR¬C¬cBí¬ÊWrÉCì"¬3C¬C¬cBí”∞¢&ófFR7FFñ2&VFˆÊ«í&V7FÊv∆Teµ“&VgVvUv∆«2“≤ÊWrÉB¬CR¬ÉR¬ì2í¬ÊWrÉcc"¬CR¬ÉR¬ì2í¬ÊWrÉ#¬C3¬sb¬ÉRí¬ÊWrÉccb¬C3¬sb¬ÉRí¬ÊWrÉC"¬#SB¬3b¬ÉÇí¬ÊWrÉSB¬3s¬3b¬É"í”∞¢&ófFR7FFñ2&VFˆÊ«í&V7FÊv∆Teµ“&ñFvUv∆«2“≤ÊWrÉ#Cb¬SÇ¬SÇ¬#bí¬ÊWrÉcSb¬SÇ¬SÇ¬#bí¬ÊWrÉ#Cb¬C¬SÇ¬#bí¬ÊWrÉcSb¬C¬SÇ¬#bí¬ÊWrÉC#í¬#Éí¬ìb¬C"í”∞¢&ófFR7FFñ2&VFˆÊ«í&V7FÊv∆Teµ“∆VFvW%v∆«2“≤ÊWrÉ#Sb¬SB¬SB¬Cbí¬ÊWrÉcS¬SB¬SB¬Cbí¬ÊWrÉ#Sb¬3ìí¬SB¬Cbí¬ÊWrÉcS¬3ìí¬SB¬Cbí¬ÊWrÉC#R¬SB¬¬3í¬ÊWrÉC#R¬Cb¬¬3í”∞¢&ófFR7FFñ2&VFˆÊ«í&V7FÊv∆Teµ“6«D÷'6Öv∆«2“≤ÊWrÉ#C¬SR¬Sb¬3"í¬ÊWrÉcS"¬SR¬Sb¬3"í¬ÊWrÉ#C¬CÇ¬Sb¬3"í¬ÊWrÉcS"¬CÇ¬Sb¬3"í¬ÊWrÉC3Ç¬#ÉR¬ÉB¬ìbí”∞¢&ófFR7FFñ2&VFˆÊ«í&V7FÊv∆Teµ“FñFT'&ñFvUv∆«2“≤ÊWrÉ#S¬SR¬S¬Rí¬ÊWrÉcc¬SR¬S¬Rí¬ÊWrÉ#S¬C#R¬S¬Rí¬ÊWrÉcc¬C#R¬S¬Rí”∞¢&ófFR7FFñ2&VFˆÊ«í&V7FÊv∆Teµ“F˜v‰'Vñ∆FñÊw2“≤ÊWrÉR¬#Ç¬#Ç¬#Çí¬ÊWrÉcsr¬#Ç¬#Ç¬#Çí¬ÊWrÉR¬C#b¬#Ç¬#í¬ÊWrÉcsr¬C#b¬#Ç¬#í”∞¢&ófFR7FFñ2&VFˆÊ«íˆñÁDb7W&F˜%˜6óFñˆ‚“ÊWrÉc#R¬3Rí¬&V∆ƒ∂VWW%˜6óFñˆ‚“ÊWrÉ3S"¬3Crí¬&6ÜófT&ˆˆµ˜6óFñˆ‚“ÊWrÉsÉR¬3SRí¬7'óDvFU˜6óFñˆ‚“ÊWrÉì"¬33ì∞¢&ófFR7FFñ2&VFˆÊ«íˆñÁDbfVÂ˜6óFñˆ‚“ÊWrÉCì¬33Rí¬6W&˜6óFñˆ‚“ÊWrÉ3S¬3Cí¬Êˆ˜6óFñˆ‚“ÊWrÉcC¬3cì∞¢&ófFR7FFñ2&VFˆÊ«íˆñÁDeµ“÷V÷˜'ï7FˆÊU˜6óFñˆÁ2“≤ÊWrÉ#c¬cRí¬ÊWrÉ#s¬CÉRí”∞¢&ófFR7FFñ2&VFˆÊ«í7G&ñÊuµ“÷V÷˜'ï7FˆÊUFWáG2“∞¢$Ê&¢(	≈6R˜26ñÊ˜26∆&V“¬6ñvÚ∆VóFÚFÚ&ñÚ6VvÚ‚7W&F˜&fV6Ü˜R˜2'Vóf˜2ÁFW2FÊˆóFR6ˆ÷\:v"Ó(	“"¿¢%&Vvó7G&ÚFRfñ|:÷∆ñ¢(	ƒÚwV&Fú:6ÚVÁG&Vv˜R6WRÊˆ÷RÚ«V÷R‚7W&F˜&v˜RÚ&Vvó7G&Ú&VR6ñFFRW7VV6W76RÚ&\:vÚÓ(	“ ¢”∞¢&ófFR&VFˆÊ«í∆ó7CƒVÊV◊ì‚VÊV÷ñW2“ÊWrÇì∞¢&ófFR&VFˆÊ«í∆ó7CƒG&˜‚G&˜2“ÊWrÇì∞¢&ófFR&VFˆÊ«íÜ6Ö6WCƒ∂Wó3‚F˜v‚“ÊWrÇì∞¢&ófFR&VFˆÊ«í7ó7FV“ÂvñÊF˜w2‰f˜&◊2ÂFñ÷W"Fñ÷W"“ÊWrÇí≤ñÁFW'f¬“b”∞¢&ófFR&VFˆÊ«í&ÊFˆ“&ÊFˆ““ÊWrÇì∞¢&ófFR&VFˆÊ«í∆ó7CƒV6Üı6Ü&C‚V6Üı6Ü&G2“ÊWrÇì∞¢&ófFR&VFˆÊ«í7G&ñÊuµ“&ˆˆ‘Ê÷W2“≤%dU5L8‘%TƒÚT“%\8‘‰2"¬%4Ã84ÚDı2ı54ı2"¬$<8$‘$DÚuT$Dú84Ú"¬%l8ï5U$(
+"$8tDÚd$Ù¬"¬$%TïdÚ‰ı%DR(
+"tƒU$î"¬$%TïdÚ‰ı%DR(
+"4Ùe$R"¬%$îÚ4TtÚ(
+"ƒTïDÚ4T4Ú"¬%$îÚ4TtÚ(
+"4TƒdÙtD"¬$d$Ù¬(
+"U44DDR4îÂ§2"¬$d$Ù¬(
+"<8$‘$DÚ≈T‘R"¬$Ã8î“DÚ≈T‘R(
+"‘$tT“4T“$TdƒUÑÚ"¬%$U4U%dL95$îÚ(
+"dı§U2$UDîD2"¬$4ı5DD2dı§U2D$Dî2"¬$4ƒU5E$ÚDÚ4ı$Ú%DîDÚ"¬$$4îDÚ$î‘Tï$Ú‰Ù‘R"¬%4ƒD$î‘Tï$dî|8‘ƒî"¬%dRDı2‰Ù‘U2U44ÙƒÑîDı2"¬%8DîÚD2DU5DT’T‰Ñ2"¬%$Tl9§tîÚDÚdTîÚ4ƒ‘Ú"¬%E$îƒÑDı2≈T‘îÏ8$îı2"¬$4ï5DU$‰DÚ$Ttï5E$Úd§îÚ"¬%l8%§TD2dı§U24ı$D2"¬%ÙÂDRD‘,8íîÂdU%DîD"”∞¢&ófFR&VFˆÊ«í7G&ñÊuµ“vVˆ‰Ê÷W2“≤$U5DDRTE$"¬$Ã8$‘î‰DÚ%TïdÚ"¬$d4DÚ5$U9•45TƒÚ"”∞¢&ófFR&VFˆÊ«í7G&ñÊuµ“6Ü&‘Ê÷W2“≤""¬$Ï92DR%$4"¬$dîÚDRE$dU54î"¬%dîE$ÚDRdî|8‘ƒî"¬$‘$4Ddî|8‘ƒî"¬$dîÚD‘$tT“"”∞¢&ófFR&VFˆÊ«í7G&ñÊuµ“&ˆ∆ˆwVR“∞¢$ÊÊˆóFR6V“6ñÊ˜2¬l:ó7W&6ˆ÷\:v˜RW7VV6W"˜2Êˆ÷W2FR6WW2÷˜'F˜2‚6ˆ"2'V2¬Ú&ñÚ6VvÚ&WWFóRV÷f˜¢VRÊñÊw\:ñ“÷ó26ˆÁ6VwVñ˜Wfó"‚"¿¢%fˆ<:¢:íV“W67WFF˜#¢˜WfR2∆V÷'&Ï:v2VRVG&Ï:6Ú6ˆÁ6VwVóRwV&F"V“6ñÃ:¶Ê6ñÚ‚VÁG&RV∆2&V6ˆÊÜV6WRÊ&¬7Vó&‹:2¬FW6&V6ñFVÊFÚ˜26ñÊ˜2&&“‚"¿¢$÷V‹;7&ñFV∆6ÜVv'FñF¢(	ƒFW<:v‚V∆RñÊF∆V÷'&Ó(	“ÚwV&Fú:6Ú6V“Êˆ÷RW7W&Ê7&óF¬FñÁFRF;¶Êñ6ó7FVRˆFRWá∆ñ6"˜"VRÊ&fˆíL:íÃ:‚ ¢”∞¢&ófFR&VFˆÊ«íñÁEµ“vVˆ‰F÷vR“≤¬¬B”∞¢&ófFR&VFˆÊ«íñÁEµ“vVˆ‰&ˆÁW6W2“ÊWrñÁE≥5“¬vVˆÂ&&óFñW2“ÊWrñÁE≥5“¬vVˆ‰ffóÜW2“ÊWrñÁE≥5”∞¢&ófFRˆñÁDb∆ñW"“ÊWrÉS¬33í¬f6ñÊr“ÊWrÉ¬í¬÷˜W6Tñ““ÊWrÉ¬ì∞¢&ófFRñÁB&ˆˆ“¬∆WfV¬“¬á¬vˆ∆B¬˜FñˆÁ2“"¬F÷vR“#R¬vVˆ‚¬˜vÊVEvVˆÁ2“∞¢&ófFRñÁBÜV«FÖF∆VÁB¬6∂ñ∆≈F∆VÁB¬FˆFvUF∆VÁB¬VÊFñÊuF∆VÁG2¬VÊV÷ñW4FVfVFVC∞¢&ófFRñÁB÷V÷˜&ñW4f˜VÊB¬VW7E7FvR¬6∆V&VE&ˆˆ◊3∞¢&ófFR&ˆˆ¬6Ü˜'W4÷V÷˜'í¬fó'7D÷V÷˜'í¬vW7EG&6R¬W7G&V’G&6S∞¢&ófFRñÁB˜vÊVD6Ü&◊2¬WVóVD6Ü&“¬WVóVD6Ü&”#∞¢&ófFR&ˆˆ¬&6ÜófU6V√∞¢&ófFR&ˆˆ¬&ófW$&V∆√∞¢&ófFR&ˆˆ¬«V÷T∆VÁ3∞¢&ófFR&ˆˆ¬Ê&G&6S∞¢&ófFRf∆ˆBÜV«FÇ“¬÷ÑÜV«FÇ“¬GF6¥6B¬6∂ñ∆ƒ6B¬6Ü&D6B¬&V∆ƒ6B¬&V∆≈vfUFñ÷R¬&V∆≈vfU&FóW2¬F6Ñ6B¬F6ÖFñ÷R¬ñÁgV∆ÊW&&∆R¬Ê˜Fñ6UFñ÷R¬vñÊGWV«6S∞¢&ófFR&ˆˆ¬&÷˜"¬&÷˜$ˆ‚¬&V∆ñ2¬&V∆ñ4ˆ‚¬ñÁfVÁF˜'î˜V‚¬FóF∆R“G'VR¬FVB¬fñ7F˜'í¬F∆VÁD6Üˆñ6R¬6ÜW7D6Üˆñ6R¬7F˜'î˜fW&∆í¬÷V÷˜'î˜fW&∆í¬VÊFñÊt6Üˆñ6T˜V„∞¢&ófFRñÁBF˜v‰VÊFñÊs∞¢&ófFRñÁB7F˜'ïvS∞¢&ófFR7G&ñÊrÊ˜Fñ6R“"#∞¢&ófFR7G&ñÊr÷V÷˜'ïFóF∆R“"#∞¢&ófFR7G&ñÊr÷V÷˜'ïFWáB“"#∞¢&ófFR7G&ñÊr6fUFÇ”‚FÇ‰6ˆ÷&ñÊRÑVÁfó&ˆÊ÷VÁB‰vWDfˆ∆FW%FÇÑVÁfó&ˆÊ÷VÁBÂ7V6ñƒfˆ∆FW"‰∆ˆ6ƒ∆ñ6Fñˆ‰FFí¬%66G'ñ≤"¬'6fRÊß6ˆ‚"ì∞†¢V&∆ñ2v÷RÇê¢∞¢FWáB“%66G'ñ≤(	B%rFR:|:6Ú$B#≤6∆ñVÁE6ó¶R“ÊWr6ó¶RÉìc¬cCì≤÷ñÊñ◊V’6ó¶R“÷Üñ◊V’6ó¶R“ÊWr6ó¶RÉìsb¬csíì∞¢f˜&‘&˜&FW%7Gñ∆R“f˜&‘&˜&FW%7Gñ∆R‰fóÜVE6ñÊv∆S≤÷Üñ÷ó¶T&˜Ç“f«6S≤7F'E˜6óFñˆ‚“f˜&’7F'E˜6óFñˆ‚‰6VÁFW%67&VV„∞¢F˜V&∆T'VffW&VB“G'VS≤∂Wï&WfñWr“G'VS≤&6¥6ˆ∆˜"“6ˆ∆˜"‰g&ˆ‘&v"Éb¬í¬#2ì∞¢Fñ÷W"ÂFñ6≤≥“ÖÚ¬Úí”‚Fñ6¥v÷RÇì≤Fñ÷W"Â7F'BÇì∞¢∂WîF˜v‚≥“ˆ‰∂WîF˜v„≤∂WïW≥“ÖÚ¬Rí”‚F˜v‚Â&V÷˜fRÜR‰∂Wî6ˆFRì∞¢÷˜W6T÷˜fR≥“ÖÚ¬Rí”‚≤÷˜W6Tñ““Ê˜&÷∆ó¶RÜÊWrˆñÁDbÜRÂÇ“∆ñW"ÂÇ¬RÂí“∆ñW"Âíí¬f6ñÊrì≤”∞¢÷˜W6TF˜v‚≥“ÖÚ¬Rí”‡¢∞¢ñbá7F˜'î˜fW&∆íí≤ñbÜR‰'WGFˆ‚”“÷˜W6T'WGFˆÁ2‰∆VgBíGfÊ6U7F˜'íÇì≤&WGW&„≤–¢ñbÜ÷V÷˜'î˜fW&∆íí≤ñbÜR‰'WGFˆ‚”“÷˜W6T'WGFˆÁ2‰∆VgBí÷V÷˜'î˜fW&∆í“f«6S≤&WGW&„≤–¢ñbáFóF∆R«¬FVB«¬fñ7F˜'í«¬6ÜW7D6Üˆñ6R«¬F∆VÁD6Üˆñ6R«¬ñÁfVÁF˜'î˜V‚í&WGW&„∞¢÷˜W6Tñ““Ê˜&÷∆ó¶RÜÊWrˆñÁDbÜRÂÇ“∆ñW"ÂÇ¬RÂí“∆ñW"Âíí¬f6ñÊrì∞¢ñbÜR‰'WGFˆ‚”“÷˜W6T'WGFˆÁ2‰∆VgBíGF6≤Çì∞¢ñbÜR‰'WGFˆ‚”“÷˜W6T'WGFˆÁ2Â&ñváBívÜó&«vñÊBÇì∞¢”∞¢–†¢&ófFRfˆñB7F'Dv÷RÇê¢∞¢&ˆˆ““≤∆WfV¬“≤á“vˆ∆B“F÷vR“≤F÷vR“#S≤˜FñˆÁ2“#≤vVˆ‚“≤˜vÊVEvVˆÁ2“≤'&í‰6∆V"ávVˆ‰&ˆÁW6W2ì≤'&í‰6∆V"ávVˆÂ&&óFñW2ì≤'&í‰6∆V"ávVˆ‰ffóÜW2ì∞¢&÷˜"“&÷˜$ˆ‚“&V∆ñ2“&V∆ñ4ˆ‚“&6ÜófU6V¬“&ófW$&V∆¬“«V÷T∆VÁ2“Ê&G&6R“6Ü˜'W4÷V÷˜'í“fó'7D÷V÷˜'í“vW7EG&6R“W7G&V’G&6R“ñÁfVÁF˜'î˜V‚“FVB“fñ7F˜'í“6ÜW7D6Üˆñ6R“F∆VÁD6Üˆñ6R“÷V÷˜'î˜fW&∆í“VÊFñÊt6Üˆñ6T˜V‚“f«6S∞¢F˜v‰VÊFñÊr“∞¢ÜV«FÖF∆VÁB“6∂ñ∆≈F∆VÁB“FˆFvUF∆VÁB“VÊFñÊuF∆VÁG2“VÊV÷ñW4FVfVFVB“÷V÷˜&ñW4f˜VÊB“VW7E7FvR“∞¢6∆V&VE&ˆˆ◊2“∞¢˜vÊVD6Ü&◊2“WVóVD6Ü&““WVóVD6Ü&”"“∞¢ÜV«FÇ“÷ÑÜV«FÇ“≤GF6¥6B“6∂ñ∆ƒ6B“6Ü&D6B“&V∆ƒ6B“&V∆≈vfUFñ÷R“&V∆≈vfU&FóW2“F6Ñ6B“F6ÖFñ÷R“ñÁgV∆ÊW&&∆R“≤V6Üı6Ü&G2‰6∆V"Çì≤FóF∆R“f«6S≤7F˜'ïvR“≤7F˜'î˜fW&∆í“G'VS≤6WGW&ˆˆ“Çì∞¢–†¢&ófFRfˆñBGfÊ6U7F˜'íÇê¢∞¢ñbÇ7F˜'î˜fW&∆íí&WGW&„∞¢7F˜'ïvR≤≥∞¢ñbá7F˜'ïvR„“&ˆ∆ˆwVR‰∆VÊwFÇí7F˜'î˜fW&∆í“f«6S∞¢–†¢&ófFRfˆñB6WGW&ˆˆ“Çê¢∞¢∆ñW"“ÊWrˆñÁDbÉS¬33ì≤VÊV÷ñW2‰6∆V"Çì≤G&˜2‰6∆V"Çì≤V6Üı6Ü&G2‰6∆V"Çì≤∆ˆ6∂VEF&vWB“ÁV∆√∞¢ñbá&ˆˆ““2bbÜ6∆V&VE&ˆˆ◊2bÉ√¬&ˆˆ“íí“í&WGW&„∞¢ñÁB6˜VÁB“&ˆˆ“ó22˜"ÇÚ¢&ˆˆ“”“Ú2¢&ˆˆ“”“ÚR¢&ˆˆ“”“BÚR¢&ˆˆ“”“RÚB¢&ˆˆ“”“bÚb¢&ˆˆ“”“#Úb¢&ˆˆ“”“#"ÚR¢á&ˆˆ“ó2r˜"í˜"˜"R˜"r˜"#íÚB¢&ˆˆ“”“ÇÚR¢&ˆˆ“ó2˜""˜"B˜"b˜"íÚb¢&ˆˆ“”“2ÚB¢C∞¢f˜"ÜñÁBí“≤í¬6˜VÁC≤í≤≤ê¢∞¢VÊV◊î∂ñÊB∂ñÊB“&ˆˆ“”“"bbí”“ÚVÊV◊î∂ñÊB‰wV&Fñ‚¢&ˆˆ“”“Rbbí”“ÚVÊV◊î∂ñÊB‰&∆ñÊE67&ñ&R¢&ˆˆ“”“rbbí”“ÚVÊV◊î∂ñÊBÂ&ófW$fW''ñ÷‚¢&ˆˆ“”“íbbí”“ÚVÊV◊î∂ñÊB‰6Öv&FV‚¢&ˆˆ“”“2bbí”“ÚVÊV◊î∂ñÊB‰Ê÷UvVfW"¢&ˆˆ“”“Rbbí”“ÚVÊV◊î∂ñÊB‰fó'7D∂VWW"¢&ˆˆ“”“rbbí”“ÚVÊV◊î∂ñÊB‰ˆFÑ6'Fˆw&ÜW"¢&ˆˆ“”“#bbí”“ÚVÊV◊î∂ñÊB‰Ê÷T'&ˆ∂W"¢&ˆˆ“”“#"bbí”“ÚVÊV◊î∂ñÊBÂFñFUvóFÊW72¢&ˆˆ“”“bbí”“ÚVÊV◊î∂ñÊB‰Üˆ∆∆˜tÊ÷R¢&ˆˆ“”“bbí”“6˜VÁB“ÚVÊV◊î∂ñÊB‰V∆óFR¢&ˆˆ“”“BbbÜíó2˜"BíÚVÊV◊î∂ñÊB‰ñÊ¥V6ÜÚ¢&ˆˆ“”“Rbbí”“"ÚVÊV◊î∂ñÊB‰ñÊ¥V6ÜÚ¢&ˆˆ“”“bbbÜíó2˜"BíÚVÊV◊î∂ñÊB‰G&˜vÊVD÷V÷˜'í¢&ˆˆ“”“rbbí”“"ÚVÊV◊î∂ñÊB‰G&˜vÊVD÷V÷˜'í¢&ˆˆ“”“ÇbbÜíó2˜"BíÚVÊV◊î∂ñÊB‰V÷&W%vó7¢&ˆˆ“”“íbbí”“"ÚVÊV◊î∂ñÊB‰V÷&W%vó7¢&ˆˆ“”“bbÜíó2˜"BíÚVÊV◊î∂ñÊB‰Ê÷T÷˜FÇ¢&ˆˆ“ó2"bbÜíó2˜"BíÚVÊV◊î∂ñÊB‰Ê÷T÷˜FÇ¢á&ˆˆ“ó2˜"2˜"B˜"R˜"b˜"r˜"í˜"#íbbí”“"ÚVÊV◊î∂ñÊB‰Ê÷T÷˜FÇ¢á&ˆˆ“ó2"˜"2˜"B˜"R˜"b˜"r˜"í˜"#íbbí”“ÚVÊV◊î∂ñÊB‰Ê÷T÷˜FÇ¢&ˆˆ“”“bbbí”“BÚVÊV◊î∂ñÊB‰◊VD6ÁF˜"¢&ˆˆ“”“rbbí”“2ÚVÊV◊î∂ñÊB‰◊VD6ÁF˜"¢á&ˆˆ“ó2í˜"#íbbí”“2ÚVÊV◊î∂ñÊBÂW%w&óFÇ¢á&ˆˆ“ó2#˜"#"íbbí”“"ÚVÊV◊î∂ñÊBÂ6«DV6ÜÚ¢&ˆˆ“‚bbí”“ÚVÊV◊î∂ñÊB‰&6ÜW"¢á&ˆˆ“ó2"˜"R˜"r˜"í˜"˜"B˜"b˜"ííbbí”“"ÚVÊV◊î∂ñÊB‰÷vR¢VÊV◊î∂ñÊB‰w'VÁC∞¢f∆ˆBá“∂ñÊB7vóF6Ç≤VÊV◊î∂ñÊB‰wV&Fñ‚”‚c¬VÊV◊î∂ñÊB‰&∆ñÊE67&ñ&R”‚#CR¬VÊV◊î∂ñÊBÂ&ófW$fW''ñ÷‚”‚#ÉR¬VÊV◊î∂ñÊB‰6Öv&FV‚”‚3C¬VÊV◊î∂ñÊB‰Üˆ∆∆˜tÊ÷R”‚3ì¬VÊV◊î∂ñÊB‰Ê÷UvVfW"”‚F˜v‰VÊFñÊr”“ÚC¢CSR¬VÊV◊î∂ñÊB‰fó'7D∂VWW"”‚F˜v‰VÊFñÊr”“ÚSc¢c#¬VÊV◊î∂ñÊB‰ˆFÑ6'Fˆw&ÜW"”‚F˜v‰VÊFñÊr”“Úc¢cì¬VÊV◊î∂ñÊB‰Ê÷T'&ˆ∂W"”‚F˜v‰VÊFñÊr”“Ús#¢sì¬VÊV◊î∂ñÊBÂFñFUvóFÊW72”‚F˜v‰VÊFñÊr”“ÚÉ#¢ì#¬VÊV◊î∂ñÊB‰V∆óFR”‚#¬VÊV◊î∂ñÊB‰&6ÜW"˜"VÊV◊î∂ñÊB‰÷vR˜"VÊV◊î∂ñÊB‰ñÊ¥V6ÜÚ˜"VÊV◊î∂ñÊB‰G&˜vÊVD÷V÷˜'í˜"VÊV◊î∂ñÊB‰V÷&W%vó7˜"VÊV◊î∂ñÊB‰Ê÷T÷˜FÇ˜"VÊV◊î∂ñÊB‰◊VD6ÁF˜"˜"VÊV◊î∂ñÊBÂW%w&óFÇ˜"VÊV◊î∂ñÊBÂ6«DV6ÜÚ”‚cB¬Ú”‚SÇ≤&ˆˆ“¢Ç”∞¢f"VÊV◊í“ÊWrVÊV◊í≤˜2“ÊWrˆñÁDbÉCÉR≤íR2¢#¬#R≤íÚ2¢cRí¬∂ñÊB“∂ñÊB¬á“á¬÷Ñá“á¬6ˆˆ∆F˜v‚“„vb≤Üf∆ˆBó&ÊFˆ“‰ÊWáDF˜V&∆RÇí¬&÷˜&VB“∂ñÊB”“VÊV◊î∂ñÊB‰V∆óFRbb&ÊFˆ“‰ÊWáBÉ"í”“”∞¢ñbÑ&∆ˆ6∂VBÜVÊV◊íÂ˜2¬VÊV◊íÂ&FóW2ííVÊV◊íÂ˜2“ÊWrˆñÁDbÉcc≤í¢"¬CÉ“í¢Çì∞¢VÊV÷ñW2‰FBÜVÊV◊íì∞¢–¢–†¢&ófFRfˆñBVÁFW%fW7W"Çê¢∞¢&ˆˆ““3≤FóF∆R“f«6S≤fñ7F˜'í“f«6S≤6WGW&ˆˆ“Çì∞¢6Ü˜t÷V÷˜'íÇ%l8ï5U$"¬$&:vFÚf&ˆ¬ñÊFfófR¬V÷&˜&6WW2÷˜&F˜&W2WfóFV“f∆"F˜26ñÊ˜2‚6ñ∆WFÇW7W&W'FÚFÚ'VófÛ≤F«fW¢&V6ˆÊÜ\:vf˜¢FRÊ&‚"ì∞¢Ê˜Fñ6R“VW7E7FvR”“Ú$‰ıdÚÙ$§UDïdÛ¢dƒR4Ù“4îƒUDÇ"¢$Ù$§UDïdÚETƒï§DÚ#≤Ê˜Fñ6UFñ÷R“2„Vc∞¢–†¢&ófFRfˆñB6Üˆ˜6UF˜v‰VÊFñÊrÜñÁB6Üˆñ6Rê¢∞¢ñbáVW7E7FvR¬"«¬F˜v‰VÊFñÊr“«¬6Üˆñ6Ró2¬˜"‚"í&WGW&„∞¢F˜v‰VÊFñÊr“6Üˆñ6S≤VW7E7FvR“3≤VÊFñÊt6Üˆñ6T˜V‚“f«6S∞¢ñbÜ6Üˆñ6R”“ê¢∞¢÷ÑÜV«FÇ≥“#≤ÜV«FÇ“÷ÑÜV«FÉ∞¢6Ü˜t÷V÷˜'íÇ%l8ï5U$DUdÙ≈dRı2‰Ù‘U2"¬%6ñ∆WFÇ'&R˜2'Vóf˜2RÃ:¢6FÊˆ÷RV“f˜¢«F‚˜26ñÊ˜2&W7ˆÊFV“V“V“‚Ú«V÷RVÊg&VV6R¬RÚ6ñÃ:¶Ê6ñÚfˆ«F6R÷˜fW"6ˆ"Ú&ñÛ≤ÊñÊw\:ñ“÷ó2VÊg&VÁF,:W76÷V:v6˜¶ñÊÜÚ‚VFF&ˆ÷WFR÷ÁFW"˜2Êˆ÷W2Ê˜26ñÊ˜2‚&:vˆfW&V6R'&ñvÚR6˜&vV”¢fñF‹:Üñ÷≥#‚"ì∞¢–¢V«6P¢∞¢F÷vR≥“∞¢6Ü˜t÷V÷˜'íÇ%l8ï5U$‘ÂL8î“Ú≈T‘R"¬%6ñ∆WFÇ6ˆÁ6W'f&'&Vó&R&Vvó7G&Ú&\:vÚ6V“v"ÚVRfˆíW&FñFÚ‚VFFFˆ6˜26ñÊ˜2&VR6ñFFRÏ:6Ú6ˆÊgVÊF&˜F\:|:6Ú6ˆ“W7VV6ñ÷VÁFÚ‚«W¢FÚ«V÷R÷&6&÷FÚW67WFF˜#¢FÊÚ≥‚˜2'Vóf˜2fñ6“&W'F˜2¬÷W6÷Ú6ˆ"«W¢ÁFñv‚"ì∞¢–¢Ê˜Fñ6R“$DT4ï<84ÚDRl8ï5U$$Ttï5E$D(
+"4≈dR4Ù“cR#≤Ê˜Fñ6UFñ÷R“C∞¢–†¢&ófFRfˆñBˆ‰∂WîF˜v‚Üˆ&¶V7CÚ6VÊFW"¬∂WîWfVÁD&w2Rê¢∞¢F˜v‚‰FBÜR‰∂Wî6ˆFRì∞¢ñbÜR‰∂Wî6ˆFR”“∂Wó2‰VÁFW"bbáFóF∆R«¬FVB«¬fñ7F˜'ííí≤7F'Dv÷RÇì≤&WGW&„≤–¢ñbÜR‰∂Wî6ˆFR”“∂Wó2‰2bbFóF∆Rí≤∆ˆDv÷RÇì≤&WGW&„≤–¢ñbÜR‰∂Wî6ˆFR”“∂Wó2‰cRbbfñ7F˜'íí≤6fTv÷RÇì≤&WGW&„≤–¢ñbáFóF∆R«¬FVB«¬fñ7F˜'íí&WGW&„∞¢ñbá7F˜'î˜fW&∆íí≤ñbÜR‰∂Wî6ˆFRó2∂Wó2‰VÁFW"˜"∂Wó2Â76RíGfÊ6U7F˜'íÇì≤&WGW&„≤–¢ñbÜ÷V÷˜'î˜fW&∆íí≤ñbÜR‰∂Wî6ˆFRó2∂Wó2‰VÁFW"˜"∂Wó2Â76Rí÷V÷˜'î˜fW&∆í“f«6S≤&WGW&„≤–¢ñbÜVÊFñÊt6Üˆñ6T˜V‚í≤ñbÜR‰∂Wî6ˆFR”“∂Wó2‰Cí6Üˆ˜6UF˜v‰VÊFñÊrÉì≤V«6RñbÜR‰∂Wî6ˆFR”“∂Wó2‰C"í6Üˆ˜6UF˜v‰VÊFñÊrÉ"ì≤V«6RñbÜR‰∂Wî6ˆFR”“∂Wó2‰C2íVÊFñÊt6Üˆñ6T˜V‚“f«6S≤&WGW&„≤–¢ñbÜ6ÜW7D6Üˆñ6Rí≤ñbÜR‰∂Wî6ˆFR”“∂Wó2‰Cívˆ∆B≥“sS≤V«6RñbÜR‰∂Wî6ˆFR”“∂Wó2‰C"í˜FñˆÁ2≥“#≤V«6RñbÜR‰∂Wî6ˆFR”“∂Wó2‰C2íÜV«FÇ“÷ÑÜV«FÉ≤V«6R&WGW&„≤6ÜW7D6Üˆñ6R“f«6S≤VÁFW%fW7W"Çì≤&WGW&„≤–¢ñbáF∆VÁD6Üˆñ6Rí≤6V∆V7EF∆VÁBÜR‰∂Wî6ˆFRì≤&WGW&„≤–¢ñbÜR‰∂Wî6ˆFR”“∂Wó2‰íí≤ñÁfVÁF˜'î˜V‚“ñÁfVÁF˜'î˜V„≤&WGW&„≤–¢ñbÜñÁfVÁF˜'î˜V‚í≤ñbÜR‰∂Wî6ˆFR„“∂Wó2‰CbbR‰∂Wî6ˆFR√“∂Wó2‰C2íWVóvVˆ‚ÇÜñÁBñR‰∂Wî6ˆFR“ÜñÁBî∂Wó2‰Cì≤V«6RñbÜR‰∂Wî6ˆFR”“∂Wó2‰CBbb&÷˜"í&÷˜$ˆ‚“&÷˜$ˆ„≤V«6RñbÜR‰∂Wî6ˆFR”“∂Wó2‰CRbb&V∆ñ2í&V∆ñ4ˆ‚“&V∆ñ4ˆ„≤V«6RñbÜR‰∂Wî6ˆFR”“∂Wó2‰Cbí7ñ6∆T6Ü&“Éì≤V«6RñbÜR‰∂Wî6ˆFR”“∂Wó2‰Crí7ñ6∆T6Ü&“É"ì≤&WGW&„≤–¢ñbÜR‰∂Wî6ˆFR”“∂Wó2Â76R«¬R‰∂Wî6ˆFR”“∂Wó2‰¢íGF6≤Çì∞¢V«6RñbÇÜR‰∂Wî6ˆFR”“∂Wó2Â6ÜñgD∂Wí«¬R‰∂Wî6ˆFR”“∂Wó2‰≤íbbF6Ñ6B√“í≤F6ÖFñ÷R“F6ÑGW&Fñˆ‚Çì≤F6Ñ6B“F6Ñ6ˆˆ∆F˜v‚Çì≤–¢V«6RñbÜR‰∂Wî6ˆFR”“∂Wó2Â"ívÜó&«vñÊBÇì∞¢V«6RñbÜR‰∂Wî6ˆFR”“∂Wó2‰bí67Efˆñ6U6Ü&BÇì∞¢V«6RñbÜR‰∂Wî6ˆFR”“∂Wó2Âbí67D&V∆≈V«6RÇì∞¢V«6RñbÜR‰∂Wî6ˆFR”“∂Wó2ÂíW6U˜Fñˆ‚Çì∞¢V«6RñbÜR‰∂Wî6ˆFR”“∂Wó2‰RíñÁFW&7BÇì∞¢V«6RñbÜR‰∂Wî6ˆFR”“∂Wó2‰cRí≤ñbÜVÊV÷ñW2‰6˜VÁB”“bbG&˜2‰6˜VÁB”“í6fTv÷RÇì≤V«6R≤Ê˜Fñ6R“$ƒî’R4ƒR$T4ÙƒÑÚƒÙıBÂDU2DR4≈d"#≤Ê˜Fñ6UFñ÷R“#≤“–¢V«6RñbÜR‰∂Wî6ˆFR”“∂Wó2ÂF"í7ñ6∆UF&vWBÇì∞¢–†¢&ófFRfˆñB6V∆V7EF∆VÁBÑ∂Wó2∂Wíê¢∞¢ñbÜ∂Wí”“∂Wó2‰Cí≤ÜV«FÖF∆VÁB≤≥≤÷ÑÜV«FÇ≥“#≤ÜV«FÇ“÷FÇ‰÷ñ‚Ü÷ÑÜV«FÇ¬ÜV«FÇ≤#ì≤–¢V«6RñbÜ∂Wí”“∂Wó2‰C"í6∂ñ∆≈F∆VÁB≤≥∞¢V«6RñbÜ∂Wí”“∂Wó2‰C2íFˆFvUF∆VÁB≤≥∞¢V«6R&WGW&„∞¢VÊFñÊuF∆VÁG2“”≤F∆VÁD6Üˆñ6R“VÊFñÊuF∆VÁG2‚∞¢–†¢&ófFRfˆñBGF6≤Çê¢∞¢ñbÜGF6¥6B‚í&WGW&„∞¢f6ñÊr“∆ˆ6∂VEF&vWBó2Ê˜BÁV∆¬bbVÊV÷ñW2‰6ˆÁFñÁ2Ü∆ˆ6∂VEF&vWBíÚÊ˜&÷∆ó¶RÖ7V"Ü∆ˆ6∂VEF&vWBÂ˜2¬∆ñW"í¬f6ñÊrí¢÷˜W6Tñ”∞¢GF6¥6B“&6ñ4GF6¥6ˆˆ∆F˜v‚Çì∞¢f˜&V6ÇÑVÊV◊íVÊV◊íñ‚VÊV÷ñW2ÂFÙ'&íÇíê¢∞¢ˆñÁDbˆfg6WB“7V"ÜVÊV◊íÂ˜2¬∆ñW"ì≤f∆ˆBFó7FÊ6R“∆VÊwFÇÜˆfg6WBì∞¢ñbÜFó7FÊ6R‚ÜVÊV◊í‰&˜72ÚìR¢sÇí«¬ÜFó7FÊ6R„“#bbF˜BÜf6ñÊr¬Ê˜&÷∆ó¶RÜˆfg6WB¬f6ñÊríí√“„bí«¬&∆ˆ6∂VD∆ñÊRá∆ñW"¬VÊV◊íÂ˜2íí6ˆÁFñÁVS∞¢&ˆˆ¬7&óFñ6¬“&ÊFˆ“‰ÊWáDF˜V&∆RÇí¬7&óFñ6ƒ6ÜÊ6RÇì≤ñÁBFV«B“ÜñÁBíÜF÷vR¢˜WFvˆñÊtF÷vT◊V«Fó∆ñW"ÜVÊV◊íí¢Ü7&óFñ6¬Ú7&óFñ6ƒ◊V«Fó∆ñW"Çí¢íì≤ñbÜVÊV◊í‰&÷˜&VBíFV«B“ÜñÁBíÜFV«B¢„sVbì∞¢VÊV◊í‰á”“FV«C≤VÊV◊í‰f∆6Ç“„&c≤ñbÜVÊV◊í‰á√“íFVfVBÜVÊV◊íì∞¢–¢–†¢&ófFRfˆñBvÜó&«vñÊBÇê¢∞¢ñbá6∂ñ∆ƒ6B‚«¬F∆VÁD6Üˆñ6Rí&WGW&„∞¢6∂ñ∆ƒ6B“÷FÇ‰÷ÇÉ„Vb¬fb“6∂ñ∆≈F∆VÁB¢„Vbí≤vÜó&«vñÊD6ˆˆ∆F˜vÂVÊ«GíÇì∞¢f˜&V6ÇÑVÊV◊íVÊV◊íñ‚VÊV÷ñW2ÂFÙ'&íÇííñbÑFó7FÊ6Rá∆ñW"¬VÊV◊íÂ˜2í¬í≤VÊV◊í‰á”“ÜñÁBíÜF÷vR¢˜WFvˆñÊtF÷vT◊V«Fó∆ñW"ÜVÊV◊íí¢vÜó&«vñÊD◊V«Fó∆ñW"Çí¢vVˆÂ6∂ñ∆ƒ◊V«Fó∆ñW"Çí¢ÜVÊV◊í‰&÷˜&VBÚ„sVb¢íì≤ñbÜVÊV◊í‰á√“íFVfVBÜVÊV◊íì≤–¢–†¢&ófFRfˆñB67Efˆñ6U6Ü&BÇê¢∞¢ñbá&ˆˆ“”“2«¬6Ü&D6B‚«¬VÊV÷ñW2‰6˜VÁB”“í&WGW&„∞¢f6ñÊr“∆ˆ6∂VEF&vWBó2Ê˜BÁV∆¬bbVÊV÷ñW2‰6ˆÁFñÁ2Ü∆ˆ6∂VEF&vWBíÚÊ˜&÷∆ó¶RÖ7V"Ü∆ˆ6∂VEF&vWBÂ˜2¬∆ñW"í¬f6ñÊrí¢Ê˜&÷∆ó¶RÜ÷˜W6Tñ“¬f6ñÊrì∞¢V6Üı6Ü&G2‰FBÜÊWrV6Üı6Ü&B≤˜2“FBá∆ñW"¬66∆RÜf6ñÊr¬#2íí¬Fó&V7Fñˆ‚“f6ñÊr¬∆ñfR“fˆñ6U6Ü&D∆ñfWFñ÷RÇí¬F÷vR“fˆñ6U6Ü&DF÷vRÇí“ì∞¢6Ü&D6B“fˆñ6U6Ü&D6ˆˆ∆F˜v‚Çì≤Ê˜Fñ6R“$U5DîƒÑ8tÚDRdı¢#≤Ê˜Fñ6UFñ÷R“„sVc∞¢–†¢&ófFRf∆ˆB&V∆≈V«6U&FóW2Çí”‚Ü46Ü&“É"íÚìb¢SVc∞¢&ófFRf∆ˆB&V∆≈V«6T6ˆˆ∆F˜v‚Çí”‚÷FÇ‰÷ÇÉvb¬Fb“6∂ñ∆≈F∆VÁB¢„vbí≤ÑÜ46Ü&“É"íÚ„Vb¢bì∞¢&ófFRf∆ˆBvVˆÂ6∂ñ∆ƒ◊V«Fó∆ñW"Çí”‚vVˆ‰ffóÜW5∑vVˆÂ“”“2ÚvVˆÂ&&óFñW5∑vVˆÂ“”“"Ú„Üb¢„&b¢c∞¢&ófFRñÁBvVˆÂ˜vW"ÜñÁBñÊFWÇí”‚vVˆ‰F÷vU∂ñÊFWÖ“≤vVˆ‰&ˆÁW6W5∂ñÊFWÖ”∞¢&ófFR7FFñ27G&ñÊrvVˆÂ&&óGîÊ÷RÜñÁBñÊFWÇí”‚ñÊFWÇ”“Ú$4Ù’T“"¢ñÊFWÇ”“Ú%$$"¢%$TÃ8’Tî#∞¢&ófFR7G&ñÊrvVˆ‰ffóÑÊ÷RÜñÁBñÊFWÇí”‚vVˆ‰ffóÜW5∂ñÊFWÖ“7vóF6Ç≤”‚&FG,:ñwV"¬"”‚&FÚ6ˆÁG&6ÁFÚ"¬2”‚&F÷,:í"¬Ú”‚'6V“fóÜÚ"”∞¢&ófFR7G&ñÊrvVˆ‰Fó7∆îÊ÷RÜñÁBñÊFWÇí”‚vVˆÂ&&óFñW5∂ñÊFWÖ“”“ÚB'∑vVˆ‰Ê÷W5∂ñÊFWÖ◊“¥4Ù’T’“"¢B'∑vVˆ‰Ê÷W5∂ñÊFWÖ◊“(
+"µvVˆÂ&&óGîÊ÷RÜñÊFWÇó“µvVˆ‰ffóÑÊ÷RÜñÊFWÇó“#∞¢&ófFR7G&ñÊrvVˆ‰ffóÑFW67&óFñˆ‚ÜñÁBñÊFWÇí”‚vVˆ‰ffóÜW5∂ñÊFWÖ“7vóF6Ç≤”‚B&FG,:ñwV¢&V7WW&≤ávVˆÂ&&óFñW5∂ñÊFWÖ“”“"Úb¢2ó“fñF˜"&FR"¬"”‚B&FÚ6ˆÁG&6ÁFÛ¢∑≤ávVˆÂ&&óFñW5∂ñÊFWÖ“”“"Ú¢ró“Á‚FR7,:◊Fñ6Ú"¬2”‚B&F÷,:ì¢∑≤ávVˆÂ&&óFñW5∂ñÊFWÖ“”“"ÚÇ¢"ó“RFRFÊÚFRL:ñ6Êñ6"¬Ú”‚%6V“fóÜÚ"”∞†¢&ófFRfˆñB67D&V∆≈V«6RÇê¢∞¢ñbÇ&ófW$&V∆¬í≤Ê˜Fñ6R“$Ú4î‰ÚDR‰$î‰DÏ84ÚdÙíT‰4ÙÂE$DÚ#≤Ê˜Fñ6UFñ÷R“„fc≤&WGW&„≤–¢ñbá&ˆˆ“ó22˜"Ç«¬VÊV÷ñW2‰6˜VÁB”“«¬&V∆ƒ6B‚í&WGW&„∞¢&V∆ƒ6B“&V∆≈V«6T6ˆˆ∆F˜v‚Çì≤&V∆≈vfUFñ÷R“„C&c≤&V∆≈vfU&FóW2“&V∆≈V«6U&FóW2Çì∞¢f˜&V6ÇÑVÊV◊íVÊV◊íñ‚VÊV÷ñW2ÂFÙ'&íÇíê¢∞¢ñbÑFó7FÊ6Rá∆ñW"¬VÊV◊íÂ˜2í‚&V∆≈vfU&FóW2í6ˆÁFñÁVS∞¢f∆ˆB◊V«Fó∆ñW"“ÑÜ46Ü&“É2íÚ„#Vb¢bí¢vVˆÂ6∂ñ∆ƒ◊V«Fó∆ñW"Çì∞¢f∆ˆB˜vW"“VÊV◊í‰&˜72Ú„SVb¢„ìVc∞¢VÊV◊í‰á”“ÜñÁBíÜF÷vR¢˜vW"¢◊V«Fó∆ñW"¢˜WFvˆñÊtF÷vT◊V«Fó∆ñW"ÜVÊV◊íí¢ÜVÊV◊í‰&÷˜&VBÚ„sVb¢íì∞¢VÊV◊í‰f∆6Ç“„&c∞¢ñbÇVÊV◊í‰&˜72í≤VÊV◊íÂ7FvvW"“„ìVc≤VÊV◊íÂvñÊGW“≤VÊV◊í‰6ˆˆ∆F˜v‚“÷FÇ‰÷ÇÜVÊV◊í‰6ˆˆ∆F˜v‚¬„Übì≤–¢ñbÜVÊV◊í‰á√“íFVfVBÜVÊV◊íì∞¢–¢Ê˜Fñ6R“Ü46Ü&“É"íÚ%4î‰ÚDR‰$(
+"Ù‰D’ƒîD"¢%4î‰ÚDR‰$(
+"$U54ÙÏ8$‰4î#≤Ê˜Fñ6UFñ÷R“„&c∞¢–†¢&ófFRfˆñBGfÊ6Ufˆñ6U6Ü&G2Üf∆ˆBGBê¢∞¢f˜"ÜñÁBí“V6Üı6Ü&G2‰6˜VÁB“≤í„“≤í““ê¢∞¢V6Üı6Ü&B6Ü&B“V6Üı6Ü&G5∂ï”≤6Ü&B‰∆ñfR”“GC∞¢f∆ˆBFó7FÊ6R“S#¢GC≤ñÁB7FW2“÷FÇ‰÷ÇÉ¬ÜñÁBî÷FÑb‰6Vñ∆ñÊrÜFó7FÊ6RÚbíì≤f∆ˆB7FW“Fó7FÊ6RÚ7FW3≤&ˆˆ¬&∆ˆ6∂VB“f«6S∞¢f˜"ÜñÁB‚“≤‚¬7FW3≤‚≤≤ê¢∞¢ˆñÁDbÊWáB“FBá6Ü&BÂ˜2¬66∆Rá6Ü&B‰Fó&V7Fñˆ‚¬7FWíì∞¢ñbÑ&∆ˆ6∂VBÜÊWáB¬Bíí≤&∆ˆ6∂VB“G'VS≤'&V≥≤–¢6Ü&BÂ˜2“ÊWáC∞¢f˜&V6ÇÑVÊV◊íVÊV◊íñ‚VÊV÷ñW2ÂFÙ'&íÇíê¢∞¢ñbá6Ü&B‰ÜóB‰6ˆÁFñÁ2ÜVÊV◊íí«¬Fó7FÊ6UFı6Vv÷VÁBÜVÊV◊íÂ˜2¬7V"á6Ü&BÂ˜2¬66∆Rá6Ü&B‰Fó&V7Fñˆ‚¬7FWíí¬6Ü&BÂ˜2í„“VÊV◊íÂ&FóW2≤Çí6ˆÁFñÁVS∞¢6Ü&B‰ÜóB‰FBÜVÊV◊íì≤VÊV◊í‰á”“6Ü&B‰F÷vR¢˜WFvˆñÊtF÷vT◊V«Fó∆ñW"ÜVÊV◊íí¢ÜVÊV◊í‰&÷˜&VBÚ„sVb¢ì≤VÊV◊í‰f∆6Ç“„fc∞¢ñbÜVÊV◊í‰á√“íFVfVBÜVÊV◊íì∞¢–¢–¢ñbÜ&∆ˆ6∂VB«¬6Ü&B‰∆ñfR√“«¬6Ü&BÂ˜2ÂÇ¬sR«¬6Ü&BÂ˜2ÂÇ‚ÉÉR«¬6Ü&BÂ˜2Âí¬«¬6Ü&BÂ˜2Âí‚SSíV6Üı6Ü&G2Â&V÷˜fTBÜíì∞¢–¢–†¢&ófFRfˆñBFVfVBÑVÊV◊íVÊV◊íê¢∞¢ñbÇVÊV÷ñW2Â&V÷˜fRÜVÊV◊ííí&WGW&„∞¢VÊV÷ñW4FVfVFVB≤≥≤G&˜2‰FBÜÊWrG&˜≤˜2“VÊV◊íÂ˜2¬∂ñÊB“&vˆ∆B"¬÷˜VÁB“VÊV◊í‰&˜72Ú3R¢VÊV◊í‰∂ñÊB”“VÊV◊î∂ñÊB‰V∆óFRÚ#¢Ç“ì∞¢FEáÜVÊV◊í‰&˜72ÚsR¢VÊV◊í‰∂ñÊB”“VÊV◊î∂ñÊB‰V∆óFRÚC¢#"ì∞¢ñbávVˆ‰ffóÜW5∑vVˆÂ“”“íÜV«FÇ“÷FÇ‰÷ñ‚Ü÷ÑÜV«FÇ¬ÜV«FÇ≤ávVˆÂ&&óFñW5∑vVˆÂ“”“"Úb¢2íì∞¢ñbÜVÊV◊í‰∂ñÊB”“VÊV◊î∂ñÊB‰wV&Fñ‚bb&V∆ñ2íG&˜2‰FBÜÊWrG&˜≤˜2“ˆfg6WBÜVÊV◊íÂ˜2¬”#B¬í¬∂ñÊB“'&V∆ñ2"“ì∞¢ñbÜVÊV◊í‰∂ñÊB”“VÊV◊î∂ñÊB‰&∆ñÊE67&ñ&Rbb&6ÜófU6V¬íG&˜2‰FBÜÊWrG&˜≤˜2“ˆfg6WBÜVÊV◊íÂ˜2¬”#B¬í¬∂ñÊB“'6V¬"“ì∞¢ñbÜVÊV◊í‰∂ñÊB”“VÊV◊î∂ñÊBÂ&ófW$fW''ñ÷‚bb&ófW$&V∆¬íG&˜2‰FBÜÊWrG&˜≤˜2“ˆfg6WBÜVÊV◊íÂ˜2¬”#B¬í¬∂ñÊB“&&V∆¬"“ì∞¢ñbÜVÊV◊í‰∂ñÊB”“VÊV◊î∂ñÊB‰6Öv&FV‚bb«V÷T∆VÁ2íG&˜2‰FBÜÊWrG&˜≤˜2“ˆfg6WBÜVÊV◊íÂ˜2¬”#B¬í¬∂ñÊB“&∆VÁ2"“ì∞¢ñbÜVÊV◊í‰∂ñÊB”“VÊV◊î∂ñÊB‰Üˆ∆∆˜tÊ÷RbbÊ&G&6RíG&˜2‰FBÜÊWrG&˜≤˜2“ˆfg6WBÜVÊV◊íÂ˜2¬”#B¬í¬∂ñÊB“'G&6R"“ì∞¢ñbÜVÊV◊í‰∂ñÊB”“VÊV◊î∂ñÊB‰Ê÷UvVfW"bb6Ü˜'W4÷V÷˜'ííG&˜2‰FBÜÊWrG&˜≤˜2“ˆfg6WBÜVÊV◊íÂ˜2¬”#B¬í¬∂ñÊB“&6Ü˜'W2"“ì∞¢ñbÜVÊV◊í‰∂ñÊB”“VÊV◊î∂ñÊB‰fó'7D∂VWW"bbfó'7D÷V÷˜'ííG&˜2‰FBÜÊWrG&˜≤˜2“ˆfg6WBÜVÊV◊íÂ˜2¬”#B¬í¬∂ñÊB“&fó'7B"“ì∞¢ñbÜVÊV◊í‰∂ñÊB”“VÊV◊î∂ñÊB‰ˆFÑ6'Fˆw&ÜW"bbvW7EG&6RíG&˜2‰FBÜÊWrG&˜≤˜2“ˆfg6WBÜVÊV◊íÂ˜2¬”#B¬í¬∂ñÊB“'vW7B"“ì∞¢ñbÜVÊV◊í‰∂ñÊB”“VÊV◊î∂ñÊB‰Ê÷T'&ˆ∂W"bbVW7E7FvR”“#"íG&˜2‰FBÜÊWrG&˜≤˜2“ˆfg6WBÜVÊV◊íÂ˜2¬”#B¬í¬∂ñÊB“'&Vvó7FW""“ì∞¢ñbÜVÊV◊í‰∂ñÊB”“VÊV◊î∂ñÊBÂFñFUvóFÊW72bbW7G&V’G&6RíG&˜2‰FBÜÊWrG&˜≤˜2“ˆfg6WBÜVÊV◊íÂ˜2¬”#B¬í¬∂ñÊB“'vóFÊW72"“ì∞¢ñbÜVÊV◊í‰∂ñÊB”“VÊV◊î∂ñÊB‰fó'7D∂VWW"bbÜ˜vÊVD6Ü&◊2bÇí”“íG&˜2‰FBÜÊWrG&˜≤˜2“ˆfg6WBÜVÊV◊íÂ˜2¬#B¬”"í¬∂ñÊB“&6Ü&“"¬÷˜VÁB“B“ì∞¢ñbÜVÊV◊í‰∂ñÊB”“VÊV◊î∂ñÊB‰ˆFÑ6'Fˆw&ÜW"bbÜ˜vÊVD6Ü&◊2bbí”“íG&˜2‰FBÜÊWrG&˜≤˜2“ˆfg6WBÜVÊV◊íÂ˜2¬#B¬”"í¬∂ñÊB“&6Ü&“"¬÷˜VÁB“R“ì∞¢ñbÜVÊV◊í‰∂ñÊB”“VÊV◊î∂ñÊB‰V∆óFRbbÜ˜vÊVD6Ü&◊2bí”“íG&˜2‰FBÜÊWrG&˜≤˜2“ˆfg6WBÜVÊV◊íÂ˜2¬#B¬”"í¬∂ñÊB“&6Ü&“"¬÷˜VÁB““ì∞¢ñbÜVÊV◊í‰∂ñÊB”“VÊV◊î∂ñÊBÂ&ófW$fW''ñ÷‚bbÜ˜vÊVD6Ü&◊2b"í”“íG&˜2‰FBÜÊWrG&˜≤˜2“ˆfg6WBÜVÊV◊íÂ˜2¬”#B¬”"í¬∂ñÊB“&6Ü&“"¬÷˜VÁB“"“ì∞¢ñbÜVÊV◊í‰∂ñÊB”“VÊV◊î∂ñÊB‰&∆ñÊE67&ñ&RbbÜ˜vÊVD6Ü&◊2bBí”“íG&˜2‰FBÜÊWrG&˜≤˜2“ˆfg6WBÜVÊV◊íÂ˜2¬”#B¬”"í¬∂ñÊB“&6Ü&“"¬÷˜VÁB“2“ì∞¢ñbÇVÊV◊í‰&˜72bbVÊV◊í‰∂ñÊB“VÊV◊î∂ñÊB‰V∆óFRbb&ÊFˆ“‰ÊWáDF˜V&∆RÇí¬„bê¢G&˜2‰FBÜÊWrG&˜≤˜2“ˆfg6WBÜVÊV◊íÂ˜2¬Ç¬Bí¬∂ñÊB“&6Ü&“"¬÷˜VÁB“&ÊFˆ“‰ÊWáBÉ¬Bí“ì∞¢ñbÜVÊV◊í‰∂ñÊB”“VÊV◊î∂ñÊB‰V∆óFRbb&÷˜"íG&˜2‰FBÜÊWrG&˜≤˜2“ˆfg6WBÜVÊV◊íÂ˜2¬#B¬í¬∂ñÊB“&&÷˜""“ì∞¢V«6RñbÇVÊV◊í‰&˜72bb&ÊFˆ“‰ÊWáDF˜V&∆RÇí¬„"íG&˜2‰FBÜÊWrG&˜≤˜2“ˆfg6WBÜVÊV◊íÂ˜2¬b¬"í¬∂ñÊB“'˜Fñˆ‚"“ì∞¢ñbá&V∆ñ4ˆ‚íÜV«FÇ“÷FÇ‰÷ñ‚Ü÷ÑÜV«FÇ¬ÜV«FÇ≤Rì∞¢ñbÜVÊV÷ñW2‰6˜VÁB”“bb&ˆˆ“¬"í≤ñÁBÊWáB“&ˆˆ“”“Ú"¢≤ñbÇÜ˜vÊVEvVˆÁ2bÉ√¬ÊWáBíí”“íG&˜2‰FBÜÊWrG&˜≤˜2“ˆfg6WBÜVÊV◊íÂ˜2¬”b¬”Çí¬∂ñÊB“'vVˆ‚"¬÷˜VÁB“ÊWáB“ì≤–¢ñbÜVÊV÷ñW2‰6˜VÁB”“bbG&˜2‰6˜VÁB”“bb&ˆˆ“”“"bb÷V÷˜'î˜fW&∆íí6ÜW7D6Üˆñ6R“G'VS∞¢–†¢&ófFRfˆñBFEáÜñÁB÷˜VÁBê¢∞¢á≥“÷˜VÁC∞¢vÜñ∆Ráá„“∆WfV¬¢cí≤á”“∆WfV¬¢c≤∆WfV¬≤≥≤F÷vR≥“S≤VÊFñÊuF∆VÁG2≤≥≤–¢ñbáVÊFñÊuF∆VÁG2‚íF∆VÁD6Üˆñ6R“G'VS∞¢–†¢&ófFRfˆñBFñ6¥v÷RÇê¢∞¢f∆ˆBGB“Fñ÷W"‰ñÁFW'f¬Úc≤Ê˜Fñ6UFñ÷R“÷FÇ‰÷ÇÉ¬Ê˜Fñ6UFñ÷R“GBì≤GF6¥6B“÷FÇ‰÷ÇÉ¬GF6¥6B“GBì≤6∂ñ∆ƒ6B“÷FÇ‰÷ÇÉ¬6∂ñ∆ƒ6B“GBì≤6Ü&D6B“÷FÇ‰÷ÇÉ¬6Ü&D6B“GBì≤&V∆ƒ6B“÷FÇ‰÷ÇÉ¬&V∆ƒ6B“GBì≤&V∆≈vfUFñ÷R“÷FÇ‰÷ÇÉ¬&V∆≈vfUFñ÷R“GBì≤F6Ñ6B“÷FÇ‰÷ÇÉ¬F6Ñ6B“GBì≤F6ÖFñ÷R“÷FÇ‰÷ÇÉ¬F6ÖFñ÷R“GBì≤ñÁgV∆ÊW&&∆R“÷FÇ‰÷ÇÉ¬ñÁgV∆ÊW&&∆R“GBì≤vñÊGWV«6R≥“GC∞¢ñbáFóF∆R«¬FVB«¬fñ7F˜'í«¬7F˜'î˜fW&∆í«¬÷V÷˜'î˜fW&∆í«¬ñÁfVÁF˜'î˜V‚«¬F∆VÁD6Üˆñ6R«¬6ÜW7D6Üˆñ6R«¬VÊFñÊt6Üˆñ6T˜V‚í≤ñÁf∆ñFFRÇì≤&WGW&„≤–¢ˆñÁDbFó"“ÊWrÇÜF˜v‚‰6ˆÁFñÁ2Ñ∂Wó2‰Bí«¬F˜v‚‰6ˆÁFñÁ2Ñ∂Wó2Â&ñváBíÚ¢í“ÜF˜v‚‰6ˆÁFñÁ2Ñ∂Wó2‰í«¬F˜v‚‰6ˆÁFñÁ2Ñ∂Wó2‰∆VgBíÚ¢í¬ÜF˜v‚‰6ˆÁFñÁ2Ñ∂Wó2Â2í«¬F˜v‚‰6ˆÁFñÁ2Ñ∂Wó2‰F˜v‚íÚ¢í“ÜF˜v‚‰6ˆÁFñÁ2Ñ∂Wó2Ârí«¬F˜v‚‰6ˆÁFñÁ2Ñ∂Wó2ÂWíÚ¢íì∞¢Fó"“Ê˜&÷∆ó¶RÜFó"¬ˆñÁDb‰V◊Gíì≤ñbÜF6ÖFñ÷R‚íFó"“f6ñÊs∞¢÷˜fU∆ñW"Ö66∆RÜFó"¬ÜF6ÖFñ÷R‚ÚS3¢ìí¢GBíì∞¢f˜"ÜñÁBí“G&˜2‰6˜VÁB“≤í„“≤í““íñbÑFó7FÊ6Rá∆ñW"¬G&˜5∂ï“Â˜2í¬3í6ˆ∆∆V7BÜG&˜5∂ï“ì∞¢f˜&V6ÇÑVÊV◊íVÊV◊íñ‚VÊV÷ñW2ÂFÙ'&íÇíí≤WFFTVÊV◊íÜVÊV◊í¬GBì≤ñbÜFVBí'&V≥≤–¢GfÊ6Ufˆñ6U6Ü&G2ÜGBì∞¢ñbÜVÊV÷ñW2‰6˜VÁB”“bbG&˜2‰6˜VÁB”“bb&ˆˆ“”“"bb÷V÷˜'î˜fW&∆íí6ÜW7D6Üˆñ6R“G'VS∞¢÷&µ&ˆˆ‘6∆V&VBÇì∞¢ñÁf∆ñFFRÇì∞¢–†¢&ófFRfˆñBWFFTVÊV◊íÑVÊV◊íR¬f∆ˆBGBê¢∞¢R‰6ˆˆ∆F˜v‚”“GC≤R‰f∆6Ç“÷FÇ‰÷ÇÉ¬R‰f∆6Ç“GBì≤ˆñÁDbˆfg6WB“7V"á∆ñW"¬RÂ˜2ì≤f∆ˆBFó7B“∆VÊwFÇÜˆfg6WBì∞¢ñbÜRÂ7FvvW"‚í≤RÂ7FvvW"“÷FÇ‰÷ÇÉ¬RÂ7FvvW"“GBì≤&WGW&„≤–¢ñbÜRÂvñÊGW‚í∞¢RÂvñÊGW”“GC∞¢f∆ˆB&V6Ç“R‰&˜72ÚR‰&˜75GFW&‚”“Úì¢R‰∂ñÊB”“VÊV◊î∂ñÊBÂ&ófW$fW''ñ÷‚bbR‰&˜75GFW&‚”“"ÚÉR¢R‰∂ñÊB”“VÊV◊î∂ñÊB‰6Öv&FV‚bbR‰&˜75GFW&‚”“"ÚcÇ¢R‰∂ñÊB”“VÊV◊î∂ñÊB‰Üˆ∆∆˜tÊ÷RbbR‰&˜75GFW&‚”“"ÚÉR¢ÜR‰∂ñÊBó2VÊV◊î∂ñÊB‰Ê÷UvVfW"˜"VÊV◊î∂ñÊB‰ˆFÑ6'Fˆw&ÜW"˜"VÊV◊î∂ñÊB‰Ê÷T'&ˆ∂W"˜"VÊV◊î∂ñÊBÂFñFUvóFÊW72íbbR‰&˜75GFW&‚”“"Ú#3¢C"¢R‰∂ñÊB”“VÊV◊î∂ñÊB‰V∆óFRÚc"¢R‰∂ñÊB”“VÊV◊î∂ñÊB‰÷vRÚS"¢R‰∂ñÊBó2VÊV◊î∂ñÊB‰&6ÜW"˜"VÊV◊î∂ñÊB‰ñÊ¥V6ÜÚ˜"VÊV◊î∂ñÊBÂW%w&óFÇÚ#3¢R‰∂ñÊB”“VÊV◊î∂ñÊB‰G&˜vÊVD÷V÷˜'íÚìR¢R‰∂ñÊBó2VÊV◊î∂ñÊB‰V÷&W%vó7˜"VÊV◊î∂ñÊB‰Ê÷T÷˜FÇ˜"VÊV◊î∂ñÊB‰◊VD6ÁF˜"Ú#¢3É∞¢&ˆˆ¬F&vWFVB“ÜR‰&˜72bbÜR‰&˜75GFW&‚ó2˜""íí«¬ÜR‰∂ñÊBó2VÊV◊î∂ñÊB‰÷vR˜"VÊV◊î∂ñÊB‰V∆óFR˜"VÊV◊î∂ñÊB‰&6ÜW"˜"VÊV◊î∂ñÊB‰ñÊ¥V6ÜÚ˜"VÊV◊î∂ñÊB‰G&˜vÊVD÷V÷˜'í˜"VÊV◊î∂ñÊB‰V÷&W%vó7˜"VÊV◊î∂ñÊB‰Ê÷T÷˜FÇ˜"VÊV◊î∂ñÊB‰◊VD6ÁF˜"˜"VÊV◊î∂ñÊBÂW%w&óFÇ˜"VÊV◊î∂ñÊBÂ6«DV6ÜÚì∞¢&ˆˆ¬ñ‰fó'7Efˆñ6T∆ñÊR“R‰∂ñÊB”“VÊV◊î∂ñÊB‰fó'7D∂VWW"bbR‰&˜75GFW&‚”“"bbÑFó7FÊ6UFı6Vv÷VÁBá∆ñW"¬RÂ˜2¬RÂF&vWBí¬#R«¬Fó7FÊ6UFı6Vv÷VÁBá∆ñW"¬RÂF&vWC%7F'B¬RÂF&vWC"í¬#Rì∞¢&ˆˆ¬ñ‰GF6≤“ñ‰fó'7Efˆñ6T∆ñÊR«¬ÇÜR‰∂ñÊBó2VÊV◊î∂ñÊB‰Ê÷UvVfW"˜"VÊV◊î∂ñÊB‰ˆFÑ6'Fˆw&ÜW"˜"VÊV◊î∂ñÊB‰Ê÷T'&ˆ∂W"˜"VÊV◊î∂ñÊBÂFñFUvóFÊW72íbbR‰&˜75GFW&‚”“"ÚFó7FÊ6UFı6Vv÷VÁBá∆ñW"¬RÂ˜2¬RÂF&vWBí¬#B¢F&vWFVBÚFó7FÊ6Rá∆ñW"¬RÂF&vWBí¬&V6Ç¢Fó7B¬&V6Çì∞¢ñbÜRÂvñÊGW√“bbñ‰GF6≤bbñÁgV∆ÊW&&∆R√“bbF6ÖFñ÷R√“íÜóE∆ñW"ÜR‰&˜72ÚR‰∂ñÊB”“VÊV◊î∂ñÊB‰&∆ñÊE67&ñ&RÚ#2¢R‰∂ñÊB”“VÊV◊î∂ñÊBÂ&ófW$fW''ñ÷‚Ú#Ç¢R‰∂ñÊB”“VÊV◊î∂ñÊB‰6Öv&FV‚Ú3¢R‰∂ñÊB”“VÊV◊î∂ñÊB‰Üˆ∆∆˜tÊ÷RÚ3b¢R‰∂ñÊB”“VÊV◊î∂ñÊB‰Ê÷UvVfW"Ú3í¢R‰∂ñÊB”“VÊV◊î∂ñÊB‰fó'7D∂VWW"ÚCB¢R‰∂ñÊB”“VÊV◊î∂ñÊB‰ˆFÑ6'Fˆw&ÜW"ÚC"¢R‰∂ñÊB”“VÊV◊î∂ñÊB‰Ê÷T'&ˆ∂W"ÚCÇ¢R‰∂ñÊB”“VÊV◊î∂ñÊBÂFñFUvóFÊW72ÚS"¢#b¢R‰∂ñÊB”“VÊV◊î∂ñÊB‰V∆óFRÚ#¢R‰∂ñÊB”“VÊV◊î∂ñÊB‰÷vRÚb¢R‰∂ñÊBó2VÊV◊î∂ñÊB‰ñÊ¥V6ÜÚ˜"VÊV◊î∂ñÊB‰G&˜vÊVD÷V÷˜'í˜"VÊV◊î∂ñÊB‰V÷&W%vó7˜"VÊV◊î∂ñÊB‰Ê÷T÷˜FÇ˜"VÊV◊î∂ñÊB‰◊VD6ÁF˜"˜"VÊV◊î∂ñÊBÂW%w&óFÇ˜"VÊV◊î∂ñÊBÂ6«DV6ÜÚÚÇ¢ì∞¢&WGW&„∞¢–¢ñbÜR‰∂ñÊBó2VÊV◊î∂ñÊB‰&6ÜW"˜"VÊV◊î∂ñÊB‰ñÊ¥V6ÜÚ˜"VÊV◊î∂ñÊBÂ6«DV6ÜÚí≤f∆ˆB&VfW'&VB“R‰∂ñÊB”“VÊV◊î∂ñÊB‰ñÊ¥V6ÜÚÚ3R¢R‰∂ñÊB”“VÊV◊î∂ñÊBÂ6«DV6ÜÚÚSR¢s≤ñbÜFó7B¬&VfW'&VBíRÂ˜2“÷˜fTVÊV◊íÜR¬66∆RÑÊ˜&÷∆ó¶RÖ7V"ÜRÂ˜2¬∆ñW"í¬ˆñÁDb‰V◊Gíí¬ÜR‰∂ñÊB”“VÊV◊î∂ñÊB‰ñÊ¥V6ÜÚÚcÇ¢R‰∂ñÊB”“VÊV◊î∂ñÊBÂ6«DV6ÜÚÚc"¢SRí¢GBíì≤V«6RñbÜR‰6ˆˆ∆F˜v‚√“í≤&VvñÂvñÊGWÜR¬∆ñW"¬R‰∂ñÊB”“VÊV◊î∂ñÊB‰ñÊ¥V6ÜÚÚ„sVb¢R‰∂ñÊB”“VÊV◊î∂ñÊBÂ6«DV6ÜÚÚ„cÜb¢„fbì≤R‰6ˆˆ∆F˜v‚“R‰∂ñÊB”“VÊV◊î∂ñÊB‰ñÊ¥V6ÜÚÚ"„b¢R‰∂ñÊB”“VÊV◊î∂ñÊBÂ6«DV6ÜÚÚ„ÉVb¢„Üc≤“6W&FTg&ˆ’6≤ÜR¬GBì≤&WGW&„≤–¢ñbÜR‰∂ñÊBó2VÊV◊î∂ñÊB‰G&˜vÊVD÷V÷˜'í˜"VÊV◊î∂ñÊB‰V÷&W%vó7˜"VÊV◊î∂ñÊB‰Ê÷T÷˜FÇ˜"VÊV◊î∂ñÊB‰◊VD6ÁF˜"˜"VÊV◊î∂ñÊBÂW%w&óFÇí≤f∆ˆB&VfW'&VB“R‰∂ñÊB”“VÊV◊î∂ñÊB‰V÷&W%vó7ÚCR¢R‰∂ñÊB”“VÊV◊î∂ñÊB‰Ê÷T÷˜FÇÚsR¢R‰∂ñÊB”“VÊV◊î∂ñÊB‰◊VD6ÁF˜"Ú#R¢R‰∂ñÊB”“VÊV◊î∂ñÊBÂW%w&óFÇÚÉR¢≤ñbÜFó7B¬&VfW'&VBíRÂ˜2“÷˜fTVÊV◊íÜR¬66∆RÑÊ˜&÷∆ó¶RÖ7V"ÜRÂ˜2¬∆ñW"í¬ˆñÁDb‰V◊Gíí¬ÜR‰∂ñÊBó2VÊV◊î∂ñÊB‰◊VD6ÁF˜"˜"VÊV◊î∂ñÊBÂW%w&óFÇÚS"¢s"í¢GBíì≤V«6RñbÜR‰6ˆˆ∆F˜v‚√“í≤&VvñÂvñÊGWÜR¬∆ñW"¬R‰∂ñÊB”“VÊV◊î∂ñÊB‰V÷&W%vó7Ú„vb¢R‰∂ñÊB”“VÊV◊î∂ñÊB‰Ê÷T÷˜FÇÚ„c&b¢R‰∂ñÊB”“VÊV◊î∂ñÊB‰◊VD6ÁF˜"Ú„É&b¢R‰∂ñÊB”“VÊV◊î∂ñÊBÂW%w&óFÇÚ„cÜb¢„ñbì≤R‰6ˆˆ∆F˜v‚“R‰∂ñÊB”“VÊV◊î∂ñÊB‰V÷&W%vó7Ú„ñb¢R‰∂ñÊB”“VÊV◊î∂ñÊB‰Ê÷T÷˜FÇÚ„vb¢R‰∂ñÊB”“VÊV◊î∂ñÊB‰◊VD6ÁF˜"Ú"„Vb¢R‰∂ñÊB”“VÊV◊î∂ñÊBÂW%w&óFÇÚ„ìVb¢"„#Vc≤“6W&FTg&ˆ’6≤ÜR¬GBì≤&WGW&„≤–¢ñbÜR‰∂ñÊB”“VÊV◊î∂ñÊB‰÷vRbbFó7B¬cRíRÂ˜2“÷˜fTVÊV◊íÜR¬66∆RÑÊ˜&÷∆ó¶RÖ7V"ÜRÂ˜2¬∆ñW"í¬ˆñÁDb‰V◊Gíí¬C"¢GBíì∞¢ñbÜR‰∂ñÊB”“VÊV◊î∂ñÊB‰V∆óFRbbR‰6ˆˆ∆F˜v‚√“bbFó7B¬##í≤&VvñÂvñÊGWÜR¬∆ñW"¬R‰&÷˜&VBÚ„s&b¢„Vbì≤R‰6ˆˆ∆F˜v‚“R‰&÷˜&VBÚ"„Vb¢&c≤&WGW&„≤–¢ñbÜR‰&˜72bbR‰6ˆˆ∆F˜v‚√“bbÜFó7B¬3R«¬ÜR‰∂ñÊBó2VÊV◊î∂ñÊB‰&∆ñÊE67&ñ&R˜"VÊV◊î∂ñÊBÂ&ófW$fW''ñ÷‚˜"VÊV◊î∂ñÊB‰6Öv&FV‚˜"VÊV◊î∂ñÊB‰Üˆ∆∆˜tÊ÷R˜"VÊV◊î∂ñÊB‰Ê÷UvVfW"˜"VÊV◊î∂ñÊB‰fó'7D∂VWW"˜"VÊV◊î∂ñÊB‰ˆFÑ6'Fˆw&ÜW"˜"VÊV◊î∂ñÊB‰Ê÷T'&ˆ∂W"˜"VÊV◊î∂ñÊBÂFñFUvóFÊW72ííí≤R‰&˜75GFW&‚“ÜR‰∂ñÊBó2VÊV◊î∂ñÊBÂ&ófW$fW''ñ÷‚˜"VÊV◊î∂ñÊB‰6Öv&FV‚˜"VÊV◊î∂ñÊB‰Üˆ∆∆˜tÊ÷R˜"VÊV◊î∂ñÊB‰Ê÷UvVfW"˜"VÊV◊î∂ñÊB‰fó'7D∂VWW"˜"VÊV◊î∂ñÊB‰ˆFÑ6'Fˆw&ÜW"˜"VÊV◊î∂ñÊB‰Ê÷T'&ˆ∂W"˜"VÊV◊î∂ñÊBÂFñFUvóFÊW72íÚÜR‰&˜75GFW&‚≤íR2¢“R‰&˜75GFW&„≤&ˆˆ¬ñ÷VB“ÜR‰∂ñÊB”“VÊV◊î∂ñÊB‰&∆ñÊE67&ñ&RbbR‰&˜75GFW&‚”“í«¬ÇÜR‰∂ñÊBó2VÊV◊î∂ñÊBÂ&ófW$fW''ñ÷‚˜"VÊV◊î∂ñÊB‰6Öv&FV‚íbbÜR‰&˜75GFW&‚ó2˜""íí«¬ÜR‰∂ñÊBó2VÊV◊î∂ñÊB‰Üˆ∆∆˜tÊ÷R˜"VÊV◊î∂ñÊB‰Ê÷UvVfW"˜"VÊV◊î∂ñÊB‰fó'7D∂VWW"˜"VÊV◊î∂ñÊB‰ˆFÑ6'Fˆw&ÜW"˜"VÊV◊î∂ñÊB‰Ê÷T'&ˆ∂W"˜"VÊV◊î∂ñÊBÂFñFUvóFÊW72íbbR‰&˜75GFW&‚ó2˜"#≤f∆ˆBvñÊGW“R‰á¬R‰÷Ñá¢„VbÚ„S&b¢„sÜc≤ñbÜR‰∂ñÊB”“VÊV◊î∂ñÊB‰fó'7D∂VWW"bbR‰&˜75GFW&‚”“"í≤ˆñÁDbÜó2“Ê˜&÷∆ó¶RÖ7V"á∆ñW"¬RÂ˜2í¬ÊWrˆñÁDbÉ¬íì≤ˆñÁDb6ñFR“ÊWrÇ÷Üó2Âí¬Üó2ÂÇì≤RÂF&vWB“FBÜRÂ˜2¬66∆RÜÜó2¬ì#íì≤RÂF&vWC%7F'B“FBá∆ñW"¬66∆Rá6ñFR¬”Ccíì≤RÂF&vWC"“FBá∆ñW"¬66∆Rá6ñFR¬Ccíì≤RÂvñÊGW“RÂvñÊGW÷Ç“vñÊGW≤“V«6R&VvñÂvñÊGWÜR¬ñ÷VBÚ∆ñW"¢RÂ˜2¬vñÊGWì≤R‰6ˆˆ∆F˜v‚“R‰á¬R‰÷Ñá¢„VbÚ„#Vb¢"„c≤&WGW&„≤–¢ñbÜR‰∂ñÊB”“VÊV◊î∂ñÊB‰÷vRbbR‰6ˆˆ∆F˜v‚√“í≤&VvñÂvñÊGWÜR¬∆ñW"¬„Übì≤R‰6ˆˆ∆F˜v‚“"„&c≤6W&FTg&ˆ’6≤ÜR¬GBì≤&WGW&„≤–¢ñbÜFó7B‚ÜR‰&˜72ÚC¢3ííRÂ˜2“÷˜fTVÊV◊íÜR¬66∆RÑÊ˜&÷∆ó¶RÜˆfg6WB¬ˆñÁDb‰V◊Gíí¬ÜR‰&˜72ÚSR¢sB≤&ˆˆ“¢rí¢GBíì∞¢V«6RñbÜR‰6ˆˆ∆F˜v‚√“í≤&VvñÂvñÊGWÜR¬∆ñW"¬„CVbì≤R‰6ˆˆ∆F˜v‚“„3Vc≤–¢ñbÇR‰&˜72í6W&FTg&ˆ’6≤ÜR¬GBì∞¢–†¢&ófFR7FFñ2fˆñB&VvñÂvñÊGWÑVÊV◊íVÊV◊í¬ˆñÁDbF&vWB¬f∆ˆBGW&Fñˆ‚í≤VÊV◊íÂF&vWB“F&vWC≤VÊV◊íÂvñÊGW“VÊV◊íÂvñÊGW÷Ç“GW&Fñˆ„≤–¢&ófFRfˆñBÜóE∆ñW"Üf∆ˆBf«VRí≤ÜV«FÇ“÷FÇ‰÷ÇÉ¬ÜV«FÇ“f«VR¢Ü&÷˜$ˆ‚Ú„vb¢íì≤ñÁgV∆ÊW&&∆R“„fc≤ñbÜÜV«FÇ√“íFVB“G'VS≤–¢&ófFRfˆñB6ˆ∆∆V7BÑG&˜óFV“ê¢∞¢7vóF6ÇÜóFV“‰∂ñÊBí≤66R&vˆ∆B#¢vˆ∆B≥“óFV“‰÷˜VÁC≤Ê˜Fñ6R“B"∑∂óFV“‰÷˜VÁG“ıU$Ú#≤'&V≥≤66R'˜Fñˆ‚#¢˜FñˆÁ2≤≥≤Ê˜Fñ6R“"≥¸8|84Ú#≤'&V≥≤66R'vVˆ‚#¢ñbÜóFV“‰÷˜VÁBó2¬˜"‚"í≤G&˜2Â&V÷˜fRÜóFV“ì≤&WGW&„≤“&ˆ∆≈vVˆ‚ÜóFV“‰÷˜VÁBì≤˜vÊVEvVˆÁ2√“√¬óFV“‰÷˜VÁC≤Ê˜Fñ6R“B$$‘µvVˆÂ&&óGîÊ÷RávVˆÂ&&óFñW5∂óFV“‰÷˜VÁE“ó”¢µvVˆ‰Fó7∆îÊ÷RÜóFV“‰÷˜VÁBó“#≤'&V≥≤66R'vóFÊW72#¢W7G&V’G&6R“G'VS≤VW7E7FvR“#c≤Ê˜Fñ6R“$‘T‹95$î¢DU5DT’T‰ÑD‘,8í#≤6Ü˜t÷V÷˜'íÇ$9§≈Dî‘5U%dDR‰$"¬$FW7FV◊VÊÜÏ:6ÚwV&FV“÷ÊV“V“Êˆ÷R‚wV&F76vV“FRV“w'WÚVRG&fW76˜RÚ&ñÚ6ˆÁG&6˜'&VÁFR‚VÊFÚ∆w\:ñ“6Ü÷˜RV∆ÚÊˆ÷RW67&óFÚÊÚ&Vvó7G&ÚFRl:ó7W&¬Ê&&W7ˆÊFWR6ˆ“˜WG&ÚÊˆ÷RRVFóRVRÚw'WÚÚ&VÊFW76R‚V∆W26VóF&“R6VwVó&“ßVÁF˜2&Ã:ñ“F2:wV2‚ÚV6Ú6RVÊ6W'&ÁFW2FR&WfV∆"∆g&W66ˆ∆ÜñF˜RÚ«Vv"VR6ÜVv&“‚"ì≤'&V≥≤66R'&Vvó7FW"#¢VW7E7FvR“#3≤Ê˜Fñ6R“%$Ttï5E$ÚDR54tT“$T5UU$DÚ#≤6Ü˜t÷V÷˜'íÇ$ı2‰Ù‘U2TRÏ84Ú<84Úı54R"¬$Ú∆óg&Ú6ˆÁL:ñ“&˜F2R&V∆F˜2W67&óF˜2˜"fñ¶ÁFW2FñfW&VÁFW2‚fV‚Ã:¢V“f˜¢«FVÊ2ÚG&V6ÜÚ76ñÊFÚ˜"VV“W66ˆ∆ÜWR6ˆ◊'Fñ∆å:÷∆Ú‚V÷Ê˜F:|:6ÚFRÊ&6ˆÊfó&÷VRV∆6VwVóRFñÁFR6ˆ“Úw'WÚ¬÷2Ï:6Ú&WfV∆6WRÊˆ÷RGV¬ÊV“6WR&FVó&Ú‚Ú&Vvó7G&Úfñ66ˆ“6ˆ◊VÊñFFR¬Ï:6Ú6ˆ“l:ó7W&‚"ì≤'&V≥≤66R&6Ü˜'W2#¢6Ü˜'W4÷V÷˜'í“G'VS≤VW7E7FvR“C≤Ê˜Fñ6R“$‘T‹95$î¢4ı$ÚDı2‰Ù‘U24ÙÂ5T‘îDı2#≤6Ü˜t÷V÷˜'íÇ$DT4TÃ82DR‰Ù‘U2"¬%VÊFÚÚfñÚ6R&ˆ◊R¬2f˜¶W2Ï:6Ú6R6∆“‚Ú6˜&Û¢(	ƒÏ:6Ú6ˆ÷˜2V÷6ˆó6VRfVñÚFRf˜&‚6ˆ÷˜2FˆF˜2˜2Êˆ÷W2VRÚ«V÷RFˆ÷˜RRÏ:6Ú6ˆÁ6VwVóRwV&F"‚Ê&6'&Vv˜R'FRFRÏ;72&∆ˆÊvR¬÷2Úf&ˆ¬6ˆÁFñÁVÊ˜26Ü÷ÊFÚÓ(	“Ú6ñÃ:¶Ê6ñÚFR&óÜÚ:í&W7<:6ÚFW762÷V‹;7&ñ2FVÁFÊFÚfˆ«F"ßVÁF2‚"ì≤'&V≥≤66R&fó'7B#¢fó'7D÷V÷˜'í“G'VS≤VW7E7FvR“c≤Ê˜Fñ6R“$‘T‹95$î¢Ú$î‘Tï$Ú‰Ù‘R#≤6Ü˜t÷V÷˜'íÇ$$î‘Tï$dî|8‘ƒî"¬$wV&Fú:2&V6˜&F6WRÊˆ÷S¢ñ«ó&¬&ñ÷Vó&W67WFF˜&‚V∆Ï:6Ú6VÊFWRÚ«V÷R&v"2f˜¶W2¬÷2&VRFˆF÷V‹;7&ñVÊ6ˆÁG&76RV“«Vv"ˆÊFR6W"˜WfñF‚<:ñ7V∆˜2FWˆó2¬˜2wV&Fú;VW2ñÁfW'FW&“Ú&˜;76óFÚRG&Á6f˜&÷&“∆V÷'&Ï:vV“6ˆ÷'W7L:◊fV¬‚ñ«ó&VÁG&Vv˜RÚ,;7&ñÚÊˆ÷R&ñ◊VFó"VRÚf&ˆ¬W7VV6W76R7V˜&ñvV“‚ÊÚ;¶«Fñ÷ÚV6Ú¬fóRÊ&G&fW76"6˜'&VÁFR∆WfÊFÚf˜¶W2VRÚ«V÷RÏ:6Ú6ˆ◊˜'Ff‚Ï:6Ú6&RÚVR6ˆÁFV6WR6ˆ“V∆FWˆó2¬÷2FVóÜV“fó6Û¢6R∆w\:ñ“VÊ6ˆÁG&"¬Ï:6ÚFWfR6Ü‹:÷∆V∆ÚÊˆ÷RVRÚf&ˆ¬W66ˆ∆ÜWR‚"ì≤'&V≥≤66R'vW7B#¢vW7EG&6R“G'VS≤VW7E7FvR“ì≤Ê˜Fñ6R“$‘T‹95$î¢‘D‘$tT“U44ÙƒÑîD#≤6Ü˜t÷V÷˜'íÇ$Ú‘DR‰$"¬$6'L;6w&fwV&FfV“&Vvó7G&ÚFRVV“G&fW76˜RÚfR‚VÁG&R˜2G&:v˜2&V6VÁFW2¬fˆ<:¢&V6ˆÊÜV6R∆WG&FRÊ&¢(	ƒVí¬ÊñÊw\:ñ“&V6ó66ˆÁ6W'f"ÚÊˆ÷RVRÚ«V÷RW66ˆ∆ÜWR‚ßVFVí∆WfÁF"V“'&ñvÚR6VwVí6ˆ“˜2VRVW&ñ“6ˆÁFñÁV"ˆW7FR‚6RfVñÚG,:2FR÷ñ“¬Ï:6ÚW6RÚ&VÁFW66Ú6ˆ÷Ú&W7˜7F‚W&wVÁFR&ñ÷Vó&ÚVV“W66ˆ∆Üí6W"Ó(	“FñÁFRÚ6÷ñÊÜÚ<:6Ú6WW2¬÷2Ú÷Ï:6ÚFó¢VÊFÚV∆'FóRÊV“ˆÊFRW7L:v˜&‚"ì≤'&V≥≤66R&6Ü&“#¢ñbÜóFV“‰÷˜VÁBó2¬˜"‚Rí≤G&˜2Â&V÷˜fRÜóFV“ì≤&WGW&„≤“&ˆˆ¬ÊWt6Ü&““Ü˜vÊVD6Ü&◊2bÉ√¬ÜóFV“‰÷˜VÁB“ííí”“≤˜vÊVD6Ü&◊2√“√¬ÜóFV“‰÷˜VÁB“ì≤ñbÜWVóVD6Ü&“”“bbWVóVD6Ü&”"“óFV“‰÷˜VÁBíWVóVD6Ü&““óFV“‰÷˜VÁC≤V«6RñbÜWVóVD6Ü&”"”“bbWVóVD6Ü&““óFV“‰÷˜VÁBíWVóVD6Ü&”"“óFV“‰÷˜VÁC≤Ê˜Fñ6R“ÊWt6Ü&“ÚB%Dƒï4‹83¢∂6Ü&‘Ê÷W5∂óFV“‰÷˜VÁE◊“"¢B$T4ÚEUƒî4DÛ¢∂6Ü&‘Ê÷W5∂óFV“‰÷˜VÁE◊“#≤'&V≥≤66R&&÷˜"#¢&÷˜"“G'VS≤Ê˜Fñ6R“%TïDı$¬DRTE$T‰4ÙÂE$DÚ#≤'&V≥≤66R'&V∆ñ2#¢&V∆ñ2“G'VS≤Ê˜Fñ6R“$e$t‘TÂDÚDRdı¢T‰4ÙÂE$DÚ#≤6Ü˜t÷V÷˜'íÇ$T4Ú$U4Ú‰Ú$Tƒî<8$îÚ"¬$Ê&¢(	ƒWRfñ“˜"fˆÁFFR,;7&ñ‚6RVÊ6ˆÁG&˜RW7F∆V÷'&Ï:v¬&ˆ7W&RÚ'VófÚFR6ñ∆WFÇÓ(	“"ì≤'&V≥≤66R'6V¬#¢&6ÜófU6V¬“G'VS≤F÷vR≥“É≤VW7E7FvR“C≤Ê˜Fñ6R“%4TƒÚDdî|8‘ƒî(
+"D‰Ú≥Ç#≤6Ü˜t÷V÷˜'íÇ%4TƒÚDdî|8‘ƒî"¬$Ú6V∆ÚwV&F;¶«Fñ÷w&f:|:6ÚFRÊ&¢(	≈6ñ∆WFÇÏ:6Úv˜R˜2Êˆ÷W2&∆ñ÷VÁF"Ú«V÷R‚V∆FVÁF˜RW66ˆÊFW"VRÚ,;7&ñÚf&ˆ¬W7L:&VÊFVÊFÚW66ˆ∆ÜW"VV“W7VV6W"Ó(	“∆WfRW7F&˜fFRfˆ«F:7W&F˜&‚"ì≤'&V≥≤66R&&V∆¬#¢&ófW$&V∆¬“G'VS≤÷ÑÜV«FÇ≥“#≤ÜV«FÇ“÷FÇ‰÷ñ‚Ü÷ÑÜV«FÇ¬ÜV«FÇ≤#ì≤VW7E7FvR“c≤Ê˜Fñ6R“%4î‰ÚDR‰$(
+"dîD‹8Ñî‘≥##≤6Ü˜t÷V÷˜'íÇ$Ú4î‰Ú4T“$DƒÚ"¬$÷&6ÊÚ'&ˆÁ¶RW'FVÊ6RÊ&‚f˜¢w&fF:íFRV÷◊V∆ÜW"VRG&fW76˜RÚ&ñÛ¢(	ƒÏ:6ÚW7F˜R&W6‚Úf&ˆ¬÷RW67WF˜'VRWR6VóFVí∆Wf"2÷V‹;7&ñ2&∆ˆÊvRF6ñFFR‚6RñÊF÷R&ˆ7W&¬Ï:6ÚFVÁFR÷RG&¶W"FRfˆ«FÁFW2FR˜Wfó"ÚVRÚ&ñÚwV&FÓ(	“"ì≤'&V≥≤66R&∆VÁ2#¢«V÷T∆VÁ2“G'VS≤F÷vR≥“#≤VW7E7FvR“ì≤Ê˜Fñ6R“%$ï4‘DÚ≈T‘R(
+"D‰Ú≥"#≤6Ü˜t÷V÷˜'íÇ$Ú$ï4‘D$î‘Tï$dî|8‘ƒî"¬$«W¢&ˆ¶WFÊ&Ú∆FÚFR6ñ∆WFÇ¬Ê˜2ÁFW2FÊˆóFRF˜26ñÊ˜2‚Ê&W66ˆ∆ÜWR6W"˜'FF˜&F2∆V÷'&Ï:v2VRÚ«V÷RÏ:6Ú6ˆÁ6VwVñwV&F"‚ñ÷vV“6R&ˆ◊RÁFW2FR÷˜7G&"ˆÊFRV∆W7L:v˜&‚"ì≤'&V≥≤66R'G&6R#¢Ê&G&6R“G'VS≤VW7E7FvR“≤Ê˜Fñ6R“%$5E$ÚDR‰$(
+"‰ıd‘T‹95$î#≤6Ü˜t÷V÷˜'íÇ$ƒT‘%$Ï8tTR4Ù%$ıR"¬$ÚV6ÚÏ:6Ú÷˜7G&V“&˜7FÚ‚÷˜7G&Ê&VÁ6ñÊÊFÚ∆w\:ñ“¬FÚ˜WG&Ú∆FÚFÚ&ñÚ¬&ˆÁVÊ6ñ"V“Êˆ÷RVRl:ó7W&v˜R‚7V;¶«Fñ÷g&6RÏ:6ÚVFR&W6vFS¢(	≈6R6ñFFRñÊF∆V÷'&"FRÏ;72¬WR6&W&Vífˆ«F"Ó(	“"ì≤'&V≥≤–¢G&˜2Â&V÷˜fRÜóFV“ì≤Ê˜Fñ6UFñ÷R“„vc∞¢–†¢&ófFRfˆñB&ˆ∆≈vVˆ‚ÜñÁBñÊFWÇê¢∞¢ñÁB&&óGï&ˆ∆¬“&ÊFˆ“‰ÊWáBÉì∞¢ñÁB&ˆÁW5&ˆ∆¬“&ÊFˆ“‰ÊWáBÉRì∞¢ñÁBffóÖ&ˆ∆¬“&ÊFˆ“‰ÊWáBÉ2ì∞¢vVˆÂ&&óFñW5∂ñÊFWÖ““&&óGï&ˆ∆¬¬c"Ú¢&&óGï&ˆ∆¬¬ìRÚ¢#∞¢vVˆ‰&ˆÁW6W5∂ñÊFWÖ““vVˆÂ&&óFñW5∂ñÊFWÖ“7vóF6Ç≤”‚&ˆÁW5&ˆ∆¬R2¬”‚2≤&ˆÁW5&ˆ∆¬RB¬Ú”‚r≤&ˆÁW5&ˆ∆¬RR”∞¢vVˆ‰ffóÜW5∂ñÊFWÖ““vVˆÂ&&óFñW5∂ñÊFWÖ“”“Ú¢≤ffóÖ&ˆ∆√∞¢–†¢&ófFRfˆñB&ˆ∆≈vVˆ‚ÜñÁBñÊFWÇ¬ñÁB&&óGï&ˆ∆¬¬ñÁB&ˆÁW5&ˆ∆¬¬ñÁBffóÖ&ˆ∆¬ê¢∞¢vVˆÂ&&óFñW5∂ñÊFWÖ““&&óGï&ˆ∆¬¬c"Ú¢&&óGï&ˆ∆¬¬ìRÚ¢#∞¢vVˆ‰&ˆÁW6W5∂ñÊFWÖ““vVˆÂ&&óFñW5∂ñÊFWÖ“7vóF6Ç≤”‚&ˆÁW5&ˆ∆¬R2¬”‚2≤&ˆÁW5&ˆ∆¬RB¬Ú”‚r≤&ˆÁW5&ˆ∆¬RR”∞¢vVˆ‰ffóÜW5∂ñÊFWÖ““vVˆÂ&&óFñW5∂ñÊFWÖ“”“Ú¢≤ffóÖ&ˆ∆¬R3∞¢–†¢&ófFRfˆñBW6U˜Fñˆ‚Çí≤ñbá˜FñˆÁ2‚bbÜV«FÇ¬÷ÑÜV«FÇí≤˜FñˆÁ2“”≤ÜV«FÇ“÷FÇ‰÷ñ‚Ü÷ÑÜV«FÇ¬ÜV«FÇ≤CRì≤Ê˜Fñ6R“"≥CRdîD#≤Ê˜Fñ6UFñ÷R“„6c≤“V«6R≤Ê˜Fñ6R“˜FñˆÁ2”“Ú%4T“¸8|9TU2"¢%dîD¨8U5L84ÑTî#≤Ê˜Fñ6UFñ÷R“„6c≤“–¢&ófFRfˆñBñÁFW&7BÇê¢∞¢ñbá&ˆˆ“”“2í≤ñÁFW&7EF˜v‚Çì≤&WGW&„≤–¢ñbá&ˆˆ“”“Çí≤ñÁFW&7E&VgVvRÇì≤&WGW&„≤–¢ñbÜVÊV÷ñW2‰6˜VÁB“í≤Ê˜Fñ6R“$DU%$ıDRı2î‰î‘îtı2$î‘Tï$Ú#≤Ê˜Fñ6UFñ÷R“„&c≤&WGW&„≤–¢ñbÜG&˜2‰6˜VÁB“í≤Ê˜Fñ6R“%$T4ÙƒÑÚƒÙıBÂDU2DRdÏ8t"#≤Ê˜Fñ6UFñ÷R“„Vc≤&WGW&„≤–¢÷&µ&ˆˆ‘6∆V&VBÇì∞¢ñbá&ˆˆ“¬÷V÷˜'ï7FˆÊU˜6óFñˆÁ2‰∆VÊwFÇbbÜ÷V÷˜&ñW4f˜VÊBbÉ√¬&ˆˆ“íí”“bbFó7FÊ6Rá∆ñW"¬÷V÷˜'ï7FˆÊU˜6óFñˆÁ5∑&ˆˆ’“í¬S"ê¢∞¢÷V÷˜&ñW4f˜VÊB√“√¬&ˆˆ”∞¢6Ü˜t÷V÷˜'íá&ˆˆ“”“Ú$îÂ45$ú8|84Ú‰ÚdU5L8‘%TƒÚ"¢%$Ttï5E$Ú‰Ú4Ã84ÚDı2ı54ı2"¬÷V÷˜'ï7FˆÊUFWáG5∑&ˆˆ’“ì∞¢&WGW&„∞¢–¢ñbá&ˆˆ“¬"bb∆ñW"ÂÇ‚sìí≤&ˆˆ“≤≥≤6WGW&ˆˆ“Çì≤–¢V«6Rñbá&ˆˆ“”“"bbFó7FÊ6Rá∆ñW"¬ÊWrˆñÁDbÉsS¬33íí¬í6ÜW7D6Üˆñ6R“G'VS∞¢V«6Rñbá&ˆˆ“”“Bbb∆ñW"ÂÇ‚sìí≤&ˆˆ““S≤6WGW&ˆˆ“Çì≤6Ü˜t÷V÷˜'íÇ$4Ùe$RDÚ%TïdÚ"¬$2:vñÊ2fñÊó2f˜&“6V∆F2˜"FVÁG&Ú‚ÚwV&Fú:6ÚVR2&˜FVvR¨:Ï:6ÚFó7FñÊwVRÚÊˆ÷RFRVV“ßW&˜R6«f"‚"ì≤–¢V«6Rñbá&ˆˆ“”“Bbb∆ñW"ÂÇ¬Rí≤&ˆˆ““3≤6WGW&ˆˆ“Çì≤–¢V«6Rñbá&ˆˆ“”“Rbb∆ñW"ÂÇ¬Rí≤&ˆˆ““C≤6WGW&ˆˆ“Çì≤–¢V«6Rñbá&ˆˆ“”“Rbb∆ñW"ÂÇ‚sìí≤&ˆˆ““3≤6WGW&ˆˆ“Çì≤6Ü˜t÷V÷˜'íÇ%$Tu$U54Úl8ï5U$"¬$Ú6V∆ÚFÚ'VófÚÊ˜'FRW6Ê‹:6Ú‚6ñ∆WFÇ&V6ó6fW"w&f:|:6ÚFRÊ&‚"ì≤–¢V«6Rñbá&ˆˆ“”“bbb∆ñW"ÂÇ‚sìí≤&ˆˆ““s≤6WGW&ˆˆ“Çì≤6Ü˜t÷V÷˜'íÇ$4TƒdÙtD"¬%6ˆ"2VG&2FÚ&ñÚ¬V“6ñÊÚFˆ66V“&F∆Ú‚V÷fñwW&&∆˜VVñ76vV“R&WWFR˜2Êˆ÷W2VR6˜'&VÁFR∆Wf˜R‚"ì≤–¢V«6Rñbá&ˆˆ“”“bbb∆ñW"ÂÇ¬Rí≤&ˆˆ““3≤6WGW&ˆˆ“Çì≤–¢V«6Rñbá&ˆˆ“”“rbb∆ñW"ÂÇ¬Rí≤&ˆˆ““c≤6WGW&ˆˆ“Çì≤–¢V«6Rñbá&ˆˆ“”“rbb∆ñW"ÂÇ‚sìí≤&ˆˆ““3≤6WGW&ˆˆ“Çì≤6Ü˜t÷V÷˜'íÇ%$Tu$U54Úl8ï5U$"¬$Ú'&ˆÁ¶R÷&6FÚ6ˆ“ÚÊˆ÷RFRÊ&ñÊFfñ'&‚VFF&V6ˆÊÜV6W,:Ú6ñÊÚ‚"ì≤–¢V«6Rñbá&ˆˆ“”“Çbb∆ñW"ÂÇ¬Rí≤&ˆˆ““3≤6WGW&ˆˆ“Çì≤–¢V«6Rñbá&ˆˆ“”“Çbb∆ñW"ÂÇ‚sìí≤&ˆˆ““ì≤6WGW&ˆˆ“Çì≤6Ü˜t÷V÷˜'íÇ$<8$‘$DÚ≈T‘R"¬$Úf&ˆ¬W7L:6W6Ú¬÷27V«W¢Ï:6Ú6RW7∆Ü¢V∆6ˆÁfW&vR&V“&ó6÷7W7VÁ6Ú6ˆ'&RV“¸:vÚ6V“gVÊFÚ‚"ì≤–¢V«6Rñbá&ˆˆ“”“íbb∆ñW"ÂÇ¬Rí≤&ˆˆ““É≤6WGW&ˆˆ“Çì≤–¢V«6Rñbá&ˆˆ“”“íbb∆ñW"ÂÇ‚sìí≤&ˆˆ““3≤6WGW&ˆˆ“Çì≤6Ü˜t÷V÷˜'íÇ%$Tu$U54Ú8$8t"¬$ñ÷vV“FRÊ&ÊÚ&ó6÷Ï:6ÚW66∆&V6R6RV∆ñÊFˆFR6W"VÊ6ˆÁG&F‚6ñ∆WFÇ&V6ó6fW"ÚVRfˆ<:¢FW66ˆ'&óR‚"ì≤–¢V«6Rñbá&ˆˆ“”“íbbVW7E7FvR„“bbFó7FÊ6Rá∆ñW"¬ÊWrˆñÁDbÉCÉ¬Síí¬cBí≤&ˆˆ““≤6WGW&ˆˆ“Çì≤6Ü˜t÷V÷˜'íÇ$‘$tT“4T“$TdƒUÑÚ"¬$G,:2FÚ&ó6÷WÜó7FRV“∆VóFÚVRÏ:6Ú&V6RV“ÊVÊáV“÷‚2VG&2wV&F“f˜¶W2&V7W6F2V∆Ú«V÷R¬÷2ÊVÊáV÷FV∆2&WWFRÚÊˆ÷RFRÊ&‚"ì≤–¢V«6Rñbá&ˆˆ“”“bb∆ñW"ÂÇ¬Rí≤&ˆˆ““ì≤6WGW&ˆˆ“Çì≤–¢V«6Rñbá&ˆˆ“”“bb∆ñW"ÂÇ‚sìí≤&ˆˆ““≤6WGW&ˆˆ“Çì≤6Ü˜t÷V÷˜'íÇ%$U4U%dL95$îÚD2dı§U2"¬$2∆V÷'&Ï:v2&V7W6F26ˆÁfW&vV“&V“¸:vÚ‚∆vÚ6R÷˜fRVÁG&RV∆2¬W6ÊFÚÊˆ÷W2W7VV6ñF˜26ˆ÷Ú&÷GW&‚"ì≤–¢V«6Rñbá&ˆˆ“”“bb∆ñW"ÂÇ¬Rí≤&ˆˆ““≤6WGW&ˆˆ“Çì≤–¢V«6Rñbá&ˆˆ“”“"bb∆ñW"ÂÇ¬Rí≤&ˆˆ““≤6WGW&ˆˆ“Çì≤–¢V«6Rñbá&ˆˆ“”“"bb∆ñW"ÂÇ‚sìí≤&ˆˆ““3≤6WGW&ˆˆ“Çì≤6Ü˜t÷V÷˜'íÇ$4ƒU5E$ÚDÚ4ı$Ú%DîDÚ"¬$2f˜¶W2F6˜7F6ˆÁfW&vV“&V÷&Fñ6V“FWFÚ‚ÊÚ6VÁG&Ú¬V÷fñwW&6˜7GW&Êˆ÷W2vF˜26ˆ“fñ˜2FR:wVW67W&‚"ì≤–¢V«6Rñbá&ˆˆ“”“2bb∆ñW"ÂÇ¬Rí≤&ˆˆ““#≤6WGW&ˆˆ“Çì≤–¢V«6Rñbá&ˆˆ“”“2bbVW7E7FvR„“RbbFó7FÊ6Rá∆ñW"¬ÊWrˆñÁDbÉCÉ¬Síí¬cBí≤&ˆˆ““C≤6WGW&ˆˆ“Çì≤6Ü˜t÷V÷˜'íÇ$$4îDÚ$î‘Tï$Ú‰Ù‘R"¬F˜v‰VÊFñÊr”“Ú$˜2Êˆ÷W2FWfˆ«fñF˜2˜26ñÊ˜2f¶V“VG&&W7ˆÊFW"‚V÷W66F&ñW66ˆÊFñFFW66RL:íV÷&6ñ6ˆÁ7G'\:÷FÁFW2FÚ«V÷R‚"¢$«W¢FÚ«V÷RG&fW76Úó6ÚFÚ6∆W7G&ÚR&WfV∆FVw&W2&V÷&6ñVRÏ:6Ú&V6RÊ˜2÷2‚"ì≤–¢V«6Rñbá&ˆˆ“”“2bb∆ñW"ÂÇ‚sìbb6Ü˜'W4÷V÷˜'íí≤&ˆˆ““3≤6WGW&ˆˆ“Çì≤6Ü˜t÷V÷˜'íÇ%$Tu$U54Úl8ï5U$"¬%fˆ<:¢G&¢V“6˜&ÚñÁFVó&Ú¬÷2Ï:6ÚV÷f˜¢;¶Êñ6‚6ñ∆WFÇ&V6ó6˜Wfí÷∆Ú&FW66ˆ'&ó"˜"VR˜2Êˆ÷W26ˆÁ7V÷ñF˜26ˆÁFñÁV“6Ü÷ÊFÚFÚgVÊFÚ‚"ì≤–¢V«6Rñbá&ˆˆ“”“Bbb∆ñW"ÂÇ¬Rí≤&ˆˆ““3≤6WGW&ˆˆ“Çì≤–¢V«6Rñbá&ˆˆ“”“Bbb∆ñW"ÂÇ‚sìí≤&ˆˆ““S≤6WGW&ˆˆ“Çì≤6Ü˜t÷V÷˜'íÇ%4ƒD$î‘Tï$dî|8‘ƒî"¬$&6ñL:«Vv"V÷<:&÷&6ó&7V∆"‚V÷wV&Fú:26V“&˜7FÚ&˜FVvRÚ&ñ÷Vó&ÚÊˆ÷RVRÚ«V÷R&V6V&WR‚"ì≤–¢V«6Rñbá&ˆˆ“”“Rbb∆ñW"ÂÇ¬Rí≤&ˆˆ““C≤6WGW&ˆˆ“Çì≤–¢V«6Rñbá&ˆˆ“”“Rbb∆ñW"ÂÇ‚sìbbfó'7D÷V÷˜'íí≤&ˆˆ““3≤6WGW&ˆˆ“Çì≤6Ü˜t÷V÷˜'íÇ%$Tu$U54Úl8ï5U$"¬$wV&Fú:2Ï:6ÚW&˜&ñvV“FÚ«V÷R¬÷2wV&Ff∆V÷'&Ï:vFRVV“Ú6VÊFWR‚6ñ∆WFÇ&V6ó6˜Wfó"Ú&ñ÷Vó&ÚÊˆ÷RÁFW2VRÜó7L;7&ñfÊ6R‚"ì≤–¢V«6Rñbá&ˆˆ“”“bbb∆ñW"ÂÇ¬Rí≤&ˆˆ““3≤6WGW&ˆˆ“Çì≤6Ü˜t÷V÷˜'íÇ%$Tu$U54Úl8ï5U$"¬$VFFW7W&ÊÚ6ó2F&:v‚ÚfRˆFR6W"7'W¶FÚÊ˜f÷VÁFRVÊFÚVó6W"6VwVó"Ú÷‚"ì≤–¢V«6Rñbá&ˆˆ“”“bbb∆ñW"ÂÇ‚sìí≤&ˆˆ““s≤6WGW&ˆˆ“Çì≤6Ü˜t÷V÷˜'íÇ%8DîÚD2DU5DT’T‰Ñ2"¬$2÷&vVÁ2FÚfRf˜&÷“V“:FñÚFRL:'V2‚V÷6'L;6w&fv˜R2∆62F˜26÷ñÊÜ˜3≤V∆ˆ'6W'fVV“6ÜVvÁFW2FRFV6ñFó"6R76vV“6ˆÁFñÁV&W'F‚"ì≤–¢V«6Rñbá&ˆˆ“”“rbb∆ñW"ÂÇ¬Rí≤&ˆˆ““c≤6WGW&ˆˆ“Çì≤–¢V«6Rñbá&ˆˆ“”“rbb∆ñW"ÂÇ‚sìbbvW7EG&6Rí≤&ˆˆ““3≤6WGW&ˆˆ“Çì≤6Ü˜t÷V÷˜'íÇ%$Tu$U54Úl8ï5U$"¬$Ú÷FRÊ&ˆÁFÃ:ñ“FÚ'&ñvÚ¬÷2∆WG&Ï:6Ú&WfV∆VÊFÚV∆'FóR‚VFF6&W,:∆Wf"fˆ<:ß26ˆÁG&6˜'&VÁFR‚"ì≤–¢V«6Rñbá&ˆˆ“”“íbb∆ñW"ÂÇ¬Rí≤&ˆˆ““É≤6WGW&ˆˆ“Çì≤–¢V«6Rñbá&ˆˆ“”“íbb∆ñW"ÂÇ‚sìí≤&ˆˆ““#≤6WGW&ˆˆ“Çì≤6Ü˜t÷V÷˜'íÇ$4ï5DU$‰DÚ$Ttï5E$Úd§îÚ"¬$6ó7FW&Êfˆí6ˆÁ7G'\:÷F&wV&F":wV¬÷2∆w\:ñ“6ˆ'&óRFR6ˆÁG&F˜2‚V“W67&ól:6ÚFR6ˆÁG&FÚ&˜FVvRÚfˆ«V÷RRF6V«VW"W76ˆ7V¶ÚÊˆ÷R6ˆÁ6ñv∆W"‚"ì≤–¢V«6Rñbá&ˆˆ“”“#bb∆ñW"ÂÇ¬Rí≤&ˆˆ““ì≤6WGW&ˆˆ“Çì≤–¢V«6Rñbá&ˆˆ“”“#bb∆ñW"ÂÇ‚sìbbVW7E7FvR„“#2í≤&ˆˆ““É≤6WGW&ˆˆ“Çì≤–¢V«6Rñbá&ˆˆ“”“#bb∆ñW"ÂÇ¬Rí≤&ˆˆ““É≤6WGW&ˆˆ“Çì≤–¢V«6Rñbá&ˆˆ“”“#bb∆ñW"ÂÇ‚sìí≤&ˆˆ““##≤6WGW&ˆˆ“Çì≤6Ü˜t÷V÷˜'íÇ%ÙÂDRD‘,8íîÂdU%DîD"¬$ˆÁFRÁFñv7'W¶Ê66VÁFR˜"ˆÊFR2f˜¶W26VwVV“6ˆÁG&6˜'&VÁFR‚V÷fñwW&6ˆ'&R2L:'V26ˆ“÷&62FR:wV6∆vF‚V∆Ï:6Ú&WWFRÊVÊáV“Êˆ÷S≤W7W&&˜Wfó"ÚVRfˆ<:¢fVñÚW&wVÁF"‚"ì≤–¢V«6Rñbá&ˆˆ“”“#"bb∆ñW"ÂÇ¬Rí≤&ˆˆ““#≤6WGW&ˆˆ“Çì≤–¢V«6Rñbá&ˆˆ“”“#"bb∆ñW"ÂÇ‚sìbbVW7E7FvR„“#bí≤&ˆˆ““É≤6WGW&ˆˆ“Çì≤6Ü˜t÷V÷˜'íÇ%dÙ≈D8‘U44Ù’T‰ïL8$î"¬$∆V÷'&Ï:vFÊ66VÁFR6&RÁV÷g&6R7W'F‚fV‚ˆFRwV&L:÷∆6V“W67&WfW"˜"Ê&‚"ì≤–¢V«6Rñbá&ˆˆ“”“bb∆ñW"ÂÇ‚sìbbVW7E7FvR„“2í≤&ˆˆ““#≤6WGW&ˆˆ“Çì≤6Ü˜t÷V÷˜'íÇ$4ı5DD2dı§U2D$Dî2"¬F˜v‰VÊFñÊr”“Ú$2&F∆F26ˆ“˜2Êˆ÷W2FRl:ó7W&G&fW76“Ú&ñÚ‚V6˜26Rf7F“FG&ñ∆Ü≤6ñFFRFWfˆ«fWRf˜,:vW7F2f˜¶W2‚"¢$Ú«V÷RW&÷ÊV6R6W6ÚG,:2FRfˆ<:¢‚7V«W¢G&fW762:wV26V“&Vf∆WÜÚRG&í&6˜7FGVFÚÚVRfˆíW7VV6ñFÚ‚"ì≤–¢V«6Rñbá&ˆˆ“”“bb∆ñW"ÂÇ‚sìbbÊ&G&6Rí≤&ˆˆ““3≤6WGW&ˆˆ“Çì≤6Ü˜t÷V÷˜'íÇ%$Tu$U54Úl8ï5U$"¬%fˆ<:¢6'&VvV÷∆V÷'&Ï:vVRÚ«V÷RÏ:6Ú6ˆÁ6VwVóRv"‚6ñ∆WFÇ&V6ó6˜Wfí÷∆ÁFW2FRFV6ñFó"ÚVRf¶W"6ˆ“˜2'Vóf˜2‚"ì≤–¢–¢&ófFRfˆñBñÁFW&7EF˜v‚Çê¢∞¢ñbÑFó7FÊ6Rá∆ñW"¬7W&F˜%˜6óFñˆ‚í¬SÇê¢∞¢ñbáVW7E7FvR”“ê¢∞¢VW7E7FvR“∞¢6Ü˜t÷V÷˜'íÇ$5U$Dı$4îƒUDÇ"¬%fˆ<:¢G&˜WÜRV÷∆V÷'&Ï:vFRÊ&‚˜2&Vvó7G&˜2ˆfñ6ñó2Ï:6Ú6ˆÁF“˜"VRV∆FW66WR:7&óF‚∆VñÚ∆óg&ÚF2W<:¶Ê6ñ2ÊÚ˜7FÚÁFñvÚF&:v≤FWˆó26ˆÁfW'6&V÷˜26ˆ'&RÚVRV∆R&˜f‚"ì∞¢–¢V«6RñbáVW7E7FvR”“í6Ü˜t÷V÷˜'íÇ$5U$Dı$4îƒUDÇ"¬$Ú∆óg&ÚF2W<:¶Ê6ñ2fñ6fÊÚ˜7FÚßVÁFÚÚ¸:vÚ‚&ˆ7W&R÷W6÷&6F6ˆ“Ú6V∆ÚFÚf&ˆ¬‚"ì∞¢V«6RñbáVW7E7FvR”“"ê¢∞¢VW7E7FvR“3≤vˆ∆B≥“C≤˜FñˆÁ2≤≥∞¢6Ü˜t÷V÷˜'íÇ$4Ù‰dï5<84ÚDR4îƒUDÇ"¬$Ê&FW66ˆ'&óRVRÚ«V÷R6ˆÁ7V÷ñÊˆ÷W2¬Ï:6ÚVÊ2∆V÷'&Ï:v2‚WRfV6ÜVíÚ'VófÚ&ñ◊VFó"Ú:&Êñ6Ú‚V∆&ˆ7W&fV÷&˜fVRVFW76R6ˆÁfVÊ6W"6ñFFR‚∆WfRÚ&Vvó7G&ÚÚ'VófÚÊ˜'FR¬Ã:ñ“FÚ&ñÚ‚"ì∞¢Ê˜Fñ6R“%$T4Ù’TÂ4¢CıU$ÚR¸8|84Ú#≤Ê˜Fñ6UFñ÷R“3∞¢–¢V«6RñbáVW7E7FvR”“2í6Ü˜t÷V÷˜'íÇ$5U$Dı$4îƒUDÇ"¬$Ú'VófÚÊ˜'FRfñ6Ã:ñ“FÚ&ñÚ6VvÚ¬V∆Ú˜'L:6ÚFRVG&ÚÊ˜'FRF&:v‚G&vÚ6V∆ÚVRÊ&VÊ6ˆÁG&˜R‚"ì∞¢V«6RñbáVW7E7FvR”“Bí≤VW7E7FvR“S≤vˆ∆B≥“cS≤˜FñˆÁ2≤≥≤6Ü˜t÷V÷˜'íÇ$dı¢TRU44ÙƒÑR"¬$Ê&FVóÜ˜RV÷&˜fFRVRÚ«V÷RÏ:6Ú:íVÊ2V÷FVfW6‚V∆R6ˆ÷\:v˜RW66ˆ∆ÜW"Vó2Êˆ÷W26ˆÁ6ˆ÷R‚Ï:6Ú˜76Ú÷ó2W66ˆÊFW"ó76Ú‚f˜R&WVÊó"6ñFFS≤fˆ<:¢&V6ó66VwVó"Ú&7G&ÚFV∆L:íÚ∆VóFÚFÚ&ñÚ6VvÚ‚"ì≤Ê˜Fñ6R“$‘ï5<84Ú4Ù‰4≈\8‘D¢cRıU$ÚR¸8|84Ú#≤Ê˜Fñ6UFñ÷R“3≤–¢V«6RñbáVW7E7FvR”“íí≤VW7E7FvR“≤vˆ∆B≥“#≤˜FñˆÁ2≤≥≤6Ü˜t÷V÷˜'íÇ$Ú‰Ù‘RTRÚ≈T‘RuT$D"¬$Ú&ó6÷6ˆÊfó&÷VRÊ&6VóF˜R6W"˜'FF˜&F2∆V÷'&Ï:v2&V7W6F2V∆Ú«V÷R‚˜2'Vóf˜2Ï:6ÚFó¶V“6RV∆W7L:fóf¬÷˜'F˜RgVÊFñF:«W¢‚Ï:6Úf÷˜2FV6ñFó"6WRFW7FñÊÚ6ˆ“&6RV“÷ó2V÷:vñÊñÊ6ˆ◊∆WF‚&\;¶Ê2÷V‹;7&ñ2VRf«F”≤VÊFÚ6ÜVv"Ü˜&¬l:ó7W&&V6ó6W66ˆ∆ÜW"6&VÊFÚÚ&\:vÚ‚"ì≤Ê˜Fñ6R“$‘ï5<84Ú4Ù‰4≈\8‘D¢#ıU$ÚR¸8|84Ú#≤Ê˜Fñ6UFñ÷R“3≤–¢V«6RñbáVW7E7FvR”“bbÊ&G&6Rí≤VW7E7FvR“#≤vˆ∆B≥“S≤˜FñˆÁ2≤≥≤6Ü˜t÷V÷˜'íÇ$dı¢DRTT“î‰DƒT‘%$"¬$Ê&FVóÜ˜RV÷÷V‹;7&ñf˜&FÚ∆6Ê6RFÚf&ˆ¬‚V∆VÁ6ñÊf˜2W7VV6ñF˜2Fó¶W"˜2Êˆ÷W2VÁ2F˜2˜WG&˜2¬6V“VFó"VR∆w\:ñ“6«f76R‚6ñ∆WFÉ¢(	≈76VífñFW66ˆ∆ÜVÊFÚÚVRl:ó7W&ˆFñ∆V÷'&"‚v˜&6ñFFRFW,:FRW66ˆ∆ÜW"˜"6í‚ñÊFf«F“f˜¶W3≤Ï:6Úf˜RfV6Ü"Ú'VófÚ˜WG&fW¢Ó(	“"ì≤Ê˜Fñ6R“$‘ï5<84Ú4Ù‰4≈\8‘D¢SıU$ÚR¸8|84Ú#≤Ê˜Fñ6UFñ÷R“3≤–¢V«6RñbáVW7E7FvR”“Bbb6Ü˜'W4÷V÷˜'íí≤VW7E7FvR“S≤vˆ∆B≥“#≤˜FñˆÁ2≤≥≤6Ü˜t÷V÷˜'íÇ$Ú4ı$Ú4ÑTt8$8t"¬$2f˜¶W2Ï:6Ú<:6ÚV÷7&ñGW&VR˜766W"FW7G'\:÷F‚6FÊˆ÷RVRÚ«V÷R6ˆÁ6ˆ÷RV÷VÁF&W7<:6Ú6ˆ"6ñFFR‚6ñ∆WFÇ&Vvó7G&Ú6˜&Ú6V“v"ÊVÊáV÷fW'<:6Û¢(	≈6RÊ&ñÊFW7L:VÁG&RW762f˜¶W2¬FV÷˜2FRW67WF"ÁFW2FRFV6ñFó"6ˆ÷Ú6Ü‹:÷∆FRfˆ«FÓ(	“Ú&7G&ÚˆÁF&Ã:ñ“F˜2÷2FRl:ó7W&‚"ì≤Ê˜Fñ6R“$‘ï5<84Ú4Ù‰4≈\8‘D¢#ıU$ÚR¸8|84Ú#≤Ê˜Fñ6UFñ÷R“3≤–¢V«6RñbáVW7E7FvR”“bbbfó'7D÷V÷˜'íí≤VW7E7FvR“s≤vˆ∆B≥“#c≤˜FñˆÁ2≤≥≤6Ü˜t÷V÷˜'íÇ$Ú‰Ù‘RDRî≈ï$"¬$&ñ÷Vó&÷V‹;7&ñFWfˆ«fRV“&˜;76óFÚÚ«V÷R¬÷2Ï:6ÚFW6f¢<:ñ7V∆˜2FRW66ˆ∆Ü2‚6ñ∆WFÇÊ˜FfW'<:6ÚFRñ«ó&Ú∆FÚF2FV÷ó2¬6V“fV6Ü"Ú'VófÛ¢(	ƒÊ&G&fW76˜RÚ&ñÚ˜"fˆÁFFR,;7&ñ‚6RVÊ6ˆÁG&&÷˜2¬FW&V÷˜2FRW67WF"ÚÊˆ÷RVRV∆W66ˆ∆ÜWR&6íÓ(	“VFF˜WfóRÚ6˜&Ú6VwVó"&ÚˆW7FR¬6ˆÁG&6˜'&VÁFR¬V“Fó&\:|:6ÚFW'&2VRl:ó7W&ÁVÊ6&Vvó7G&˜R‚"ì≤Ê˜Fñ6R“$‘ï5<84Ú4Ù‰4≈\8‘D¢#cıU$ÚR¸8|84Ú#≤Ê˜Fñ6UFñ÷R“3≤–¢V«6RñbáVW7E7FvR„“rí6Ü˜t÷V÷˜'íÇ$5U$Dı$4îƒUDÇ"¬$Ú'VófÚW&÷ÊV6R&W'FÚ‚ñ«ó&ˆÁF&ÚˆW7FR¬6ˆÁG&6˜'&VÁFRFÚ&ñÚ6VvÚ‚VFF&W&V“&&6Û≤VÊFÚG&ñ∆ÜW7FófW"&ˆÁF¬6VwVó&V÷˜2&Ã:ñ“F2FW'&26ˆÊÜV6ñF2‚"ì∞¢V«6RñbáVW7E7FvR„“"bbF˜v‰VÊFñÊr”“í≤VÊFñÊt6Üˆñ6T˜V‚“G'VS≤Ê˜Fñ6R“%l8ï5U$U5U$5TDT4ï<84Ú(
+"ıR"#≤Ê˜Fñ6UFñ÷R“3≤–¢V«6RñbáF˜v‰VÊFñÊr”“í6Ü˜t÷V÷˜'íÇ$5U$Dı$4îƒUDÇ"¬$˜2Êˆ÷W2fˆ«F&“˜26ñÊ˜2‚&:vW7L:6ˆ“fˆ<:¢¬÷22f˜¶W2Ã:ñ“FÚ&W6W'fL;7&ñÚñÊFf«F“‚f÷˜2&ˆ7W,:÷∆26V“fV6Ü"Ú'VófÚ˜WG&fW¢‚"ì∞¢V«6RñbáF˜v‰VÊFñÊr”“"í6Ü˜t÷V÷˜'íÇ$5U$Dı$4îƒUDÇ"¬$Ú«V÷R6ˆÁFñÁV6W6ÚR˜2'Vóf˜2W&÷ÊV6V“&W'F˜2‚Ú6ñÃ:¶Ê6ñÚÏ:6ÚFW6&V6WS≤6ñvÚ&7G&Ú&Ã:ñ“FÚ&W6W'fL;7&ñÚÁFW2VR6ñFFRFWVÊFFRÊ˜fÚFRÊˆ÷W2vF˜2‚"ì∞¢V«6R6Ü˜t÷V÷˜'íÇ$5U$Dı$4îƒUDÇ"¬$Ú&7G&ÚFRÊ&6VwVRV∆Ú∆VóFÚFÚ&ñÚ6VvÚ‚6ˆ“Ú6ñÊÚFRVFF¬76vV“&óÜÚF6V∆ˆFR6W"&W'F‚"ì∞¢&WGW&„∞¢–¢ñbÑFó7FÊ6Rá∆ñW"¬&V∆ƒ∂VWW%˜6óFñˆ‚í¬SÇê¢∞¢ñbáVW7E7FvR”“bbb&ófW$&V∆¬í≤VW7E7FvR“s≤vˆ∆B≥“≤˜FñˆÁ2≤≥≤6Ü˜t÷V÷˜'íÇ$TDD$T4Ù‰ÑT4RÚ4î‰Ú"¬$W76RW&Ú6ñÊÚFRG&fW76ñFÚ÷WRí‚Ê&Ú∆Wf˜RVÊFÚFW66WRÚ&ñÛ≤V∆6ˆÊÜV6ñÚ6÷ñÊÜÚRFV6ñFóR7'W¨:÷∆Ú‚Ï:6Úfˆí6GW&F‚wV&FRÚ6ñÊÛ¢6RV∆fˆ«F"¬fí6&W"VRñÊF∆V÷'&÷˜26WRÊˆ÷R‚"ì≤Ê˜Fñ6R“$‘ï5<84Ú4Ù‰4≈\8‘D¢ıU$ÚR¸8|84Ú#≤Ê˜Fñ6UFñ÷R“3≤–¢V«6RñbáVW7E7FvR”“íbbvW7EG&6Rí≤VW7E7FvR“#≤vˆ∆B≥“3sS≤˜FñˆÁ2≤≥≤6Ü˜t÷V÷˜'íÇ$4%DDÚ$Tl9§tîÚ"¬$Ê&6ˆÁ7G'VóRV“«Vv"ˆÊFR6FW76ˆW66ˆ∆ÜR6ˆ÷Ú6W,:6Ü÷FR'FóR&ˆW7FR6ˆ“VV“VFóR&G&fW76"‚VFF&V6ˆÊÜV6R2÷&62FÚ÷¢(	ƒ6ˆÁ6ñvÚ∆Wf"fˆ<:ß2L:í,;7Üñ÷7W'f¬÷2F∆íV“FñÁFR6W,:&V6ó6Ú6VwVó":wVÓ(	“6ñ∆WFÇFVóÜÚ'VófÚ&W'FÚ&fˆ«FFÚw'WÚ‚Ê˜L:÷6ñÏ:6Ú&˜fˆÊFRÊ&W7L:v˜&‚"ì≤Ê˜Fñ6R“%$T4Ù’TÂ4¢3sRıU$ÚR¸8|84Ú#≤Ê˜Fñ6UFñ÷R“3≤–¢V«6RñbáVW7E7FvRó2r˜"Çí≤VW7E7FvR“É≤&ˆˆ““c≤6WGW&ˆˆ“Çì≤6Ü˜t÷V÷˜'íÇ$E$dU54îDÚ4ÙÂE$’$îÚ"¬$VFF6ˆ«FÚ&&6ÚFRgVÊFÚ∆&vÚ‚˜2Êˆ÷W2FWfˆ«fñF˜2˜26ñÊ˜2ßVF“VÊ6ˆÁG&"76vV“VÁG&R2VG&3≤Ú«V÷R÷ÁFñFÚ6W6Úñ«V÷ñÊ˜2÷&6˜27V&÷W'6˜2¬÷26Ü÷V6˜2&ÚfR‚6'L;6w&fF÷&vV“wV&FVÁG&FFÚ&Vl;¶vñÚFRÊ&‚"ì≤–¢V«6RñbáVW7E7FvR”“#í≤VW7E7FvR“#≤&ˆˆ““É≤6WGW&ˆˆ“Çì≤6Ü˜t÷V÷˜'íÇ%$Tl9§tîÚDÚdTîÚ4ƒ‘Ú"¬$Ú&&6ÚFRVFF6VwVR2∆ÁFW&Ê2L:íV÷V÷&&6:|:6ÚÁFñv¬VÊ6∆ÜFVÁG&R2VG&2‚W76ˆ2VR'Fó&“FRl:ó7W&6ˆÁ7G'\:◊&“∆íV“'&ñvÚ‚Ê&ßVF˜RG&:v"2&ñ÷Vó&2&˜F2¬÷26ˆÁFñÁV˜RfñvV“6ˆ“VV“W66ˆ∆ÜWR'Fó"‚fV‚¬ÚÁFñvÚ&'VVó&Ú¬W7W&ßVÁFÚ:÷W66ˆ◊VÊóL:&ñ‚"ì≤–¢V«6RñbáVW7E7FvR„“#í6Ü˜t÷V÷˜'íÇ$TDD¬‰Ú4ï2"¬$Ú÷FRÊ&÷&6˜WG&7W'fˆW7FR¬Ã:ñ“FÚ&Vl;¶vñÚ‚ñÊFÏ:6Ú6&V÷˜2ˆÊFRV∆W7L:≤G&ñ∆Ü6ˆÁFñÁV&W'F‚"ì∞¢V«6RñbáF˜v‰VÊFñÊr”“í6Ü˜t÷V÷˜'íÇ$TDD¬DÙ4Dı$DR4î‰ı2"¬$˜2Êˆ÷W2fˆ«F&“:2&F∆F2‚f˜RVÁ6ñÊ"27&ñÏ:v2∆W"6F6ñÊÚ¬&VRÊñÊw\:ñ“&V6ó6RFófñÊÜ"VV“fˆíW7VV6ñFÚ‚"ì≤V«6RñbáF˜v‰VÊFñÊr”“"í6Ü˜t÷V÷˜'íÇ$TDD¬DÙ4Dı$DR4î‰ı2"¬$˜26ñÊ˜2v˜&÷&6“2Ü˜&2FÚ«V÷R‚Ï:6Úf˜RFVóÜ"VR«W¢G&Á6f˜&÷R&˜F\:|:6ÚV“6ñÃ:¶Ê6ñÚ˜WG&fW¢‚"ì≤V«6R6Ü˜t÷V÷˜'íÇ$TDD¬DÙ4Dı$DR4î‰ı2"¬$˜26ñÊ˜26ˆÁFñÁV“ñÁFVó&˜2‚ÚVR7V÷óRf˜&“˜2Êˆ÷W2w&fF˜2ÊV∆W2‚VÊFÚFVÁFÚ∆V÷'&"VV“˜2gVÊFóR¬<;2W67WFÚ:wVFV&óÜÚF&:v‚"ì∞¢&WGW&„∞¢–¢ñbÑFó7FÊ6Rá∆ñW"¬&6ÜófT&ˆˆµ˜6óFñˆ‚í¬SÇê¢∞¢ñbáVW7E7FvR”“í6Ü˜t÷V÷˜'íÇ$ƒïe$ÚD2U<8§‰4î2"¬$Úfˆ«V÷RW7L:∆7&FÚ6ˆ“Ú6V∆ÚF7W&F˜&‚f∆R6ˆ“6ñ∆WFÇÁFW2FRFVÁF"'&í÷∆Ú‚"ì∞¢V«6RñbáVW7E7FvR”“ê¢∞¢VW7E7FvR“#∞¢6Ü˜t÷V÷˜'íÇ$ƒïe$ÚD2U<8§‰4î2"¬%&Vvó7G&ÚFRfñ|:÷∆ñ¢ÚwV&Fú:6ÚVÁG&Vv˜R6WRÊˆ÷RÚ«V÷R‚VF˜'¶RÊˆ÷W2f˜&“W6F˜2&÷ÁL:¢÷∆Ú6W6Ú‚˜&FV“FRVÊ6W'&÷VÁFÚFÚ'VófÚ∆Wf76ñÊGW&FR6ñ∆WFÇ‚"ì∞¢–¢V«6R6Ü˜t÷V÷˜'íÇ$ƒïe$ÚD2U<8§‰4î2"¬$2:vñÊ2&Vvó7G&“˜2Êˆ÷W2VÁG&VwVW2Ú«V÷R‚76ñÊGW&FR6ñ∆WFÇfV6ÜÚ;¶«Fñ÷Úfˆ«V÷R‚"ì∞¢&WGW&„∞¢–¢ñbÑFó7FÊ6Rá∆ñW"¬ÊWrˆñÁDbÉCÉ¬3Ríí¬cBê¢∞¢ñbáVW7E7FvR„“2í≤&ˆˆ““C≤6WGW&ˆˆ“Çì≤6Ü˜t÷V÷˜'íÇ$%TïdÚ‰ı%DR"¬$Ú˜'L:6Ú6VFR‚VÁG&R2W7FÁFW2¬V6˜2&WWFV“G&V6Ü˜2FRFWˆñ÷VÁF˜2VRf˜&“&V÷˜fñF˜2FÚ&Vvó7G&Úˆfñ6ñ¬‚"ì≤–¢V«6R6Ü˜t÷V÷˜'íÇ%ı%L84ÚDÚ%TïdÚ‰ı%DR"¬$Ú6V∆ÚF7W&F˜&÷ÁL:ñ“Ú˜'L:6ÚfV6ÜFÚ‚FW67V'&ÚVRÚ∆óg&ÚF2W<:¶Ê6ñ2&˜fRf∆R6ˆ“6ñ∆WFÇ‚"ì∞¢&WGW&„∞¢–¢ñbÑFó7FÊ6Rá∆ñW"¬ÊWrˆñÁDbÉCÉ¬S#íí¬cBê¢∞¢ñbáVW7E7FvR„“rí≤&ˆˆ““É≤6WGW&ˆˆ“Çì≤6Ü˜t÷V÷˜'íÇ$U44DDR4îÂ§2"¬$Ú6ñÊÚ'&RV÷76vV“&óÜÚF6V∆fˆvF‚6FFVw&R¬Ú"fñ6÷ó2VVÁFRR2∆V÷'&Ï:v2&V6V“6ÜVv"ÁFW2FRfˆ<:¢‚"ì≤–¢V«6RñbáVW7E7FvR„“Rí≤&ˆˆ““c≤6WGW&ˆˆ“Çì≤6Ü˜t÷V÷˜'íÇ$ƒTïDÚDÚ$îÚ4TtÚ"¬$:wVFW6&V6WRF7WW&l:÷6ñR¬÷22VG&2ñÊFwV&F“2;¶«Fñ÷2∆g&2FRVV“7'W¶˜RÚ&ñÚ‚Ú6ñÊÚFRÊ&ˆÁF&&óÜÚF6˜'&VÁFR‚"ì≤–¢V«6R6Ü˜t÷V÷˜'íÇ%54tT“DÚ$îÚ"¬$VFFÏ:6Ú&V6ˆÊÜV6RÚ6÷ñÊÜÚ&Ú∆VóFÚ6V6Ú‚6ˆÊ6«V7VñÁfW7Fñv:|:6Ú6ˆ“6ñ∆WFÇÁFW2FRFW66W"‚"ì∞¢&WGW&„∞¢–¢ñbÑFó7FÊ6Rá∆ñW"¬7'óDvFU˜6óFñˆ‚í¬SÇê¢∞¢&ˆˆ““#≤6WGW&ˆˆ“Çì≤6Ü˜t÷V÷˜'íÇ$5$ïD"¬$76vV“6ˆÁFñÁV&W'F‚ÚwV&Fú:6Ú&˜FVvRÚ&V∆ñ<:&ñÚ¬÷2,;7Üñ÷ó7FW7L:Ê˜2'Vóf˜2FRl:ó7W&‚"ì∞¢–¢–¢&ófFRfˆñBñÁFW&7E&VgVvRÇê¢∞¢ñbÑFó7FÊ6Rá∆ñW"¬fVÂ˜6óFñˆ‚í¬cê¢∞¢ñbáVW7E7FvR”“#í≤VW7E7FvR“##≤6Ü˜t÷V÷˜'íÇ$dT‚¬Ú$%TTï$Ú"¬$Ï:6Ú÷ÁFV÷˜2V“∆óg&ÚFRÊˆ÷W2‚6Ffñ¶ÁFRFV6ñFRÚVRVW"FVóÜ"Ê÷W6RVV“ˆFR∆W"‚Ê&ßVF˜R÷&6"G&ñ∆ÜF˜2«V÷ñÏ:&ñ˜2R6VwVóRFñÁFR6ˆ“˜WG&2W76ˆ2‚V∆VFóRVRÏ:6Ú6ˆÁL:76V÷˜2ÚÊˆ÷RVRW66ˆ∆ÜWRÊV“&ˆ÷WL:ß76V÷˜2VRfˆ«F&ñ‚6RVó6W"6ˆÁFñÁV"¬&˜FV¶˜2fó6˜2VR6FW76ˆFV6ñFóR6ˆ◊'Fñ∆Ü"‚"ì≤–¢V«6RñbáVW7E7FvR”“#2í≤VW7E7FvR“#C≤vˆ∆B≥“#C≤˜FñˆÁ2≥“#≤6Ü˜t÷V÷˜'íÇ$‘U44ÙÂDîÂT$U%D"¬$6ˆ◊VÊñFFRW66ˆ∆ÜRwV&F"˜2&Vvó7G&˜2FR76vV“Ví‚Ê˜FFRÊ&FW&÷ñÊÁFW2F,;7Üñ÷7W'f≤ÊñÊw\:ñ“fí&VVÊ6ÜW"∆7VÊ˜"V∆‚fV‚ˆfW&V6R&˜fó<;VW2&fñvV“RˆÁF2∆ÁFW&Ê2÷ó2&V6VÁFW2&ˆW7FR‚6RV“FñV∆fˆ«F"¬6W,:V∆VV“FV6ñFó,:ÚVR6ˆÁF"‚"ì≤Ê˜Fñ6R“%$Tl9§tîÛ¢#CıU$ÚR"¸8|9TU2#≤Ê˜Fñ6UFñ÷R“3≤–¢V«6RñbáVW7E7FvR”“#bbbW7G&V’G&6Rí≤VW7E7FvR“#s≤vˆ∆B≥“3#≤˜FñˆÁ2≤≥≤6Ü˜t÷V÷˜'íÇ$DU5DT’T‰Ñ4T“$Ttï5E$Ú"¬$fV‚˜WfR∆V÷'&Ï:v6V“W&wVÁF"V¬W&ÚÊˆ÷RÁFW&ñ˜"ÊV“ÚW66ˆ∆ÜñFÚ˜"Ê&‚V∆R&Vvó7G&VÊ2VRV“w'WÚ6ÜVv˜RßVÁFÚ:Ê66VÁFRR6ˆÁFñÁV˜RfñvV“˜"fˆÁFFR,;7&ñ‚(	≈6Rfˆ<:¢ñÊFVW"VÊ6ˆÁG,:÷∆¬,;7Üñ÷W&wVÁF&V6ó66W"fVóFV∆‚Ê˜766ˆ◊VÊñFFRÏ:6Úfí&W7ˆÊFW"V“6WR«Vv"Ó(	“G&ñ∆Ü6VwVRÃ:ñ“FÚ∆6Ê6RF2∆ÁFW&Ê2‚"ì≤Ê˜Fñ6R“%$T4Ù’TÂ4¢3#ıU$ÚR¸8|84Ú#≤Ê˜Fñ6UFñ÷R“3≤–¢V«6RñbáVW7E7FvR„“#rí6Ü˜t÷V÷˜'íÇ$dT‚¬Ú$%TTï$Ú"¬$Ú&Vvó7G&ÚFW&÷ñÊˆÊFR˜2fñ¶ÁFW2FV6ñFó&“&"FR6ˆ◊'Fñ∆å:÷∆Ú‚Ú6÷ñÊÜÚ6VwVR&ˆW7FR¬÷2ÊVÊáV“÷WF˜&ó¶6ˆ◊VÊñFFRf∆"˜"Ê&‚"ì∞¢V«6RñbáVW7E7FvR„“#Bí6Ü˜t÷V÷˜'íÇ$dT‚¬Ú$%TTï$Ú"¬$÷W66ˆÁFñÁV&W'FVV“W66ˆ∆ÜRFVóÜ"V“&V∆FÚ‚,;7Üñ÷7W'ffñ6ˆW7FS≤˜2fñ¶ÁFW2VR76&“˜"VíFV6ñFó&“6ˆ◊'Fñ∆Ü"VÊ2ÚñÏ:÷6ñÚFG&ñ∆Ü‚"ì∞¢V«6R6Ü˜t÷V÷˜'íÇ$dT‚¬Ú$%TTï$Ú"¬$W7FR&&6ÚVÊ6∆ÜFÚfó&˜R'&ñvÚ‚ÊñÊw\:ñ“&V6ó6W67&WfW"V“Êˆ÷R&fñ6"Ví‚"ì∞¢&WGW&„∞¢–¢ñbÑFó7FÊ6Rá∆ñW"¬6W&˜6óFñˆ‚í¬SÇí≤6Ü˜t÷V÷˜'íÇ%4U$¬$U$Dı$DRƒÂDU$‰2"¬$2∆ÁFW&Ê2Ï:6Ú÷&6“V÷&˜F&Fˆ÷"˜76RFV∆‚6FW76ˆ6VÊFRV÷<;2VÊFÚVW"FVóÜ"V“fó6Ú&VV“fñW"FWˆó2‚"ì≤&WGW&„≤–¢ñbÑFó7FÊ6Rá∆ñW"¬Êˆ˜6óFñˆ‚í¬SÇí≤6Ü˜t÷V÷˜'íÇ$‰Ù¬$T‰Dï¢DR4%L94u$d"¬$&VÊFíFW6VÊÜ"˜2G&V6Ü˜2VR÷WW2÷ñv˜2÷RFVóÜ“fW"‚Ú&W7FÚFÚ÷fñ6V“'&Ê6Ú˜"W66ˆ∆ÜFV∆W2‚"ì≤&WGW&„≤–¢ñbá∆ñW"ÂÇ¬Sí≤&ˆˆ““3≤6WGW&ˆˆ“Çì≤&WGW&„≤–¢ñbá∆ñW"ÂÇ‚sìbbVW7E7FvR„“#Bí≤ñbáVW7E7FvR”“#BíVW7E7FvR“#S≤&ˆˆ““#≤6WGW&ˆˆ“Çì≤6Ü˜t÷V÷˜'íÇ$l8%§TD2dı§U24ı$D2"¬$Ã:ñ“F6ó7FW&Ê¬Ú&ñÚ6RFófñFRVÁG&R6◊˜2FR6¬RVG&∆ó6‚2∆ÁFW&Ê26&“Ví‚÷&62&V6VÁFW2÷˜7G&“VRfñ¶ÁFW27'W¶&“:wV6V“FVóÜ"V“FW7FñÊÚW67&óFÚ‚"ì≤&WGW&„≤–¢ñbá∆ñW"ÂÇ‚sìbbVW7E7FvR„“#"í≤&ˆˆ““ì≤6WGW&ˆˆ“Çì≤6Ü˜t÷V÷˜'íÇ%E$îƒÑDı2≈T‘îÏ8$îı2"¬%WVVÊ2∆ÁFW&Ê2ñÊFñ6“˜2ˆÁF˜2ˆÊFRfñ¶ÁFW26VóF&“FVóÜ"V“fó6Ú‚2÷&62Ï:6Úf˜&÷“V“÷6ˆ◊∆WFÛ¢6FW76ˆFV6ñFóRVÁFÚFÚ6÷ñÊÜÚ6ˆ◊'Fñ∆Ü"‚"ì≤&WGW&„≤–¢Ê˜Fñ6R“VW7E7FvR¬#"Ú$dƒR4Ù“dT‚$4Ù‰ÑT4U"4Ù’T‰îDDR"¢$R4TuTï"E$îƒÑDı2≈T‘îÏ8$îı2#≤Ê˜Fñ6UFñ÷R“„Vc∞¢–¢&ófFRfˆñB6Ü˜t÷V÷˜'íá7G&ñÊrFóF∆UFWáB¬7G&ñÊr&ˆGïFWáBí≤÷V÷˜'ïFóF∆R“FóF∆UFWáC≤÷V÷˜'ïFWáB“&ˆGïFWáC≤÷V÷˜'î˜fW&∆í“G'VS≤–¢&ófFRfˆñB÷&µ&ˆˆ‘6∆V&VBÇí≤ñbá&ˆˆ““2bbVÊV÷ñW2‰6˜VÁB”“bbG&˜2‰6˜VÁB”“í6∆V&VE&ˆˆ◊2√“√¬&ˆˆ”≤–¢&ófFRVÊV◊ìÚ∆ˆ6∂VEF&vWC∞¢&ófFRfˆñB7ñ6∆UF&vWBÇí≤ñbÜVÊV÷ñW2‰6˜VÁB”“í≤∆ˆ6∂VEF&vWB“ÁV∆√≤&WGW&„≤“ñÁBí“∆ˆ6∂VEF&vWBó2ÁV∆¬Ú”¢VÊV÷ñW2‰ñÊFWÑˆbÜ∆ˆ6∂VEF&vWBì≤∆ˆ6∂VEF&vWB“VÊV÷ñW5≤Üí≤íRVÊV÷ñW2‰6˜VÁE”≤Ê˜Fñ6R“B$≈dÛ¢¥VÊV◊îÊ÷RÜ∆ˆ6∂VEF&vWBó“#≤Ê˜Fñ6UFñ÷R“„Fc≤–¢&ófFRfˆñBWVóvVˆ‚ÜñÁBñÊFWÇí≤ñbÇÜ˜vÊVEvVˆÁ2bÉ√¬ñÊFWÇíí”“í≤Ê˜Fñ6R“$$‘î‰DÏ84ÚT‰4ÙÂE$D#≤Ê˜Fñ6UFñ÷R“„Fc≤&WGW&„≤“F÷vR≥“vVˆÂ˜vW"ÜñÊFWÇí“vVˆÂ˜vW"ávVˆ‚ì≤vVˆ‚“ñÊFWÉ≤–¢&ófFRfˆñB7ñ6∆T6Ü&“ÜñÁB6∆˜Bê¢∞¢ñÁB7W'&VÁB“6∆˜B”“ÚWVóVD6Ü&“¢WVóVD6Ü&”#∞¢ñÁB˜FÜW"“6∆˜B”“ÚWVóVD6Ü&”"¢WVóVD6Ü&”∞¢f˜"ÜñÁBí“≤í√“S≤í≤≤ê¢∞¢ñÁB6ÊFñFFR“ÇÜ7W'&VÁB“≤í≤RíRRí≤∞¢ñbÜ6ÊFñFFR”“7W'&VÁB«¬6ÊFñFFR”“˜FÜW"«¬Ü˜vÊVD6Ü&◊2bÉ√¬Ü6ÊFñFFR“ííí”“í6ˆÁFñÁVS∞¢ñbá6∆˜B”“íWVóVD6Ü&““6ÊFñFFS≤V«6RWVóVD6Ü&”"“6ÊFñFFS∞¢Ê˜Fñ6R“B$U58tÚ∑6∆˜G”¢∂6Ü&‘Ê÷W5∂6ÊFñFFU◊“#∞¢Ê˜Fñ6UFñ÷R“„fc≤&WGW&„∞¢–¢ñbÜ7W'&VÁB“í≤ñbá6∆˜B”“íWVóVD6Ü&““≤V«6RWVóVD6Ü&”"“≤Ê˜Fñ6R“B$U58tÚ∑6∆˜G“DRDƒï4‹82d§îÚ#≤–¢V«6RÊ˜Fñ6R“$‰T‰ÖT“Dƒï4‹82Dï5ÙÏ8’dT¬$U5DRU58tÚ#∞¢Ê˜Fñ6UFñ÷R“„fc∞¢–¢&ófFR&ˆˆ¬Ü46Ü&“ÜñÁB6Ü&“í”‚WVóVD6Ü&“”“6Ü&“«¬WVóVD6Ü&”"”“6Ü&”∞¢&ófFR&ˆˆ¬Ü46Ü&’ó"ÜñÁBfó'7B¬ñÁB6V6ˆÊBí”‚WVóVD6Ü&“”“fó'7BbbWVóVD6Ü&”"”“6V6ˆÊB«¬WVóVD6Ü&“”“6V6ˆÊBbbWVóVD6Ü&”"”“fó'7C∞¢&ófFRf∆ˆBvÜó&«vñÊD◊V«Fó∆ñW"Çí”‚Ü46Ü&’ó"É¬"íÚ"„S&b¢Ü46Ü&“ÉíÚ"„fb¢„fc∞¢&ófFRf∆ˆBvÜó&«vñÊD6ˆˆ∆F˜vÂVÊ«GíÇí”‚Ü46Ü&“ÉíÚb¢Ü46Ü&’ó"É¬"íÚ„Vb¢c∞¢&ófFRf∆ˆBfˆñ6U6Ü&DF÷vRÇí”‚F÷vR¢ÑÜ46Ü&’ó"É2¬RíÚ"„Vb¢Ü46Ü&“É2íÚ„Üb¢„3Vbí¢vVˆÂ6∂ñ∆ƒ◊V«Fó∆ñW"Çì∞¢&ófFRf∆ˆBfˆñ6U6Ü&D∆ñfWFñ÷RÇí”‚Ü46Ü&“ÉRíÚ„Üb¢„#Vc∞¢&ófFRf∆ˆBfˆñ6U6Ü&D6ˆˆ∆F˜v‚Çí”‚÷FÇ‰÷ÇÉ2„Vb¬vb“6∂ñ∆≈F∆VÁB¢„Vbí≤ÑÜ46Ü&“ÉRíÚÜ46Ü&’ó"É2¬RíÚ„Vb¢„#Vb¢bì∞¢&ófFRf∆ˆB˜WFvˆñÊtF÷vT◊V«Fó∆ñW"ÑVÊV◊íVÊV◊íí”‚Ü46Ü&“ÉBíÚb¢VÊV◊í‰&˜72Ú„#Vb¢„Üc∞¢&ófFRf∆ˆBF6ÑGW&Fñˆ‚Çí”‚Ü46Ü&“É"íÚ„#ñb¢„vc∞¢&ófFRf∆ˆBF6Ñ6ˆˆ∆F˜v‚Çí”‚÷FÇ‰÷ÇÉ„3Vb¬„Vb“FˆFvUF∆VÁB¢„&bí≤ÑÜ46Ü&“É"íbbÜ46Ü&’ó"É"¬2íÚ„6b¢bì∞¢&ófFRf∆ˆB7&óFñ6ƒ6ÜÊ6RÇí”‚ávVˆ‚”“"Ú„#Vb¢„&bí≤ÑÜ46Ü&“É2íÚÜ46Ü&’ó"É¬2íÚ„vb¢„&b¢bí≤ávVˆ‰ffóÜW5∑vVˆÂ“”“"ÚvVˆÂ&&óFñW5∑vVˆÂ“”“"Ú„b¢„vb¢bì∞†¢&ófFR7FFñ2&ˆˆ¬f∆ñEvVˆ‰FFÖ6fTFF2ê¢∞¢ñbá2ÂvVˆ‰&ˆÁW6W2ó2ÁV∆¬«¬2ÂvVˆ‰&ˆÁW6W2‰∆VÊwFÇ“2«¬2ÂvVˆÂ&&óFñW2ó2ÁV∆¬«¬2ÂvVˆÂ&&óFñW2‰∆VÊwFÇ“2«¬2ÂvVˆ‰ffóÜW2ó2ÁV∆¬«¬2ÂvVˆ‰ffóÜW2‰∆VÊwFÇ“2í&WGW&‚f«6S∞¢f˜"ÜñÁBí“≤í¬3≤í≤≤ê¢∞¢ñÁB&&óGí“2ÂvVˆÂ&&óFñW5∂ï“¬&ˆÁW2“2ÂvVˆ‰&ˆÁW6W5∂ï“¬ffóÇ“2ÂvVˆ‰ffóÜW5∂ï”∞¢ñbá&&óGí”“Ú&ˆÁW2ó2¬˜"‚"«¬ffóÇ“¢&&óGí”“Ú&ˆÁW2ó2¬2˜"‚b«¬ffóÇó2¬˜"‚2¢&&óGí”“"Ú&ˆÁW2ó2¬r˜"‚«¬ffóÇó2¬˜"‚2¢G'VRí&WGW&‚f«6S∞¢ñbÇá2‰˜vÊVEvVˆÁ2bÉ√¬ííí”“bbá&&óGí“«¬&ˆÁW2“«¬ffóÇ“íí&WGW&‚f«6S∞¢–¢&WGW&‚G'VS∞¢–¢&ófFRfˆñB&W7F˜&UvVˆ‰FFÖ6fTFF2í≤'&í‰6˜íá2ÂvVˆ‰&ˆÁW6W2¬vVˆ‰&ˆÁW6W2¬2ì≤'&í‰6˜íá2ÂvVˆÂ&&óFñW2¬vVˆÂ&&óFñW2¬2ì≤'&í‰6˜íá2ÂvVˆ‰ffóÜW2¬vVˆ‰ffóÜW2¬2ì≤–¢&ófFRf∆ˆB7&óFñ6ƒ◊V«Fó∆ñW"Çí”‚Ü46Ü&“É2íÚÜ46Ü&’ó"É¬2íÚ"„sVb¢"„Vb¢&c∞¢&ófFRf∆ˆB&6ñ4GF6¥6ˆˆ∆F˜v‚Çí”‚ávVˆ‚”“"Ú„#6b¢„36bí≤ÑÜ46Ü&“É2íÚÜ46Ü&’ó"É¬2íÚ„6b¢„fb¢bì∞¢&ófFRˆñÁDb÷˜fTVÊV◊íÑVÊV◊íR¬ˆñÁDbFV«Fí≤ˆñÁDb“RÂ˜3≤ˆñÁDbÇ“ÊWráÂÇ≤FV«FÂÇ¬Âíí¬í“ÊWráÂÇ¬Âí≤FV«FÂíì≤ñbÇ&∆ˆ6∂VBáÇ¬RÂ&FóW2ííÂÇ“ÇÂÉ≤ñbÇ&∆ˆ6∂VBÜÊWrˆñÁDbáÂÇ¬íÂíí¬RÂ&FóW2ííÂí“íÂì≤&WGW&‚ÊWrˆñÁDbÑ÷FÇ‰6∆◊áÂÇ¬ÉR¬ÉsRí¬÷FÇ‰6∆◊áÂí¬#Ç¬S32íì≤–¢&ófFRfˆñB6W&FTg&ˆ’6≤ÑVÊV◊íVÊV◊í¬f∆ˆBGBí≤ˆñÁDbW6Ç“ˆñÁDb‰V◊Gì≤f˜&V6ÇÑVÊV◊í˜FÜW"ñ‚VÊV÷ñW2í≤ñbÖ&VfW&VÊ6TWV«2ÜVÊV◊í¬˜FÜW"íí6ˆÁFñÁVS≤ˆñÁDbví“7V"ÜVÊV◊íÂ˜2¬˜FÜW"Â˜2ì≤f∆ˆBB“∆VÊwFÇÜvíì≤ñbÜB‚„bbbB¬CíW6Ç“FBáW6Ç¬66∆RÜví¬ÉC“BíÚÉC¢Bííì≤“ñbÑ∆VÊwFÇáW6Çí‚„bíVÊV◊íÂ˜2“÷˜fTVÊV◊íÜVÊV◊í¬66∆RÑÊ˜&÷∆ó¶RáW6Ç¬ˆñÁDb‰V◊Gíí¬S"¢GBíì≤–¢&ófFRfˆñB÷˜fU∆ñW"ÖˆñÁDbFV«Fí≤ˆñÁDbÇ“ÊWrá∆ñW"ÂÇ≤FV«FÂÇ¬∆ñW"Âíí¬í“ÊWrá∆ñW"ÂÇ¬∆ñW"Âí≤FV«FÂíì≤ñbÇ&∆ˆ6∂VBáÇíí∆ñW"ÂÇ“ÇÂÉ≤ñbÇ&∆ˆ6∂VBÜÊWrˆñÁDbá∆ñW"ÂÇ¬íÂíííí∆ñW"Âí“íÂì≤∆ñW"ÂÇ“÷FÇ‰6∆◊á∆ñW"ÂÇ¬ÉR¬ÉsRì≤∆ñW"Âí“÷FÇ‰6∆◊á∆ñW"Âí¬#Ç¬S32ì≤–¢&ófFR&ˆˆ¬&∆ˆ6∂VBÖˆñÁDb¬f∆ˆB&FóW2“"í≤&V7FÊv∆Tb&ˆGí“ÊWráÂÇ“&FóW2¬Âí“&FóW2¬&FóW2¢"¬&FóW2¢"ì≤&V7FÊv∆Teµ“ˆ'7F6∆W2“&ˆˆ“”“2ÚF˜v‰'Vñ∆FñÊw2¢&ˆˆ“”“ÇÚ&VgVvUv∆«2¢&ˆˆ“”“íÚ&ñFvUv∆«2¢&ˆˆ“”“#Ú∆VFvW%v∆«2¢&ˆˆ“”“#Ú6«D÷'6Öv∆«2¢&ˆˆ“”“#"ÚFñFT'&ñFvUv∆«2¢&ˆˆ“”“BÚ&6ÜófUv∆«2¢&ˆˆ“”“RÚfV«Ev∆«2¢&ˆˆ“”“bÚ&ófW%v∆«2¢&ˆˆ“”“rÚ&V∆ƒ6Ü÷&W%v∆«2¢&ˆˆ“”“ÇÚ6Ñv∆∆W'ïv∆«2¢&ˆˆ“”“íÚ«V÷T6Ü÷&W%v∆«2¢&ˆˆ“”“ÚÊ÷U6Ü˜&Uv∆«2¢&ˆˆ“”“Úfˆñ6UvV∆≈v∆«2¢&ˆˆ“”“"Úf%&V6Öv∆«2¢&ˆˆ“”“2ÚÊ÷T6∆ˆó7FW%v∆«2¢&ˆˆ“”“BÚfó'7D&6ñÂv∆«2¢&ˆˆ“”“RÚfó'7Efñvñ≈v∆«2¢&ˆˆ“”“bÚvW7Df˜&Ev∆«2¢&ˆˆ“”“rÚvóFÊW75ñ&Ev∆«2¢v∆«3≤&WGW&‚ˆ'7F6∆W2‰Áíár”‚r‰ñÁFW'6V7G5vóFÇÜ&ˆGííì≤–¢&ófFR&ˆˆ¬&∆ˆ6∂VD∆ñÊRÖˆñÁDb¬ˆñÁDb"ê¢∞¢ñÁB7FW2“÷FÇ‰÷ÇÉ¬ÜñÁBíÑFó7FÊ6RÜ¬"íÚbíì∞¢&V7FÊv∆Teµ“ˆ'7F6∆W2“&ˆˆ“”“ÇÚ&VgVvUv∆«2¢&ˆˆ“”“íÚ&ñFvUv∆«2¢&ˆˆ“”“#Ú∆VFvW%v∆«2¢&ˆˆ“”“#Ú6«D÷'6Öv∆«2¢&ˆˆ“”“#"ÚFñFT'&ñFvUv∆«2¢&ˆˆ“”“BÚ&6ÜófUv∆«2¢&ˆˆ“”“RÚfV«Ev∆«2¢&ˆˆ“”“bÚ&ófW%v∆«2¢&ˆˆ“”“rÚ&V∆ƒ6Ü÷&W%v∆«2¢&ˆˆ“”“ÇÚ6Ñv∆∆W'ïv∆«2¢&ˆˆ“”“íÚ«V÷T6Ü÷&W%v∆«2¢&ˆˆ“”“ÚÊ÷U6Ü˜&Uv∆«2¢&ˆˆ“”“Úfˆñ6UvV∆≈v∆«2¢&ˆˆ“”“"Úf%&V6Öv∆«2¢&ˆˆ“”“2ÚÊ÷T6∆ˆó7FW%v∆«2¢v∆«3∞¢f˜"ÜñÁBí“≤í√“7FW3≤í≤≤í≤f∆ˆBB“íÚÜf∆ˆBó7FW3≤ˆñÁDb“ÊWrÜÂÇ≤Ü"ÂÇ“ÂÇí¢B¬Âí≤Ü"Âí“Âíí¢Bì≤ñbÜˆ'7F6∆W2‰Áíár”‚r‰6ˆÁFñÁ2áííí&WGW&‚G'VS≤–¢&WGW&‚f«6S∞¢–†¢&ófFR6fTFF6GW&U6fTFFÇí”‚ÊWrÇí≤&ˆˆ““&ˆˆ“¬∆WfV¬“∆WfV¬¬á“á¬vˆ∆B“vˆ∆B¬˜FñˆÁ2“˜FñˆÁ2¬F÷vR“F÷vR¬ÜV«FÇ“ÜV«FÇ¬÷ÑÜV«FÇ“÷ÑÜV«FÇ¬vVˆ‚“vVˆ‚¬˜vÊVEvVˆÁ2“˜vÊVEvVˆÁ2¬&÷˜"“&÷˜"¬&V∆ñ2“&V∆ñ2¬ÜV«FÖF∆VÁB“ÜV«FÖF∆VÁB¬6∂ñ∆≈F∆VÁB“6∂ñ∆≈F∆VÁB¬FˆFvUF∆VÁB“FˆFvUF∆VÁB¬&ˆˆ‘6∆V&VB“&ˆˆ“”“2«¬VÊV÷ñW2‰6˜VÁB”“bbG&˜2‰6˜VÁB”“¬6ˆ◊∆WFVB“fñ7F˜'í¬÷V÷˜&ñW4f˜VÊB“÷V÷˜&ñW4f˜VÊB¬VW7E7FvR“VW7E7FvR¬6∆V&VE&ˆˆ◊2“6∆V&VE&ˆˆ◊2¬á&ˆˆ““2bbVÊV÷ñW2‰6˜VÁB”“bbG&˜2‰6˜VÁB”“Ú√¬&ˆˆ“¢í¬&6ÜófU6V¬“&6ÜófU6V¬¬&ófW$&V∆¬“&ófW$&V∆¬¬«V÷T∆VÁ2“«V÷T∆VÁ2¬Ê&G&6R“Ê&G&6R¬6Ü˜'W4÷V÷˜'í“6Ü˜'W4÷V÷˜'í¬fó'7D÷V÷˜'í“fó'7D÷V÷˜'í¬vW7EG&6R“vW7EG&6R¬W7G&V’G&6R“W7G&V’G&6R¬˜vÊVD6Ü&◊2“˜vÊVD6Ü&◊2¬WVóVD6Ü&““WVóVD6Ü&“¬WVóVD6Ü&”"“WVóVD6Ü&”"¬F˜v‰VÊFñÊr“F˜v‰VÊFñÊr¬vVˆ‰&ˆÁW6W2“vVˆ‰&ˆÁW6W2ÂFÙ'&íÇí¬vVˆÂ&&óFñW2“vVˆÂ&&óFñW2ÂFÙ'&íÇí¬vVˆ‰ffóÜW2“vVˆ‰ffóÜW2ÂFÙ'&íÇí”∞¢&ófFRfˆñB6fTv÷RÇí≤Fó&V7F˜'í‰7&VFTFó&V7F˜'íÖFÇ‰vWDFó&V7F˜'îÊ÷RÖ6fUFÇíì≤fñ∆RÂw&óFT∆≈FWáBÖ6fUFÇ¬ß6ˆÂ6W&ñ∆ó¶W"Â6W&ñ∆ó¶RÑ6GW&U6fTFFÇííì≤Ê˜Fñ6R“%$Ùu$U54Ú4≈dÚ#≤Ê˜Fñ6UFñ÷R“#≤–¢&ófFR7G&ñÊr∆Vv7ï6fUFÇ”‚FÇ‰6ˆ÷&ñÊRÑVÁfó&ˆÊ÷VÁB‰vWDfˆ∆FW%FÇÑVÁfó&ˆÊ÷VÁBÂ7V6ñƒfˆ∆FW"‰∆ñ6Fñˆ‰FFí¬$vˆF˜B"¬&˜W6W&FF"¬%66G'ñ≤%r"¬'66G'ñ≤◊6fRÊ6fr"ì∞¢&ófFR6fTFF&VD∆Vv7ï6fRÇê¢∞¢ñbÇfñ∆R‰WÜó7G2Ñ∆Vv7ï6fUFÇííFá&˜rÊWrfñ∆TÊ˜Df˜VÊDWÜ6WFñˆ‚Çì∞¢7G&ñÊr6V7Fñˆ‚“"#≤f"f«VW2“ÊWrFñ7FñˆÊ'ì«7G&ñÊr¬7G&ñÊs‚Ö7G&ñÊt6ˆ◊&W"‰˜&FñÊƒñvÊ˜&T66Rì∞¢f˜&V6Çá7G&ñÊr&rñ‚fñ∆RÂ&VD∆ñÊW2Ñ∆Vv7ï6fUFÇíí≤7G&ñÊr∆ñÊR“&rÂG&ñ“Çì≤ñbÜ∆ñÊRÂ7F'G5vóFÇÇu≤ríbb∆ñÊR‰VÊG5vóFÇÇu“ríí≤6V7Fñˆ‚“∆ñÊU≥‚Â„”≤6ˆÁFñÁVS≤“ñÁB7∆óB“∆ñÊR‰ñÊFWÑˆbÇs“rì≤ñbá7∆óB‚íf«VW5∑6V7Fñˆ‚≤"‚"≤∆ñÊU≤‚Á7∆óE“ÂG&ñ“Çï““∆ñÊU≤á7∆óB≤í‚Â“ÂG&ñ“ÇíÂG&ñ“Çr"rì≤–¢7G&ñÊrvWBá7G&ñÊr∂Wí¬7G&ñÊrf∆∆&6≤“""í”‚f«VW2‰vWEf«VT˜$FVfV«BÇ'∆ñW"‚"≤∂Wí¬f∆∆&6≤ì∞¢ñÁBñÁBá7G&ñÊr∂Wí¬ñÁBf∆∆&6≤“í”‚ñÁBÂG'ï'6RÑvWBÜ∂Wíí¬˜WBñÁB‚íÚ‚¢f∆∆&6≥∞¢f∆ˆBf∆ˆBá7G&ñÊr∂Wí¬f∆ˆBf∆∆&6≤í”‚f∆ˆBÂG'ï'6RÑvWBÜ∂Wíí¬7ó7FV“‰v∆ˆ&∆ó¶Fñˆ‚‰ÁV÷&W%7Gñ∆W2‰f∆ˆB¬7ó7FV“‰v∆ˆ&∆ó¶Fñˆ‚‰7V«GW&TñÊfÚ‰ñÁf&ñÁD7V«GW&R¬˜WBf∆ˆB‚íÚ‚¢f∆∆&6≥∞¢&ˆˆ¬&ˆˆ¬á7G&ñÊr∂Wí¬&ˆˆ¬f∆∆&6≤“f«6Rí”‚&ˆˆ¬ÂG'ï'6RÑvWBÜ∂Wíí¬˜WB&ˆˆ¬"íÚ"¢f∆∆&6≥∞¢ñÁB6fVEvVˆ‚“ñÁBÇ'vVˆ‚"ì≤ñÁB6fVE&ˆˆ““ñÁBÇ'&ˆˆ“"ì∞¢&WGW&‚ÊWr6fTFF≤&ˆˆ““6fVE&ˆˆ“¬∆WfV¬“ñÁBÇ&∆WfV¬"¬í¬á“ñÁBÇ'á"í¬vˆ∆B“ñÁBÇ&vˆ∆B"í¬˜FñˆÁ2“ñÁBÇ'˜FñˆÁ2"¬"í¬F÷vR“ñÁBÇ&F÷vR"¬#Rí¬ÜV«FÇ“f∆ˆBÇ&ÜV«FÇ"¬í¬÷ÑÜV«FÇ“f∆ˆBÇ&÷ÖˆÜV«FÇ"¬í¬vVˆ‚“6fVEvVˆ‚¬˜vÊVEvVˆÁ2“ñÁBÇ&˜vÊVE˜vVˆÁ2"¬6fVEvVˆ‚”“Ú2¢6fVE&ˆˆ“‚ÚR¢í¬&÷˜"“&ˆˆ¬Ç&Ü5ˆ&÷˜""í¬&V∆ñ2“&ˆˆ¬Ç&Ü5˜&V∆ñ2"í¬ÜV«FÖF∆VÁB“ñÁBÇ&ÜV«FÖ˜F∆VÁB"í¬6∂ñ∆≈F∆VÁB“ñÁBÇ'6∂ñ∆≈˜F∆VÁB"í¬FˆFvUF∆VÁB“ñÁBÇ&FˆFvU˜F∆VÁB"í¬&ˆˆ‘6∆V&VB“&ˆˆ¬Ç'&ˆˆ’ˆ6∆V&VB"¬G'VRí¬6ˆ◊∆WFVB“&ˆˆ¬Ç&6ˆ◊∆WFVB"í”∞¢–¢&ófFRfˆñB∆ˆDv÷RÇê¢∞¢G'ê¢∞¢&ˆˆ¬÷ñw&FVB“fñ∆R‰WÜó7G2Ö6fUFÇì≤6fTFF2“÷ñw&FVBÚ&VD∆Vv7ï6fRÇí¢ß6ˆÂ6W&ñ∆ó¶W"‰FW6W&ñ∆ó¶S≈6fTFF‚Ñfñ∆RÂ&VD∆≈FWáBÖ6fUFÇííÛÚFá&˜rÊWrñÁf∆ñDFFWÜ6WFñˆ‚Çì∞¢ñbÇf∆ñEvVˆ‰FFá2í«¬2Â&ˆˆ“ó2¬˜"‚#"«¬2‰∆WfV¬ó2¬˜"‚«¬2Âá¬«¬2Âá„“2‰∆WfV¬¢c«¬2ÂvVˆ‚ó2¬˜"‚"«¬2‰˜vÊVEvVˆÁ2¬«¬2‰˜vÊVEvVˆÁ2‚r«¬á2‰˜vÊVEvVˆÁ2bÉ√¬2ÂvVˆ‚íùtÛæm¢Gß≤⁄Óù∆≠y–Color.LightGreen : Color.FromArgb(76, 78, 85), 7); g.DrawLine(gate, 885, 290, 885, 370); g.DrawLine(gate, 75, 290, 75, 370);
         if (player.X < 150) DrawCentered(g, "E  VOLTAR", 382, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, 146);
         if (room == 19 && player.X > 790 && enemies.Count == 0 && drops.Count == 0) DrawCentered(g, "E  ENTRAR NA CISTERNA", 382, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, 820);
         if (room == 20 && player.X > 790 && questStage >= 23 && enemies.Count == 0 && drops.Count == 0) DrawCentered(g, "E  VOLTAR AO REF√öGIO", 382, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, 820);
+    }
+
+    private void DrawUpstreamEnvironment(Graphics g, Brush ground, Pen tile)
+    {
+        using var deep = new SolidBrush(Color.FromArgb(22, 35, 42)); using var water = new SolidBrush(Color.FromArgb(74, 58, 118, 127));
+        using var stone = new SolidBrush(Color.FromArgb(78, 88, 82)); using var edge = new Pen(Color.FromArgb(170, 186, 166, 134), 2);
+        g.FillRectangle(deep, 65, 108, 830, 445); g.FillRectangle(ground, 94, 132, 772, 397);
+        for (int y = 0; y < 7; y++) for (int x = 0; x < 12; x++) g.DrawRectangle(tile, 70 + x * 68, 112 + y * 62, 67, 61);
+        RectangleF[] walls = room == 21 ? SaltMarshWalls : TideBridgeWalls;
+        foreach (RectangleF wall in walls) { g.FillRectangle(stone, wall); g.DrawRectangle(edge, wall.X, wall.Y, wall.Width, wall.Height); }
+        if (room == 21)
+        {
+            g.FillPolygon(water, new[] { new PointF(92, 284), new PointF(336, 308), new PointF(570, 278), new PointF(868, 313), new PointF(868, 371), new PointF(572, 346), new PointF(332, 376), new PointF(92, 350) });
+            using var current = new Pen(Color.FromArgb(150, 173, 208, 198), 2);
+            for (int i = 0; i < 8; i++) { float y = 300 + i * 7; g.DrawLine(current, 112 + i * 23, y, 208 + i * 23, y + 7); }
+            using var reed = new Pen(Color.FromArgb(172, 155, 173, 142), 2);
+            for (int i = 0; i < 12; i++) { float x = 122 + i * 62; g.DrawLine(reed, x, 212 + i % 3 * 11, x + (i % 2 == 0 ? 5 : -4), 180 + i % 3 * 11); }
+        }
+        else
+        {
+            g.FillRectangle(water, 94, 132, 772, 137); g.FillRectangle(water, 94, 411, 772, 118);
+            using var current = new Pen(Color.FromArgb(150, 173, 208, 198), 2);
+            for (int i = 0; i < 9; i++) { float x = 108 + i * 88; g.DrawArc(current, x, 155 + i % 2 * 35, 60, 22, 0, 160); g.DrawArc(current, x + 28, 438 + i % 2 * 28, 60, 22, 180, 160); }
+            using var deck = new SolidBrush(Color.FromArgb(113, 93, 66)); using var plank = new Pen(Color.FromArgb(192, 158, 111), 2);
+            g.FillRectangle(deck, 94, 270, 772, 143); g.DrawRectangle(edge, 94, 270, 772, 143);
+            for (int y = 285; y < 410; y += 20) g.DrawLine(plank, 98, y, 862, y);
+            g.DrawEllipse(edge, 397, 292, 166, 100); g.DrawEllipse(plank, 418, 309, 124, 66);
+        }
+        using var gate = new Pen(enemies.Count == 0 && drops.Count == 0 ? Color.LightGreen : Color.FromArgb(73, 82, 79), 7);
+        g.DrawLine(gate, 885, 290, 885, 370); g.DrawLine(gate, 75, 290, 75, 370);
+        if (player.X < 150) DrawCentered(g, room == 21 ? "E  VOLTAR AO REF√öGIO" : "E  VOLTAR √Ä V√ÅRZEA", 382, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, 146);
+        if (room == 21 && player.X > 790 && enemies.Count == 0 && drops.Count == 0) DrawCentered(g, "E  CRUZAR A PONTE", 382, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, 820);
+        if (room == 22 && player.X > 790 && questStage >= 26 && enemies.Count == 0 && drops.Count == 0) DrawCentered(g, "E  VOLTAR √Ä MESA", 382, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, 820);
     }
 
     private static void DrawTownHouse(Graphics g, RectangleF area, string sign)
@@ -956,15 +77,15 @@ public sealed class Game : Form
 
     private void DrawEnemy(Graphics g, Enemy enemy)
     {
-        float r = enemy.Radius; Color color = enemy.Kind == EnemyKind.BlindScribe ? Color.FromArgb(89, 128, 135) : enemy.Kind == EnemyKind.RiverFerryman ? Color.FromArgb(69, 120, 124) : enemy.Kind == EnemyKind.AshWarden ? Color.FromArgb(169, 91, 53) : enemy.Kind == EnemyKind.HollowName ? Color.FromArgb(120, 165, 155) : enemy.Kind == EnemyKind.NameWeaver ? Color.FromArgb(139, 108, 162) : enemy.Kind == EnemyKind.FirstKeeper ? Color.FromArgb(202, 173, 112) : enemy.Kind == EnemyKind.OathCartographer ? Color.FromArgb(96, 148, 144) : enemy.Kind == EnemyKind.NameBroker ? Color.FromArgb(126, 82, 132) : enemy.Kind == EnemyKind.PaperWraith ? Color.FromArgb(201, 190, 161) : enemy.Kind == EnemyKind.MudCantor ? Color.FromArgb(165, 135, 104) : enemy.Boss ? Color.FromArgb(145, 87, 77) : enemy.Kind switch { EnemyKind.Elite => enemy.Armored ? Color.SlateGray : Color.IndianRed, EnemyKind.Archer => Color.FromArgb(128, 151, 106), EnemyKind.Mage => Color.MediumPurple, EnemyKind.InkEcho => Color.FromArgb(113, 98, 143), EnemyKind.DrownedMemory => Color.FromArgb(95, 145, 142), EnemyKind.EmberWisp => Color.FromArgb(212, 126, 61), EnemyKind.NameMoth => Color.FromArgb(126, 170, 156), _ => Color.FromArgb(183, 181, 166) };
+        float r = enemy.Radius; Color color = enemy.Kind == EnemyKind.BlindScribe ? Color.FromArgb(89, 128, 135) : enemy.Kind == EnemyKind.RiverFerryman ? Color.FromArgb(69, 120, 124) : enemy.Kind == EnemyKind.AshWarden ? Color.FromArgb(169, 91, 53) : enemy.Kind == EnemyKind.HollowName ? Color.FromArgb(120, 165, 155) : enemy.Kind == EnemyKind.NameWeaver ? Color.FromArgb(139, 108, 162) : enemy.Kind == EnemyKind.FirstKeeper ? Color.FromArgb(202, 173, 112) : enemy.Kind == EnemyKind.OathCartographer ? Color.FromArgb(96, 148, 144) : enemy.Kind == EnemyKind.NameBroker ? Color.FromArgb(126, 82, 132) : enemy.Kind == EnemyKind.TideWitness ? Color.FromArgb(63, 157, 168) : enemy.Kind == EnemyKind.SaltEcho ? Color.LightSteelBlue : enemy.Kind == EnemyKind.PaperWraith ? Color.FromArgb(201, 190, 161) : enemy.Kind == EnemyKind.MudCantor ? Color.FromArgb(165, 135, 104) : enemy.Boss ? Color.FromArgb(145, 87, 77) : enemy.Kind switch { EnemyKind.Elite => enemy.Armored ? Color.SlateGray : Color.IndianRed, EnemyKind.Archer => Color.FromArgb(128, 151, 106), EnemyKind.Mage => Color.MediumPurple, EnemyKind.InkEcho => Color.FromArgb(113, 98, 143), EnemyKind.DrownedMemory => Color.FromArgb(95, 145, 142), EnemyKind.EmberWisp => Color.FromArgb(212, 126, 61), EnemyKind.NameMoth => Color.FromArgb(126, 170, 156), _ => Color.FromArgb(183, 181, 166) };
         if (enemy.Stagger > 0) { using var staggerPen = new Pen(Color.FromArgb(200, 125, 211, 203), 2); float pulse = 1 + (0.95f - enemy.Stagger) * 7; g.DrawEllipse(staggerPen, enemy.Pos.X - r - pulse, enemy.Pos.Y - r - pulse, (r + pulse) * 2, (r + pulse) * 2); }
-        if (enemy.Windup > 0) { float baseWarn = enemy.Kind == EnemyKind.Elite ? 62 : enemy.Kind == EnemyKind.Mage ? 52 : enemy.Boss && enemy.BossPattern == 0 ? 90 : enemy.Kind == EnemyKind.Archer ? 26 : enemy.Kind == EnemyKind.InkEcho ? 30 : enemy.Kind == EnemyKind.DrownedMemory ? 28 : (enemy.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.OathCartographer or EnemyKind.NameBroker) && enemy.BossPattern == 2 ? 85 : enemy.Kind == EnemyKind.NameWeaver && enemy.BossPattern == 2 ? 38 : enemy.Kind is EnemyKind.EmberWisp or EnemyKind.NameMoth ? 28 : 36; float progress = Math.Clamp(enemy.Windup / Math.Max(0.01f, enemy.WindupMax), 0, 1); float warn = baseWarn * (0.4f + progress * 0.6f); using var p = new Pen(Color.FromArgb(235, 115, 75), 3); using var b = new SolidBrush(Color.FromArgb(35, 235, 115, 75)); if ((enemy.Kind is EnemyKind.Archer or EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth or EnemyKind.PaperWraith) || ((enemy.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.OathCartographer or EnemyKind.NameBroker) && enemy.BossPattern == 2)) g.DrawLine(p, enemy.Pos, enemy.Target); g.FillEllipse(b, enemy.Target.X - warn, enemy.Target.Y - warn, warn * 2, warn * 2); g.DrawEllipse(p, enemy.Target.X - warn, enemy.Target.Y - warn, warn * 2, warn * 2); }
+        if (enemy.Windup > 0) { float baseWarn = enemy.Kind == EnemyKind.Elite ? 62 : enemy.Kind == EnemyKind.Mage ? 52 : enemy.Boss && enemy.BossPattern == 0 ? 90 : enemy.Kind == EnemyKind.Archer ? 26 : enemy.Kind == EnemyKind.InkEcho ? 30 : enemy.Kind == EnemyKind.DrownedMemory ? 28 : (enemy.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness) && enemy.BossPattern == 2 ? 85 : enemy.Kind == EnemyKind.NameWeaver && enemy.BossPattern == 2 ? 38 : enemy.Kind is EnemyKind.EmberWisp or EnemyKind.NameMoth ? 28 : 36; float progress = Math.Clamp(enemy.Windup / Math.Max(0.01f, enemy.WindupMax), 0, 1); float warn = baseWarn * (0.4f + progress * 0.6f); using var p = new Pen(Color.FromArgb(235, 115, 75), 3); using var b = new SolidBrush(Color.FromArgb(35, 235, 115, 75)); if ((enemy.Kind is EnemyKind.Archer or EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth or EnemyKind.PaperWraith or EnemyKind.SaltEcho) || ((enemy.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness) && enemy.BossPattern == 2)) g.DrawLine(p, enemy.Pos, enemy.Target); g.FillEllipse(b, enemy.Target.X - warn, enemy.Target.Y - warn, warn * 2, warn * 2); g.DrawEllipse(p, enemy.Target.X - warn, enemy.Target.Y - warn, warn * 2, warn * 2); }
         if (enemy.Kind == EnemyKind.FirstKeeper && enemy.Windup > 0 && enemy.BossPattern == 2) { using var fork = new Pen(Color.FromArgb(235, 214, 184, 124), 4); g.DrawLine(fork, enemy.Pos, enemy.Target); g.DrawLine(fork, enemy.Target2Start, enemy.Target2); }
         using var body = new SolidBrush(enemy.Flash > 0 ? Color.White : color); using var edge = new Pen(enemy == lockedTarget ? Color.Gold : enemy.Armored ? Color.LightSteelBlue : Color.FromArgb(35, 25, 22), enemy == lockedTarget ? 4 : 2);
         g.FillEllipse(body, enemy.Pos.X - r, enemy.Pos.Y - r, r * 2, r * 2); g.DrawEllipse(edge, enemy.Pos.X - r, enemy.Pos.Y - r, r * 2, r * 2);
         using var hpBack = new SolidBrush(Color.FromArgb(40, 20, 20)); using var hpBar = new SolidBrush(Color.FromArgb(188, 76, 70)); g.FillRectangle(hpBack, enemy.Pos.X - 22, enemy.Pos.Y - r - 10, 44, 5); g.FillRectangle(hpBar, enemy.Pos.X - 22, enemy.Pos.Y - r - 10, 44 * Math.Max(0, enemy.Hp / enemy.MaxHp), 5);
         string name = EnemyName(enemy); if (name.Length > 0) DrawCentered(g, name, enemy.Pos.Y - r - 28, new Font("Segoe UI", 8, FontStyle.Bold), Color.FromArgb(233, 198, 151), enemy.Pos.X);
-        if (enemy.Boss) { using var bossBack = new SolidBrush(Color.FromArgb(40, 20, 20)); using var bossHp = new SolidBrush(enemy.Hp <= enemy.MaxHp * 0.5f ? Color.OrangeRed : enemy.Kind == EnemyKind.BlindScribe ? Color.Teal : enemy.Kind == EnemyKind.RiverFerryman ? Color.SteelBlue : enemy.Kind == EnemyKind.AshWarden ? Color.DarkOrange : enemy.Kind == EnemyKind.HollowName ? Color.LightSeaGreen : enemy.Kind == EnemyKind.NameWeaver ? Color.MediumPurple : enemy.Kind == EnemyKind.FirstKeeper ? Color.Goldenrod : enemy.Kind == EnemyKind.OathCartographer ? Color.DarkCyan : enemy.Kind == EnemyKind.NameBroker ? Color.MediumPurple : Color.Firebrick); g.FillRectangle(bossBack, 360, 112, 240, 8); g.FillRectangle(bossHp, 360, 112, 240 * Math.Clamp(enemy.Hp / enemy.MaxHp, 0, 1), 8); string bossName = enemy.Kind == EnemyKind.BlindScribe ? "ESCRIBA CEGO" : enemy.Kind == EnemyKind.RiverFerryman ? "BARQUEIRO OCO" : enemy.Kind == EnemyKind.AshWarden ? "GUARDI√ÉO DAS CINZAS" : enemy.Kind == EnemyKind.HollowName ? "O NOME VAZIO" : enemy.Kind == EnemyKind.NameWeaver ? "A TECEL√É DE NOMES" : enemy.Kind == EnemyKind.FirstKeeper ? "A PRIMEIRA VIG√çLIA" : enemy.Kind == EnemyKind.OathCartographer ? "CART√ìGRAFA DO V√ÉO" : enemy.Kind == EnemyKind.NameBroker ? "ESCRIV√ÉO DE CONTRATO" : "GUARDI√ÉO DA CRIPTA"; DrawCentered(g, enemy.Hp <= enemy.MaxHp * 0.5f ? $"{bossName} ‚Ä¢ SEGUNDA FASE" : bossName, 91, new Font("Georgia", 11, FontStyle.Bold), enemy.Hp <= enemy.MaxHp * 0.5f ? Color.OrangeRed : Color.Goldenrod); }
+        if (enemy.Boss) { using var bossBack = new SolidBrush(Color.FromArgb(40, 20, 20)); using var bossHp = new SolidBrush(enemy.Hp <= enemy.MaxHp * 0.5f ? Color.OrangeRed : enemy.Kind == EnemyKind.BlindScribe ? Color.Teal : enemy.Kind == EnemyKind.RiverFerryman ? Color.SteelBlue : enemy.Kind == EnemyKind.AshWarden ? Color.DarkOrange : enemy.Kind == EnemyKind.HollowName ? Color.LightSeaGreen : enemy.Kind == EnemyKind.NameWeaver ? Color.MediumPurple : enemy.Kind == EnemyKind.FirstKeeper ? Color.Goldenrod : enemy.Kind == EnemyKind.OathCartographer ? Color.DarkCyan : enemy.Kind is EnemyKind.NameBroker or EnemyKind.TideWitness ? Color.MediumPurple : Color.Firebrick); g.FillRectangle(bossBack, 360, 112, 240, 8); g.FillRectangle(bossHp, 360, 112, 240 * Math.Clamp(enemy.Hp / enemy.MaxHp, 0, 1), 8); string bossName = enemy.Kind == EnemyKind.BlindScribe ? "ESCRIBA CEGO" : enemy.Kind == EnemyKind.RiverFerryman ? "BARQUEIRO OCO" : enemy.Kind == EnemyKind.AshWarden ? "GUARDI√ÉO DAS CINZAS" : enemy.Kind == EnemyKind.HollowName ? "O NOME VAZIO" : enemy.Kind == EnemyKind.NameWeaver ? "A TECEL√É DE NOMES" : enemy.Kind == EnemyKind.FirstKeeper ? "A PRIMEIRA VIG√çLIA" : enemy.Kind == EnemyKind.OathCartographer ? "CART√ìGRAFA DO V√ÉO" : enemy.Kind == EnemyKind.NameBroker ? "ESCRIV√ÉO DE CONTRATO" : enemy.Kind == EnemyKind.TideWitness ? "TESTEMUNHA DA MAR√â" : "GUARDI√ÉO DA CRIPTA"; DrawCentered(g, enemy.Hp <= enemy.MaxHp * 0.5f ? $"{bossName} ‚Ä¢ SEGUNDA FASE" : bossName, 91, new Font("Georgia", 11, FontStyle.Bold), enemy.Hp <= enemy.MaxHp * 0.5f ? Color.OrangeRed : Color.Goldenrod); }
     }
     private void DrawDrop(Graphics g, Drop item) { Color c = item.Kind switch { "relic" => Color.Violet, "seal" => Color.LightSkyBlue, "bell" => Color.FromArgb(162, 212, 192), "lens" => Color.FromArgb(248, 185, 95), "trace" => Color.FromArgb(185, 231, 215), "chorus" => Color.Khaki, "first" => Color.Goldenrod, "west" => Color.LightSkyBlue, "register" => Color.LightSteelBlue, "charm" => item.Amount == 4 ? Color.Goldenrod : item.Amount == 5 ? Color.LightSeaGreen : Color.Plum, "armor" => Color.MediumAquamarine, "weapon" => Color.CornflowerBlue, "potion" => Color.IndianRed, _ => Color.Goldenrod }; using var b = new SolidBrush(c); using var p = new Pen(Color.FromArgb(230, 220, 190), 1); g.FillEllipse(b, item.Pos.X - 8, item.Pos.Y - 8, 16, 16); g.DrawEllipse(p, item.Pos.X - 8, item.Pos.Y - 8, 16, 16); }
     private void DrawPlayer(Graphics g) { using var b = new SolidBrush(invulnerable > 0 ? Color.Salmon : Color.FromArgb(90, 143, 138)); using var face = new SolidBrush(Color.Bisque); g.FillEllipse(b, player.X - 16, player.Y - 16, 32, 32); g.FillEllipse(face, player.X - 8, player.Y - 11, 16, 16); using var p = new Pen(Color.AntiqueWhite, 4); g.DrawLine(p, player, Add(player, Scale(facing, 24))); if (skillCd > 0) { using var cooldownPen = new Pen(Color.FromArgb(190, 230, 193, 129), 3); g.DrawArc(cooldownPen, player.X - 25, player.Y - 25, 50, 50, -90, 360 * skillCd / Math.Max(1.5f, 6f - skillTalent * .5f)); } if (shardCd > 0) { using var shardCooldownPen = new Pen(Color.FromArgb(205, 107, 202, 196), 3); g.DrawArc(shardCooldownPen, player.X - 33, player.Y - 33, 66, 66, 90, 360 * shardCd / VoiceShardCooldown()); } if (riverBell && bellCd > 0) { using var bellCooldownPen = new Pen(Color.FromArgb(210, 205, 169, 118), 3); g.DrawArc(bellCooldownPen, player.X - 41, player.Y - 41, 82, 82, 180, 360 * bellCd / BellPulseCooldown()); } }
@@ -1055,7 +176,7 @@ public sealed class Game : Form
     }
     private void DrawOverlay(Graphics g, string titleText, string instruction) { using var bg = new SolidBrush(Color.FromArgb(225, 8, 10, 12)); g.FillRectangle(bg, 0, 0, 960, 640); DrawCentered(g, titleText, 250, new Font("Georgia", 36, FontStyle.Bold), Color.FromArgb(230, 193, 129)); DrawCentered(g, instruction, 340, new Font("Segoe UI", 15, FontStyle.Bold), Color.AntiqueWhite); if (noticeTime > 0) DrawCentered(g, notice, 410, new Font("Segoe UI", 12), Color.Goldenrod); }
     private static void DrawCentered(Graphics g, string s, float y, Font f, Color color, float x = 480) { using (f) using (var brush = new SolidBrush(color)) { SizeF size = g.MeasureString(s, f); g.DrawString(s, f, brush, x - size.Width / 2, y); } }
-    private static string EnemyName(Enemy e) => e.Kind switch { EnemyKind.Guardian => "GUARDI√ÉO SEM NOME", EnemyKind.BlindScribe => "ESCRIBA CEGO", EnemyKind.RiverFerryman => "BARQUEIRO OCO", EnemyKind.AshWarden => "GUARDI√ÉO DAS CINZAS", EnemyKind.HollowName => "O NOME VAZIO", EnemyKind.NameWeaver => "A TECEL√É DE NOMES", EnemyKind.FirstKeeper => "A PRIMEIRA VIG√çLIA", EnemyKind.OathCartographer => "CART√ìGRAFA DO V√ÉO", EnemyKind.NameBroker => "ESCRIV√ÉO DE CONTRATO", EnemyKind.PaperWraith => "ESPECTRO DE PAPEL", EnemyKind.MudCantor => "CANTOR DO LODO", EnemyKind.DrownedMemory => "LEMBRAN√áA AFOGADA", EnemyKind.EmberWisp => "VEST√çGIO DE BRASAS", EnemyKind.NameMoth => "MARIPOSA DE NOMES", EnemyKind.Elite => e.Armored ? "ELITE ‚Ä¢ BLINDADO" : "ELITE ‚Ä¢ FREN√âTICO", EnemyKind.Archer => "ARQUEIRO", EnemyKind.Mage => "CONJURADOR", EnemyKind.InkEcho => "ECO DE TINTA", _ => "" };
+    private static string EnemyName(Enemy e) => e.Kind switch { EnemyKind.Guardian => "GUARDI√ÉO SEM NOME", EnemyKind.BlindScribe => "ESCRIBA CEGO", EnemyKind.RiverFerryman => "BARQUEIRO OCO", EnemyKind.AshWarden => "GUARDI√ÉO DAS CINZAS", EnemyKind.HollowName => "O NOME VAZIO", EnemyKind.NameWeaver => "A TECEL√É DE NOMES", EnemyKind.FirstKeeper => "A PRIMEIRA VIG√çLIA", EnemyKind.OathCartographer => "CART√ìGRAFA DO V√ÉO", EnemyKind.NameBroker => "ESCRIV√ÉO DE CONTRATO", EnemyKind.SaltEcho => "ECO SALINO", EnemyKind.TideWitness => "TESTEMUNHA DA MAR√â", EnemyKind.PaperWraith => "ESPECTRO DE PAPEL", EnemyKind.MudCantor => "CANTOR DO LODO", EnemyKind.DrownedMemory => "LEMBRAN√áA AFOGADA", EnemyKind.EmberWisp => "VEST√çGIO DE BRASAS", EnemyKind.NameMoth => "MARIPOSA DE NOMES", EnemyKind.Elite => e.Armored ? "ELITE ‚Ä¢ BLINDADO" : "ELITE ‚Ä¢ FREN√âTICO", EnemyKind.Archer => "ARQUEIRO", EnemyKind.Mage => "CONJURADOR", EnemyKind.InkEcho => "ECO DE TINTA", _ => "" };
     private static PointF Normalize(PointF p, PointF fallback) { float n = Length(p); return n > 0.001f ? new PointF(p.X / n, p.Y / n) : fallback; }
     private static float Length(PointF p) => MathF.Sqrt(p.X * p.X + p.Y * p.Y);
     private static float Distance(PointF a, PointF b) => Length(Sub(a, b));
@@ -1377,12 +498,34 @@ public sealed class Game : Form
         if (refugeExpedition.questStage != 24 || refugeExpedition.gold != refugeGold + 240 || refugeExpedition.potions < 4) throw new InvalidOperationException("Aven n√£o reconheceu o registro nem forneceu provis√µes.");
         using var lumeRefuge = new Game(); lumeRefuge.timer.Stop(); lumeRefuge.StartGame(); lumeRefuge.room = 20; lumeRefuge.townEnding = 2; lumeRefuge.questStage = 22; lumeRefuge.westTrace = true; lumeRefuge.firstMemory = true; lumeRefuge.chorusMemory = true; lumeRefuge.SetupRoom();
         if (lumeRefuge.enemies.Single(e => e.Kind == EnemyKind.NameBroker).MaxHp != 790) throw new InvalidOperationException("Manter o Lume n√£o alterou a for√ßa do Escriv√£o de Contrato.");
+        using var upstreamExpedition = new Game(); upstreamExpedition.timer.Stop(); upstreamExpedition.StartGame(); upstreamExpedition.storyOverlay = false; upstreamExpedition.room = 18; upstreamExpedition.questStage = 24; upstreamExpedition.westTrace = true; upstreamExpedition.townEnding = 1; upstreamExpedition.player = new PointF(850, 330); upstreamExpedition.Interact();
+        if (upstreamExpedition.room != 21 || upstreamExpedition.questStage != 25 || upstreamExpedition.enemies.Count != 6 || !upstreamExpedition.enemies.Any(e => e.Kind == EnemyKind.SaltEcho)) throw new InvalidOperationException("A nova trilha n√£o abriu a V√°rzea das Vozes Sopradas e seus Ecos Salinos.");
+        upstreamExpedition.enemies.Clear(); upstreamExpedition.drops.Clear(); upstreamExpedition.player = new PointF(850, 330); upstreamExpedition.Interact();
+        if (upstreamExpedition.room != 22 || upstreamExpedition.enemies.Count != 5 || upstreamExpedition.memoryTitle != "PONTE DA MAR√â INVERTIDA") throw new InvalidOperationException("A V√°rzea n√£o levou √† Ponte da Mar√© Invertida.");
+        Enemy tideWitness = upstreamExpedition.enemies.Single(e => e.Kind == EnemyKind.TideWitness);
+        if (tideWitness.MaxHp != 820 || upstreamExpedition.Blocked(tideWitness.Pos, tideWitness.Radius)) throw new InvalidOperationException("A Testemunha da Mar√© n√£o respeitou a escolha da cidade ou surgiu dentro da ponte.");
+        tideWitness.Cooldown = 0; upstreamExpedition.player = new PointF(150, 330); upstreamExpedition.UpdateEnemy(tideWitness, 0.01f);
+        if (tideWitness.BossPattern != 1 || tideWitness.Windup <= 0 || tideWitness.Target != upstreamExpedition.player) throw new InvalidOperationException("A Testemunha n√£o anunciou a marca d'√°gua.");
+        tideWitness.Windup = 0; tideWitness.Cooldown = 0; upstreamExpedition.UpdateEnemy(tideWitness, 0.01f);
+        if (tideWitness.BossPattern != 2 || tideWitness.Windup <= 0 || tideWitness.Target == PointF.Empty) throw new InvalidOperationException("A Testemunha n√£o anunciou o corte ao longo da corrente.");
+        tideWitness.Windup = 0; tideWitness.Cooldown = 0; upstreamExpedition.UpdateEnemy(tideWitness, 0.01f);
+        if (tideWitness.BossPattern != 0 || tideWitness.Windup <= 0) throw new InvalidOperationException("A Testemunha n√£o concluiu o ciclo de tr√™s ataques.");
+        upstreamExpedition.enemies.Clear(); upstreamExpedition.enemies.Add(tideWitness); upstreamExpedition.drops.Clear(); tideWitness.Hp = 1; tideWitness.Windup = 0; upstreamExpedition.Defeat(tideWitness);
+        if (!upstreamExpedition.drops.Any(d => d.Kind == "witness")) throw new InvalidOperationException("A Testemunha da Mar√© n√£o deixou o eco da passagem de Nara.");
+        foreach (Drop drop in upstreamExpedition.drops.ToArray()) upstreamExpedition.Collect(drop);
+        if (!upstreamExpedition.upstreamTrace || upstreamExpedition.questStage != 26 || upstreamExpedition.memoryTitle != "A √öLTIMA CURVA DE NARA") throw new InvalidOperationException("A lembran√ßa da nascente alterou o destino de Nara sem consentimento.");
+        SaveData upstreamSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(upstreamExpedition.CaptureSaveData()))!;
+        if (!upstreamSave.UpstreamTrace || upstreamSave.QuestStage != 26 || upstreamSave.Room != 22 || (upstreamSave.ClearedRooms & (1 << 22)) == 0) throw new InvalidOperationException("A nova regi√£o e a lembran√ßa da nascente n√£o foram salvas.");
+        upstreamExpedition.memoryOverlay = false; upstreamExpedition.player = new PointF(850, 330); upstreamExpedition.Interact(); upstreamExpedition.player = AvenPosition; upstreamExpedition.Interact();
+        if (upstreamExpedition.room != 18 || upstreamExpedition.questStage != 27 || upstreamExpedition.memoryTitle != "A TESTEMUNHA SEM REGISTRO" || upstreamExpedition.gold < 320) throw new InvalidOperationException("Aven n√£o registrou o testemunho preservando a escolha de Nara.");
+        using var lumeUpstream = new Game(); lumeUpstream.timer.Stop(); lumeUpstream.StartGame(); lumeUpstream.room = 22; lumeUpstream.questStage = 25; lumeUpstream.townEnding = 2; lumeUpstream.SetupRoom();
+        if (lumeUpstream.enemies.Single(e => e.Kind == EnemyKind.TideWitness).MaxHp != 920) throw new InvalidOperationException("Manter o Lume n√£o alterou a for√ßa da Testemunha da Mar√©.");
         game.room = 11; game.SetupRoom();
         if (game.enemies.Count != 0 || game.drops.Count != 0) throw new InvalidOperationException("O Reservat√≥rio foi recriado ap√≥s ter sido limpo.");
         game.room = 3; game.SetupRoom();
         game.memoryOverlay = false; game.player = CryptGatePosition; game.Interact();
         if (game.room != 2 || game.enemies.Count != 4) throw new InvalidOperationException("A passagem da cidade n√£o retornou √† cripta.");
-        Console.WriteLine("TESTES OK: campanha, escolhas, regi√µes, chefes, ataques anunciados, Resson√¢ncia do Sino, habilidades √† dist√¢ncia, raridades e afixos de armas, talism√£s, builds, progress√£o e save."); return 0;
+        Console.WriteLine("TESTES OK: campanha at√© o Cap√≠tulo VIII, nascente, escolhas, regi√µes, chefes, ataques anunciados, Resson√¢ncia do Sino, habilidades √† dist√¢ncia, raridades e afixos de armas, talism√£s, builds, progress√£o e save."); return 0;
     }
 }
 
