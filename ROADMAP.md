@@ -34,6 +34,7 @@ O documento de história com cenário, personagens e resumo dos oito capítulos 
 - Vau dos Nomes Escolhidos e Pátio das Testemunhas, com travessia iniciada por Edda, Cantores do Lodo e a Cartógrafa do Vão. O mapa de Nara revela um refúgio fundado por ela para quem escolhe o próprio nome e abre a trilha para oeste sem confirmar onde ela está.
 - Refúgio do Veio Calmo, Trilha dos Luminários e Cisterna do Registro Vazio: área segura com três moradores, rota com Espectros de Papel e chefe Escrivão de Contrato. A comunidade guarda o registro compartilhado sob suas próprias regras; o conteúdo confirma apenas que Nara continuou viagem, sem declarar seu nome atual nem seu paradeiro.
 - Várzea das Vozes Sopradas e Ponte da Maré Invertida: duas salas a oeste do refúgio, com Ecos Salinos à distância e a Testemunha da Maré, chefe de três ataques anunciados. Sua lembrança confirma que Nara respondeu pelo nome escolhido diante de um grupo que seguiu viagem por vontade própria; não revela o nome nem o destino.
+- Têmpera do Veio Calmo: serviço de progressão de equipamento aberto após devolver a lembrança a Aven. Sal vítreo e ouro permitem escolher um afixo; armas comuns sobem a raras e armas raras ou relíquias podem mudar de afixo sem perder seu bônus. O material e as escolhas ficam no save.
 - Elites e chefes deixam cinco talismãs originais com efeitos e compensações diferentes; duas peças únicas podem ser combinadas, com sintonias para Redemoinho, críticos, esquiva e alcance; coleção e ambos os espaços persistem no save.
 - A primeira escolha muda diálogos, a praça e a força de cinco chefes; memórias, etapas da missão e as vinte e uma câmaras já limpas ficam no save. Os ecos coletados aparecem na interface.
 - A Marca da Vigília especializa dano contra chefes; o Fio da Margem amplia o alcance do Estilhaço com custo de recarga e sintoniza com o Vidro. O Fio de Travessia amplia a onda do Sino e o Vidro reforça seu dano. Domínio reduz a recarga das três técnicas; ataques corpo a corpo e à distância permitem builds de contato, controle, alcance e caça a chefes.
@@ -62,6 +63,6 @@ Cada etapa deve compilar, incluir uma validação adequada e registrar as limita
 
 ## Trabalho em andamento
 
-- Capítulo VIII: a Várzea das Vozes Sopradas e a Ponte da Maré Invertida estão jogáveis. A etapa adiciona os Ecos Salinos, a Testemunha da Maré com três ataques anunciados, a lembrança persistente da nascente e a recompensa de Aven; mantém em aberto o nome escolhido, o paradeiro e a vontade atual de Nara.
+- Capítulo VIII: a Várzea das Vozes Sopradas e a Ponte da Maré Invertida estão jogáveis. A etapa adiciona os Ecos Salinos, a Testemunha da Maré com três ataques anunciados, a lembrança persistente da nascente, a Têmpera do Veio Calmo e o sal vítreo salvo; mantém em aberto o nome escolhido, o paradeiro e a vontade atual de Nara.
 
 
