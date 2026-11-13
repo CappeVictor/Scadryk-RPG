@@ -20,7 +20,7 @@ O documento de história com cenário, personagens e resumo dos seis capítulos 
 - O protótipo mantém dezessete salas de combate, inimigos comuns, arqueiro, conjurador, elite, Guardião da Cripta, Ecos de Tinta, Escriba Cego, Lembranças Afogadas, Barqueiro Oco, Vestígios de Brasas, Guardião das Cinzas, Mariposas de Nomes, O Nome Vazio, a Tecelã de Nomes, a Primeira Vigília, Cantores do Lodo e a Cartógrafa do Vão.
 - Combate: ataque corpo a corpo, ataque especial Redemoinho, esquiva, crítico, alvo marcado e golpes inimigos anunciados.
 - Combate à distância: Estilhaço de Voz é um projétil perfurante de recarga própria; percorre a linha de mira, atinge cada inimigo uma vez e para ao encontrar as paredes das salas.
-- Progressão: XP, níveis, escolhas de talentos, ouro, poções, três armas, armadura, relíquia e três talismãs que podem ocupar dois espaços de equipamento.
+- Progressão: XP, níveis, escolhas de talentos, ouro, poções, três armas, armadura, relíquia e cinco talismãs únicos que podem ocupar dois espaços de equipamento.
 - Salvamento local em JSON com migração do save ConfigFile da versão Godot.
 - Movimento com colisão por eixo, permitindo deslizar pelas quinas.
 - Prólogo interativo, duas inscrições opcionais e lembrança de Nara ao recolher o fragmento do Relicário Vital após derrotar o Guardião.
@@ -32,16 +32,16 @@ O documento de história com cenário, personagens e resumo dos seis capítulos 
 - Costa das Vozes Tardias e Claustro do Coro Partido, com a Tecelã de Nomes, três padrões anunciados, loot narrativo e revelação de que o Silêncio é o conjunto de nomes consumidos pelo Lume.
 - Bacia do Primeiro Nome e Sala da Primeira Vigília, com Ilyra, uma guardiã ecoica que anuncia três ataques; sua memória revela a intenção original do Lume e aponta a trilha de Nara para oeste.
 - Vau dos Nomes Escolhidos e Pátio das Testemunhas, com travessia iniciada por Edda, Cantores do Lodo e a Cartógrafa do Vão. O mapa de Nara revela um refúgio fundado por ela para quem escolhe o próprio nome e abre a trilha para oeste sem confirmar onde ela está.
-- Elites e chefes deixam talismãs originais com efeitos e compensações diferentes; duas peças únicas podem ser combinadas, com sintonias próprias para Redemoinho, críticos e esquiva; coleção e ambos os espaços persistem no save.
+- Elites e chefes deixam cinco talismãs originais com efeitos e compensações diferentes; duas peças únicas podem ser combinadas, com sintonias para Redemoinho, críticos, esquiva e alcance; coleção e ambos os espaços persistem no save.
 - A primeira escolha muda diálogos, a praça e a força da Tecelã, da Primeira Vigília e da Cartógrafa do Vão; novas memórias, a etapa da missão e as dezessete câmaras já limpas ficam no save. Os ecos coletados aparecem na interface.
-- O Vidro de Vigília fortalece o Estilhaço de Voz e Domínio reduz a recarga das duas técnicas; ataques corpo a corpo e à distância permitem alternar entre builds de contato e de alcance.
+- A Marca da Vigília especializa dano contra chefes; o Fio da Margem amplia o alcance do Estilhaço com custo de recarga e sintoniza com o Vidro. Domínio reduz a recarga das duas técnicas; ataques corpo a corpo e à distância permitem builds de contato, alcance e caça a chefes.
 
 ## Próximas etapas
 
 1. **Consolidar a base C#** — manter compilação Windows e smoke tests, conferir save novo e migração do save antigo.
 2. **Transformar a premissa em campanha** — Ilyra revela o propósito original do Lume; o Vau e o mapa de Nara introduzem o refúgio escolhido. Continuar para oeste para descobrir que nome Nara escolheu e se ela deseja reencontrar o protagonista.
 3. **Aprofundar combate** — o Estilhaço de Voz amplia a opção de alcance e o papel do Vidro; evoluir animações, habilidades equipáveis, leitura de ataques, esquiva consistente e balanceamento por sala.
-4. **Expandir loot e builds** — os dois espaços e as três primeiras sintonias já são jogáveis; adicionar raridades de equipamento, comparação mais rica, habilidades alternativas e combinações sem perder legibilidade.
+4. **Expandir loot e builds** — cinco talismãs e sintonias de dois espaços já oferecem especializações básicas; adicionar raridades de equipamento, comparação mais rica, habilidades alternativas e combinações sem perder legibilidade.
 5. **Criar masmorras e narrativa ambiental** — novas regiões, rotas, arquivos, eventos e chefes cujas mecânicas reforcem a história.
 6. **Concluir a escolha final** — mostrar como as decisões acumuladas alteram Véspera, Nara, aliados e o destino do Lume de Vigília.
 7. **Finalizar apresentação e distribuição** — arte e áudio originais, animações, acessibilidade, builds self-contained e testes em Windows.
