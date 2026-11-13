@@ -72,11 +72,21 @@ Na Sala da Primeira Vigília, a guardiã Ilyra surge como um eco preso ao dever,
 
 Ao ceder, Ilyra revela que foi a primeira Escutadora. Ela construiu o Lume para que nenhuma lembrança ficasse sem lugar, mas os guardiões posteriores inverteram esse propósito e transformaram memórias em combustível. Ilyra entregou o próprio nome para que o farol não esquecesse sua origem. Seu último eco mostra Nara atravessando a corrente com as vozes que o Lume não comportava; Ilyra não sabe o que aconteceu depois e alerta o protagonista a não chamar a irmã pelo nome escolhido pelo farol. A lembrança amplia as pistas sem confirmar o destino de Nara. Sileth registra o testemunho, e Edda ouve o Coro seguir para oeste, contra a corrente.
 
+### Capítulo VI — O refúgio da margem escolhida
+
+Edda conduz o Escutador contra a corrente até o Vau dos Nomes Escolhidos, uma travessia estreita de água escura, tábuas e pedras marcadas com giz. Ecos chamados Cantores do Lodo tentam expulsar quem atravessa. Eles não guardam um tesouro: repetem os nomes impostos pelo Lume e atacam qualquer pessoa que responda a eles. Ao limpar a margem, o grupo alcança o Pátio das Testemunhas, onde mapas foram raspados para que ninguém pudesse transformar o caminho de outras pessoas em propriedade.
+
+A Cartógrafa do Vão protege o pátio. Ela não serve ao Lume; acredita que um mapa exato permitiria que Véspera reclamasse para si quem partiu. Seus ataques avisam três padrões: uma marca que segue o Escutador, um impacto próximo e um traço comprido que atravessa o pátio. As marcas de giz e o fio visível dão tempo para reposicionar-se ou esquivar. A escolha de devolver os nomes enfraquece a Cartógrafa, pois os sinos de Véspera deixam de chamar os ecos pelo nome antigo; manter o Lume fortalece o chamado.
+
+O mapa deixado no pátio tem a letra de Nara. Ela escreveu que ajudou a levantar um abrigo onde ninguém precisa conservar o nome que o Lume escolheu e que seguiu para oeste com as pessoas que quiseram continuar. Ela pede que, se o protagonista a encontrar, não trate parentesco como resposta: primeiro pergunte quem ela escolheu ser. O mapa confirma uma decisão e a existência de uma comunidade, mas não diz quando Nara partiu, onde está agora ou se quer reencontrar a família. Edda reconhece o caminho até a próxima curva do rio; além dela, a trilha ainda precisa ser descoberta.
+
+A recompensa pela travessia é paga por Edda, enquanto Sileth mantém o arquivo de Véspera aberto para registrar a carta sem convertê-la em uma ordem de resgate. O capítulo amplia a campanha para além das terras mapeadas pela cidade e prepara a próxima região, onde o Escutador terá de conhecer a comunidade antes de procurar Nara.
+
 ## Regras de continuidade
 
 - A inspiração em Diablo fica no gênero e na ambição de combate, exploração, loot e progressão. Scadryk mantém mitologia, trama, personagens, criaturas, nomes e apresentação próprios.
 - O Guardião e a cripta já existem como protótipo de combate; as ligações com o Rio Cego e o Lume são ficção planejada para a campanha.
-- O prólogo, as duas inscrições da cripta, a praça, as missões de Sileth e Edda, o Arquivo Norte, o Rio Cego, a Capela Afogada, a Câmara do Lume, a Margem sem Reflexo, o Reservatório das Vozes, a Costa das Vozes Tardias, o Claustro do Coro Partido, a Bacia do Primeiro Nome, Ilyra e o Coro dos Nomes Consumidos estão jogáveis; a primeira escolha em Véspera altera a força de duas guardiãs. O caminho a oeste, o destino de Nara, o confronto final e o epílogo continuam planejados.
+- O prólogo, as duas inscrições da cripta, a praça, as missões de Sileth e Edda, o Arquivo Norte, o Rio Cego, a Capela Afogada, a Câmara do Lume, a Margem sem Reflexo, o Reservatório das Vozes, a Costa das Vozes Tardias, o Claustro do Coro Partido, a Bacia do Primeiro Nome, Ilyra, o Coro dos Nomes Consumidos, o Vau dos Nomes Escolhidos, o Pátio das Testemunhas e o mapa de Nara estão jogáveis; a primeira escolha em Véspera altera a força de três chefes. A comunidade além do mapa, o destino atual de Nara, o confronto final e o epílogo continuam planejados.
 - Novos itens e poderes devem ter origem no mundo de Scadryk e revelar algo sobre quem os criou, usou ou esqueceu.
 
 
