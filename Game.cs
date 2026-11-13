@@ -43,6 +43,7 @@ public sealed class Game : Form
         public int HealthTalent { get; set; }
         public int SkillTalent { get; set; }
         public int DodgeTalent { get; set; }
+        public int TechniqueTalent { get; set; }
         public bool RoomCleared { get; set; }
         public bool Completed { get; set; }
         public int MemoriesFound { get; set; }
@@ -119,7 +120,7 @@ public sealed class Game : Form
     private readonly int[] weaponBonuses = new int[3], weaponRarities = new int[3], weaponAffixes = new int[3];
     private PointF player = new(150, 330), facing = new(1, 0), mouseAim = new(1, 0);
     private int room, level = 1, xp, gold, potions = 2, damage = 25, weapon, ownedWeapons = 1;
-    private int healthTalent, skillTalent, dodgeTalent, pendingTalents, enemiesDefeated;
+    private int healthTalent, skillTalent, dodgeTalent, techniqueTalent, pendingTalents, enemiesDefeated;
     private int memoriesFound, questStage, clearedRooms, tideGlass;
     private bool chorusMemory, firstMemory, westTrace, upstreamTrace, forgeMenuOpen;
     private bool beyondTrace, ebbSeal, counterTrace, anchorWard;
@@ -161,7 +162,7 @@ public sealed class Game : Form
         room = 0; level = 1; xp = gold = damage = 0; damage = 25; potions = 2; weapon = 0; ownedWeapons = 1; Array.Clear(weaponBonuses); Array.Clear(weaponRarities); Array.Clear(weaponAffixes);
         armor = armorOn = relic = relicOn = archiveSeal = riverBell = lumeLens = naraTrace = chorusMemory = firstMemory = westTrace = upstreamTrace = beyondTrace = ebbSeal = counterTrace = anchorWard = inventoryOpen = dead = victory = chestChoice = talentChoice = memoryOverlay = endingChoiceOpen = forgeMenuOpen = false;
         townEnding = 0;
-        healthTalent = skillTalent = dodgeTalent = pendingTalents = enemiesDefeated = memoriesFound = questStage = tideGlass = 0;
+        healthTalent = skillTalent = dodgeTalent = techniqueTalent = pendingTalents = enemiesDefeated = memoriesFound = questStage = tideGlass = 0;
         clearedRooms = 0;
         ownedCharms = equippedCharm = equippedCharm2 = 0;
         health = maxHealth = 100; attackCd = skillCd = shardCd = bellCd = bellWaveTime = bellWaveRadius = pullCd = pullWaveTime = wardCd = wardTime = dashCd = dashTime = invulnerable = 0; echoShards.Clear(); title = false; storyPage = 0; storyOverlay = true; SetupRoom();
@@ -263,6 +264,7 @@ public sealed class Game : Form
         if (key == Keys.D1) { healthTalent++; maxHealth += 20; health = Math.Min(maxHealth, health + 20); }
         else if (key == Keys.D2) skillTalent++;
         else if (key == Keys.D3) dodgeTalent++;
+        else if (key == Keys.D4) techniqueTalent++;
         else return;
         pendingTalents--; talentChoice = pendingTalents > 0;
     }
@@ -285,7 +287,7 @@ public sealed class Game : Form
     {
         if (skillCd > 0 || talentChoice) return;
         skillCd = Math.Max(1.5f, 6f - skillTalent * 0.5f) + WhirlwindCooldownPenalty();
-        foreach (Enemy enemy in enemies.ToArray()) if (Distance(player, enemy.Pos) < 110) { enemy.Hp -= (int)(damage * OutgoingDamageMultiplier(enemy) * WhirlwindMultiplier() * WeaponSkillMultiplier() * (enemy.Armored ? 0.75f : 1)); if (enemy.Hp <= 0) Defeat(enemy); }
+        foreach (Enemy enemy in enemies.ToArray()) if (Distance(player, enemy.Pos) < 110) { enemy.Hp -= (int)(damage * OutgoingDamageMultiplier(enemy) * WhirlwindMultiplier() * WeaponSkillMultiplier() * TechniqueDamageMultiplier() * (enemy.Armored ? 0.75f : 1)); if (enemy.Hp <= 0) Defeat(enemy); }
     }
 
     private void CastVoiceShard()
@@ -299,6 +301,7 @@ public sealed class Game : Form
     private float BellPulseRadius() => HasCharm(2) ? 190f : 155f;
     private float BellPulseCooldown() => Math.Max(7f, 14f - skillTalent * 0.7f) + (HasCharm(2) ? 1.5f : 0f);
     private float WeaponSkillMultiplier() => weaponAffixes[weapon] == 3 ? weaponRarities[weapon] == 2 ? 1.18f : 1.12f : 1f;
+    private float TechniqueDamageMultiplier() => 1f + techniqueTalent * 0.08f;
     private int WeaponPower(int index) => weaponDamage[index] + weaponBonuses[index];
     private static string WeaponRarityName(int index) => index == 0 ? "COMUM" : index == 1 ? "RARA" : "RELÍQUIA";
     private string WeaponAffixName(int index) => weaponAffixes[index] switch { 1 => "da Trégua", 2 => "do Contracanto", 3 => "da Maré", _ => "sem afixo" };
@@ -313,7 +316,7 @@ public sealed class Game : Form
         foreach (Enemy enemy in enemies.ToArray())
         {
             if (Distance(player, enemy.Pos) > bellWaveRadius) continue;
-            float multiplier = (HasCharm(3) ? 1.25f : 1f) * WeaponSkillMultiplier();
+            float multiplier = (HasCharm(3) ? 1.25f : 1f) * WeaponSkillMultiplier() * TechniqueDamageMultiplier();
             float power = enemy.Boss ? 0.55f : 0.95f;
             enemy.Hp -= (int)(damage * power * multiplier * OutgoingDamageMultiplier(enemy) * (enemy.Armored ? 0.75f : 1));
             enemy.Flash = 0.2f;
@@ -329,7 +332,7 @@ public sealed class Game : Form
         if (!ebbSeal) { notice = "A VAZANTE AINDA NÃO FOI APRENDIDA"; noticeTime = 1.5f; return; }
         if (room is 3 or 18 || enemies.Count == 0 || pullCd > 0) return;
         pullCd = EbbPullCooldown(); pullWaveTime = 0.45f;
-        float techniqueBoost = (HasCharm(3) ? 1.25f : 1f) * WeaponSkillMultiplier();
+        float techniqueBoost = (HasCharm(3) ? 1.25f : 1f) * WeaponSkillMultiplier() * TechniqueDamageMultiplier();
         foreach (Enemy enemy in enemies.ToArray())
         {
             float distance = Distance(player, enemy.Pos); if (distance > 160) continue;
@@ -714,7 +717,7 @@ public sealed class Game : Form
     private bool HasCharmPair(int first, int second) => equippedCharm == first && equippedCharm2 == second || equippedCharm == second && equippedCharm2 == first;
     private float WhirlwindMultiplier() => HasCharmPair(1, 2) ? 2.52f : HasCharm(1) ? 2.16f : 1.6f;
     private float WhirlwindCooldownPenalty() => !HasCharm(1) ? 0f : HasCharmPair(1, 2) ? 0.5f : 1f;
-    private float VoiceShardDamage() => damage * (HasCharmPair(3, 5) ? 2.05f : HasCharm(3) ? 1.8f : 1.35f) * WeaponSkillMultiplier();
+    private float VoiceShardDamage() => damage * (HasCharmPair(3, 5) ? 2.05f : HasCharm(3) ? 1.8f : 1.35f) * WeaponSkillMultiplier() * TechniqueDamageMultiplier();
     private float VoiceShardLifetime() => HasCharm(5) ? 1.8f : 1.25f;
     private float VoiceShardCooldown() => Math.Max(3.5f, 7f - skillTalent * 0.5f) + (HasCharm(5) ? HasCharmPair(3, 5) ? 0.5f : 1.25f : 0f);
     private float OutgoingDamageMultiplier(Enemy enemy) => !HasCharm(4) ? 1f : enemy.Boss ? 1.25f : 0.8f;
@@ -748,7 +751,7 @@ public sealed class Game : Form
         return false;
     }
 
-    private SaveData CaptureSaveData() => new() { Room = room, Level = level, Xp = xp, Gold = gold, Potions = potions, Damage = damage, Health = health, MaxHealth = maxHealth, Weapon = weapon, OwnedWeapons = ownedWeapons, Armor = armor, Relic = relic, HealthTalent = healthTalent, SkillTalent = skillTalent, DodgeTalent = dodgeTalent, RoomCleared = room == 3 || enemies.Count == 0 && drops.Count == 0, Completed = victory, MemoriesFound = memoriesFound, QuestStage = questStage, ClearedRooms = clearedRooms | (room != 3 && enemies.Count == 0 && drops.Count == 0 ? 1 << room : 0), ArchiveSeal = archiveSeal, RiverBell = riverBell, LumeLens = lumeLens, NaraTrace = naraTrace, ChorusMemory = chorusMemory, FirstMemory = firstMemory, WestTrace = westTrace, UpstreamTrace = upstreamTrace, TideGlass = tideGlass, BeyondTrace = beyondTrace, EbbSeal = ebbSeal, CounterTrace = counterTrace, AnchorWard = anchorWard, OwnedCharms = ownedCharms, EquippedCharm = equippedCharm, EquippedCharm2 = equippedCharm2, TownEnding = townEnding, WeaponBonuses = weaponBonuses.ToArray(), WeaponRarities = weaponRarities.ToArray(), WeaponAffixes = weaponAffixes.ToArray() };
+    private SaveData CaptureSaveData() => new() { Room = room, Level = level, Xp = xp, Gold = gold, Potions = potions, Damage = damage, Health = health, MaxHealth = maxHealth, Weapon = weapon, OwnedWeapons = ownedWeapons, Armor = armor, Relic = relic, HealthTalent = healthTalent, SkillTalent = skillTalent, DodgeTalent = dodgeTalent, TechniqueTalent = techniqueTalent, RoomCleared = room == 3 || enemies.Count == 0 && drops.Count == 0, Completed = victory, MemoriesFound = memoriesFound, QuestStage = questStage, ClearedRooms = clearedRooms | (room != 3 && enemies.Count == 0 && drops.Count == 0 ? 1 << room : 0), ArchiveSeal = archiveSeal, RiverBell = riverBell, LumeLens = lumeLens, NaraTrace = naraTrace, ChorusMemory = chorusMemory, FirstMemory = firstMemory, WestTrace = westTrace, UpstreamTrace = upstreamTrace, TideGlass = tideGlass, BeyondTrace = beyondTrace, EbbSeal = ebbSeal, CounterTrace = counterTrace, AnchorWard = anchorWard, OwnedCharms = ownedCharms, EquippedCharm = equippedCharm, EquippedCharm2 = equippedCharm2, TownEnding = townEnding, WeaponBonuses = weaponBonuses.ToArray(), WeaponRarities = weaponRarities.ToArray(), WeaponAffixes = weaponAffixes.ToArray() };
     private void SaveGame() { Directory.CreateDirectory(Path.GetDirectoryName(SavePath)!); File.WriteAllText(SavePath, JsonSerializer.Serialize(CaptureSaveData())); notice = "PROGRESSO SALVO"; noticeTime = 2; }
     private string LegacySavePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Godot", "app_userdata", "Scadryk RPG", "scadryk-save.cfg");
     private SaveData ReadLegacySave()
@@ -768,8 +771,8 @@ public sealed class Game : Form
         try
         {
             bool migrated = !File.Exists(SavePath); SaveData s = migrated ? ReadLegacySave() : JsonSerializer.Deserialize<SaveData>(File.ReadAllText(SavePath)) ?? throw new InvalidDataException();
-            if (!ValidWeaponData(s) || s.Room is < 0 or > 28 || s.Level is < 1 or > 10000 || s.Xp < 0 || s.Xp >= s.Level * 60 || s.Weapon is < 0 or > 2 || s.OwnedWeapons < 1 || s.OwnedWeapons > 7 || (s.OwnedWeapons & (1 << s.Weapon)) == 0 || s.MaxHealth < 1 || s.Health <= 0 || s.Health > s.MaxHealth || s.Potions < 0 || s.Gold < 0 || s.TideGlass is < 0 or > 999 || s.Damage < 1 || s.MemoriesFound is < 0 or > 3 || s.QuestStage is < 0 or > 36 || s.ClearedRooms is < 0 or > 536870911 || s.Completed && s.Room != 2 || s.OwnedCharms is < 0 or > 31 || s.EquippedCharm is < 0 or > 5 || s.EquippedCharm2 is < 0 or > 5 || s.EquippedCharm > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm - 1))) == 0 || s.EquippedCharm2 > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm2 - 1))) == 0 || s.EquippedCharm > 0 && s.EquippedCharm == s.EquippedCharm2 || s.TownEnding is < 0 or > 2 || s.QuestStage == 13 && s.TownEnding == 0 || s.QuestStage >= 14 && !s.ChorusMemory || s.QuestStage >= 16 && !s.FirstMemory || s.QuestStage >= 19 && !s.WestTrace || s.WestTrace && s.QuestStage < 19 || s.UpstreamTrace && s.QuestStage < 26 || s.QuestStage >= 26 && !s.UpstreamTrace || s.BeyondTrace && s.QuestStage < 29 || s.QuestStage >= 29 && !s.BeyondTrace || s.EbbSeal && s.QuestStage < 33 || s.QuestStage >= 33 && !s.EbbSeal || s.CounterTrace && s.QuestStage < 35 || s.QuestStage >= 35 && !s.CounterTrace || s.AnchorWard && s.QuestStage < 36 || s.Room >= 27 && s.QuestStage < 34 || s.Room >= 25 && s.QuestStage < 31 || s.Room >= 23 && s.QuestStage < 28 || s.Room >= 21 && s.QuestStage < 25 || s.Room >= 14 && s.QuestStage < 15 || s.Room >= 16 && s.QuestStage < 18 || s.Room >= 18 && s.QuestStage < 21 || s.Room >= 19 && s.QuestStage < 22 || s.Room == 20 && s.QuestStage < 22) throw new InvalidDataException();
-            StartGame(); room = s.Room; level = s.Level; xp = s.Xp; gold = s.Gold; potions = s.Potions; damage = s.Damage; health = s.Health; maxHealth = s.MaxHealth; weapon = s.Weapon; ownedWeapons = s.OwnedWeapons; RestoreWeaponData(s); armor = s.Armor; relic = s.Relic; healthTalent = s.HealthTalent; skillTalent = s.SkillTalent; dodgeTalent = s.DodgeTalent; memoriesFound = s.MemoriesFound; questStage = s.QuestStage; clearedRooms = s.ClearedRooms | (s.RoomCleared && s.Room != 3 ? 1 << s.Room : 0); archiveSeal = s.ArchiveSeal; riverBell = s.RiverBell; lumeLens = s.LumeLens; naraTrace = s.NaraTrace; chorusMemory = s.ChorusMemory; firstMemory = s.FirstMemory; westTrace = s.WestTrace; upstreamTrace = s.UpstreamTrace; tideGlass = s.TideGlass; beyondTrace = s.BeyondTrace; ebbSeal = s.EbbSeal; counterTrace = s.CounterTrace; anchorWard = s.AnchorWard || s.QuestStage >= 36; ownedCharms = s.OwnedCharms; equippedCharm = s.EquippedCharm; equippedCharm2 = s.EquippedCharm2; townEnding = s.TownEnding; SetupRoom(); if (s.RoomCleared) enemies.Clear(); victory = s.Completed; title = false; storyOverlay = false;
+            if (!ValidWeaponData(s) || s.Room is < 0 or > 28 || s.Level is < 1 or > 10000 || s.Xp < 0 || s.Xp >= s.Level * 60 || s.Weapon is < 0 or > 2 || s.OwnedWeapons < 1 || s.OwnedWeapons > 7 || (s.OwnedWeapons & (1 << s.Weapon)) == 0 || s.MaxHealth < 1 || s.Health <= 0 || s.Health > s.MaxHealth || s.Potions < 0 || s.Gold < 0 || s.TideGlass is < 0 or > 999 || s.Damage < 1 || s.TechniqueTalent is < 0 or > 10000 || s.MemoriesFound is < 0 or > 3 || s.QuestStage is < 0 or > 36 || s.ClearedRooms is < 0 or > 536870911 || s.Completed && s.Room != 2 || s.OwnedCharms is < 0 or > 31 || s.EquippedCharm is < 0 or > 5 || s.EquippedCharm2 is < 0 or > 5 || s.EquippedCharm > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm - 1))) == 0 || s.EquippedCharm2 > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm2 - 1))) == 0 || s.EquippedCharm > 0 && s.EquippedCharm == s.EquippedCharm2 || s.TownEnding is < 0 or > 2 || s.QuestStage == 13 && s.TownEnding == 0 || s.QuestStage >= 14 && !s.ChorusMemory || s.QuestStage >= 16 && !s.FirstMemory || s.QuestStage >= 19 && !s.WestTrace || s.WestTrace && s.QuestStage < 19 || s.UpstreamTrace && s.QuestStage < 26 || s.QuestStage >= 26 && !s.UpstreamTrace || s.BeyondTrace && s.QuestStage < 29 || s.QuestStage >= 29 && !s.BeyondTrace || s.EbbSeal && s.QuestStage < 33 || s.QuestStage >= 33 && !s.EbbSeal || s.CounterTrace && s.QuestStage < 35 || s.QuestStage >= 35 && !s.CounterTrace || s.AnchorWard && s.QuestStage < 36 || s.Room >= 27 && s.QuestStage < 34 || s.Room >= 25 && s.QuestStage < 31 || s.Room >= 23 && s.QuestStage < 28 || s.Room >= 21 && s.QuestStage < 25 || s.Room >= 14 && s.QuestStage < 15 || s.Room >= 16 && s.QuestStage < 18 || s.Room >= 18 && s.QuestStage < 21 || s.Room >= 19 && s.QuestStage < 22 || s.Room == 20 && s.QuestStage < 22) throw new InvalidDataException();
+            StartGame(); room = s.Room; level = s.Level; xp = s.Xp; gold = s.Gold; potions = s.Potions; damage = s.Damage; health = s.Health; maxHealth = s.MaxHealth; weapon = s.Weapon; ownedWeapons = s.OwnedWeapons; RestoreWeaponData(s); armor = s.Armor; relic = s.Relic; healthTalent = s.HealthTalent; skillTalent = s.SkillTalent; dodgeTalent = s.DodgeTalent; techniqueTalent = s.TechniqueTalent; memoriesFound = s.MemoriesFound; questStage = s.QuestStage; clearedRooms = s.ClearedRooms | (s.RoomCleared && s.Room != 3 ? 1 << s.Room : 0); archiveSeal = s.ArchiveSeal; riverBell = s.RiverBell; lumeLens = s.LumeLens; naraTrace = s.NaraTrace; chorusMemory = s.ChorusMemory; firstMemory = s.FirstMemory; westTrace = s.WestTrace; upstreamTrace = s.UpstreamTrace; tideGlass = s.TideGlass; beyondTrace = s.BeyondTrace; ebbSeal = s.EbbSeal; counterTrace = s.CounterTrace; anchorWard = s.AnchorWard || s.QuestStage >= 36; ownedCharms = s.OwnedCharms; equippedCharm = s.EquippedCharm; equippedCharm2 = s.EquippedCharm2; townEnding = s.TownEnding; SetupRoom(); if (s.RoomCleared) enemies.Clear(); victory = s.Completed; title = false; storyOverlay = false;
             if (migrated) SaveGame(); notice = migrated ? "SAVE ANTIGO MIGRADO" : "PROGRESSO CARREGADO"; noticeTime = 2;
         }
         catch { notice = "NENHUM SALVAMENTO VÁLIDO"; noticeTime = 2; }
@@ -825,7 +828,7 @@ public sealed class Game : Form
         if (noticeTime > 0) DrawCentered(g, notice, 170, new Font("Segoe UI", 13, FontStyle.Bold), Color.FromArgb(230, 193, 129));
         if (title || dead || victory) DrawOverlay(g, title ? "SCADRYK" : victory ? "VITÓRIA" : "VOCÊ CAIU", title ? "ENTER PARA COMEÇAR    •    C CARREGAR SAVE" : "ENTER PARA RECOMEÇAR    •    F5 SALVAR");
         if (inventoryOpen) DrawInventory(g);
-        if (talentChoice) DrawChoice(g, $"SUBIU DE NÍVEL — ESCOLHA ({pendingTalents} PENDENTES)", "1. VIGOR  +20 VIDA MÁXIMA", "2. DOMÍNIO  técnicas recarregam mais rápido", "3. AGILIDADE  esquiva recarrega mais rápido");
+        if (talentChoice) DrawTalentChoice(g, pendingTalents);
         if (chestChoice) DrawChoice(g, "BAÚ DA CRIPTA — ESCOLHA UMA RECOMPENSA", "1. 75 OURO", "2. DUAS POÇÕES", "3. RECUPERAR TODA A VIDA");
         if (endingChoiceOpen) DrawChoice(g, "O QUE VÉSPERA DEVE LEMBRAR?", "1. DEVOLVER OS NOMES  •  +20 VIDA MÁXIMA", "2. MANTER O LUME  •  +10 DANO", "3. ADIAR A DECISÃO");
         if (forgeMenuOpen) DrawChoice(g, weaponRarities[weapon] == 0 ? $"TÊMPERA DO VEIO • {weaponNames[weapon]} VIRA RARA" : $"TÊMPERA DO VEIO • {weaponNames[weapon]}", $"1. TRÉGUA • CURA AO ABATER   ({gold} OURO / {tideGlass} SAL)", "2. CONTRACANTO • AUMENTA O CRÍTICO", "3. MARÉ • AUMENTA O DANO DE TÉCNICA  •  ESC PARA FECHAR");
@@ -1371,6 +1374,20 @@ public sealed class Game : Form
         DrawCentered(g, titleText, 238, new Font("Georgia", 15, FontStyle.Bold), Color.Goldenrod);
         g.DrawString(a, optionFont, Brushes.AntiqueWhite, 220, 286); g.DrawString(b, optionFont, Brushes.AntiqueWhite, 220, 330); g.DrawString(c, optionFont, Brushes.AntiqueWhite, 220, 374);
     }
+
+    private void DrawTalentChoice(Graphics g, int pending)
+    {
+        using var background = new SolidBrush(Color.FromArgb(248, 15, 17, 18));
+        using var optionFont = new Font("Segoe UI", 12);
+        using var hintBrush = new SolidBrush(Color.FromArgb(165, 174, 168));
+        g.FillRectangle(background, 170, 185, 620, 270);
+        DrawCentered(g, $"SUBIU DE NÍVEL — ESCOLHA ({pending} PENDENTES)", 212, new Font("Georgia", 15, FontStyle.Bold), Color.Goldenrod);
+        g.DrawString("1. VIGOR  +20 VIDA MÁXIMA", optionFont, Brushes.AntiqueWhite, 220, 258);
+        g.DrawString("2. DOMÍNIO  técnicas recarregam mais rápido", optionFont, Brushes.AntiqueWhite, 220, 300);
+        g.DrawString("3. AGILIDADE  esquiva recarrega mais rápido", optionFont, Brushes.AntiqueWhite, 220, 342);
+        g.DrawString("4. SINTONIA  +8% de dano de técnica por ponto", optionFont, Brushes.AntiqueWhite, 220, 384);
+        g.DrawString("Cada escolha é permanente e pode ser repetida.", optionFont, hintBrush, 220, 424);
+    }
     private void DrawStoryOverlay(Graphics g)
     {
         using var shade = new SolidBrush(Color.FromArgb(145, 5, 7, 9));
@@ -1490,6 +1507,18 @@ public sealed class Game : Form
             string label = lootRollCheck.DropLabel(drop); lootRollCheck.Collect(drop);
             if (lootRollCheck.weaponRarities[1] != rarity || lootRollCheck.weaponBonuses[1] != bonus || lootRollCheck.weaponAffixes[1] != affix || !label.Contains(WeaponRarityName(rarity)) || !label.Contains(WeaponGroundAffix(drop)))
                 throw new InvalidOperationException("A arma mudou ao ser recolhida ou não foi identificada no chão.");
+        }
+        using (var buildGame = new Game())
+        {
+            buildGame.timer.Stop(); buildGame.StartGame(); buildGame.storyOverlay = false; buildGame.room = 6; buildGame.damage = 100; buildGame.enemies.Clear();
+            float baseDamage = buildGame.VoiceShardDamage(); buildGame.pendingTalents = 1; buildGame.talentChoice = true; buildGame.SelectTalent(Keys.D4);
+            float specializedDamage = buildGame.VoiceShardDamage();
+            if (buildGame.techniqueTalent != 1 || buildGame.pendingTalents != 0 || buildGame.talentChoice || Math.Abs(specializedDamage / baseDamage - 1.08f) > 0.001f)
+                throw new InvalidOperationException("A especialização de Sintonia não foi escolhida ou não fortaleceu as técnicas em 8%.");
+            buildGame.player = new PointF(250, 330); buildGame.enemies.Add(new Enemy { Pos = new PointF(300, 330), Kind = EnemyKind.Grunt, Hp = 1000, MaxHp = 1000 }); buildGame.Whirlwind();
+            if (buildGame.enemies[0].Hp >= 1000 - 100 * 1.6f * 1.08f + 1) throw new InvalidOperationException("A Sintonia não alterou o dano real do Redemoinho.");
+            SaveData buildSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(buildGame.CaptureSaveData())) ?? throw new InvalidOperationException("A especialização não foi serializada.");
+            if (buildSave.TechniqueTalent != 1 || JsonSerializer.Deserialize<SaveData>("{}")?.TechniqueTalent != 0) throw new InvalidOperationException("A especialização não persistiu ou invalidou saves antigos.");
         }
         using var game = new Game(); game.timer.Stop(); game.StartGame();
         if (!game.storyOverlay || game.storyPage != 0) throw new InvalidOperationException("O novo jogo não iniciou no prólogo da história.");
@@ -1884,6 +1913,6 @@ public sealed class Game : Form
         game.room = 3; game.SetupRoom();
         game.memoryOverlay = false; game.player = CryptGatePosition; game.Interact();
         if (game.room != 2 || game.enemies.Count != 4) throw new InvalidOperationException("A passagem da cidade não retornou à cripta.");
-        Console.WriteLine("TESTES OK: campanha até o Capítulo XI, correntes alternadas, Manto de Lastro, saque identificado com rolagem persistente, Vazante, escolhas, regiões, chefes, ataques anunciados, loot, Ressonância do Sino, têmpera de armas, raridades e afixos, talismãs, builds, progressão e save."); return 0;
+        Console.WriteLine("TESTES OK: campanha até o Capítulo XI, correntes alternadas, Manto de Lastro, Sintonia e quatro talentos, saque identificado com rolagem persistente, Vazante, escolhas, regiões, chefes, ataques anunciados, loot, Ressonância do Sino, têmpera de armas, raridades e afixos, talismãs, builds, progressão e save."); return 0;
     }
 }

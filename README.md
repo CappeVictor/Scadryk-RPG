@@ -42,7 +42,7 @@ Para compilar uma versão de produção:
 dotnet build --configuration Release
 ```
 
-Para verificar o prólogo, as inscrições, as treze etapas da campanha, as áreas seguras, os chefes, os itens de história, as correntes alternadas, a Vazante, o Manto de Lastro, a nascente, as raridades e os afixos das armas, as missões, o save, movimento, avisos de ataque, esquiva e progressão:
+Para verificar o prólogo, as inscrições, as treze etapas da campanha, as áreas seguras, os chefes, os itens de história, as correntes alternadas, a Vazante, o Manto de Lastro, as quatro especializações de nível, a nascente, as raridades e os afixos das armas, as missões, o save, movimento, avisos de ataque, esquiva e progressão:
 
 ```powershell
 dotnet run -- --self-test
@@ -73,12 +73,14 @@ dotnet publish --configuration Release --runtime win-x64 --self-contained true
 | 4–5 no inventário | Alternar armadura e relíquia |
 | 6 no inventário | Alternar o talismã do espaço I |
 | 7 no inventário | Alternar o talismã do espaço II |
-| 1–3 ao subir de nível | Escolher talento ou responder quando Sileth apresentar uma decisão |
+| 1–4 ao subir de nível | Escolher talento ou responder quando Sileth apresentar uma decisão |
 | Tab | Trocar alvo |
 | Enter, Espaço ou clique na introdução | Avançar o prólogo e a lembrança |
 | F5 | Salvar depois de limpar a sala e recolher o loot |
 | C na tela inicial | Carregar o save |
 | Enter | Começar ou reiniciar |
+
+Cada nível concede um ponto permanente: **Vigor** aumenta a vida máxima, **Domínio** reduz as recargas, **Agilidade** acelera a esquiva e **Sintonia** acrescenta 8% de dano às técnicas por ponto. A nova especialização é compatível com saves antigos e pode ser escolhida várias vezes.
 
 Os ataques corpo a corpo comuns agora mostram a área de impacto antes do golpe. Saia do círculo para evitar dano. O movimento também desliza pela quina dos obstáculos quando uma direção fica bloqueada. O Estilhaço de Voz oferece uma opção de ataque à distância que atravessa uma linha de inimigos e para na geometria da sala. O Sino de Nara libera a Ressonância, uma onda de área que interrompe ecos comuns; chefes recebem dano reduzido e mantêm seus ataques. Domínio reduz a recarga das técnicas. Depois de devolver a memória do Afinador a Aven, o Manto de Lastro (H) reduz em 55% o dano recebido por 2,5 segundos; sua recarga base é de 20 segundos e também diminui com Domínio. O Vidro fortalece o Estilhaço e a Ressonância; o Fio de Travessia amplia a onda do Sino à custa de recarga adicional. Ao se aproximar do saque, o chão mostra o nome dos itens e distingue armas Comuns, Raras e Relíquias por cor. A raridade, o bônus e o afixo da arma são rolados quando ela cai, então a identificação exibida continua igual ao recolhê-la.
 
