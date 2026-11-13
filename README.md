@@ -67,6 +67,7 @@ dotnet publish --configuration Release --runtime win-x64 --self-contained true
 | I | Abrir ou fechar inventário |
 | 1–3 no inventário | Equipar arma |
 | 4–5 no inventário | Alternar armadura e relíquia |
+| 6 no inventário | Alternar talismãs encontrados |
 | 1–3 ao subir de nível | Escolher talento |
 | Tab | Trocar alvo |
 | Enter, Espaço ou clique na introdução | Avançar o prólogo e a lembrança |
@@ -76,11 +77,13 @@ dotnet publish --configuration Release --runtime win-x64 --self-contained true
 
 Os ataques corpo a corpo comuns agora mostram a área de impacto antes do golpe. Saia do círculo para evitar dano. O movimento também desliza pela quina dos obstáculos quando uma direção fica bloqueada.
 
+Elites deixam o Nó de Brasa; o Escriba Cego deixa o Vidro de Vigília; o Barqueiro Oco deixa o Fio de Travessia. Cada talismã ocupa o único espaço disponível: o Nó fortalece o Redemoinho, o Fio prolonga a esquiva com uma recarga maior, e o Vidro aumenta a chance e o dano crítico enquanto desacelera o ataque básico. Abra o inventário com **I** e pressione **6** para alternar entre os encontrados. Inimigos comuns podem deixar talismãs raros.
+
 Depois de escolher a recompensa do baú da cripta, explore a praça de Véspera. Fale com Sileth, leia o Livro das Ausências e volte para conversar com ela. Limpe a galeria e o cofre do Arquivo Norte, leve o selo a Sileth, derrote o Barqueiro Oco no Rio Cego e mostre o sino a Edda. Volte à passagem sul para alcançar o Lume. Derrote o Guardião das Cinzas e leve o prisma a Sileth. Depois, reentre na Câmara do Lume e procure a passagem abaixo do prisma. Atravesse a Margem sem Reflexo, vença O Nome Vazio e retorne a Sileth com a lembrança de Nara. A passagem à esquerda da praça retorna à cripta. Use **F5** em uma área segura para salvar seu progresso.
 
 ## Salvamento
 
-O save JSON fica em `%LOCALAPPDATA%\Scadryk\save.json` e guarda inscrições, etapas das missões, o Selo da Vigília, o Sino de Nara e o Prisma do Lume. Na tela inicial, pressione **C** para carregar. Se não houver um save novo, o jogo também procura o ConfigFile da versão anterior em `%APPDATA%\Godot\app_userdata\Scadryk RPG\scadryk-save.cfg` e migra os dados encontrados para o formato JSON.
+O save JSON fica em `%LOCALAPPDATA%\Scadryk\save.json` e guarda inscrições, etapas das missões, o Selo da Vigília, o Sino de Nara, o Prisma do Lume, os talismãs encontrados e o talismã equipado. Na tela inicial, pressione **C** para carregar. Se não houver um save novo, o jogo também procura o ConfigFile da versão anterior em `%APPDATA%\Godot\app_userdata\Scadryk RPG\scadryk-save.cfg` e migra os dados encontrados para o formato JSON.
 
 ## Estrutura
 
@@ -94,6 +97,7 @@ O save JSON fica em `%LOCALAPPDATA%\Scadryk\save.json` e guarda inscrições, et
 ## Limites atuais
 
 Este é um protótipo com onze salas de combate e arte procedural desenhada em formas 2D. Ainda faltam a busca final por Nara, as escolhas e os finais da campanha, mais regiões e builds, arte e áudio originais, animações, balanceamento amplo e testes manuais em diferentes resoluções. Não há medição de desempenho em máquinas variadas.
+
 
 
 

@@ -52,6 +52,8 @@ Sileth ouve a lembrança e admite que não pode continuar escolhendo sozinha o q
 
 Nara ajudou Sileth a manter a cidade protegida, mas passou a questionar o preço. Ela não está simplesmente presa e à espera de ser resgatada: seus rastros mostram uma decisão que muda o sentido da busca do protagonista.
 
+O loot também oferece três talismãs com origens em Véspera. O Nó de Brasa veio do cordão de um vigia da cripta e concentra o último impulso de quem não recuou; ele fortalece o Redemoinho, mas aumenta sua recarga. O Fio de Travessia é trançado com a corda que os barqueiros usavam para cruzar o Rio Cego; alonga a esquiva e cobra mais tempo para se recompor. O Vidro de Vigília é um caco da lente de leitura usada no Arquivo Norte; torna os golpes críticos mais prováveis e fortes, mas desacelera o ataque básico. O Escutador pode manter um talismã equipado e alternar entre os encontrados.
+
 No confronto final, o jogador decide o que fazer com o arquivo e com o Lume. Pode devolver à cidade as memórias apagadas e enfrentar o Silêncio sem a proteção antiga, ou sustentar o farol oferecendo uma lembrança própria. As consequências devem aparecer nos habitantes, nas áreas exploráveis e no epílogo, sem uma opção apresentada como perfeitamente correta.
 
 ## Regras de continuidade
@@ -60,6 +62,7 @@ No confronto final, o jogador decide o que fazer com o arquivo e com o Lume. Pod
 - O Guardião e a cripta já existem como protótipo de combate; as ligações com o Rio Cego e o Lume são ficção planejada para a campanha.
 - O prólogo, as duas inscrições da cripta, a praça, as missões de Sileth e Edda, o Arquivo Norte, o Rio Cego, a Capela Afogada, a Câmara do Lume, a Margem sem Reflexo, o Reservatório das Vozes, os chefes e as gravações no Selo, Sino, Prisma e lembrança de Nara estão disponíveis; a busca final, as escolhas e os finais são conteúdo planejado.
 - Novos itens e poderes devem ter origem no mundo de Scadryk e revelar algo sobre quem os criou, usou ou esqueceu.
+
 
 
 
