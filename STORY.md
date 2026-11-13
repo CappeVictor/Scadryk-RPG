@@ -40,7 +40,7 @@ As escolhas deste trecho devem mudar quais aliados ajudam na descida e quais lem
 
 ### Capítulo III — A corrente sob o farol
 
-O começo deste capítulo já pode ser explorado. Ao sul da praça, o leito seco do Rio Cego conserva as palavras de quem atravessou a corrente. Na Capela Afogada, a Lembrança Afogada tenta manter intrusos longe do sino. O Barqueiro Oco guarda a passagem e alterna entre um impacto ao redor de si, uma marca projetada no chão e um golpe em linha. O Sino sem Badalo, recuperado após a luta, traz uma gravação de Nara: ela não foi capturada. Cruzou o rio para levar as memórias para longe de Véspera e pediu que ninguém a trouxesse de volta sem antes escutar o que a corrente guarda.
+O começo deste capítulo já pode ser explorado. Ao sul da praça, o leito seco do Rio Cego conserva as palavras de quem atravessou a corrente. Na Capela Afogada, a Lembrança Afogada tenta manter intrusos longe do sino. O Barqueiro Oco guarda a passagem e alterna entre um impacto ao redor de si, uma marca projetada no chão e um golpe em linha. O Sino sem Badalo, recuperado após a luta, traz uma gravação de Nara: ela não foi capturada. Cruzou o rio para levar as memórias para longe de Véspera e pediu que ninguém a trouxesse de volta sem antes escutar o que a corrente guarda. Sua ressonância também pode ser usada em combate: a onda interrompe ecos comuns, mas chefes resistem à interrupção e sofrem menos dano.
 
 Edda reconhece o sino como instrumento de travessia usado por seu pai. Ela confirma que Nara sabia o caminho e partiu por escolha própria. O jogador recebe uma recompensa e desce pela passagem aberta pelo sino. Na Escada de Cinzas, Vestígios de Brasas protegem o caminho. Na Câmara do Lume, o Guardião das Cinzas alterna entre uma onda ao seu redor, uma marca de luz no chão e uma faixa de calor projetada à distância. Ao derrotá-lo, o jogador recolhe o Prisma da Primeira Vigília, que concede dano adicional e revela uma cena antiga: Nara aceitou carregar as lembranças que o Lume não conseguia guardar. A projeção se quebra antes de indicar onde ela está.
 
@@ -107,4 +107,5 @@ Nara ajudou a mapear as primeiras rotas do refúgio e seguiu adiante com viajant
 Na Cisterna do Registro Vazio, um Escrivão de Contrato acredita que registrar todo nome é a única forma de impedir que o Lume volte a apagá-los. Ele prende nomes em contratos e os usa para dar forma a ecos de papel. O confronto não decide quem Nara é nem onde ela está; ele abre acesso a anotações de viagem incompletas, suficientes para indicar a próxima curva a oeste.
 
 Este capítulo já é jogável: Edda conduz o protagonista ao refúgio, Aven libera a trilha, os Espectros de Papel guardam a cisterna e o Escrivão de Contrato protege o registro comunitário. A missão e as câmaras limpas ficam no save. O próximo trecho da viagem continua além do mapa disponível.
+
 

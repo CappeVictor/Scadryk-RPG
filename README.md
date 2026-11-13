@@ -63,6 +63,7 @@ dotnet publish --configuration Release --runtime win-x64 --self-contained true
 | Shift ou K | Esquivar |
 | R ou clique direito | Redemoinho, dano em área ao redor do personagem |
 | F | Estilhaço de Voz, projétil que atravessa inimigos e para em paredes; mira na direção do cursor ou do alvo marcado |
+| V | Ressonância do Sino de Nara, onda de curto alcance que fere e interrompe ecos comuns; desbloqueada ao encontrar o sino |
 | Q | Usar poção |
 | E | Escutar inscrições, falar/investigar em Véspera, abrir passagem ou interagir com o baú |
 | I | Abrir ou fechar inventário |
@@ -77,9 +78,9 @@ dotnet publish --configuration Release --runtime win-x64 --self-contained true
 | C na tela inicial | Carregar o save |
 | Enter | Começar ou reiniciar |
 
-Os ataques corpo a corpo comuns agora mostram a área de impacto antes do golpe. Saia do círculo para evitar dano. O movimento também desliza pela quina dos obstáculos quando uma direção fica bloqueada. O Estilhaço de Voz oferece uma opção de ataque à distância que atravessa uma linha de inimigos, para na geometria da sala e recebe bônus do Vidro de Vigília; Domínio reduz a recarga das duas técnicas.
+Os ataques corpo a corpo comuns agora mostram a área de impacto antes do golpe. Saia do círculo para evitar dano. O movimento também desliza pela quina dos obstáculos quando uma direção fica bloqueada. O Estilhaço de Voz oferece uma opção de ataque à distância que atravessa uma linha de inimigos e para na geometria da sala. O Sino de Nara libera a Ressonância, uma onda de área que interrompe ecos comuns; chefes recebem dano reduzido e mantêm seus ataques. Domínio reduz a recarga das três técnicas. O Vidro fortalece o Estilhaço e a Ressonância; o Fio de Travessia amplia a onda do Sino à custa de recarga adicional.
 
-Elites deixam o Nó de Brasa; o Escriba Cego deixa o Vidro de Vigília; o Barqueiro Oco deixa o Fio de Travessia. Ilyra deixa a Marca da Vigília, que causa mais dano a chefes e menos dano a inimigos comuns. A Cartógrafa do Vão deixa o Fio da Margem, que amplia o alcance do Estilhaço de Voz à custa de uma recarga maior. Combine-o com o Vidro para fortalecer o Estilhaço e reduzir essa penalidade. Equipe dois dos cinco talismãs pelo inventário (**I**; teclas **6** e **7**). O Nó fortalece o Redemoinho; o Fio de Travessia prolonga a esquiva; o Vidro melhora os críticos e o Estilhaço. As sintonias, a coleção e os dois espaços equipados são salvos. Inimigos comuns também podem deixar os três talismãs encontrados nas primeiras regiões.
+Elites deixam o Nó de Brasa; o Escriba Cego deixa o Vidro de Vigília; o Barqueiro Oco deixa o Fio de Travessia. Ilyra deixa a Marca da Vigília, que causa mais dano a chefes e menos dano a inimigos comuns. A Cartógrafa do Vão deixa o Fio da Margem, que amplia o alcance do Estilhaço de Voz à custa de uma recarga maior. Combine-o com o Vidro para fortalecer o Estilhaço e reduzir essa penalidade. Equipe dois dos cinco talismãs pelo inventário (**I**; teclas **6** e **7**). O Nó fortalece o Redemoinho; o Fio de Travessia prolonga a esquiva e amplia a onda do Sino; o Vidro melhora os críticos e fortalece o Estilhaço e a Ressonância. As sintonias, a coleção e os dois espaços equipados são salvos. Inimigos comuns também podem deixar os três talismãs encontrados nas primeiras regiões.
 
 Depois de escolher a recompensa do baú da cripta, explore a praça de Véspera. Fale com Sileth, leia o Livro das Ausências e volte para conversar com ela. Limpe a galeria e o cofre do Arquivo Norte, leve o selo a Sileth, derrote o Barqueiro Oco no Rio Cego e mostre o sino a Edda. Volte à passagem sul para alcançar o Lume. Derrote o Guardião das Cinzas e leve o prisma a Sileth. Depois, reentre na Câmara do Lume e procure a passagem abaixo do prisma. Atravesse a Margem sem Reflexo, vença O Nome Vazio e retorne a Sileth com a lembrança de Nara. Após as decisões de Véspera e do testemunho do Coro, explore o Claustro, desça à Bacia e leve a memória de Ilyra de volta a Sileth. Converse com Edda para iniciar a travessia oeste; vença a Cartógrafa no Pátio das Testemunhas e recolha o mapa de Nara. Volte a Edda para chegar ao Refúgio do Veio Calmo e fale com Aven. Cruze a Trilha dos Luminários, derrote o Escrivão de Contrato e recolha o registro. Devolva-o à comunidade para receber provisões e abrir a continuação da trilha. A passagem à esquerda da praça retorna à cripta. Use **F5** em uma área segura para salvar seu progresso.
 
@@ -99,6 +100,7 @@ O save JSON fica em `%LOCALAPPDATA%\Scadryk\save.json` e guarda inscrições, et
 ## Limites atuais
 
 Este é um protótipo com dezenove salas de combate e arte procedural desenhada em formas 2D. Ainda faltam seguir além da próxima curva, conhecer a vontade atual de Nara, as escolhas e os finais da campanha, mais regiões, raridades e builds, arte e áudio originais, animações, balanceamento amplo e testes manuais em diferentes resoluções. Não há medição de desempenho em máquinas variadas.
+
 
 
 

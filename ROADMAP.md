@@ -18,8 +18,8 @@ O documento de história com cenário, personagens e resumo dos sete capítulos 
 
 - A Godot foi removida do projeto. A janela e o desenho usam C#/.NET 8 Windows Forms e GDI+.
 - O protótipo mantém dezenove salas de combate e duas áreas seguras, inimigos comuns, arqueiro, conjurador, elite, Guardião da Cripta, Ecos de Tinta, Escriba Cego, Lembranças Afogadas, Barqueiro Oco, Vestígios de Brasas, Guardião das Cinzas, Mariposas de Nomes, O Nome Vazio, a Tecelã de Nomes, a Primeira Vigília, Cantores do Lodo, a Cartógrafa do Vão, Espectros de Papel e o Escrivão de Contrato.
-- Combate: ataque corpo a corpo, ataque especial Redemoinho, esquiva, crítico, alvo marcado e golpes inimigos anunciados.
-- Combate à distância: Estilhaço de Voz é um projétil perfurante de recarga própria; percorre a linha de mira, atinge cada inimigo uma vez e para ao encontrar as paredes das salas.
+- Combate: ataque corpo a corpo, ataque especial Redemoinho, Ressonância do Sino que interrompe ecos comuns, esquiva, crítico, alvo marcado e golpes inimigos anunciados.
+- Combate à distância: Estilhaço de Voz é um projétil perfurante de recarga própria; percorre a linha de mira, atinge cada inimigo uma vez e para ao encontrar as paredes das salas. A Ressonância do Sino adiciona uma onda de área com interrupção limitada a ecos comuns e proteção contra interrupção nos chefes.
 - Progressão: XP, níveis, escolhas de talentos, ouro, poções, três armas, armadura, relíquia e cinco talismãs únicos que podem ocupar dois espaços de equipamento.
 - Salvamento local em JSON com migração do save ConfigFile da versão Godot.
 - Movimento com colisão por eixo, permitindo deslizar pelas quinas.
@@ -35,13 +35,13 @@ O documento de história com cenário, personagens e resumo dos sete capítulos 
 - Refúgio do Veio Calmo, Trilha dos Luminários e Cisterna do Registro Vazio: área segura com três moradores, rota com Espectros de Papel e chefe Escrivão de Contrato. A comunidade guarda o registro compartilhado sob suas próprias regras; o conteúdo confirma apenas que Nara continuou viagem, sem declarar seu nome atual nem seu paradeiro.
 - Elites e chefes deixam cinco talismãs originais com efeitos e compensações diferentes; duas peças únicas podem ser combinadas, com sintonias para Redemoinho, críticos, esquiva e alcance; coleção e ambos os espaços persistem no save.
 - A primeira escolha muda diálogos, a praça e a força da Tecelã, da Primeira Vigília, da Cartógrafa do Vão e do Escrivão de Contrato; novas memórias, a etapa da missão e as dezenove câmaras já limpas ficam no save. Os ecos coletados aparecem na interface.
-- A Marca da Vigília especializa dano contra chefes; o Fio da Margem amplia o alcance do Estilhaço com custo de recarga e sintoniza com o Vidro. Domínio reduz a recarga das duas técnicas; ataques corpo a corpo e à distância permitem builds de contato, alcance e caça a chefes.
+- A Marca da Vigília especializa dano contra chefes; o Fio da Margem amplia o alcance do Estilhaço com custo de recarga e sintoniza com o Vidro. O Fio de Travessia amplia a onda do Sino e o Vidro reforça seu dano. Domínio reduz a recarga das três técnicas; ataques corpo a corpo e à distância permitem builds de contato, controle, alcance e caça a chefes.
 
 ## Próximas etapas
 
 1. **Consolidar a base C#** — manter compilação Windows e smoke tests, conferir save novo e migração do save antigo.
 2. **Transformar a premissa em campanha** — Ilyra revela o propósito original do Lume; o Vau e o mapa de Nara introduzem o refúgio escolhido. O refúgio, a trilha e a cisterna já são jogáveis; continuar para oeste e descobrir novas pistas sem presumir que Nara quer reencontrar o protagonista.
-3. **Aprofundar combate** — o Estilhaço de Voz amplia a opção de alcance e o papel do Vidro; evoluir animações, habilidades equipáveis, leitura de ataques, esquiva consistente e balanceamento por sala.
+3. **Aprofundar combate** — Estilhaço e Ressonância do Sino ampliam as opções de alcance e controle, com sintonias próprias; evoluir animações, habilidades equipáveis, leitura de ataques, esquiva consistente e balanceamento por sala.
 4. **Expandir loot e builds** — cinco talismãs e sintonias de dois espaços já oferecem especializações básicas; adicionar raridades de equipamento, comparação mais rica, habilidades alternativas e combinações sem perder legibilidade.
 5. **Criar masmorras e narrativa ambiental** — novas regiões, rotas, arquivos, eventos e chefes cujas mecânicas reforcem a história.
 6. **Concluir a escolha final** — mostrar como as decisões acumuladas alteram Véspera, Nara, aliados e o destino do Lume de Vigília.
@@ -62,4 +62,5 @@ Cada etapa deve compilar, incluir uma validação adequada e registrar as limita
 ## Trabalho em andamento
 
 - Capítulo VII: o Refúgio do Veio Calmo, a Trilha dos Luminários e a Cisterna do Registro Vazio estão jogáveis. A etapa adiciona diálogos, Espectros de Papel, o Escrivão de Contrato, o registro de passagem e progresso persistente; mantém em aberto o paradeiro e o nome escolhido por Nara.
+
 
