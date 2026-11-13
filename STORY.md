@@ -1,7 +1,7 @@
 # História de Scadryk
 
 **Subtítulo de trabalho:** *Os Nomes do Rio Cego*  
-**Estado:** prólogo, cripta, Véspera, Arquivo Norte, Rio Cego, Lume, Margem sem Reflexo, Reservatório, costa, Claustro, Bacia do Primeiro Nome, Vau, Refúgio, Cisterna, Várzea e Ponte da Maré Invertida jogáveis. O paradeiro atual de Nara, o nome que ela escolheu e o destino final do Lume continuam sem resposta.
+**Estado:** prólogo, cripta, Véspera, Arquivo Norte, Rio Cego, Lume, Margem sem Reflexo, Reservatório, costa, Claustro, Bacia do Primeiro Nome, Vau, Refúgio, Cisterna, Várzea, Ponte da Maré Invertida, Cotovelo dos Juncais e Pátio das Amarras Livres jogáveis. O paradeiro atual de Nara, o nome que ela escolheu e o destino final do Lume continuam sem resposta.
 
 ## Ideia central
 
@@ -86,7 +86,7 @@ A recompensa pela travessia é paga por Edda, enquanto Sileth mantém o arquivo 
 
 - A inspiração em Diablo fica no gênero e na ambição de combate, exploração, loot e progressão. Scadryk mantém mitologia, trama, personagens, criaturas, nomes e apresentação próprios.
 - O Guardião e a cripta já existem como protótipo de combate; as ligações com o Rio Cego e o Lume são ficção planejada para a campanha.
-- O prólogo, as duas inscrições da cripta, a praça, as missões de Sileth e Edda, o Arquivo Norte, o Rio Cego, a Capela Afogada, a Câmara do Lume, a Margem sem Reflexo, o Reservatório das Vozes, a Costa das Vozes Tardias, o Claustro do Coro Partido, a Bacia do Primeiro Nome, Ilyra, o Coro dos Nomes Consumidos, o Vau dos Nomes Escolhidos, o Pátio das Testemunhas, o mapa de Nara, o Refúgio do Veio Calmo, a Trilha dos Luminários, a Cisterna do Registro Vazio, a Várzea das Vozes Sopradas e a Ponte da Maré Invertida estão jogáveis; a primeira escolha em Véspera altera a força de cinco chefes. A trilha além da nascente, o destino atual de Nara, o confronto final e o epílogo continuam planejados.
+- O prólogo, as duas inscrições da cripta, a praça, as missões de Sileth e Edda, o Arquivo Norte, o Rio Cego, a Capela Afogada, a Câmara do Lume, a Margem sem Reflexo, o Reservatório das Vozes, a Costa das Vozes Tardias, o Claustro do Coro Partido, a Bacia do Primeiro Nome, Ilyra, o Coro dos Nomes Consumidos, o Vau dos Nomes Escolhidos, o Pátio das Testemunhas, o mapa de Nara, o Refúgio do Veio Calmo, a Trilha dos Luminários, a Cisterna do Registro Vazio, a Várzea das Vozes Sopradas e a Ponte da Maré Invertida estão jogáveis; a primeira escolha em Véspera altera a força de cinco chefes. O território além do Pátio das Amarras Livres, o destino atual de Nara, o confronto final e o epílogo continuam planejados.
 - Novos itens e poderes devem ter origem no mundo de Scadryk e revelar algo sobre quem os criou, usou ou esqueceu.
 
 
@@ -117,3 +117,13 @@ A Ponte da Maré Invertida cruza a nascente. A Testemunha da Maré protege a pas
 Ao ceder, a Testemunha entrega uma lembrança incompleta. Um grupo chegou à nascente com Nara. Alguém a chamou pelo nome que constava no livro de Véspera; ela respondeu com o nome que escolheu, e o grupo o aprendeu antes de seguir viagem. O eco não revela essa palavra, o destino do grupo ou se Nara está esperando por alguém.
 
 Aven recebe o testemunho sem perguntar qual era o nome anterior ou qual foi o escolhido. Registra somente que o grupo cruzou a nascente por vontade própria. O capítulo abre duas novas salas, introduz os Ecos Salinos e a Testemunha da Maré, e guarda a lembrança no save. A Testemunha também deixa sal vítreo, material que a comunidade já usa para recompor ferramentas sem gravar nelas os nomes de quem partiu. Aven oferece a Têmpera do Veio Calmo: quem viajou pode escolher que lembrança ficará na própria arma. A trilha continua para oeste, fora do mapa atual.
+
+### Capítulo IX — As amarras que podem ser desfeitas
+
+A passagem para oeste não segue um mapa de Véspera. Depois da Ponte da Maré Invertida, o rio dobra pelo Cotovelo dos Juncais, onde sinais trançados indicam bancos seguros sem declarar quem deve atravessá-los. Os Ecos Salinos e os Cantores do Lodo ocupam as margens; o Escutador precisa abrir caminho sem converter os sinais em ordens.
+
+No Pátio das Amarras Livres, a Guardiã do Leito preserva uma antiga regra de segurança: todo viajante deveria seguir a mesma rota marcada. Seu cuidado se tornou controle. Ela prende os nós de junco antes que seus autores possam desfazê-los e transforma qualquer alternativa em um risco. Seus ataques desenham uma marca que segue o Escutador, uma onda ao redor do corpo e um corte longo pelo pátio. Ajudar Véspera a devolver os nomes enfraquece a Guardiã; manter o Lume fortalece os ecos que ela comanda.
+
+Quando a Guardiã cede, um conjunto de nós revela que um grupo cruzou a nascente com Nara. O grupo escolheu por si qual margem seguir e desfez as amarras depois da travessia. A lembrança não informa o nome que Nara escolheu, para onde o grupo foi ou se ela deseja ser encontrada. Aven recebe o relato e oferece provisões para quem ajudou a proteger as rotas, sem pedir que o protagonista fale em nome dos viajantes.
+
+Este capítulo é jogável: acrescenta duas salas, a Guardiã do Leito, seu padrão de ataques anunciado, um item de história e uma etapa persistente da missão. A trilha continua além do pátio; a próxima região e o destino atual de Nara permanecem desconhecidos.
