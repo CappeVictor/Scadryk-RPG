@@ -12,12 +12,12 @@ A investigação leva à Curadora Sileth, guardiã dos arquivos. Ela remove nome
 
 O prólogo, a cripta inicial e sua lembrança já iniciam essa narrativa. A praça segura de Véspera é explorável e leva ao Arquivo Norte, ao leito do Rio Cego e à escada de cinzas sob a Capela Afogada. O Selo da Vigília revela que o Lume escolhe nomes para consumir; o sino mostra que Nara atravessou o rio por vontade própria. Na Câmara do Lume, o prisma confirma que ela aceitou carregar as lembranças que o farol não consegue guardar. Sua localização e o destino da cidade seguem sem resposta. A primeira decisão da cidade agora é jogável: devolver os nomes ou sustentar o Lume, alterando a praça, um bônus de progressão e os diálogos de Sileth e Edda; a escolha fica no save.
 
-O documento de história com cenário, personagens e resumo dos nove capítulos está em [STORY.md](STORY.md).
+O documento de história com cenário, personagens e resumo dos dez capítulos está em [STORY.md](STORY.md).
 
 ## Estado atual
 
 - A Godot foi removida do projeto. A janela e o desenho usam C#/.NET 8 Windows Forms e GDI+.
-- O protótipo mantém vinte e três salas de combate e duas áreas seguras, com inimigos comuns, arqueiro, conjurador, elite, Guardião da Cripta, Ecos de Tinta, Escriba Cego, Lembranças Afogadas, Barqueiro Oco, Vestígios de Brasas, Guardião das Cinzas, Mariposas de Nomes, O Nome Vazio, a Tecelã de Nomes, a Primeira Vigília, Cantores do Lodo, a Cartógrafa do Vão, Espectros de Papel, o Escrivão de Contrato, Ecos Salinos, a Testemunha da Maré, a Guardiã do Leito e o testemunho dos viajantes.
+- O protótipo mantém vinte e cinco salas de combate e duas áreas seguras, com inimigos comuns, arqueiro, conjurador, elite, Guardião da Cripta, Ecos de Tinta, Escriba Cego, Lembranças Afogadas, Barqueiro Oco, Vestígios de Brasas, Guardião das Cinzas, Mariposas de Nomes, O Nome Vazio, a Tecelã de Nomes, a Primeira Vigília, Cantores do Lodo, a Cartógrafa do Vão, Espectros de Papel, o Escrivão de Contrato, Ecos Salinos, a Testemunha da Maré, a Guardiã do Leito, o Vigia do Veio Preso e o testemunho dos viajantes.
 - Combate: ataque corpo a corpo, ataque especial Redemoinho, Ressonância do Sino que interrompe ecos comuns, esquiva, crítico, alvo marcado e golpes inimigos anunciados.
 - Combate à distância: Estilhaço de Voz é um projétil perfurante de recarga própria; percorre a linha de mira, atinge cada inimigo uma vez e para ao encontrar as paredes das salas. A Ressonância do Sino adiciona uma onda de área com interrupção limitada a ecos comuns e proteção contra interrupção nos chefes.
 - Progressão: XP, níveis, escolhas de talentos, ouro, poções, três armas com rolagens de raridade e afixos, armadura, relíquia e cinco talismãs únicos que podem ocupar dois espaços de equipamento.
@@ -34,22 +34,23 @@ O documento de história com cenário, personagens e resumo dos nove capítulos 
 - Vau dos Nomes Escolhidos e Pátio das Testemunhas, com travessia iniciada por Edda, Cantores do Lodo e a Cartógrafa do Vão. O mapa de Nara revela um refúgio fundado por ela para quem escolhe o próprio nome e abre a trilha para oeste sem confirmar onde ela está.
 - Refúgio do Veio Calmo, Trilha dos Luminários e Cisterna do Registro Vazio: área segura com três moradores, rota com Espectros de Papel e chefe Escrivão de Contrato. A comunidade guarda o registro compartilhado sob suas próprias regras; o conteúdo confirma apenas que Nara continuou viagem, sem declarar seu nome atual nem seu paradeiro.
 - Várzea das Vozes Sopradas e Ponte da Maré Invertida: duas salas a oeste do refúgio, com Ecos Salinos à distância e a Testemunha da Maré, chefe de três ataques anunciados. Sua lembrança confirma que Nara respondeu pelo nome escolhido diante de um grupo que seguiu viagem por vontade própria; não revela o nome nem o destino.
+- Moinhos da Vazante e Câmara do Veio Preso: duas novas salas com corrente que altera o posicionamento, o Vigia do Veio Preso e a habilidade Vazante. A habilidade agrupa ecos comuns, reduz o dano contra chefes e fica desbloqueada no save após o relato a Aven.
 - Têmpera do Veio Calmo: serviço de progressão de equipamento aberto após devolver a lembrança a Aven. Sal vítreo e ouro permitem escolher um afixo; armas comuns sobem a raras e armas raras ou relíquias podem mudar de afixo sem perder seu bônus. O material e as escolhas ficam no save.
 - Elites e chefes deixam cinco talismãs originais com efeitos e compensações diferentes; duas peças únicas podem ser combinadas, com sintonias para Redemoinho, críticos, esquiva e alcance; coleção e ambos os espaços persistem no save.
-- A primeira escolha muda diálogos, a praça e a força de cinco chefes; memórias, etapas da missão e as vinte e três câmaras já limpas ficam no save. Os ecos coletados aparecem na interface.
+- A primeira escolha muda diálogos, a praça e a força de cinco chefes; memórias, etapas da missão e as vinte e cinco câmaras já limpas ficam no save. Os ecos coletados aparecem na interface.
 - A Marca da Vigília especializa dano contra chefes; o Fio da Margem amplia o alcance do Estilhaço com custo de recarga e sintoniza com o Vidro. O Fio de Travessia amplia a onda do Sino e o Vidro reforça seu dano. Domínio reduz a recarga das três técnicas; ataques corpo a corpo e à distância permitem builds de contato, controle, alcance e caça a chefes.
 
 ## Próximas etapas
 
 1. **Consolidar a base C#** — manter compilação Windows e smoke tests, conferir save novo e migração do save antigo.
-2. **Transformar a premissa em campanha** — Ilyra revela o propósito original do Lume; o Vau e o mapa de Nara introduzem o refúgio escolhido. O Refúgio, a trilha, a cisterna, a Várzea e a Ponte já são jogáveis; continuar além da nascente sem presumir que Nara quer reencontrar o protagonista. O Cotovelo dos Juncais, o Pátio das Amarras Livres e a Guardiã do Leito já estão jogáveis; o testemunho do grupo amplia a história sem revelar o nome ou o paradeiro de Nara.
+2. **Transformar a premissa em campanha** — Ilyra revela o propósito original do Lume; o Vau e o mapa de Nara introduzem o refúgio escolhido. O Refúgio, a trilha, a cisterna, a Várzea e a Ponte já são jogáveis; continuar além da nascente sem presumir que Nara quer reencontrar o protagonista. O Cotovelo dos Juncais, o Pátio das Amarras Livres, os Moinhos da Vazante e a Câmara do Veio Preso estão jogáveis; as correntes criam um desafio de posicionamento, e a Vazante acrescenta controle de grupos sem revelar o nome ou o paradeiro de Nara.
 3. **Aprofundar combate** — Estilhaço e Ressonância do Sino ampliam as opções de alcance e controle, com sintonias próprias; evoluir animações, habilidades equipáveis, leitura de ataques, esquiva consistente e balanceamento por sala.
 4. **Expandir loot e builds** — armas Comuns, Raras e Relíquias agora recebem bônus de dano e afixos de Trégua, Contracanto ou Maré; as rolagens persistem no save e aparecem no inventário. Cinco talismãs e dois espaços criam especializações; aprofundar famílias de equipamento, afixos combináveis, comparação de itens e habilidades alternativas sem perder legibilidade.
 5. **Criar masmorras e narrativa ambiental** — novas regiões, rotas, arquivos, eventos e chefes cujas mecânicas reforcem a história.
 6. **Concluir a escolha final** — mostrar como as decisões acumuladas alteram Véspera, Nara, aliados e o destino do Lume de Vigília.
 7. **Finalizar apresentação e distribuição** — arte e áudio originais, animações, acessibilidade, builds self-contained e testes em Windows.
 
-Cada etapa deve compilar, incluir uma validação adequada e registrar as limitações conhecidas. A decisão ramificada de Véspera muda o estado persistente da cidade e a dificuldade de cinco chefes. O sétimo capítulo apresenta a comunidade que Nara ajudou a formar; o oitavo acrescenta a nascente e o nono explora como a comunidade respeita rotas escolhidas, sem resolver a localização, a identidade atual ou a vontade de Nara voltar. O ataque à distância e a Ressonância do Sino já sustentam abordagens distintas, e as três raridades de arma mudam dano e afixos; ainda são necessários mais conjuntos de habilidades, famílias de itens, variedade de builds e regiões para alcançar o volume e a rejogabilidade de um RPG de ação longo.
+Cada etapa deve compilar, incluir uma validação adequada e registrar as limitações conhecidas. A decisão ramificada de Véspera muda o estado persistente da cidade e a dificuldade de cinco chefes. O sétimo capítulo apresenta a comunidade que Nara ajudou a formar; o oitavo acrescenta a nascente e o nono explora como a comunidade respeita rotas escolhidas e o décimo acrescenta travessia ambiental e controle de grupos, sem resolver a localização, a identidade atual ou a vontade de Nara voltar. O ataque à distância e a Ressonância do Sino já sustentam abordagens distintas, e as três raridades de arma mudam dano e afixos; ainda são necessários mais conjuntos de habilidades, famílias de itens, variedade de builds e regiões para alcançar o volume e a rejogabilidade de um RPG de ação longo.
 
 
 
@@ -68,3 +69,5 @@ Cada etapa deve compilar, incluir uma validação adequada e registrar as limita
 
 
 - Capítulo IX: o Cotovelo dos Juncais e o Pátio das Amarras Livres estão jogáveis, com a Guardiã do Leito, novo testemunho persistente e recompensa comunitária em Aven.
+
+- Capítulo X: os Moinhos da Vazante e a Câmara do Veio Preso estão jogáveis, com corrente ambiental, o Vigia de três padrões, memória persistente, sal vítreo e a habilidade Vazante liberada por Aven.

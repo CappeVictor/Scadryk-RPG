@@ -1,7 +1,7 @@
 # História de Scadryk
 
 **Subtítulo de trabalho:** *Os Nomes do Rio Cego*  
-**Estado:** prólogo, cripta, Véspera, Arquivo Norte, Rio Cego, Lume, Margem sem Reflexo, Reservatório, costa, Claustro, Bacia do Primeiro Nome, Vau, Refúgio, Cisterna, Várzea, Ponte da Maré Invertida, Cotovelo dos Juncais e Pátio das Amarras Livres jogáveis. O paradeiro atual de Nara, o nome que ela escolheu e o destino final do Lume continuam sem resposta.
+**Estado:** prólogo, cripta, Véspera, Arquivo Norte, Rio Cego, Lume, Margem sem Reflexo, Reservatório, costa, Claustro, Bacia do Primeiro Nome, Vau, Refúgio, Cisterna, Várzea, Ponte da Maré Invertida, Cotovelo dos Juncais e Pátio das Amarras Livres, Moinhos da Vazante e Câmara do Veio Preso jogáveis. O paradeiro atual de Nara, o nome que ela escolheu e o destino final do Lume continuam sem resposta.
 
 ## Ideia central
 
@@ -86,7 +86,7 @@ A recompensa pela travessia é paga por Edda, enquanto Sileth mantém o arquivo 
 
 - A inspiração em Diablo fica no gênero e na ambição de combate, exploração, loot e progressão. Scadryk mantém mitologia, trama, personagens, criaturas, nomes e apresentação próprios.
 - O Guardião e a cripta já existem como protótipo de combate; as ligações com o Rio Cego e o Lume são ficção planejada para a campanha.
-- O prólogo, as duas inscrições da cripta, a praça, as missões de Sileth e Edda, o Arquivo Norte, o Rio Cego, a Capela Afogada, a Câmara do Lume, a Margem sem Reflexo, o Reservatório das Vozes, a Costa das Vozes Tardias, o Claustro do Coro Partido, a Bacia do Primeiro Nome, Ilyra, o Coro dos Nomes Consumidos, o Vau dos Nomes Escolhidos, o Pátio das Testemunhas, o mapa de Nara, o Refúgio do Veio Calmo, a Trilha dos Luminários, a Cisterna do Registro Vazio, a Várzea das Vozes Sopradas e a Ponte da Maré Invertida estão jogáveis; a primeira escolha em Véspera altera a força de cinco chefes. O território além do Pátio das Amarras Livres, o destino atual de Nara, o confronto final e o epílogo continuam planejados.
+- O prólogo, as duas inscrições da cripta, a praça, as missões de Sileth e Edda, o Arquivo Norte, o Rio Cego, a Capela Afogada, a Câmara do Lume, a Margem sem Reflexo, o Reservatório das Vozes, a Costa das Vozes Tardias, o Claustro do Coro Partido, a Bacia do Primeiro Nome, Ilyra, o Coro dos Nomes Consumidos, o Vau dos Nomes Escolhidos, o Pátio das Testemunhas, o mapa de Nara, o Refúgio do Veio Calmo, a Trilha dos Luminários, a Cisterna do Registro Vazio, a Várzea das Vozes Sopradas e a Ponte da Maré Invertida estão jogáveis; a primeira escolha em Véspera altera a força de cinco chefes. O território além da Câmara do Veio Preso, o destino atual de Nara, o confronto final e o epílogo continuam planejados.
 - Novos itens e poderes devem ter origem no mundo de Scadryk e revelar algo sobre quem os criou, usou ou esqueceu.
 
 
@@ -126,4 +126,14 @@ No Pátio das Amarras Livres, a Guardiã do Leito preserva uma antiga regra de s
 
 Quando a Guardiã cede, um conjunto de nós revela que um grupo cruzou a nascente com Nara. O grupo escolheu por si qual margem seguir e desfez as amarras depois da travessia. A lembrança não informa o nome que Nara escolheu, para onde o grupo foi ou se ela deseja ser encontrada. Aven recebe o relato e oferece provisões para quem ajudou a proteger as rotas, sem pedir que o protagonista fale em nome dos viajantes.
 
-Este capítulo é jogável: acrescenta duas salas, a Guardiã do Leito, seu padrão de ataques anunciado, um item de história e uma etapa persistente da missão. A trilha continua além do pátio; a próxima região e o destino atual de Nara permanecem desconhecidos.
+Este capítulo é jogável: acrescenta duas salas, a Guardiã do Leito, seu padrão de ataques anunciado, um item de história e uma etapa persistente da missão. A trilha continua além do pátio e leva aos Moinhos da Vazante; o destino atual de Nara permanece desconhecido.
+
+### Capítulo X — A vazante não pertence a ninguém
+
+Depois de guardar o sinal do grupo, Aven reconhece um som que não vinha das rodas quebradas do refúgio: os Moinhos da Vazante voltaram a girar. Eles regulavam as cheias para que qualquer pessoa pudesse atravessar sem depender de uma ponte ou de um guia. Alguém fechou o canal e prendeu a corrente num percurso único.
+
+Nos moinhos, a água corre por uma faixa larga que empurra o Escutador em direção à câmara. Resistir exige avançar contra o fluxo; esquivar-se permite atravessá-lo sem ser arrastado. Sob a casa das rodas, a Câmara do Veio Preso gira em torno de uma bacia. As correntes puxam para o centro, enquanto o Vigia do Veio Preso anuncia três ataques: um impacto próximo, uma marca que segue o Escutador e um corte longo pela câmara. A decisão de Véspera altera a força do Vigia.
+
+O Vigia não guarda um nome nem um mapa. Mantém o canal fechado porque acredita que qualquer vazante pode levar pessoas para longe de quem se importa com elas. Ao ser derrotado, deixa uma gravação sobre o custo de transformar uma passagem em rota obrigatória. O registro não confirma se Nara atravessou por ali nem revela onde ela está.
+
+Aven ouve a memória e entrega ao Escutador a Marca da Vazante: um selo de bronze que cria uma onda curta, reúne ecos comuns ao redor do jogador e os interrompe; contra chefes, causa dano reduzido e não os desloca de forma significativa. A marca, o progresso do capítulo e o sal vítreo ficam no save. A corrente volta a mudar com a cheia, e a comunidade mantém aberto o caminho para quem decidir atravessá-lo.
