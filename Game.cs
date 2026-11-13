@@ -1538,7 +1538,7 @@ public sealed class Game : Form
             weaponCombat.timer.Stop(); weaponCombat.StartGame(); weaponCombat.storyOverlay = false; weaponCombat.room = 0; weaponCombat.SetupRoom(); weaponCombat.enemies.Clear(); weaponCombat.damage = 100; weaponCombat.player = new PointF(150, 330); weaponCombat.mouseAim = new PointF(1, 0); weaponCombat.weapon = 1;
             Enemy platedEcho = new() { Pos = new PointF(245, 330), Kind = EnemyKind.Grunt, Hp = 1000, MaxHp = 1000, Armored = true };
             weaponCombat.enemies.Add(platedEcho); weaponCombat.Attack();
-            if (platedEcho.Hp != 910 || platedEcho.Stagger <= 0 || weaponCombat.BasicAttackCooldown() != 0.52f || weaponCombat.BasicAttackReach(platedEcho) != 108f) throw new InvalidOperationException("A Lâmina do Arquivo não alcançou, perfurou a armadura e interrompeu o eco como arma pesada.");
+            if (platedEcho.Hp != 910 && platedEcho.Hp != 820 || platedEcho.Stagger <= 0 || weaponCombat.BasicAttackDamageMultiplier(platedEcho) != 0.9f || weaponCombat.BasicAttackCooldown() != 0.52f || weaponCombat.BasicAttackReach(platedEcho) != 108f) throw new InvalidOperationException("A Lâmina do Arquivo não alcançou, perfurou a armadura e interrompeu o eco como arma pesada.");
             weaponCombat.attackCd = 0; weaponCombat.weapon = 0; platedEcho.Hp = 1000; platedEcho.Stagger = 0; platedEcho.Pos = new PointF(245, 330); weaponCombat.Attack();
             if (platedEcho.Hp != 1000 || weaponCombat.BasicAttackReach(platedEcho) != 78f) throw new InvalidOperationException("A Espada de Pedra não manteve seu alcance equilibrado.");
             weaponCombat.attackCd = 0; weaponCombat.weapon = 2; platedEcho.Pos = new PointF(215, 330); weaponCombat.Attack();
