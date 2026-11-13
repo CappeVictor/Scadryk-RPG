@@ -20,7 +20,7 @@ O documento de história com cenário, personagens e resumo dos sete capítulos 
 - O protótipo mantém dezenove salas de combate e duas áreas seguras, inimigos comuns, arqueiro, conjurador, elite, Guardião da Cripta, Ecos de Tinta, Escriba Cego, Lembranças Afogadas, Barqueiro Oco, Vestígios de Brasas, Guardião das Cinzas, Mariposas de Nomes, O Nome Vazio, a Tecelã de Nomes, a Primeira Vigília, Cantores do Lodo, a Cartógrafa do Vão, Espectros de Papel e o Escrivão de Contrato.
 - Combate: ataque corpo a corpo, ataque especial Redemoinho, Ressonância do Sino que interrompe ecos comuns, esquiva, crítico, alvo marcado e golpes inimigos anunciados.
 - Combate à distância: Estilhaço de Voz é um projétil perfurante de recarga própria; percorre a linha de mira, atinge cada inimigo uma vez e para ao encontrar as paredes das salas. A Ressonância do Sino adiciona uma onda de área com interrupção limitada a ecos comuns e proteção contra interrupção nos chefes.
-- Progressão: XP, níveis, escolhas de talentos, ouro, poções, três armas, armadura, relíquia e cinco talismãs únicos que podem ocupar dois espaços de equipamento.
+- Progressão: XP, níveis, escolhas de talentos, ouro, poções, três armas com rolagens de raridade e afixos, armadura, relíquia e cinco talismãs únicos que podem ocupar dois espaços de equipamento.
 - Salvamento local em JSON com migração do save ConfigFile da versão Godot.
 - Movimento com colisão por eixo, permitindo deslizar pelas quinas.
 - Prólogo interativo, duas inscrições opcionais e lembrança de Nara ao recolher o fragmento do Relicário Vital após derrotar o Guardião.
@@ -42,12 +42,12 @@ O documento de história com cenário, personagens e resumo dos sete capítulos 
 1. **Consolidar a base C#** — manter compilação Windows e smoke tests, conferir save novo e migração do save antigo.
 2. **Transformar a premissa em campanha** — Ilyra revela o propósito original do Lume; o Vau e o mapa de Nara introduzem o refúgio escolhido. O refúgio, a trilha e a cisterna já são jogáveis; continuar para oeste e descobrir novas pistas sem presumir que Nara quer reencontrar o protagonista.
 3. **Aprofundar combate** — Estilhaço e Ressonância do Sino ampliam as opções de alcance e controle, com sintonias próprias; evoluir animações, habilidades equipáveis, leitura de ataques, esquiva consistente e balanceamento por sala.
-4. **Expandir loot e builds** — cinco talismãs e sintonias de dois espaços já oferecem especializações básicas; adicionar raridades de equipamento, comparação mais rica, habilidades alternativas e combinações sem perder legibilidade.
+4. **Expandir loot e builds** — armas Comuns, Raras e Relíquias agora recebem bônus de dano e afixos de Trégua, Contracanto ou Maré; as rolagens persistem no save e aparecem no inventário. Cinco talismãs e dois espaços criam especializações; aprofundar famílias de equipamento, afixos combináveis, comparação de itens e habilidades alternativas sem perder legibilidade.
 5. **Criar masmorras e narrativa ambiental** — novas regiões, rotas, arquivos, eventos e chefes cujas mecânicas reforcem a história.
 6. **Concluir a escolha final** — mostrar como as decisões acumuladas alteram Véspera, Nara, aliados e o destino do Lume de Vigília.
 7. **Finalizar apresentação e distribuição** — arte e áudio originais, animações, acessibilidade, builds self-contained e testes em Windows.
 
-Cada etapa deve compilar, incluir uma validação adequada e registrar as limitações conhecidas. A decisão ramificada de Véspera muda o estado persistente da cidade e a dificuldade de quatro chefes. O sétimo capítulo acrescenta a nona região e apresenta a comunidade que Nara ajudou a formar sem resolver sua localização, identidade atual ou vontade de voltar. A opção de ataque à distância inicia uma segunda abordagem de combate, mas ainda são necessários outros conjuntos de habilidades, variação real de raridade e muito mais regiões para alcançar o volume e a rejogabilidade de um RPG de ação longo.
+Cada etapa deve compilar, incluir uma validação adequada e registrar as limitações conhecidas. A decisão ramificada de Véspera muda o estado persistente da cidade e a dificuldade de quatro chefes. O sétimo capítulo acrescenta a nona região e apresenta a comunidade que Nara ajudou a formar sem resolver sua localização, identidade atual ou vontade de voltar. A opção de ataque à distância inicia uma segunda abordagem de combate, e as três raridades de arma já mudam dano e afixos; ainda são necessários mais conjuntos de habilidades, famílias de itens, variedade de builds e regiões para alcançar o volume e a rejogabilidade de um RPG de ação longo.
 
 
 
