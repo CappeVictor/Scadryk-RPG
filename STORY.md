@@ -168,3 +168,11 @@ O relato da fonte não fecha a trilha. Quando Aven o guarda, percebe um som anti
 O Regente das Lanternas protege o espelho interior. Seus três avisos de ataque pedem respostas diferentes: afastar-se da expansão em torno do chefe, sair da marca que segue o Escutador e cruzar a linha comprida antes que ela se feche. Ao cair, o Regente deixa um sinal e sal vítreo. A memória mostra apenas uma luz mantida acesa para quem, um dia, decida voltar; não revela nomes, rostos, rotas ou destinos.
 
 Aven guarda o sinal sem acrescentar uma direção ao mapa comunitário. Como recompensa, ensina o Farol de Vigília: uma chama portátil que permanece no lugar por alguns segundos e pulsa contra ecos próximos. Ela ajuda a sustentar uma posição durante o combate, mas não persegue alvos nem escolhe um caminho pelo jogador. O capítulo acrescenta duas salas, um chefe de três padrões, uma lembrança persistente e uma sexta técnica equipável; a vontade e o paradeiro de Nara continuam desconhecidos.
+
+### Capítulo XV — As linhas que não apontam
+
+Depois de aprender o Farol de Vigília, o Escutador volta à mesa de Aven. A chama revela traços sob a madeira: registros de viajantes que escolheram retornar, partir para outras margens ou permanecer onde estavam. Eles não formam a rota de Nara. Aven abre a Trilha das Linhas Abertas para entender por que alguém tentou cobrir as marcas de todas essas escolhas.
+
+A trilha leva à Galeria da Rota Não Escrita. O Escriba do Traçado reorganiza as marcas para fazer cada saída terminar no mesmo ponto. Seus três ataques também testam essa leitura: um golpe circular ao redor de si, uma marca no lugar escolhido pelo Escutador e uma linha comprida que atravessa a galeria. Esquivar-se muda a posição do jogador sem alterar o caminho que outras pessoas escolheram.
+
+O Escriba deixa um traçado coletivo, sem nomes nem destinos. A memória mostra que algumas pessoas voltaram, outras seguiram viagem e outras decidiram ficar; não identifica quais delas eram Nara ou seu grupo. Aven compartilha as provisões e preserva as linhas como relatos separados, sem convertê-las em um mapa para encontrar alguém. O Capítulo XV acrescenta duas salas, um chefe de três padrões e uma memória persistente; a busca continua aberta e a próxima resposta ainda cabe a Nara.
