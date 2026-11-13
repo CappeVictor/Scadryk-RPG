@@ -2,7 +2,7 @@
 
 Scadryk é um RPG de ação 2D em fantasia sombria, feito em C# com .NET 8 e Windows Forms. O desenho usa GDI+; o projeto não depende de Godot nem de outro motor de jogo. Diablo é uma referência de ritmo, combate e progressão. O mundo, os nomes e os itens de Scadryk são próprios. A meta de longo prazo é alcançar uma aventura de ação e loot 2D rica e rejogável, construída em etapas e sem copiar a história ou os personagens de outros jogos.
 
-O protótipo tem nove salas de combate e a praça segura de Véspera, com inimigos de funções distintas, quatro chefes com ataques em fases, loot, equipamentos, níveis e talentos. A campanha inclui o prólogo, inscrições exploráveis, missões de Sileth e Edda, o Arquivo Norte, o Rio Cego e a Câmara do Lume. O Selo da Vigília revela que o farol escolhe nomes para consumir; o Sino mostra que Nara cruzou o rio por vontade própria; o Prisma confirma que ela aceitou carregar as lembranças que o Lume recusava. A localização dela e as escolhas finais continuam em desenvolvimento.
+O protótipo tem onze salas de combate e a praça segura de Véspera, com inimigos de funções distintas, cinco chefes com ataques em fases, loot, equipamentos, níveis e talentos. A campanha jogável inclui o prólogo, inscrições exploráveis, missões de Sileth e Edda, o Arquivo Norte, o Rio Cego, a Câmara do Lume e o Reservatório das Vozes. O Selo revela que o farol escolhe nomes para consumir; o Sino confirma que Nara cruzou o rio por vontade própria; o Prisma mostra que ela aceitou carregar lembranças recusadas; além do Lume, o Nome Vazio protege uma memória que ela deixou para Véspera. A busca por Nara e as escolhas finais continuam em desenvolvimento.
 
 ## História de Scadryk
 
@@ -12,7 +12,7 @@ Na noite em que todos os sinos de Véspera se calaram, pessoas começaram a esqu
 
 As pistas apontam para a Curadora Sileth, responsável pelos arquivos de Véspera. Ela apaga nomes de propósito: acredita que manter a história incompleta é o preço necessário para alimentar o farol e conter o Silêncio. A jornada colocará o protagonista diante de uma escolha difícil: preservar a proteção construída sobre esquecimentos ou devolver à cidade a verdade e enfrentar o que ela mantinha afastado.
 
-O prólogo apresenta Véspera, o Escutador e a busca por Nara. Ao derrotar o Guardião e recolher o fragmento do relicário, siga até a praça. Fale com Sileth, investigue o Livro das Ausências e entre no Arquivo Norte pelo portão ao norte. Derrote o Escriba Cego e leve o selo a Sileth. Depois, desça pelo portão ao sul, vença o Barqueiro Oco e mostre o Sino de Nara a Edda. Volte à mesma passagem para descer pela escada de cinzas. Atravesse a galeria, enfrente o Guardião das Cinzas na Câmara do Lume e leve o prisma de volta a Sileth. A busca final por Nara e as escolhas sobre o Lume continuam em desenvolvimento.
+O prólogo apresenta Véspera, o Escutador e a busca por Nara. Ao derrotar o Guardião e recolher o fragmento do relicário, siga até a praça. Fale com Sileth, investigue o Livro das Ausências e entre no Arquivo Norte pelo portão ao norte. Derrote o Escriba Cego e leve o selo a Sileth. Depois, desça pelo portão ao sul, vença o Barqueiro Oco e mostre o Sino de Nara a Edda. Volte à mesma passagem para descer pela escada de cinzas. Atravesse a galeria, enfrente o Guardião das Cinzas na Câmara do Lume e leve o prisma de volta a Sileth. Retorne à câmara e procure a passagem no chão abaixo do prisma. Cruze a Margem sem Reflexo, derrote O Nome Vazio e recolha a lembrança. Volte a Véspera pelo portão à direita e conte a Sileth o que Nara deixou. A busca e as escolhas sobre o Lume continuam em desenvolvimento.
 
 O universo, os personagens e o arco planejado estão detalhados em [STORY.md](STORY.md).
 
@@ -42,7 +42,7 @@ Para compilar uma versão de produção:
 dotnet build --configuration Release
 ```
 
-Para verificar o prólogo, as inscrições, as quatro expedições, os chefes, os itens de história, as missões, o save, movimento, avisos de ataque, esquiva e progressão:
+Para verificar o prólogo, as inscrições, as cinco expedições, os chefes, os itens de história, as missões, o save, movimento, avisos de ataque, esquiva e progressão:
 
 ```powershell
 dotnet run -- --self-test
@@ -76,7 +76,7 @@ dotnet publish --configuration Release --runtime win-x64 --self-contained true
 
 Os ataques corpo a corpo comuns agora mostram a área de impacto antes do golpe. Saia do círculo para evitar dano. O movimento também desliza pela quina dos obstáculos quando uma direção fica bloqueada.
 
-Depois de escolher a recompensa do baú da cripta, explore a praça de Véspera. Fale com Sileth, leia o Livro das Ausências e volte para conversar com ela. Limpe a galeria e o cofre do Arquivo Norte, leve o selo a Sileth, derrote o Barqueiro Oco no Rio Cego e mostre o sino a Edda. Volte à passagem sul para alcançar o Lume. Derrote o Guardião das Cinzas e leve o prisma a Sileth. A passagem à esquerda da praça retorna à cripta. Use **F5** em uma área segura para salvar seu progresso.
+Depois de escolher a recompensa do baú da cripta, explore a praça de Véspera. Fale com Sileth, leia o Livro das Ausências e volte para conversar com ela. Limpe a galeria e o cofre do Arquivo Norte, leve o selo a Sileth, derrote o Barqueiro Oco no Rio Cego e mostre o sino a Edda. Volte à passagem sul para alcançar o Lume. Derrote o Guardião das Cinzas e leve o prisma a Sileth. Depois, reentre na Câmara do Lume e procure a passagem abaixo do prisma. Atravesse a Margem sem Reflexo, vença O Nome Vazio e retorne a Sileth com a lembrança de Nara. A passagem à esquerda da praça retorna à cripta. Use **F5** em uma área segura para salvar seu progresso.
 
 ## Salvamento
 
@@ -93,7 +93,8 @@ O save JSON fica em `%LOCALAPPDATA%\Scadryk\save.json` e guarda inscrições, et
 
 ## Limites atuais
 
-Este é um protótipo com nove salas de combate e arte procedural desenhada em formas 2D. Ainda faltam a busca final por Nara, as escolhas e os finais da campanha, mais regiões e builds, arte e áudio originais, animações, balanceamento amplo e testes manuais em diferentes resoluções. Não há medição de desempenho em máquinas variadas.
+Este é um protótipo com onze salas de combate e arte procedural desenhada em formas 2D. Ainda faltam a busca final por Nara, as escolhas e os finais da campanha, mais regiões e builds, arte e áudio originais, animações, balanceamento amplo e testes manuais em diferentes resoluções. Não há medição de desempenho em máquinas variadas.
+
 
 
 

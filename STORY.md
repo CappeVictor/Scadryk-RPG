@@ -1,7 +1,7 @@
 # História de Scadryk
 
 **Subtítulo de trabalho:** *Os Nomes do Rio Cego*  
-**Estado:** prólogo, cripta inicial, praça de Véspera, Arquivo Norte, Rio Cego, Câmara do Lume e quatro etapas da investigação jogáveis; a localização de Nara e as escolhas da campanha estão planejadas.
+**Estado:** prólogo, cripta inicial, praça de Véspera, Arquivo Norte, Rio Cego, Câmara do Lume, Margem sem Reflexo, Reservatório das Vozes e cinco etapas da investigação jogáveis; o rastro de Nara foi recuperado, mas sua localização e as escolhas da campanha continuam em desenvolvimento.
 
 ## Ideia central
 
@@ -44,7 +44,11 @@ O começo deste capítulo já pode ser explorado. Ao sul da praça, o leito seco
 
 Edda reconhece o sino como instrumento de travessia usado por seu pai. Ela confirma que Nara sabia o caminho e partiu por escolha própria. O jogador recebe uma recompensa e desce pela passagem aberta pelo sino. Na Escada de Cinzas, Vestígios de Brasas protegem o caminho. Na Câmara do Lume, o Guardião das Cinzas alterna entre uma onda ao seu redor, uma marca de luz no chão e uma faixa de calor projetada à distância. Ao derrotá-lo, o jogador recolhe o Prisma da Primeira Vigília, que concede dano adicional e revela uma cena antiga: Nara aceitou carregar as lembranças que o Lume não conseguia guardar. A projeção se quebra antes de indicar onde ela está.
 
-Sileth confirma que os arquivos não dizem se Nara está viva, morta ou ligada à luz. Ela evita transformar outra lacuna documental em certeza e pede que o protagonista reúna as memórias restantes antes de decidir o futuro de Véspera. O caminho jogável chega à câmara, mas a localização atual de Nara e o destino do Lume ainda serão descobertos.
+Sileth confirma que os arquivos não dizem se Nara está viva, morta ou ligada à luz. Ela evita transformar outra lacuna documental em certeza e pede que o protagonista reúna as memórias restantes antes de decidir o futuro de Véspera.
+
+Depois de mostrar o prisma à Curadora, o Escutador percebe uma passagem sob o pedestal. Ela leva à Margem sem Reflexo, um leito escondido onde as vozes recusadas pelo Lume se acumulam. Mariposas de Nomes protegem o caminho até o Reservatório das Vozes. Lá, O Nome Vazio usa nomes esquecidos como armadura e alterna entre uma marca no chão, um golpe próximo e uma faixa de energia dirigida. Ao cair, revela a última lembrança que Nara conseguiu preservar fora do farol: ela ensinava outra pessoa a pronunciar nomes apagados e acreditava que a lembrança mútua permitiria que encontrasse o caminho de volta. A gravação não mostra onde ela está.
+
+Sileth ouve a lembrança e admite que não pode continuar escolhendo sozinha o que a cidade deve recordar. Ela abre novamente os arquivos e pede que o Escutador procure as vozes que ainda faltam. A expedição e a nova etapa da investigação já são jogáveis; as terras além do reservatório, o retorno de Nara e as decisões de Véspera ainda serão desenvolvidos.
 
 Nara ajudou Sileth a manter a cidade protegida, mas passou a questionar o preço. Ela não está simplesmente presa e à espera de ser resgatada: seus rastros mostram uma decisão que muda o sentido da busca do protagonista.
 
@@ -54,8 +58,9 @@ No confronto final, o jogador decide o que fazer com o arquivo e com o Lume. Pod
 
 - A inspiração em Diablo fica no gênero e na ambição de combate, exploração, loot e progressão. Scadryk mantém mitologia, trama, personagens, criaturas, nomes e apresentação próprios.
 - O Guardião e a cripta já existem como protótipo de combate; as ligações com o Rio Cego e o Lume são ficção planejada para a campanha.
-- O prólogo, as duas inscrições da cripta, a praça, as missões de Sileth e Edda, o Arquivo Norte, o Rio Cego, a Capela Afogada, a Câmara do Lume, os chefes e as gravações no Selo, Sino e Prisma estão disponíveis; a busca final por Nara, as escolhas e os finais são conteúdo planejado.
+- O prólogo, as duas inscrições da cripta, a praça, as missões de Sileth e Edda, o Arquivo Norte, o Rio Cego, a Capela Afogada, a Câmara do Lume, a Margem sem Reflexo, o Reservatório das Vozes, os chefes e as gravações no Selo, Sino, Prisma e lembrança de Nara estão disponíveis; a busca final, as escolhas e os finais são conteúdo planejado.
 - Novos itens e poderes devem ter origem no mundo de Scadryk e revelar algo sobre quem os criou, usou ou esqueceu.
+
 
 
 

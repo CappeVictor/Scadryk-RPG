@@ -17,7 +17,7 @@ O documento de história com cenário, personagens e resumo dos três capítulos
 ## Estado atual
 
 - A Godot foi removida do projeto. A janela e o desenho usam C#/.NET 8 Windows Forms e GDI+.
-- O protótipo mantém nove salas de combate, inimigos comuns, arqueiro, conjurador, elite, Guardião da Cripta, Ecos de Tinta, Escriba Cego, Lembranças Afogadas, Barqueiro Oco, Vestígios de Brasas e Guardião das Cinzas.
+- O protótipo mantém onze salas de combate, inimigos comuns, arqueiro, conjurador, elite, Guardião da Cripta, Ecos de Tinta, Escriba Cego, Lembranças Afogadas, Barqueiro Oco, Vestígios de Brasas, Guardião das Cinzas, Mariposas de Nomes e O Nome Vazio.
 - Combate: ataque corpo a corpo, ataque especial Redemoinho, esquiva, crítico, alvo marcado e golpes inimigos anunciados.
 - Progressão: XP, níveis, escolhas de talentos, ouro, poções, três armas, armadura e relíquia.
 - Salvamento local em JSON com migração do save ConfigFile da versão Godot.
@@ -27,19 +27,21 @@ O documento de história com cenário, personagens e resumo dos três capítulos
 - Arquivo Norte com galeria e cofre exploráveis, inimigo à distância original, chefe com duas fases e Selo da Vigília como item de história e melhoria de dano.
 - Leito do Rio Cego e Capela Afogada exploráveis, novo inimigo à distância, chefe com três ataques anunciados e Sino de Nara como item de história e melhoria de vida.
 - Escada de Cinzas e Câmara do Lume exploráveis, Vestígios de Brasas, chefe com três ataques anunciados e Prisma da Primeira Vigília como revelação narrativa e melhoria de dano.
-- Inscrições, etapa da missão, selo, sino e prisma ficam no save; os ecos coletados aparecem na interface.
+- Nova expedição além do Lume: Margem sem Reflexo e Reservatório das Vozes, Mariposas de Nomes, chefe O Nome Vazio com três ataques anunciados e lembrança de Nara como item de história.
+- Inscrições, etapa da missão, selo, sino, prisma, rastro de Nara e câmaras já limpas ficam no save; os ecos coletados aparecem na interface.
 
 ## Próximas etapas
 
 1. **Consolidar a base C#** — manter compilação Windows e smoke tests, conferir save novo e migração do save antigo.
-2. **Transformar a premissa em campanha** — aprofundar o que o Lume faz com as lembranças recusadas e dar ao jogador escolhas que afetem Nara, Sileth, Edda e Véspera.
+2. **Transformar a premissa em campanha** — seguir o rastro de Nara além do reservatório, revelar por que o Silêncio de Baixo cresce e dar ao jogador escolhas que afetem Nara, Sileth, Edda e Véspera.
 3. **Aprofundar combate** — mais ataques legíveis, esquiva consistente, inimigos com funções distintas e balanceamento por sala.
 4. **Expandir loot e builds** — raridades com efeitos reais, comparação de equipamento e escolhas de habilidades relevantes.
 5. **Criar masmorras e narrativa ambiental** — novas regiões, rotas, arquivos, eventos e chefes cujas mecânicas reforcem a história.
 6. **Dar forma à escolha final** — permitir que as decisões do jogador alterem Véspera e o destino do Lume de Vigília.
 7. **Finalizar apresentação e distribuição** — arte e áudio originais, animações, acessibilidade, builds self-contained e testes em Windows.
 
-Cada etapa deve compilar, incluir uma validação adequada e registrar as limitações conhecidas. O protótipo atual já tem quatro expedições jogáveis, mas ainda não tem o volume de conteúdo de Diablo; essa escala exige desenvolvimento continuado.
+Cada etapa deve compilar, incluir uma validação adequada e registrar as limitações conhecidas. O protótipo atual já tem cinco expedições jogáveis, mas ainda não tem o volume de conteúdo de Diablo; essa escala exige desenvolvimento continuado.
+
 
 
 
