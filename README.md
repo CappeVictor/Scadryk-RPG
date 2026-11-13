@@ -2,7 +2,7 @@
 
 Scadryk é um RPG de ação 2D em fantasia sombria, feito em C# com .NET 8 e Windows Forms. O desenho usa GDI+; o projeto não depende de Godot nem de outro motor de jogo. Diablo é uma referência de ritmo, combate e progressão. O mundo, os nomes e os itens de Scadryk são próprios. A meta de longo prazo é alcançar uma aventura de ação e loot 2D rica e rejogável, construída em etapas e sem copiar a história ou os personagens de outros jogos.
 
-O protótipo tem vinte e sete salas de combate e duas áreas seguras — a praça de Véspera e o Refúgio do Veio Calmo —, com inimigos de funções distintas, treze chefes com ataques em fases, loot, equipamentos, níveis e talentos. A campanha jogável inclui o prólogo, inscrições exploráveis, missões de Sileth e Edda, o Arquivo Norte, o Rio Cego, a Câmara do Lume, o Reservatório das Vozes, a Costa das Vozes Tardias, a Bacia do Primeiro Nome, o Vau dos Nomes Escolhidos, o Refúgio do Veio Calmo, a Cisterna do Registro Vazio, a Várzea das Vozes Sopradas e a Ponte da Maré Invertida, o Cotovelo dos Juncais, o Pátio das Amarras Livres, os Moinhos da Vazante, a Câmara do Veio Preso, a Escarpa do Contrafluxo e o Coração das Duas Margens. A Guardiã do Leito, o Vigia do Veio Preso e o Afinador das Margens anunciam três padrões cada. No Coração, a corrente alterna entre puxar e repelir; ler a mudança ajuda a escolher a abertura para atacar ou recuar. Aven ensina a habilidade Vazante para reunir ecos próximos. A memória da primeira Escutadora, Ilyra, revela que o Lume nasceu como abrigo para lembranças e depois foi transformado em combustível. O mapa de Nara confirma que ela ajudou a criar um refúgio a oeste e partiu com quem escolheu continuar a viagem. Na nascente, uma testemunha confirma que Nara respondeu com o nome que escolheu; a palavra e seu paradeiro permanecem desconhecidos. As decisões de Véspera afetam a praça, a progressão e a força de chefes.
+O protótipo tem vinte e nove salas de combate e duas áreas seguras — a praça de Véspera e o Refúgio do Veio Calmo —, com inimigos de funções distintas, quatorze chefes com ataques em fases, loot, equipamentos, níveis e talentos. A campanha jogável inclui o prólogo, inscrições exploráveis, missões de Sileth e Edda, o Arquivo Norte, o Rio Cego, a Câmara do Lume, o Reservatório das Vozes, a Costa das Vozes Tardias, a Bacia do Primeiro Nome, o Vau dos Nomes Escolhidos, o Refúgio do Veio Calmo, a Cisterna do Registro Vazio, a Várzea das Vozes Sopradas e a Ponte da Maré Invertida, o Cotovelo dos Juncais, o Pátio das Amarras Livres, os Moinhos da Vazante, a Câmara do Veio Preso, a Escarpa do Contrafluxo, o Coração das Duas Margens, a Cantaria das Vozes Livres e a Câmara da Contravoz. A Guardiã do Leito, o Vigia do Veio Preso e o Afinador das Margens anunciam três padrões cada. No Coração, a corrente alterna entre puxar e repelir; ler a mudança ajuda a escolher a abertura para atacar ou recuar. Aven ensina a habilidade Vazante para reunir ecos próximos. Depois do Capítulo XI, a Cantaria e a Câmara da Contravoz formam o Capítulo XII; a Contravoz alterna entre três ataques anunciados e deixa uma memória que desbloqueia o Coro de Retorno (T), uma onda de dano em área que interrompe ecos comuns, mas não chefes. A memória da primeira Escutadora, Ilyra, revela que o Lume nasceu como abrigo para lembranças e depois foi transformado em combustível. O mapa de Nara confirma que ela ajudou a criar um refúgio a oeste e partiu com quem escolheu continuar a viagem. Na nascente, uma testemunha confirma que Nara respondeu com o nome que escolheu; a palavra e seu paradeiro permanecem desconhecidos. As decisões de Véspera afetam a praça, a progressão e a força de chefes.
 
 ## História de Scadryk
 
@@ -42,7 +42,7 @@ Para compilar uma versão de produção:
 dotnet build --configuration Release
 ```
 
-Para verificar o prólogo, as inscrições, as treze etapas da campanha, as áreas seguras, os chefes, os itens de história, as correntes alternadas, a Vazante, o Manto de Lastro, as quatro especializações de nível, a nascente, as raridades e os afixos das armas, as missões, o save, movimento, avisos de ataque, esquiva e progressão:
+Para verificar o prólogo, as inscrições, os doze capítulos jogáveis da campanha, as áreas seguras, os chefes, os itens de história, as correntes alternadas, a Vazante, o Manto de Lastro, as quatro especializações de nível, a nascente, as raridades e os afixos das armas, as missões, o save, movimento, avisos de ataque, esquiva e progressão:
 
 ```powershell
 dotnet run -- --self-test
@@ -66,6 +66,7 @@ dotnet publish --configuration Release --runtime win-x64 --self-contained true
 | V | Ressonância do Sino de Nara, onda de curto alcance que fere e interrompe ecos comuns; desbloqueada ao encontrar o sino |
 | G | Vazante, reúne ecos próximos e interrompe inimigos comuns; desbloqueada no Capítulo X |
 | H | Manto de Lastro, reduz o dano recebido por 2,5 segundos; desbloqueado após o Capítulo XI |
+| T | Coro de Retorno, onda de dano em área e interrupção de ecos comuns; desbloqueado após o Capítulo XII |
 | Q | Usar poção |
 | E | Escutar inscrições, falar/investigar em Véspera, abrir passagem ou interagir com o baú |
 | I | Abrir ou fechar inventário |
@@ -94,7 +95,7 @@ Depois de registrar a passagem coletiva com Aven e aprender a Vazante, siga pela
 
 ## Salvamento
 
-O save JSON fica em `%LOCALAPPDATA%\Scadryk\save.json` e guarda armas, bônus, raridades e afixos, a lembrança da nascente, inscrições, etapas das missões, o Selo da Vigília, o Sino de Nara, o Prisma do Lume, os talismãs encontrados, os dois espaços equipados, a decisão de Véspera, o Coro dos Nomes Consumidos, a memória de Ilyra, o mapa de Nara, a etapa do Refúgio do Veio Calmo, o registro comunitário, o testemunho do Pátio das Amarras Livres, a memória dos moinhos, a habilidade Vazante, o compasso das margens, o Manto de Lastro e as câmaras já limpas. Saves anteriores sem os campos mais recentes carregam com valores vazios. Na tela inicial, pressione **C** para carregar. Se não houver um save novo, o jogo também procura o ConfigFile da versão anterior em `%APPDATA%\Godot\app_userdata\Scadryk RPG\scadryk-save.cfg` e migra os dados encontrados para o formato JSON.
+O save JSON fica em `%LOCALAPPDATA%\Scadryk\save.json` e guarda armas, bônus, raridades e afixos, a lembrança da nascente, inscrições, etapas das missões, o Selo da Vigília, o Sino de Nara, o Prisma do Lume, os talismãs encontrados, os dois espaços equipados, a decisão de Véspera, o Coro dos Nomes Consumidos, a memória de Ilyra, o mapa de Nara, a etapa do Refúgio do Veio Calmo, o registro comunitário, o testemunho do Pátio das Amarras Livres, a memória dos moinhos, a habilidade Vazante, o compasso das margens, o Manto de Lastro, a nota da Contravoz, o Coro de Retorno e as câmaras já limpas. Saves anteriores sem os campos mais recentes carregam com valores vazios. Na tela inicial, pressione **C** para carregar. Se não houver um save novo, o jogo também procura o ConfigFile da versão anterior em `%APPDATA%\Godot\app_userdata\Scadryk RPG\scadryk-save.cfg` e migra os dados encontrados para o formato JSON.
 
 ## Estrutura
 
@@ -107,4 +108,7 @@ O save JSON fica em `%LOCALAPPDATA%\Scadryk\save.json` e guarda armas, bônus, r
 
 ## Limites atuais
 
-Este é um protótipo com vinte e sete salas de combate e arte procedural desenhada em formas 2D. Ainda faltam continuar além do Coração das Duas Margens, conhecer a vontade atual de Nara, as escolhas e os finais da campanha, mais regiões, famílias de equipamento e variedade de builds, arte e áudio originais, animações, balanceamento amplo e testes manuais em diferentes resoluções. Não há medição de desempenho em máquinas variadas.
+Este é um protótipo com vinte e nove salas de combate e arte procedural desenhada em formas 2D. Ainda faltam continuar além da Câmara da Contravoz, conhecer a vontade atual de Nara, as escolhas e os finais da campanha, mais regiões, famílias de equipamento e variedade de builds, arte e áudio originais, animações, balanceamento amplo e testes manuais em diferentes resoluções. Não há medição de desempenho em máquinas variadas.
+
+
+Depois de aprender o Manto de Lastro com Aven, volte à Escarpa do Contrafluxo e siga pela saída leste. Limpe a Cantaria das Vozes Livres para abrir a Câmara da Contravoz. Leia os três avisos do chefe, recolha a nota de memória e leve-a a Aven para aprender o Coro de Retorno (**T**). O relato não revela o nome escolhido nem o paradeiro de Nara.

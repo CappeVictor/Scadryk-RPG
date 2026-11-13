@@ -132,4 +132,24 @@ Este capítulo é jogável: acrescenta duas salas, a Guardiã do Leito, seu padr
 
 Depois de guardar o sinal do grupo, Aven reconhece um som que não vinha das rodas quebradas do refúgio: os Moinhos da Vazante voltaram a girar. Eles regulavam as cheias para que qualquer pessoa pudesse atravessar sem depender de uma ponte ou de um guia. Alguém fechou o canal e prendeu a corrente num percurso único.
 
-Nos moi
+Na Câmara do Veio Preso, o Vigia mantém a água girando num circuito fechado. Ele alterna três ataques anunciados enquanto a corrente desloca o Escutador para dentro ou para fora do centro. Ao ceder, deixa uma memória e sal vítreo. Aven entende que a água pode reunir ecos próximos sem decidir para onde devem seguir e ensina a Vazante, uma técnica de controle com efeito reduzido contra chefes.
+
+O capítulo acrescenta as duas salas dos moinhos, uma corrente que interfere no posicionamento, um chefe e uma habilidade ativa. O registro confirma apenas que os viajantes atravessaram a cheia por vontade própria. Nara não deixou um destino nem pediu que alguém a seguisse.
+
+### Capítulo XI — O compasso das duas margens
+
+A corrente liberada sobe pela Escarpa do Contrafluxo até um círculo de pedra no Coração das Duas Margens. O Afinador regula o mecanismo que alterna entre puxar e repelir. Ele acredita que um curso constante é a única forma de proteger o refúgio; seus ataques fazem desse equilíbrio uma arma.
+
+O Afinador anuncia três padrões, incluindo um corte em linha que atravessa a arena. Ao mesmo tempo, a corrente muda de sentido. Observar PUXO ou REPULSO ajuda a decidir quando atravessar o círculo e quando manter distância. A memória deixada pelo chefe conta que o mecanismo pode mudar sem que uma margem precise dominar a outra.
+
+Aven registra o relato como conhecimento compartilhado e ensina o Manto de Lastro, uma defesa curta que reduz o dano recebido. A comunidade oferece ouro, sal vítreo e provisões. O compasso não registra quem partiu, para onde foi ou qual deveria ser o próximo rumo de Nara.
+
+### Capítulo XII — A nota que não manda
+
+Depois que Aven ensina o Manto de Lastro, um intervalo novo surge sob o antigo vertedouro. A Cantaria das Vozes Livres guarda notas de viajantes sem registrar quem as tocou. As pedras ainda respondem em tons distintos, mas uma contravoz tenta reduzir o lugar a uma única frequência e apagar os intervalos que não consegue controlar.
+
+Na Câmara da Contravoz, o eco que conduz essa tentativa alterna três ataques legíveis: uma marca ao redor do próprio corpo, uma marca direcionada ao Escutador e um corte comprido em linha reta. Os avisos deixam janelas para esquivar; a terceira marca atravessa a câmara e pode ser evitada saindo do traço. O chefe não pode ser interrompido por habilidades de controle e exige observar o ciclo completo.
+
+Ao ceder, a Contravoz deixa uma nota de memória. Ela mostra viajantes sustentando a mesma ponte sonora sem fundir suas vozes. Ninguém conduz as outras vozes nem escolhe o que elas devem revelar. Aven recebe a lembrança e ensina o Coro de Retorno, uma onda que fere e interrompe ecos comuns próximos, mas causa dano menor e não cancela ataques de chefes. Ouro, sal vítreo e provisões mantêm aberta a próxima etapa da jornada.
+
+O capítulo XII acrescenta duas salas, um chefe de três padrões, uma nova habilidade ativa e uma lembrança persistente. O eco não registra nome, rota, destino ou vontade atual de Nara; essas respostas continuam pertencendo a ela.
