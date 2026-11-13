@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 23088)
-Total output lines: 865
-
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -77,8 +74,7 @@ public sealed class Game : Form
     private readonly Random random = new();
     private readonly string[] roomNames = { "VESTÍBULO EM RUÍNAS", "SALÃO DOS OSSOS", "CÂMARA DO GUARDIÃO", "VÉSPERA • PRAÇA DO FAROL", "ARQUIVO NORTE • GALERIA", "ARQUIVO NORTE • COFRE", "RIO CEGO • LEITO SECO", "RIO CEGO • CAPELA AFOGADA", "FAROL • ESCADA DE CINZAS", "FAROL • CÂMARA DO LUME", "ALÉM DO LUME • MARGEM SEM REFLEXO", "RESERVATÓRIO • VOZES RETIDAS" };
     private readonly string[] weaponNames = { "ESPADA COMUM", "LÂMINA RARA", "LÂMINA DO CREPÚSCULO" };
-    private readonly string[] charmNames = { "NENHUM", "NÓ DE BRASA", "FIO DE TRAVESSIA", "VIDRO DE VIGÍLIA" };
-    private readonly string[] charmEffects = { "", "Redemoinho causa +35% de dano e recarrega 1 s mais devagar.", "Esquiva dura +0,12 s, mas recarrega 0,3 s mais devagar.", "+12% de crítico e +0,5x dano crítico; ataques são 0,06 s mais lentos." };
+    private readonly string[] charmNames = { "", "NÓ DE BRASA", "FIO DE TRAVESSIA", "VIDRO DE VIGÍLIA" };
     private readonly string[] prologue = {
         "Na noite sem sinos, Véspera começou a esquecer os nomes de seus mortos. Sob as ruas, o Rio Cego repetiu uma voz que ninguém mais conseguia ouvir.",
         "Você é um Escutador: ouve as lembranças que a pedra não conseguiu guardar em silêncio. Entre elas reconheceu Nara, sua irmã, desaparecida quando os sinos pararam.",
@@ -208,7 +204,7 @@ public sealed class Game : Form
     private void Whirlwind()
     {
         if (skillCd > 0 || talentChoice) return;
-        skillCd = Math.Max(1.5f, 6f - skillTalent * 0.5f + (equippedCharm == 1 ? 1f : 0));
+        skillCd = Math.Max(1.5f, 6f - skillTalent * 0.5f) + (equippedCharm == 1 ? 1f : 0f);
         foreach (Enemy enemy in enemies.ToArray()) if (Distance(player, enemy.Pos) < 110) { enemy.Hp -= (int)(damage * WhirlwindMultiplier() * (enemy.Armored ? 0.75f : 1)); if (enemy.Hp <= 0) Defeat(enemy); }
     }
 
@@ -222,9 +218,11 @@ public sealed class Game : Form
         if (enemy.Kind == EnemyKind.RiverFerryman && !riverBell) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "bell" });
         if (enemy.Kind == EnemyKind.AshWarden && !lumeLens) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "lens" });
         if (enemy.Kind == EnemyKind.HollowName && !naraTrace) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "trace" });
-        int guaranteedCharm = enemy.Kind switch { EnemyKind.Elite => 1, EnemyKind.BlindScribe => 3, EnemyKind.RiverFerryman => 2, _ => 0 };
-        if (guaranteedCharm != 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 28, 12), Kind = "charm", Amount = guaranteedCharm });
-        else if (!enemy.Boss && random.NextDouble() < 0.06) drops.Add(new Drop { Pos = Offset(enemy.Pos, 28, 12), Kind = "charm", Amount = random.Next(1, charmNames.Length) });
+        if (enemy.Kind == EnemyKind.Elite && (ownedCharms & 1) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 24, -12), Kind = "charm", Amount = 1 });
+        if (enemy.Kind == EnemyKind.RiverFerryman && (ownedCharms & 2) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, -12), Kind = "charm", Amount = 2 });
+        if (enemy.Kind == EnemyKind.BlindScribe && (ownedCharms & 4) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, -12), Kind = "charm", Amount = 3 });
+        if (!enemy.Boss && enemy.Kind != EnemyKind.Elite && random.NextDouble() < 0.06)
+            drops.Add(new Drop { Pos = Offset(enemy.Pos, 18, 14), Kind = "charm", Amount = random.Next(1, 4) });
         if (enemy.Kind == EnemyKind.Elite && !armor) drops.Add(new Drop { Pos = Offset(enemy.Pos, 24, 0), Kind = "armor" });
         else if (!enemy.Boss && random.NextDouble() < 0.2) drops.Add(new Drop { Pos = Offset(enemy.Pos, 16, 12), Kind = "potion" });
         if (relicOn) health = Math.Min(maxHealth, health + 5);
@@ -381,20 +379,20 @@ public sealed class Game : Form
     private void EquipWeapon(int index) { if ((ownedWeapons & (1 << index)) == 0) { notice = "ARMA AINDA NÃO ENCONTRADA"; noticeTime = 1.4f; return; } damage += weaponDamage[index] - weaponDamage[weapon]; weapon = index; }
     private void CycleCharm()
     {
-        for (int offset = 1; offset <= charmNames.Length; offset++)
+        for (int i = 1; i <= 3; i++)
         {
-            int candidate = (equippedCharm + offset) % charmNames.Length;
+            int candidate = (equippedCharm + i) % 4;
             if (candidate == 0 || (ownedCharms & (1 << (candidate - 1))) == 0) continue;
             equippedCharm = candidate; notice = $"TALISMÃ EQUIPADO: {charmNames[candidate]}"; noticeTime = 1.6f; return;
         }
-        notice = "NENHUM TALISMÃ ENCONTRADO"; noticeTime = 1.4f;
+        equippedCharm = 0; notice = "NENHUM TALISMÃ ENCONTRADO"; noticeTime = 1.6f;
     }
-    private float BasicAttackCooldown() => (weapon == 2 ? 0.23f : 0.33f) + (equippedCharm == 3 ? 0.06f : 0);
-    private float CriticalChance() => (weapon == 2 ? 0.25f : 0.12f) + (equippedCharm == 3 ? 0.12f : 0);
-    private float CriticalMultiplier() => equippedCharm == 3 ? 2.5f : 2f;
     private float WhirlwindMultiplier() => equippedCharm == 1 ? 2.16f : 1.6f;
     private float DashDuration() => equippedCharm == 2 ? 0.29f : 0.17f;
-    private float DashCooldown() => Math.Max(0.35f, 1.15f - dodgeTalent * 0.12f + (equippedCharm == 2 ? 0.3f : 0));
+    private float DashCooldown() => Math.Max(0.35f, 1.15f - dodgeTalent * 0.12f) + (equippedCharm == 2 ? 0.3f : 0f);
+    private float CriticalChance() => (weapon == 2 ? 0.25f : 0.12f) + (equippedCharm == 3 ? 0.12f : 0f);
+    private float CriticalMultiplier() => equippedCharm == 3 ? 2.5f : 2f;
+    private float BasicAttackCooldown() => (weapon == 2 ? 0.23f : 0.33f) + (equippedCharm == 3 ? 0.06f : 0f);
     private PointF MoveEnemy(Enemy e, PointF delta) { PointF p = e.Pos; PointF x = new(p.X + delta.X, p.Y), y = new(p.X, p.Y + delta.Y); if (!Blocked(x, e.Radius)) p.X = x.X; if (!Blocked(new PointF(p.X, y.Y), e.Radius)) p.Y = y.Y; return new PointF(Math.Clamp(p.X, 85, 875), Math.Clamp(p.Y, 128, 533)); }
     private void SeparateFromPack(Enemy enemy, float dt) { PointF push = PointF.Empty; foreach (Enemy other in enemies) { if (ReferenceEquals(enemy, other)) continue; PointF away = Sub(enemy.Pos, other.Pos); float d = Length(away); if (d > 0.01f && d < 40) push = Add(push, Scale(away, (40 - d) / (40 * d))); } if (Length(push) > 0.01f) enemy.Pos = MoveEnemy(enemy, Scale(Normalize(push, PointF.Empty), 52 * dt)); }
     private void MovePlayer(PointF delta) { PointF x = new(player.X + delta.X, player.Y), y = new(player.X, player.Y + delta.Y); if (!Blocked(x)) player.X = x.X; if (!Blocked(new PointF(player.X, y.Y))) player.Y = y.Y; player.X = Math.Clamp(player.X, 85, 875); player.Y = Math.Clamp(player.Y, 128, 533); }
@@ -409,7 +407,121 @@ public sealed class Game : Form
 
     private SaveData CaptureSaveData() => new() { Room = room, Level = level, Xp = xp, Gold = gold, Potions = potions, Damage = damage, Health = health, MaxHealth = maxHealth, Weapon = weapon, OwnedWeapons = ownedWeapons, Armor = armor, Relic = relic, HealthTalent = healthTalent, SkillTalent = skillTalent, DodgeTalent = dodgeTalent, RoomCleared = room == 3 || enemies.Count == 0 && drops.Count == 0, Completed = victory, MemoriesFound = memoriesFound, QuestStage = questStage, ClearedRooms = clearedRooms | (room != 3 && enemies.Count == 0 && drops.Count == 0 ? 1 << room : 0), ArchiveSeal = archiveSeal, RiverBell = riverBell, LumeLens = lumeLens, NaraTrace = naraTrace, OwnedCharms = ownedCharms, EquippedCharm = equippedCharm };
     private void SaveGame() { Directory.CreateDirectory(Path.GetDirectoryName(SavePath)!); File.WriteAllText(SavePath, JsonSerializer.Serialize(CaptureSaveData())); notice = "PROGRESSO SALVO"; noticeTime = 2; }
-    private string LegacySavePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Godot", "app_userdata", "Scadryk RPG…3088 tokens truncated… "E  DESCER", riverGate.Y - 38, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, riverGate.X);
+    private string LegacySavePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Godot", "app_userdata", "Scadryk RPG", "scadryk-save.cfg");
+    private SaveData ReadLegacySave()
+    {
+        if (!File.Exists(LegacySavePath)) throw new FileNotFoundException();
+        string section = ""; var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (string raw in File.ReadLines(LegacySavePath)) { string line = raw.Trim(); if (line.StartsWith('[') && line.EndsWith(']')) { section = line[1..^1]; continue; } int split = line.IndexOf('='); if (split > 0) values[section + "." + line[..split].Trim()] = line[(split + 1)..].Trim().Trim('"'); }
+        string Get(string key, string fallback = "") => values.GetValueOrDefault("player." + key, fallback);
+        int Int(string key, int fallback = 0) => int.TryParse(Get(key), out int n) ? n : fallback;
+        float Float(string key, float fallback) => float.TryParse(Get(key), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float n) ? n : fallback;
+        bool Bool(string key, bool fallback = false) => bool.TryParse(Get(key), out bool b) ? b : fallback;
+        int savedWeapon = Int("weapon"); int savedRoom = Int("room");
+        return new SaveData { Room = savedRoom, Level = Int("level", 1), Xp = Int("xp"), Gold = Int("gold"), Potions = Int("potions", 2), Damage = Int("damage", 25), Health = Float("health", 100), MaxHealth = Float("max_health", 100), Weapon = savedWeapon, OwnedWeapons = Int("owned_weapons", savedWeapon == 1 ? 3 : savedRoom > 0 ? 5 : 1), Armor = Bool("has_armor"), Relic = Bool("has_relic"), HealthTalent = Int("health_talent"), SkillTalent = Int("skill_talent"), DodgeTalent = Int("dodge_talent"), RoomCleared = Bool("room_cleared", true), Completed = Bool("completed") };
+    }
+    private void LoadGame()
+    {
+        try
+        {
+            bool migrated = !File.Exists(SavePath); SaveData s = migrated ? ReadLegacySave() : JsonSerializer.Deserialize<SaveData>(File.ReadAllText(SavePath)) ?? throw new InvalidDataException();
+            if (s.Room is < 0 or > 11 || s.Level is < 1 or > 10000 || s.Xp < 0 || s.Xp >= s.Level * 60 || s.Weapon is < 0 or > 2 || s.OwnedWeapons < 1 || s.OwnedWeapons > 7 || (s.OwnedWeapons & (1 << s.Weapon)) == 0 || s.MaxHealth < 1 || s.Health <= 0 || s.Health > s.MaxHealth || s.Potions < 0 || s.Gold < 0 || s.Damage < 1 || s.MemoriesFound is < 0 or > 3 || s.QuestStage is < 0 or > 12 || s.ClearedRooms is < 0 or > 4095 || s.Completed && s.Room != 2 || s.OwnedCharms is < 0 or > 7 || s.EquippedCharm is < 0 or > 3 || s.EquippedCharm > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm - 1))) == 0) throw new InvalidDataException();
+            StartGame(); room = s.Room; level = s.Level; xp = s.Xp; gold = s.Gold; potions = s.Potions; damage = s.Damage; health = s.Health; maxHealth = s.MaxHealth; weapon = s.Weapon; ownedWeapons = s.OwnedWeapons; armor = s.Armor; relic = s.Relic; healthTalent = s.HealthTalent; skillTalent = s.SkillTalent; dodgeTalent = s.DodgeTalent; memoriesFound = s.MemoriesFound; questStage = s.QuestStage; clearedRooms = s.ClearedRooms | (s.RoomCleared && s.Room != 3 ? 1 << s.Room : 0); archiveSeal = s.ArchiveSeal; riverBell = s.RiverBell; lumeLens = s.LumeLens; naraTrace = s.NaraTrace; ownedCharms = s.OwnedCharms; equippedCharm = s.EquippedCharm; SetupRoom(); if (s.RoomCleared) enemies.Clear(); victory = s.Completed; title = false; storyOverlay = false;
+            if (migrated) SaveGame(); notice = migrated ? "SAVE ANTIGO MIGRADO" : "PROGRESSO CARREGADO"; noticeTime = 2;
+        }
+        catch { notice = "NENHUM SALVAMENTO VÁLIDO"; noticeTime = 2; }
+    }
+
+    protected override void OnPaint(PaintEventArgs e)
+    {
+        Graphics g = e.Graphics; g.SmoothingMode = SmoothingMode.AntiAlias; g.Clear(Color.FromArgb(16, 19, 23));
+        using var goldBrush = new SolidBrush(Color.FromArgb(230, 193, 129)); using var textBrush = new SolidBrush(Color.FromArgb(222, 216, 201));
+        using var panel = new SolidBrush(Color.FromArgb(28, 32, 35)); using var floor = new SolidBrush(Color.FromArgb(54, 60, 53)); using var tile = new Pen(Color.FromArgb(70, 78, 68));
+        using var headerFont = new Font("Georgia", 22, FontStyle.Bold); using var hudFont = new Font("Segoe UI", 12, FontStyle.Bold); using var roomFont = new Font("Georgia", 13, FontStyle.Bold); using var helpFont = new Font("Segoe UI", 10);
+        g.FillRectangle(panel, 0, 0, 960, 83); g.DrawString("SCADRYK", headerFont, goldBrush, 24, 18);
+        g.DrawString($"VIDA {health:0}/{maxHealth:0}     NÍVEL {level}     XP {xp}/{level * 60}     OURO {gold}     POÇÕES {potions}", hudFont, textBrush, 255, 29);
+        using var healthBack = new SolidBrush(Color.FromArgb(52, 56, 51)); using var healthBar = new SolidBrush(health / maxHealth < .25f ? Color.IndianRed : Color.FromArgb(112, 171, 123));
+        g.FillRectangle(healthBack, 25, 58, 190, 11); g.FillRectangle(healthBar, 25, 58, 190 * health / maxHealth, 11);
+        if (room == 3) DrawTownEnvironment(g, floor, tile);
+        else if (room is 4 or 5) DrawArchiveEnvironment(g, floor, tile);
+        else if (room is 6 or 7) DrawRiverEnvironment(g, floor, tile);
+        else if (room >= 10) DrawNameShoreEnvironment(g, floor, tile);
+        else if (room >= 8) DrawLumeEnvironment(g, floor, tile);
+        else
+        {
+            g.FillRectangle(floor, 65, 108, 830, 445); for (int y = 0; y < 7; y++) for (int x = 0; x < 12; x++) g.DrawRectangle(tile, 70 + x * 68, 112 + y * 62, 67, 61);
+            using var wallBrush = new SolidBrush(Color.FromArgb(90, 79, 62)); using var wallEdge = new Pen(Color.FromArgb(154, 132, 91), 3); foreach (RectangleF wall in Walls) { g.FillRectangle(wallBrush, wall); g.DrawRectangle(wallEdge, wall.X, wall.Y, wall.Width, wall.Height); }
+            using var exitPen = new Pen(enemies.Count == 0 && drops.Count == 0 ? Color.LightGreen : Color.FromArgb(45, 48, 43), 8); g.DrawRectangle(exitPen, 882, 293, 3, 75);
+        }
+        foreach (Enemy enemy in enemies) DrawEnemy(g, enemy);
+        foreach (Drop item in drops) DrawDrop(g, item);
+        DrawPlayer(g);
+        g.DrawString(room == 3 ? roomNames[room] : room < 3 ? $"{room + 1} / 3   {roomNames[room]}" : room < 6 ? $"{room - 3} / 2   {roomNames[room]}" : room < 8 ? $"{room - 5} / 2   {roomNames[room]}" : room < 10 ? $"{room - 7} / 2   {roomNames[room]}" : $"{room - 9} / 2   {roomNames[room]}", roomFont, goldBrush, 67, 572);
+        int memoriesRead = (memoriesFound & 1) + ((memoriesFound >> 1) & 1);
+        g.DrawString($"ECOS {memoriesRead} / 2", hudFont, goldBrush, 760, 572);
+        if (room == 3) g.DrawString(TownObjective(), hudFont, goldBrush, 67, 592);
+        else if (room >= 4 && room < 6) g.DrawString(ArchiveObjective(), hudFont, goldBrush, 67, 592);
+        else if (room is 6 or 7) g.DrawString(RiverObjective(), hudFont, goldBrush, 67, 592);
+        else if (room >= 8) g.DrawString(LumeObjective(), hudFont, goldBrush, 67, 592);
+        g.DrawString(room == 3 ? "WASD mover   E falar/investigar   F5 salvar   I inventário" : "WASD mover   ESPAÇO/CLIQUE atacar   SHIFT esquivar   R redemoinho   Q poção   E interagir   I inventário", helpFont, textBrush, 67, 619);
+        if (room < MemoryStonePositions.Length && (memoriesFound & (1 << room)) == 0) DrawMemoryStone(g, MemoryStonePositions[room], Distance(player, MemoryStonePositions[room]) < 58);
+        if (noticeTime > 0) DrawCentered(g, notice, 170, new Font("Segoe UI", 13, FontStyle.Bold), Color.FromArgb(230, 193, 129));
+        if (title || dead || victory) DrawOverlay(g, title ? "SCADRYK" : victory ? "VITÓRIA" : "VOCÊ CAIU", title ? "ENTER PARA COMEÇAR    •    C CARREGAR SAVE" : "ENTER PARA RECOMEÇAR    •    F5 SALVAR");
+        if (inventoryOpen) DrawInventory(g);
+        if (talentChoice) DrawChoice(g, $"SUBIU DE NÍVEL — ESCOLHA ({pendingTalents} PENDENTES)", "1. VIGOR  +20 VIDA MÁXIMA", "2. DOMÍNIO  Redemoinho recarrega mais rápido", "3. AGILIDADE  esquiva recarrega mais rápido");
+        if (chestChoice) DrawChoice(g, "BAÚ DA CRIPTA — ESCOLHA UMA RECOMPENSA", "1. 75 OURO", "2. DUAS POÇÕES", "3. RECUPERAR TODA A VIDA");
+        if (storyOverlay) DrawStoryOverlay(g);
+        if (memoryOverlay) DrawMemoryOverlay(g);
+    }
+
+    private string TownObjective() => questStage switch
+    {
+        0 => "OBJETIVO: ENCONTRE A CURADORA SILETH",
+        1 => "OBJETIVO: LEIA O LIVRO DAS AUSÊNCIAS",
+        2 => "OBJETIVO: VOLTE E FALE COM SILETH",
+        3 => "OBJETIVO: ENTRE NO ARQUIVO NORTE AO NORTE",
+        4 => "OBJETIVO: MOSTRE O SELO DA VIGÍLIA A SILETH",
+        5 => "OBJETIVO: DESÇA AO LEITO DO RIO CEGO AO SUL",
+        6 => "OBJETIVO: MOSTRE A EDDA O SINO DE NARA",
+        7 => "OBJETIVO: DESÇA A ESCADA ABERTA PELO SINO",
+        9 => "OBJETIVO: MOSTRE O PRISMA DO LUME A SILETH",
+        10 => "OBJETIVO: DESÇA ALÉM DO PRISMA",
+        11 => "OBJETIVO: MOSTRE A NOVA MEMÓRIA A SILETH",
+        12 => "PRÓXIMO DESTINO: ENCONTRE AS VOZES QUE FALTAM",
+        _ => "PRÓXIMO DESTINO: REÚNA AS MEMÓRIAS QUE FALTAM"
+    };
+
+    private void DrawTownEnvironment(Graphics g, Brush ground, Pen tile)
+    {
+        g.FillRectangle(ground, 65, 108, 830, 445);
+        for (int y = 0; y < 7; y++) for (int x = 0; x < 12; x++) g.DrawRectangle(tile, 70 + x * 68, 112 + y * 62, 67, 61);
+        using var road = new SolidBrush(Color.FromArgb(94, 84, 68));
+        using var plaza = new SolidBrush(Color.FromArgb(105, 96, 78));
+        using var trim = new Pen(Color.FromArgb(159, 139, 101), 2);
+        g.FillRectangle(road, 345, 274, 315, 118); g.FillRectangle(road, 430, 242, 116, 210);
+        g.FillEllipse(plaza, 424, 290, 128, 92); g.DrawEllipse(trim, 424, 290, 128, 92);
+        using var water = new SolidBrush(Color.FromArgb(88, 142, 145));
+        g.FillEllipse(water, 458, 315, 60, 42); g.DrawEllipse(trim, 458, 315, 60, 42);
+        DrawTownHouse(g, TownBuildings[0], "FERRARIA"); DrawTownHouse(g, TownBuildings[1], "ARQUIVO");
+        DrawTownHouse(g, TownBuildings[2], "CASAS"); DrawTownHouse(g, TownBuildings[3], "ARMAZÉM");
+        using var gateBrush = new SolidBrush(Color.FromArgb(116, 100, 70)); using var gatePen = new Pen(Color.FromArgb(220, 189, 125), 3);
+        g.FillRectangle(gateBrush, 70, 298, 30, 64); g.DrawRectangle(gatePen, 70, 298, 30, 64);
+        using var bookBrush = new SolidBrush(Color.FromArgb(107, 56, 43)); using var bookEdge = new Pen(Color.FromArgb(234, 204, 133), 2);
+        g.FillRectangle(bookBrush, ArchiveBookPosition.X - 13, ArchiveBookPosition.Y - 7, 26, 18); g.DrawRectangle(bookEdge, ArchiveBookPosition.X - 13, ArchiveBookPosition.Y - 7, 26, 18);
+        DrawTownPerson(g, CuratorPosition, "SILETH", Color.FromArgb(117, 73, 104), Distance(player, CuratorPosition) < 72);
+        DrawTownPerson(g, BellKeeperPosition, "EDDA", Color.FromArgb(111, 137, 124), Distance(player, BellKeeperPosition) < 72);
+        if (Distance(player, ArchiveBookPosition) < 72) DrawCentered(g, "E  LER", ArchiveBookPosition.Y + 22, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, ArchiveBookPosition.X);
+        if (Distance(player, CryptGatePosition) < 72) DrawCentered(g, "E  CRIPTA", CryptGatePosition.Y + 42, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, CryptGatePosition.X + 15);
+        PointF archiveGate = new(480, 135);
+        using var portal = new Pen(questStage >= 3 ? Color.FromArgb(219, 178, 112) : Color.FromArgb(88, 75, 61), 5);
+        g.DrawArc(portal, archiveGate.X - 28, archiveGate.Y - 24, 56, 52, 180, 180);
+        DrawCentered(g, questStage >= 3 ? "ARQUIVO NORTE" : "PORTÃO SELADO", archiveGate.Y - 38, new Font("Segoe UI", 8, FontStyle.Bold), Color.FromArgb(230, 193, 129), archiveGate.X);
+        if (Distance(player, archiveGate) < 72) DrawCentered(g, "E  ENTRAR", archiveGate.Y + 28, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, archiveGate.X);
+        PointF riverGate = new(480, 520);
+        using var riverPortal = new Pen(questStage >= 5 ? Color.FromArgb(112, 179, 185) : Color.FromArgb(72, 85, 82), 5);
+        g.DrawArc(riverPortal, riverGate.X - 28, riverGate.Y - 22, 56, 50, 0, 180);
+        DrawCentered(g, questStage >= 7 ? "ESCADA DO LUME" : questStage >= 5 ? "RIO CEGO" : "LEITO SELADO", riverGate.Y - 4, new Font("Segoe UI", 8, FontStyle.Bold), Color.FromArgb(190, 211, 196), riverGate.X);
+        if (Distance(player, riverGate) < 72) DrawCentered(g, "E  DESCER", riverGate.Y - 38, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, riverGate.X);
     }
 
     private string ArchiveObjective() => room == 4 ? "OBJETIVO: CRUZE A GALERIA E ENCONTRE O COFRE" : archiveSeal ? "OBJETIVO: VOLTE A VÉSPERA COM O SELO" : "OBJETIVO: RECUPERE O REGISTRO NO COFRE";
@@ -516,23 +628,25 @@ public sealed class Game : Form
         string name = EnemyName(enemy); if (name.Length > 0) DrawCentered(g, name, enemy.Pos.Y - r - 28, new Font("Segoe UI", 8, FontStyle.Bold), Color.FromArgb(233, 198, 151), enemy.Pos.X);
         if (enemy.Boss) { using var bossBack = new SolidBrush(Color.FromArgb(40, 20, 20)); using var bossHp = new SolidBrush(enemy.Hp <= enemy.MaxHp * 0.5f ? Color.OrangeRed : enemy.Kind == EnemyKind.BlindScribe ? Color.Teal : enemy.Kind == EnemyKind.RiverFerryman ? Color.SteelBlue : enemy.Kind == EnemyKind.AshWarden ? Color.DarkOrange : enemy.Kind == EnemyKind.HollowName ? Color.LightSeaGreen : Color.Firebrick); g.FillRectangle(bossBack, 360, 112, 240, 8); g.FillRectangle(bossHp, 360, 112, 240 * Math.Clamp(enemy.Hp / enemy.MaxHp, 0, 1), 8); string bossName = enemy.Kind == EnemyKind.BlindScribe ? "ESCRIBA CEGO" : enemy.Kind == EnemyKind.RiverFerryman ? "BARQUEIRO OCO" : enemy.Kind == EnemyKind.AshWarden ? "GUARDIÃO DAS CINZAS" : enemy.Kind == EnemyKind.HollowName ? "O NOME VAZIO" : "GUARDIÃO DA CRIPTA"; DrawCentered(g, enemy.Hp <= enemy.MaxHp * 0.5f ? $"{bossName} • SEGUNDA FASE" : bossName, 91, new Font("Georgia", 11, FontStyle.Bold), enemy.Hp <= enemy.MaxHp * 0.5f ? Color.OrangeRed : Color.Goldenrod); }
     }
-    private void DrawDrop(Graphics g, Drop item) { Color c = item.Kind switch { "relic" => Color.Violet, "seal" => Color.LightSkyBlue, "bell" => Color.FromArgb(162, 212, 192), "lens" => Color.FromArgb(248, 185, 95), "trace" => Color.FromArgb(185, 231, 215), "charm" => Color.FromArgb(191, 177, 239), "armor" => Color.MediumAquamarine, "weapon" => Color.CornflowerBlue, "potion" => Color.IndianRed, _ => Color.Goldenrod }; using var b = new SolidBrush(c); using var p = new Pen(Color.FromArgb(230, 220, 190), 1); g.FillEllipse(b, item.Pos.X - 8, item.Pos.Y - 8, 16, 16); g.DrawEllipse(p, item.Pos.X - 8, item.Pos.Y - 8, 16, 16); }
+    private void DrawDrop(Graphics g, Drop item) { Color c = item.Kind switch { "relic" => Color.Violet, "seal" => Color.LightSkyBlue, "bell" => Color.FromArgb(162, 212, 192), "lens" => Color.FromArgb(248, 185, 95), "trace" => Color.FromArgb(185, 231, 215), "charm" => Color.Plum, "armor" => Color.MediumAquamarine, "weapon" => Color.CornflowerBlue, "potion" => Color.IndianRed, _ => Color.Goldenrod }; using var b = new SolidBrush(c); using var p = new Pen(Color.FromArgb(230, 220, 190), 1); g.FillEllipse(b, item.Pos.X - 8, item.Pos.Y - 8, 16, 16); g.DrawEllipse(p, item.Pos.X - 8, item.Pos.Y - 8, 16, 16); }
     private void DrawPlayer(Graphics g) { using var b = new SolidBrush(invulnerable > 0 ? Color.Salmon : Color.FromArgb(90, 143, 138)); using var face = new SolidBrush(Color.Bisque); g.FillEllipse(b, player.X - 16, player.Y - 16, 32, 32); g.FillEllipse(face, player.X - 8, player.Y - 11, 16, 16); using var p = new Pen(Color.AntiqueWhite, 4); g.DrawLine(p, player, Add(player, Scale(facing, 24))); if (skillCd > 0) { using var cooldownPen = new Pen(Color.FromArgb(190, 230, 193, 129), 3); g.DrawArc(cooldownPen, player.X - 25, player.Y - 25, 50, 50, -90, 360 * skillCd / Math.Max(1.5f, 6f - skillTalent * .5f)); } }
     private void DrawInventory(Graphics g)
     {
-        using var b = new SolidBrush(Color.FromArgb(245, 17, 19, 20)); using var itemFont = new Font("Segoe UI", 12); using var detailFont = new Font("Segoe UI", 10); g.FillRectangle(b, 150, 145, 660, 475);
-        DrawCentered(g, "INVENTÁRIO • 1–3 ARMAS • 4/5 ARMADURA/RELÍQUIA • 6 TALISMÃ • I FECHAR", 180, new Font("Segoe UI", 11, FontStyle.Bold), Color.Goldenrod);
+        using var b = new SolidBrush(Color.FromArgb(245, 17, 19, 20)); using var itemFont = new Font("Segoe UI", 11); g.FillRectangle(b, 150, 145, 660, 490);
+        DrawCentered(g, "INVENTÁRIO   •   1–3 ARMAS   •   4 ARMADURA   •   5 RELÍQUIA   •   6 TALISMÃ   •   I FECHAR", 180, new Font("Segoe UI", 12, FontStyle.Bold), Color.Goldenrod);
         for (int i = 0; i < 3; i++) g.DrawString($"{i + 1}. {weaponNames[i]}    DANO {weaponDamage[i] - weaponDamage[weapon]:+#;-#;0}    {(weapon == i ? "EQUIPADA" : (ownedWeapons & (1 << i)) != 0 ? "DISPONÍVEL" : "NÃO ENCONTRADA")}", itemFont, (ownedWeapons & (1 << i)) != 0 ? Brushes.AntiqueWhite : Brushes.Gray, 205, 230 + i * 40);
         g.DrawString($"4. PEITORAL DE PEDRA {(armorOn ? "EQUIPADO" : armor ? "DISPONÍVEL" : "NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 360);
         g.DrawString($"5. RELICÁRIO VITAL {(relicOn ? "EQUIPADO" : relic ? "DISPONÍVEL" : "NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 400);
         g.DrawString($"SELO DA VIGÍLIA {(archiveSeal ? "ENCONTRADO • +8 DANO" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 440);
         g.DrawString($"SINO DE NARA {(riverBell ? "ENCONTRADO • +20 VIDA MÁXIMA" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 480);
         g.DrawString($"PRISMA DO LUME {(lumeLens ? "ENCONTRADO • +12 DANO" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 520);
-        g.DrawString($"RASTRO DE NARA {(naraTrace ? "RECUPERADO • MEMÓRIA PRESERVADA" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 540);
+        g.DrawString($"RASTRO DE NARA {(naraTrace ? "RECUPERADO • MEMÓRIA PRESERVADA" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 560);
         string availableCharms = string.Join(" • ", Enumerable.Range(1, 3).Where(i => (ownedCharms & (1 << (i - 1))) != 0).Select(i => charmNames[i]));
-        g.DrawString($"ACHADOS: {(availableCharms.Length == 0 ? "nenhum talismã" : availableCharms)}", detailFont, Brushes.Gainsboro, 205, 560);
-        g.DrawString($"TALISMÃ: {charmNames[equippedCharm]} • D6 ALTERNAR", itemFont, Brushes.AntiqueWhite, 205, 582);
-        g.DrawString(equippedCharm == 0 ? "Nenhum talismã encontrado." : charmEffects[equippedCharm], detailFont, Brushes.Gainsboro, 205, 604);
+        g.DrawString($"TALISMÃS: {(availableCharms.Length == 0 ? "NENHUM" : availableCharms)}", itemFont, Brushes.Plum, 205, 582);
+        string equippedName = equippedCharm == 0 ? "NENHUM" : charmNames[equippedCharm];
+        g.DrawString($"6. EQUIPADO: {equippedName}", itemFont, Brushes.Plum, 205, 602);
+        string effect = equippedCharm switch { 1 => "Redemoinho +35% dano • recarga +1 s", 2 => "Esquiva mais longa • recarga +0,3 s", 3 => "+12 p.p. crítico • ataque básico mais lento", _ => "Elites e chefes deixam talismãs especiais" };
+        g.DrawString(effect, itemFont, Brushes.AntiqueWhite, 205, 622);
     }
     private void DrawChoice(Graphics g, string titleText, string a, string b, string c)
     {
@@ -719,30 +833,28 @@ public sealed class Game : Form
         game.player = CuratorPosition; game.Interact();
         if (game.questStage != 12 || game.gold != goldBeforeTown + 615 || game.potions != potionsBeforeTown + 5) throw new InvalidOperationException("Sileth não reconheceu a memória que escapou do Lume.");
         SaveData saved = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(game.CaptureSaveData()))!;
-        if (saved.Room != 3 || saved.QuestStage != 12 || saved.MemoriesFound != 3 || !saved.ArchiveSeal || !saved.RiverBell || !saved.LumeLens || !saved.NaraTrace || (saved.OwnedCharms & 6) != 6 || saved.EquippedCharm != 3 || saved.MaxHealth < 120 || (saved.ClearedRooms & (1 << 9)) == 0 || (saved.ClearedRooms & (1 << 11)) == 0) throw new InvalidOperationException("O progresso da campanha, os talismãs, as câmaras limpas e os itens não foram serializados no save.");
+        if (saved.Room != 3 || saved.QuestStage != 12 || saved.MemoriesFound != 3 || !saved.ArchiveSeal || !saved.RiverBell || !saved.LumeLens || !saved.NaraTrace || saved.MaxHealth < 120 || (saved.ClearedRooms & (1 << 9)) == 0 || (saved.ClearedRooms & (1 << 11)) == 0) throw new InvalidOperationException("O progresso da campanha, as câmaras limpas e os itens não foram serializados no save.");
+        using var lootGame = new Game(); lootGame.timer.Stop(); lootGame.StartGame(); lootGame.enemies.Clear(); lootGame.room = 1;
+        var elite = new Enemy { Pos = new PointF(500, 330), Kind = EnemyKind.Elite, Hp = 1, MaxHp = 1 };
+        lootGame.enemies.Add(elite); lootGame.Defeat(elite);
+        Drop firstCharm = lootGame.drops.Single(d => d.Kind == "charm");
+        if (firstCharm.Amount != 1) throw new InvalidOperationException("O Elite não deixou o Nó de Brasa.");
+        lootGame.Collect(firstCharm);
+        if (lootGame.equippedCharm != 1 || lootGame.WhirlwindMultiplier() <= 1.6f) throw new InvalidOperationException("O Nó de Brasa não alterou o Redemoinho.");
+        lootGame.Collect(new Drop { Pos = lootGame.player, Kind = "charm", Amount = 2 }); lootGame.CycleCharm();
+        if (lootGame.equippedCharm != 2 || lootGame.DashDuration() <= 0.17f || lootGame.DashCooldown() <= 1.15f) throw new InvalidOperationException("O Fio de Travessia não alterou a esquiva.");
+        lootGame.Collect(new Drop { Pos = lootGame.player, Kind = "charm", Amount = 3 }); lootGame.CycleCharm();
+        if (lootGame.equippedCharm != 3 || lootGame.CriticalChance() <= 0.12f || lootGame.CriticalMultiplier() <= 2f || lootGame.BasicAttackCooldown() <= 0.33f) throw new InvalidOperationException("O Vidro de Vigília não alterou os ataques críticos.");
+        SaveData charmSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(lootGame.CaptureSaveData()))!;
+        if (charmSave.OwnedCharms != 7 || charmSave.EquippedCharm != 3) throw new InvalidOperationException("Os talismãs não foram serializados no save.");
         game.room = 11; game.SetupRoom();
         if (game.enemies.Count != 0 || game.drops.Count != 0) throw new InvalidOperationException("O Reservatório foi recriado após ter sido limpo.");
         game.room = 3; game.SetupRoom();
         game.memoryOverlay = false; game.player = CryptGatePosition; game.Interact();
         if (game.room != 2 || game.enemies.Count != 4) throw new InvalidOperationException("A passagem da cidade não retornou à cripta.");
-        using var lootGame = new Game(); lootGame.timer.Stop(); lootGame.StartGame();
-        var lootElite = new Enemy { Pos = new PointF(500, 300), Kind = EnemyKind.Elite, Hp = 100, MaxHp = 100 };
-        lootGame.enemies.Add(lootElite); lootGame.Defeat(lootElite);
-        Drop firstCharm = lootGame.drops.Single(d => d.Kind == "charm");
-        if (firstCharm.Amount != 1) throw new InvalidOperationException("O Elite não deixou o Nó de Brasa.");
-        lootGame.Collect(firstCharm);
-        if (lootGame.equippedCharm != 1 || lootGame.WhirlwindMultiplier() <= 1.6f) throw new InvalidOperationException("O Nó de Brasa não alterou o Redemoinho.");
-        lootGame.Collect(new Drop { Kind = "charm", Amount = 2 }); lootGame.Collect(new Drop { Kind = "charm", Amount = 3 });
-        lootGame.CycleCharm();
-        if (lootGame.equippedCharm != 2 || lootGame.DashDuration() <= 0.17f || lootGame.DashCooldown() <= 1.15f) throw new InvalidOperationException("O Fio de Travessia não alterou a esquiva.");
-        lootGame.CycleCharm();
-        if (lootGame.equippedCharm != 3 || lootGame.CriticalChance() <= 0.12f || lootGame.CriticalMultiplier() <= 2f || lootGame.BasicAttackCooldown() <= 0.33f) throw new InvalidOperationException("O Vidro de Vigília não alterou os ataques críticos.");
-        SaveData charmSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(lootGame.CaptureSaveData()))!;
-        if (charmSave.OwnedCharms != 7 || charmSave.EquippedCharm != 3) throw new InvalidOperationException("Os talismãs não foram serializados no save.");
         Console.WriteLine("TESTES OK: campanha, chefes, itens, talismãs e builds, progressão, save e retorno à cripta."); return 0;
     }
 }
-
 
 
 
