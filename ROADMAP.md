@@ -162,3 +162,8 @@ A folha de ataques dos arquétipos agora conserva o último quadro por 0,16 segu
 Uma partida manual revelou que o texto da segunda página do prólogo chegava perto do comando de avanço; textos de memórias também podiam exceder a caixa fixa. Os painéis agora medem a altura necessária e mantêm o comando abaixo do corpo do texto. O autoteste cobre a página observada e um relato longo; falta observar todas as memórias em diferentes resoluções.
 
 O 25º andar da Vigília concede o **Pulso Bifurcado**: duas técnicas prontas fortalecem o dano técnico em 12%; duas técnicas em recarga fortalecem os ataques básicos em 12%. A troca de condição recompensa alternar habilidades e golpes; o autoteste verifica os dois limiares, a queda do talismã, sua descrição no inventário e a persistência em save.
+
+
+## Ressonâncias de desafio
+
+Após o epílogo e a expedição XVII, a Têmpera permite alternar entre quatro níveis persistentes de Ressonância. A campanha aumenta vida e dano dos inimigos em troca de mais ouro, experiência e equipamento; cada nível também melhora as rolagens de armas. A Vigília Ascendente conserva seu escalonamento independente. A CI compila e roda os smoke tests gerais do projeto; a calibragem fina dos tiers ainda precisa de observação em partidas reais.
