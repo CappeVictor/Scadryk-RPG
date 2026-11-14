@@ -89,9 +89,9 @@ public sealed class Game : Form
     }
 
     private static readonly RectangleF[] Walls = { new(345, 235, 48, 90), new(565, 375, 58, 80) };
-    private static readonly Lazy<Bitmap?> AvenSpriteSheet = new(() =>
+    private static readonly Lazy<Bitmap?> PlayerSpriteSheet = new(() =>
     {
-        string path = Path.Combine(AppContext.BaseDirectory, "Assets", "Aven.png");
+        string path = Path.Combine(AppContext.BaseDirectory, "Assets", "Listener.png");
         return File.Exists(path) ? new Bitmap(path) : null;
     });
     private static readonly Lazy<Bitmap?> PlayerAttackSpriteSheet = new(() =>
@@ -2576,7 +2576,7 @@ public sealed class Game : Form
         if (Length(animationDirection) <= 0.001f) animationDirection = CurrentDrift();
         if (Length(animationDirection) <= 0.001f) animationDirection = facing;
         Bitmap? attackSprites = attackFlash > 0 ? PlayerAttackSpriteSheet.Value : null;
-        Bitmap? sprites = attackSprites ?? AvenSpriteSheet.Value;
+        Bitmap? sprites = attackSprites ?? PlayerSpriteSheet.Value;
         if (sprites is not null)
         {
             int row = PlayerSpriteRow(animationDirection);
@@ -3024,10 +3024,10 @@ public sealed class Game : Form
             if (File.ReadAllText(saveCheckPath) != "segundo" || Directory.GetFiles(saveCheckDirectory).Length != 1) throw new InvalidOperationException("Uma falha de gravação alterou o save anterior ou deixou arquivo temporário.");
         }
         finally { if (File.Exists(saveCheckPath)) File.Delete(saveCheckPath); if (Directory.Exists(saveCheckDirectory)) Directory.Delete(saveCheckDirectory); }
-        string spritePath = Path.Combine(AppContext.BaseDirectory, "Assets", "Aven.png");
+        string spritePath = Path.Combine(AppContext.BaseDirectory, "Assets", "Listener.png");
         if (!File.Exists(spritePath)) throw new InvalidOperationException("A folha original de sprites de Aven não foi copiada para a saída do jogo.");
         using (var sprite = new Bitmap(spritePath))
-            if (sprite.Width != sprite.Height || sprite.GetPixel(0, 0).A != 0) throw new InvalidOperationException("A folha de sprites de Aven precisa ter células quadradas e fundo transparente.");
+            if (sprite.Width != sprite.Height || sprite.GetPixel(0, 0).A != 0) throw new InvalidOperationException("A folha de sprites do Escutador precisa ter células quadradas e fundo transparente.");
         string enemySpritePath = Path.Combine(AppContext.BaseDirectory, "Assets", "Enemies.png");
         if (!File.Exists(enemySpritePath)) throw new InvalidOperationException("A folha de inimigos não foi copiada para a saída do jogo.");
         using (var sprite = new Bitmap(enemySpritePath))
