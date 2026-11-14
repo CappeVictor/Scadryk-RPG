@@ -193,3 +193,11 @@ Depois do epílogo, Aven encontra uma nota sem assinatura na mesa comunitária. 
 O Cais dos Ecos Emprestados leva ao Arquivo da Maré sem Nome. O Arquivista das Marés acredita que preservar cada voz exige mantê-las juntas. Seus três ataques deixam sinais distintos: uma onda circular em torno do corpo, uma marca que acompanha o Escutador e um corte em linha reta. O combate pede que o jogador observe cada aviso e mude de posição.
 
 Quando o Arquivista cai, os sons voltam a pertencer a quem os deixou. O eco recuperado não identifica ninguém nem indica para onde viajaram. Aven guarda a memória com o consentimento de seus autores e oferece provisões e uma melhoria permanente para as técnicas do Escutador. O Capítulo XVII acrescenta duas salas, uma horda, um chefe de três padrões e progresso persistente, mantendo aberta a história pessoal de Nara.
+
+### Capítulo XVIII — A badalada não enviada
+
+Depois de guardar a memória dos ecos emprestados, Aven encontra o desenho de um sino sem badalo. O registro pede que certas pausas permaneçam vazias: intervalos em que alguém escolheu não tocar, responder ou registrar a própria passagem. A expedição é opcional e não contém notícia de Nara nem acrescenta uma direção ao mapa dela.
+
+A Câmara das Badaladas Não Enviadas guarda os instrumentos abandonados. Mais abaixo, no Poço do Contratempo, o Afinador tenta preencher cada intervalo com uma nota obrigatória. Sua onda anular deixa um centro seguro; o segundo golpe marca o lugar do Escutador. Os avisos permitem recuar, cruzar o anel ou permanecer no espaço protegido antes de responder ao chefe.
+
+Ao cair, o Afinador deixa uma memória coletiva: as pausas voltam a pertencer a quem escolheu mantê-las. Aven recebe o relato sem registrar nomes nem rotas e oferece provisões e sintonia para as técnicas. A expedição acrescenta duas salas de combate, um chefe e progresso persistente; não altera o epílogo e não sugere que Nara passou por ali.

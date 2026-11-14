@@ -120,3 +120,7 @@ Os sprites agora acompanham a leitura do ataque: durante o aviso, inclinam-se na
 O Peitoral de Pedra e o Relicário Vital formam o conjunto Vigília do Veio quando equipados juntos: o peitoral mitiga 35% do dano e o relicário cura 8 por abate, ante 30% e 5 quando usados isoladamente. Cada abate também ativa o Pulso do Veio por 2,5 segundos, aumentando em 15% o dano causado; abates sucessivos renovam o efeito. HUD, inventário e ficha mostram o estado do conjunto. O pulso é temporário e não exige novo campo de save.
 
 Os avisos de ataques comuns e de chefes agora pulsam e ganham opacidade e espessura conforme o golpe se aproxima. O modo H de alto contraste mantém o contorno escuro e reforça a leitura do impacto iminente sem alterar alcance, tempo ou dano dos ataques.
+
+## Capítulo XVIII — A badalada não enviada
+
+A expedição opcional pós-epílogo adiciona a Câmara das Badaladas Não Enviadas, o Poço do Contratempo e o Afinador do Contratempo. O chefe alterna uma onda anular com centro seguro e um impacto marcado sob o jogador; a lembrança coletiva, a recompensa e o avanço de campanha ficam salvos. A história mantém Nara fora desta trilha. Scadryk agora reúne 41 salas de combate e 20 chefes. Próxima frente: validar ritmo em partida manual, revisar equilíbrio da campanha e avançar animações e distribuição.
