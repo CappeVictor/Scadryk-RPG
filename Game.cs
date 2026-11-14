@@ -56,6 +56,7 @@ public sealed class Game : Form
         public int SkillTalent { get; set; }
         public int DodgeTalent { get; set; }
         public int TechniqueTalent { get; set; }
+        public int? CombatDiscipline { get; set; }
         public bool RoomCleared { get; set; }
         public bool Completed { get; set; }
         public int MemoriesFound { get; set; }
@@ -232,7 +233,7 @@ public sealed class Game : Form
     private PointF player = new(150, 330), facing = new(1, 0), mouseAim = new(1, 0), dashDirection = new(1, 0);
     private float playerAnimationTime;
     private int room, level = 1, xp, gold, potions = 2, damage = 25, weapon, ownedWeapons = 1;
-    private int healthTalent, skillTalent, dodgeTalent, techniqueTalent, pendingTalents, enemiesDefeated;
+    private int healthTalent, skillTalent, dodgeTalent, techniqueTalent, combatDiscipline, pendingTalents, enemiesDefeated;
     private int memoriesFound, questStage, tideGlass, finalEnding, eliteWeaponMisses;
     private int vigilBestFloor, vigilFloor;
     private float vigilMinionCooldown, vigilTideTime;
@@ -289,7 +290,7 @@ public sealed class Game : Form
         finalEnding = 0;
         vigilBestFloor = vigilFloor = 0;
         townEnding = 0;
-        healthTalent = skillTalent = dodgeTalent = techniqueTalent = pendingTalents = enemiesDefeated = memoriesFound = questStage = tideGlass = eliteWeaponMisses = 0;
+        healthTalent = skillTalent = dodgeTalent = techniqueTalent = combatDiscipline = pendingTalents = enemiesDefeated = memoriesFound = questStage = tideGlass = eliteWeaponMisses = 0;
         clearedRooms = 0;
         ownedCharms = equippedCharm = equippedCharm2 = 0;
         equippedSkills = new[] { 1, 0, 0 }; skillMenuOpen = false; skillMenuSlot = 0;
@@ -549,18 +550,25 @@ public sealed class Game : Form
 
     private void RespecTalents()
     {
-        int spent = healthTalent + skillTalent + dodgeTalent + techniqueTalent;
+        int spent = healthTalent + skillTalent + dodgeTalent + techniqueTalent + (combatDiscipline > 0 ? 1 : 0);
         int goldCost = TalentRespecGoldCost(level), glassCost = TalentRespecGlassCost(level);
         if (pendingTalents > 0 || talentChoice) { notice = "GASTE OS PONTOS DE TALENTO PENDENTES PRIMEIRO"; noticeTime = 2; return; }
         if (spent == 0) { notice = "NÃO HÁ TALENTOS PARA REDISTRIBUIR"; noticeTime = 2; return; }
         if (gold < goldCost || tideGlass < glassCost) { notice = $"REDISTRIBUIR CUSTA {goldCost} OURO E {glassCost} SAL VÍTREO"; noticeTime = 2.5f; return; }
         float healthRatio = maxHealth > 0 ? health / maxHealth : 1;
-        gold -= goldCost; tideGlass -= glassCost; maxHealth = Math.Max(1, maxHealth - healthTalent * 20); healthTalent = skillTalent = dodgeTalent = techniqueTalent = 0; health = Math.Clamp(maxHealth * healthRatio, 1, maxHealth);
-        pendingTalents = 0; talentChoice = false; forgeMenuOpen = false; notice = $"TALENTOS REDISTRIBUÍDOS: {spent} PONTOS DEVOLVIDOS"; noticeTime = 3;
+        gold -= goldCost; tideGlass -= glassCost; maxHealth = Math.Max(1, maxHealth - healthTalent * 20); healthTalent = skillTalent = dodgeTalent = techniqueTalent = combatDiscipline = 0; health = Math.Clamp(maxHealth * healthRatio, 1, maxHealth);
+        pendingTalents = spent; talentChoice = pendingTalents > 0; forgeMenuOpen = false; notice = $"TALENTOS REDISTRIBUÍDOS: {spent} PONTOS DEVOLVIDOS"; noticeTime = 3;
     }
 
     private void SelectTalent(Keys key)
     {
+        if (level >= 5 && combatDiscipline == 0)
+        {
+            if (key == Keys.D5) combatDiscipline = 1;
+            else if (key == Keys.D6) combatDiscipline = 2;
+            else return;
+            pendingTalents--; talentChoice = pendingTalents > 0; return;
+        }
         if (key == Keys.D1) { healthTalent++; maxHealth += 20; health = Math.Min(maxHealth, health + 20); }
         else if (key == Keys.D2) skillTalent++;
         else if (key == Keys.D3) dodgeTalent++;
@@ -581,7 +589,7 @@ public sealed class Game : Form
         {
             PointF offset = Sub(enemy.Pos, player); float distance = Length(offset);
             if (distance > BasicAttackReach(enemy) || (distance >= 20 && !BasicAttackCoversDirection(Dot(facing, Normalize(offset, facing)), weapon)) || BlockedLine(player, enemy.Pos)) continue;
-            bool critical = random.NextDouble() < CriticalChance(); int dealt = (int)(damage * BasicAttackDamageMultiplier(enemy) * OutgoingDamageMultiplier(enemy) * (critical ? CriticalMultiplier() : 1));
+            bool critical = random.NextDouble() < CriticalChance(); int dealt = (int)(damage * BasicAttackSpecializationMultiplier() * BasicAttackDamageMultiplier(enemy) * OutgoingDamageMultiplier(enemy) * (critical ? CriticalMultiplier() : 1));
             DamageEnemy(enemy, dealt, critical); enemy.Flash = 0.2f;
             if (critical && !cadenceTriggered && HasWeaponAffix(weapon, 7)) { cadenceTriggered = true; float reduction = weaponRarities[weapon] == 2 ? 0.25f : 0.15f; AdvanceTechniqueCooldowns(reduction); AddFloatingText(new PointF(player.X, player.Y - 38), $"CADÊNCIA −{reduction:0.00} S", Color.LightCyan); }
             if (weapon == 1 && !enemy.Boss) { enemy.Stagger = Math.Max(enemy.Stagger, 0.2f); enemy.Windup = 0; }
@@ -639,8 +647,10 @@ public sealed class Game : Form
     private float BellPulseRadius() => HasCharm(2) ? 190f : 155f;
     private float BellPulseCooldown() => (Math.Max(7f, 14f - skillTalent * 0.7f) + (HasCharm(2) ? 1.5f : 0f)) * WeaponCooldownMultiplier();
     private float WeaponSkillMultiplier() => HasWeaponAffix(weapon, 3) ? weaponRarities[weapon] == 2 ? 1.18f : 1.12f : 1f;
-    private float TechniqueDamageMultiplier() => (1f + techniqueTalent * 0.08f) * (vigilActive && HasCharm(8) ? 1.18f : 1f);
+    private float TechniqueDamageMultiplier() => (1f + techniqueTalent * 0.08f) * (combatDiscipline == 2 ? 1.12f : 1f) * (vigilActive && HasCharm(8) ? 1.18f : 1f);
+    private float BasicAttackSpecializationMultiplier() => combatDiscipline == 1 ? 1.12f : 1f;
     private int WeaponPower(int index) => weaponDamage[index] + weaponBonuses[index];
+    private static int CombatDisciplineForSave(SaveData data) => data.CombatDiscipline ?? (data.Level >= 5 ? 1 : 0);
     private static string WeaponRarityName(int index) => index == 0 ? "COMUM" : index == 1 ? "RARA" : "RELÍQUIA";
     private bool HasWeaponAffix(int index, int affix) => weaponAffixes[index] == affix || weaponAffixes2[index] == affix;
     private string WeaponAffixName(int index) => string.Join(" + ", new[] { WeaponAffixLabel(weaponAffixes[index]), WeaponAffixLabel(weaponAffixes2[index]) }.Where(label => label.Length > 0));
@@ -1537,7 +1547,7 @@ public sealed class Game : Form
         return false;
     }
 
-    private SaveData CaptureSaveData() => new() { Room = room, Level = level, Xp = xp, Gold = gold, Potions = potions, Damage = damage, Health = health, MaxHealth = maxHealth, Weapon = weapon, OwnedWeapons = ownedWeapons, Armor = armor, Relic = relic, HealthTalent = healthTalent, SkillTalent = skillTalent, DodgeTalent = dodgeTalent, TechniqueTalent = techniqueTalent, RoomCleared = room == 3 || enemies.Count == 0 && drops.Count == 0, Completed = victory, MemoriesFound = memoriesFound, QuestStage = questStage, ClearedRooms = clearedRooms | (room != 3 && enemies.Count == 0 && drops.Count == 0 ? 1L << room : 0), ArchiveSeal = archiveSeal, RiverBell = riverBell, LumeLens = lumeLens, NaraTrace = naraTrace, ChorusMemory = chorusMemory, FirstMemory = firstMemory, WestTrace = westTrace, UpstreamTrace = upstreamTrace, TideGlass = tideGlass, BeyondTrace = beyondTrace, EbbSeal = ebbSeal, CounterTrace = counterTrace, AnchorWard = anchorWard, RefrainSong = refrainSong, RiftVerse = riftVerse, DeepTrace = deepTrace, LanternSignal = lanternSignal, BeaconLight = beaconLight, RouteMemory = routeMemory, SilenceMemory = silenceMemory, BorrowedTrace = borrowedTrace, UnstruckTrace = unstruckTrace, FinalEnding = finalEnding, VigilBestFloor = vigilBestFloor, HighContrastTelegraphs = highContrastTelegraphs, EliteWeaponMisses = eliteWeaponMisses, OwnedCharms = ownedCharms, EquippedCharm = equippedCharm, EquippedCharm2 = equippedCharm2, EquippedSkills = equippedSkills.ToArray(), TownEnding = townEnding, WeaponBonuses = weaponBonuses.ToArray(), WeaponRarities = weaponRarities.ToArray(), WeaponAffixes = weaponAffixes.ToArray(), WeaponAffixes2 = weaponAffixes2.ToArray() };
+    private SaveData CaptureSaveData() => new() { Room = room, Level = level, Xp = xp, Gold = gold, Potions = potions, Damage = damage, Health = health, MaxHealth = maxHealth, Weapon = weapon, OwnedWeapons = ownedWeapons, Armor = armor, Relic = relic, HealthTalent = healthTalent, SkillTalent = skillTalent, DodgeTalent = dodgeTalent, TechniqueTalent = techniqueTalent, CombatDiscipline = combatDiscipline, RoomCleared = room == 3 || enemies.Count == 0 && drops.Count == 0, Completed = victory, MemoriesFound = memoriesFound, QuestStage = questStage, ClearedRooms = clearedRooms | (room != 3 && enemies.Count == 0 && drops.Count == 0 ? 1L << room : 0), ArchiveSeal = archiveSeal, RiverBell = riverBell, LumeLens = lumeLens, NaraTrace = naraTrace, ChorusMemory = chorusMemory, FirstMemory = firstMemory, WestTrace = westTrace, UpstreamTrace = upstreamTrace, TideGlass = tideGlass, BeyondTrace = beyondTrace, EbbSeal = ebbSeal, CounterTrace = counterTrace, AnchorWard = anchorWard, RefrainSong = refrainSong, RiftVerse = riftVerse, DeepTrace = deepTrace, LanternSignal = lanternSignal, BeaconLight = beaconLight, RouteMemory = routeMemory, SilenceMemory = silenceMemory, BorrowedTrace = borrowedTrace, UnstruckTrace = unstruckTrace, FinalEnding = finalEnding, VigilBestFloor = vigilBestFloor, HighContrastTelegraphs = highContrastTelegraphs, EliteWeaponMisses = eliteWeaponMisses, OwnedCharms = ownedCharms, EquippedCharm = equippedCharm, EquippedCharm2 = equippedCharm2, EquippedSkills = equippedSkills.ToArray(), TownEnding = townEnding, WeaponBonuses = weaponBonuses.ToArray(), WeaponRarities = weaponRarities.ToArray(), WeaponAffixes = weaponAffixes.ToArray(), WeaponAffixes2 = weaponAffixes2.ToArray() };
     private static void WriteSaveFile(string path, string contents)
     {
         string directory = Path.GetDirectoryName(path)!;
@@ -1594,6 +1604,7 @@ public sealed class Game : Form
             || s.EliteWeaponMisses is < 0 or > 2
             || s.Damage < 1
             || s.TechniqueTalent is < 0 or > 10000
+            || s.CombatDiscipline is < 0 or > 2
             || s.MemoriesFound is < 0 or > 3
             || s.QuestStage is < 0 or > 59
             || s.ClearedRooms < 0
@@ -1671,7 +1682,7 @@ public sealed class Game : Form
 
 
             if (!ValidSaveData(s)) throw new InvalidDataException();
-            StartGame(); room = s.Room; level = s.Level; xp = s.Xp; gold = s.Gold; potions = s.Potions; damage = s.Damage; health = s.Health; maxHealth = s.MaxHealth; weapon = s.Weapon; ownedWeapons = s.OwnedWeapons; RestoreWeaponData(s); armor = s.Armor; relic = s.Relic; healthTalent = s.HealthTalent; skillTalent = s.SkillTalent; dodgeTalent = s.DodgeTalent; techniqueTalent = s.TechniqueTalent; memoriesFound = s.MemoriesFound; questStage = s.QuestStage; clearedRooms = s.ClearedRooms | (s.RoomCleared && s.Room != 3 ? 1L << s.Room : 0); archiveSeal = s.ArchiveSeal; riverBell = s.RiverBell; lumeLens = s.LumeLens; naraTrace = s.NaraTrace; chorusMemory = s.ChorusMemory; firstMemory = s.FirstMemory; westTrace = s.WestTrace; upstreamTrace = s.UpstreamTrace; tideGlass = s.TideGlass; beyondTrace = s.BeyondTrace; ebbSeal = s.EbbSeal; counterTrace = s.CounterTrace; anchorWard = s.AnchorWard || s.QuestStage >= 36; riftVerse = s.RiftVerse; deepTrace = s.DeepTrace; lanternSignal = s.LanternSignal; beaconLight = s.BeaconLight; routeMemory = s.RouteMemory; silenceMemory = s.SilenceMemory; borrowedTrace = s.BorrowedTrace; unstruckTrace = s.UnstruckTrace; finalEnding = s.FinalEnding; vigilBestFloor = s.VigilBestFloor; highContrastTelegraphs = s.HighContrastTelegraphs; eliteWeaponMisses = s.EliteWeaponMisses; refrainSong = s.RefrainSong; ownedCharms = s.OwnedCharms; equippedCharm = s.EquippedCharm; equippedCharm2 = s.EquippedCharm2; equippedSkills = s.EquippedSkills.ToArray(); townEnding = s.TownEnding; SetupRoom(); if (s.RoomCleared) enemies.Clear(); victory = s.Completed; title = false; storyOverlay = false;
+            StartGame(); room = s.Room; level = s.Level; xp = s.Xp; gold = s.Gold; potions = s.Potions; damage = s.Damage; health = s.Health; maxHealth = s.MaxHealth; weapon = s.Weapon; ownedWeapons = s.OwnedWeapons; RestoreWeaponData(s); armor = s.Armor; relic = s.Relic; healthTalent = s.HealthTalent; skillTalent = s.SkillTalent; dodgeTalent = s.DodgeTalent; techniqueTalent = s.TechniqueTalent; combatDiscipline = CombatDisciplineForSave(s); memoriesFound = s.MemoriesFound; questStage = s.QuestStage; clearedRooms = s.ClearedRooms | (s.RoomCleared && s.Room != 3 ? 1L << s.Room : 0); archiveSeal = s.ArchiveSeal; riverBell = s.RiverBell; lumeLens = s.LumeLens; naraTrace = s.NaraTrace; chorusMemory = s.ChorusMemory; firstMemory = s.FirstMemory; westTrace = s.WestTrace; upstreamTrace = s.UpstreamTrace; tideGlass = s.TideGlass; beyondTrace = s.BeyondTrace; ebbSeal = s.EbbSeal; counterTrace = s.CounterTrace; anchorWard = s.AnchorWard || s.QuestStage >= 36; riftVerse = s.RiftVerse; deepTrace = s.DeepTrace; lanternSignal = s.LanternSignal; beaconLight = s.BeaconLight; routeMemory = s.RouteMemory; silenceMemory = s.SilenceMemory; borrowedTrace = s.BorrowedTrace; unstruckTrace = s.UnstruckTrace; finalEnding = s.FinalEnding; vigilBestFloor = s.VigilBestFloor; highContrastTelegraphs = s.HighContrastTelegraphs; eliteWeaponMisses = s.EliteWeaponMisses; refrainSong = s.RefrainSong; ownedCharms = s.OwnedCharms; equippedCharm = s.EquippedCharm; equippedCharm2 = s.EquippedCharm2; equippedSkills = s.EquippedSkills.ToArray(); townEnding = s.TownEnding; SetupRoom(); if (s.RoomCleared) enemies.Clear(); victory = s.Completed; title = false; storyOverlay = false;
             if (migrated && !SaveGame()) { notice = "SAVE ANTIGO CARREGADO • NÃO FOI POSSÍVEL MIGRAR"; noticeTime = 5; }
             else { notice = migrated ? "SAVE ANTIGO MIGRADO" : "PROGRESSO CARREGADO"; noticeTime = 2; }
         }
@@ -2922,7 +2933,7 @@ public sealed class Game : Form
         g.FillRectangle(shade, 0, 83, 960, 557); g.FillRectangle(background, 105, 125, 750, 455); g.DrawRectangle(border, 105, 125, 750, 455);
         DrawCentered(g, "FICHA DO ESCUTADOR", 151, heading, Color.FromArgb(230, 193, 129));
         float critical = CriticalChance(), multiplier = CriticalMultiplier(), cooldown = BasicAttackCooldown();
-        float expectedDps = damage * (1 + critical * (multiplier - 1)) / cooldown;
+        float expectedDps = damage * BasicAttackSpecializationMultiplier() * (1 + critical * (multiplier - 1)) / cooldown;
         float mitigation = 1 - ArmorDamageTakenMultiplier() * WeaponDamageTakenMultiplier() * CharmDamageTakenMultiplier();
         if (wardTime > 0) mitigation = 1 - (1 - mitigation) * 0.45f;
         g.DrawString("ATAQUE", section, Brushes.Goldenrod, 145, 205);
@@ -2941,6 +2952,7 @@ public sealed class Game : Form
         string charmOne = equippedCharm == 0 ? "vazio" : charmNames[equippedCharm]; string charmTwo = equippedCharm2 == 0 ? "vazio" : charmNames[equippedCharm2];
         g.DrawString($"Talismãs: {charmOne} + {charmTwo}", body, Brushes.Plum, new RectangleF(515, 362, 315, 45));
         g.DrawString($"Técnicas: F {ShortSkillName(0)}  •  V {ShortSkillName(1)}  •  G {ShortSkillName(2)}", body, Brushes.AntiqueWhite, new RectangleF(145, 424, 670, 40));
+        g.DrawString($"Especialização: {(combatDiscipline == 1 ? "Forma do Gume • ataques básicos +12%" : combatDiscipline == 2 ? "Forma do Eco • dano de técnicas +12%" : "a escolher no nível 5")}", body, combatDiscipline == 2 ? Brushes.Plum : Brushes.Goldenrod, 145, 458);
         g.DrawString("Dano esperado considera apenas acerto básico e críticos; não inclui armadura inimiga, chefes ou efeitos temporários.", hint, Brushes.DarkGray, 145, 510);
         g.DrawString("P ou ESC fecha", hint, Brushes.DarkGray, 145, 540);
     }
@@ -2984,13 +2996,20 @@ public sealed class Game : Form
         using var background = new SolidBrush(Color.FromArgb(248, 15, 17, 18));
         using var optionFont = new Font("Segoe UI", 12);
         using var hintBrush = new SolidBrush(Color.FromArgb(165, 174, 168));
-        g.FillRectangle(background, 170, 185, 620, 270);
+        g.FillRectangle(background, 170, 185, 620, 325);
         DrawCentered(g, $"SUBIU DE NÍVEL — ESCOLHA ({pending} PENDENTES)", 212, new Font("Georgia", 15, FontStyle.Bold), Color.Goldenrod);
         g.DrawString("1. VIGOR  +20 VIDA MÁXIMA", optionFont, Brushes.AntiqueWhite, 220, 258);
         g.DrawString("2. DOMÍNIO  técnicas recarregam mais rápido", optionFont, Brushes.AntiqueWhite, 220, 300);
         g.DrawString("3. AGILIDADE  esquiva recarrega mais rápido", optionFont, Brushes.AntiqueWhite, 220, 342);
         g.DrawString("4. SINTONIA  +8% de dano de técnica por ponto", optionFont, Brushes.AntiqueWhite, 220, 384);
-        g.DrawString("Cada escolha é permanente e pode ser repetida.", optionFont, hintBrush, 220, 424);
+        if (level < 5) g.DrawString("Especializações 5 e 6 desbloqueiam no nível 5.", optionFont, hintBrush, 220, 424);
+        else if (combatDiscipline == 0)
+        {
+            g.DrawString("5. FORMA DO GUME  +12% dano de ataques básicos", optionFont, Brushes.Goldenrod, 220, 424);
+            g.DrawString("6. FORMA DO ECO  +12% dano de técnicas", optionFont, Brushes.Plum, 220, 458);
+        }
+        else g.DrawString($"Especialização: {(combatDiscipline == 1 ? "Forma do Gume" : "Forma do Eco")} • redistribuível na forja.", optionFont, hintBrush, 220, 424);
+        g.DrawString("Talentos podem ser repetidos; a especialização escolhe um caminho.", optionFont, hintBrush, 220, 486);
     }
     private void DrawStoryOverlay(Graphics g)
     {
@@ -3556,6 +3575,21 @@ public sealed class Game : Form
             if (buildGame.enemies[0].Hp >= 1000 - 100 * 1.6f * 1.08f + 1) throw new InvalidOperationException("A Sintonia não alterou o dano real do Redemoinho.");
             SaveData buildSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(buildGame.CaptureSaveData())) ?? throw new InvalidOperationException("A especialização não foi serializada.");
             if (buildSave.TechniqueTalent != 1 || JsonSerializer.Deserialize<SaveData>("{}")?.TechniqueTalent != 0) throw new InvalidOperationException("A especialização não persistiu ou invalidou saves antigos.");
+        }
+        using (var disciplineGame = new Game())
+        {
+            disciplineGame.timer.Stop(); disciplineGame.StartGame(); disciplineGame.level = 5; disciplineGame.pendingTalents = 1; disciplineGame.talentChoice = true;
+            disciplineGame.SelectTalent(Keys.D4);
+            if (disciplineGame.pendingTalents != 1 || disciplineGame.combatDiscipline != 0) throw new InvalidOperationException("O talento comum ignorou a escolha obrigatória de especialização do nível 5.");
+            disciplineGame.SelectTalent(Keys.D5);
+            if (disciplineGame.combatDiscipline != 1 || disciplineGame.pendingTalents != 0 || Math.Abs(disciplineGame.BasicAttackSpecializationMultiplier() - 1.12f) > 0.001f || Math.Abs(disciplineGame.TechniqueDamageMultiplier() - 1f) > 0.001f) throw new InvalidOperationException("A Forma do Gume não aplicou sua especialização exclusiva.");
+            SaveData disciplineSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(disciplineGame.CaptureSaveData()))!;
+            if (disciplineSave.CombatDiscipline != 1 || !ValidSaveData(disciplineSave) || JsonSerializer.Deserialize<SaveData>("{}")?.CombatDiscipline is not null || CombatDisciplineForSave(new SaveData { Level = 4 }) != 0 || CombatDisciplineForSave(new SaveData { Level = 5 }) != 1) throw new InvalidOperationException("A Forma do Gume não persistiu ou saves antigos não preservaram a migração de especialização.");
+        }
+        using (var echoDisciplineGame = new Game())
+        {
+            echoDisciplineGame.timer.Stop(); echoDisciplineGame.StartGame(); echoDisciplineGame.level = 5; echoDisciplineGame.pendingTalents = 1; echoDisciplineGame.talentChoice = true; echoDisciplineGame.SelectTalent(Keys.D6);
+            if (echoDisciplineGame.combatDiscipline != 2 || Math.Abs(echoDisciplineGame.TechniqueDamageMultiplier() - 1.12f) > 0.001f || echoDisciplineGame.BasicAttackSpecializationMultiplier() != 1f) throw new InvalidOperationException("A Forma do Eco não aplicou sua especialização exclusiva.");
         }
         using var game = new Game(); game.timer.Stop(); game.StartGame();
         if (!game.storyOverlay || game.storyPage != 0) throw new InvalidOperationException("O novo jogo não iniciou no prólogo da história.");
@@ -4159,12 +4193,13 @@ public sealed class Game : Form
         if (borrowedChapter.room != 18 || borrowedChapter.questStage != 59 || borrowedChapter.gold != chimeGold + 2200 || borrowedChapter.tideGlass != chimeGlass + 10 || borrowedChapter.potions != chimePotions + 3 || borrowedChapter.techniqueTalent != chimeTalent + 1 || !ValidSaveData(completedChimeSave)) throw new InvalidOperationException("Aven não concluiu a expedição XVIII com recompensa e save válidos.");
         borrowedChapter.memoryOverlay = false; borrowedChapter.Interact();
         if (!borrowedChapter.forgeMenuOpen) throw new InvalidOperationException("A forja pós-jogo não permaneceu acessível após a expedição XVIII.");
-        borrowedChapter.level = 10; borrowedChapter.healthTalent = 2; borrowedChapter.skillTalent = 1; borrowedChapter.dodgeTalent = 1; borrowedChapter.techniqueTalent = 2;
+        borrowedChapter.level = 10; borrowedChapter.healthTalent = 2; borrowedChapter.skillTalent = 1; borrowedChapter.dodgeTalent = 1; borrowedChapter.techniqueTalent = 2; borrowedChapter.combatDiscipline = 1;
         borrowedChapter.maxHealth = 180; borrowedChapter.health = 90; borrowedChapter.gold = 5000; borrowedChapter.tideGlass = 10; borrowedChapter.pendingTalents = 0; borrowedChapter.talentChoice = false;
         borrowedChapter.OnKeyDown(borrowedChapter, new KeyEventArgs(Keys.D7));
-        if (borrowedChapter.forgeMenuOpen || borrowedChapter.gold != 3750 || borrowedChapter.tideGlass != 3 || borrowedChapter.healthTalent + borrowedChapter.skillTalent + borrowedChapter.dodgeTalent + borrowedChapter.techniqueTalent != 0 || borrowedChapter.maxHealth != 140 || borrowedChapter.health != 70)
+        if (borrowedChapter.forgeMenuOpen || borrowedChapter.gold != 3750 || borrowedChapter.tideGlass != 3 || borrowedChapter.healthTalent + borrowedChapter.skillTalent + borrowedChapter.dodgeTalent + borrowedChapter.techniqueTalent != 0 || borrowedChapter.combatDiscipline != 0 || borrowedChapter.pendingTalents != 7 || !borrowedChapter.talentChoice || borrowedChapter.maxHealth != 140 || borrowedChapter.health != 70)
             throw new InvalidOperationException("A redistribuição não devolveu os talentos, preservou os bônus permanentes de vida ou cobrou os recursos corretos.");
-        if (!ValidSaveData(borrowedChapter.CaptureSaveData())) throw new InvalidOperationException("A redistribuição produziu um estado de save inválido.");
+        borrowedChapter.SelectTalent(Keys.D6);
+        if (borrowedChapter.combatDiscipline != 2 || borrowedChapter.pendingTalents != 6 || Math.Abs(borrowedChapter.TechniqueDamageMultiplier() - 1.12f) > 0.001f || !ValidSaveData(borrowedChapter.CaptureSaveData())) throw new InvalidOperationException("A redistribuição não permitiu mudar para a Forma do Eco nem salvou a nova especialização.");
         using var eliteCircuit = new Game(); eliteCircuit.timer.Stop(); eliteCircuit.StartGame(); eliteCircuit.storyOverlay = false;
         foreach (int eliteRoom in new[] { 23, 25, 27, 31, 33, 35, 37, 39 })
         {
