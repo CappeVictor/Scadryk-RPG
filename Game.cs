@@ -1254,12 +1254,12 @@ public sealed class Game : Form
             try { File.Delete(temporary); } catch (IOException) { } catch (UnauthorizedAccessException) { }
         }
     }
-    private void SaveGame()
+    private bool SaveGame(string? destination = null)
     {
-        try { WriteSaveFile(SavePath, JsonSerializer.Serialize(CaptureSaveData())); notice = "PROGRESSO SALVO"; }
+        try { WriteSaveFile(destination ?? SavePath, JsonSerializer.Serialize(CaptureSaveData())); notice = "PROGRESSO SALVO"; noticeTime = 3; return true; }
         catch (IOException) { notice = "NÃO FOI POSSÍVEL SALVAR • VERIFIQUE O ARQUIVO"; }
         catch (UnauthorizedAccessException) { notice = "NÃO FOI POSSÍVEL SALVAR • VERIFIQUE AS PERMISSÕES"; }
-        noticeTime = 3;
+        noticeTime = 3; return false;
     }
     private string LegacySavePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Godot", "app_userdata", "Scadryk RPG", "scadryk-save.cfg");
     private SaveData ReadLegacySave()
@@ -1364,7 +1364,8 @@ public sealed class Game : Form
 
             if (!ValidSaveData(s)) throw new InvalidDataException();
             StartGame(); room = s.Room; level = s.Level; xp = s.Xp; gold = s.Gold; potions = s.Potions; damage = s.Damage; health = s.Health; maxHealth = s.MaxHealth; weapon = s.Weapon; ownedWeapons = s.OwnedWeapons; RestoreWeaponData(s); armor = s.Armor; relic = s.Relic; healthTalent = s.HealthTalent; skillTalent = s.SkillTalent; dodgeTalent = s.DodgeTalent; techniqueTalent = s.TechniqueTalent; memoriesFound = s.MemoriesFound; questStage = s.QuestStage; clearedRooms = s.ClearedRooms | (s.RoomCleared && s.Room != 3 ? 1L << s.Room : 0); archiveSeal = s.ArchiveSeal; riverBell = s.RiverBell; lumeLens = s.LumeLens; naraTrace = s.NaraTrace; chorusMemory = s.ChorusMemory; firstMemory = s.FirstMemory; westTrace = s.WestTrace; upstreamTrace = s.UpstreamTrace; tideGlass = s.TideGlass; beyondTrace = s.BeyondTrace; ebbSeal = s.EbbSeal; counterTrace = s.CounterTrace; anchorWard = s.AnchorWard || s.QuestStage >= 36; riftVerse = s.RiftVerse; deepTrace = s.DeepTrace; lanternSignal = s.LanternSignal; beaconLight = s.BeaconLight; routeMemory = s.RouteMemory; silenceMemory = s.SilenceMemory; finalEnding = s.FinalEnding; vigilBestFloor = s.VigilBestFloor; refrainSong = s.RefrainSong; ownedCharms = s.OwnedCharms; equippedCharm = s.EquippedCharm; equippedCharm2 = s.EquippedCharm2; equippedSkills = s.EquippedSkills.ToArray(); townEnding = s.TownEnding; SetupRoom(); if (s.RoomCleared) enemies.Clear(); victory = s.Completed; title = false; storyOverlay = false;
-            if (migrated) SaveGame(); notice = migrated ? "SAVE ANTIGO MIGRADO" : "PROGRESSO CARREGADO"; noticeTime = 2;
+            if (migrated && !SaveGame()) { notice = "SAVE ANTIGO CARREGADO • NÃO FOI POSSÍVEL MIGRAR"; noticeTime = 5; }
+            else { notice = migrated ? "SAVE ANTIGO MIGRADO" : "PROGRESSO CARREGADO"; noticeTime = 2; }
         }
         catch { notice = "NENHUM SALVAMENTO VÁLIDO"; noticeTime = 2; }
     }
@@ -2469,6 +2470,8 @@ public sealed class Game : Form
                 bool rejected = false;
                 try { WriteSaveFile(saveCheckPath, "não deve substituir"); } catch (IOException) { rejected = true; } catch (UnauthorizedAccessException) { rejected = true; }
                 if (!rejected) throw new InvalidOperationException("O save bloqueado não rejeitou a substituição.");
+                using var failedSaveGame = new Game(); failedSaveGame.timer.Stop(); failedSaveGame.StartGame();
+                if (failedSaveGame.SaveGame(saveCheckPath) || !failedSaveGame.notice.Contains("NÃO FOI POSSÍVEL SALVAR")) throw new InvalidOperationException("A falha de salvar não foi comunicada ao jogador.");
             }
             if (File.ReadAllText(saveCheckPath) != "segundo" || Directory.GetFiles(saveCheckDirectory).Length != 1) throw new InvalidOperationException("Uma falha de gravação alterou o save anterior ou deixou arquivo temporário.");
         }
