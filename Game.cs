@@ -94,6 +94,11 @@ public sealed class Game : Form
         string path = Path.Combine(AppContext.BaseDirectory, "Assets", "Aven.png");
         return File.Exists(path) ? new Bitmap(path) : null;
     });
+    private static readonly Lazy<Bitmap?> PlayerAttackSpriteSheet = new(() =>
+    {
+        string path = Path.Combine(AppContext.BaseDirectory, "Assets", "PlayerAttack.png");
+        return File.Exists(path) ? new Bitmap(path) : null;
+    });
     private static readonly Lazy<Bitmap?> EnemySpriteSheet = new(() =>
     {
         string path = Path.Combine(AppContext.BaseDirectory, "Assets", "Enemies.png");
@@ -2558,15 +2563,16 @@ public sealed class Game : Form
     }
     private void DrawPlayer(Graphics g)
     {
-        PointF animationDirection = dashTime > 0 ? dashDirection : MovementInput();
+        PointF animationDirection = attackFlash > 0 ? facing : dashTime > 0 ? dashDirection : MovementInput();
         if (Length(animationDirection) <= 0.001f) animationDirection = CurrentDrift();
         if (Length(animationDirection) <= 0.001f) animationDirection = facing;
-        Bitmap? sprites = AvenSpriteSheet.Value;
+        Bitmap? attackSprites = attackFlash > 0 ? PlayerAttackSpriteSheet.Value : null;
+        Bitmap? sprites = attackSprites ?? AvenSpriteSheet.Value;
         if (sprites is not null)
         {
             int row = PlayerSpriteRow(animationDirection);
             bool moving = dashTime > 0 || Length(MovementInput()) > 0.001f || Length(CurrentDrift()) > 0.001f;
-            int frame = PlayerSpriteFrame(playerAnimationTime, moving);
+            int frame = attackSprites is not null ? Math.Clamp((int)((0.16f - attackFlash) / 0.16f * 4), 0, 3) : PlayerSpriteFrame(playerAnimationTime, moving);
             float cellWidth = sprites.Width / 4f, cellHeight = sprites.Height / 4f;
             RectangleF source = new(frame * cellWidth, row * cellHeight, cellWidth, cellHeight);
             RectangleF target = new(player.X - 38, player.Y - 73, 76, 76);

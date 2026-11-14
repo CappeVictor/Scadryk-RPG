@@ -8,7 +8,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="Assets\Aven.png;Assets\Enemies.png;Assets\SpearboundElite.png;Assets\InkEcho.png;Assets\DrownedMemory.png;Assets\EmberWisp.png;Assets\NameMoth.png;Assets\MudCantor.png;Assets\PaperWraith.png;Assets\SaltEcho.png;Assets\Bosses.png;Assets\BossesMidgame.png;Assets\BossesLate.png;Assets\BossesFinalWave.png;Assets\BossesEndgame.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\Aven.png;Assets\PlayerAttack.png;Assets\Enemies.png;Assets\SpearboundElite.png;Assets\InkEcho.png;Assets\DrownedMemory.png;Assets\EmberWisp.png;Assets\NameMoth.png;Assets\MudCantor.png;Assets\PaperWraith.png;Assets\SaltEcho.png;Assets\Bosses.png;Assets\BossesMidgame.png;Assets\BossesLate.png;Assets\BossesFinalWave.png;Assets\BossesEndgame.png" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
 
