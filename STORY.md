@@ -203,3 +203,5 @@ A Câmara das Badaladas Não Enviadas guarda os instrumentos abandonados. Mais a
 Ao cair, o Afinador deixa uma memória coletiva: as pausas voltam a pertencer a quem escolheu mantê-las. Aven recebe o relato sem registrar nomes nem rotas e oferece provisões e sintonia para as técnicas. A expedição acrescenta duas salas de combate, um chefe e progresso persistente; não altera o epílogo e não sugere que Nara passou por ali.
 
 Entre as peças deixadas pelo Afinador está a **Lança da Badalada**, uma haste de bronze feita para atravessar a distância sem preencher o silêncio entre dois golpes. O Escutador a recolhe entre os despojos: a ponta perfura ecos blindados, mas a estocada estreita exige escolher bem a direção. A arma não guarda a voz de seu antigo dono; é apenas uma ferramenta que o refúgio pode reutilizar.
+
+O afinador deixa também o **Nó do Contratempo**, um anel de bronze que transforma o espaço entre os golpes em reserva de força. O Escutador pode sintonizar as técnicas para causar 20% mais dano, aceitando recargas 15% maiores. A peça não guarda uma ordem do Afinador; seu portador escolhe quando usar cada técnica.
