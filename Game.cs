@@ -510,6 +510,8 @@ public sealed class Game : Form
         enemiesDefeated++; drops.Add(new Drop { Pos = enemy.Pos, Kind = "gold", Amount = enemy.Boss ? 35 : enemy.Kind == EnemyKind.Elite ? 20 : 8 });
         AddXp(enemy.Boss ? 75 : enemy.Kind == EnemyKind.Elite ? 40 : 22);
         if (HasWeaponAffix(weapon, 1)) health = Math.Min(maxHealth, health + (weaponRarities[weapon] == 2 ? 6 : 3));
+        if (enemy.Boss) drops.Add(CreateWeaponDrop(Offset(enemy.Pos, 0, 28), random.Next(1, 3), true));
+        else if (enemy.Kind == EnemyKind.Elite && EliteWeaponDropRoll(random.Next(100))) drops.Add(CreateWeaponDrop(Offset(enemy.Pos, -24, 28), random.Next(1, 3)));
         if (enemy.Kind == EnemyKind.Guardian && !relic) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "relic" });
         if (enemy.Kind == EnemyKind.BlindScribe && !archiveSeal) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "seal" });
         if (enemy.Kind == EnemyKind.RiverFerryman && !riverBell) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "bell" });
@@ -637,9 +639,11 @@ public sealed class Game : Form
         return (rarity, bonus, affix, affix2);
     }
 
-    private Drop CreateWeaponDrop(PointF pos, int index)
+    private static bool EliteWeaponDropRoll(int roll) => roll is >= 0 and < 35;
+
+    private Drop CreateWeaponDrop(PointF pos, int index, bool bossReward = false)
     {
-        var roll = RollWeaponStats(random.Next(100), random.Next(5), random.Next(5), random.Next(4));
+        var roll = RollWeaponStats(bossReward ? random.Next(62, 100) : random.Next(100), random.Next(5), random.Next(5), random.Next(4));
         return new Drop { Pos = pos, Kind = "weapon", Amount = index, Rarity = roll.Rarity, Bonus = roll.Bonus, Affix = roll.Affix, Affix2 = roll.Affix2 };
     }
 
@@ -1949,6 +1953,22 @@ public sealed class Game : Form
             string label = lootRollCheck.DropLabel(drop); int expectedDropDamage = lootRollCheck.damage - lootRollCheck.WeaponPower(lootRollCheck.weapon) + lootRollCheck.weaponDamage[1] + bonus; lootRollCheck.Collect(drop);
             if (lootRollCheck.weaponRarities[1] != rarity || lootRollCheck.weaponBonuses[1] != bonus || lootRollCheck.weaponAffixes[1] != affix || lootRollCheck.weaponAffixes2[1] != affix2 || !label.Contains(WeaponRarityName(rarity)) || !label.Contains(WeaponGroundAffix(drop)) || !label.Contains($"DANO: 25 → {expectedDropDamage}") || !label.Contains("longo") || !label.Contains("ATUAL: sem afixo"))
                 throw new InvalidOperationException("A arma mudou ao ser recolhida ou não foi identificada no chão.");
+        }
+        if (EliteWeaponDropRoll(-1) || !EliteWeaponDropRoll(0) || !EliteWeaponDropRoll(34) || EliteWeaponDropRoll(35) || EliteWeaponDropRoll(99))
+            throw new InvalidOperationException("A chance de arma dos elites não respeitou os 35% definidos.");
+        using (var bossLootCheck = new Game())
+        {
+            bossLootCheck.timer.Stop(); bossLootCheck.StartGame(); bossLootCheck.storyOverlay = false; bossLootCheck.room = 40;
+            var boss = new Enemy { Pos = new PointF(500, 330), Kind = EnemyKind.Guardian, Hp = 1, MaxHp = 1 };
+            bossLootCheck.enemies.Add(boss); bossLootCheck.Defeat(boss);
+            Drop bossWeapon = bossLootCheck.drops.Single(d => d.Kind == "weapon");
+            if (bossWeapon.Amount is < 1 or > 2 || bossWeapon.Rarity is < 1 or > 2 || bossWeapon.Affix == 0 || bossWeapon.Rarity == 2 && (bossWeapon.Affix2 == 0 || bossWeapon.Affix2 == bossWeapon.Affix))
+                throw new InvalidOperationException("A recompensa do chefe não gerou uma arma Rara ou Relíquia válida.");
+            bossLootCheck.Collect(bossWeapon);
+            SaveData bossLootSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(bossLootCheck.CaptureSaveData()))!;
+            int bossWeaponIndex = bossWeapon.Amount;
+            if ((bossLootCheck.ownedWeapons & (1 << bossWeaponIndex)) == 0 || bossLootSave.WeaponRarities[bossWeaponIndex] != bossWeapon.Rarity || bossLootSave.WeaponAffixes[bossWeaponIndex] != bossWeapon.Affix || !ValidWeaponData(bossLootSave))
+                throw new InvalidOperationException("A arma do chefe não foi coletada e persistida corretamente.");
         }
         using (var activeWeaponDrop = new Game())
         {
