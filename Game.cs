@@ -640,10 +640,11 @@ public sealed class Game : Form
     }
 
     private static bool EliteWeaponDropRoll(int roll) => roll is >= 0 and < 35;
+    private static int BossWeaponRollFloor(int room) => room >= 25 ? 85 : room >= 12 ? 75 : 62;
 
     private Drop CreateWeaponDrop(PointF pos, int index, bool bossReward = false)
     {
-        var roll = RollWeaponStats(bossReward ? random.Next(62, 100) : random.Next(100), random.Next(5), random.Next(5), random.Next(4));
+        var roll = RollWeaponStats(bossReward ? random.Next(BossWeaponRollFloor(room), 100) : random.Next(100), random.Next(5), random.Next(5), random.Next(4));
         return new Drop { Pos = pos, Kind = "weapon", Amount = index, Rarity = roll.Rarity, Bonus = roll.Bonus, Affix = roll.Affix, Affix2 = roll.Affix2 };
     }
 
@@ -1956,6 +1957,14 @@ public sealed class Game : Form
         }
         if (EliteWeaponDropRoll(-1) || !EliteWeaponDropRoll(0) || !EliteWeaponDropRoll(34) || EliteWeaponDropRoll(35) || EliteWeaponDropRoll(99))
             throw new InvalidOperationException("A chance de arma dos elites não respeitou os 35% definidos.");
+        foreach (var tier in new[] { (Room: 2, Floor: 62), (Room: 12, Floor: 75), (Room: 25, Floor: 85) })
+        {
+            int floor = BossWeaponRollFloor(tier.Room);
+            int commonRolls = Enumerable.Range(floor, 100 - floor).Count(roll => RollWeaponStats(roll, 0, 0).Rarity == 0);
+            int relicRolls = Enumerable.Range(floor, 100 - floor).Count(roll => RollWeaponStats(roll, 0, 0).Rarity == 2);
+            if (floor != tier.Floor || commonRolls != 0 || relicRolls != 5)
+                throw new InvalidOperationException("A raridade das armas de chefe não escalou com o avanço da campanha.");
+        }
         using (var bossLootCheck = new Game())
         {
             bossLootCheck.timer.Stop(); bossLootCheck.StartGame(); bossLootCheck.storyOverlay = false; bossLootCheck.room = 40;
