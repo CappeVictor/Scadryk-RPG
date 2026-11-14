@@ -20,7 +20,7 @@ public sealed class Game : Form
     {
         public PointF Pos, Target, Target2, Target2Start;
         public EnemyKind Kind;
-        public float Hp, MaxHp, Cooldown, Windup, WindupMax, Flash, AnimationTime, AttackPoseTime, SummonCooldown, SummonWindup, SupportCooldown, SupportWindup, BeaconMarkTime;
+        public float Hp, MaxHp, Cooldown, Windup, WindupMax, Flash, AnimationTime, AttackPoseTime, SummonCooldown, SummonWindup, SupportCooldown, SupportWindup, BeaconMarkTime, WoundTime, WoundTickCooldown, WoundDamage;
         public int BossPattern;
         public bool Armored, Moving;
         public bool VigilMinion;
@@ -513,7 +513,7 @@ public sealed class Game : Form
             if (e.KeyCode is >= Keys.D1 and <= Keys.D8) { EquipSkill(skillMenuSlot, (int)e.KeyCode - (int)Keys.D0); return; }
             return;
         }
-        if (forgeMenuOpen) { if (e.KeyCode == Keys.D0) ReforgeWeapon(0); else if (e.KeyCode is >= Keys.D1 and <= Keys.D7) ReforgeWeapon((int)e.KeyCode - (int)Keys.D0); else if (e.KeyCode == Keys.Escape) forgeMenuOpen = false; return; }
+        if (forgeMenuOpen) { if (e.KeyCode == Keys.D0) ReforgeWeapon(0); else if (e.KeyCode is >= Keys.D1 and <= Keys.D8) ReforgeWeapon((int)e.KeyCode - (int)Keys.D0); else if (e.KeyCode == Keys.Escape) forgeMenuOpen = false; return; }
         if (endingChoiceOpen) { if (e.KeyCode == Keys.D1) ChooseTownEnding(1); else if (e.KeyCode == Keys.D2) ChooseTownEnding(2); else if (e.KeyCode == Keys.D3) endingChoiceOpen = false; return; }
         if (vigilChoiceOpen) { if (e.KeyCode == Keys.D1) ResolveVigilFloor(true); else if (e.KeyCode == Keys.D2) ResolveVigilFloor(false); else if (e.KeyCode == Keys.D3 || e.KeyCode == Keys.Escape) vigilChoiceOpen = false; return; }
         if (chestChoice) { if (e.KeyCode == Keys.D1) gold += 75; else if (e.KeyCode == Keys.D2) potions += 2; else if (e.KeyCode == Keys.D3) health = maxHealth; else return; chestChoice = false; EnterVesper(); return; }
@@ -541,7 +541,7 @@ public sealed class Game : Form
         if (!forgeMenuOpen || room != 18 || questStage < 27 || Distance(player, AvenPosition) >= 60) { forgeMenuOpen = false; return; }
         if (affix == 7) { RespecTalents(); return; }
         if (affix == 0) affix = 7;
-        if (affix is < 1 or > 7) return;
+        if (affix is < 1 or > 8) return;
         if (gold < 75 || tideGlass < 1) { notice = "A TÊMPERA CUSTA 75 OURO E 1 SAL VÍTREO"; noticeTime = 2; return; }
         if (weaponAffixes[weapon] == affix) { notice = "ESSA ARMA JÁ GUARDA ESSE AFFIX"; noticeTime = 2; return; }
         int oldPower = WeaponPower(weapon);
@@ -620,6 +620,7 @@ public sealed class Game : Form
             if (distance > BasicAttackReach(enemy) || (distance >= 20 && !BasicAttackCoversDirection(Dot(facing, Normalize(offset, facing)), weapon)) || BlockedLine(player, enemy.Pos)) continue;
             bool rangedCriticalResonance = UsesRangedCriticalResonance(enemy); bool critical = random.NextDouble() < BasicAttackCriticalChance(enemy); int dealt = (int)(damage * BasicAttackSpecializationMultiplier() * BasicAttackDamageMultiplier(enemy) * OutgoingDamageMultiplier(enemy) * (critical ? CriticalMultiplier() : 1));
             DamageEnemy(enemy, dealt, critical); enemy.Flash = 0.2f;
+            ApplyWeaponWound(enemy, critical);
             if (critical && rangedCriticalResonance) AddFloatingText(new PointF(enemy.Pos.X, enemy.Pos.Y - enemy.Radius - 28), "RESSONÂNCIA DO CONTRACANTO", Color.LightCyan);
             if (critical && !cadenceTriggered && HasWeaponAffix(weapon, 7)) { cadenceTriggered = true; float reduction = WeaponCriticalCooldownAdvance(weapon); AdvanceTechniqueCooldowns(reduction); AddFloatingText(new PointF(player.X, player.Y - 38), $"CADÊNCIA −{reduction:0.00} S", Color.LightCyan); }
             if (weapon == 1 && !enemy.Boss) { enemy.Stagger = Math.Max(enemy.Stagger, 0.2f); enemy.Windup = 0; }
@@ -702,15 +703,16 @@ public sealed class Game : Form
     private bool HasWeaponAffix(int index, int affix) => weaponAffixes[index] == affix || weaponAffixes2[index] == affix;
     private bool HasAnchorWardResonance(int index) => weaponRarities[index] == 2 && HasWeaponAffix(index, 4) && HasWeaponAffix(index, 5);
     private bool HasRangedCriticalResonance(int index) => weaponRarities[index] == 2 && HasWeaponAffix(index, 2) && HasWeaponAffix(index, 6);
+    private bool HasWoundResonance(int index) => weaponRarities[index] == 2 && HasWeaponAffix(index, 2) && HasWeaponAffix(index, 8);
     private bool UsesRangedCriticalResonance(Enemy enemy) => HasRangedCriticalResonance(weapon) && Distance(player, enemy.Pos) >= BasicAttackReach(enemy) * 0.7f;
     private float BasicAttackCriticalChance(Enemy enemy) => CriticalChance() + (UsesRangedCriticalResonance(enemy) ? 0.1f : 0f);
     private float AnchorWardDuration() => 2.5f + (HasAnchorWardResonance(weapon) ? 0.75f : 0f);
     private float WeaponCriticalCooldownAdvance(int index) => !HasWeaponAffix(index, 7) ? 0 : (weaponRarities[index] == 2 ? 0.25f : 0.15f) + (HasWeaponAffix(index, 3) && HasWeaponAffix(index, 7) ? 0.1f : 0f);
     private string WeaponAffixName(int index) => string.Join(" + ", new[] { WeaponAffixLabel(weaponAffixes[index]), WeaponAffixLabel(weaponAffixes2[index]) }.Where(label => label.Length > 0));
-    private static string WeaponAffixLabel(int affix) => affix switch { 1 => "Trégua", 2 => "Contracanto", 3 => "Maré", 4 => "Passo Célere", 5 => "Lastro", 6 => "Fio Esticado", 7 => "Cadência", _ => "" };
+    private static string WeaponAffixLabel(int affix) => affix switch { 1 => "Trégua", 2 => "Contracanto", 3 => "Maré", 4 => "Passo Célere", 5 => "Lastro", 6 => "Fio Esticado", 7 => "Cadência", 8 => "Ruptura", _ => "" };
     private string WeaponDisplayName(int index) => weaponRarities[index] == 0 ? $"{weaponNames[index]} [COMUM]" : $"{weaponNames[index]} • {WeaponRarityName(index)} {WeaponAffixName(index)}";
-    private string WeaponAffixDescription(int index) => string.Join(" • ", new[] { WeaponAffixDescription(weaponAffixes[index], weaponRarities[index]), WeaponAffixDescription(weaponAffixes2[index], weaponRarities[index]), weaponRarities[index] == 2 && HasWeaponAffix(index, 3) && HasWeaponAffix(index, 7) ? "Ressonância da Maré: Cadência adianta +0,10 s por crítico" : "", weaponRarities[index] == 2 && HasWeaponAffix(index, 1) && HasWeaponAffix(index, 5) ? "Ressonância da Trégua: abaixo de metade da vida, abates curam +6" : "", HasAnchorWardResonance(index) ? "Ressonância do Lastro: Manto de Lastro dura +0,75 s" : "", HasRangedCriticalResonance(index) ? "Ressonância do Contracanto: +10 p.p. de crítico no alcance longo" : "" }.Where(description => description.Length > 0));
-    private static string WeaponAffixDescription(int affix, int rarity) => affix switch { 1 => $"da Trégua: recupera {(rarity == 2 ? 6 : 3)} vida por abate", 2 => $"do Contracanto: +{(rarity == 2 ? 11 : 7)} p.p. de crítico", 3 => $"da Maré: +{(rarity == 2 ? 18 : 12)}% de dano de técnica", 4 => $"do Passo Célere: recarga de técnicas -{(rarity == 2 ? 16 : 10)}%", 5 => $"do Lastro: dano recebido -{(rarity == 2 ? 12 : 8)}%", 6 => $"do Fio Esticado: alcance básico +{(rarity == 2 ? 20 : 12)}%", 7 => $"da Cadência: crítico adianta recargas em {(rarity == 2 ? 0.25f : 0.15f):0.00} s por golpe", _ => "" };
+    private string WeaponAffixDescription(int index) => string.Join(" • ", new[] { WeaponAffixDescription(weaponAffixes[index], weaponRarities[index]), WeaponAffixDescription(weaponAffixes2[index], weaponRarities[index]), weaponRarities[index] == 2 && HasWeaponAffix(index, 3) && HasWeaponAffix(index, 7) ? "Ressonância da Maré: Cadência adianta +0,10 s por crítico" : "", weaponRarities[index] == 2 && HasWeaponAffix(index, 1) && HasWeaponAffix(index, 5) ? "Ressonância da Trégua: abaixo de metade da vida, abates curam +6" : "", HasAnchorWardResonance(index) ? "Ressonância do Lastro: Manto de Lastro dura +0,75 s" : "", HasRangedCriticalResonance(index) ? "Ressonância do Contracanto: +10 p.p. de crítico no alcance longo" : "", HasWoundResonance(index) ? "Ressonância da Cicatriz: Ruptura causa +40% de dano" : "" }.Where(description => description.Length > 0));
+    private static string WeaponAffixDescription(int affix, int rarity) => affix switch { 1 => $"da Trégua: recupera {(rarity == 2 ? 6 : 3)} vida por abate", 2 => $"do Contracanto: +{(rarity == 2 ? 11 : 7)} p.p. de crítico", 3 => $"da Maré: +{(rarity == 2 ? 18 : 12)}% de dano de técnica", 4 => $"do Passo Célere: recarga de técnicas -{(rarity == 2 ? 16 : 10)}%", 5 => $"do Lastro: dano recebido -{(rarity == 2 ? 12 : 8)}%", 6 => $"do Fio Esticado: alcance básico +{(rarity == 2 ? 20 : 12)}%", 7 => $"da Cadência: crítico adianta recargas em {(rarity == 2 ? 0.25f : 0.15f):0.00} s por golpe", 8 => $"da Ruptura: críticos ferem por 3 s ({(rarity == 2 ? 8 : 6)}% do dano da arma/s)", _ => "" };
 
     private void CastBellPulse()
     {
@@ -987,7 +989,7 @@ public sealed class Game : Form
         else playerAnimationTime = 0;
         for (int i = drops.Count - 1; i >= 0; i--) if (drops[i].Kind != "weapon" && Distance(player, drops[i].Pos) < 30) { GameAudio.Play(GameAudio.Cue.Loot); Collect(drops[i]); }
         TickBeacon(dt); int roomBeingUpdated = room; foreach (Enemy enemy in enemies.ToArray()) { PointF previousPos = enemy.Pos; UpdateEnemy(enemy, dt); enemy.Moving = Distance(previousPos, enemy.Pos) > 0.01f; if (enemy.Moving) enemy.AnimationTime += dt; if (dead || room != roomBeingUpdated) break; }
-        TickVigilMinions(dt); TickGroundHazards(dt);
+        TickVigilMinions(dt); TickGroundHazards(dt); TickEnemyWounds(dt);
         AdvanceVoiceShards(dt);
         if (enemies.Count == 0 && drops.Count == 0 && room == 2 && !memoryOverlay) chestChoice = true;
         MarkRoomCleared();
@@ -1243,6 +1245,34 @@ public sealed class Game : Form
         AddFloatingText(new PointF(enemy.Pos.X, enemy.Pos.Y - enemy.Radius - 10), critical ? $"CRÍTICO {value}" : value, critical ? Color.FromArgb(255, 211, 123) : Color.AntiqueWhite);
     }
 
+    private void ApplyWeaponWound(Enemy enemy, bool critical)
+    {
+        if (!critical || enemy.Hp <= 0 || !HasWeaponAffix(weapon, 8)) return;
+        float perSecond = weaponRarities[weapon] == 2 ? 0.08f : 0.06f;
+        float resonance = HasWoundResonance(weapon) ? 1.4f : 1f;
+        if (enemy.WoundTime <= 0) enemy.WoundTickCooldown = 1f;
+        enemy.WoundTime = 3f;
+        enemy.WoundDamage = damage * perSecond * resonance * OutgoingDamageMultiplier(enemy) * (IsArmored(enemy) ? 0.75f : 1f);
+        AddFloatingText(new PointF(enemy.Pos.X, enemy.Pos.Y - enemy.Radius - 26), "RUPTURA", Color.Salmon);
+    }
+
+    private void TickEnemyWounds(float dt)
+    {
+        foreach (Enemy enemy in enemies.ToArray())
+        {
+            if (enemy.WoundTime <= 0) continue;
+            enemy.WoundTickCooldown -= dt;
+            if (enemy.WoundTickCooldown <= 0)
+            {
+                enemy.WoundTickCooldown += 1f;
+                DamageEnemy(enemy, enemy.WoundDamage);
+                if (enemy.Hp <= 0) { Defeat(enemy); continue; }
+            }
+            enemy.WoundTime = Math.Max(0, enemy.WoundTime - dt);
+            if (enemy.WoundTime <= 0) { enemy.WoundDamage = 0; enemy.WoundTickCooldown = 0; }
+        }
+    }
+
     private void HitPlayer(float value)
     {
         GameAudio.Play(GameAudio.Cue.Impact);
@@ -1316,7 +1346,7 @@ public sealed class Game : Form
 
     private void RollWeapon(int index)
     {
-        RollWeapon(index, random.Next(100), random.Next(5), random.Next(7), random.Next(6));
+        RollWeapon(index, random.Next(100), random.Next(5), random.Next(8), random.Next(7));
     }
 
     private void RollWeapon(int index, int rarityRoll, int bonusRoll, int affixRoll, int secondAffixRoll = 0)
@@ -1329,8 +1359,8 @@ public sealed class Game : Form
     {
         int rarity = rarityRoll < 62 ? 0 : rarityRoll < 95 ? 1 : 2;
         int bonus = rarity switch { 0 => bonusRoll % 3, 1 => 3 + bonusRoll % 4, _ => 7 + bonusRoll % 5 };
-        int affix = rarity == 0 ? 0 : 1 + affixRoll % 7;
-        int affix2 = rarity == 2 ? 1 + secondAffixRoll % 6 : 0;
+        int affix = rarity == 0 ? 0 : 1 + affixRoll % 8;
+        int affix2 = rarity == 2 ? 1 + secondAffixRoll % 7 : 0;
         if (affix2 >= affix && affix2 != 0) affix2++;
         return (rarity, bonus, affix, affix2);
     }
@@ -1344,7 +1374,7 @@ public sealed class Game : Form
     private Drop CreateWeaponDrop(PointF pos, int index, bool bossReward = false)
     {
         int rarityFloor = vigilActive ? Math.Min(99, 85 + vigilFloor / 2) : BossWeaponRollFloor(room);
-        var roll = RollWeaponStats(bossReward ? random.Next(rarityFloor, 100) : random.Next(100), random.Next(5), random.Next(7), random.Next(6));
+        var roll = RollWeaponStats(bossReward ? random.Next(rarityFloor, 100) : random.Next(100), random.Next(5), random.Next(8), random.Next(7));
         return new Drop { Pos = pos, Kind = "weapon", Amount = index, Rarity = roll.Rarity, Bonus = roll.Bonus, Affix = roll.Affix, Affix2 = roll.Affix2 };
     }
 
@@ -1634,7 +1664,7 @@ public sealed class Game : Form
         for (int i = 0; i < 3; i++)
         {
             int rarity = s.WeaponRarities[i], bonus = s.WeaponBonuses[i], affix = s.WeaponAffixes[i], affix2 = s.WeaponAffixes2[i];
-            if (rarity == 0 ? bonus is < 0 or > 2 || affix != 0 || affix2 != 0 : rarity == 1 ? bonus is < 3 or > 6 || affix is < 1 or > 7 || affix2 != 0 : rarity == 2 ? bonus is < 7 or > 11 || affix is < 1 or > 7 || affix2 is < 0 or > 7 || affix2 == affix : true) return false;
+            if (rarity == 0 ? bonus is < 0 or > 2 || affix != 0 || affix2 != 0 : rarity == 1 ? bonus is < 3 or > 6 || affix is < 1 or > 8 || affix2 != 0 : rarity == 2 ? bonus is < 7 or > 11 || affix is < 1 or > 8 || affix2 is < 0 or > 8 || affix2 == affix : true) return false;
             if ((s.OwnedWeapons & (1 << i)) == 0 && (rarity != 0 || bonus != 0 || affix != 0 || affix2 != 0)) return false;
         }
         return true;
@@ -2541,6 +2571,7 @@ public sealed class Game : Form
             if (enemy.Kind == EnemyKind.CooldownLeech) DrawCentered(g, "RECARGAS", center.Y - radius - 14, new Font("Segoe UI", 8, FontStyle.Bold), highContrastTelegraphs ? Color.White : Color.Plum, center.X);
             if (enemy.Kind == EnemyKind.SlagWeaver) DrawCentered(g, "SAL VIVO", center.Y - radius - 14, new Font("Segoe UI", 8, FontStyle.Bold), highContrastTelegraphs ? Color.White : Color.FromArgb(255, 191, 126), center.X);
         }
+        if (enemy.WoundTime > 0) { int alpha = (int)(110 + 100 * enemy.WoundTime / 3f); using var woundRing = new Pen(Color.FromArgb(alpha, 237, 111, 105), 2.5f); g.DrawEllipse(woundRing, enemy.Pos.X - r - 5, enemy.Pos.Y - r - 5, (r + 5) * 2, (r + 5) * 2); }
         using var body = new SolidBrush(enemy.Flash > 0 ? Color.White : color); using var edge = new Pen(enemy == lockedTarget ? Color.Gold : IsArmored(enemy) ? Color.LightSteelBlue : Color.FromArgb(35, 25, 22), enemy == lockedTarget ? 4 : 2);
         int bossSpriteIndex = CampaignBossSpriteIndex(enemy.Kind), enemySpriteRow = EnemySpriteRow(enemy.Kind);
         Bitmap? individualSprite = enemy.Kind == EnemyKind.Elite && enemy.EliteAffix == EliteAffix.Spearbound ? SpearboundEliteSprite.Value : AdvancedEnemySprites.Value.GetValueOrDefault(enemy.Kind);
@@ -2828,6 +2859,7 @@ public sealed class Game : Form
         5 => "Lastro • dano recebido -" + (rarity == 2 ? 12 : 8) + "%",
         6 => "Fio Esticado • alcance +" + (rarity == 2 ? 20 : 12) + "%",
         7 => "Cadência • crítico adianta recargas em " + (rarity == 2 ? "0,25" : "0,15") + " s",
+        8 => "Ruptura • crítico aplica ferida por 3 s",
         _ => ""
     };
 
@@ -3168,25 +3200,26 @@ public sealed class Game : Form
         using var optionFont = new Font("Segoe UI", 11); using var hintFont = new Font("Segoe UI", 9);
         g.FillRectangle(shade, 0, 83, 960, 557); g.FillRectangle(background, 120, 135, 720, 455); g.DrawRectangle(border, 120, 135, 720, 455);
         DrawCentered(g, weaponRarities[weapon] == 0 ? $"TÊMPERA DO VEIO • {weaponNames[weapon]} VIRA RARA" : $"TÊMPERA DO VEIO • {weaponNames[weapon]}", 170, new Font("Georgia", 16, FontStyle.Bold), Color.Goldenrod);
-        g.DrawString("1. TRÉGUA • recupera 3/6 vida por abate", optionFont, Brushes.AntiqueWhite, 165, 215);
-        g.DrawString("2. CONTRACANTO • crítico +7/+11 pontos percentuais", optionFont, Brushes.AntiqueWhite, 165, 245);
-        g.DrawString("3. MARÉ • dano de técnica +12%/+18%", optionFont, Brushes.AntiqueWhite, 165, 275);
-        g.DrawString("4. PASSO CÉLERE • recarga de técnicas -10%/-16%", optionFont, Brushes.AntiqueWhite, 165, 305);
-        g.DrawString("5. LASTRO • dano recebido -8%/-12%", optionFont, Brushes.AntiqueWhite, 165, 335);
-        g.DrawString("6. FIO ESTICADO • alcance básico +12%/+20%", optionFont, Brushes.AntiqueWhite, 165, 365);
-        g.DrawString("0. CADÊNCIA • críticos adiantam recargas em 0,15/0,25 s por golpe", optionFont, Brushes.AntiqueWhite, 165, 395);
+        g.DrawString("1. TRÉGUA • recupera 3/6 vida por abate", optionFont, Brushes.AntiqueWhite, 165, 205);
+        g.DrawString("2. CONTRACANTO • crítico +7/+11 pontos percentuais", optionFont, Brushes.AntiqueWhite, 165, 230);
+        g.DrawString("3. MARÉ • dano de técnica +12%/+18%", optionFont, Brushes.AntiqueWhite, 165, 255);
+        g.DrawString("4. PASSO CÉLERE • recarga de técnicas -10%/-16%", optionFont, Brushes.AntiqueWhite, 165, 280);
+        g.DrawString("5. LASTRO • dano recebido -8%/-12%", optionFont, Brushes.AntiqueWhite, 165, 305);
+        g.DrawString("6. FIO ESTICADO • alcance básico +12%/+20%", optionFont, Brushes.AntiqueWhite, 165, 330);
+        g.DrawString("0. CADÊNCIA • críticos adiantam recargas em 0,15/0,25 s por golpe", optionFont, Brushes.AntiqueWhite, 165, 355);
+        g.DrawString("8. RUPTURA • críticos ferem por 3 s (6%/8% do dano da arma por segundo)", optionFont, Brushes.Salmon, 165, 380);
         if (finalEnding > 0 && questStage >= 56)
         {
             int goldCost = TalentRespecGoldCost(level), glassCost = TalentRespecGlassCost(level);
-            g.DrawString("7. REDISTRIBUIR TALENTOS • devolve todos os pontos", optionFont, Brushes.AntiqueWhite, 165, 435);
-            g.DrawString($"CUSTO: {goldCost} OURO E {glassCost} SAL VÍTREO   •   DISPONÍVEL: {gold} OURO / {tideGlass} SAL", hintFont, gold < goldCost || tideGlass < glassCost ? Brushes.IndianRed : Brushes.Goldenrod, 165, 465);
-            g.DrawString("Valores: RARA / RELÍQUIA • 1–6 ou 0 afixo • 7 redistribui • ESC fecha", hintFont, Brushes.DarkGray, 165, 495);
+            g.DrawString("7. REDISTRIBUIR TALENTOS • devolve todos os pontos", optionFont, Brushes.AntiqueWhite, 165, 414);
+            g.DrawString($"CUSTO: {goldCost} OURO E {glassCost} SAL VÍTREO   •   DISPONÍVEL: {gold} OURO / {tideGlass} SAL", hintFont, gold < goldCost || tideGlass < glassCost ? Brushes.IndianRed : Brushes.Goldenrod, 165, 449);
+            g.DrawString("1–6 ou 8 afixo • 0 Cadência • 7 redistribui • ESC fecha", hintFont, Brushes.DarkGray, 165, 477);
         }
         else
         {
-            g.DrawString("Valores: RARA / RELÍQUIA.", hintFont, Brushes.DarkGray, 165, 435);
-            g.DrawString($"CUSTO: 75 OURO E 1 SAL VÍTREO   •   DISPONÍVEL: {gold} OURO / {tideGlass} SAL", hintFont, gold < 75 || tideGlass < 1 ? Brushes.IndianRed : Brushes.Goldenrod, 165, 465);
-            g.DrawString("1–6 ou 0 escolhe o afixo • ESC fecha", hintFont, Brushes.DarkGray, 165, 495);
+            g.DrawString("Valores: RARA / RELÍQUIA.", hintFont, Brushes.DarkGray, 165, 414);
+            g.DrawString($"CUSTO: 75 OURO E 1 SAL VÍTREO   •   DISPONÍVEL: {gold} OURO / {tideGlass} SAL", hintFont, gold < 75 || tideGlass < 1 ? Brushes.IndianRed : Brushes.Goldenrod, 165, 449);
+            g.DrawString("1–6 ou 8 afixo • 0 Cadência • ESC fecha", hintFont, Brushes.DarkGray, 165, 477);
         }
     }
 
@@ -3752,8 +3785,8 @@ public sealed class Game : Form
         using (var lootRollCheck = new Game())
         {
             lootRollCheck.timer.Stop(); lootRollCheck.StartGame(); lootRollCheck.storyOverlay = false;
-            var common = RollWeaponStats(0, 4, 2); var rare = RollWeaponStats(62, 4, 2); var relic = RollWeaponStats(95, 4, 2); var swiftRelic = RollWeaponStats(95, 4, 3); var anchoredRelic = RollWeaponStats(95, 4, 4); var reachRare = RollWeaponStats(62, 4, 5); var reachRelic = RollWeaponStats(95, 4, 5, 4);
-            if (common.Rarity != 0 || common.Bonus != 1 || common.Affix != 0 || common.Affix2 != 0 || rare.Rarity != 1 || rare.Bonus != 3 || rare.Affix != 3 || rare.Affix2 != 0 || relic.Rarity != 2 || relic.Bonus != 11 || relic.Affix != 3 || relic.Affix2 is < 1 or > 6 || relic.Affix2 == relic.Affix || swiftRelic.Affix != 4 || anchoredRelic.Affix != 5 || reachRare.Affix != 6 || reachRelic.Affix != 6 || reachRelic.Affix2 != 5)
+            var common = RollWeaponStats(0, 4, 2); var rare = RollWeaponStats(62, 4, 2); var relic = RollWeaponStats(95, 4, 2); var swiftRelic = RollWeaponStats(95, 4, 3); var anchoredRelic = RollWeaponStats(95, 4, 4); var reachRare = RollWeaponStats(62, 4, 5); var reachRelic = RollWeaponStats(95, 4, 5, 4); var ruptureRelic = RollWeaponStats(95, 4, 7, 5);
+            if (common.Rarity != 0 || common.Bonus != 1 || common.Affix != 0 || common.Affix2 != 0 || rare.Rarity != 1 || rare.Bonus != 3 || rare.Affix != 3 || rare.Affix2 != 0 || relic.Rarity != 2 || relic.Bonus != 11 || relic.Affix != 3 || relic.Affix2 is < 1 or > 8 || relic.Affix2 == relic.Affix || swiftRelic.Affix != 4 || anchoredRelic.Affix != 5 || reachRare.Affix != 6 || reachRelic.Affix != 6 || reachRelic.Affix2 != 5 || ruptureRelic.Affix != 8 || ruptureRelic.Affix2 != 6)
                 throw new InvalidOperationException("As faixas de rolagem de raridade e afixo da arma mudaram.");
             lootRollCheck.weaponRarities[0] = 1; lootRollCheck.weaponBonuses[0] = 3; lootRollCheck.weaponAffixes[0] = 6;
             if (Math.Abs(lootRollCheck.BasicAttackReach(new Enemy { Kind = EnemyKind.Grunt }) - 87.36f) > 0.01f || !ValidWeaponData(lootRollCheck.CaptureSaveData()) || WeaponGroundAffix(6, 1) != "Fio Esticado • alcance +12%")
@@ -4291,6 +4324,27 @@ public sealed class Game : Form
             if (affixForge.health != 62) throw new InvalidOperationException("A Ressonância da Trégua não recuperou vida ao abater sob metade da vida.");
             affixForge.health = 51; var healthyDummy = new Enemy { Pos = affixForge.player, Kind = EnemyKind.Grunt, Hp = 1, MaxHp = 1 }; affixForge.enemies.Add(healthyDummy); affixForge.Defeat(healthyDummy);
             if (affixForge.health != 57) throw new InvalidOperationException("A cura adicional da Ressonância da Trégua foi aplicada acima do limiar de risco.");
+        }
+        using (var ruptureForge = new Game())
+        {
+            ruptureForge.timer.Stop(); ruptureForge.StartGame(); ruptureForge.storyOverlay = false; ruptureForge.room = 18; ruptureForge.questStage = 27; ruptureForge.player = AvenPosition; ruptureForge.gold = 75; ruptureForge.tideGlass = 1; ruptureForge.forgeMenuOpen = true;
+            ruptureForge.OnKeyDown(ruptureForge, new KeyEventArgs(Keys.D8));
+            if (ruptureForge.weaponRarities[0] != 1 || ruptureForge.weaponAffixes[0] != 8 || !ruptureForge.WeaponAffixDescription(0).Contains("da Ruptura: críticos ferem por 3 s (6% do dano da arma/s)")) throw new InvalidOperationException("A têmpera não aplicou nem explicou a Ruptura rara pelo atalho 8.");
+            var woundTarget = new Enemy { Pos = new PointF(400, 330), Kind = EnemyKind.Grunt, Hp = 1000, MaxHp = 1000 }; ruptureForge.enemies.Add(woundTarget);
+            ruptureForge.ApplyWeaponWound(woundTarget, false);
+            if (woundTarget.WoundTime != 0) throw new InvalidOperationException("A Ruptura foi aplicada sem um acerto crítico.");
+            ruptureForge.ApplyWeaponWound(woundTarget, true); float rareWoundTick = ruptureForge.damage * 0.06f;
+            if (Math.Abs(woundTarget.WoundDamage - rareWoundTick) > 0.01f || woundTarget.WoundTime != 3f) throw new InvalidOperationException("A Ruptura rara não aplicou seu dano periódico e duração.");
+            ruptureForge.TickEnemyWounds(0.5f); ruptureForge.ApplyWeaponWound(woundTarget, true);
+            if (Math.Abs(woundTarget.WoundTickCooldown - 0.5f) > 0.01f || woundTarget.WoundTime != 3f) throw new InvalidOperationException("Um novo crítico reiniciou o relógio do próximo pulso da Ruptura.");
+            ruptureForge.TickEnemyWounds(0.5f); ruptureForge.TickEnemyWounds(1); ruptureForge.TickEnemyWounds(1); ruptureForge.TickEnemyWounds(0.5f);
+            if (Math.Abs(woundTarget.Hp - (1000 - rareWoundTick * 3)) > 0.02f || woundTarget.WoundTime != 0) throw new InvalidOperationException("A ferida renovada não causou exatamente três pulsos ou não expirou.");
+            ruptureForge.weaponRarities[0] = 2; ruptureForge.weaponBonuses[0] = 7; ruptureForge.weaponAffixes[0] = 8; ruptureForge.weaponAffixes2[0] = 1; ruptureForge.damage = 100;
+            var relicWoundTarget = new Enemy { Pos = new PointF(420, 330), Kind = EnemyKind.Grunt, Hp = 1000, MaxHp = 1000 }; ruptureForge.enemies.Add(relicWoundTarget); ruptureForge.ApplyWeaponWound(relicWoundTarget, true);
+            if (Math.Abs(relicWoundTarget.WoundDamage - 8f) > 0.01f || !ruptureForge.WeaponAffixDescription(0).Contains("da Ruptura: críticos ferem por 3 s (8% do dano da arma/s)")) throw new InvalidOperationException("A Ruptura de Relíquia não aumentou o pulso nem mostrou seu valor correto.");
+            ruptureForge.weaponAffixes[0] = 2; ruptureForge.weaponAffixes2[0] = 8;
+            var scarTarget = new Enemy { Pos = new PointF(440, 330), Kind = EnemyKind.Grunt, Hp = 1000, MaxHp = 1000 }; ruptureForge.enemies.Add(scarTarget); ruptureForge.ApplyWeaponWound(scarTarget, true);
+            if (Math.Abs(scarTarget.WoundDamage - 11.2f) > 0.01f || !ruptureForge.WeaponAffixDescription(0).Contains("Ressonância da Cicatriz: Ruptura causa +40% de dano") || !ValidWeaponData(ruptureForge.CaptureSaveData())) throw new InvalidOperationException("Contracanto + Ruptura não ativou sua ressonância ou não preservou a Relíquia no save.");
         }
         using var lumeUpstream = new Game(); lumeUpstream.timer.Stop(); lumeUpstream.StartGame(); lumeUpstream.room = 22; lumeUpstream.questStage = 25; lumeUpstream.townEnding = 2; lumeUpstream.SetupRoom();
         if (lumeUpstream.enemies.Single(e => e.Kind == EnemyKind.TideWitness).MaxHp != 920) throw new InvalidOperationException("Manter o Lume não alterou a força da Testemunha da Maré.");
