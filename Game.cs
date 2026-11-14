@@ -993,7 +993,7 @@ public sealed class Game : Form
                 return;
             }
             if (!hasEliteEcho && e.SummonCooldown > 0) e.SummonCooldown -= dt;
-            if (!hasEliteEcho && e.SummonCooldown <= 0)
+            if (!hasEliteEcho && e.SummonCooldown <= 0 && e.Windup <= 0 && e.Stagger <= 0)
             {
                 e.SummonWindup = 0.95f;
                 GameAudio.Play(GameAudio.Cue.EliteWarning);
