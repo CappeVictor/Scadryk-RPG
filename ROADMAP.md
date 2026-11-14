@@ -91,6 +91,8 @@ O sexto afixo de elite, **Condutor**, acrescenta uma prioridade de suporte: a ca
 
 O **Mordente de Compasso** estreia como arquétipo de longo alcance nas câmaras 14 e 21. Um círculo violeta anuncia o impacto; se acertar, além de 14 de dano ele atrasa 1,1 segundo as técnicas que já estão em recarga. O autoteste verifica presença nas duas salas, raio do aviso, janela de reação e atraso seletivo das recargas.
 
+O **Eco de Escória** adiciona negação temporária de terreno nas câmaras 27, 31 e 41: anuncia um círculo âmbar por 0,95 segundo, causa 18 de dano no impacto e deixa uma poça de 48 pixels por 3,2 segundos, com pulsos de 9 de dano a cada 0,85 segundo. Sair da área ou esquivar impede os pulsos seguintes. O autoteste cobre o surgimento por região, aviso, impacto, pulsos, evasão, expiração e silhueta procedural.
+
 A montagem conjunta de **Vazante + Farol de Vigília** cria uma sinergia de sequência: alvos puxados recebem uma marca por cinco segundos, e o próximo pulso do Farol causa 35% a mais de dano e consome a marca. A montagem, o aro nos alvos, o dano e a remoção da marca têm cobertura de autoteste.
 
 **Cadência** amplia as escolhas de equipamento: um golpe crítico adianta todas as recargas de técnica em 0,15 segundo numa arma Rara ou 0,25 numa Relíquia, uma vez por golpe. O afixo pode aparecer em saques Raros/Relíquia ou ser escolhido na Têmpera pelo atalho **0**, sem alterar o formato do save; a escolha **7** continua reservada para redistribuir talentos no pós-jogo.

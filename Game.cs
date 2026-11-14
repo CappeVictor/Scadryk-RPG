@@ -13,7 +13,7 @@ public sealed class Game : Form
     private const float ConductorPulseRadius = 165f;
     private const float InteractionRadius = 72;
     private const float MemoryStoneInteractionRadius = 58;
-    private enum EnemyKind { Grunt, Archer, Mage, Elite, Guardian, InkEcho, BlindScribe, DrownedMemory, RiverFerryman, EmberWisp, AshWarden, NameMoth, HollowName, NameWeaver, FirstKeeper, MudCantor, OathCartographer, PaperWraith, NameBroker, SaltEcho, TideWitness, ReedKeeper, FlowKeeper, CounterCurrent, RiftCantor, GlassHerald, LanternRegent, RouteScribe, DeepSilence, BorrowedChorus, LastTuner, CooldownLeech }
+    private enum EnemyKind { Grunt, Archer, Mage, Elite, Guardian, InkEcho, BlindScribe, DrownedMemory, RiverFerryman, EmberWisp, AshWarden, NameMoth, HollowName, NameWeaver, FirstKeeper, MudCantor, OathCartographer, PaperWraith, NameBroker, SaltEcho, TideWitness, ReedKeeper, FlowKeeper, CounterCurrent, RiftCantor, GlassHerald, LanternRegent, RouteScribe, DeepSilence, BorrowedChorus, LastTuner, CooldownLeech, SlagWeaver }
     private enum VigilAspect { Hardened, Hungry, Swift, Chorus, Counterflow }
     private enum EliteAffix { Armored, Swift, Bloodbound, Spearbound, Summoner, Conductor }
     private sealed class Enemy
@@ -31,6 +31,7 @@ public sealed class Game : Form
         public float Radius => Boss ? 23 : Kind == EnemyKind.Elite ? 18 : 14;
     }
     private sealed class Drop { public PointF Pos; public string Kind = "gold"; public int Amount, Rarity, Bonus, Affix, Affix2; }
+    private sealed class GroundHazard { public PointF Pos; public float Radius = 48, TimeLeft = 3.2f, TickCooldown = 0.8f; public int Damage = 9; }
     private sealed class EchoShard { public PointF Pos, Direction; public float Life, Damage; public HashSet<Enemy> Hit = new(); }
     private sealed class FloatingText { public PointF Pos; public string Text = ""; public Color Color; public float TimeLeft, Duration; }
     private readonly record struct ReadingOverlayLayout(float PanelY, float PanelHeight, float HeadingY, float BodyY, float BodyHeight, float HintY);
@@ -214,6 +215,7 @@ public sealed class Game : Form
     };
     private readonly List<Enemy> enemies = new();
     private readonly List<Drop> drops = new();
+    private readonly List<GroundHazard> groundHazards = new();
     private readonly HashSet<Keys> down = new();
     private bool focusPaused;
     private readonly System.Windows.Forms.Timer timer = new() { Interval = 16 };
@@ -407,7 +409,7 @@ public sealed class Game : Form
 
     private void SetupRoom()
     {
-        player = new PointF(150, 330); enemies.Clear(); drops.Clear(); echoShards.Clear(); lockedTarget = null;
+        player = new PointF(150, 330); enemies.Clear(); drops.Clear(); groundHazards.Clear(); echoShards.Clear(); lockedTarget = null;
         if (vigilActive && room == 38) { vigilMinionCooldown = 20; vigilTideTime = 0; }
         if (room != 3 && !vigilActive && (clearedRooms & (1L << room)) != 0) return;
         int count = room is 3 or 18 ? 0 : room == 0 ? 3 : room == 1 ? 5 : room == 4 ? 5 : room == 5 ? 4 : room == 6 ? 6 : room is 21 or 29 or 31 or 33 or 35 or 37 or 41 ? 6 : room == 22 ? 5 : room == 23 ? 6 : room == 24 ? 5 : room == 25 ? 6 : room is 26 or 28 or 30 or 32 or 34 or 36 ? 5 : room is 38 or 40 or 42 ? 1 : room == 39 ? 5 : room == 27 ? 6 : (room is 7 or 9 or 11 or 15 or 17 or 20) ? 4 : room == 8 ? 5 : room is 10 or 12 or 14 or 16 or 19 ? 6 : room == 13 ? 4 : 4;
@@ -428,8 +430,9 @@ public sealed class Game : Form
             if (vigilActive && i == 0) kind = VigilBossKind(vigilFloor);
             if (room >= 27 && i == 2) kind = EnemyKind.SaltEcho;
             if (room >= 27 && i == 3) kind = EnemyKind.MudCantor;
+            if ((room is 27 or 31 or 41) && i == 4) kind = EnemyKind.SlagWeaver;
             if (!vigilActive && i == count - 1 && room is 23 or 25 or 27 or 31 or 33 or 35 or 37 or 39) kind = EnemyKind.Elite;
-            float hp = kind switch { EnemyKind.Guardian => 160, EnemyKind.BlindScribe => 245, EnemyKind.RiverFerryman => 285, EnemyKind.AshWarden => 340, EnemyKind.HollowName => 390, EnemyKind.NameWeaver => townEnding == 1 ? 410 : 455, EnemyKind.FirstKeeper => townEnding == 1 ? 560 : 620, EnemyKind.OathCartographer => townEnding == 1 ? 610 : 690, EnemyKind.NameBroker => townEnding == 1 ? 720 : 790, EnemyKind.TideWitness => townEnding == 1 ? 820 : 920, EnemyKind.ReedKeeper => townEnding == 1 ? 970 : 1060, EnemyKind.FlowKeeper => townEnding == 1 ? 1120 : 1230, EnemyKind.CounterCurrent => townEnding == 1 ? 1320 : 1440, EnemyKind.RiftCantor => townEnding == 1 ? 1480 : 1600, EnemyKind.GlassHerald => townEnding == 1 ? 1740 : 1880, EnemyKind.LanternRegent => townEnding == 1 ? 1920 : 2080, EnemyKind.RouteScribe => townEnding == 1 ? 2250 : 2450, EnemyKind.DeepSilence => townEnding == 1 ? 3450 : 3750, EnemyKind.BorrowedChorus => townEnding == 1 ? 4050 : 4450, EnemyKind.LastTuner => townEnding == 1 ? 4700 : 5150, EnemyKind.Elite => 120 + Math.Max(0, room - 1) * 6, EnemyKind.Archer or EnemyKind.Mage or EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth or EnemyKind.MudCantor or EnemyKind.PaperWraith or EnemyKind.SaltEcho or EnemyKind.CooldownLeech => 72, _ => 58 + room * 8 };
+            float hp = kind switch { EnemyKind.Guardian => 160, EnemyKind.BlindScribe => 245, EnemyKind.RiverFerryman => 285, EnemyKind.AshWarden => 340, EnemyKind.HollowName => 390, EnemyKind.NameWeaver => townEnding == 1 ? 410 : 455, EnemyKind.FirstKeeper => townEnding == 1 ? 560 : 620, EnemyKind.OathCartographer => townEnding == 1 ? 610 : 690, EnemyKind.NameBroker => townEnding == 1 ? 720 : 790, EnemyKind.TideWitness => townEnding == 1 ? 820 : 920, EnemyKind.ReedKeeper => townEnding == 1 ? 970 : 1060, EnemyKind.FlowKeeper => townEnding == 1 ? 1120 : 1230, EnemyKind.CounterCurrent => townEnding == 1 ? 1320 : 1440, EnemyKind.RiftCantor => townEnding == 1 ? 1480 : 1600, EnemyKind.GlassHerald => townEnding == 1 ? 1740 : 1880, EnemyKind.LanternRegent => townEnding == 1 ? 1920 : 2080, EnemyKind.RouteScribe => townEnding == 1 ? 2250 : 2450, EnemyKind.DeepSilence => townEnding == 1 ? 3450 : 3750, EnemyKind.BorrowedChorus => townEnding == 1 ? 4050 : 4450, EnemyKind.LastTuner => townEnding == 1 ? 4700 : 5150, EnemyKind.Elite => 120 + Math.Max(0, room - 1) * 6, EnemyKind.SlagWeaver => 88, EnemyKind.Archer or EnemyKind.Mage or EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth or EnemyKind.MudCantor or EnemyKind.PaperWraith or EnemyKind.SaltEcho or EnemyKind.CooldownLeech => 72, _ => 58 + room * 8 };
             if (vigilActive) hp = 3450 * (1 + Math.Max(0, vigilFloor - 1) * 0.28f);
             EliteAffix eliteAffix = kind == EnemyKind.Elite ? EliteAffixForRoll(random.Next(6)) : EliteAffix.Armored;
             var enemy = new Enemy { Pos = new PointF(485 + i % 3 * 120, 215 + i / 3 * 165), Kind = kind, Hp = hp, MaxHp = hp, Cooldown = 0.7f + (float)random.NextDouble(), SummonCooldown = 5.5f + (float)random.NextDouble() * 2, SupportCooldown = 2.5f + (float)random.NextDouble() * 2, EliteAffix = eliteAffix, Armored = kind == EnemyKind.Elite && eliteAffix == EliteAffix.Armored };
@@ -973,7 +976,7 @@ public sealed class Game : Form
         else playerAnimationTime = 0;
         for (int i = drops.Count - 1; i >= 0; i--) if (drops[i].Kind != "weapon" && Distance(player, drops[i].Pos) < 30) { GameAudio.Play(GameAudio.Cue.Loot); Collect(drops[i]); }
         TickBeacon(dt); int roomBeingUpdated = room; foreach (Enemy enemy in enemies.ToArray()) { PointF previousPos = enemy.Pos; UpdateEnemy(enemy, dt); enemy.Moving = Distance(previousPos, enemy.Pos) > 0.01f; if (enemy.Moving) enemy.AnimationTime += dt; if (dead || room != roomBeingUpdated) break; }
-        TickVigilMinions(dt);
+        TickVigilMinions(dt); TickGroundHazards(dt);
         AdvanceVoiceShards(dt);
         if (enemies.Count == 0 && drops.Count == 0 && room == 2 && !memoryOverlay) chestChoice = true;
         MarkRoomCleared();
@@ -987,8 +990,23 @@ public sealed class Game : Form
         EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth => 28,
         EnemyKind.MudCantor or EnemyKind.PaperWraith or EnemyKind.SaltEcho => 36,
         EnemyKind.CooldownLeech => 42,
+        EnemyKind.SlagWeaver => 48,
         _ => 0
     };
+
+    private void CreateSlagHazard(PointF position) => groundHazards.Add(new GroundHazard { Pos = position });
+
+    private void TickGroundHazards(float dt)
+    {
+        for (int i = groundHazards.Count - 1; i >= 0; i--)
+        {
+            GroundHazard hazard = groundHazards[i]; hazard.TimeLeft -= dt; hazard.TickCooldown -= dt;
+            if (hazard.TimeLeft <= 0) { groundHazards.RemoveAt(i); continue; }
+            if (hazard.TickCooldown > 0) continue;
+            hazard.TickCooldown = 0.85f;
+            if (Distance(player, hazard.Pos) <= hazard.Radius && invulnerable <= 0 && dashTime <= 0) HitPlayer(hazard.Damage);
+        }
+    }
 
     private static float NonBossAttackRadius(Enemy e)
     {
@@ -1097,9 +1115,14 @@ public sealed class Game : Form
             bool inAttack = e.Boss ? BossAttackContains(e, player) : NonBossAttackContains(e, player);
             if (e.Windup <= 0 && inAttack && invulnerable <= 0 && dashTime <= 0)
             {
-                HitPlayer(vigilActive ? 112 : e.Boss ? e.Kind == EnemyKind.BlindScribe ? 23 : e.Kind == EnemyKind.RiverFerryman ? 28 : e.Kind == EnemyKind.AshWarden ? 31 : e.Kind == EnemyKind.HollowName ? 36 : e.Kind == EnemyKind.NameWeaver ? 39 : e.Kind == EnemyKind.FirstKeeper ? 44 : e.Kind == EnemyKind.OathCartographer ? 42 : e.Kind == EnemyKind.NameBroker ? 48 : e.Kind == EnemyKind.CounterCurrent ? 68 : e.Kind == EnemyKind.RiftCantor ? 74 : e.Kind == EnemyKind.GlassHerald ? 82 : e.Kind == EnemyKind.LanternRegent ? 88 : e.Kind == EnemyKind.RouteScribe ? 96 : e.Kind == EnemyKind.DeepSilence ? 112 : e.Kind == EnemyKind.LastTuner ? 126 : e.Kind == EnemyKind.BorrowedChorus ? 118 : e.Kind == EnemyKind.FlowKeeper ? 62 : e.Kind == EnemyKind.ReedKeeper ? 56 : e.Kind == EnemyKind.TideWitness ? 52 : 26 : e.Kind == EnemyKind.Elite ? e.EliteAffix == EliteAffix.Bloodbound ? 24 : e.EliteAffix == EliteAffix.Spearbound ? 18 : 20 : e.Kind == EnemyKind.CooldownLeech ? 14 : e.Kind == EnemyKind.Mage ? 16 : e.Kind is EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth or EnemyKind.MudCantor or EnemyKind.PaperWraith or EnemyKind.SaltEcho ? 18 : 10);
+                if (e.Kind == EnemyKind.SlagWeaver) HitPlayer(18); else HitPlayer(vigilActive ? 112 : e.Boss ? e.Kind == EnemyKind.BlindScribe ? 23 : e.Kind == EnemyKind.RiverFerryman ? 28 : e.Kind == EnemyKind.AshWarden ? 31 : e.Kind == EnemyKind.HollowName ? 36 : e.Kind == EnemyKind.NameWeaver ? 39 : e.Kind == EnemyKind.FirstKeeper ? 44 : e.Kind == EnemyKind.OathCartographer ? 42 : e.Kind == EnemyKind.NameBroker ? 48 : e.Kind == EnemyKind.CounterCurrent ? 68 : e.Kind == EnemyKind.RiftCantor ? 74 : e.Kind == EnemyKind.GlassHerald ? 82 : e.Kind == EnemyKind.LanternRegent ? 88 : e.Kind == EnemyKind.RouteScribe ? 96 : e.Kind == EnemyKind.DeepSilence ? 112 : e.Kind == EnemyKind.LastTuner ? 126 : e.Kind == EnemyKind.BorrowedChorus ? 118 : e.Kind == EnemyKind.FlowKeeper ? 62 : e.Kind == EnemyKind.ReedKeeper ? 56 : e.Kind == EnemyKind.TideWitness ? 52 : 26 : e.Kind == EnemyKind.Elite ? e.EliteAffix == EliteAffix.Bloodbound ? 24 : e.EliteAffix == EliteAffix.Spearbound ? 18 : 20 : e.Kind == EnemyKind.CooldownLeech ? 14 : e.Kind == EnemyKind.Mage ? 16 : e.Kind is EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth or EnemyKind.MudCantor or EnemyKind.PaperWraith or EnemyKind.SaltEcho ? 18 : 10);
                 if (e.Kind == EnemyKind.CooldownLeech) { DelayTechniqueCooldowns(1.1f); AddFloatingText(new PointF(player.X, player.Y - 46), "RECARGAS +1,1 S", Color.MediumOrchid); }
                 if (e.Kind == EnemyKind.Elite && e.EliteAffix == EliteAffix.Bloodbound) e.Hp = Math.Min(e.MaxHp, e.Hp + 8);
+            }
+            if (e.Windup <= 0 && e.Kind == EnemyKind.SlagWeaver)
+            {
+                CreateSlagHazard(e.Target);
+                AddFloatingText(new PointF(e.Target.X, e.Target.Y - 46), "ESCÓRIA VIVA", Color.FromArgb(241, 171, 106));
             }
             return;
         }
@@ -1108,6 +1131,13 @@ public sealed class Game : Form
             if (dist < 150) e.Pos = MoveEnemy(e, Scale(Normalize(Sub(e.Pos, player), PointF.Empty), 58 * dt));
             else if (dist > 285) e.Pos = MoveEnemy(e, Scale(Normalize(offset, PointF.Empty), 36 * dt));
             else if (e.Cooldown <= 0) { BeginWindup(e, player, 1.05f); e.Cooldown = 3.25f; }
+            SeparateFromPack(e, dt); return;
+        }
+        if (e.Kind == EnemyKind.SlagWeaver)
+        {
+            if (dist < 185) e.Pos = MoveEnemy(e, Scale(Normalize(Sub(e.Pos, player), PointF.Empty), 54 * dt));
+            else if (dist > 260) e.Pos = MoveEnemy(e, Scale(Normalize(offset, PointF.Empty), 36 * dt));
+            else if (e.Cooldown <= 0) { BeginWindup(e, player, 0.95f); e.Cooldown = 3.75f; }
             SeparateFromPack(e, dt); return;
         }
         if (e.Kind is EnemyKind.Archer or EnemyKind.InkEcho or EnemyKind.SaltEcho) { float preferred = e.Kind == EnemyKind.InkEcho ? 135 : e.Kind == EnemyKind.SaltEcho ? 155 : 170; if (dist < preferred) e.Pos = MoveEnemy(e, Scale(Normalize(Sub(e.Pos, player), PointF.Empty), (e.Kind == EnemyKind.InkEcho ? 68 : e.Kind == EnemyKind.SaltEcho ? 62 : 55) * dt)); else if (e.Cooldown <= 0) { BeginWindup(e, player, e.Kind == EnemyKind.InkEcho ? 0.75f : e.Kind == EnemyKind.SaltEcho ? 0.68f : 0.6f); e.Cooldown = e.Kind == EnemyKind.InkEcho ? 2.0f : e.Kind == EnemyKind.SaltEcho ? 1.85f : 1.8f; } SeparateFromPack(e, dt); return; }
@@ -1833,6 +1863,7 @@ public sealed class Game : Form
             using var wallBrush = new SolidBrush(Color.FromArgb(90, 79, 62)); using var wallEdge = new Pen(Color.FromArgb(154, 132, 91), 3); foreach (RectangleF wall in Walls) { g.FillRectangle(wallBrush, wall); g.DrawRectangle(wallEdge, wall.X, wall.Y, wall.Width, wall.Height); }
             using var exitPen = new Pen(enemies.Count == 0 && drops.Count == 0 ? Color.LightGreen : Color.FromArgb(45, 48, 43), 8); g.DrawRectangle(exitPen, 882, 293, 3, 75);
         }
+        DrawGroundHazards(g);
         if (bellWaveTime > 0) DrawBellWave(g);
         if (pullWaveTime > 0) DrawEbbWave(g);
         if (refrainWaveTime > 0) DrawRefrainWave(g); if (beaconTime > 0) DrawBeacon(g);
@@ -2469,6 +2500,7 @@ public sealed class Game : Form
     {
         float r = enemy.Radius; Color color = enemy.Kind == EnemyKind.LastTuner ? Color.FromArgb(189, 153, 98) : enemy.Kind == EnemyKind.BlindScribe ? Color.FromArgb(89, 128, 135) : enemy.Kind == EnemyKind.RiverFerryman ? Color.FromArgb(69, 120, 124) : enemy.Kind == EnemyKind.AshWarden ? Color.FromArgb(169, 91, 53) : enemy.Kind == EnemyKind.HollowName ? Color.FromArgb(120, 165, 155) : enemy.Kind == EnemyKind.NameWeaver ? Color.FromArgb(139, 108, 162) : enemy.Kind == EnemyKind.FirstKeeper ? Color.FromArgb(202, 173, 112) : enemy.Kind == EnemyKind.OathCartographer ? Color.FromArgb(96, 148, 144) : enemy.Kind == EnemyKind.NameBroker ? Color.FromArgb(126, 82, 132) : enemy.Kind == EnemyKind.ReedKeeper ? Color.FromArgb(158, 149, 98) : enemy.Kind == EnemyKind.FlowKeeper ? Color.FromArgb(71, 148, 164) : enemy.Kind == EnemyKind.TideWitness ? Color.FromArgb(63, 157, 168) : enemy.Kind == EnemyKind.GlassHerald ? Color.FromArgb(124, 204, 218) : enemy.Kind == EnemyKind.LanternRegent ? Color.FromArgb(194, 195, 144) : enemy.Kind == EnemyKind.RouteScribe ? Color.FromArgb(159, 182, 211) : enemy.Kind == EnemyKind.DeepSilence ? Color.FromArgb(119, 183, 190) : enemy.Kind == EnemyKind.SaltEcho ? Color.LightSteelBlue : enemy.Kind == EnemyKind.PaperWraith ? Color.FromArgb(201, 190, 161) : enemy.Kind == EnemyKind.MudCantor ? Color.FromArgb(165, 135, 104) : enemy.Boss ? Color.FromArgb(145, 87, 77) : enemy.Kind switch { EnemyKind.Elite => enemy.EliteAffix switch { EliteAffix.Armored => Color.SlateGray, EliteAffix.Swift => Color.Goldenrod, EliteAffix.Bloodbound => Color.MediumVioletRed, EliteAffix.Conductor => Color.MediumAquamarine, EliteAffix.Summoner => Color.MediumOrchid, _ => Color.IndianRed }, EnemyKind.Archer => Color.FromArgb(128, 151, 106), EnemyKind.Mage => Color.MediumPurple, EnemyKind.InkEcho => Color.FromArgb(113, 98, 143), EnemyKind.DrownedMemory => Color.FromArgb(95, 145, 142), EnemyKind.EmberWisp => Color.FromArgb(212, 126, 61), EnemyKind.NameMoth => Color.FromArgb(126, 170, 156), _ => Color.FromArgb(183, 181, 166) };
         if (enemy.Kind == EnemyKind.CooldownLeech) color = Color.MediumOrchid;
+        if (enemy.Kind == EnemyKind.SlagWeaver) color = Color.FromArgb(189, 123, 75);
         if (enemy.Stagger > 0) { using var staggerPen = new Pen(Color.FromArgb(200, 125, 211, 203), 2); float pulse = 1 + (0.95f - enemy.Stagger) * 7; g.DrawEllipse(staggerPen, enemy.Pos.X - r - pulse, enemy.Pos.Y - r - pulse, (r + pulse) * 2, (r + pulse) * 2); }
         if (enemy.Windup > 0 && enemy.Boss) DrawBossWarning(g, enemy);
         else if (enemy.Windup > 0)
@@ -2479,6 +2511,7 @@ public sealed class Game : Form
                 ? (Color.FromArgb(42, 76, 211, 245), Color.FromArgb(235, 76, 211, 245))
                 : AttackWarningPalette(highContrastTelegraphs);
             if (enemy.Kind == EnemyKind.CooldownLeech && !highContrastTelegraphs) { fillColor = Color.FromArgb(52, 185, 104, 220); edgeColor = Color.FromArgb(238, 205, 139, 245); }
+            if (enemy.Kind == EnemyKind.SlagWeaver && !highContrastTelegraphs) { fillColor = Color.FromArgb(45, 209, 126, 65); edgeColor = Color.FromArgb(238, 245, 164, 101); }
             float urgency = Math.Clamp(1f - enemy.Windup / Math.Max(0.01f, enemy.WindupMax), 0f, 1f);
             float pulse = (0.5f + 0.5f * MathF.Sin(windupPulse * (7f + urgency * 11f))) * urgency;
             fillColor = Color.FromArgb(Math.Clamp(fillColor.A + (int)(urgency * 24), 0, 255), fillColor);
@@ -2493,6 +2526,7 @@ public sealed class Game : Form
             if (highContrastTelegraphs) { using var shadow = new Pen(Color.FromArgb(240, 12, 13, 15), 7); g.DrawEllipse(shadow, center.X - radius, center.Y - radius, radius * 2, radius * 2); }
             g.DrawEllipse(p, center.X - radius, center.Y - radius, radius * 2, radius * 2);
             if (enemy.Kind == EnemyKind.CooldownLeech) DrawCentered(g, "RECARGAS", center.Y - radius - 14, new Font("Segoe UI", 8, FontStyle.Bold), highContrastTelegraphs ? Color.White : Color.Plum, center.X);
+            if (enemy.Kind == EnemyKind.SlagWeaver) DrawCentered(g, "SAL VIVO", center.Y - radius - 14, new Font("Segoe UI", 8, FontStyle.Bold), highContrastTelegraphs ? Color.White : Color.FromArgb(255, 191, 126), center.X);
         }
         using var body = new SolidBrush(enemy.Flash > 0 ? Color.White : color); using var edge = new Pen(enemy == lockedTarget ? Color.Gold : IsArmored(enemy) ? Color.LightSteelBlue : Color.FromArgb(35, 25, 22), enemy == lockedTarget ? 4 : 2);
         int bossSpriteIndex = CampaignBossSpriteIndex(enemy.Kind), enemySpriteRow = EnemySpriteRow(enemy.Kind);
@@ -2603,6 +2637,22 @@ public sealed class Game : Form
         using var accent = new Pen(Color.FromArgb(205, color), 2.4f);
         switch (enemy.Kind)
         {
+            case EnemyKind.SlagWeaver:
+            {
+                float rotation = enemy.AnimationTime * 0.6f;
+                using var cinderGlow = new SolidBrush(Color.FromArgb(42, 237, 133, 69)); g.FillEllipse(cinderGlow, x - r * 1.5f, y - r * 1.5f, r * 3f, r * 3f);
+                for (int i = 0; i < 4; i++)
+                {
+                    float angle = rotation + i * MathF.PI / 2;
+                    PointF tip = new(x + MathF.Cos(angle) * r * 1.05f, y + MathF.Sin(angle) * r * 1.05f);
+                    PointF left = new(x + MathF.Cos(angle + 1.1f) * r * 0.5f, y + MathF.Sin(angle + 1.1f) * r * 0.5f);
+                    PointF right = new(x + MathF.Cos(angle - 1.1f) * r * 0.5f, y + MathF.Sin(angle - 1.1f) * r * 0.5f);
+                    using var shard = new GraphicsPath(); shard.AddPolygon(new[] { tip, left, new PointF(x, y), right }); g.FillPath(fill, shard); g.DrawPath(outline, shard);
+                }
+                g.FillEllipse(fill, x - r * 0.48f, y - r * 0.48f, r * 0.96f, r * 0.96f); g.DrawEllipse(outline, x - r * 0.48f, y - r * 0.48f, r * 0.96f, r * 0.96f);
+                using var core = new SolidBrush(Color.FromArgb(245, 250, 193, 126)); g.FillEllipse(core, x - r * 0.14f, y - r * 0.14f, r * 0.28f, r * 0.28f);
+                return true;
+            }
             case EnemyKind.CooldownLeech:
             {
                 float rotation = enemy.AnimationTime * 34f;
@@ -2962,6 +3012,23 @@ public sealed class Game : Form
         using var tipGlow = new SolidBrush(Color.FromArgb(alpha / 2, color));
         g.FillEllipse(tipGlow, bladeTip.X - 5, bladeTip.Y - 5, 10, 10);
     }
+    private void DrawGroundHazards(Graphics g)
+    {
+        foreach (GroundHazard hazard in groundHazards)
+        {
+            float fade = Math.Clamp(hazard.TimeLeft / 0.45f, 0.2f, 1f), pulse = 0.5f + 0.5f * MathF.Sin(windupPulse * 5f);
+            int fillAlpha = (int)(34 * fade + pulse * 12), edgeAlpha = (int)(190 * fade);
+            using var fill = new SolidBrush(Color.FromArgb(fillAlpha, 181, 89, 42));
+            using var rim = new Pen(Color.FromArgb(edgeAlpha, 244, 155, 87), 2.5f) { DashStyle = DashStyle.Dash };
+            using var fissure = new Pen(Color.FromArgb((int)(150 * fade), 238, 177, 101), 2);
+            g.FillEllipse(fill, hazard.Pos.X - hazard.Radius, hazard.Pos.Y - hazard.Radius, hazard.Radius * 2, hazard.Radius * 2);
+            g.DrawEllipse(rim, hazard.Pos.X - hazard.Radius, hazard.Pos.Y - hazard.Radius, hazard.Radius * 2, hazard.Radius * 2);
+            g.DrawLine(fissure, hazard.Pos.X - 20, hazard.Pos.Y - 10, hazard.Pos.X - 5, hazard.Pos.Y + 4);
+            g.DrawLine(fissure, hazard.Pos.X - 5, hazard.Pos.Y + 4, hazard.Pos.X + 12, hazard.Pos.Y - 6);
+            g.DrawLine(fissure, hazard.Pos.X + 12, hazard.Pos.Y - 6, hazard.Pos.X + 24, hazard.Pos.Y + 11);
+        }
+    }
+
     private void DrawEbbWave(Graphics g) { float progress = 1f - pullWaveTime / 0.45f; float radius = 160 * progress; using var wave = new Pen(Color.FromArgb((int)(210 * pullWaveTime / 0.45f), 98, 190, 220), 4); using var glow = new Pen(Color.FromArgb((int)(65 * pullWaveTime / 0.45f), 98, 190, 220), 12); g.DrawEllipse(glow, player.X - radius, player.Y - radius, radius * 2, radius * 2); g.DrawEllipse(wave, player.X - radius, player.Y - radius, radius * 2, radius * 2); }
     private void DrawBellWave(Graphics g) { float progress = 1f - bellWaveTime / 0.42f; float radius = bellWaveRadius * progress; using var wave = new Pen(Color.FromArgb((int)(210 * bellWaveTime / 0.42f), 115, 208, 197), 4); using var glow = new Pen(Color.FromArgb((int)(65 * bellWaveTime / 0.42f), 115, 208, 197), 12); g.DrawEllipse(glow, player.X - radius, player.Y - radius, radius * 2, radius * 2); g.DrawEllipse(wave, player.X - radius, player.Y - radius, radius * 2, radius * 2); }
     private void DrawRefrainWave(Graphics g) { float progress = 1f - refrainWaveTime / 0.48f; float radius = refrainWaveRadius * progress; int alpha = (int)(220 * refrainWaveTime / 0.48f); using var wave = new Pen(Color.FromArgb(alpha, 207, 147, 227), 4); using var glow = new Pen(Color.FromArgb(alpha / 3, 207, 147, 227), 14); g.DrawEllipse(glow, player.X - radius, player.Y - radius, radius * 2, radius * 2); g.DrawEllipse(wave, player.X - radius, player.Y - radius, radius * 2, radius * 2); }
@@ -3220,7 +3287,7 @@ public sealed class Game : Form
         };
     }
     private static bool EnemyFacesLeft(float enemyX, float playerX) => playerX < enemyX;
-    private static string EnemyName(Enemy e) => e.VigilMinion ? "ECO ERRANTE • SALINO" : e.Kind switch { EnemyKind.Guardian => "GUARDIÃO SEM NOME", EnemyKind.BlindScribe => "ESCRIBA CEGO", EnemyKind.RiverFerryman => "BARQUEIRO OCO", EnemyKind.AshWarden => "GUARDIÃO DAS CINZAS", EnemyKind.HollowName => "O NOME VAZIO", EnemyKind.NameWeaver => "A TECELÃ DE NOMES", EnemyKind.FirstKeeper => "A PRIMEIRA VIGÍLIA", EnemyKind.OathCartographer => "CARTÓGRAFA DO VÃO", EnemyKind.NameBroker => "ESCRIVÃO DE CONTRATO", EnemyKind.SaltEcho => "ECO SALINO", EnemyKind.TideWitness => "TESTEMUNHA DA MARÉ", EnemyKind.ReedKeeper => "GUARDIÃ DO LEITO", EnemyKind.FlowKeeper => "VIGIA DO VEIO PRESO", EnemyKind.CounterCurrent => "AFINADOR DAS MARGENS", EnemyKind.RiftCantor => "A CONTRAVOZ", EnemyKind.GlassHerald => "ARAUTO DE VIDRO", EnemyKind.LanternRegent => "REGENTE DAS LANTERNAS", EnemyKind.RouteScribe => "ESCRIBA DO TRAÇADO", EnemyKind.DeepSilence => "SILÊNCIO DE BAIXO", EnemyKind.BorrowedChorus => "ARQUIVISTA DAS MARÉS", EnemyKind.LastTuner => "AFINADOR DO CONTRATEMPO", EnemyKind.PaperWraith => "ESPECTRO DE PAPEL", EnemyKind.MudCantor => "CANTOR DO LODO", EnemyKind.DrownedMemory => "LEMBRANÇA AFOGADA", EnemyKind.EmberWisp => "VESTÍGIO DE BRASAS", EnemyKind.NameMoth => "MARIPOSA DE NOMES", EnemyKind.Elite => $"ELITE • {EliteAffixName(e.EliteAffix)}", EnemyKind.Archer => "ARQUEIRO", EnemyKind.Mage => "CONJURADOR", EnemyKind.InkEcho => "ECO DE TINTA", EnemyKind.CooldownLeech => "MORDENTE DE COMPASSO", _ => "" };
+    private static string EnemyName(Enemy e) => e.VigilMinion ? "ECO ERRANTE • SALINO" : e.Kind switch { EnemyKind.Guardian => "GUARDIÃO SEM NOME", EnemyKind.BlindScribe => "ESCRIBA CEGO", EnemyKind.RiverFerryman => "BARQUEIRO OCO", EnemyKind.AshWarden => "GUARDIÃO DAS CINZAS", EnemyKind.HollowName => "O NOME VAZIO", EnemyKind.NameWeaver => "A TECELÃ DE NOMES", EnemyKind.FirstKeeper => "A PRIMEIRA VIGÍLIA", EnemyKind.OathCartographer => "CARTÓGRAFA DO VÃO", EnemyKind.NameBroker => "ESCRIVÃO DE CONTRATO", EnemyKind.SaltEcho => "ECO SALINO", EnemyKind.TideWitness => "TESTEMUNHA DA MARÉ", EnemyKind.ReedKeeper => "GUARDIÃ DO LEITO", EnemyKind.FlowKeeper => "VIGIA DO VEIO PRESO", EnemyKind.CounterCurrent => "AFINADOR DAS MARGENS", EnemyKind.RiftCantor => "A CONTRAVOZ", EnemyKind.GlassHerald => "ARAUTO DE VIDRO", EnemyKind.LanternRegent => "REGENTE DAS LANTERNAS", EnemyKind.RouteScribe => "ESCRIBA DO TRAÇADO", EnemyKind.DeepSilence => "SILÊNCIO DE BAIXO", EnemyKind.BorrowedChorus => "ARQUIVISTA DAS MARÉS", EnemyKind.LastTuner => "AFINADOR DO CONTRATEMPO", EnemyKind.PaperWraith => "ESPECTRO DE PAPEL", EnemyKind.MudCantor => "CANTOR DO LODO", EnemyKind.DrownedMemory => "LEMBRANÇA AFOGADA", EnemyKind.EmberWisp => "VESTÍGIO DE BRASAS", EnemyKind.NameMoth => "MARIPOSA DE NOMES", EnemyKind.Elite => $"ELITE • {EliteAffixName(e.EliteAffix)}", EnemyKind.Archer => "ARQUEIRO", EnemyKind.Mage => "CONJURADOR", EnemyKind.InkEcho => "ECO DE TINTA", EnemyKind.CooldownLeech => "MORDENTE DE COMPASSO", EnemyKind.SlagWeaver => "ECO DE ESCÓRIA", _ => "" };
     private static PointF Normalize(PointF p, PointF fallback) { float n = Length(p); return n > 0.001f ? new PointF(p.X / n, p.Y / n) : fallback; }
     private static float Length(PointF p) => MathF.Sqrt(p.X * p.X + p.Y * p.Y);
     private static float Distance(PointF a, PointF b) => Length(Sub(a, b));
@@ -3403,6 +3470,36 @@ public sealed class Game : Form
             cooldownLeechCheck.UpdateEnemy(leech, 0.02f);
             if (cooldownLeechCheck.health != 86 || Math.Abs(cooldownLeechCheck.skillCd - 3.1f) > 0.001f || Math.Abs(cooldownLeechCheck.shardCd - 4.1f) > 0.001f || cooldownLeechCheck.bellCd != 0) throw new InvalidOperationException("O impacto do Mordente não causou dano e atraso apenas às técnicas em recarga.");
         }
+        using (var slagWeaverCheck = new Game())
+        {
+            slagWeaverCheck.timer.Stop(); slagWeaverCheck.StartGame(); slagWeaverCheck.storyOverlay = false;
+            foreach (int slagRoom in new[] { 27, 31, 41 })
+            {
+                slagWeaverCheck.room = slagRoom; slagWeaverCheck.SetupRoom();
+                Enemy sower = slagWeaverCheck.enemies.SingleOrDefault(enemy => enemy.Kind == EnemyKind.SlagWeaver) ?? throw new InvalidOperationException($"A sala {slagRoom} não posicionou o Eco de Escória.");
+                if (sower.Hp != 88 || EnemyName(sower) != "ECO DE ESCÓRIA") throw new InvalidOperationException("O Eco de Escória não preservou sua vida ou identificação.");
+            }
+            var sowerCheck = new Enemy { Kind = EnemyKind.SlagWeaver, Pos = new PointF(300, 330), Cooldown = 0, Hp = 88, MaxHp = 88 };
+            slagWeaverCheck.enemies.Clear(); slagWeaverCheck.enemies.Add(sowerCheck); slagWeaverCheck.player = new PointF(500, 330);
+            slagWeaverCheck.UpdateEnemy(sowerCheck, 0.01f);
+            if (Math.Abs(sowerCheck.WindupMax - 0.95f) > 0.001f || RangedImpactRadius(sowerCheck.Kind) != 48 || NonBossAttackRadius(sowerCheck) != 48) throw new InvalidOperationException("O Eco de Escória não anunciou corretamente o círculo de 48 pixels.");
+            slagWeaverCheck.player = new PointF(560, 330); slagWeaverCheck.health = slagWeaverCheck.maxHealth = 1000; slagWeaverCheck.invulnerable = slagWeaverCheck.dashTime = 0;
+            sowerCheck.Windup = 0.01f; slagWeaverCheck.UpdateEnemy(sowerCheck, 0.02f);
+            if (slagWeaverCheck.health != 1000 || slagWeaverCheck.groundHazards.Count != 1 || Distance(slagWeaverCheck.groundHazards[0].Pos, new PointF(500, 330)) > 0.01f) throw new InvalidOperationException("O Eco de Escória não deixou a área persistente no ponto marcado ou atingiu fora do círculo.");
+            GroundHazard slagPool = slagWeaverCheck.groundHazards[0];
+            if (slagPool.Radius != 48 || slagPool.Damage != 9 || Math.Abs(slagPool.TimeLeft - 3.2f) > 0.03f) throw new InvalidOperationException("A poça de escória não preservou raio, dano e duração esperados.");
+            slagWeaverCheck.player = slagPool.Pos; slagWeaverCheck.TickGroundHazards(0.8f);
+            if (slagWeaverCheck.health != 991) throw new InvalidOperationException("A poça de escória não causou dano ao jogador que permaneceu sobre ela.");
+            slagWeaverCheck.dashTime = 1; slagWeaverCheck.TickGroundHazards(0.85f);
+            if (slagWeaverCheck.health != 991) throw new InvalidOperationException("A esquiva não protegeu contra o dano periódico da poça.");
+            slagWeaverCheck.dashTime = 0; slagWeaverCheck.TickGroundHazards(0.85f);
+            if (slagWeaverCheck.health != 982) throw new InvalidOperationException("A poça de escória não repetiu o dano depois da esquiva.");
+            slagWeaverCheck.TickGroundHazards(1.6f);
+            if (slagWeaverCheck.groundHazards.Count != 0) throw new InvalidOperationException("A poça de escória não desapareceu ao fim de sua duração.");
+            slagWeaverCheck.player = new PointF(500, 330); slagWeaverCheck.health = slagWeaverCheck.maxHealth = 1000; slagWeaverCheck.invulnerable = slagWeaverCheck.dashTime = 0;
+            sowerCheck.Target = slagWeaverCheck.player; sowerCheck.Windup = 0.01f; slagWeaverCheck.UpdateEnemy(sowerCheck, 0.02f);
+            if (slagWeaverCheck.health != 982 || slagWeaverCheck.groundHazards.Count != 1) throw new InvalidOperationException("O impacto direto do Eco de Escória não causou 18 de dano e deixou sua poça.");
+        }
         using (var meleeCheck = new Game())
         {
             meleeCheck.timer.Stop(); meleeCheck.StartGame(); meleeCheck.storyOverlay = false; meleeCheck.enemies.Clear();
@@ -3463,7 +3560,7 @@ public sealed class Game : Form
         using (var proceduralGraphics = Graphics.FromImage(proceduralArt))
         {
             proceduralGraphics.SmoothingMode = SmoothingMode.AntiAlias;
-            foreach (EnemyKind kind in new[] { EnemyKind.InkEcho, EnemyKind.DrownedMemory, EnemyKind.EmberWisp, EnemyKind.NameMoth, EnemyKind.MudCantor, EnemyKind.PaperWraith, EnemyKind.SaltEcho, EnemyKind.BorrowedChorus })
+            foreach (EnemyKind kind in new[] { EnemyKind.InkEcho, EnemyKind.DrownedMemory, EnemyKind.EmberWisp, EnemyKind.NameMoth, EnemyKind.MudCantor, EnemyKind.PaperWraith, EnemyKind.SaltEcho, EnemyKind.BorrowedChorus, EnemyKind.SlagWeaver })
             {
                 proceduralGraphics.Clear(Color.Transparent);
                 if (!DrawProceduralEnemy(proceduralGraphics, new Enemy { Kind = kind, Pos = new PointF(48, 48) }, Color.SlateGray)) throw new InvalidOperationException($"A silhueta procedural de {kind} não foi desenhada.");
