@@ -4115,11 +4115,11 @@ public sealed class Game : Form
         using var deepVigil = new Game(); deepVigil.timer.Stop(); deepVigil.StartGame(); deepVigil.storyOverlay = false; deepVigil.vigilActive = true; deepVigil.vigilFloor = 15; deepVigil.room = 38; deepVigil.SetupRoom(); Enemy fifteenthFloorBoss = deepVigil.enemies.Single(); fifteenthFloorBoss.Hp = 1; deepVigil.Defeat(fifteenthFloorBoss);
         Drop splitCompass = deepVigil.drops.Single(drop => drop.Kind == "charm" && drop.Amount == 9); deepVigil.Collect(splitCompass);
         if (deepVigil.charmNames[9] != "COMPASSO FENDIDO" || deepVigil.equippedCharm != 9 || Math.Abs(deepVigil.WeaponCooldownMultiplier() - 0.86f) > 0.001f || Math.Abs(deepVigil.CharmDamageTakenMultiplier() - 1.1f) > 0.001f) throw new InvalidOperationException("O 15º andar não concedeu a build ofensiva do Compasso Fendido.");
-        deepVigil.room = 18; deepVigil.vigilBestFloor = 0; if (!ValidSaveData(deepVigil.CaptureSaveData())) throw new InvalidOperationException("O Compasso Fendido não foi aceito por um save válido.");
+        deepVigil.room = 0; deepVigil.vigilBestFloor = 0; if (!ValidSaveData(deepVigil.CaptureSaveData())) throw new InvalidOperationException("O Compasso Fendido não foi aceito por um save válido.");
         deepVigil.drops.Clear(); deepVigil.room = 38; deepVigil.vigilFloor = 20; deepVigil.SetupRoom(); Enemy twentiethFloorBoss = deepVigil.enemies.Single(); twentiethFloorBoss.Hp = 1; deepVigil.Defeat(twentiethFloorBoss);
         Drop sharedAnchor = deepVigil.drops.Single(drop => drop.Kind == "charm" && drop.Amount == 10); deepVigil.Collect(sharedAnchor); Enemy buildDummy = new() { Kind = EnemyKind.DeepSilence, Hp = 1000, MaxHp = 1000 };
         if (deepVigil.charmNames[10] != "ÂNCORA COMUM" || deepVigil.equippedCharm2 != 10 || Math.Abs(deepVigil.OutgoingDamageMultiplier(buildDummy) - 0.9f) > 0.001f || Math.Abs(deepVigil.CharmDamageTakenMultiplier() - 0.946f) > 0.001f) throw new InvalidOperationException("O 20º andar não concedeu a build defensiva da Âncora Comum.");
-        deepVigil.room = 18; deepVigil.vigilBestFloor = 0; if (!ValidSaveData(deepVigil.CaptureSaveData())) throw new InvalidOperationException("A Âncora Comum não foi aceita por um save válido.");
+        deepVigil.room = 0; deepVigil.vigilBestFloor = 0; if (!ValidSaveData(deepVigil.CaptureSaveData())) throw new InvalidOperationException("A Âncora Comum não foi aceita por um save válido.");
         game.room = 11; game.SetupRoom();
         if (game.enemies.Count != 0 || game.drops.Count != 0) throw new InvalidOperationException("O Reservatório foi recriado após ter sido limpo.");
         game.room = 3; game.SetupRoom();
