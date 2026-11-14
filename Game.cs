@@ -24,6 +24,7 @@ public sealed class Game : Form
         public int BossPattern;
         public bool Armored, Moving;
         public bool VigilMinion;
+        public EliteAffix? EliteAffix2;
         public bool EliteMinion;
         public EliteAffix EliteAffix;
         public float Stagger;
@@ -436,7 +437,9 @@ public sealed class Game : Form
             float hp = kind switch { EnemyKind.Guardian => 160, EnemyKind.BlindScribe => 245, EnemyKind.RiverFerryman => 285, EnemyKind.AshWarden => 340, EnemyKind.HollowName => 390, EnemyKind.NameWeaver => townEnding == 1 ? 410 : 455, EnemyKind.FirstKeeper => townEnding == 1 ? 560 : 620, EnemyKind.OathCartographer => townEnding == 1 ? 610 : 690, EnemyKind.NameBroker => townEnding == 1 ? 720 : 790, EnemyKind.TideWitness => townEnding == 1 ? 820 : 920, EnemyKind.ReedKeeper => townEnding == 1 ? 970 : 1060, EnemyKind.FlowKeeper => townEnding == 1 ? 1120 : 1230, EnemyKind.CounterCurrent => townEnding == 1 ? 1320 : 1440, EnemyKind.RiftCantor => townEnding == 1 ? 1480 : 1600, EnemyKind.GlassHerald => townEnding == 1 ? 1740 : 1880, EnemyKind.LanternRegent => townEnding == 1 ? 1920 : 2080, EnemyKind.RouteScribe => townEnding == 1 ? 2250 : 2450, EnemyKind.DeepSilence => townEnding == 1 ? 3450 : 3750, EnemyKind.BorrowedChorus => townEnding == 1 ? 4050 : 4450, EnemyKind.LastTuner => townEnding == 1 ? 4700 : 5150, EnemyKind.Elite => 120 + Math.Max(0, room - 1) * 6, EnemyKind.SlagWeaver => 88, EnemyKind.Archer or EnemyKind.Mage or EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth or EnemyKind.MudCantor or EnemyKind.PaperWraith or EnemyKind.SaltEcho or EnemyKind.CooldownLeech => 72, _ => 58 + room * 8 };
             if (vigilActive) hp = 3450 * (1 + Math.Max(0, vigilFloor - 1) * 0.28f);
             EliteAffix eliteAffix = kind == EnemyKind.Elite ? EliteAffixForRoll(random.Next(6)) : EliteAffix.Armored;
-            var enemy = new Enemy { Pos = new PointF(485 + i % 3 * 120, 215 + i / 3 * 165), Kind = kind, Hp = hp, MaxHp = hp, Cooldown = 0.7f + (float)random.NextDouble(), SummonCooldown = 5.5f + (float)random.NextDouble() * 2, SupportCooldown = 2.5f + (float)random.NextDouble() * 2, EliteAffix = eliteAffix, Armored = kind == EnemyKind.Elite && eliteAffix == EliteAffix.Armored };
+            EliteAffix? eliteAffix2 = kind == EnemyKind.Elite && !vigilActive && room >= 25 ? EliteSecondaryAffixForRoll(random.Next(3), eliteAffix) : null;
+            bool armoredElite = kind == EnemyKind.Elite && (eliteAffix == EliteAffix.Armored || eliteAffix2 == EliteAffix.Armored);
+            var enemy = new Enemy { Pos = new PointF(485 + i % 3 * 120, 215 + i / 3 * 165), Kind = kind, Hp = hp, MaxHp = hp, Cooldown = 0.7f + (float)random.NextDouble(), SummonCooldown = 5.5f + (float)random.NextDouble() * 2, SupportCooldown = 2.5f + (float)random.NextDouble() * 2, EliteAffix = eliteAffix, EliteAffix2 = eliteAffix2, Armored = armoredElite };
             if (Blocked(enemy.Pos, enemy.Radius)) enemy.Pos = new PointF(660 + i * 12, 480 - i * 8);
             enemies.Add(enemy);
         }
@@ -1103,7 +1106,7 @@ public sealed class Game : Form
     private void UpdateEnemy(Enemy e, float dt)
     {
         e.AttackPoseTime = Math.Max(0, e.AttackPoseTime - dt); e.BeaconMarkTime = Math.Max(0, e.BeaconMarkTime - dt);
-        if (e.Kind == EnemyKind.Elite && e.EliteAffix == EliteAffix.Summoner)
+        if (HasEliteAffix(e, EliteAffix.Summoner))
         {
             if (e.SummonWindup > 0 && e.Stagger > 0) { e.SummonWindup = 0; e.SummonCooldown = 2.5f; }
             bool hasEliteEcho = enemies.Any(enemy => enemy.EliteMinion);
@@ -1121,7 +1124,7 @@ public sealed class Game : Form
                 return;
             }
         }
-        if (e.Kind == EnemyKind.Elite && e.EliteAffix == EliteAffix.Conductor && UpdateConductor(e, dt)) return;
+        if (HasEliteAffix(e, EliteAffix.Conductor) && UpdateConductor(e, dt)) return;
         float attackTempo = vigilActive && e.Boss && VigilAspectForFloor(vigilFloor) == VigilAspect.Swift ? 1.25f : 1;
         e.Cooldown -= dt * attackTempo; e.Flash = Math.Max(0, e.Flash - dt); PointF offset = Sub(player, e.Pos); float dist = Length(offset);
         if (e.Stagger > 0) { e.Stagger = Math.Max(0, e.Stagger - dt); return; }
@@ -1131,9 +1134,9 @@ public sealed class Game : Form
             bool inAttack = e.Boss ? BossAttackContains(e, player) : NonBossAttackContains(e, player);
             if (e.Windup <= 0 && inAttack && invulnerable <= 0 && dashTime <= 0)
             {
-                if (e.Kind == EnemyKind.SlagWeaver) HitPlayer(18); else HitPlayer(vigilActive ? 112 : e.Boss ? e.Kind == EnemyKind.BlindScribe ? 23 : e.Kind == EnemyKind.RiverFerryman ? 28 : e.Kind == EnemyKind.AshWarden ? 31 : e.Kind == EnemyKind.HollowName ? 36 : e.Kind == EnemyKind.NameWeaver ? 39 : e.Kind == EnemyKind.FirstKeeper ? 44 : e.Kind == EnemyKind.OathCartographer ? 42 : e.Kind == EnemyKind.NameBroker ? 48 : e.Kind == EnemyKind.CounterCurrent ? 68 : e.Kind == EnemyKind.RiftCantor ? 74 : e.Kind == EnemyKind.GlassHerald ? 82 : e.Kind == EnemyKind.LanternRegent ? 88 : e.Kind == EnemyKind.RouteScribe ? 96 : e.Kind == EnemyKind.DeepSilence ? 112 : e.Kind == EnemyKind.LastTuner ? 126 : e.Kind == EnemyKind.BorrowedChorus ? 118 : e.Kind == EnemyKind.FlowKeeper ? 62 : e.Kind == EnemyKind.ReedKeeper ? 56 : e.Kind == EnemyKind.TideWitness ? 52 : 26 : e.Kind == EnemyKind.Elite ? e.EliteAffix == EliteAffix.Bloodbound ? 24 : e.EliteAffix == EliteAffix.Spearbound ? 18 : 20 : e.Kind == EnemyKind.CooldownLeech ? 14 : e.Kind == EnemyKind.Mage ? 16 : e.Kind is EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth or EnemyKind.MudCantor or EnemyKind.PaperWraith or EnemyKind.SaltEcho ? 18 : 10);
+                if (e.Kind == EnemyKind.SlagWeaver) HitPlayer(18); else HitPlayer(vigilActive ? 112 : e.Boss ? e.Kind == EnemyKind.BlindScribe ? 23 : e.Kind == EnemyKind.RiverFerryman ? 28 : e.Kind == EnemyKind.AshWarden ? 31 : e.Kind == EnemyKind.HollowName ? 36 : e.Kind == EnemyKind.NameWeaver ? 39 : e.Kind == EnemyKind.FirstKeeper ? 44 : e.Kind == EnemyKind.OathCartographer ? 42 : e.Kind == EnemyKind.NameBroker ? 48 : e.Kind == EnemyKind.CounterCurrent ? 68 : e.Kind == EnemyKind.RiftCantor ? 74 : e.Kind == EnemyKind.GlassHerald ? 82 : e.Kind == EnemyKind.LanternRegent ? 88 : e.Kind == EnemyKind.RouteScribe ? 96 : e.Kind == EnemyKind.DeepSilence ? 112 : e.Kind == EnemyKind.LastTuner ? 126 : e.Kind == EnemyKind.BorrowedChorus ? 118 : e.Kind == EnemyKind.FlowKeeper ? 62 : e.Kind == EnemyKind.ReedKeeper ? 56 : e.Kind == EnemyKind.TideWitness ? 52 : 26 : e.Kind == EnemyKind.Elite ? HasEliteAffix(e, EliteAffix.Bloodbound) ? 24 : e.EliteAffix == EliteAffix.Spearbound ? 18 : 20 : e.Kind == EnemyKind.CooldownLeech ? 14 : e.Kind == EnemyKind.Mage ? 16 : e.Kind is EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth or EnemyKind.MudCantor or EnemyKind.PaperWraith or EnemyKind.SaltEcho ? 18 : 10);
                 if (e.Kind == EnemyKind.CooldownLeech) { DelayTechniqueCooldowns(1.1f); AddFloatingText(new PointF(player.X, player.Y - 46), "RECARGAS +1,1 S", Color.MediumOrchid); }
-                if (e.Kind == EnemyKind.Elite && e.EliteAffix == EliteAffix.Bloodbound) e.Hp = Math.Min(e.MaxHp, e.Hp + 8);
+                if (HasEliteAffix(e, EliteAffix.Bloodbound)) e.Hp = Math.Min(e.MaxHp, e.Hp + 8);
             }
             if (e.Windup <= 0 && e.Kind == EnemyKind.SlagWeaver)
             {
@@ -1166,7 +1169,7 @@ public sealed class Game : Form
             else if (dist > 210) e.Pos = MoveEnemy(e, Scale(Normalize(offset, PointF.Empty), 48 * dt));
             SeparateFromPack(e, dt); return;
         }
-        if (e.Kind == EnemyKind.Elite && e.Cooldown <= 0 && dist < 220) { bool swift = e.EliteAffix == EliteAffix.Swift; BeginWindup(e, player, swift ? 0.38f : e.EliteAffix == EliteAffix.Armored ? 0.72f : 0.58f); e.Cooldown = swift ? 1.55f : e.EliteAffix == EliteAffix.Armored ? 2.5f : 2.1f; return; }
+        if (e.Kind == EnemyKind.Elite && e.Cooldown <= 0 && dist < 220) { bool swift = HasEliteAffix(e, EliteAffix.Swift), armored = HasEliteAffix(e, EliteAffix.Armored); BeginWindup(e, player, swift ? armored ? 0.48f : 0.38f : armored ? 0.72f : 0.58f); e.Cooldown = swift ? armored ? 2f : 1.55f : armored ? 2.5f : 2.1f; return; }
         if (e.Kind == EnemyKind.LastTuner && e.Cooldown <= 0)
         {
             e.BossPattern = (e.BossPattern + 1) % 3;
@@ -1176,7 +1179,7 @@ public sealed class Game : Form
         }
         if (e.Boss && e.Cooldown <= 0 && (dist < 135 || (e.Kind is EnemyKind.BlindScribe or EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus))) { e.BossPattern = (e.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus) ? (e.BossPattern + 1) % 3 : 1 - e.BossPattern; bool aimed = (e.Kind == EnemyKind.BlindScribe && e.BossPattern == 1) || ((e.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden) && (e.BossPattern is 1 or 2)) || (e.Kind is EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus) && e.BossPattern is 1 or 2; float windup = e.Hp < e.MaxHp * 0.5f ? 0.52f : 0.78f; if (vigilActive && VigilAspectForFloor(vigilFloor) == VigilAspect.Swift) windup *= 0.8f; if (e.Kind == EnemyKind.FirstKeeper && e.BossPattern == 2) { PointF axis = Normalize(Sub(player, e.Pos), new PointF(1, 0)); PointF side = new(-axis.Y, axis.X); e.Target = Add(e.Pos, Scale(axis, 920)); e.Target2Start = Add(player, Scale(side, -460)); e.Target2 = Add(player, Scale(side, 460)); e.Windup = e.WindupMax = windup; GameAudio.Play(GameAudio.Cue.BossWarning); } else BeginWindup(e, aimed ? player : e.Pos, windup); e.Cooldown = e.Hp < e.MaxHp * 0.5f ? 1.25f : 2.0f; return; }
         if (e.Kind == EnemyKind.Mage && e.Cooldown <= 0) { BeginWindup(e, player, 0.8f); e.Cooldown = 2.2f; SeparateFromPack(e, dt); return; }
-        if (dist > (e.Boss ? 40 : 30)) e.Pos = MoveEnemy(e, Scale(Normalize(offset, PointF.Empty), (e.Boss ? 55 : MeleeChaseSpeed(room, e.Kind == EnemyKind.Elite && e.EliteAffix == EliteAffix.Swift)) * dt));
+        if (dist > (e.Boss ? 40 : 30)) e.Pos = MoveEnemy(e, Scale(Normalize(offset, PointF.Empty), (e.Boss ? 55 : MeleeChaseSpeed(room, HasEliteAffix(e, EliteAffix.Swift))) * dt));
         else if (e.Cooldown <= 0) { BeginWindup(e, player, 0.45f); e.Cooldown = 1.35f; }
         if (!e.Boss) SeparateFromPack(e, dt);
     }
@@ -1369,7 +1372,16 @@ public sealed class Game : Form
     }
 
     private static EliteAffix EliteAffixForRoll(int roll) => roll switch { 0 => EliteAffix.Armored, 1 => EliteAffix.Swift, 2 => EliteAffix.Bloodbound, 3 => EliteAffix.Spearbound, 5 => EliteAffix.Conductor, _ => EliteAffix.Summoner };
+    private static EliteAffix EliteSecondaryAffixForRoll(int roll, EliteAffix primary)
+    {
+        EliteAffix[] options = { EliteAffix.Armored, EliteAffix.Swift, EliteAffix.Bloodbound };
+        EliteAffix[] eligible = options.Where(affix => affix != primary && !(primary == EliteAffix.Spearbound && affix == EliteAffix.Swift)).ToArray();
+        return eligible[Math.Abs(roll % eligible.Length)];
+    }
+    private static bool HasEliteAffix(Enemy enemy, EliteAffix affix) => enemy.Kind == EnemyKind.Elite && (enemy.EliteAffix == affix || enemy.EliteAffix2 == affix);
     private static string EliteAffixName(EliteAffix affix) => affix switch { EliteAffix.Armored => "BLINDADO", EliteAffix.Swift => "VELOZ", EliteAffix.Bloodbound => "SANGRADOR", EliteAffix.Spearbound => "LANÇADOR", EliteAffix.Summoner => "INVOCADOR", EliteAffix.Conductor => "CONDUTOR", _ => "ELITE" };
+    private static string EliteAffixName(Enemy enemy) => enemy.EliteAffix2 is EliteAffix second ? $"{EliteAffixName(enemy.EliteAffix)} + {EliteAffixName(second)}" : EliteAffixName(enemy.EliteAffix);
+    private static Color EliteAffixColor(EliteAffix affix) => affix switch { EliteAffix.Armored => Color.LightSteelBlue, EliteAffix.Swift => Color.Gold, EliteAffix.Bloodbound => Color.HotPink, EliteAffix.Spearbound => Color.DeepSkyBlue, EliteAffix.Summoner => Color.MediumOrchid, EliteAffix.Conductor => Color.MediumAquamarine, _ => Color.IndianRed };
     private static bool EliteWeaponDropRoll(int roll, int consecutiveMisses = 0) => consecutiveMisses >= 2 || roll is >= 0 and < 35;
     private static int NextEliteWeaponMisses(int misses, bool dropped) => dropped ? 0 : Math.Min(2, Math.Max(0, misses) + 1);
     private static int BossWeaponRollFloor(int room) => room >= 25 ? 85 : room >= 12 ? 75 : 62;
@@ -1679,7 +1691,7 @@ public sealed class Game : Form
     private static float BasicAttackSweepAngle(int weapon) => weapon == 1 ? 142 : weapon == 2 ? 112 : 128;
     private static float BasicAttackArcThreshold(int weapon) => MathF.Cos(BasicAttackSweepAngle(weapon) * MathF.PI / 360f);
     private static bool BasicAttackCoversDirection(float facingDot, int weapon) => facingDot > BasicAttackArcThreshold(weapon);
-    private bool IsArmored(Enemy enemy) => enemy.Armored || (!enemy.Boss && enemy.Kind != EnemyKind.Elite && enemies.Any(elite => elite.Kind == EnemyKind.Elite && elite.EliteAffix == EliteAffix.Armored && Distance(enemy.Pos, elite.Pos) <= 132));
+    private bool IsArmored(Enemy enemy) => enemy.Armored || (!enemy.Boss && enemy.Kind != EnemyKind.Elite && enemies.Any(elite => HasEliteAffix(elite, EliteAffix.Armored) && Distance(enemy.Pos, elite.Pos) <= 132));
     private float BasicAttackDamageMultiplier(Enemy enemy) => (IsArmored(enemy) ? weapon == 1 ? 0.9f : 0.75f : 1f) * BasicAttackCycleMultiplier();
     private string WeaponTraitDescription(int index) => index switch
     {
@@ -2637,10 +2649,15 @@ public sealed class Game : Form
         }
         if (enemy.Kind == EnemyKind.Elite)
         {
-            Color affixColor = enemy.EliteAffix switch { EliteAffix.Armored => Color.LightSteelBlue, EliteAffix.Swift => Color.Gold, EliteAffix.Bloodbound => Color.HotPink, EliteAffix.Spearbound => Color.DeepSkyBlue, EliteAffix.Summoner => Color.MediumOrchid, EliteAffix.Conductor => Color.MediumAquamarine, _ => Color.IndianRed };
+            Color affixColor = EliteAffixColor(enemy.EliteAffix);
             DashStyle dash = enemy.EliteAffix is EliteAffix.Swift or EliteAffix.Spearbound ? DashStyle.Dash : enemy.EliteAffix == EliteAffix.Bloodbound ? DashStyle.Dot : DashStyle.Solid;
             using var affixRing = new Pen(Color.FromArgb(225, affixColor), 3) { DashStyle = dash };
             g.DrawEllipse(affixRing, enemy.Pos.X - r - 6, enemy.Pos.Y - 12, (r + 6) * 2, 24);
+            if (enemy.EliteAffix2 is EliteAffix secondAffix)
+            {
+                using var secondaryRing = new Pen(Color.FromArgb(230, EliteAffixColor(secondAffix)), 2.5f) { DashStyle = secondAffix == EliteAffix.Swift ? DashStyle.Dash : secondAffix == EliteAffix.Bloodbound ? DashStyle.Dot : DashStyle.Solid };
+                g.DrawEllipse(secondaryRing, enemy.Pos.X - r - 11, enemy.Pos.Y - 17, (r + 11) * 2, 34);
+            }
             if (enemy.SummonWindup > 0)
             {
                 float progress = 1 - enemy.SummonWindup / 0.95f, radius = 18 + progress * 50;
@@ -3343,7 +3360,7 @@ public sealed class Game : Form
         };
     }
     private static bool EnemyFacesLeft(float enemyX, float playerX) => playerX < enemyX;
-    private static string EnemyName(Enemy e) => e.VigilMinion ? "ECO ERRANTE • SALINO" : e.Kind switch { EnemyKind.Guardian => "GUARDIÃO SEM NOME", EnemyKind.BlindScribe => "ESCRIBA CEGO", EnemyKind.RiverFerryman => "BARQUEIRO OCO", EnemyKind.AshWarden => "GUARDIÃO DAS CINZAS", EnemyKind.HollowName => "O NOME VAZIO", EnemyKind.NameWeaver => "A TECELÃ DE NOMES", EnemyKind.FirstKeeper => "A PRIMEIRA VIGÍLIA", EnemyKind.OathCartographer => "CARTÓGRAFA DO VÃO", EnemyKind.NameBroker => "ESCRIVÃO DE CONTRATO", EnemyKind.SaltEcho => "ECO SALINO", EnemyKind.TideWitness => "TESTEMUNHA DA MARÉ", EnemyKind.ReedKeeper => "GUARDIÃ DO LEITO", EnemyKind.FlowKeeper => "VIGIA DO VEIO PRESO", EnemyKind.CounterCurrent => "AFINADOR DAS MARGENS", EnemyKind.RiftCantor => "A CONTRAVOZ", EnemyKind.GlassHerald => "ARAUTO DE VIDRO", EnemyKind.LanternRegent => "REGENTE DAS LANTERNAS", EnemyKind.RouteScribe => "ESCRIBA DO TRAÇADO", EnemyKind.DeepSilence => "SILÊNCIO DE BAIXO", EnemyKind.BorrowedChorus => "ARQUIVISTA DAS MARÉS", EnemyKind.LastTuner => "AFINADOR DO CONTRATEMPO", EnemyKind.PaperWraith => "ESPECTRO DE PAPEL", EnemyKind.MudCantor => "CANTOR DO LODO", EnemyKind.DrownedMemory => "LEMBRANÇA AFOGADA", EnemyKind.EmberWisp => "VESTÍGIO DE BRASAS", EnemyKind.NameMoth => "MARIPOSA DE NOMES", EnemyKind.Elite => $"ELITE • {EliteAffixName(e.EliteAffix)}", EnemyKind.Archer => "ARQUEIRO", EnemyKind.Mage => "CONJURADOR", EnemyKind.InkEcho => "ECO DE TINTA", EnemyKind.CooldownLeech => "MORDENTE DE COMPASSO", EnemyKind.SlagWeaver => "ECO DE ESCÓRIA", _ => "" };
+    private static string EnemyName(Enemy e) => e.VigilMinion ? "ECO ERRANTE • SALINO" : e.Kind switch { EnemyKind.Guardian => "GUARDIÃO SEM NOME", EnemyKind.BlindScribe => "ESCRIBA CEGO", EnemyKind.RiverFerryman => "BARQUEIRO OCO", EnemyKind.AshWarden => "GUARDIÃO DAS CINZAS", EnemyKind.HollowName => "O NOME VAZIO", EnemyKind.NameWeaver => "A TECELÃ DE NOMES", EnemyKind.FirstKeeper => "A PRIMEIRA VIGÍLIA", EnemyKind.OathCartographer => "CARTÓGRAFA DO VÃO", EnemyKind.NameBroker => "ESCRIVÃO DE CONTRATO", EnemyKind.SaltEcho => "ECO SALINO", EnemyKind.TideWitness => "TESTEMUNHA DA MARÉ", EnemyKind.ReedKeeper => "GUARDIÃ DO LEITO", EnemyKind.FlowKeeper => "VIGIA DO VEIO PRESO", EnemyKind.CounterCurrent => "AFINADOR DAS MARGENS", EnemyKind.RiftCantor => "A CONTRAVOZ", EnemyKind.GlassHerald => "ARAUTO DE VIDRO", EnemyKind.LanternRegent => "REGENTE DAS LANTERNAS", EnemyKind.RouteScribe => "ESCRIBA DO TRAÇADO", EnemyKind.DeepSilence => "SILÊNCIO DE BAIXO", EnemyKind.BorrowedChorus => "ARQUIVISTA DAS MARÉS", EnemyKind.LastTuner => "AFINADOR DO CONTRATEMPO", EnemyKind.PaperWraith => "ESPECTRO DE PAPEL", EnemyKind.MudCantor => "CANTOR DO LODO", EnemyKind.DrownedMemory => "LEMBRANÇA AFOGADA", EnemyKind.EmberWisp => "VESTÍGIO DE BRASAS", EnemyKind.NameMoth => "MARIPOSA DE NOMES", EnemyKind.Elite => $"ELITE • {EliteAffixName(e)}", EnemyKind.Archer => "ARQUEIRO", EnemyKind.Mage => "CONJURADOR", EnemyKind.InkEcho => "ECO DE TINTA", EnemyKind.CooldownLeech => "MORDENTE DE COMPASSO", EnemyKind.SlagWeaver => "ECO DE ESCÓRIA", _ => "" };
     private static PointF Normalize(PointF p, PointF fallback) { float n = Length(p); return n > 0.001f ? new PointF(p.X / n, p.Y / n) : fallback; }
     private static float Length(PointF p) => MathF.Sqrt(p.X * p.X + p.Y * p.Y);
     private static float Distance(PointF a, PointF b) => Length(Sub(a, b));
@@ -3804,7 +3821,7 @@ public sealed class Game : Form
             if (lootRollCheck.weaponRarities[1] != rarity || lootRollCheck.weaponBonuses[1] != bonus || lootRollCheck.weaponAffixes[1] != affix || lootRollCheck.weaponAffixes2[1] != affix2 || !label.Contains(WeaponRarityName(rarity)) || !label.Contains(WeaponGroundAffix(drop)) || !label.Contains($"DANO: 25 → {expectedDropDamage}") || !label.Contains("longo") || !label.Contains("ATUAL: sem afixo"))
                 throw new InvalidOperationException("A arma mudou ao ser recolhida ou não foi identificada no chão.");
         }
-        if (EliteAffixForRoll(0) != EliteAffix.Armored || EliteAffixForRoll(1) != EliteAffix.Swift || EliteAffixForRoll(2) != EliteAffix.Bloodbound || EliteAffixForRoll(4) != EliteAffix.Summoner || EliteAffixForRoll(5) != EliteAffix.Conductor || EliteAffixName(EliteAffix.Bloodbound) != "SANGRADOR" || EliteAffixName(EliteAffix.Conductor) != "CONDUTOR")
+        if (EliteAffixForRoll(0) != EliteAffix.Armored || EliteAffixForRoll(1) != EliteAffix.Swift || EliteAffixForRoll(2) != EliteAffix.Bloodbound || EliteAffixForRoll(4) != EliteAffix.Summoner || EliteAffixForRoll(5) != EliteAffix.Conductor || EliteAffixName(EliteAffix.Bloodbound) != "SANGRADOR" || EliteAffixName(EliteAffix.Conductor) != "CONDUTOR" || EliteSecondaryAffixForRoll(0, EliteAffix.Armored) != EliteAffix.Swift || EliteSecondaryAffixForRoll(1, EliteAffix.Armored) != EliteAffix.Bloodbound || EliteSecondaryAffixForRoll(0, EliteAffix.Summoner) == EliteAffix.Summoner || EliteSecondaryAffixForRoll(0, EliteAffix.Spearbound) == EliteAffix.Swift)
             throw new InvalidOperationException("As variantes dos elites não foram identificadas corretamente.");
         using (var eliteAffixCheck = new Game())
         {
@@ -3812,12 +3829,16 @@ public sealed class Game : Form
             Enemy swiftElite = new() { Pos = new PointF(250, 330), Kind = EnemyKind.Elite, EliteAffix = EliteAffix.Swift, Hp = 120, MaxHp = 120 };
             eliteAffixCheck.enemies.Add(swiftElite); eliteAffixCheck.UpdateEnemy(swiftElite, 0.01f);
             if (swiftElite.WindupMax != 0.38f || Math.Abs(swiftElite.Cooldown - 1.55f) > 0.001f || swiftElite.Armored) throw new InvalidOperationException("O elite Veloz não anunciou seu golpe curto com recarga própria.");
+            eliteAffixCheck.enemies.Clear();
+            Enemy swiftArmoredElite = new() { Pos = new PointF(250, 330), Kind = EnemyKind.Elite, EliteAffix = EliteAffix.Swift, EliteAffix2 = EliteAffix.Armored, Armored = true, Hp = 120, MaxHp = 120 };
+            eliteAffixCheck.enemies.Add(swiftArmoredElite); eliteAffixCheck.UpdateEnemy(swiftArmoredElite, 0.01f);
+            if (swiftArmoredElite.WindupMax != 0.48f || Math.Abs(swiftArmoredElite.Cooldown - 2f) > 0.001f || !eliteAffixCheck.IsArmored(swiftArmoredElite)) throw new InvalidOperationException("A combinação Veloz + Blindado perdeu um dos ritmos ou a defesa.");
             eliteAffixCheck.enemies.Clear(); eliteAffixCheck.health = 100;
-            Enemy bloodboundElite = new() { Pos = new PointF(250, 330), Target = eliteAffixCheck.player, Kind = EnemyKind.Elite, EliteAffix = EliteAffix.Bloodbound, Hp = 50, MaxHp = 120, Windup = 0.01f };
+            Enemy bloodboundElite = new() { Pos = new PointF(250, 330), Target = eliteAffixCheck.player, Kind = EnemyKind.Elite, EliteAffix = EliteAffix.Summoner, EliteAffix2 = EliteAffix.Bloodbound, Hp = 50, MaxHp = 120, Windup = 0.01f, SummonCooldown = 100 };
             eliteAffixCheck.enemies.Add(bloodboundElite); eliteAffixCheck.UpdateEnemy(bloodboundElite, 0.02f);
             if (eliteAffixCheck.health != 76 || bloodboundElite.Hp != 58) throw new InvalidOperationException("O elite Sangrador não causou o dano anunciado nem recuperou vida ao acertar.");
-            Enemy armoredElite = new() { Kind = EnemyKind.Elite, EliteAffix = EliteAffix.Armored, Armored = true, Hp = 120, MaxHp = 120 };
-            if (!armoredElite.Armored || EnemyName(armoredElite) != "ELITE • BLINDADO") throw new InvalidOperationException("O elite Blindado não preservou sua redução nem seu identificador.");
+            Enemy armoredElite = new() { Kind = EnemyKind.Elite, EliteAffix = EliteAffix.Summoner, EliteAffix2 = EliteAffix.Armored, Armored = true, Hp = 120, MaxHp = 120 };
+            if (!HasEliteAffix(armoredElite, EliteAffix.Armored) || EnemyName(armoredElite) != "ELITE • INVOCADOR + BLINDADO") throw new InvalidOperationException("O elite com afixo secundário não preservou sua redução nem anunciou os dois modificadores.");
             armoredElite.Pos = new PointF(250, 330);
             Enemy wardedGrunt = new() { Pos = new PointF(350, 330), Kind = EnemyKind.Grunt, Hp = 100, MaxHp = 100 };
             Enemy unwardedGrunt = new() { Pos = new PointF(400, 330), Kind = EnemyKind.Grunt, Hp = 100, MaxHp = 100 };
@@ -4638,8 +4659,11 @@ public sealed class Game : Form
         foreach (int eliteRoom in new[] { 23, 25, 27, 31, 33, 35, 37, 39 })
         {
             eliteCircuit.room = eliteRoom; eliteCircuit.SetupRoom(); Enemy[] roomElites = eliteCircuit.enemies.Where(enemy => enemy.Kind == EnemyKind.Elite).ToArray();
-            if (roomElites.Length != 1 || roomElites[0].MaxHp != 120 + (eliteRoom - 1) * 6 || !Enum.IsDefined(roomElites[0].EliteAffix)) throw new InvalidOperationException($"A rota avançada {eliteRoom} não recebeu um elite com afixo e vida escalada.");
+            EliteAffix? secondary = roomElites.Length == 1 ? roomElites[0].EliteAffix2 : null;
+            bool validSecondary = !secondary.HasValue;
+            if (secondary.HasValue) validSecondary = Enum.IsDefined(secondary.Value) && secondary.Value != roomElites[0].EliteAffix && (secondary.Value is EliteAffix.Armored or EliteAffix.Swift or EliteAffix.Bloodbound) && !(roomElites[0].EliteAffix == EliteAffix.Spearbound && secondary.Value == EliteAffix.Swift);
+            if (roomElites.Length != 1 || roomElites[0].MaxHp != 120 + (eliteRoom - 1) * 6 || !Enum.IsDefined(roomElites[0].EliteAffix) || secondary.HasValue != (eliteRoom >= 25) || !validSecondary || roomElites[0].Armored != HasEliteAffix(roomElites[0], EliteAffix.Armored)) throw new InvalidOperationException($"A rota avançada {eliteRoom} não recebeu as combinações de afixos e a vida escalada esperadas.");
         }
-        Console.WriteLine("TESTES OK: campanha e expedições até o Capítulo XVIII, padrões do Afinador do Contratempo, poses próprias dos ecos, expedição opcional, afixos de elite, Arquivista das Marés, epílogos, Vigília Ascendente, quatro marcos de especialização, chefes, combate, loot, progressão e compatibilidade de saves antigos."); return 0;
+        Console.WriteLine("TESTES OK: campanha e expedições até o Capítulo XVIII, padrões do Afinador do Contratempo, poses próprias dos ecos, expedição opcional, combinações de afixos de elite, Arquivista das Marés, epílogos, Vigília Ascendente, quatro marcos de especialização, chefes, combate, loot, progressão e compatibilidade de saves antigos."); return 0;
     }
 }
