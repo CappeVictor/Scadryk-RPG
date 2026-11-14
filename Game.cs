@@ -104,6 +104,11 @@ public sealed class Game : Form
         string path = Path.Combine(AppContext.BaseDirectory, "Assets", "Enemies.png");
         return File.Exists(path) ? new Bitmap(path) : null;
     });
+    private static readonly Lazy<Bitmap?> EnemyAttackSpriteSheet = new(() =>
+    {
+        string path = Path.Combine(AppContext.BaseDirectory, "Assets", "EnemyAttacks.png");
+        return File.Exists(path) ? new Bitmap(path) : null;
+    });
     private static readonly Lazy<IReadOnlyDictionary<EnemyKind, Bitmap>> AdvancedEnemySprites = new(() =>
     {
         var sprites = new Dictionary<EnemyKind, Bitmap>();
@@ -2235,12 +2240,14 @@ public sealed class Game : Form
         bool bossSprite = bossSpriteIndex >= 0;
         int spriteRow = individualSpriteLoaded ? 0 : bossSprite ? bossSpriteIndex % 4 : enemySpriteRow;
         Bitmap? enemySprites = individualSpriteLoaded ? individualSprite : bossSprite ? bossSpriteIndex switch { < 4 => BossSpriteSheet.Value, < 8 => MidBossSpriteSheet.Value, < 12 => LateBossSpriteSheet.Value, < 16 => FinalWaveBossSpriteSheet.Value, _ => EndgameBossSpriteSheet.Value } : enemySpriteRow >= 0 ? EnemySpriteSheet.Value : null;
+        if (!individualSpriteLoaded && !bossSprite && enemySpriteRow >= 0 && enemy.Windup > 0)
+            enemySprites = EnemyAttackSpriteSheet.Value ?? enemySprites;
         float spriteHeight = individualSpriteLoaded ? enemy.Kind switch { EnemyKind.Elite => 118, EnemyKind.EmberWisp => 72, EnemyKind.MudCantor => 86, EnemyKind.NameMoth => 84, EnemyKind.PaperWraith => 86, EnemyKind.SaltEcho => 82, _ => 80 } : bossSprite ? 132 : enemy.Kind == EnemyKind.Elite ? 82 : 70;
         if (spriteRow >= 0 && enemySprites is not null)
         {
             float cellWidth = individualSpriteLoaded ? enemySprites.Width : enemySprites.Width / 4f, cellHeight = individualSpriteLoaded ? enemySprites.Height : enemySprites.Height / 4f;
             float windupProgress = enemy.WindupMax > 0 && enemy.Windup > 0 ? Math.Clamp(1f - enemy.Windup / enemy.WindupMax, 0f, 1f) : 0f;
-            int windupFrame = Math.Min(3, 1 + (int)(windupProgress * 3f));
+            int windupFrame = Math.Min(3, (int)(windupProgress * 4f));
             int frame = individualSpriteLoaded ? 0 : enemy.Windup > 0 ? windupFrame : EnemySpriteFrame(enemy.AnimationTime, enemy.Moving && enemy.Stagger <= 0);
             RectangleF source = new(frame * cellWidth, spriteRow * cellHeight, cellWidth, cellHeight);
             float size = spriteHeight;
