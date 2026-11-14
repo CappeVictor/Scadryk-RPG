@@ -68,8 +68,8 @@ O Capítulo XVI acrescenta a Soleira do Silêncio e a Câmara do Último Eco, co
 
 O epílogo também fecha o estilo de combate da campanha: devolver as memórias ensina Devolução das Vozes, uma onda que recupera vida ao atingir inimigos; manter o Lume ensina Última Centelha, um golpe concentrado contra um alvo. As técnicas finais são mutuamente exclusivas por save, podem ser equipadas nos três espaços e têm suporte nos saves e no menu de técnicas.
 
-## Próximo marco de trabalho
+## Marco recente — Vigília Ascendente
 
-Implementar e validar uma Vigília Ascendente repetível no Refúgio, incluindo cinco ecos de chefes em rotação, pressão crescente, loot escalável, melhor andar salvo, saída segura e instruções de uso no README. A implementação e a validação local foram concluídas; falta confirmar a execução no GitHub Actions antes de publicar a versão.
+Concluído e publicado no commit `3bd27aa`: altar pós-epílogo no Refúgio, cinco chefes da campanha em rotação, vida e dano crescentes, armas com chance crescente de Relíquia, ouro e sal vítreo por andar, recorde no save, saída voluntária e retorno seguro ao Refúgio em caso de derrota. O README explica como iniciar e jogar a atividade. Release e smoke tests passaram localmente e no GitHub Actions.
 
-Esse marco melhora o ciclo de pós-jogo; não conclui o desenvolvimento completo de um ARPG com o escopo de Diablo. Animações, arte e áudio originais, acessibilidade, balanceamento amplo e distribuição continuam sendo trabalho posterior da meta de longo prazo.
+Próximo foco: testar o ritmo de progressão e o balanceamento em jogo real; depois ampliar as diferenças entre chefes, afixos e builds. Este marco melhora o ciclo de pós-jogo, mas não conclui o ARPG completo. Animações, arte e áudio originais, acessibilidade, balanceamento amplo e distribuição continuam sendo trabalho da meta de longo prazo.
