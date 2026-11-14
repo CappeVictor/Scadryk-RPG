@@ -937,7 +937,7 @@ public sealed class Game : Form
     private static bool BossUsesCone(Enemy e) => e.Kind == EnemyKind.GlassHerald && e.BossPattern == 2;
     private static bool BossUsesRing(Enemy e) => e.BossPattern == 0 && e.Kind is EnemyKind.RouteScribe or EnemyKind.LastTuner;
     private static float BossRingInnerRadius(Enemy e) => e.Kind == EnemyKind.LastTuner ? 96 : e.Kind == EnemyKind.RouteScribe ? 68 : 0;
-    private static bool BossUsesLine(Enemy e) => e.BossPattern == 2 && e.Kind is EnemyKind.FirstKeeper or EnemyKind.NameWeaver or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus;
+    private static bool BossUsesLine(Enemy e) => e.BossPattern == 2 && e.Kind is EnemyKind.FirstKeeper or EnemyKind.NameWeaver or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus or EnemyKind.LastTuner;
     private static bool BossConeContains(Enemy e, PointF point)
     {
         PointF axis = Normalize(Sub(e.Target, e.Pos), new PointF(1, 0)), direction = Sub(point, e.Pos); float distance = Length(direction);
@@ -951,7 +951,7 @@ public sealed class Game : Form
         if (!BossUsesLine(e)) return Distance(point, e.BossPattern == 0 ? e.Pos : e.Target) < BossCircleRadius(e);
         float width = e.Kind == EnemyKind.FirstKeeper ? 25 : 24;
         if (DistanceToSegment(point, e.Pos, e.Target) < width) return true;
-        return e.Kind is EnemyKind.FirstKeeper or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus && DistanceToSegment(point, e.Target2Start, e.Target2) < width;
+        return e.Kind is EnemyKind.FirstKeeper or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus or EnemyKind.LastTuner && DistanceToSegment(point, e.Target2Start, e.Target2) < width;
     }
 
     private static (Color Fill, Color Edge) AttackWarningPalette(bool highContrast) => highContrast
@@ -995,9 +995,9 @@ public sealed class Game : Form
         }
         float width = e.Kind == EnemyKind.FirstKeeper ? 25 : 24;
         using var area = new Pen(fillColor, width * 2) { StartCap = LineCap.Round, EndCap = LineCap.Round };
-        if (highContrastTelegraphs) { using var shadow = new Pen(Color.FromArgb(240, 12, 13, 15), width * 2 + 8) { StartCap = LineCap.Round, EndCap = LineCap.Round }; g.DrawLine(shadow, e.Pos, e.Target); if (e.Kind is EnemyKind.FirstKeeper or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus) g.DrawLine(shadow, e.Target2Start, e.Target2); }
+        if (highContrastTelegraphs) { using var shadow = new Pen(Color.FromArgb(240, 12, 13, 15), width * 2 + 8) { StartCap = LineCap.Round, EndCap = LineCap.Round }; g.DrawLine(shadow, e.Pos, e.Target); if (e.Kind is EnemyKind.FirstKeeper or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus or EnemyKind.LastTuner) g.DrawLine(shadow, e.Target2Start, e.Target2); }
         g.DrawLine(area, e.Pos, e.Target); g.DrawLine(outline, e.Pos, e.Target);
-        if (e.Kind is EnemyKind.FirstKeeper or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus) { g.DrawLine(area, e.Target2Start, e.Target2); g.DrawLine(outline, e.Target2Start, e.Target2); }
+        if (e.Kind is EnemyKind.FirstKeeper or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus or EnemyKind.LastTuner) { g.DrawLine(area, e.Target2Start, e.Target2); g.DrawLine(outline, e.Target2Start, e.Target2); }
     }
 
     private void UpdateEnemy(Enemy e, float dt)
@@ -1046,10 +1046,10 @@ public sealed class Game : Form
         if (e.Kind == EnemyKind.Elite && e.Cooldown <= 0 && dist < 220) { bool swift = e.EliteAffix == EliteAffix.Swift; BeginWindup(e, player, swift ? 0.38f : e.EliteAffix == EliteAffix.Armored ? 0.72f : 0.58f); e.Cooldown = swift ? 1.55f : e.EliteAffix == EliteAffix.Armored ? 2.5f : 2.1f; return; }
         if (e.Kind == EnemyKind.LastTuner && e.Cooldown <= 0)
         {
-            e.BossPattern = 1 - e.BossPattern;
+            e.BossPattern = (e.BossPattern + 1) % 3;
             float windup = e.Hp < e.MaxHp * 0.5f ? 0.54f : 0.82f;
             if (vigilActive && VigilAspectForFloor(vigilFloor) == VigilAspect.Swift) windup *= 0.8f;
-            BeginWindup(e, e.BossPattern == 1 ? player : e.Pos, windup); e.Cooldown = e.Hp < e.MaxHp * 0.5f ? 1.35f : 2.1f; return;
+            BeginWindup(e, e.BossPattern is 1 or 2 ? player : e.Pos, windup); e.Cooldown = e.Hp < e.MaxHp * 0.5f ? 1.35f : 2.1f; return;
         }
         if (e.Boss && e.Cooldown <= 0 && (dist < 135 || (e.Kind is EnemyKind.BlindScribe or EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus))) { e.BossPattern = (e.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus) ? (e.BossPattern + 1) % 3 : 1 - e.BossPattern; bool aimed = (e.Kind == EnemyKind.BlindScribe && e.BossPattern == 1) || ((e.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden) && (e.BossPattern is 1 or 2)) || (e.Kind is EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus) && e.BossPattern is 1 or 2; float windup = e.Hp < e.MaxHp * 0.5f ? 0.52f : 0.78f; if (vigilActive && VigilAspectForFloor(vigilFloor) == VigilAspect.Swift) windup *= 0.8f; if (e.Kind == EnemyKind.FirstKeeper && e.BossPattern == 2) { PointF axis = Normalize(Sub(player, e.Pos), new PointF(1, 0)); PointF side = new(-axis.Y, axis.X); e.Target = Add(e.Pos, Scale(axis, 920)); e.Target2Start = Add(player, Scale(side, -460)); e.Target2 = Add(player, Scale(side, 460)); e.Windup = e.WindupMax = windup; GameAudio.Play(GameAudio.Cue.BossWarning); } else BeginWindup(e, aimed ? player : e.Pos, windup); e.Cooldown = e.Hp < e.MaxHp * 0.5f ? 1.25f : 2.0f; return; }
         if (e.Kind == EnemyKind.Mage && e.Cooldown <= 0) { BeginWindup(e, player, 0.8f); e.Cooldown = 2.2f; SeparateFromPack(e, dt); return; }
@@ -1078,6 +1078,12 @@ public sealed class Game : Form
         {
             PointF axis = Normalize(Sub(target, enemy.Pos), new PointF(1, 0)); PointF side = new(-axis.Y, axis.X);
             enemy.Target2Start = Add(enemy.Pos, Scale(side, 74)); enemy.Target2 = Add(target, Scale(side, 74));
+        }
+        if (enemy.Kind == EnemyKind.LastTuner && enemy.BossPattern == 2)
+        {
+            PointF axis = Normalize(Sub(target, enemy.Pos), new PointF(1, 0)); PointF side = new(-axis.Y, axis.X);
+            PointF marked = target; enemy.Target = Add(enemy.Pos, Scale(axis, 920));
+            enemy.Target2Start = Add(marked, Scale(side, -460)); enemy.Target2 = Add(marked, Scale(side, 460));
         }
     }
     private void DamageEnemy(Enemy enemy, float amount, bool critical = false)
@@ -1286,7 +1292,7 @@ public sealed class Game : Form
         else if (room == 38 && player.X < 115) { room = 37; SetupRoom(); }
         else if (room == 38 && player.X > 790 && silenceMemory) { room = 18; SetupRoom(); ShowMemory("REGRESSO AO REFÚGIO", "A memória final não revela o paradeiro de Nara. Ela devolve ao Escutador a responsabilidade de decidir o destino do Lume com a comunidade, sem falar em nome de quem partiu."); }
         else if (room == 41 && player.X < 115) { room = 18; SetupRoom(); }
-        else if (room == 41 && player.X > 790 && enemies.Count == 0 && drops.Count == 0) { room = 42; SetupRoom(); ShowMemory("POÇO DO CONTRATEMPO", "A oficina desce até um poço onde ondas de som se movem fora do ritmo. O Afinador do Contratempo reúne as pausas e alterna entre uma onda com centro seguro e um impacto marcado sob seus passos."); }
+        else if (room == 41 && player.X > 790 && enemies.Count == 0 && drops.Count == 0) { room = 42; SetupRoom(); ShowMemory("POÇO DO CONTRATEMPO", "A oficina desce até um poço onde ondas de som se movem fora do ritmo. O Afinador do Contratempo reúne as pausas e alterna uma onda anular com centro seguro, uma marca sob seus passos e dois cortes cruzados; a segunda fase acelera os avisos."); }
         else if (room == 42 && player.X < 115) { room = 41; SetupRoom(); }
         else if (room == 42 && player.X > 790 && questStage >= 58) { room = 18; SetupRoom(); ShowMemory("REGRESSO AO REFÚGIO", "O sino permanece sem badalo. As pausas voltaram a pertencer a quem escolheu deixá-las, sem nome, rota ou notícia de Nara."); }
         else if (room == 39 && player.X < 115) { room = 18; SetupRoom(); }
@@ -3109,7 +3115,7 @@ public sealed class Game : Form
             focusCheck.ResumeAfterFocus(); focusCheck.TickGame();
             if (focusCheck.player != new PointF(500, 330) || focusCheck.skillCd >= 1) throw new InvalidOperationException("A retomada de foco não preservou a posição ou não retomou o combate.");
         }
-        foreach (EnemyKind kind in new[] { EnemyKind.Guardian, EnemyKind.BlindScribe, EnemyKind.RiverFerryman, EnemyKind.AshWarden, EnemyKind.HollowName, EnemyKind.NameWeaver, EnemyKind.FirstKeeper, EnemyKind.OathCartographer, EnemyKind.NameBroker, EnemyKind.TideWitness, EnemyKind.ReedKeeper, EnemyKind.FlowKeeper, EnemyKind.CounterCurrent, EnemyKind.RiftCantor, EnemyKind.GlassHerald, EnemyKind.LanternRegent, EnemyKind.RouteScribe, EnemyKind.DeepSilence })
+        foreach (EnemyKind kind in new[] { EnemyKind.Guardian, EnemyKind.BlindScribe, EnemyKind.RiverFerryman, EnemyKind.AshWarden, EnemyKind.HollowName, EnemyKind.NameWeaver, EnemyKind.FirstKeeper, EnemyKind.OathCartographer, EnemyKind.NameBroker, EnemyKind.TideWitness, EnemyKind.ReedKeeper, EnemyKind.FlowKeeper, EnemyKind.CounterCurrent, EnemyKind.RiftCantor, EnemyKind.GlassHerald, EnemyKind.LanternRegent, EnemyKind.RouteScribe, EnemyKind.DeepSilence, EnemyKind.LastTuner })
         {
             for (int pattern = 0; pattern < 3; pattern++)
             {
@@ -3120,13 +3126,14 @@ public sealed class Game : Form
                 }
                 else if (BossUsesRing(boss))
                 {
-                    if (BossAttackContains(boss, boss.Pos) || !BossAttackContains(boss, new PointF(400, 300)) || BossAttackContains(boss, new PointF(461, 300))) throw new InvalidOperationException("A onda do Escriba do Traçado não preservou o miolo seguro nem o limite externo.");
+                    float outsideRing = BossCircleRadius(boss) + 1;
+                    if (BossAttackContains(boss, boss.Pos) || !BossAttackContains(boss, new PointF(400, 300)) || BossAttackContains(boss, new PointF(boss.Pos.X + outsideRing, boss.Pos.Y))) throw new InvalidOperationException($"A onda de {kind} não preservou o miolo seguro nem o limite externo.");
                 }
                 else if (BossUsesLine(boss))
                 {
                     float width = kind == EnemyKind.FirstKeeper ? 25 : 24;
                     if (!BossAttackContains(boss, new PointF(400, 300 + width - 1)) || BossAttackContains(boss, new PointF(400, 300 + width + 1))) throw new InvalidOperationException($"A largura do ataque de {kind} não corresponde ao aviso.");
-                    if (kind is EnemyKind.FirstKeeper or EnemyKind.DeepSilence && !BossAttackContains(boss, new PointF(400, 400))) throw new InvalidOperationException($"A segunda linha de {kind} não causa dano.");
+                    if (kind is EnemyKind.FirstKeeper or EnemyKind.DeepSilence or EnemyKind.LastTuner && !BossAttackContains(boss, new PointF(400, 400))) throw new InvalidOperationException($"A segunda linha de {kind} não causa dano.");
                 }
                 else
                 {
@@ -3134,6 +3141,19 @@ public sealed class Game : Form
                     if (!BossAttackContains(boss, new PointF(center.X + radius - 1, center.Y)) || BossAttackContains(boss, new PointF(center.X + radius + 1, center.Y))) throw new InvalidOperationException($"O círculo de {kind} não corresponde ao impacto.");
                 }
             }
+        }
+        using (var tunerCheck = new Game())
+        {
+            tunerCheck.timer.Stop(); tunerCheck.StartGame(); tunerCheck.storyOverlay = false; tunerCheck.room = 42; tunerCheck.questStage = 57; tunerCheck.SetupRoom();
+            Enemy lastTunerCheckEnemy = tunerCheck.enemies.Single(); lastTunerCheckEnemy.Pos = new PointF(480, 300); tunerCheck.player = new PointF(650, 300);
+            lastTunerCheckEnemy.Cooldown = 0; tunerCheck.UpdateEnemy(lastTunerCheckEnemy, 0.01f);
+            if (lastTunerCheckEnemy.BossPattern != 1 || BossAttackContains(lastTunerCheckEnemy, new PointF(480, 300)) || !BossAttackContains(lastTunerCheckEnemy, tunerCheck.player)) throw new InvalidOperationException("O Afinador do Contratempo não anunciou a marca de impacto no ponto escolhido.");
+            lastTunerCheckEnemy.Windup = 0; lastTunerCheckEnemy.Cooldown = 0; tunerCheck.UpdateEnemy(lastTunerCheckEnemy, 0.01f);
+            if (lastTunerCheckEnemy.BossPattern != 2 || !BossUsesLine(lastTunerCheckEnemy) || !BossAttackContains(lastTunerCheckEnemy, tunerCheck.player)) throw new InvalidOperationException("Os cortes cruzados do Afinador não cobriram o ponto marcado.");
+            lastTunerCheckEnemy.Windup = 0; lastTunerCheckEnemy.Cooldown = 0; tunerCheck.UpdateEnemy(lastTunerCheckEnemy, 0.01f);
+            if (lastTunerCheckEnemy.BossPattern != 0 || !BossUsesRing(lastTunerCheckEnemy) || BossAttackContains(lastTunerCheckEnemy, lastTunerCheckEnemy.Pos)) throw new InvalidOperationException("A sequência do Afinador não voltou à onda anular com centro seguro.");
+            lastTunerCheckEnemy.Hp = lastTunerCheckEnemy.MaxHp * 0.49f; lastTunerCheckEnemy.Windup = 0; lastTunerCheckEnemy.Cooldown = 0; tunerCheck.UpdateEnemy(lastTunerCheckEnemy, 0.01f);
+            if (lastTunerCheckEnemy.WindupMax >= 0.6f || lastTunerCheckEnemy.Cooldown >= 1.5f) throw new InvalidOperationException("A segunda fase do Afinador não acelerou seus ataques.");
         }
         using (var rangedCheck = new Game())
         {
@@ -4035,6 +4055,6 @@ public sealed class Game : Form
             eliteCircuit.room = eliteRoom; eliteCircuit.SetupRoom(); Enemy[] roomElites = eliteCircuit.enemies.Where(enemy => enemy.Kind == EnemyKind.Elite).ToArray();
             if (roomElites.Length != 1 || roomElites[0].MaxHp != 120 + (eliteRoom - 1) * 6 || !Enum.IsDefined(roomElites[0].EliteAffix)) throw new InvalidOperationException($"A rota avançada {eliteRoom} não recebeu um elite com afixo e vida escalada.");
         }
-        Console.WriteLine("TESTES OK: campanha até o Capítulo XVII, expedição opcional, afixos de elite, Arquivista das Marés, epílogos, Vigília Ascendente, chefes, combate, loot, progressão e compatibilidade de saves antigos."); return 0;
+        Console.WriteLine("TESTES OK: campanha até o Capítulo XVII, padrões do Afinador do Contratempo, expedição opcional, afixos de elite, Arquivista das Marés, epílogos, Vigília Ascendente, chefes, combate, loot, progressão e compatibilidade de saves antigos."); return 0;
     }
 }
