@@ -2057,7 +2057,10 @@ public sealed class Game : Form
         }
         else
         {
-            g.FillEllipse(body, enemy.Pos.X - r, enemy.Pos.Y - r, r * 2, r * 2); g.DrawEllipse(edge, enemy.Pos.X - r, enemy.Pos.Y - r, r * 2, r * 2);
+            if (!DrawProceduralEnemy(g, enemy, enemy.Flash > 0 ? Color.White : color))
+            {
+                g.FillEllipse(body, enemy.Pos.X - r, enemy.Pos.Y - r, r * 2, r * 2); g.DrawEllipse(edge, enemy.Pos.X - r, enemy.Pos.Y - r, r * 2, r * 2);
+            }
         }
         if (enemy.Kind == EnemyKind.ReedKeeper) { using var stalk = new Pen(Color.FromArgb(220, 205, 193, 133), 3); for (int i = -1; i <= 1; i++) g.DrawLine(stalk, enemy.Pos.X + i * 9, enemy.Pos.Y + 13, enemy.Pos.X + i * 5, enemy.Pos.Y - 23); }
         if (enemy.Kind == EnemyKind.FlowKeeper) { using var ring = new Pen(Color.FromArgb(210, 157, 215, 216), 2); float spin = windupPulse * 40; g.DrawArc(ring, enemy.Pos.X - 18, enemy.Pos.Y - 18, 36, 36, spin, 235); g.DrawArc(ring, enemy.Pos.X - 13, enemy.Pos.Y - 13, 26, 26, spin + 170, 115); }
@@ -2068,6 +2071,79 @@ public sealed class Game : Form
         string name = EnemyName(enemy); if (name.Length > 0) DrawCentered(g, name, spriteRow >= 0 && enemySprites is not null ? hpY - 17 : enemy.Pos.Y - r - 28, new Font("Segoe UI", 8, FontStyle.Bold), Color.FromArgb(233, 198, 151), enemy.Pos.X);
         if (enemy.Boss) { using var bossBack = new SolidBrush(Color.FromArgb(40, 20, 20)); using var bossHp = new SolidBrush(enemy.Hp <= enemy.MaxHp * 0.5f ? Color.OrangeRed : enemy.Kind == EnemyKind.BlindScribe ? Color.Teal : enemy.Kind == EnemyKind.RiverFerryman ? Color.SteelBlue : enemy.Kind == EnemyKind.AshWarden ? Color.DarkOrange : enemy.Kind == EnemyKind.HollowName ? Color.LightSeaGreen : enemy.Kind == EnemyKind.NameWeaver ? Color.MediumPurple : enemy.Kind == EnemyKind.FirstKeeper ? Color.Goldenrod : enemy.Kind == EnemyKind.OathCartographer ? Color.DarkCyan : enemy.Kind == EnemyKind.ReedKeeper ? Color.DarkOliveGreen : enemy.Kind == EnemyKind.CounterCurrent ? Color.CadetBlue : enemy.Kind == EnemyKind.RiftCantor ? Color.MediumOrchid : enemy.Kind == EnemyKind.FlowKeeper ? Color.DeepSkyBlue : enemy.Kind == EnemyKind.GlassHerald ? Color.LightCyan : enemy.Kind is EnemyKind.NameBroker or EnemyKind.TideWitness ? Color.MediumPurple : enemy.Kind == EnemyKind.RouteScribe ? Color.LightSteelBlue : Color.Firebrick); g.FillRectangle(bossBack, 360, 112, 240, 8); g.FillRectangle(bossHp, 360, 112, 240 * Math.Clamp(enemy.Hp / enemy.MaxHp, 0, 1), 8); string bossName = enemy.Kind == EnemyKind.BlindScribe ? "ESCRIBA CEGO" : enemy.Kind == EnemyKind.RiverFerryman ? "BARQUEIRO OCO" : enemy.Kind == EnemyKind.AshWarden ? "GUARDIÃO DAS CINZAS" : enemy.Kind == EnemyKind.HollowName ? "O NOME VAZIO" : enemy.Kind == EnemyKind.NameWeaver ? "A TECELÃ DE NOMES" : enemy.Kind == EnemyKind.FirstKeeper ? "A PRIMEIRA VIGÍLIA" : enemy.Kind == EnemyKind.OathCartographer ? "CARTÓGRAFA DO VÃO" : enemy.Kind == EnemyKind.NameBroker ? "ESCRIVÃO DE CONTRATO" : enemy.Kind == EnemyKind.TideWitness ? "TESTEMUNHA DA MARÉ" : enemy.Kind == EnemyKind.ReedKeeper ? "GUARDIÃ DO LEITO" : enemy.Kind == EnemyKind.CounterCurrent ? "AFINADOR DAS MARGENS" : enemy.Kind == EnemyKind.RiftCantor ? "A CONTRAVOZ" : enemy.Kind == EnemyKind.FlowKeeper ? "VIGIA DO VEIO PRESO" : enemy.Kind == EnemyKind.GlassHerald ? "ARAUTO DE VIDRO" : enemy.Kind == EnemyKind.LanternRegent ? "REGENTE DAS LANTERNAS" : enemy.Kind == EnemyKind.RouteScribe ? "ESCRIBA DO TRAÇADO" : enemy.Kind == EnemyKind.DeepSilence ? "SILÊNCIO DE BAIXO" : "GUARDIÃO DA CRIPTA"; DrawCentered(g, enemy.Hp <= enemy.MaxHp * 0.5f ? $"{bossName} • SEGUNDA FASE" : bossName, 91, new Font("Georgia", 11, FontStyle.Bold), enemy.Hp <= enemy.MaxHp * 0.5f ? Color.OrangeRed : Color.Goldenrod); }
     }
+    private static bool DrawProceduralEnemy(Graphics g, Enemy enemy, Color color)
+    {
+        float x = enemy.Pos.X, y = enemy.Pos.Y, r = Math.Max(13, enemy.Radius);
+        using var fill = new SolidBrush(color);
+        using var outline = new Pen(Color.FromArgb(225, 28, 25, 27), 2.2f);
+        using var accent = new Pen(Color.FromArgb(205, color), 2.4f);
+        switch (enemy.Kind)
+        {
+            case EnemyKind.InkEcho:
+                using (var shape = new GraphicsPath())
+                {
+                    shape.AddPolygon(new[] { new PointF(x - r * .72f, y - r * .7f), new PointF(x + r * .5f, y - r), new PointF(x + r * .8f, y - r * .1f), new PointF(x + r * .22f, y + r * .9f), new PointF(x - r * .05f, y + r * .34f), new PointF(x - r * .72f, y + r * .72f) });
+                    g.FillPath(fill, shape); g.DrawPath(outline, shape);
+                }
+                using (var eye = new SolidBrush(Color.FromArgb(235, 223, 195, 247))) g.FillEllipse(eye, x + r * .12f, y - r * .45f, r * .28f, r * .15f);
+                g.DrawLine(accent, x - r * 1.15f, y + r * .72f, x - r * .42f, y + r * .15f);
+                return true;
+            case EnemyKind.DrownedMemory:
+                g.DrawEllipse(accent, x - r * .86f, y - r * .86f, r * 1.72f, r * 1.72f);
+                g.DrawEllipse(accent, x - r * .56f, y - r * .56f, r * 1.12f, r * 1.12f);
+                g.FillEllipse(fill, x - r * .27f, y - r * .37f, r * .54f, r * .74f);
+                using (var eye = new SolidBrush(Color.FromArgb(220, 220, 244, 230))) g.FillEllipse(eye, x - r * .11f, y - r * .12f, r * .22f, r * .15f);
+                return true;
+            case EnemyKind.EmberWisp:
+                using (var halo = new SolidBrush(Color.FromArgb(48, color))) g.FillEllipse(halo, x - r * 1.3f, y - r * 1.3f, r * 2.6f, r * 2.6f);
+                using (var star = new GraphicsPath())
+                {
+                    PointF[] points = Enumerable.Range(0, 8).Select(i => { float a = (float)(i * Math.PI / 4 - Math.PI / 2); float radius = i % 2 == 0 ? r : r * .48f; return new PointF(x + MathF.Cos(a) * radius, y + MathF.Sin(a) * radius); }).ToArray();
+                    star.AddPolygon(points); g.FillPath(fill, star); g.DrawPath(outline, star);
+                }
+                using (var core = new SolidBrush(Color.FromArgb(240, 255, 226, 166))) g.FillEllipse(core, x - r * .18f, y - r * .18f, r * .36f, r * .36f);
+                return true;
+            case EnemyKind.NameMoth:
+                using (var wings = new GraphicsPath())
+                {
+                    wings.AddPolygon(new[] { new PointF(x - r * .18f, y - r * .05f), new PointF(x - r * 1.25f, y - r), new PointF(x - r * .9f, y + r * .78f), new PointF(x - r * .12f, y + r * .34f) });
+                    wings.AddPolygon(new[] { new PointF(x + r * .18f, y - r * .05f), new PointF(x + r * 1.25f, y - r), new PointF(x + r * .9f, y + r * .78f), new PointF(x + r * .12f, y + r * .34f) });
+                    g.FillPath(fill, wings); g.DrawPath(outline, wings);
+                }
+                g.DrawLine(outline, x - 3, y - r * .15f, x - r * .35f, y - r * .9f); g.DrawLine(outline, x + 3, y - r * .15f, x + r * .35f, y - r * .9f);
+                using (var body = new SolidBrush(Color.FromArgb(240, 224, 224, 191))) g.FillEllipse(body, x - r * .17f, y - r * .25f, r * .34f, r * .85f);
+                using (var eye = new SolidBrush(Color.FromArgb(235, 204, 255, 229))) g.FillEllipse(eye, x - r * .08f, y - r * .17f, r * .16f, r * .12f);
+                return true;
+            case EnemyKind.MudCantor:
+                g.FillEllipse(fill, x - r * .8f, y - r * .72f, r * 1.6f, r * 1.45f); g.DrawEllipse(outline, x - r * .8f, y - r * .72f, r * 1.6f, r * 1.45f);
+                g.DrawLine(outline, x - r * .66f, y - r * .42f, x + r * .66f, y - r * .42f);
+                using (var eye = new SolidBrush(Color.FromArgb(235, 247, 210, 148))) g.FillEllipse(eye, x - r * .38f, y - r * .19f, r * .2f, r * .12f);
+                g.DrawArc(accent, x - r * 1.18f, y - r * .48f, r * 2.36f, r * 1.7f, 300, 120);
+                g.DrawArc(accent, x - r * 1.48f, y - r * .7f, r * 2.96f, r * 2.1f, 300, 120);
+                return true;
+            case EnemyKind.PaperWraith:
+                var transform = g.Save(); g.TranslateTransform(x, y); g.RotateTransform(MathF.Sin(enemy.AnimationTime * 4f) * 9f);
+                using (var page = new GraphicsPath())
+                {
+                    page.AddPolygon(new[] { new PointF(-r * .62f, -r), new PointF(r * .3f, -r * .86f), new PointF(r * .68f, -r * .2f), new PointF(r * .42f, r * .34f), new PointF(r * .66f, r), new PointF(-r * .32f, r * .78f), new PointF(-r * .72f, r * .08f) });
+                    g.FillPath(fill, page); g.DrawPath(outline, page);
+                }
+                g.DrawLine(accent, -r * .34f, -r * .32f, r * .35f, -r * .18f); g.DrawLine(accent, -r * .25f, r * .03f, r * .22f, r * .16f);
+                g.Restore(transform);
+                return true;
+            case EnemyKind.SaltEcho:
+                using (var crystal = new GraphicsPath())
+                {
+                    crystal.AddPolygon(new[] { new PointF(x, y - r), new PointF(x + r * .72f, y - r * .42f), new PointF(x + r * .62f, y + r * .48f), new PointF(x, y + r), new PointF(x - r * .68f, y + r * .48f), new PointF(x - r * .72f, y - r * .42f) });
+                    g.FillPath(fill, crystal); g.DrawPath(outline, crystal);
+                }
+                g.DrawLine(accent, x, y - r * .78f, x, y + r * .73f); g.DrawLine(accent, x, y - r * .05f, x + r * .5f, y - r * .38f); g.DrawLine(accent, x, y + r * .08f, x - r * .5f, y - r * .34f);
+                return true;
+            default:
+                return false;
+        }
+    }
+
     private string DropLabel(Drop item)
     {
         return item.Kind switch
@@ -2636,6 +2712,19 @@ public sealed class Game : Form
             if (sprite.Width != sprite.Height || sprite.GetPixel(0, 0).A != 0) throw new InvalidOperationException("A folha de inimigos precisa ter células quadradas e fundo transparente.");
         if (EnemySpriteRow(EnemyKind.Grunt) != 0 || EnemySpriteRow(EnemyKind.Archer) != 1 || EnemySpriteRow(EnemyKind.Mage) != 2 || EnemySpriteRow(EnemyKind.Elite) != 3 || EnemySpriteFrame(0.52f, false) != 0 || EnemySpriteFrame(0.52f, true) != 0 || EnemySpriteFrame(0.66f, true) != 1 || !EnemyFacesLeft(400, 300) || EnemyFacesLeft(300, 400))
             throw new InvalidOperationException("Os arquétipos e o ciclo de caminhada dos sprites de inimigos não foram mapeados corretamente.");
+        using (var proceduralArt = new Bitmap(96, 96))
+        using (var proceduralGraphics = Graphics.FromImage(proceduralArt))
+        {
+            proceduralGraphics.SmoothingMode = SmoothingMode.AntiAlias;
+            foreach (EnemyKind kind in new[] { EnemyKind.InkEcho, EnemyKind.DrownedMemory, EnemyKind.EmberWisp, EnemyKind.NameMoth, EnemyKind.MudCantor, EnemyKind.PaperWraith, EnemyKind.SaltEcho })
+            {
+                proceduralGraphics.Clear(Color.Transparent);
+                if (!DrawProceduralEnemy(proceduralGraphics, new Enemy { Kind = kind, Pos = new PointF(48, 48) }, Color.SlateGray)) throw new InvalidOperationException($"A silhueta procedural de {kind} não foi desenhada.");
+                int visiblePixels = 0;
+                for (int py = 0; py < proceduralArt.Height; py++) for (int px = 0; px < proceduralArt.Width; px++) if (proceduralArt.GetPixel(px, py).A > 0) visiblePixels++;
+                if (visiblePixels < 25) throw new InvalidOperationException($"A silhueta de {kind} ficou invisível na renderização 2D.");
+            }
+        }
         string bossSpritePath = Path.Combine(AppContext.BaseDirectory, "Assets", "Bosses.png");
         if (!File.Exists(bossSpritePath)) throw new InvalidOperationException("A folha de chefes da campanha não foi copiada para a saída do jogo.");
         using (var sprite = new Bitmap(bossSpritePath))

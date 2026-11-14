@@ -56,7 +56,7 @@ dotnet publish --configuration Release --runtime win-x64 --self-contained true
 
 ## Personagem e animação
 
-Aven usa uma folha de sprites original incluída em `Assets/Aven.png`: quatro direções e quatro quadros de caminhada por direção. Ecos comuns, arqueiros, conjuradores, elites e os dezoito chefes da campanha usam silhuetas próprias nas folhas de `Assets/`, com quadros animados durante o combate. Barras de vida, nomes, alerta de alvo e brilho de dano permanecem legíveis sobre as sprites. O projeto copia as imagens para a saída ao compilar; não precisa baixar recursos nem instalar um motor de jogo.
+Aven usa uma folha de sprites original incluída em `Assets/Aven.png`: quatro direções e quatro quadros de caminhada por direção. Ecos comuns, arqueiros, conjuradores, elites e os dezoito chefes da campanha usam silhuetas próprias nas folhas de `Assets/`, com quadros animados durante o combate. Sete inimigos de campanha sem folha de sprite — Eco de Tinta, Lembrança Afogada, Vestígio de Brasas, Mariposa de Nomes, Cantor do Lodo, Espectro de Papel e Eco Salino — agora têm formas procedurais próprias desenhadas em C#. Barras de vida, nomes, alerta de alvo e brilho de dano permanecem legíveis sobre as criaturas. O projeto copia as imagens para a saída ao compilar; não precisa baixar recursos nem instalar um motor de jogo.
 
 ## Controles
 
@@ -149,4 +149,4 @@ Após concluir o epílogo, interaja com o altar circular no Refúgio para inicia
 
 ## Limites atuais
 
-Este é um protótipo com trinta e sete salas de combate e arte procedural desenhada em formas 2D. Ainda faltam novas regiões além do Capítulo XVI, conhecer a vontade atual de Nara quando a história puder fazê-lo com sua participação, mais famílias de equipamento e variedade de builds, arte e áudio originais, animações, balanceamento amplo e testes manuais em diferentes resoluções. Não há medição de desempenho em máquinas variadas.
+Este é um protótipo com trinta e sete salas de combate, sprites originais e algumas silhuetas procedurais 2D. Ainda faltam novas regiões além do Capítulo XVI, conhecer a vontade atual de Nara quando a história puder fazê-lo com sua participação, mais famílias de equipamento e variedade de builds, música e ambiência, animações completas para o elenco, balanceamento amplo e testes manuais em diferentes resoluções. Não há medição de desempenho em máquinas variadas.
