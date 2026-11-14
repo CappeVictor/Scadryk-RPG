@@ -74,6 +74,7 @@ Aven usa uma folha de sprites original incluída em `Assets/Aven.png`: quatro di
 | X perto de uma arma no chão | Desmontar a arma mais próxima em ouro e, conforme a raridade, sal vítreo |
 | M | Abrir o atlas das câmaras; M ou Esc fecha |
 | I | Abrir ou fechar inventário |
+| P | Abrir a ficha do Escutador; P ou Esc fecha |
 | 1–3 no inventário | Equipar arma |
 | 4–5 no inventário | Alternar armadura e relíquia |
 | 6 no inventário | Alternar o talismã do espaço I |
@@ -88,6 +89,8 @@ Aven usa uma folha de sprites original incluída em `Assets/Aven.png`: quatro di
 | Enter | Começar ou reiniciar |
 
 Quando o alvo marcado é derrotado, o jogo marca automaticamente o inimigo vivo mais próximo. **Tab** continua alternando os alvos manualmente.
+
+A ficha (**P**) resume a build equipada: dano e intervalo do ataque, alcance, chance e multiplicador crítico, dano esperado por segundo contra alvo sem armadura, dano/recarga do Estilhaço, redução de dano, esquiva, talentos, afixos, talismãs e técnicas equipadas. Os números são recalculados ao trocar equipamento; efeitos de chefe, armadura inimiga e bônus temporários não entram no DPS exibido.
 
 O alcance dos avisos de interação **E** agora coincide com o alcance efetivo das conversas, portões e objetos, inclusive inscrições opcionais.
 

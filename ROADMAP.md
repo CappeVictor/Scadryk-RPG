@@ -82,3 +82,5 @@ Após o epílogo, Aven abre uma expedição opcional ao Cais dos Ecos Emprestado
 Elites agora recebem um afixo de combate: Blindado reduz dano recebido e demora mais para atacar; Veloz se move depressa e usa avisos curtos; Sangrador causa dano maior e recupera vida ao atingir o Escutador. Nome e aro colorido mostram o afixo antes do confronto. O autoteste cobre os três comportamentos; falta validar o ritmo deles em uma partida manual.
 
 Redistribuição de talentos pós-jogo: após concluir a expedição opcional XVII, a forja de Aven permite devolver os pontos investidos por ouro e sal vítreo. O cálculo preserva bônus de vida permanentes da história, mantém a proporção de vida atual e salva os talentos zerados; o autoteste cobre acesso, custos e estado persistido.
+
+Ficha de personagem em **P**: mostra valores calculados da build ativa — dano/intervalo/alcance, crítico, DPS básico esperado, dano e recarga do Estilhaço, mitigação, esquiva, talentos e equipamentos. Isso torna comparáveis as mudanças de afixos e talismãs sem adicionar campos ao save. Próximo passo: observar esses números numa sessão real e ajustar o balanceamento de armas e elites.

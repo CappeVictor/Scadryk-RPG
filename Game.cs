@@ -210,7 +210,7 @@ public sealed class Game : Form
     private bool naraTrace;
     private float health = 100, maxHealth = 100, attackCd, attackFlash, skillCd, shardCd, bellCd, bellWaveTime, bellWaveRadius, pullCd, pullWaveTime, wardCd, wardTime, refrainCd, refrainWaveTime, refrainWaveRadius, beaconCd, beaconTime, beaconPulseCd, beaconWaveTime, returnVoiceCd, returnVoiceWaveTime, returnVoiceWaveRadius, finalStrikeCd, finalStrikeFlash, dashCd, dashTime, invulnerable, noticeTime, windupPulse;
     private PointF finalStrikeTarget;
-    private bool armor, armorOn, relic, relicOn, inventoryOpen, skillMenuOpen, mapOpen, title = true, dead, victory, talentChoice, chestChoice, storyOverlay, memoryOverlay, endingChoiceOpen;
+    private bool armor, armorOn, relic, relicOn, inventoryOpen, skillMenuOpen, characterSheetOpen, mapOpen, title = true, dead, victory, talentChoice, chestChoice, storyOverlay, memoryOverlay, endingChoiceOpen;
     private int skillMenuSlot;
     private int townEnding;
     private int storyPage;
@@ -243,7 +243,7 @@ public sealed class Game : Form
     private void StartGame()
     {
         room = 0; level = 1; xp = gold = damage = 0; damage = 25; potions = 2; weapon = 0; ownedWeapons = 1; Array.Clear(weaponBonuses); Array.Clear(weaponRarities); Array.Clear(weaponAffixes); Array.Clear(weaponAffixes2);
-        armor = armorOn = relic = relicOn = archiveSeal = riverBell = lumeLens = naraTrace = chorusMemory = firstMemory = westTrace = upstreamTrace = beyondTrace = ebbSeal = counterTrace = anchorWard = refrainSong = riftVerse = deepTrace = lanternSignal = beaconLight = routeMemory = silenceMemory = inventoryOpen = skillMenuOpen = mapOpen = dead = victory = chestChoice = talentChoice = memoryOverlay = endingChoiceOpen = forgeMenuOpen = vigilActive = vigilChoiceOpen = false;
+        armor = armorOn = relic = relicOn = archiveSeal = riverBell = lumeLens = naraTrace = chorusMemory = firstMemory = westTrace = upstreamTrace = beyondTrace = ebbSeal = counterTrace = anchorWard = refrainSong = riftVerse = deepTrace = lanternSignal = beaconLight = routeMemory = silenceMemory = inventoryOpen = skillMenuOpen = characterSheetOpen = mapOpen = dead = victory = chestChoice = talentChoice = memoryOverlay = endingChoiceOpen = forgeMenuOpen = vigilActive = vigilChoiceOpen = false;
         finalEnding = 0;
         vigilBestFloor = vigilFloor = 0;
         townEnding = 0;
@@ -415,6 +415,7 @@ public sealed class Game : Form
         if (storyOverlay) { if (e.KeyCode is Keys.Enter or Keys.Space) AdvanceStory(); return; }
         if (memoryOverlay) { if (e.KeyCode is Keys.Enter or Keys.Space) memoryOverlay = false; return; }
         if (mapOpen) { if (e.KeyCode is Keys.M or Keys.Escape) mapOpen = false; return; }
+        if (characterSheetOpen) { if (e.KeyCode is Keys.P or Keys.Escape) characterSheetOpen = false; return; }
         if (skillMenuOpen)
         {
             if (e.KeyCode == Keys.Escape || e.KeyCode == Keys.B) { skillMenuOpen = false; return; }
@@ -428,6 +429,7 @@ public sealed class Game : Form
         if (vigilChoiceOpen) { if (e.KeyCode == Keys.D1) ResolveVigilFloor(true); else if (e.KeyCode == Keys.D2) ResolveVigilFloor(false); else if (e.KeyCode == Keys.D3 || e.KeyCode == Keys.Escape) vigilChoiceOpen = false; return; }
         if (chestChoice) { if (e.KeyCode == Keys.D1) gold += 75; else if (e.KeyCode == Keys.D2) potions += 2; else if (e.KeyCode == Keys.D3) health = maxHealth; else return; chestChoice = false; EnterVesper(); return; }
         if (talentChoice) { SelectTalent(e.KeyCode); return; }
+        if (e.KeyCode == Keys.P) { characterSheetOpen = true; inventoryOpen = false; skillMenuOpen = false; return; }
         if (e.KeyCode == Keys.M) { mapOpen = true; inventoryOpen = false; skillMenuOpen = false; return; }
         if (e.KeyCode == Keys.I) { inventoryOpen = !inventoryOpen; return; }
         if (e.KeyCode == Keys.B) { skillMenuOpen = true; inventoryOpen = false; return; }
@@ -791,7 +793,7 @@ public sealed class Game : Form
 
     private void PauseForLostFocus() { focusPaused = true; down.Clear(); dashTime = 0; Invalidate(); }
     private void ResumeAfterFocus() { focusPaused = false; Invalidate(); }
-    private bool GameplayPaused() => focusPaused || title || dead || victory || storyOverlay || memoryOverlay || mapOpen || inventoryOpen || skillMenuOpen || forgeMenuOpen || talentChoice || chestChoice || endingChoiceOpen || vigilChoiceOpen;
+    private bool GameplayPaused() => focusPaused || title || dead || victory || storyOverlay || memoryOverlay || mapOpen || inventoryOpen || skillMenuOpen || characterSheetOpen || forgeMenuOpen || talentChoice || chestChoice || endingChoiceOpen || vigilChoiceOpen;
 
     private void TickGame()
     {
@@ -1542,6 +1544,7 @@ public sealed class Game : Form
         if (title || dead || victory) DrawOverlay(g, title ? "SCADRYK" : victory ? "VITÓRIA" : "VOCÊ CAIU", title ? "ENTER PARA COMEÇAR    •    C CARREGAR SAVE" : "ENTER PARA RECOMEÇAR    •    F5 SALVAR");
         if (inventoryOpen) DrawInventory(g);
         if (skillMenuOpen) DrawSkillMenu(g);
+        if (characterSheetOpen) DrawCharacterSheet(g);
         if (talentChoice) DrawTalentChoice(g, pendingTalents);
         if (chestChoice) DrawChoice(g, "BAÚ DA CRIPTA — ESCOLHA UMA RECOMPENSA", "1. 75 OURO", "2. DUAS POÇÕES", "3. RECUPERAR TODA A VIDA");
         if (endingChoiceOpen) DrawChoice(g, questStage == 51 ? "O QUE VÉSPERA FARÁ COM O LUME?" : "O QUE VÉSPERA DEVE LEMBRAR?", questStage == 51 ? "1. DEVOLVER AS MEMÓRIAS  •  +20 VIDA MÁXIMA" : "1. DEVOLVER OS NOMES  •  +20 VIDA MÁXIMA", questStage == 51 ? "2. OFERECER UMA LEMBRANÇA PRÓPRIA  •  +10 DANO" : "2. MANTER O LUME  •  +10 DANO", "3. ADIAR A DECISÃO");
@@ -2572,6 +2575,34 @@ public sealed class Game : Form
         if (HasCharm(6)) effect = "Nó de Lume: Farol dura 8 s e pulsa a cada 0,85 s; recarga +3,5 s";
         if (HasCharm(7)) effect = "Fio do Retorno (Vigília): +40% dano e cura 12% ao abater chefe; dano recebido +10%";
         g.DrawString(effect, effectFont, Brushes.AntiqueWhite, new RectangleF(205, 617, 560, 18));
+    }
+    private void DrawCharacterSheet(Graphics g)
+    {
+        using var shade = new SolidBrush(Color.FromArgb(190, 5, 7, 9)); using var background = new SolidBrush(Color.FromArgb(248, 15, 17, 18)); using var border = new Pen(Color.FromArgb(175, 143, 112, 73), 2);
+        using var heading = new Font("Georgia", 17, FontStyle.Bold); using var section = new Font("Segoe UI", 11, FontStyle.Bold); using var body = new Font("Segoe UI", 10); using var hint = new Font("Segoe UI", 9);
+        g.FillRectangle(shade, 0, 83, 960, 557); g.FillRectangle(background, 105, 125, 750, 455); g.DrawRectangle(border, 105, 125, 750, 455);
+        DrawCentered(g, "FICHA DO ESCUTADOR", 151, heading, Color.FromArgb(230, 193, 129));
+        float critical = CriticalChance(), multiplier = CriticalMultiplier(), cooldown = BasicAttackCooldown();
+        float expectedDps = damage * (1 + critical * (multiplier - 1)) / cooldown;
+        float mitigation = 1 - (armorOn ? 0.7f : 1f) * WeaponDamageTakenMultiplier();
+        if (wardTime > 0) mitigation = 1 - (1 - mitigation) * 0.45f;
+        g.DrawString("ATAQUE", section, Brushes.Goldenrod, 145, 205);
+        g.DrawString($"Arma: {WeaponDisplayName(weapon)}", body, Brushes.AntiqueWhite, 145, 232);
+        g.DrawString($"Golpe: {damage:0} dano • intervalo {cooldown:0.00} s • alcance {BasicAttackReach(new Enemy { Kind = EnemyKind.Grunt }):0}", body, Brushes.AntiqueWhite, 145, 258);
+        g.DrawString($"Crítico: {critical:P0} de chance • {multiplier:0.00}× dano", body, Brushes.AntiqueWhite, 145, 284);
+        g.DrawString($"Dano esperado por segundo: {expectedDps:0.0} (alvo sem armadura)", body, Brushes.AntiqueWhite, 145, 310);
+        g.DrawString($"Estilhaço de Voz: {VoiceShardDamage():0} dano • recarga {VoiceShardCooldown():0.0} s", body, Brushes.AntiqueWhite, 145, 336);
+        g.DrawString($"Talentos: vigor {healthTalent} • domínio {skillTalent} • agilidade {dodgeTalent} • sintonia {techniqueTalent}", body, Brushes.AntiqueWhite, 145, 362);
+        g.DrawString("DEFESA E EQUIPAMENTO", section, Brushes.Goldenrod, 515, 205);
+        g.DrawString($"Vida máxima: {maxHealth:0} • poção: +45", body, Brushes.AntiqueWhite, 515, 232);
+        g.DrawString($"Redução de dano equipada: {mitigation:P0}{(wardTime > 0 ? " • Manto ativo" : "")}", body, Brushes.AntiqueWhite, 515, 258);
+        g.DrawString($"Recarga da esquiva: {DashCooldown():0.00} s • duração {DashDuration():0.00} s", body, Brushes.AntiqueWhite, 515, 284);
+        g.DrawString($"Afixos: {WeaponAffixDescription(weapon)}", body, Brushes.AntiqueWhite, new RectangleF(515, 310, 315, 48));
+        string charmOne = equippedCharm == 0 ? "vazio" : charmNames[equippedCharm]; string charmTwo = equippedCharm2 == 0 ? "vazio" : charmNames[equippedCharm2];
+        g.DrawString($"Talismãs: {charmOne} + {charmTwo}", body, Brushes.Plum, new RectangleF(515, 362, 315, 45));
+        g.DrawString($"Técnicas: F {ShortSkillName(0)}  •  V {ShortSkillName(1)}  •  G {ShortSkillName(2)}", body, Brushes.AntiqueWhite, new RectangleF(145, 424, 670, 40));
+        g.DrawString("Dano esperado considera apenas acerto básico e críticos; não inclui armadura inimiga, chefes ou efeitos temporários.", hint, Brushes.DarkGray, 145, 510);
+        g.DrawString("P ou ESC fecha", hint, Brushes.DarkGray, 145, 540);
     }
     private void DrawChoice(Graphics g, string titleText, string a, string b, string c)
     {
