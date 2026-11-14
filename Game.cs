@@ -145,7 +145,7 @@ public sealed class Game : Form
     };
     private readonly int[] weaponDamage = { 0, 10, 4 };
     private readonly int[] weaponBonuses = new int[3], weaponRarities = new int[3], weaponAffixes = new int[3], weaponAffixes2 = new int[3];
-    private PointF player = new(150, 330), facing = new(1, 0), mouseAim = new(1, 0);
+    private PointF player = new(150, 330), facing = new(1, 0), mouseAim = new(1, 0), dashDirection = new(1, 0);
     private int room, level = 1, xp, gold, potions = 2, damage = 25, weapon, ownedWeapons = 1;
     private int healthTalent, skillTalent, dodgeTalent, techniqueTalent, pendingTalents, enemiesDefeated;
     private int memoriesFound, questStage, tideGlass, finalEnding;
@@ -202,7 +202,7 @@ public sealed class Game : Form
         clearedRooms = 0;
         ownedCharms = equippedCharm = equippedCharm2 = 0;
         equippedSkills = new[] { 1, 0, 0 }; skillMenuOpen = false; skillMenuSlot = 0;
-        health = maxHealth = 100; attackCd = attackFlash = skillCd = shardCd = bellCd = bellWaveTime = bellWaveRadius = pullCd = pullWaveTime = wardCd = wardTime = refrainCd = refrainWaveTime = refrainWaveRadius = beaconCd = beaconTime = beaconPulseCd = beaconWaveTime = returnVoiceCd = returnVoiceWaveTime = returnVoiceWaveRadius = finalStrikeCd = finalStrikeFlash = dashCd = dashTime = invulnerable = 0; beaconPos = finalStrikeTarget = PointF.Empty; echoShards.Clear(); floatingTexts.Clear(); title = false; storyPage = 0; storyOverlay = true; SetupRoom();
+        health = maxHealth = 100; attackCd = attackFlash = skillCd = shardCd = bellCd = bellWaveTime = bellWaveRadius = pullCd = pullWaveTime = wardCd = wardTime = refrainCd = refrainWaveTime = refrainWaveRadius = beaconCd = beaconTime = beaconPulseCd = beaconWaveTime = returnVoiceCd = returnVoiceWaveTime = returnVoiceWaveRadius = finalStrikeCd = finalStrikeFlash = dashCd = dashTime = invulnerable = 0; beaconPos = finalStrikeTarget = PointF.Empty; facing = mouseAim = dashDirection = new PointF(1, 0); echoShards.Clear(); floatingTexts.Clear(); title = false; storyPage = 0; storyOverlay = true; SetupRoom();
     }
 
     private void AdvanceStory()
@@ -369,7 +369,7 @@ public sealed class Game : Form
         if (e.KeyCode == Keys.B) { skillMenuOpen = true; inventoryOpen = false; return; }
         if (inventoryOpen) { if (e.KeyCode >= Keys.D1 && e.KeyCode <= Keys.D3) EquipWeapon((int)e.KeyCode - (int)Keys.D1); else if (e.KeyCode == Keys.D4 && armor) armorOn = !armorOn; else if (e.KeyCode == Keys.D5 && relic) relicOn = !relicOn; else if (e.KeyCode == Keys.D6) CycleCharm(1); else if (e.KeyCode == Keys.D7) CycleCharm(2); return; }
         if (e.KeyCode == Keys.Space || e.KeyCode == Keys.J) Attack();
-        else if ((e.KeyCode == Keys.ShiftKey || e.KeyCode == Keys.K) && dashCd <= 0) { dashTime = DashDuration(); dashCd = DashCooldown(); }
+        else if (e.KeyCode == Keys.ShiftKey || e.KeyCode == Keys.K) StartDash();
         else if (e.KeyCode == Keys.R) Whirlwind();
         else if (e.KeyCode == Keys.F) CastEquippedSkill(0);
         else if (e.KeyCode == Keys.V) CastEquippedSkill(1);
@@ -709,8 +709,7 @@ public sealed class Game : Form
     {
         float dt = timer.Interval / 1000f; noticeTime = Math.Max(0, noticeTime - dt); attackCd = Math.Max(0, attackCd - dt); attackFlash = Math.Max(0, attackFlash - dt); skillCd = Math.Max(0, skillCd - dt); shardCd = Math.Max(0, shardCd - dt); bellCd = Math.Max(0, bellCd - dt); bellWaveTime = Math.Max(0, bellWaveTime - dt); pullCd = Math.Max(0, pullCd - dt); pullWaveTime = Math.Max(0, pullWaveTime - dt); wardCd = Math.Max(0, wardCd - dt); wardTime = Math.Max(0, wardTime - dt); refrainCd = Math.Max(0, refrainCd - dt); refrainWaveTime = Math.Max(0, refrainWaveTime - dt); beaconCd = Math.Max(0, beaconCd - dt); returnVoiceCd = Math.Max(0, returnVoiceCd - dt); returnVoiceWaveTime = Math.Max(0, returnVoiceWaveTime - dt); finalStrikeCd = Math.Max(0, finalStrikeCd - dt); finalStrikeFlash = Math.Max(0, finalStrikeFlash - dt); dashCd = Math.Max(0, dashCd - dt); dashTime = Math.Max(0, dashTime - dt); invulnerable = Math.Max(0, invulnerable - dt); windupPulse += dt; TickFloatingTexts(dt);
         if (title || dead || victory || storyOverlay || memoryOverlay || mapOpen || inventoryOpen || skillMenuOpen || talentChoice || chestChoice || endingChoiceOpen || vigilChoiceOpen) { Invalidate(); return; }
-        PointF dir = new((down.Contains(Keys.D) || down.Contains(Keys.Right) ? 1 : 0) - (down.Contains(Keys.A) || down.Contains(Keys.Left) ? 1 : 0), (down.Contains(Keys.S) || down.Contains(Keys.Down) ? 1 : 0) - (down.Contains(Keys.W) || down.Contains(Keys.Up) ? 1 : 0));
-        dir = Normalize(dir, PointF.Empty); if (dashTime > 0) dir = facing;
+        PointF dir = Normalize(MovementInput(), PointF.Empty); if (dashTime > 0) dir = dashDirection;
         MovePlayer(Scale(dir, (dashTime > 0 ? 530 : 190) * dt));
         if (dashTime <= 0) MovePlayer(Scale(CurrentDrift(), dt));
         for (int i = drops.Count - 1; i >= 0; i--) if (Distance(player, drops[i].Pos) < 30) Collect(drops[i]);
@@ -1098,6 +1097,15 @@ public sealed class Game : Form
         return bossHunter * (vigilActive && HasCharm(7) ? 1.4f : 1f);
     }
     private float DashDuration() => HasCharm(2) ? 0.29f : 0.17f;
+    private PointF MovementInput() => new((down.Contains(Keys.D) || down.Contains(Keys.Right) ? 1 : 0) - (down.Contains(Keys.A) || down.Contains(Keys.Left) ? 1 : 0), (down.Contains(Keys.S) || down.Contains(Keys.Down) ? 1 : 0) - (down.Contains(Keys.W) || down.Contains(Keys.Up) ? 1 : 0));
+    private void StartDash()
+    {
+        if (dashCd > 0) return;
+        PointF movement = MovementInput();
+        dashDirection = Normalize(movement, facing);
+        if (Length(movement) > 0.001f) facing = dashDirection;
+        dashTime = DashDuration(); dashCd = DashCooldown();
+    }
     private float DashCooldown() => Math.Max(0.35f, 1.15f - dodgeTalent * 0.12f) + (HasCharm(2) && !HasCharmPair(2, 3) ? 0.3f : 0f);
     private float CriticalChance() => (weapon == 2 ? 0.25f : 0.12f) + (HasCharm(3) ? HasCharmPair(1, 3) ? 0.17f : 0.12f : 0f) + (HasWeaponAffix(weapon, 2) ? weaponRarities[weapon] == 2 ? 0.11f : 0.07f : 0f);
 
@@ -2274,6 +2282,17 @@ public sealed class Game : Form
             if (floatingTextCheck.floatingTexts.Count != 2 || floatingTextCheck.floatingTexts[0].Pos.Y >= initialY) throw new InvalidOperationException("Os números de dano não subiram e permaneceram visíveis durante o impacto.");
             floatingTextCheck.TickFloatingTexts(1f);
             if (floatingTextCheck.floatingTexts.Count != 0) throw new InvalidOperationException("Os números flutuantes não desapareceram depois da animação.");
+        }
+        using (var dodgeDirectionCheck = new Game())
+        {
+            dodgeDirectionCheck.timer.Stop(); dodgeDirectionCheck.StartGame(); dodgeDirectionCheck.storyOverlay = false; dodgeDirectionCheck.room = 3; dodgeDirectionCheck.SetupRoom(); dodgeDirectionCheck.player = new PointF(500, 330); dodgeDirectionCheck.down.Add(Keys.D); dodgeDirectionCheck.down.Add(Keys.W);
+            dodgeDirectionCheck.StartDash(); PointF expectedDirection = Normalize(new PointF(1, -1), PointF.Empty); dodgeDirectionCheck.TickGame(); PointF diagonalDash = dodgeDirectionCheck.dashDirection, diagonalPosition = dodgeDirectionCheck.player;
+            if (Math.Abs(diagonalDash.X - expectedDirection.X) > 0.001f || Math.Abs(diagonalDash.Y - expectedDirection.Y) > 0.001f || diagonalPosition.X <= 505 || diagonalPosition.Y >= 325)
+                throw new InvalidOperationException("A esquiva diagonal não seguiu o movimento indicado pelo jogador.");
+            dodgeDirectionCheck.down.Clear(); dodgeDirectionCheck.dashCd = 0; dodgeDirectionCheck.facing = new PointF(-1, 0); dodgeDirectionCheck.StartDash();
+            PointF fallbackDash = dodgeDirectionCheck.dashDirection;
+            if (Math.Abs(fallbackDash.X + 1) > 0.001f || Math.Abs(fallbackDash.Y) > 0.001f)
+                throw new InvalidOperationException("A esquiva sem direção de movimento não usou a direção para a qual o personagem olha.");
         }
         using (var atlasCheck = new Game())
         {
