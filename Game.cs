@@ -599,8 +599,9 @@ public sealed class Game : Form
         {
             PointF offset = Sub(enemy.Pos, player); float distance = Length(offset);
             if (distance > BasicAttackReach(enemy) || (distance >= 20 && !BasicAttackCoversDirection(Dot(facing, Normalize(offset, facing)), weapon)) || BlockedLine(player, enemy.Pos)) continue;
-            bool critical = random.NextDouble() < CriticalChance(); int dealt = (int)(damage * BasicAttackSpecializationMultiplier() * BasicAttackDamageMultiplier(enemy) * OutgoingDamageMultiplier(enemy) * (critical ? CriticalMultiplier() : 1));
+            bool rangedCriticalResonance = UsesRangedCriticalResonance(enemy); bool critical = random.NextDouble() < BasicAttackCriticalChance(enemy); int dealt = (int)(damage * BasicAttackSpecializationMultiplier() * BasicAttackDamageMultiplier(enemy) * OutgoingDamageMultiplier(enemy) * (critical ? CriticalMultiplier() : 1));
             DamageEnemy(enemy, dealt, critical); enemy.Flash = 0.2f;
+            if (critical && rangedCriticalResonance) AddFloatingText(new PointF(enemy.Pos.X, enemy.Pos.Y - enemy.Radius - 28), "RESSONÂNCIA DO CONTRACANTO", Color.LightCyan);
             if (critical && !cadenceTriggered && HasWeaponAffix(weapon, 7)) { cadenceTriggered = true; float reduction = WeaponCriticalCooldownAdvance(weapon); AdvanceTechniqueCooldowns(reduction); AddFloatingText(new PointF(player.X, player.Y - 38), $"CADÊNCIA −{reduction:0.00} S", Color.LightCyan); }
             if (weapon == 1 && !enemy.Boss) { enemy.Stagger = Math.Max(enemy.Stagger, 0.2f); enemy.Windup = 0; }
             if (enemy.Hp <= 0) Defeat(enemy);
@@ -678,12 +679,15 @@ public sealed class Game : Form
     private static string WeaponRarityName(int index) => index == 0 ? "COMUM" : index == 1 ? "RARA" : "RELÍQUIA";
     private bool HasWeaponAffix(int index, int affix) => weaponAffixes[index] == affix || weaponAffixes2[index] == affix;
     private bool HasAnchorWardResonance(int index) => weaponRarities[index] == 2 && HasWeaponAffix(index, 4) && HasWeaponAffix(index, 5);
+    private bool HasRangedCriticalResonance(int index) => weaponRarities[index] == 2 && HasWeaponAffix(index, 2) && HasWeaponAffix(index, 6);
+    private bool UsesRangedCriticalResonance(Enemy enemy) => HasRangedCriticalResonance(weapon) && Distance(player, enemy.Pos) >= BasicAttackReach(enemy) * 0.7f;
+    private float BasicAttackCriticalChance(Enemy enemy) => CriticalChance() + (UsesRangedCriticalResonance(enemy) ? 0.1f : 0f);
     private float AnchorWardDuration() => 2.5f + (HasAnchorWardResonance(weapon) ? 0.75f : 0f);
     private float WeaponCriticalCooldownAdvance(int index) => !HasWeaponAffix(index, 7) ? 0 : (weaponRarities[index] == 2 ? 0.25f : 0.15f) + (HasWeaponAffix(index, 3) && HasWeaponAffix(index, 7) ? 0.1f : 0f);
     private string WeaponAffixName(int index) => string.Join(" + ", new[] { WeaponAffixLabel(weaponAffixes[index]), WeaponAffixLabel(weaponAffixes2[index]) }.Where(label => label.Length > 0));
     private static string WeaponAffixLabel(int affix) => affix switch { 1 => "Trégua", 2 => "Contracanto", 3 => "Maré", 4 => "Passo Célere", 5 => "Lastro", 6 => "Fio Esticado", 7 => "Cadência", _ => "" };
     private string WeaponDisplayName(int index) => weaponRarities[index] == 0 ? $"{weaponNames[index]} [COMUM]" : $"{weaponNames[index]} • {WeaponRarityName(index)} {WeaponAffixName(index)}";
-    private string WeaponAffixDescription(int index) => string.Join(" • ", new[] { WeaponAffixDescription(weaponAffixes[index], weaponRarities[index]), WeaponAffixDescription(weaponAffixes2[index], weaponRarities[index]), weaponRarities[index] == 2 && HasWeaponAffix(index, 3) && HasWeaponAffix(index, 7) ? "Ressonância da Maré: Cadência adianta +0,10 s por crítico" : "", weaponRarities[index] == 2 && HasWeaponAffix(index, 1) && HasWeaponAffix(index, 5) ? "Ressonância da Trégua: abaixo de metade da vida, abates curam +6" : "", HasAnchorWardResonance(index) ? "Ressonância do Lastro: Manto de Lastro dura +0,75 s" : "" }.Where(description => description.Length > 0));
+    private string WeaponAffixDescription(int index) => string.Join(" • ", new[] { WeaponAffixDescription(weaponAffixes[index], weaponRarities[index]), WeaponAffixDescription(weaponAffixes2[index], weaponRarities[index]), weaponRarities[index] == 2 && HasWeaponAffix(index, 3) && HasWeaponAffix(index, 7) ? "Ressonância da Maré: Cadência adianta +0,10 s por crítico" : "", weaponRarities[index] == 2 && HasWeaponAffix(index, 1) && HasWeaponAffix(index, 5) ? "Ressonância da Trégua: abaixo de metade da vida, abates curam +6" : "", HasAnchorWardResonance(index) ? "Ressonância do Lastro: Manto de Lastro dura +0,75 s" : "", HasRangedCriticalResonance(index) ? "Ressonância do Contracanto: +10 p.p. de crítico no alcance longo" : "" }.Where(description => description.Length > 0));
     private static string WeaponAffixDescription(int affix, int rarity) => affix switch { 1 => $"da Trégua: recupera {(rarity == 2 ? 6 : 3)} vida por abate", 2 => $"do Contracanto: +{(rarity == 2 ? 11 : 7)} p.p. de crítico", 3 => $"da Maré: +{(rarity == 2 ? 18 : 12)}% de dano de técnica", 4 => $"do Passo Célere: recarga de técnicas -{(rarity == 2 ? 16 : 10)}%", 5 => $"do Lastro: dano recebido -{(rarity == 2 ? 12 : 8)}%", 6 => $"do Fio Esticado: alcance básico +{(rarity == 2 ? 20 : 12)}%", 7 => $"da Cadência: crítico adianta recargas em {(rarity == 2 ? 0.25f : 0.15f):0.00} s por golpe", _ => "" };
 
     private void CastBellPulse()
@@ -4091,6 +4095,9 @@ public sealed class Game : Form
             affixForge.gold = 75; affixForge.tideGlass = 1; affixForge.forgeMenuOpen = true; affixForge.OnKeyDown(affixForge, new KeyEventArgs(Keys.D6));
             if (affixForge.weaponAffixes[0] != 6 || affixForge.weaponAffixes2[0] != 5 || Math.Abs(affixForge.BasicAttackReach(new Enemy { Kind = EnemyKind.Grunt }) - 93.6f) > 0.01f || !ValidWeaponData(affixForge.CaptureSaveData()))
                 throw new InvalidOperationException("A têmpera não permitiu escolher o Fio Esticado sem invalidar a Relíquia.");
+            affixForge.weapon = 0; affixForge.player = new PointF(300, 300); affixForge.weaponRarities[0] = 2; affixForge.weaponAffixes[0] = 2; affixForge.weaponAffixes2[0] = 6;
+            float baseCriticalChance = affixForge.CriticalChance(); var closeTarget = new Enemy { Pos = new PointF(350, 300), Kind = EnemyKind.Grunt }; var distantTarget = new Enemy { Pos = new PointF(380, 300), Kind = EnemyKind.Grunt };
+            if (Math.Abs(affixForge.BasicAttackCriticalChance(closeTarget) - baseCriticalChance) > 0.001f || Math.Abs(affixForge.BasicAttackCriticalChance(distantTarget) - baseCriticalChance - 0.1f) > 0.001f || !affixForge.WeaponAffixDescription(0).Contains("Ressonância do Contracanto: +10 p.p. de crítico no alcance longo")) throw new InvalidOperationException("A Relíquia Contracanto + Fio Esticado não especializou os críticos de alcance longo.");
             affixForge.weaponAffixes[0] = 3; affixForge.weaponAffixes2[0] = 7; affixForge.skillCd = 1;
             if (Math.Abs(affixForge.WeaponCriticalCooldownAdvance(0) - 0.35f) > 0.001f || !affixForge.WeaponAffixDescription(0).Contains("Ressonância da Maré: Cadência adianta +0,10 s por crítico")) throw new InvalidOperationException("A combinação Maré + Cadência da Relíquia não desbloqueou sua sinergia documentada.");
             affixForge.AdvanceTechniqueCooldowns(affixForge.WeaponCriticalCooldownAdvance(0));
