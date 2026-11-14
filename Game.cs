@@ -17,7 +17,7 @@ public sealed class Game : Form
         public EnemyKind Kind;
         public float Hp, MaxHp, Cooldown, Windup, WindupMax, Flash, AnimationTime;
         public int BossPattern;
-        public bool Armored;
+        public bool Armored, Moving;
         public float Stagger;
         public bool Boss => Kind is EnemyKind.Guardian or EnemyKind.BlindScribe or EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence;
         public float Radius => Boss ? 23 : Kind == EnemyKind.Elite ? 18 : 14;
@@ -753,7 +753,7 @@ public sealed class Game : Form
         if (Length(animationDirection) > 0.001f) playerAnimationTime += dt;
         else playerAnimationTime = 0;
         for (int i = drops.Count - 1; i >= 0; i--) if (Distance(player, drops[i].Pos) < 30) Collect(drops[i]);
-        TickBeacon(dt); int roomBeingUpdated = room; foreach (Enemy enemy in enemies.ToArray()) { UpdateEnemy(enemy, dt); if (dead || room != roomBeingUpdated) break; }
+        TickBeacon(dt); int roomBeingUpdated = room; foreach (Enemy enemy in enemies.ToArray()) { PointF previousPos = enemy.Pos; UpdateEnemy(enemy, dt); enemy.Moving = Distance(previousPos, enemy.Pos) > 0.01f; if (enemy.Moving) enemy.AnimationTime += dt; if (dead || room != roomBeingUpdated) break; }
         AdvanceVoiceShards(dt);
         if (enemies.Count == 0 && drops.Count == 0 && room == 2 && !memoryOverlay) chestChoice = true;
         MarkRoomCleared();
@@ -765,7 +765,6 @@ public sealed class Game : Form
         float attackTempo = vigilActive && e.Boss && VigilAspectForFloor(vigilFloor) == VigilAspect.Swift ? 1.25f : 1;
         e.Cooldown -= dt * attackTempo; e.Flash = Math.Max(0, e.Flash - dt); PointF offset = Sub(player, e.Pos); float dist = Length(offset);
         if (e.Stagger > 0) { e.Stagger = Math.Max(0, e.Stagger - dt); return; }
-        if (e.Windup <= 0 && dist > e.Radius * 2) e.AnimationTime += dt;
         if (e.Windup > 0) {
             e.Windup -= dt * attackTempo;
             float reach = e.Boss ? e.BossPattern == 0 ? e.Kind == EnemyKind.GlassHerald ? 135 : e.Kind == EnemyKind.LanternRegent ? 150 : e.Kind == EnemyKind.RouteScribe ? 160 : 90 : e.Kind == EnemyKind.RiverFerryman && e.BossPattern == 2 ? 85 : e.Kind == EnemyKind.AshWarden && e.BossPattern == 2 ? 68 : e.Kind == EnemyKind.HollowName && e.BossPattern == 2 ? 85 : e.Kind is EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence && e.BossPattern == 2 ? 230 : (e.Kind is EnemyKind.NameWeaver or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor) && e.BossPattern == 2 ? 230 : 42 : e.Kind == EnemyKind.Elite ? 62 : e.Kind == EnemyKind.Mage ? 52 : e.Kind is EnemyKind.Archer or EnemyKind.InkEcho or EnemyKind.PaperWraith ? 230 : e.Kind == EnemyKind.DrownedMemory ? 195 : e.Kind is EnemyKind.EmberWisp or EnemyKind.NameMoth or EnemyKind.MudCantor ? 210 : 38;
@@ -1922,7 +1921,7 @@ public sealed class Game : Form
         if (spriteRow >= 0 && enemySprites is not null)
         {
             float cellWidth = enemySprites.Width / 4f, cellHeight = enemySprites.Height / 4f;
-            int frame = EnemySpriteFrame(enemy.AnimationTime, enemy.Windup <= 0 && enemy.Stagger <= 0);
+            int frame = EnemySpriteFrame(enemy.AnimationTime, enemy.Moving && enemy.Windup <= 0 && enemy.Stagger <= 0);
             RectangleF source = new(frame * cellWidth, spriteRow * cellHeight, cellWidth, cellHeight);
             float size = bossSprite ? 132 : enemy.Kind == EnemyKind.Elite ? 82 : 70;
             RectangleF target = new(enemy.Pos.X - size / 2, enemy.Pos.Y - size, size, size);
