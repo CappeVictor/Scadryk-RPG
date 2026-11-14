@@ -124,3 +124,5 @@ Os avisos de ataques comuns e de chefes agora pulsam e ganham opacidade e espess
 ## Capítulo XVIII — A badalada não enviada
 
 A expedição opcional pós-epílogo adiciona a Câmara das Badaladas Não Enviadas, o Poço do Contratempo e o Afinador do Contratempo. O autoteste verifica a sequência e as áreas dos três golpes, inclusive a aceleração da segunda fase. O chefe alterna uma onda anular com centro seguro, um impacto marcado sob o jogador e dois cortes cruzados; a lembrança coletiva, a recompensa e o avanço de campanha ficam salvos. A história mantém Nara fora desta trilha. Scadryk agora reúne 41 salas de combate e 20 chefes. Próxima frente: validar ritmo em partida manual, revisar equilíbrio da campanha e avançar animações e distribuição.
+
+A folha de ataques dos arquétipos agora conserva o último quadro por 0,16 segundo após o impacto. Isso dá leitura ao contato e à recuperação; o autoteste confere a pose residual nos ataques corpo a corpo. Próximo foco: criar sequências específicas de ataque para os ecos com silhuetas próprias e observar o ritmo em partida manual.

@@ -42,7 +42,7 @@ Para compilar uma versão de produção:
 dotnet build --configuration Release
 ```
 
-Para executar o autoteste automatizado, que cobre a campanha até o Capítulo XVII, as oito técnicas possíveis (sete por campanha), a Vigília Ascendente, o combate, o loot, a progressão, o save e a compatibilidade com saves antigos:
+Para executar o autoteste automatizado, que cobre a campanha até o Capítulo XVII, as oito técnicas possíveis (sete por campanha), a Vigília Ascendente, o combate, as poses de impacto, o loot, a progressão, o save e a compatibilidade com saves antigos:
 
 ```powershell
 dotnet run -- --self-test
@@ -56,7 +56,7 @@ dotnet publish --configuration Release --runtime win-x64 --self-contained true
 
 ## Personagem e animação
 
-O protagonista, o Escutador, usa a folha de caminhada `Assets/Listener.png`, com quatro direções e quatro quadros por direção; Aven é um NPC distinto no Refúgio. `Assets/PlayerAttack.png` fornece poses de ataque para o jogador, e `Assets/EnemyAttacks.png` dá ciclos próprios ao guerreiro, arqueiro, mago e elite. As outras folhas de `Assets/` contêm os inimigos e os vinte chefes; seus quadros acompanham a movimentação e os avisos de ataque. O Arquivista das Marés e o Afinador do Contratempo têm representações procedurais próprias em C#. Eco de Tinta, Lembrança Afogada, Vestígio de Brasas, Mariposa de Nomes, Cantor do Lodo, Espectro de Papel e Eco Salino agora usam retratos originais com fundo transparente, animação sutil de movimento e escala adequada à silhueta; as formas procedurais permanecem como fallback. Barras de vida, nomes, alerta de alvo e brilho de dano permanecem legíveis sobre as criaturas. O projeto copia as imagens para a saída ao compilar; não precisa baixar recursos nem instalar um motor de jogo.
+O protagonista, o Escutador, usa a folha de caminhada `Assets/Listener.png`, com quatro direções e quatro quadros por direção; Aven é um NPC distinto no Refúgio. `Assets/PlayerAttack.png` fornece poses de ataque para o jogador, e `Assets/EnemyAttacks.png` dá ciclos próprios ao guerreiro, arqueiro, mago e elite. As outras folhas de `Assets/` contêm os inimigos e os vinte chefes; seus quadros acompanham a movimentação e os avisos de ataque. Nos sprites com quadros de ataque, a última pose permanece por um instante após o impacto, marcando o fim da animação. O Arquivista das Marés e o Afinador do Contratempo têm representações procedurais próprias em C#. Eco de Tinta, Lembrança Afogada, Vestígio de Brasas, Mariposa de Nomes, Cantor do Lodo, Espectro de Papel e Eco Salino agora usam retratos originais com fundo transparente, animação sutil de movimento e escala adequada à silhueta; as formas procedurais permanecem como fallback. Barras de vida, nomes, alerta de alvo e brilho de dano permanecem legíveis sobre as criaturas. O projeto copia as imagens para a saída ao compilar; não precisa baixar recursos nem instalar um motor de jogo.
 
 ## Controles
 

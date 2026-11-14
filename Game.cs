@@ -18,7 +18,7 @@ public sealed class Game : Form
     {
         public PointF Pos, Target, Target2, Target2Start;
         public EnemyKind Kind;
-        public float Hp, MaxHp, Cooldown, Windup, WindupMax, Flash, AnimationTime, SummonCooldown, SummonWindup;
+        public float Hp, MaxHp, Cooldown, Windup, WindupMax, Flash, AnimationTime, AttackPoseTime, SummonCooldown, SummonWindup;
         public int BossPattern;
         public bool Armored, Moving;
         public bool VigilMinion;
@@ -1002,6 +1002,7 @@ public sealed class Game : Form
 
     private void UpdateEnemy(Enemy e, float dt)
     {
+        e.AttackPoseTime = Math.Max(0, e.AttackPoseTime - dt);
         if (e.Kind == EnemyKind.Elite && e.EliteAffix == EliteAffix.Summoner)
         {
             if (e.SummonWindup > 0 && e.Stagger > 0) { e.SummonWindup = 0; e.SummonCooldown = 2.5f; }
@@ -1025,6 +1026,7 @@ public sealed class Game : Form
         if (e.Stagger > 0) { e.Stagger = Math.Max(0, e.Stagger - dt); return; }
         if (e.Windup > 0) {
             e.Windup -= dt * attackTempo;
+            if (e.Windup <= 0) e.AttackPoseTime = 0.16f;
             bool inAttack = e.Boss ? BossAttackContains(e, player) : NonBossAttackContains(e, player);
             if (e.Windup <= 0 && inAttack && invulnerable <= 0 && dashTime <= 0)
             {
@@ -1071,7 +1073,7 @@ public sealed class Game : Form
 
     private static void BeginWindup(Enemy enemy, PointF target, float duration)
     {
-        enemy.Target = target; enemy.Windup = enemy.WindupMax = duration;
+        enemy.Target = target; enemy.Windup = enemy.WindupMax = duration; enemy.AttackPoseTime = 0;
         if (enemy.Boss) GameAudio.Play(GameAudio.Cue.BossWarning);
         else if (enemy.Kind == EnemyKind.Elite) GameAudio.Play(GameAudio.Cue.EliteWarning);
         if (enemy.Kind == EnemyKind.DeepSilence && enemy.BossPattern == 2)
@@ -2382,19 +2384,19 @@ public sealed class Game : Form
         bool bossSprite = bossSpriteIndex >= 0;
         int spriteRow = individualSpriteLoaded ? 0 : bossSprite ? bossSpriteIndex % 4 : enemySpriteRow;
         Bitmap? enemySprites = individualSpriteLoaded ? individualSprite : bossSprite ? bossSpriteIndex switch { < 4 => BossSpriteSheet.Value, < 8 => MidBossSpriteSheet.Value, < 12 => LateBossSpriteSheet.Value, < 16 => FinalWaveBossSpriteSheet.Value, _ => EndgameBossSpriteSheet.Value } : enemySpriteRow >= 0 ? EnemySpriteSheet.Value : null;
-        if (!individualSpriteLoaded && !bossSprite && enemySpriteRow >= 0 && enemy.Windup > 0)
+        int attackFrame = EnemyAttackSpriteFrame(enemy);
+        if (!individualSpriteLoaded && !bossSprite && enemySpriteRow >= 0 && attackFrame >= 0)
             enemySprites = EnemyAttackSpriteSheet.Value ?? enemySprites;
         float spriteHeight = individualSpriteLoaded ? enemy.Kind switch { EnemyKind.Elite => 118, EnemyKind.EmberWisp => 72, EnemyKind.MudCantor => 86, EnemyKind.NameMoth => 84, EnemyKind.PaperWraith => 86, EnemyKind.SaltEcho => 82, _ => 80 } : bossSprite ? 132 : enemy.Kind == EnemyKind.Elite ? 82 : 70;
         if (spriteRow >= 0 && enemySprites is not null)
         {
             float cellWidth = individualSpriteLoaded ? enemySprites.Width : enemySprites.Width / 4f, cellHeight = individualSpriteLoaded ? enemySprites.Height : enemySprites.Height / 4f;
-            float windupProgress = enemy.WindupMax > 0 && enemy.Windup > 0 ? Math.Clamp(1f - enemy.Windup / enemy.WindupMax, 0f, 1f) : 0f;
-            int windupFrame = Math.Min(3, (int)(windupProgress * 4f));
-            int frame = individualSpriteLoaded ? 0 : enemy.Windup > 0 ? windupFrame : EnemySpriteFrame(enemy.AnimationTime, enemy.Moving && enemy.Stagger <= 0);
+            float windupProgress = enemy.WindupMax > 0 && enemy.Windup > 0 ? Math.Clamp(1f - enemy.Windup / enemy.WindupMax, 0f, 1f) : enemy.AttackPoseTime > 0 ? 1f : 0f;
+            int frame = individualSpriteLoaded ? 0 : attackFrame >= 0 ? attackFrame : EnemySpriteFrame(enemy.AnimationTime, enemy.Moving && enemy.Stagger <= 0);
             RectangleF source = new(frame * cellWidth, spriteRow * cellHeight, cellWidth, cellHeight);
             float size = spriteHeight;
             float width = individualSpriteLoaded ? size * cellWidth / cellHeight : size;
-            bool freelyMoving = enemy.Moving && enemy.Windup <= 0 && enemy.Stagger <= 0;
+            bool freelyMoving = enemy.Moving && enemy.Windup <= 0 && enemy.AttackPoseTime <= 0 && enemy.Stagger <= 0;
             bool animatedCreature = individualSpriteLoaded && enemy.Kind != EnemyKind.Elite;
             float motionPhase = freelyMoving ? enemy.AnimationTime * 15 : windupPulse * 2.2f;
             float bob = animatedCreature ? MathF.Sin(motionPhase) * (freelyMoving ? 2f : 1.1f) : 0;
@@ -2405,7 +2407,7 @@ public sealed class Game : Form
             using var shadow = new SolidBrush(Color.FromArgb(110, 5, 7, 9));
             g.FillEllipse(shadow, enemy.Pos.X - r, enemy.Pos.Y - 5, r * 2, 10);
             var spriteTransform = g.Save();
-            float facingX = enemy.Windup > 0 ? enemy.Target.X : player.X;
+            float facingX = enemy.Windup > 0 || enemy.AttackPoseTime > 0 ? enemy.Target.X : player.X;
             if (EnemyFacesLeft(enemy.Pos.X, facingX)) { g.TranslateTransform(enemy.Pos.X * 2, 0); g.ScaleTransform(-1, 1); }
             g.DrawImage(enemySprites, target, source, GraphicsUnit.Pixel);
             g.Restore(spriteTransform);
@@ -3022,6 +3024,7 @@ public sealed class Game : Form
     private static int EnemySpriteRow(EnemyKind kind) => kind switch { EnemyKind.Grunt => 0, EnemyKind.Archer => 1, EnemyKind.Mage => 2, EnemyKind.Elite => 3, _ => -1 };
     private static int CampaignBossSpriteIndex(EnemyKind kind) => kind switch { EnemyKind.Guardian => 0, EnemyKind.BlindScribe => 1, EnemyKind.RiverFerryman => 2, EnemyKind.AshWarden => 3, EnemyKind.HollowName => 4, EnemyKind.NameWeaver => 5, EnemyKind.FirstKeeper => 6, EnemyKind.OathCartographer => 7, EnemyKind.NameBroker => 8, EnemyKind.TideWitness => 9, EnemyKind.ReedKeeper => 10, EnemyKind.FlowKeeper => 11, EnemyKind.CounterCurrent => 12, EnemyKind.RiftCantor => 13, EnemyKind.GlassHerald => 14, EnemyKind.LanternRegent => 15, EnemyKind.RouteScribe => 16, EnemyKind.DeepSilence => 17, _ => -1 };
     private static int EnemySpriteFrame(float animationTime, bool walking) => walking ? (int)(Math.Max(0, animationTime) / 0.13f) % 4 : 0;
+    private static int EnemyAttackSpriteFrame(Enemy enemy) => enemy.Windup > 0 ? Math.Min(3, (int)(Math.Clamp(1f - enemy.Windup / Math.Max(0.01f, enemy.WindupMax), 0f, 1f) * 4f)) : enemy.AttackPoseTime > 0 ? 3 : -1;
     private static bool EnemyFacesLeft(float enemyX, float playerX) => playerX < enemyX;
     private static string EnemyName(Enemy e) => e.VigilMinion ? "ECO ERRANTE • SALINO" : e.Kind switch { EnemyKind.Guardian => "GUARDIÃO SEM NOME", EnemyKind.BlindScribe => "ESCRIBA CEGO", EnemyKind.RiverFerryman => "BARQUEIRO OCO", EnemyKind.AshWarden => "GUARDIÃO DAS CINZAS", EnemyKind.HollowName => "O NOME VAZIO", EnemyKind.NameWeaver => "A TECELÃ DE NOMES", EnemyKind.FirstKeeper => "A PRIMEIRA VIGÍLIA", EnemyKind.OathCartographer => "CARTÓGRAFA DO VÃO", EnemyKind.NameBroker => "ESCRIVÃO DE CONTRATO", EnemyKind.SaltEcho => "ECO SALINO", EnemyKind.TideWitness => "TESTEMUNHA DA MARÉ", EnemyKind.ReedKeeper => "GUARDIÃ DO LEITO", EnemyKind.FlowKeeper => "VIGIA DO VEIO PRESO", EnemyKind.CounterCurrent => "AFINADOR DAS MARGENS", EnemyKind.RiftCantor => "A CONTRAVOZ", EnemyKind.GlassHerald => "ARAUTO DE VIDRO", EnemyKind.LanternRegent => "REGENTE DAS LANTERNAS", EnemyKind.RouteScribe => "ESCRIBA DO TRAÇADO", EnemyKind.DeepSilence => "SILÊNCIO DE BAIXO", EnemyKind.BorrowedChorus => "ARQUIVISTA DAS MARÉS", EnemyKind.LastTuner => "AFINADOR DO CONTRATEMPO", EnemyKind.PaperWraith => "ESPECTRO DE PAPEL", EnemyKind.MudCantor => "CANTOR DO LODO", EnemyKind.DrownedMemory => "LEMBRANÇA AFOGADA", EnemyKind.EmberWisp => "VESTÍGIO DE BRASAS", EnemyKind.NameMoth => "MARIPOSA DE NOMES", EnemyKind.Elite => $"ELITE • {EliteAffixName(e.EliteAffix)}", EnemyKind.Archer => "ARQUEIRO", EnemyKind.Mage => "CONJURADOR", EnemyKind.InkEcho => "ECO DE TINTA", _ => "" };
     private static PointF Normalize(PointF p, PointF fallback) { float n = Length(p); return n > 0.001f ? new PointF(p.X / n, p.Y / n) : fallback; }
@@ -3179,6 +3182,7 @@ public sealed class Game : Form
                 meleeCheck.health = meleeCheck.maxHealth = 1000; meleeCheck.invulnerable = meleeCheck.dashTime = 0; meleeCheck.player = new PointF(center.X + radius + 1, center.Y);
                 meleeCheck.UpdateEnemy(attacker, 0.02f);
                 if (meleeCheck.health != 1000) throw new InvalidOperationException($"{kind} atingiu fora do círculo anunciado.");
+                if (attacker.AttackPoseTime <= 0 || EnemyAttackSpriteFrame(attacker) != 3) throw new InvalidOperationException($"{kind} não manteve o quadro de impacto após o aviso.");
                 attacker.Windup = 0.01f; meleeCheck.player = new PointF(center.X + radius - 1, center.Y); meleeCheck.UpdateEnemy(attacker, 0.02f);
                 if (meleeCheck.health >= 1000) throw new InvalidOperationException($"{kind} não atingiu dentro do círculo anunciado.");
             }
