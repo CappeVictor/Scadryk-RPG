@@ -1204,7 +1204,29 @@ public sealed class Game : Form
     }
 
     private SaveData CaptureSaveData() => new() { Room = room, Level = level, Xp = xp, Gold = gold, Potions = potions, Damage = damage, Health = health, MaxHealth = maxHealth, Weapon = weapon, OwnedWeapons = ownedWeapons, Armor = armor, Relic = relic, HealthTalent = healthTalent, SkillTalent = skillTalent, DodgeTalent = dodgeTalent, TechniqueTalent = techniqueTalent, RoomCleared = room == 3 || enemies.Count == 0 && drops.Count == 0, Completed = victory, MemoriesFound = memoriesFound, QuestStage = questStage, ClearedRooms = clearedRooms | (room != 3 && enemies.Count == 0 && drops.Count == 0 ? 1L << room : 0), ArchiveSeal = archiveSeal, RiverBell = riverBell, LumeLens = lumeLens, NaraTrace = naraTrace, ChorusMemory = chorusMemory, FirstMemory = firstMemory, WestTrace = westTrace, UpstreamTrace = upstreamTrace, TideGlass = tideGlass, BeyondTrace = beyondTrace, EbbSeal = ebbSeal, CounterTrace = counterTrace, AnchorWard = anchorWard, RefrainSong = refrainSong, RiftVerse = riftVerse, DeepTrace = deepTrace, LanternSignal = lanternSignal, BeaconLight = beaconLight, RouteMemory = routeMemory, SilenceMemory = silenceMemory, FinalEnding = finalEnding, VigilBestFloor = vigilBestFloor, OwnedCharms = ownedCharms, EquippedCharm = equippedCharm, EquippedCharm2 = equippedCharm2, EquippedSkills = equippedSkills.ToArray(), TownEnding = townEnding, WeaponBonuses = weaponBonuses.ToArray(), WeaponRarities = weaponRarities.ToArray(), WeaponAffixes = weaponAffixes.ToArray(), WeaponAffixes2 = weaponAffixes2.ToArray() };
-    private void SaveGame() { Directory.CreateDirectory(Path.GetDirectoryName(SavePath)!); File.WriteAllText(SavePath, JsonSerializer.Serialize(CaptureSaveData())); notice = "PROGRESSO SALVO"; noticeTime = 2; }
+    private static void WriteSaveFile(string path, string contents)
+    {
+        string directory = Path.GetDirectoryName(path)!;
+        Directory.CreateDirectory(directory);
+        string temporary = Path.Combine(directory, $".save-{Guid.NewGuid():N}.tmp");
+        try
+        {
+            using (var stream = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+            using (var writer = new StreamWriter(stream)) { writer.Write(contents); writer.Flush(); stream.Flush(true); }
+            File.Move(temporary, path, true);
+        }
+        finally
+        {
+            try { File.Delete(temporary); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+    private void SaveGame()
+    {
+        try { WriteSaveFile(SavePath, JsonSerializer.Serialize(CaptureSaveData())); notice = "PROGRESSO SALVO"; }
+        catch (IOException) { notice = "NÃO FOI POSSÍVEL SALVAR • VERIFIQUE O ARQUIVO"; }
+        catch (UnauthorizedAccessException) { notice = "NÃO FOI POSSÍVEL SALVAR • VERIFIQUE AS PERMISSÕES"; }
+        noticeTime = 3;
+    }
     private string LegacySavePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Godot", "app_userdata", "Scadryk RPG", "scadryk-save.cfg");
     private SaveData ReadLegacySave()
     {
@@ -2371,6 +2393,22 @@ public sealed class Game : Form
 
     public static int SelfTest()
     {
+        string saveCheckDirectory = Path.Combine(Path.GetTempPath(), "Scadryk-save-check-" + Guid.NewGuid().ToString("N"));
+        string saveCheckPath = Path.Combine(saveCheckDirectory, "save.json");
+        try
+        {
+            WriteSaveFile(saveCheckPath, "primeiro");
+            WriteSaveFile(saveCheckPath, "segundo");
+            if (File.ReadAllText(saveCheckPath) != "segundo") throw new InvalidOperationException("O save não substituiu o progresso anterior.");
+            using (var lockedSave = new FileStream(saveCheckPath, FileMode.Open, FileAccess.Read, FileShare.None))
+            {
+                bool rejected = false;
+                try { WriteSaveFile(saveCheckPath, "não deve substituir"); } catch (IOException) { rejected = true; }
+                if (!rejected) throw new InvalidOperationException("O save bloqueado não rejeitou a substituição.");
+            }
+            if (File.ReadAllText(saveCheckPath) != "segundo" || Directory.GetFiles(saveCheckDirectory).Length != 1) throw new InvalidOperationException("Uma falha de gravação alterou o save anterior ou deixou arquivo temporário.");
+        }
+        finally { if (File.Exists(saveCheckPath)) File.Delete(saveCheckPath); if (Directory.Exists(saveCheckDirectory)) Directory.Delete(saveCheckDirectory); }
         string spritePath = Path.Combine(AppContext.BaseDirectory, "Assets", "Aven.png");
         if (!File.Exists(spritePath)) throw new InvalidOperationException("A folha original de sprites de Aven não foi copiada para a saída do jogo.");
         using (var sprite = new Bitmap(spritePath))
