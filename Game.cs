@@ -220,7 +220,7 @@ public sealed class Game : Form
         {
             if (storyOverlay) { if (e.Button == MouseButtons.Left) AdvanceStory(); return; }
             if (memoryOverlay) { if (e.Button == MouseButtons.Left) memoryOverlay = false; return; }
-            if (title || dead || victory || chestChoice || talentChoice || inventoryOpen || skillMenuOpen) return;
+            if (GameplayPaused()) return;
             mouseAim = Normalize(new PointF(e.X - player.X, e.Y - player.Y), facing);
             if (e.Button == MouseButtons.Left) Attack();
             if (e.Button == MouseButtons.Right) Whirlwind();
@@ -741,10 +741,13 @@ public sealed class Game : Form
         if (pendingTalents > 0) talentChoice = true;
     }
 
+    private bool GameplayPaused() => title || dead || victory || storyOverlay || memoryOverlay || mapOpen || inventoryOpen || skillMenuOpen || forgeMenuOpen || talentChoice || chestChoice || endingChoiceOpen || vigilChoiceOpen;
+
     private void TickGame()
     {
-        float dt = timer.Interval / 1000f; noticeTime = Math.Max(0, noticeTime - dt); attackCd = Math.Max(0, attackCd - dt); attackFlash = Math.Max(0, attackFlash - dt); skillCd = Math.Max(0, skillCd - dt); shardCd = Math.Max(0, shardCd - dt); bellCd = Math.Max(0, bellCd - dt); bellWaveTime = Math.Max(0, bellWaveTime - dt); pullCd = Math.Max(0, pullCd - dt); pullWaveTime = Math.Max(0, pullWaveTime - dt); wardCd = Math.Max(0, wardCd - dt); wardTime = Math.Max(0, wardTime - dt); refrainCd = Math.Max(0, refrainCd - dt); refrainWaveTime = Math.Max(0, refrainWaveTime - dt); beaconCd = Math.Max(0, beaconCd - dt); returnVoiceCd = Math.Max(0, returnVoiceCd - dt); returnVoiceWaveTime = Math.Max(0, returnVoiceWaveTime - dt); finalStrikeCd = Math.Max(0, finalStrikeCd - dt); finalStrikeFlash = Math.Max(0, finalStrikeFlash - dt); dashCd = Math.Max(0, dashCd - dt); dashTime = Math.Max(0, dashTime - dt); invulnerable = Math.Max(0, invulnerable - dt); windupPulse += dt; TickFloatingTexts(dt);
-        if (title || dead || victory || storyOverlay || memoryOverlay || mapOpen || inventoryOpen || skillMenuOpen || talentChoice || chestChoice || endingChoiceOpen || vigilChoiceOpen) { Invalidate(); return; }
+        float dt = timer.Interval / 1000f; noticeTime = Math.Max(0, noticeTime - dt);
+        if (GameplayPaused()) { Invalidate(); return; }
+        attackCd = Math.Max(0, attackCd - dt); attackFlash = Math.Max(0, attackFlash - dt); skillCd = Math.Max(0, skillCd - dt); shardCd = Math.Max(0, shardCd - dt); bellCd = Math.Max(0, bellCd - dt); bellWaveTime = Math.Max(0, bellWaveTime - dt); pullCd = Math.Max(0, pullCd - dt); pullWaveTime = Math.Max(0, pullWaveTime - dt); wardCd = Math.Max(0, wardCd - dt); wardTime = Math.Max(0, wardTime - dt); refrainCd = Math.Max(0, refrainCd - dt); refrainWaveTime = Math.Max(0, refrainWaveTime - dt); beaconCd = Math.Max(0, beaconCd - dt); returnVoiceCd = Math.Max(0, returnVoiceCd - dt); returnVoiceWaveTime = Math.Max(0, returnVoiceWaveTime - dt); finalStrikeCd = Math.Max(0, finalStrikeCd - dt); finalStrikeFlash = Math.Max(0, finalStrikeFlash - dt); dashCd = Math.Max(0, dashCd - dt); dashTime = Math.Max(0, dashTime - dt); invulnerable = Math.Max(0, invulnerable - dt); windupPulse += dt; TickFloatingTexts(dt);
         PointF dir = Normalize(MovementInput(), PointF.Empty); if (dashTime > 0) dir = dashDirection;
         MovePlayer(Scale(dir, (dashTime > 0 ? 530 : 190) * dt));
         PointF drift = CurrentDrift();
@@ -2444,13 +2447,15 @@ public sealed class Game : Form
             atlasCheck.timer.Stop(); atlasCheck.StartGame(); atlasCheck.storyOverlay = false; atlasCheck.room = 4; atlasCheck.questStage = 3;
             atlasCheck.enemies.Clear(); atlasCheck.clearedRooms = (1L << 0) | (1L << 1);
             var pausedEnemy = new Enemy { Pos = new PointF(700, 400), Kind = EnemyKind.Grunt, Hp = 100, MaxHp = 100, Stagger = 0.2f };
-            atlasCheck.enemies.Add(pausedEnemy); PointF playerBeforeMap = atlasCheck.player;
+            atlasCheck.enemies.Add(pausedEnemy); PointF playerBeforeMap = atlasCheck.player; atlasCheck.skillCd = 1; atlasCheck.wardTime = 1;
             atlasCheck.OnKeyDown(atlasCheck, new KeyEventArgs(Keys.M)); long knownRooms = atlasCheck.KnownRoomMask(); atlasCheck.TickGame();
+            atlasCheck.OnMouseDown(new MouseEventArgs(MouseButtons.Left, 1, 700, 400, 0));
             long expectedKnown = (1L << 0) | (1L << 1) | (1L << 3) | (1L << 4);
-            if (!atlasCheck.mapOpen || (knownRooms & expectedKnown) != expectedKnown || (knownRooms & (1L << 5)) != 0 || atlasCheck.player != playerBeforeMap || pausedEnemy.Stagger != 0.2f)
+            if (!atlasCheck.mapOpen || (knownRooms & expectedKnown) != expectedKnown || (knownRooms & (1L << 5)) != 0 || atlasCheck.player != playerBeforeMap || pausedEnemy.Stagger != 0.2f || atlasCheck.skillCd != 1 || atlasCheck.wardTime != 1 || atlasCheck.attackCd != 0)
                 throw new InvalidOperationException("O atlas não distinguiu câmaras conhecidas ou não pausou a exploração.");
             atlasCheck.OnKeyDown(atlasCheck, new KeyEventArgs(Keys.Escape));
             if (atlasCheck.mapOpen) throw new InvalidOperationException("ESC não fechou o atlas da campanha.");
+            atlasCheck.TickGame(); if (atlasCheck.skillCd >= 1 || atlasCheck.wardTime >= 1) throw new InvalidOperationException("O combate não retomou os temporizadores ao fechar o atlas.");
         }
         using (var shardGame = new Game())
         {
