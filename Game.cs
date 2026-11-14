@@ -3491,11 +3491,11 @@ public sealed class Game : Form
             slagPool.TimeLeft = 4.5f;
             slagWeaverCheck.player = slagPool.Pos; slagWeaverCheck.TickGroundHazards(0.8f);
             if (slagWeaverCheck.health != 991) throw new InvalidOperationException("A poça de escória não causou dano ao jogador que permaneceu sobre ela.");
-            slagWeaverCheck.player = new PointF(600, 330); slagWeaverCheck.TickGroundHazards(0.86f);
+            slagWeaverCheck.invulnerable = 0; slagWeaverCheck.player = new PointF(600, 330); slagWeaverCheck.TickGroundHazards(0.86f);
             if (slagWeaverCheck.health != 991) throw new InvalidOperationException("A poça de escória atingiu o jogador depois que ele saiu da área.");
-            slagWeaverCheck.player = slagPool.Pos; slagWeaverCheck.dashTime = 1; slagWeaverCheck.TickGroundHazards(0.86f);
+            slagWeaverCheck.invulnerable = 0; slagWeaverCheck.player = slagPool.Pos; slagWeaverCheck.dashTime = 1; slagWeaverCheck.TickGroundHazards(0.86f);
             if (slagWeaverCheck.health != 991) throw new InvalidOperationException("A esquiva não protegeu contra o dano periódico da poça.");
-            slagWeaverCheck.dashTime = 0; slagWeaverCheck.TickGroundHazards(0.86f);
+            slagWeaverCheck.invulnerable = 0; slagWeaverCheck.dashTime = 0; slagWeaverCheck.TickGroundHazards(0.86f);
             if (slagWeaverCheck.health != 982) throw new InvalidOperationException("A poça de escória não repetiu o dano depois da esquiva.");
             slagWeaverCheck.TickGroundHazards(1.6f);
             if (slagWeaverCheck.groundHazards.Count != 0) throw new InvalidOperationException("A poça de escória não desapareceu ao fim de sua duração.");
