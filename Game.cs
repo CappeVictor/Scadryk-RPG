@@ -278,6 +278,7 @@ public sealed class Game : Form
         else if (e.KeyCode == Keys.G) CastEquippedSkill(2);
         else if (e.KeyCode == Keys.Q) UsePotion();
         else if (e.KeyCode == Keys.E) Interact();
+        else if (e.KeyCode == Keys.X) SalvageNearbyWeapon();
         else if (e.KeyCode == Keys.F5) { if (enemies.Count == 0 && drops.Count == 0) SaveGame(); else { notice = "LIMPE A SALA E RECOLHA O LOOT ANTES DE SALVAR"; noticeTime = 2; } }
         else if (e.KeyCode == Keys.Tab) CycleTarget();
     }
@@ -609,6 +610,21 @@ public sealed class Game : Form
 
     private static void BeginWindup(Enemy enemy, PointF target, float duration) { enemy.Target = target; enemy.Windup = enemy.WindupMax = duration; }
     private void HitPlayer(float value) { float damageTaken = value * (armorOn ? 0.7f : 1) * (wardTime > 0 ? 0.45f : 1) * WeaponDamageTakenMultiplier(); health = Math.Max(0, health - damageTaken); invulnerable = 0.6f; if (health <= 0) dead = true; }
+    private void SalvageNearbyWeapon()
+    {
+        Drop? item = drops.Where(drop => drop.Kind == "weapon" && Distance(player, drop.Pos) <= 75).OrderBy(drop => Distance(player, drop.Pos)).FirstOrDefault();
+        if (item is null) { notice = "NENHUMA ARMA POR PERTO PARA DESMONTAR"; noticeTime = 1.5f; return; }
+        (int goldValue, int glassValue) = WeaponSalvageReward(item.Rarity);
+        gold += goldValue;
+        int receivedGlass = Math.Min(glassValue, 999 - tideGlass);
+        tideGlass += receivedGlass;
+        drops.Remove(item);
+        notice = receivedGlass > 0 ? $"ARMA DESMONTADA: +{goldValue} OURO • +{receivedGlass} SAL" : $"ARMA DESMONTADA: +{goldValue} OURO";
+        noticeTime = 2.2f;
+    }
+
+    private static (int Gold, int Glass) WeaponSalvageReward(int rarity) => rarity switch { 2 => (75, 2), 1 => (40, 1), _ => (15, 0) };
+
     private void Collect(Drop item)
     {
         if (item.Kind == "deep") { deepTrace = true; questStage = 42; notice = "MEMÓRIA: A PEDRA QUE NÃO GUARDA NOMES"; ShowMemory("A PEDRA QUE NÃO GUARDA NOMES", "A fonte não ecoa nenhuma voz antiga. Ela repete o som de passos que chegaram até aqui e escolheram partir sem deixar registro. O Guardião tentava reunir os sons numa única história; a pedra se abre quando cada passo volta a ter seu próprio ritmo. A lembrança não identifica quem passou nem para onde foi."); drops.Remove(item); return; }
@@ -1662,6 +1678,12 @@ public sealed class Game : Form
         using var border = new Pen(Color.FromArgb(210, color), 1);
         using var format = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
         string label = DropLabel(item);
+        float dropDistance = Distance(player, item.Pos);
+        if (item.Kind == "weapon" && dropDistance <= 75)
+        {
+            (int salvageGold, int salvageGlass) = WeaponSalvageReward(item.Rarity);
+            label += $"\nX desmonta • +{salvageGold} ouro{(salvageGlass > 0 ? $" / +{salvageGlass} sal" : "")}";
+        }
         float maxWidth = item.Kind == "weapon" ? 310 : 196;
         SizeF measured = g.MeasureString(label, font, (int)maxWidth - 12);
         float width = Math.Clamp(measured.Width + 12, 94, maxWidth);
@@ -1978,6 +2000,21 @@ public sealed class Game : Form
             int bossWeaponIndex = bossWeapon.Amount;
             if ((bossLootCheck.ownedWeapons & (1 << bossWeaponIndex)) == 0 || bossLootSave.WeaponRarities[bossWeaponIndex] != bossWeapon.Rarity || bossLootSave.WeaponAffixes[bossWeaponIndex] != bossWeapon.Affix || !ValidWeaponData(bossLootSave))
                 throw new InvalidOperationException("A arma do chefe não foi coletada e persistida corretamente.");
+        }
+        using (var salvageCheck = new Game())
+        {
+            salvageCheck.timer.Stop(); salvageCheck.StartGame(); salvageCheck.storyOverlay = false; salvageCheck.player = new PointF(500, 330); salvageCheck.tideGlass = 998;
+            int originalDamage = salvageCheck.damage, originalWeapon = salvageCheck.weapon, originalOwnedWeapons = salvageCheck.ownedWeapons;
+            var rareDrop = new Drop { Pos = new PointF(540, 330), Kind = "weapon", Amount = 1, Rarity = 1, Bonus = 3, Affix = 1 };
+            var relicDrop = new Drop { Pos = new PointF(560, 330), Kind = "weapon", Amount = 2, Rarity = 2, Bonus = 7, Affix = 2, Affix2 = 4 };
+            salvageCheck.drops.Add(rareDrop); salvageCheck.drops.Add(relicDrop);
+            salvageCheck.OnKeyDown(salvageCheck, new KeyEventArgs(Keys.X));
+            if (salvageCheck.gold != 40 || salvageCheck.tideGlass != 999 || salvageCheck.drops.Count != 1 || !ReferenceEquals(salvageCheck.drops[0], relicDrop) || salvageCheck.weapon != originalWeapon || salvageCheck.damage != originalDamage || salvageCheck.ownedWeapons != originalOwnedWeapons)
+                throw new InvalidOperationException("Desmontar a arma Rara não converteu o item mais próximo sem alterar o equipamento.");
+            salvageCheck.OnKeyDown(salvageCheck, new KeyEventArgs(Keys.X));
+            SaveData salvageSave = salvageCheck.CaptureSaveData();
+            if (salvageCheck.gold != 115 || salvageCheck.tideGlass != 999 || salvageCheck.drops.Count != 0 || salvageSave.Gold != 115 || salvageSave.TideGlass != 999)
+                throw new InvalidOperationException("Desmontar a Relíquia não concedeu os materiais ou não os preservou no save.");
         }
         using (var activeWeaponDrop = new Game())
         {
