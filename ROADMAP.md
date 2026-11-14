@@ -98,3 +98,5 @@ O afixo Blindado passou a proteger também os ecos num raio de 132 pixels. A bor
 O quarto afixo de elite, Lançador, cria um papel de alcance: mantém distância, marca uma linha até o alvo e atinge apenas uma área estreita após o aviso. A cor ciano identifica o ataque; o reposicionamento lateral é a resposta tática.
 
 O Lançador recebeu uma arte original de corpo inteiro com lança, integrada como recurso transparente e espelhada conforme a direção do inimigo; o movimento usa a animação temporal já existente. A identidade da arma agora combina com o ataque de alcance.
+
+Uma ambiência musical original agora é sintetizada em C#: camadas graves lentas e ecos de vidro formam um loop estéreo de 16 segundos. Ela toca somente durante a exploração, pausa com as telas e acompanha o controle global de áudio da tecla N; não adiciona arquivos nem dependências.
