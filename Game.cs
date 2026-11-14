@@ -10,16 +10,17 @@ using System.Windows.Forms;
 public sealed class Game : Form
 {
     private const float PlayerMoveSpeed = 190f;
+    private const float ConductorPulseRadius = 165f;
     private const float InteractionRadius = 72;
     private const float MemoryStoneInteractionRadius = 58;
     private enum EnemyKind { Grunt, Archer, Mage, Elite, Guardian, InkEcho, BlindScribe, DrownedMemory, RiverFerryman, EmberWisp, AshWarden, NameMoth, HollowName, NameWeaver, FirstKeeper, MudCantor, OathCartographer, PaperWraith, NameBroker, SaltEcho, TideWitness, ReedKeeper, FlowKeeper, CounterCurrent, RiftCantor, GlassHerald, LanternRegent, RouteScribe, DeepSilence, BorrowedChorus, LastTuner }
     private enum VigilAspect { Hardened, Hungry, Swift, Chorus, Counterflow }
-    private enum EliteAffix { Armored, Swift, Bloodbound, Spearbound, Summoner }
+    private enum EliteAffix { Armored, Swift, Bloodbound, Spearbound, Summoner, Conductor }
     private sealed class Enemy
     {
         public PointF Pos, Target, Target2, Target2Start;
         public EnemyKind Kind;
-        public float Hp, MaxHp, Cooldown, Windup, WindupMax, Flash, AnimationTime, AttackPoseTime, SummonCooldown, SummonWindup;
+        public float Hp, MaxHp, Cooldown, Windup, WindupMax, Flash, AnimationTime, AttackPoseTime, SummonCooldown, SummonWindup, SupportCooldown, SupportWindup;
         public int BossPattern;
         public bool Armored, Moving;
         public bool VigilMinion;
@@ -427,8 +428,8 @@ public sealed class Game : Form
             if (!vigilActive && i == count - 1 && room is 23 or 25 or 27 or 31 or 33 or 35 or 37 or 39) kind = EnemyKind.Elite;
             float hp = kind switch { EnemyKind.Guardian => 160, EnemyKind.BlindScribe => 245, EnemyKind.RiverFerryman => 285, EnemyKind.AshWarden => 340, EnemyKind.HollowName => 390, EnemyKind.NameWeaver => townEnding == 1 ? 410 : 455, EnemyKind.FirstKeeper => townEnding == 1 ? 560 : 620, EnemyKind.OathCartographer => townEnding == 1 ? 610 : 690, EnemyKind.NameBroker => townEnding == 1 ? 720 : 790, EnemyKind.TideWitness => townEnding == 1 ? 820 : 920, EnemyKind.ReedKeeper => townEnding == 1 ? 970 : 1060, EnemyKind.FlowKeeper => townEnding == 1 ? 1120 : 1230, EnemyKind.CounterCurrent => townEnding == 1 ? 1320 : 1440, EnemyKind.RiftCantor => townEnding == 1 ? 1480 : 1600, EnemyKind.GlassHerald => townEnding == 1 ? 1740 : 1880, EnemyKind.LanternRegent => townEnding == 1 ? 1920 : 2080, EnemyKind.RouteScribe => townEnding == 1 ? 2250 : 2450, EnemyKind.DeepSilence => townEnding == 1 ? 3450 : 3750, EnemyKind.BorrowedChorus => townEnding == 1 ? 4050 : 4450, EnemyKind.LastTuner => townEnding == 1 ? 4700 : 5150, EnemyKind.Elite => 120 + Math.Max(0, room - 1) * 6, EnemyKind.Archer or EnemyKind.Mage or EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth or EnemyKind.MudCantor or EnemyKind.PaperWraith or EnemyKind.SaltEcho => 72, _ => 58 + room * 8 };
             if (vigilActive) hp = 3450 * (1 + Math.Max(0, vigilFloor - 1) * 0.28f);
-            EliteAffix eliteAffix = kind == EnemyKind.Elite ? EliteAffixForRoll(random.Next(5)) : EliteAffix.Armored;
-            var enemy = new Enemy { Pos = new PointF(485 + i % 3 * 120, 215 + i / 3 * 165), Kind = kind, Hp = hp, MaxHp = hp, Cooldown = 0.7f + (float)random.NextDouble(), SummonCooldown = 5.5f + (float)random.NextDouble() * 2, EliteAffix = eliteAffix, Armored = kind == EnemyKind.Elite && eliteAffix == EliteAffix.Armored };
+            EliteAffix eliteAffix = kind == EnemyKind.Elite ? EliteAffixForRoll(random.Next(6)) : EliteAffix.Armored;
+            var enemy = new Enemy { Pos = new PointF(485 + i % 3 * 120, 215 + i / 3 * 165), Kind = kind, Hp = hp, MaxHp = hp, Cooldown = 0.7f + (float)random.NextDouble(), SummonCooldown = 5.5f + (float)random.NextDouble() * 2, SupportCooldown = 2.5f + (float)random.NextDouble() * 2, EliteAffix = eliteAffix, Armored = kind == EnemyKind.Elite && eliteAffix == EliteAffix.Armored };
             if (Blocked(enemy.Pos, enemy.Radius)) enemy.Pos = new PointF(660 + i * 12, 480 - i * 8);
             enemies.Add(enemy);
         }
@@ -1044,6 +1045,7 @@ public sealed class Game : Form
                 return;
             }
         }
+        if (e.Kind == EnemyKind.Elite && e.EliteAffix == EliteAffix.Conductor && UpdateConductor(e, dt)) return;
         float attackTempo = vigilActive && e.Boss && VigilAspectForFloor(vigilFloor) == VigilAspect.Swift ? 1.25f : 1;
         e.Cooldown -= dt * attackTempo; e.Flash = Math.Max(0, e.Flash - dt); PointF offset = Sub(player, e.Pos); float dist = Length(offset);
         if (e.Stagger > 0) { e.Stagger = Math.Max(0, e.Stagger - dt); return; }
@@ -1082,6 +1084,36 @@ public sealed class Game : Form
         else if (e.Cooldown <= 0) { BeginWindup(e, player, 0.45f); e.Cooldown = 1.35f; }
         if (!e.Boss) SeparateFromPack(e, dt);
     }
+
+    private bool UpdateConductor(Enemy conductor, float dt)
+    {
+        if (conductor.SupportWindup > 0)
+        {
+            if (conductor.Stagger > 0) { conductor.SupportWindup = 0; conductor.SupportCooldown = 1.8f; return true; }
+            conductor.SupportWindup -= dt;
+            if (conductor.SupportWindup <= 0)
+            {
+                foreach (Enemy ally in enemies.Where(ally => ConductorPulseCovers(conductor, ally)).ToArray())
+                {
+                    float healed = Math.Min(ally.MaxHp - ally.Hp, MathF.Ceiling(ally.MaxHp * 0.12f));
+                    if (healed <= 0) continue;
+                    ally.Hp += healed; ally.Flash = 0.18f;
+                    AddFloatingText(new PointF(ally.Pos.X, ally.Pos.Y - ally.Radius - 10), $"+{Math.Max(1, (int)Math.Round(healed))}", Color.LightGreen);
+                }
+            }
+            return true;
+        }
+        if (conductor.Stagger > 0) return false;
+        conductor.SupportCooldown = Math.Max(0, conductor.SupportCooldown - dt);
+        if (conductor.SupportCooldown <= 0 && conductor.Windup <= 0)
+        {
+            conductor.SupportWindup = 0.9f; conductor.SupportCooldown = 5.8f;
+            GameAudio.Play(GameAudio.Cue.EliteWarning); return true;
+        }
+        return false;
+    }
+
+    private static bool ConductorPulseCovers(Enemy conductor, Enemy ally) => Distance(conductor.Pos, ally.Pos) <= ConductorPulseRadius;
 
     private void SummonEliteEcho(Enemy summoner)
     {
@@ -1212,8 +1244,8 @@ public sealed class Game : Form
         return (rarity, bonus, affix, affix2);
     }
 
-    private static EliteAffix EliteAffixForRoll(int roll) => roll switch { 0 => EliteAffix.Armored, 1 => EliteAffix.Swift, 2 => EliteAffix.Bloodbound, 3 => EliteAffix.Spearbound, _ => EliteAffix.Summoner };
-    private static string EliteAffixName(EliteAffix affix) => affix switch { EliteAffix.Armored => "BLINDADO", EliteAffix.Swift => "VELOZ", EliteAffix.Bloodbound => "SANGRADOR", EliteAffix.Spearbound => "LANÇADOR", EliteAffix.Summoner => "INVOCADOR", _ => "ELITE" };
+    private static EliteAffix EliteAffixForRoll(int roll) => roll switch { 0 => EliteAffix.Armored, 1 => EliteAffix.Swift, 2 => EliteAffix.Bloodbound, 3 => EliteAffix.Spearbound, 5 => EliteAffix.Conductor, _ => EliteAffix.Summoner };
+    private static string EliteAffixName(EliteAffix affix) => affix switch { EliteAffix.Armored => "BLINDADO", EliteAffix.Swift => "VELOZ", EliteAffix.Bloodbound => "SANGRADOR", EliteAffix.Spearbound => "LANÇADOR", EliteAffix.Summoner => "INVOCADOR", EliteAffix.Conductor => "CONDUTOR", _ => "ELITE" };
     private static bool EliteWeaponDropRoll(int roll, int consecutiveMisses = 0) => consecutiveMisses >= 2 || roll is >= 0 and < 35;
     private static int NextEliteWeaponMisses(int misses, bool dropped) => dropped ? 0 : Math.Min(2, Math.Max(0, misses) + 1);
     private static int BossWeaponRollFloor(int room) => room >= 25 ? 85 : room >= 12 ? 75 : 62;
@@ -2381,7 +2413,7 @@ public sealed class Game : Form
 
     private void DrawEnemy(Graphics g, Enemy enemy)
     {
-        float r = enemy.Radius; Color color = enemy.Kind == EnemyKind.LastTuner ? Color.FromArgb(189, 153, 98) : enemy.Kind == EnemyKind.BlindScribe ? Color.FromArgb(89, 128, 135) : enemy.Kind == EnemyKind.RiverFerryman ? Color.FromArgb(69, 120, 124) : enemy.Kind == EnemyKind.AshWarden ? Color.FromArgb(169, 91, 53) : enemy.Kind == EnemyKind.HollowName ? Color.FromArgb(120, 165, 155) : enemy.Kind == EnemyKind.NameWeaver ? Color.FromArgb(139, 108, 162) : enemy.Kind == EnemyKind.FirstKeeper ? Color.FromArgb(202, 173, 112) : enemy.Kind == EnemyKind.OathCartographer ? Color.FromArgb(96, 148, 144) : enemy.Kind == EnemyKind.NameBroker ? Color.FromArgb(126, 82, 132) : enemy.Kind == EnemyKind.ReedKeeper ? Color.FromArgb(158, 149, 98) : enemy.Kind == EnemyKind.FlowKeeper ? Color.FromArgb(71, 148, 164) : enemy.Kind == EnemyKind.TideWitness ? Color.FromArgb(63, 157, 168) : enemy.Kind == EnemyKind.GlassHerald ? Color.FromArgb(124, 204, 218) : enemy.Kind == EnemyKind.LanternRegent ? Color.FromArgb(194, 195, 144) : enemy.Kind == EnemyKind.RouteScribe ? Color.FromArgb(159, 182, 211) : enemy.Kind == EnemyKind.DeepSilence ? Color.FromArgb(119, 183, 190) : enemy.Kind == EnemyKind.SaltEcho ? Color.LightSteelBlue : enemy.Kind == EnemyKind.PaperWraith ? Color.FromArgb(201, 190, 161) : enemy.Kind == EnemyKind.MudCantor ? Color.FromArgb(165, 135, 104) : enemy.Boss ? Color.FromArgb(145, 87, 77) : enemy.Kind switch { EnemyKind.Elite => enemy.EliteAffix switch { EliteAffix.Armored => Color.SlateGray, EliteAffix.Swift => Color.Goldenrod, EliteAffix.Bloodbound => Color.MediumVioletRed, _ => Color.IndianRed }, EnemyKind.Archer => Color.FromArgb(128, 151, 106), EnemyKind.Mage => Color.MediumPurple, EnemyKind.InkEcho => Color.FromArgb(113, 98, 143), EnemyKind.DrownedMemory => Color.FromArgb(95, 145, 142), EnemyKind.EmberWisp => Color.FromArgb(212, 126, 61), EnemyKind.NameMoth => Color.FromArgb(126, 170, 156), _ => Color.FromArgb(183, 181, 166) };
+        float r = enemy.Radius; Color color = enemy.Kind == EnemyKind.LastTuner ? Color.FromArgb(189, 153, 98) : enemy.Kind == EnemyKind.BlindScribe ? Color.FromArgb(89, 128, 135) : enemy.Kind == EnemyKind.RiverFerryman ? Color.FromArgb(69, 120, 124) : enemy.Kind == EnemyKind.AshWarden ? Color.FromArgb(169, 91, 53) : enemy.Kind == EnemyKind.HollowName ? Color.FromArgb(120, 165, 155) : enemy.Kind == EnemyKind.NameWeaver ? Color.FromArgb(139, 108, 162) : enemy.Kind == EnemyKind.FirstKeeper ? Color.FromArgb(202, 173, 112) : enemy.Kind == EnemyKind.OathCartographer ? Color.FromArgb(96, 148, 144) : enemy.Kind == EnemyKind.NameBroker ? Color.FromArgb(126, 82, 132) : enemy.Kind == EnemyKind.ReedKeeper ? Color.FromArgb(158, 149, 98) : enemy.Kind == EnemyKind.FlowKeeper ? Color.FromArgb(71, 148, 164) : enemy.Kind == EnemyKind.TideWitness ? Color.FromArgb(63, 157, 168) : enemy.Kind == EnemyKind.GlassHerald ? Color.FromArgb(124, 204, 218) : enemy.Kind == EnemyKind.LanternRegent ? Color.FromArgb(194, 195, 144) : enemy.Kind == EnemyKind.RouteScribe ? Color.FromArgb(159, 182, 211) : enemy.Kind == EnemyKind.DeepSilence ? Color.FromArgb(119, 183, 190) : enemy.Kind == EnemyKind.SaltEcho ? Color.LightSteelBlue : enemy.Kind == EnemyKind.PaperWraith ? Color.FromArgb(201, 190, 161) : enemy.Kind == EnemyKind.MudCantor ? Color.FromArgb(165, 135, 104) : enemy.Boss ? Color.FromArgb(145, 87, 77) : enemy.Kind switch { EnemyKind.Elite => enemy.EliteAffix switch { EliteAffix.Armored => Color.SlateGray, EliteAffix.Swift => Color.Goldenrod, EliteAffix.Bloodbound => Color.MediumVioletRed, EliteAffix.Conductor => Color.MediumAquamarine, EliteAffix.Summoner => Color.MediumOrchid, _ => Color.IndianRed }, EnemyKind.Archer => Color.FromArgb(128, 151, 106), EnemyKind.Mage => Color.MediumPurple, EnemyKind.InkEcho => Color.FromArgb(113, 98, 143), EnemyKind.DrownedMemory => Color.FromArgb(95, 145, 142), EnemyKind.EmberWisp => Color.FromArgb(212, 126, 61), EnemyKind.NameMoth => Color.FromArgb(126, 170, 156), _ => Color.FromArgb(183, 181, 166) };
         if (enemy.Stagger > 0) { using var staggerPen = new Pen(Color.FromArgb(200, 125, 211, 203), 2); float pulse = 1 + (0.95f - enemy.Stagger) * 7; g.DrawEllipse(staggerPen, enemy.Pos.X - r - pulse, enemy.Pos.Y - r - pulse, (r + pulse) * 2, (r + pulse) * 2); }
         if (enemy.Windup > 0 && enemy.Boss) DrawBossWarning(g, enemy);
         else if (enemy.Windup > 0)
@@ -2467,7 +2499,7 @@ public sealed class Game : Form
         }
         if (enemy.Kind == EnemyKind.Elite)
         {
-            Color affixColor = enemy.EliteAffix switch { EliteAffix.Armored => Color.LightSteelBlue, EliteAffix.Swift => Color.Gold, EliteAffix.Bloodbound => Color.HotPink, EliteAffix.Spearbound => Color.DeepSkyBlue, EliteAffix.Summoner => Color.MediumOrchid, _ => Color.IndianRed };
+            Color affixColor = enemy.EliteAffix switch { EliteAffix.Armored => Color.LightSteelBlue, EliteAffix.Swift => Color.Gold, EliteAffix.Bloodbound => Color.HotPink, EliteAffix.Spearbound => Color.DeepSkyBlue, EliteAffix.Summoner => Color.MediumOrchid, EliteAffix.Conductor => Color.MediumAquamarine, _ => Color.IndianRed };
             DashStyle dash = enemy.EliteAffix is EliteAffix.Swift or EliteAffix.Spearbound ? DashStyle.Dash : enemy.EliteAffix == EliteAffix.Bloodbound ? DashStyle.Dot : DashStyle.Solid;
             using var affixRing = new Pen(Color.FromArgb(225, affixColor), 3) { DashStyle = dash };
             g.DrawEllipse(affixRing, enemy.Pos.X - r - 6, enemy.Pos.Y - 12, (r + 6) * 2, 24);
@@ -2476,6 +2508,22 @@ public sealed class Game : Form
                 float progress = 1 - enemy.SummonWindup / 0.95f, radius = 18 + progress * 50;
                 using var summonRing = new Pen(Color.FromArgb(220, 192, 112, 220), 3);
                 g.DrawEllipse(summonRing, enemy.Pos.X - radius, enemy.Pos.Y - radius * 0.55f, radius * 2, radius * 1.1f);
+            }
+            if (enemy.SupportWindup > 0)
+            {
+                float progress = 1 - enemy.SupportWindup / 0.9f;
+                using var supportRing = new Pen(Color.FromArgb(215, 127, 255, 198), highContrastTelegraphs ? 4 : 2.5f) { DashStyle = DashStyle.Dash };
+                using var supportShadow = new Pen(Color.FromArgb(245, 10, 13, 15), 8);
+                foreach (Enemy ally in enemies.Where(ally => ConductorPulseCovers(enemy, ally)))
+                {
+                    if (highContrastTelegraphs) { g.DrawLine(supportShadow, enemy.Pos, ally.Pos); g.DrawEllipse(supportShadow, ally.Pos.X - ally.Radius - 7, ally.Pos.Y - ally.Radius - 7, (ally.Radius + 7) * 2, (ally.Radius + 7) * 2); }
+                    g.DrawLine(supportRing, enemy.Pos, ally.Pos);
+                    g.DrawEllipse(supportRing, ally.Pos.X - ally.Radius - 7, ally.Pos.Y - ally.Radius - 7, (ally.Radius + 7) * 2, (ally.Radius + 7) * 2);
+                }
+                float radius = 24 + progress * 28;
+                if (highContrastTelegraphs) g.DrawEllipse(supportShadow, enemy.Pos.X - radius, enemy.Pos.Y - radius * 0.55f, radius * 2, radius * 1.1f);
+                g.DrawEllipse(supportRing, enemy.Pos.X - radius, enemy.Pos.Y - radius * 0.55f, radius * 2, radius * 1.1f);
+                DrawCentered(g, "CANTANDO • INTERROMPA", enemy.Pos.Y - r - 44, new Font("Segoe UI", 8, FontStyle.Bold), Color.LightGreen, enemy.Pos.X);
             }
         }
         if (enemy.VigilMinion) { using var chorusRing = new Pen(Color.FromArgb(235, 194, 133, 230), 3) { DashStyle = DashStyle.Dot }; g.DrawEllipse(chorusRing, enemy.Pos.X - r - 6, enemy.Pos.Y - 12, (r + 6) * 2, 24); }
@@ -3481,7 +3529,7 @@ public sealed class Game : Form
             if (lootRollCheck.weaponRarities[1] != rarity || lootRollCheck.weaponBonuses[1] != bonus || lootRollCheck.weaponAffixes[1] != affix || lootRollCheck.weaponAffixes2[1] != affix2 || !label.Contains(WeaponRarityName(rarity)) || !label.Contains(WeaponGroundAffix(drop)) || !label.Contains($"DANO: 25 → {expectedDropDamage}") || !label.Contains("longo") || !label.Contains("ATUAL: sem afixo"))
                 throw new InvalidOperationException("A arma mudou ao ser recolhida ou não foi identificada no chão.");
         }
-        if (EliteAffixForRoll(0) != EliteAffix.Armored || EliteAffixForRoll(1) != EliteAffix.Swift || EliteAffixForRoll(2) != EliteAffix.Bloodbound || EliteAffixName(EliteAffix.Bloodbound) != "SANGRADOR")
+        if (EliteAffixForRoll(0) != EliteAffix.Armored || EliteAffixForRoll(1) != EliteAffix.Swift || EliteAffixForRoll(2) != EliteAffix.Bloodbound || EliteAffixForRoll(4) != EliteAffix.Summoner || EliteAffixForRoll(5) != EliteAffix.Conductor || EliteAffixName(EliteAffix.Bloodbound) != "SANGRADOR" || EliteAffixName(EliteAffix.Conductor) != "CONDUTOR")
             throw new InvalidOperationException("As variantes dos elites não foram identificadas corretamente.");
         using (var eliteAffixCheck = new Game())
         {
@@ -3503,6 +3551,17 @@ public sealed class Game : Form
                 throw new InvalidOperationException("A aura do elite Blindado não protegeu apenas os ecos dentro do alcance.");
             eliteAffixCheck.enemies.Remove(armoredElite);
             if (eliteAffixCheck.IsArmored(wardedGrunt)) throw new InvalidOperationException("A proteção da aura permaneceu depois da queda do elite Blindado.");
+            Enemy conductor = new() { Pos = new PointF(500, 330), Kind = EnemyKind.Elite, EliteAffix = EliteAffix.Conductor, Hp = 90, MaxHp = 120, SupportCooldown = 0 };
+            Enemy supportedGrunt = new() { Pos = new PointF(620, 330), Kind = EnemyKind.Grunt, Hp = 50, MaxHp = 100 };
+            Enemy distantGrunt = new() { Pos = new PointF(680, 330), Kind = EnemyKind.Grunt, Hp = 50, MaxHp = 100 };
+            eliteAffixCheck.enemies.Clear(); eliteAffixCheck.enemies.AddRange(new[] { conductor, supportedGrunt, distantGrunt });
+            if (!ConductorPulseCovers(conductor, supportedGrunt) || ConductorPulseCovers(conductor, distantGrunt)) throw new InvalidOperationException("O alcance do pulso do Condutor não distinguiu aliados próximos e distantes.");
+            eliteAffixCheck.UpdateEnemy(conductor, 0.01f);
+            if (conductor.SupportWindup <= 0 || Math.Abs(conductor.SupportWindup - 0.9f) > 0.001f) throw new InvalidOperationException("O Condutor não anunciou o pulso de cura antes de aplicá-lo.");
+            conductor.SupportWindup = 0.01f; eliteAffixCheck.UpdateEnemy(conductor, 0.02f);
+            if (supportedGrunt.Hp != 62 || distantGrunt.Hp != 50 || conductor.Hp != 105) throw new InvalidOperationException("O pulso do Condutor não curou somente os aliados dentro do alcance.");
+            conductor.SupportWindup = 0.2f; conductor.Stagger = 0.1f; supportedGrunt.Hp = 40; eliteAffixCheck.UpdateEnemy(conductor, 0.01f);
+            if (conductor.SupportWindup != 0 || supportedGrunt.Hp != 40 || conductor.SupportCooldown != 1.8f) throw new InvalidOperationException("O Condutor não teve o canal cancelado por interrupção.");
         }
         if (EliteWeaponDropRoll(-1) || !EliteWeaponDropRoll(0) || !EliteWeaponDropRoll(34) || EliteWeaponDropRoll(35) || EliteWeaponDropRoll(99)
             || !EliteWeaponDropRoll(99, 2) || !EliteWeaponDropRoll(0, 1) || EliteWeaponDropRoll(99, 1)

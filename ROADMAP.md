@@ -87,6 +87,8 @@ Proteção contra azar no saque de elite: a chance base de arma continua em 35%;
 
 O quinto afixo de elite, **Invocador**, anuncia um círculo violeta e chama um Eco de Tinta de apoio a cada 7,5 segundos, se não houver outro eco invocado ativo. O aviso de 0,95 segundo permite priorizar o elite ou reposicionar-se antes da chegada; armas e técnicas que interrompem ecos cancelam o canal e atrasam a próxima tentativa. O eco usa o comportamento de ataque à distância já existente, escala a vida com a região e não concede ouro nem XP, evitando farm infinito; o Invocador também conserva seu ataque normal.
 
+O sexto afixo de elite, **Condutor**, acrescenta uma prioridade de suporte: a cada 5,8 segundos, anuncia por 0,9 segundo um pulso que recupera 12% da vida máxima dos inimigos num raio de 165. A marcação verde tracejada liga o elite aos alvos da cura e permite interromper o canal com golpes que causam stagger. O autoteste verifica alcance, cura limitada, telegráfico e interrupção.
+
 **Cadência** amplia as escolhas de equipamento: um golpe crítico adianta todas as recargas de técnica em 0,15 segundo numa arma Rara ou 0,25 numa Relíquia, uma vez por golpe. O afixo pode aparecer em saques Raros/Relíquia ou ser escolhido na Têmpera pelo atalho **0**, sem alterar o formato do save; a escolha **7** continua reservada para redistribuir talentos no pós-jogo.
 
 ## Capítulo XVII — As marés emprestadas
