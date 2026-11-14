@@ -88,3 +88,5 @@ Ficha de personagem em **P**: mostra valores calculados da build ativa — dano/
 O Arauto de Vidro agora usa um cone amplo de estilhaços como terceiro ataque. O aviso e a área de dano compartilham ângulo, direção e alcance; o jogador pode atravessar o arco ou se reposicionar para o flanco. A validação de geometria cobre acerto, escape lateral e limite de alcance.
 
 O Escriba do Traçado transforma seu primeiro círculo em uma onda anular com um centro seguro. Entrar perto do chefe ou atravessar a borda são respostas válidas, o que amplia o repertório de posicionamento dos confrontos. O autoteste cobre o miolo, o anel de dano e o limite externo.
+
+Os ataques básicos agora percorrem o arco da arma ao longo da animação, com ponta luminosa em movimento e variação de largura para espada, lâmina pesada e faca. Próximo foco: passar de silhuetas animadas a quadros de ataque específicos para o elenco.

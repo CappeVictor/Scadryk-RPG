@@ -2518,16 +2518,26 @@ public sealed class Game : Form
     private void DrawAttackSwing(Graphics g)
     {
         float progress = Math.Clamp(attackFlash / 0.16f, 0, 1);
+        float elapsed = 1 - progress;
         float angle = MathF.Atan2(facing.Y, facing.X) * 180 / MathF.PI;
         float radius = weapon == 1 ? 72 : weapon == 2 ? 46 : 57;
         float sweep = BasicAttackSweepAngle(weapon);
+        float activeSweep = sweep * (weapon == 1 ? 0.42f : weapon == 2 ? 0.28f : 0.35f);
+        float startAngle = angle - sweep / 2 + (sweep - activeSweep) * elapsed;
         var bounds = new RectangleF(player.X - radius, player.Y - radius, radius * 2, radius * 2);
         Color color = weapon == 1 ? Color.FromArgb(255, 220, 155) : weapon == 2 ? Color.FromArgb(163, 222, 223) : Color.FromArgb(224, 213, 181);
-        int alpha = (int)(225 * progress);
+        int alpha = (int)(progress * (115 + 110 * MathF.Sin(MathF.PI * elapsed)));
         using var glow = new Pen(Color.FromArgb(alpha / 3, color), weapon == 1 ? 13 : 9) { StartCap = LineCap.Round, EndCap = LineCap.Round };
         using var edge = new Pen(Color.FromArgb(alpha, color), weapon == 1 ? 5 : 3) { StartCap = LineCap.Round, EndCap = LineCap.Round };
-        g.DrawArc(glow, bounds, angle - sweep / 2, sweep);
-        g.DrawArc(edge, bounds, angle - sweep / 2, sweep);
+        g.DrawArc(glow, bounds, startAngle, activeSweep);
+        g.DrawArc(edge, bounds, startAngle, activeSweep);
+        float tipAngle = (startAngle + activeSweep) * MathF.PI / 180;
+        PointF tipDirection = new(MathF.Cos(tipAngle), MathF.Sin(tipAngle));
+        PointF bladeTip = Add(player, Scale(tipDirection, radius + 7));
+        PointF bladeBase = Add(player, Scale(tipDirection, radius - (weapon == 1 ? 16 : 11)));
+        g.DrawLine(glow, bladeBase, bladeTip); g.DrawLine(edge, bladeBase, bladeTip);
+        using var tipGlow = new SolidBrush(Color.FromArgb(alpha / 2, color));
+        g.FillEllipse(tipGlow, bladeTip.X - 5, bladeTip.Y - 5, 10, 10);
     }
     private void DrawEbbWave(Graphics g) { float progress = 1f - pullWaveTime / 0.45f; float radius = 160 * progress; using var wave = new Pen(Color.FromArgb((int)(210 * pullWaveTime / 0.45f), 98, 190, 220), 4); using var glow = new Pen(Color.FromArgb((int)(65 * pullWaveTime / 0.45f), 98, 190, 220), 12); g.DrawEllipse(glow, player.X - radius, player.Y - radius, radius * 2, radius * 2); g.DrawEllipse(wave, player.X - radius, player.Y - radius, radius * 2, radius * 2); }
     private void DrawBellWave(Graphics g) { float progress = 1f - bellWaveTime / 0.42f; float radius = bellWaveRadius * progress; using var wave = new Pen(Color.FromArgb((int)(210 * bellWaveTime / 0.42f), 115, 208, 197), 4); using var glow = new Pen(Color.FromArgb((int)(65 * bellWaveTime / 0.42f), 115, 208, 197), 12); g.DrawEllipse(glow, player.X - radius, player.Y - radius, radius * 2, radius * 2); g.DrawEllipse(wave, player.X - radius, player.Y - radius, radius * 2, radius * 2); }
