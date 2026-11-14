@@ -115,4 +115,4 @@ Uma ambiência musical original agora é sintetizada em C#: camadas graves lenta
 
 Os sprites agora acompanham a leitura do ataque: durante o aviso, inclinam-se na direção do alvo e comprimem o corpo até o impacto; o enquadramento continua ancorado no chão. É uma etapa de animação em C# antes de produzir quadros de ataque específicos para cada criatura.
 
-O Peitoral de Pedra e o Relicário Vital agora formam o conjunto Vigília do Veio quando equipados juntos: o peitoral mitiga 35% do dano e o relicário cura 8 por abate, ante 30% e 5 quando usados isoladamente. A ficha e o inventário mostram os valores; não foi necessário alterar o save.
+O Peitoral de Pedra e o Relicário Vital formam o conjunto Vigília do Veio quando equipados juntos: o peitoral mitiga 35% do dano e o relicário cura 8 por abate, ante 30% e 5 quando usados isoladamente. Cada abate também ativa o Pulso do Veio por 2,5 segundos, aumentando em 15% o dano causado; abates sucessivos renovam o efeito. HUD, inventário e ficha mostram o estado do conjunto. O pulso é temporário e não exige novo campo de save.

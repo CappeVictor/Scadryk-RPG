@@ -243,7 +243,7 @@ public sealed class Game : Form
     private bool riverBell;
     private bool lumeLens;
     private bool naraTrace;
-    private float health = 100, maxHealth = 100, attackCd, attackFlash, skillCd, shardCd, bellCd, bellWaveTime, bellWaveRadius, pullCd, pullWaveTime, wardCd, wardTime, refrainCd, refrainWaveTime, refrainWaveRadius, beaconCd, beaconTime, beaconPulseCd, beaconWaveTime, returnVoiceCd, returnVoiceWaveTime, returnVoiceWaveRadius, finalStrikeCd, finalStrikeFlash, dashCd, dashTime, invulnerable, noticeTime, windupPulse;
+    private float health = 100, maxHealth = 100, attackCd, attackFlash, skillCd, shardCd, bellCd, bellWaveTime, bellWaveRadius, pullCd, pullWaveTime, wardCd, wardTime, refrainCd, refrainWaveTime, refrainWaveRadius, beaconCd, beaconTime, beaconPulseCd, beaconWaveTime, returnVoiceCd, returnVoiceWaveTime, returnVoiceWaveRadius, finalStrikeCd, finalStrikeFlash, dashCd, dashTime, invulnerable, noticeTime, windupPulse, veinResonanceTime;
     private PointF finalStrikeTarget;
     private bool armor, armorOn, relic, relicOn, inventoryOpen, skillMenuOpen, characterSheetOpen, mapOpen, title = true, dead, victory, talentChoice, chestChoice, storyOverlay, memoryOverlay, endingChoiceOpen;
     private int skillMenuSlot;
@@ -286,7 +286,7 @@ public sealed class Game : Form
         clearedRooms = 0;
         ownedCharms = equippedCharm = equippedCharm2 = 0;
         equippedSkills = new[] { 1, 0, 0 }; skillMenuOpen = false; skillMenuSlot = 0;
-        health = maxHealth = 100; attackCd = attackFlash = skillCd = shardCd = bellCd = bellWaveTime = bellWaveRadius = pullCd = pullWaveTime = wardCd = wardTime = refrainCd = refrainWaveTime = refrainWaveRadius = beaconCd = beaconTime = beaconPulseCd = beaconWaveTime = returnVoiceCd = returnVoiceWaveTime = returnVoiceWaveRadius = finalStrikeCd = finalStrikeFlash = dashCd = dashTime = invulnerable = 0; vigilMinionCooldown = vigilTideTime = 0; beaconPos = finalStrikeTarget = PointF.Empty; facing = mouseAim = dashDirection = new PointF(1, 0); playerAnimationTime = 0; echoShards.Clear(); floatingTexts.Clear(); title = false; storyPage = 0; storyOverlay = true; SetupRoom();
+        health = maxHealth = 100; attackCd = attackFlash = skillCd = shardCd = bellCd = bellWaveTime = bellWaveRadius = pullCd = pullWaveTime = wardCd = wardTime = refrainCd = refrainWaveTime = refrainWaveRadius = beaconCd = beaconTime = beaconPulseCd = beaconWaveTime = returnVoiceCd = returnVoiceWaveTime = returnVoiceWaveRadius = finalStrikeCd = finalStrikeFlash = dashCd = dashTime = invulnerable = veinResonanceTime = 0; vigilMinionCooldown = vigilTideTime = 0; beaconPos = finalStrikeTarget = PointF.Empty; facing = mouseAim = dashDirection = new PointF(1, 0); playerAnimationTime = 0; echoShards.Clear(); floatingTexts.Clear(); title = false; storyPage = 0; storyOverlay = true; SetupRoom();
     }
 
     private void AdvanceStory()
@@ -869,6 +869,7 @@ public sealed class Game : Form
             int recovered = (int)Math.Round(health - healthBeforeRelic);
             if (recovered > 0)
                 AddFloatingText(new PointF(player.X, player.Y - 30), armorOn ? $"VIGÍLIA +{recovered} VIDA" : $"RELICÁRIO +{recovered} VIDA", Color.FromArgb(145, 225, 204));
+            if (armorOn) veinResonanceTime = 2.5f;
         }
         if (enemies.Count == 0 && room < 2) { int next = room == 0 ? 2 : 1; if ((ownedWeapons & (1 << next)) == 0) drops.Add(CreateWeaponDrop(Offset(enemy.Pos, -16, -8), next)); }
         if (enemies.Count == 0 && drops.Count == 0 && room == 2 && !memoryOverlay) chestChoice = true;
@@ -890,7 +891,7 @@ public sealed class Game : Form
         float dt = timer.Interval / 1000f; noticeTime = Math.Max(0, noticeTime - dt);
         GameAudio.SetAmbientActive(!GameplayPaused());
         if (GameplayPaused()) { Invalidate(); return; }
-        attackCd = Math.Max(0, attackCd - dt); attackFlash = Math.Max(0, attackFlash - dt); skillCd = Math.Max(0, skillCd - dt); shardCd = Math.Max(0, shardCd - dt); bellCd = Math.Max(0, bellCd - dt); bellWaveTime = Math.Max(0, bellWaveTime - dt); pullCd = Math.Max(0, pullCd - dt); pullWaveTime = Math.Max(0, pullWaveTime - dt); wardCd = Math.Max(0, wardCd - dt); wardTime = Math.Max(0, wardTime - dt); refrainCd = Math.Max(0, refrainCd - dt); refrainWaveTime = Math.Max(0, refrainWaveTime - dt); beaconCd = Math.Max(0, beaconCd - dt); returnVoiceCd = Math.Max(0, returnVoiceCd - dt); returnVoiceWaveTime = Math.Max(0, returnVoiceWaveTime - dt); finalStrikeCd = Math.Max(0, finalStrikeCd - dt); finalStrikeFlash = Math.Max(0, finalStrikeFlash - dt); dashCd = Math.Max(0, dashCd - dt); dashTime = Math.Max(0, dashTime - dt); invulnerable = Math.Max(0, invulnerable - dt); windupPulse += dt; TickFloatingTexts(dt);
+        attackCd = Math.Max(0, attackCd - dt); attackFlash = Math.Max(0, attackFlash - dt); skillCd = Math.Max(0, skillCd - dt); shardCd = Math.Max(0, shardCd - dt); bellCd = Math.Max(0, bellCd - dt); bellWaveTime = Math.Max(0, bellWaveTime - dt); pullCd = Math.Max(0, pullCd - dt); pullWaveTime = Math.Max(0, pullWaveTime - dt); wardCd = Math.Max(0, wardCd - dt); wardTime = Math.Max(0, wardTime - dt); refrainCd = Math.Max(0, refrainCd - dt); refrainWaveTime = Math.Max(0, refrainWaveTime - dt); beaconCd = Math.Max(0, beaconCd - dt); returnVoiceCd = Math.Max(0, returnVoiceCd - dt); returnVoiceWaveTime = Math.Max(0, returnVoiceWaveTime - dt); finalStrikeCd = Math.Max(0, finalStrikeCd - dt); finalStrikeFlash = Math.Max(0, finalStrikeFlash - dt); dashCd = Math.Max(0, dashCd - dt); dashTime = Math.Max(0, dashTime - dt); invulnerable = Math.Max(0, invulnerable - dt); veinResonanceTime = Math.Max(0, veinResonanceTime - dt); windupPulse += dt; TickFloatingTexts(dt);
         PointF dir = Normalize(MovementInput(), PointF.Empty); if (dashTime > 0) dir = dashDirection;
         MovePlayer(Scale(dir, (dashTime > 0 ? 530 : 190) * dt));
         PointF drift = CurrentDrift();
@@ -1416,6 +1417,7 @@ public sealed class Game : Form
     private bool HasCharmPair(int first, int second) => equippedCharm == first && equippedCharm2 == second || equippedCharm == second && equippedCharm2 == first;
     private float ArmorDamageTakenMultiplier() => !armorOn ? 1f : relicOn ? 0.65f : 0.7f;
     private int RelicKillHealing() => !relicOn ? 0 : armorOn ? 8 : 5;
+    private float VeinResonanceMultiplier() => armorOn && relicOn && veinResonanceTime > 0 ? 1.15f : 1f;
     private float WhirlwindMultiplier() => HasCharmPair(1, 2) ? 2.52f : HasCharm(1) ? 2.16f : 1.6f;
     private float WhirlwindCooldownPenalty() => !HasCharm(1) ? 0f : HasCharmPair(1, 2) ? 0.5f : 1f;
     private float VoiceShardDamage() => damage * (HasCharmPair(3, 5) ? 2.05f : HasCharm(3) ? 1.8f : 1.35f) * WeaponSkillMultiplier() * TechniqueDamageMultiplier();
@@ -1427,7 +1429,7 @@ public sealed class Game : Form
     private float OutgoingDamageMultiplier(Enemy enemy)
     {
         float bossHunter = !HasCharm(4) ? 1f : enemy.Boss ? 1.25f : 0.8f;
-        return bossHunter * (vigilActive && HasCharm(7) ? 1.4f : 1f);
+        return bossHunter * (vigilActive && HasCharm(7) ? 1.4f : 1f) * VeinResonanceMultiplier();
     }
     private float DashDuration() => HasCharm(2) ? 0.29f : 0.17f;
     private PointF MovementInput() => new((down.Contains(Keys.D) || down.Contains(Keys.Right) ? 1 : 0) - (down.Contains(Keys.A) || down.Contains(Keys.Left) ? 1 : 0), (down.Contains(Keys.S) || down.Contains(Keys.Down) ? 1 : 0) - (down.Contains(Keys.W) || down.Contains(Keys.Up) ? 1 : 0));
@@ -1652,7 +1654,7 @@ public sealed class Game : Form
             using var setText = new SolidBrush(Color.FromArgb(236, 174, 215, 202));
             using var setFont = new Font("Segoe UI", 9, FontStyle.Bold);
             g.FillRectangle(setBadge, 604, 85, 291, 19);
-            g.DrawString("VIGÍLIA DO VEIO  •  -35% DANO  •  CURA 8/ABATE", setFont, setText, 610, 87);
+            g.DrawString(veinResonanceTime > 0 ? $"VIGÍLIA  •  -35%  •  PULSO +15% ({veinResonanceTime:0.0} s)" : "VIGÍLIA DO VEIO  •  -35% DANO  •  CURA 8/ABATE", setFont, setText, 610, 87);
         }
         using var healthBack = new SolidBrush(Color.FromArgb(52, 56, 51)); using var healthBar = new SolidBrush(health / maxHealth < .25f ? Color.IndianRed : Color.FromArgb(112, 171, 123));
         g.FillRectangle(healthBack, 25, 58, 190, 11); g.FillRectangle(healthBar, 25, 58, 190 * health / maxHealth, 11);
@@ -2793,7 +2795,7 @@ public sealed class Game : Form
         DrawCentered(g, "INVENTÁRIO   •   1–3 ARMAS   •   4 ARMADURA   •   5 RELÍQUIA   •   6/7 TALISMÃS   •   I FECHAR", 150, new Font("Segoe UI", 11, FontStyle.Bold), Color.Goldenrod);
         for (int i = 0; i < 3; i++) { bool found = (ownedWeapons & (1 << i)) != 0; Brush rarityBrush = !found ? Brushes.Gray : weaponRarities[i] == 2 ? Brushes.MediumTurquoise : weaponRarities[i] == 1 ? Brushes.Goldenrod : Brushes.AntiqueWhite; g.DrawString($"{i + 1}. {WeaponDisplayName(i)}    DANO {WeaponPower(i) - WeaponPower(weapon):+#;-#;0}    {(weapon == i ? "EQUIPADA" : found ? "DISPONÍVEL" : "NÃO ENCONTRADA")}", itemFont, rarityBrush, 205, 190 + i * 48); if (found) g.DrawString($"{WeaponAffixDescription(i)}\n{WeaponTraitDescription(i)}", effectFont, Brushes.DarkGray, new RectangleF(232, 210 + i * 48, 570, 32)); }
         g.DrawString($"4. PEITORAL DE PEDRA {(armorOn ? relicOn ? "EQUIPADO • -35% DANO • VIGÍLIA DO VEIO" : "EQUIPADO • -30% DANO" : armor ? "DISPONÍVEL" : "NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 340);
-        g.DrawString($"5. RELICÁRIO VITAL {(relicOn ? armorOn ? "EQUIPADO • CURA 8 POR ABATE • VIGÍLIA DO VEIO" : "EQUIPADO • CURA 5 POR ABATE" : relic ? "DISPONÍVEL" : "NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 368);
+        g.DrawString($"5. RELICÁRIO VITAL {(relicOn ? armorOn ? "EQUIPADO • CURA 8/ABATE • PULSO +15% POR 2,5 s" : "EQUIPADO • CURA 5 POR ABATE" : relic ? "DISPONÍVEL" : "NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 368);
         g.DrawString($"SELO DA VIGÍLIA {(archiveSeal ? "ENCONTRADO • +8 DANO" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 396);
         g.DrawString($"SINO DE NARA {(riverBell ? "ENCONTRADO • +20 VIDA MÁXIMA" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 424);
         g.DrawString($"PRISMA DO LUME {(lumeLens ? "ENCONTRADO • +12 DANO" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 452);
@@ -2835,7 +2837,7 @@ public sealed class Game : Form
         g.DrawString("DEFESA E EQUIPAMENTO", section, Brushes.Goldenrod, 515, 205);
         g.DrawString($"Vida máxima: {maxHealth:0} • poção: +45", body, Brushes.AntiqueWhite, 515, 232);
         g.DrawString($"Redução de dano equipada: {mitigation:P0}{(wardTime > 0 ? " • Manto ativo" : "")}", body, Brushes.AntiqueWhite, 515, 258);
-        g.DrawString($"Relicário Vital: cura {RelicKillHealing()} por abate{(armorOn && relicOn ? " • conjunto Vigília do Veio" : "")}", body, Brushes.AntiqueWhite, 145, 388);
+        g.DrawString($"Relicário Vital: cura {RelicKillHealing()} por abate{(armorOn && relicOn ? $" • Pulso +15% por 2,5 s ({veinResonanceTime:0.0} s restantes)" : "")}", body, Brushes.AntiqueWhite, new RectangleF(145, 388, 670, 38));
         g.DrawString($"Recarga da esquiva: {DashCooldown():0.00} s • duração {DashDuration():0.00} s", body, Brushes.AntiqueWhite, 515, 284);
         g.DrawString($"Afixos: {WeaponAffixDescription(weapon)}", body, Brushes.AntiqueWhite, new RectangleF(515, 310, 315, 48));
         string charmOne = equippedCharm == 0 ? "vazio" : charmNames[equippedCharm]; string charmTwo = equippedCharm2 == 0 ? "vazio" : charmNames[equippedCharm2];
