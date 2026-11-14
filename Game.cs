@@ -2396,14 +2396,15 @@ public sealed class Game : Form
             RectangleF source = new(frame * cellWidth, spriteRow * cellHeight, cellWidth, cellHeight);
             float size = spriteHeight;
             float width = individualSpriteLoaded ? size * cellWidth / cellHeight : size;
+            var uniqueAttackPose = individualSpriteLoaded ? EnemyAttackPose(enemy, windupProgress) : (Width: 1f, Height: 1f, OffsetX: 0f, OffsetY: 0f);
             bool freelyMoving = enemy.Moving && enemy.Windup <= 0 && enemy.AttackPoseTime <= 0 && enemy.Stagger <= 0;
             bool animatedCreature = individualSpriteLoaded && enemy.Kind != EnemyKind.Elite;
             float motionPhase = freelyMoving ? enemy.AnimationTime * 15 : windupPulse * 2.2f;
             float bob = animatedCreature ? MathF.Sin(motionPhase) * (freelyMoving ? 2f : 1.1f) : 0;
             float breath = animatedCreature && !freelyMoving && enemy.Windup <= 0 && enemy.Stagger <= 0 ? MathF.Sin(windupPulse * 2.4f) * 0.009f : 0;
-            float posedWidth = width * (1f + windupProgress * 0.07f + breath), posedHeight = size * (1f - windupProgress * 0.035f + breath);
-            float lunge = windupProgress * (bossSprite ? 5f : 7f);
-            RectangleF target = new(enemy.Pos.X - posedWidth / 2 + lunge, enemy.Pos.Y - posedHeight + bob, posedWidth, posedHeight);
+            float posedWidth = width * (1f + windupProgress * 0.07f + breath) * uniqueAttackPose.Width, posedHeight = size * (1f - windupProgress * 0.035f + breath) * uniqueAttackPose.Height;
+            float lunge = windupProgress * (bossSprite ? 5f : 7f) + uniqueAttackPose.OffsetX;
+            RectangleF target = new(enemy.Pos.X - posedWidth / 2 + lunge, enemy.Pos.Y - posedHeight + bob + uniqueAttackPose.OffsetY, posedWidth, posedHeight);
             using var shadow = new SolidBrush(Color.FromArgb(110, 5, 7, 9));
             g.FillEllipse(shadow, enemy.Pos.X - r, enemy.Pos.Y - 5, r * 2, 10);
             var spriteTransform = g.Save();
@@ -3025,6 +3026,20 @@ public sealed class Game : Form
     private static int CampaignBossSpriteIndex(EnemyKind kind) => kind switch { EnemyKind.Guardian => 0, EnemyKind.BlindScribe => 1, EnemyKind.RiverFerryman => 2, EnemyKind.AshWarden => 3, EnemyKind.HollowName => 4, EnemyKind.NameWeaver => 5, EnemyKind.FirstKeeper => 6, EnemyKind.OathCartographer => 7, EnemyKind.NameBroker => 8, EnemyKind.TideWitness => 9, EnemyKind.ReedKeeper => 10, EnemyKind.FlowKeeper => 11, EnemyKind.CounterCurrent => 12, EnemyKind.RiftCantor => 13, EnemyKind.GlassHerald => 14, EnemyKind.LanternRegent => 15, EnemyKind.RouteScribe => 16, EnemyKind.DeepSilence => 17, _ => -1 };
     private static int EnemySpriteFrame(float animationTime, bool walking) => walking ? (int)(Math.Max(0, animationTime) / 0.13f) % 4 : 0;
     private static int EnemyAttackSpriteFrame(Enemy enemy) => enemy.Windup > 0 ? Math.Min(3, (int)(Math.Clamp(1f - enemy.Windup / Math.Max(0.01f, enemy.WindupMax), 0f, 1f) * 4f)) : enemy.AttackPoseTime > 0 ? 3 : -1;
+    private static (float Width, float Height, float OffsetX, float OffsetY) EnemyAttackPose(Enemy enemy, float progress)
+    {
+        float p = Math.Clamp(progress, 0f, 1f);
+        return enemy.Kind switch
+        {
+            EnemyKind.DrownedMemory => (1 + 0.16f * p, 1 + 0.05f * p, 0, -p),
+            EnemyKind.EmberWisp => (1 + 0.22f * p, 1 + 0.25f * p, 0, -5 * p),
+            EnemyKind.NameMoth => (1 + 0.28f * p, 1 + 0.02f * p, 0, 0),
+            EnemyKind.MudCantor => (1 + 0.12f * p, 1 + 0.20f * p, 0, 2 * p),
+            EnemyKind.PaperWraith => (1 + 0.05f * p, 1 + 0.05f * p, MathF.Sin(enemy.AnimationTime * 18f) * 6f * p, -2 * p),
+            EnemyKind.SaltEcho => (1 - 0.08f * p, 1 + 0.18f * p, 0, -3 * p),
+            _ => (1, 1, 0, 0)
+        };
+    }
     private static bool EnemyFacesLeft(float enemyX, float playerX) => playerX < enemyX;
     private static string EnemyName(Enemy e) => e.VigilMinion ? "ECO ERRANTE • SALINO" : e.Kind switch { EnemyKind.Guardian => "GUARDIÃO SEM NOME", EnemyKind.BlindScribe => "ESCRIBA CEGO", EnemyKind.RiverFerryman => "BARQUEIRO OCO", EnemyKind.AshWarden => "GUARDIÃO DAS CINZAS", EnemyKind.HollowName => "O NOME VAZIO", EnemyKind.NameWeaver => "A TECELÃ DE NOMES", EnemyKind.FirstKeeper => "A PRIMEIRA VIGÍLIA", EnemyKind.OathCartographer => "CARTÓGRAFA DO VÃO", EnemyKind.NameBroker => "ESCRIVÃO DE CONTRATO", EnemyKind.SaltEcho => "ECO SALINO", EnemyKind.TideWitness => "TESTEMUNHA DA MARÉ", EnemyKind.ReedKeeper => "GUARDIÃ DO LEITO", EnemyKind.FlowKeeper => "VIGIA DO VEIO PRESO", EnemyKind.CounterCurrent => "AFINADOR DAS MARGENS", EnemyKind.RiftCantor => "A CONTRAVOZ", EnemyKind.GlassHerald => "ARAUTO DE VIDRO", EnemyKind.LanternRegent => "REGENTE DAS LANTERNAS", EnemyKind.RouteScribe => "ESCRIBA DO TRAÇADO", EnemyKind.DeepSilence => "SILÊNCIO DE BAIXO", EnemyKind.BorrowedChorus => "ARQUIVISTA DAS MARÉS", EnemyKind.LastTuner => "AFINADOR DO CONTRATEMPO", EnemyKind.PaperWraith => "ESPECTRO DE PAPEL", EnemyKind.MudCantor => "CANTOR DO LODO", EnemyKind.DrownedMemory => "LEMBRANÇA AFOGADA", EnemyKind.EmberWisp => "VESTÍGIO DE BRASAS", EnemyKind.NameMoth => "MARIPOSA DE NOMES", EnemyKind.Elite => $"ELITE • {EliteAffixName(e.EliteAffix)}", EnemyKind.Archer => "ARQUEIRO", EnemyKind.Mage => "CONJURADOR", EnemyKind.InkEcho => "ECO DE TINTA", _ => "" };
     private static PointF Normalize(PointF p, PointF fallback) { float n = Length(p); return n > 0.001f ? new PointF(p.X / n, p.Y / n) : fallback; }
@@ -3215,6 +3230,13 @@ public sealed class Game : Form
             if (sprite.Width != sprite.Height || sprite.GetPixel(0, 0).A != 0) throw new InvalidOperationException("A folha de inimigos precisa ter células quadradas e fundo transparente.");
         if (EnemySpriteRow(EnemyKind.Grunt) != 0 || EnemySpriteRow(EnemyKind.Archer) != 1 || EnemySpriteRow(EnemyKind.Mage) != 2 || EnemySpriteRow(EnemyKind.Elite) != 3 || EnemySpriteFrame(0.52f, false) != 0 || EnemySpriteFrame(0.52f, true) != 0 || EnemySpriteFrame(0.66f, true) != 1 || !EnemyFacesLeft(400, 300) || EnemyFacesLeft(300, 400))
             throw new InvalidOperationException("Os arquétipos e o ciclo de caminhada dos sprites de inimigos não foram mapeados corretamente.");
+        var attackPoseShapes = new HashSet<(float Width, float Height, float OffsetX, float OffsetY)>();
+        foreach (EnemyKind kind in new[] { EnemyKind.DrownedMemory, EnemyKind.EmberWisp, EnemyKind.NameMoth, EnemyKind.MudCantor, EnemyKind.PaperWraith, EnemyKind.SaltEcho })
+        {
+            var creature = new Enemy { Kind = kind, AnimationTime = 0.5f };
+            var idlePose = EnemyAttackPose(creature, 0); var attackPose = EnemyAttackPose(creature, 1);
+            if (idlePose != (1, 1, 0, 0) || attackPose == idlePose || !attackPoseShapes.Add(attackPose)) throw new InvalidOperationException($"A silhueta de {kind} não recebeu uma pose de ataque própria.");
+        }
         using (var proceduralArt = new Bitmap(96, 96))
         using (var proceduralGraphics = Graphics.FromImage(proceduralArt))
         {
@@ -4059,6 +4081,6 @@ public sealed class Game : Form
             eliteCircuit.room = eliteRoom; eliteCircuit.SetupRoom(); Enemy[] roomElites = eliteCircuit.enemies.Where(enemy => enemy.Kind == EnemyKind.Elite).ToArray();
             if (roomElites.Length != 1 || roomElites[0].MaxHp != 120 + (eliteRoom - 1) * 6 || !Enum.IsDefined(roomElites[0].EliteAffix)) throw new InvalidOperationException($"A rota avançada {eliteRoom} não recebeu um elite com afixo e vida escalada.");
         }
-        Console.WriteLine("TESTES OK: campanha até o Capítulo XVII, padrões do Afinador do Contratempo, expedição opcional, afixos de elite, Arquivista das Marés, epílogos, Vigília Ascendente, chefes, combate, loot, progressão e compatibilidade de saves antigos."); return 0;
+        Console.WriteLine("TESTES OK: campanha até o Capítulo XVII, padrões do Afinador do Contratempo, poses próprias dos ecos, expedição opcional, afixos de elite, Arquivista das Marés, epílogos, Vigília Ascendente, chefes, combate, loot, progressão e compatibilidade de saves antigos."); return 0;
     }
 }
