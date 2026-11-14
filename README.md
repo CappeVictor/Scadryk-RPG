@@ -90,7 +90,7 @@ Quando o alvo marcado é derrotado, o jogo marca automaticamente o inimigo vivo 
 
 O alcance dos avisos de interação **E** agora coincide com o alcance efetivo das conversas, portões e objetos, inclusive inscrições opcionais.
 
-Os efeitos de golpe, esquiva, impacto, técnica e coleta são sintetizados pelo próprio jogo em C# e reproduzidos pelo áudio do Windows. Não há pacote, arquivo de som ou ferramenta adicional para instalar. Pressione **N** para ativar ou silenciar os efeitos.
+Os efeitos de golpe, esquiva, impacto, técnica, coleta e aviso de ataque de chefe são sintetizados pelo próprio jogo em C# e reproduzidos pelo áudio do Windows. O sinal grave do chefe acompanha o aviso visual de cada golpe. Não há pacote, arquivo de som ou ferramenta adicional para instalar. Pressione **N** para ativar ou silenciar os efeitos.
 
 Cada nível concede um ponto permanente: **Vigor** aumenta a vida máxima, **Domínio** reduz as recargas, **Agilidade** acelera a esquiva e **Sintonia** acrescenta 8% de dano às técnicas por ponto. A nova especialização é compatível com saves antigos e pode ser escolhida várias vezes.
 

@@ -2,7 +2,7 @@ using System.Media;
 
 internal static class GameAudio
 {
-    internal enum Cue { Strike, Dash, Impact, Skill, Loot }
+    internal enum Cue { Strike, Dash, Impact, Skill, Loot, BossWarning }
 
     private const int SampleRate = 22050;
     private static readonly MemoryStream[] streams;
@@ -40,6 +40,7 @@ internal static class GameAudio
             Cue.Dash => (0.19f, 180f, 620f, 0.44f),
             Cue.Impact => (0.16f, 105f, 48f, 0.52f),
             Cue.Skill => (0.27f, 260f, 880f, 0.15f),
+            Cue.BossWarning => (0.24f, 138f, 72f, 0.36f),
             _ => (0.22f, 520f, 1040f, 0.04f)
         };
         int sampleCount = (int)(SampleRate * duration);
