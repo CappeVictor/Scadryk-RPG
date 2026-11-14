@@ -359,7 +359,7 @@ public sealed class Game : Form
             if (e.KeyCode is >= Keys.D1 and <= Keys.D8) { EquipSkill(skillMenuSlot, (int)e.KeyCode - (int)Keys.D0); return; }
             return;
         }
-        if (forgeMenuOpen) { if (e.KeyCode is >= Keys.D1 and <= Keys.D5) ReforgeWeapon((int)e.KeyCode - (int)Keys.D0); else if (e.KeyCode == Keys.Escape) forgeMenuOpen = false; return; }
+        if (forgeMenuOpen) { if (e.KeyCode is >= Keys.D1 and <= Keys.D6) ReforgeWeapon((int)e.KeyCode - (int)Keys.D0); else if (e.KeyCode == Keys.Escape) forgeMenuOpen = false; return; }
         if (endingChoiceOpen) { if (e.KeyCode == Keys.D1) ChooseTownEnding(1); else if (e.KeyCode == Keys.D2) ChooseTownEnding(2); else if (e.KeyCode == Keys.D3) endingChoiceOpen = false; return; }
         if (vigilChoiceOpen) { if (e.KeyCode == Keys.D1) ResolveVigilFloor(true); else if (e.KeyCode == Keys.D2) ResolveVigilFloor(false); else if (e.KeyCode == Keys.D3 || e.KeyCode == Keys.Escape) vigilChoiceOpen = false; return; }
         if (chestChoice) { if (e.KeyCode == Keys.D1) gold += 75; else if (e.KeyCode == Keys.D2) potions += 2; else if (e.KeyCode == Keys.D3) health = maxHealth; else return; chestChoice = false; EnterVesper(); return; }
@@ -384,7 +384,7 @@ public sealed class Game : Form
     private void ReforgeWeapon(int affix)
     {
         if (!forgeMenuOpen || room != 18 || questStage < 27 || Distance(player, AvenPosition) >= 60) { forgeMenuOpen = false; return; }
-        if (affix is < 1 or > 5) return;
+        if (affix is < 1 or > 6) return;
         if (gold < 75 || tideGlass < 1) { notice = "A TÊMPERA CUSTA 75 OURO E 1 SAL VÍTREO"; noticeTime = 2; return; }
         if (weaponAffixes[weapon] == affix) { notice = "ESSA ARMA JÁ GUARDA ESSE AFFIX"; noticeTime = 2; return; }
         int oldPower = WeaponPower(weapon);
@@ -472,10 +472,10 @@ public sealed class Game : Form
     private static string WeaponRarityName(int index) => index == 0 ? "COMUM" : index == 1 ? "RARA" : "RELÍQUIA";
     private bool HasWeaponAffix(int index, int affix) => weaponAffixes[index] == affix || weaponAffixes2[index] == affix;
     private string WeaponAffixName(int index) => string.Join(" + ", new[] { WeaponAffixLabel(weaponAffixes[index]), WeaponAffixLabel(weaponAffixes2[index]) }.Where(label => label.Length > 0));
-    private static string WeaponAffixLabel(int affix) => affix switch { 1 => "Trégua", 2 => "Contracanto", 3 => "Maré", 4 => "Passo Célere", 5 => "Lastro", _ => "" };
+    private static string WeaponAffixLabel(int affix) => affix switch { 1 => "Trégua", 2 => "Contracanto", 3 => "Maré", 4 => "Passo Célere", 5 => "Lastro", 6 => "Fio Esticado", _ => "" };
     private string WeaponDisplayName(int index) => weaponRarities[index] == 0 ? $"{weaponNames[index]} [COMUM]" : $"{weaponNames[index]} • {WeaponRarityName(index)} {WeaponAffixName(index)}";
     private string WeaponAffixDescription(int index) => string.Join(" • ", new[] { WeaponAffixDescription(weaponAffixes[index], weaponRarities[index]), WeaponAffixDescription(weaponAffixes2[index], weaponRarities[index]) }.Where(description => description.Length > 0));
-    private static string WeaponAffixDescription(int affix, int rarity) => affix switch { 1 => $"da Trégua: recupera {(rarity == 2 ? 6 : 3)} vida por abate", 2 => $"do Contracanto: +{(rarity == 2 ? 11 : 7)} p.p. de crítico", 3 => $"da Maré: +{(rarity == 2 ? 18 : 12)}% de dano de técnica", 4 => $"do Passo Célere: recarga de técnicas -{(rarity == 2 ? 16 : 10)}%", 5 => $"do Lastro: dano recebido -{(rarity == 2 ? 12 : 8)}%", _ => "" };
+    private static string WeaponAffixDescription(int affix, int rarity) => affix switch { 1 => $"da Trégua: recupera {(rarity == 2 ? 6 : 3)} vida por abate", 2 => $"do Contracanto: +{(rarity == 2 ? 11 : 7)} p.p. de crítico", 3 => $"da Maré: +{(rarity == 2 ? 18 : 12)}% de dano de técnica", 4 => $"do Passo Célere: recarga de técnicas -{(rarity == 2 ? 16 : 10)}%", 5 => $"do Lastro: dano recebido -{(rarity == 2 ? 12 : 8)}%", 6 => $"do Fio Esticado: alcance básico +{(rarity == 2 ? 20 : 12)}%", _ => "" };
 
     private void CastBellPulse()
     {
@@ -825,7 +825,7 @@ public sealed class Game : Form
 
     private void RollWeapon(int index)
     {
-        RollWeapon(index, random.Next(100), random.Next(5), random.Next(5), random.Next(4));
+        RollWeapon(index, random.Next(100), random.Next(5), random.Next(6), random.Next(5));
     }
 
     private void RollWeapon(int index, int rarityRoll, int bonusRoll, int affixRoll, int secondAffixRoll = 0)
@@ -838,8 +838,8 @@ public sealed class Game : Form
     {
         int rarity = rarityRoll < 62 ? 0 : rarityRoll < 95 ? 1 : 2;
         int bonus = rarity switch { 0 => bonusRoll % 3, 1 => 3 + bonusRoll % 4, _ => 7 + bonusRoll % 5 };
-        int affix = rarity == 0 ? 0 : 1 + affixRoll % 5;
-        int affix2 = rarity == 2 ? 1 + secondAffixRoll % 4 : 0;
+        int affix = rarity == 0 ? 0 : 1 + affixRoll % 6;
+        int affix2 = rarity == 2 ? 1 + secondAffixRoll % 5 : 0;
         if (affix2 >= affix && affix2 != 0) affix2++;
         return (rarity, bonus, affix, affix2);
     }
@@ -850,7 +850,7 @@ public sealed class Game : Form
     private Drop CreateWeaponDrop(PointF pos, int index, bool bossReward = false)
     {
         int rarityFloor = vigilActive ? Math.Min(99, 85 + vigilFloor / 2) : BossWeaponRollFloor(room);
-        var roll = RollWeaponStats(bossReward ? random.Next(rarityFloor, 100) : random.Next(100), random.Next(5), random.Next(5), random.Next(4));
+        var roll = RollWeaponStats(bossReward ? random.Next(rarityFloor, 100) : random.Next(100), random.Next(5), random.Next(6), random.Next(5));
         return new Drop { Pos = pos, Kind = "weapon", Amount = index, Rarity = roll.Rarity, Bonus = roll.Bonus, Affix = roll.Affix, Affix2 = roll.Affix2 };
     }
 
@@ -1091,6 +1091,7 @@ public sealed class Game : Form
     private float VoiceShardCooldown() => (Math.Max(3.5f, 7f - skillTalent * 0.5f) + (HasCharm(5) ? HasCharmPair(3, 5) ? 0.5f : 1.25f : 0f)) * WeaponCooldownMultiplier();
     private float WeaponCooldownMultiplier() => HasWeaponAffix(weapon, 4) ? weaponRarities[weapon] == 2 ? 0.84f : 0.9f : 1f;
     private float WeaponDamageTakenMultiplier() => HasWeaponAffix(weapon, 5) ? weaponRarities[weapon] == 2 ? 0.88f : 0.92f : 1f;
+    private float WeaponReachMultiplier() => HasWeaponAffix(weapon, 6) ? weaponRarities[weapon] == 2 ? 1.2f : 1.12f : 1f;
     private float OutgoingDamageMultiplier(Enemy enemy)
     {
         float bossHunter = !HasCharm(4) ? 1f : enemy.Boss ? 1.25f : 0.8f;
@@ -1115,7 +1116,7 @@ public sealed class Game : Form
         for (int i = 0; i < 3; i++)
         {
             int rarity = s.WeaponRarities[i], bonus = s.WeaponBonuses[i], affix = s.WeaponAffixes[i], affix2 = s.WeaponAffixes2[i];
-            if (rarity == 0 ? bonus is < 0 or > 2 || affix != 0 || affix2 != 0 : rarity == 1 ? bonus is < 3 or > 6 || affix is < 1 or > 5 || affix2 != 0 : rarity == 2 ? bonus is < 7 or > 11 || affix is < 1 or > 5 || affix2 is < 0 or > 5 || affix2 == affix : true) return false;
+            if (rarity == 0 ? bonus is < 0 or > 2 || affix != 0 || affix2 != 0 : rarity == 1 ? bonus is < 3 or > 6 || affix is < 1 or > 6 || affix2 != 0 : rarity == 2 ? bonus is < 7 or > 11 || affix is < 1 or > 6 || affix2 is < 0 or > 6 || affix2 == affix : true) return false;
             if ((s.OwnedWeapons & (1 << i)) == 0 && (rarity != 0 || bonus != 0 || affix != 0 || affix2 != 0)) return false;
         }
         return true;
@@ -1123,7 +1124,7 @@ public sealed class Game : Form
     private void RestoreWeaponData(SaveData s) { Array.Copy(s.WeaponBonuses, weaponBonuses, 3); Array.Copy(s.WeaponRarities, weaponRarities, 3); Array.Copy(s.WeaponAffixes, weaponAffixes, 3); Array.Copy(s.WeaponAffixes2, weaponAffixes2, 3); for (int i = 0; i < 3; i++) if (weaponRarities[i] == 2 && weaponAffixes2[i] == 0) weaponAffixes2[i] = weaponAffixes[i] % 5 + 1; }
     private float CriticalMultiplier() => HasCharm(3) ? HasCharmPair(1, 3) ? 2.75f : 2.5f : 2f;
     private float BasicAttackCooldown() => (weapon == 1 ? 0.52f : weapon == 2 ? 0.23f : 0.33f) + (HasCharm(3) ? HasCharmPair(1, 3) ? 0.03f : 0.06f : 0f);
-    private float BasicAttackReach(Enemy enemy) => weapon == 1 ? (enemy.Boss ? 122f : 108f) : weapon == 2 ? (enemy.Boss ? 80f : 68f) : (enemy.Boss ? 95f : 78f);
+    private float BasicAttackReach(Enemy enemy) => (weapon == 1 ? (enemy.Boss ? 122f : 108f) : weapon == 2 ? (enemy.Boss ? 80f : 68f) : (enemy.Boss ? 95f : 78f)) * WeaponReachMultiplier();
     private float BasicAttackArcThreshold() => weapon == 1 ? 0.28f : weapon == 2 ? -0.04f : 0.1f;
     private float BasicAttackDamageMultiplier(Enemy enemy) => enemy.Armored ? weapon == 1 ? 0.9f : 0.75f : 1f;
     private string WeaponTraitDescription(int index) => index switch
@@ -1936,6 +1937,7 @@ public sealed class Game : Form
         3 => "Maré • técnica +" + (rarity == 2 ? 18 : 12) + "%",
         4 => "Passo Célere • recarga -" + (rarity == 2 ? 16 : 10) + "%",
         5 => "Lastro • dano recebido -" + (rarity == 2 ? 12 : 8) + "%",
+        6 => "Fio Esticado • alcance +" + (rarity == 2 ? 20 : 12) + "%",
         _ => ""
     };
 
@@ -2170,16 +2172,17 @@ public sealed class Game : Form
     {
         using var shade = new SolidBrush(Color.FromArgb(190, 5, 7, 9)); using var background = new SolidBrush(Color.FromArgb(248, 15, 17, 18)); using var border = new Pen(Color.FromArgb(175, 143, 112, 73), 2);
         using var optionFont = new Font("Segoe UI", 11); using var hintFont = new Font("Segoe UI", 9);
-        g.FillRectangle(shade, 0, 83, 960, 557); g.FillRectangle(background, 120, 145, 720, 405); g.DrawRectangle(border, 120, 145, 720, 405);
+        g.FillRectangle(shade, 0, 83, 960, 557); g.FillRectangle(background, 120, 135, 720, 455); g.DrawRectangle(border, 120, 135, 720, 455);
         DrawCentered(g, weaponRarities[weapon] == 0 ? $"TÊMPERA DO VEIO • {weaponNames[weapon]} VIRA RARA" : $"TÊMPERA DO VEIO • {weaponNames[weapon]}", 170, new Font("Georgia", 16, FontStyle.Bold), Color.Goldenrod);
         g.DrawString("1. TRÉGUA • recupera 3/6 vida por abate", optionFont, Brushes.AntiqueWhite, 165, 225);
         g.DrawString("2. CONTRACANTO • crítico +7/+11 pontos percentuais", optionFont, Brushes.AntiqueWhite, 165, 265);
         g.DrawString("3. MARÉ • dano de técnica +12%/+18%", optionFont, Brushes.AntiqueWhite, 165, 305);
         g.DrawString("4. PASSO CÉLERE • recarga de técnicas -10%/-16%", optionFont, Brushes.AntiqueWhite, 165, 345);
         g.DrawString("5. LASTRO • dano recebido -8%/-12%", optionFont, Brushes.AntiqueWhite, 165, 385);
-        g.DrawString("Valores: RARA / RELÍQUIA.", hintFont, Brushes.DarkGray, 165, 440);
-        g.DrawString($"CUSTO: 75 OURO E 1 SAL VÍTREO   •   DISPONÍVEL: {gold} OURO / {tideGlass} SAL", hintFont, gold < 75 || tideGlass < 1 ? Brushes.IndianRed : Brushes.Goldenrod, 165, 467);
-        g.DrawString("1–5 escolhe o afixo • ESC fecha", hintFont, Brushes.DarkGray, 165, 494);
+        g.DrawString("6. FIO ESTICADO • alcance básico +12%/+20%", optionFont, Brushes.AntiqueWhite, 165, 425);
+        g.DrawString("Valores: RARA / RELÍQUIA.", hintFont, Brushes.DarkGray, 165, 460);
+        g.DrawString($"CUSTO: 75 OURO E 1 SAL VÍTREO   •   DISPONÍVEL: {gold} OURO / {tideGlass} SAL", hintFont, gold < 75 || tideGlass < 1 ? Brushes.IndianRed : Brushes.Goldenrod, 165, 485);
+        g.DrawString("1–6 escolhe o afixo • ESC fecha", hintFont, Brushes.DarkGray, 165, 515);
     }
 
     private void DrawTalentChoice(Graphics g, int pending)
@@ -2375,9 +2378,16 @@ public sealed class Game : Form
         using (var lootRollCheck = new Game())
         {
             lootRollCheck.timer.Stop(); lootRollCheck.StartGame(); lootRollCheck.storyOverlay = false;
-            var common = RollWeaponStats(0, 4, 2); var rare = RollWeaponStats(62, 4, 2); var relic = RollWeaponStats(95, 4, 2); var swiftRelic = RollWeaponStats(95, 4, 3); var anchoredRelic = RollWeaponStats(95, 4, 4);
-            if (common.Rarity != 0 || common.Bonus != 1 || common.Affix != 0 || common.Affix2 != 0 || rare.Rarity != 1 || rare.Bonus != 3 || rare.Affix != 3 || rare.Affix2 != 0 || relic.Rarity != 2 || relic.Bonus != 11 || relic.Affix != 3 || relic.Affix2 is < 1 or > 5 || relic.Affix2 == relic.Affix || swiftRelic.Affix != 4 || anchoredRelic.Affix != 5)
+            var common = RollWeaponStats(0, 4, 2); var rare = RollWeaponStats(62, 4, 2); var relic = RollWeaponStats(95, 4, 2); var swiftRelic = RollWeaponStats(95, 4, 3); var anchoredRelic = RollWeaponStats(95, 4, 4); var reachRare = RollWeaponStats(62, 4, 5); var reachRelic = RollWeaponStats(95, 4, 5, 4);
+            if (common.Rarity != 0 || common.Bonus != 1 || common.Affix != 0 || common.Affix2 != 0 || rare.Rarity != 1 || rare.Bonus != 3 || rare.Affix != 3 || rare.Affix2 != 0 || relic.Rarity != 2 || relic.Bonus != 11 || relic.Affix != 3 || relic.Affix2 is < 1 or > 6 || relic.Affix2 == relic.Affix || swiftRelic.Affix != 4 || anchoredRelic.Affix != 5 || reachRare.Affix != 6 || reachRelic.Affix != 6 || reachRelic.Affix2 != 5)
                 throw new InvalidOperationException("As faixas de rolagem de raridade e afixo da arma mudaram.");
+            lootRollCheck.weaponRarities[0] = 1; lootRollCheck.weaponBonuses[0] = 3; lootRollCheck.weaponAffixes[0] = 6;
+            if (Math.Abs(lootRollCheck.BasicAttackReach(new Enemy { Kind = EnemyKind.Grunt }) - 87.36f) > 0.01f || !ValidWeaponData(lootRollCheck.CaptureSaveData()) || WeaponGroundAffix(6, 1) != "Fio Esticado • alcance +12%")
+                throw new InvalidOperationException("O Fio Esticado não aumentou o alcance básico, não apareceu no loot ou foi recusado pelo save.");
+            lootRollCheck.weaponRarities[0] = 2; lootRollCheck.weaponBonuses[0] = 7;
+            if (Math.Abs(lootRollCheck.BasicAttackReach(new Enemy { Kind = EnemyKind.Grunt }) - 93.6f) > 0.01f || WeaponAffixDescription(6, 2) != "do Fio Esticado: alcance básico +20%")
+                throw new InvalidOperationException("O Fio Esticado não escalou para o bônus de Relíquia.");
+            lootRollCheck.weaponRarities[0] = lootRollCheck.weaponBonuses[0] = lootRollCheck.weaponAffixes[0] = lootRollCheck.weaponAffixes2[0] = 0;
             Drop drop = lootRollCheck.CreateWeaponDrop(lootRollCheck.player, 1); int rarity = drop.Rarity, bonus = drop.Bonus, affix = drop.Affix, affix2 = drop.Affix2;
             string label = lootRollCheck.DropLabel(drop); int expectedDropDamage = lootRollCheck.damage - lootRollCheck.WeaponPower(lootRollCheck.weapon) + lootRollCheck.weaponDamage[1] + bonus; lootRollCheck.Collect(drop);
             if (lootRollCheck.weaponRarities[1] != rarity || lootRollCheck.weaponBonuses[1] != bonus || lootRollCheck.weaponAffixes[1] != affix || lootRollCheck.weaponAffixes2[1] != affix2 || !label.Contains(WeaponRarityName(rarity)) || !label.Contains(WeaponGroundAffix(drop)) || !label.Contains($"DANO: 25 → {expectedDropDamage}") || !label.Contains("longo") || !label.Contains("ATUAL: sem afixo"))
@@ -2770,6 +2780,9 @@ public sealed class Game : Form
             if (!ValidWeaponData(newAffixesSave) || newAffixesSave.WeaponAffixes[0] != 5) throw new InvalidOperationException("Os novos afixos não passaram pela validação nem persistiram no save.");
             affixForge.gold = 75; affixForge.tideGlass = 1; affixForge.forgeMenuOpen = true; affixForge.ReforgeWeapon(3);
             if (affixForge.weaponAffixes[0] != 3 || affixForge.weaponAffixes2[0] != 5 || affixForge.gold != 0 || affixForge.tideGlass != 0 || !ValidWeaponData(affixForge.CaptureSaveData())) throw new InvalidOperationException("A têmpera não reordenou os dois afixos da Relíquia sem duplicá-los.");
+            affixForge.gold = 75; affixForge.tideGlass = 1; affixForge.forgeMenuOpen = true; affixForge.OnKeyDown(affixForge, new KeyEventArgs(Keys.D6));
+            if (affixForge.weaponAffixes[0] != 6 || affixForge.weaponAffixes2[0] != 5 || Math.Abs(affixForge.BasicAttackReach(new Enemy { Kind = EnemyKind.Grunt }) - 93.6f) > 0.01f || !ValidWeaponData(affixForge.CaptureSaveData()))
+                throw new InvalidOperationException("A têmpera não permitiu escolher o Fio Esticado sem invalidar a Relíquia.");
         }
         using var lumeUpstream = new Game(); lumeUpstream.timer.Stop(); lumeUpstream.StartGame(); lumeUpstream.room = 22; lumeUpstream.questStage = 25; lumeUpstream.townEnding = 2; lumeUpstream.SetupRoom();
         if (lumeUpstream.enemies.Single(e => e.Kind == EnemyKind.TideWitness).MaxHp != 920) throw new InvalidOperationException("Manter o Lume não alterou a força da Testemunha da Maré.");
