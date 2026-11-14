@@ -1569,6 +1569,14 @@ public sealed class Game : Form
         g.FillRectangle(panel, 0, 0, 960, 83); g.DrawString("SCADRYK", headerFont, goldBrush, 24, 18);
         g.DrawString($"VIDA {health:0}/{maxHealth:0}     NÍVEL {level}     XP {xp}/{level * 60}     OURO {gold}     POÇÕES {potions}", hudFont, textBrush, 255, 29);
         g.DrawString($"F  {ShortSkillName(0)}     V  {ShortSkillName(1)}     G  {ShortSkillName(2)}", helpFont, goldBrush, 255, 61);
+        if (armorOn && relicOn)
+        {
+            using var setBadge = new SolidBrush(Color.FromArgb(210, 31, 52, 53));
+            using var setText = new SolidBrush(Color.FromArgb(236, 174, 215, 202));
+            using var setFont = new Font("Segoe UI", 9, FontStyle.Bold);
+            g.FillRectangle(setBadge, 604, 85, 291, 19);
+            g.DrawString("VIGÍLIA DO VEIO  •  -35% DANO  •  CURA 8/ABATE", setFont, setText, 610, 87);
+        }
         using var healthBack = new SolidBrush(Color.FromArgb(52, 56, 51)); using var healthBar = new SolidBrush(health / maxHealth < .25f ? Color.IndianRed : Color.FromArgb(112, 171, 123));
         g.FillRectangle(healthBack, 25, 58, 190, 11); g.FillRectangle(healthBar, 25, 58, 190 * health / maxHealth, 11);
         if (room == 3) DrawTownEnvironment(g, floor, tile);
