@@ -196,7 +196,7 @@ Quando o Arquivista cai, os sons voltam a pertencer a quem os deixou. O eco recu
 
 ### Capítulo XVIII — A badalada não enviada
 
-Depois de guardar a memória dos ecos emprestados, Aven encontra o desenho de um sino sem badalo. O registro pede que certas pausas permaneçam vazias: intervalos em que alguém escolheu não tocar, responder ou registrar a própria passagem. A expedição é opcional e não contém notícia de Nara nem acrescenta uma direção ao mapa dela.
+Depois de guardar a memória dos ecos emprestados, Aven encontra o desenho de um sino sem badalo. O registro pede que certas pausas permaneçam vazias: intervalos em que alguém escolheu não tocar, responder ou registrar a própria passagem. A expedição é opcional: Aven mantém a saída leste fechada até a conclusão do capítulo anterior e deixa o Escutador escolher quando atravessá-la. A oficina não contém notícia de Nara nem acrescenta uma direção ao mapa dela.
 
 A Câmara das Badaladas Não Enviadas guarda os instrumentos abandonados. Mais abaixo, no Poço do Contratempo, o Afinador tenta preencher cada intervalo com uma nota obrigatória. Sua onda anular deixa um centro seguro; o segundo golpe marca o lugar do Escutador. Os avisos permitem recuar, cruzar o anel ou permanecer no espaço protegido antes de responder ao chefe.
 
