@@ -825,7 +825,7 @@ public sealed class Game : Form
             drops.Add(new Drop { Pos = Offset(enemy.Pos, 18, 14), Kind = "charm", Amount = random.Next(1, 4) });
         if (enemy.Kind == EnemyKind.Elite && !armor) drops.Add(new Drop { Pos = Offset(enemy.Pos, 24, 0), Kind = "armor" });
         else if (!enemy.Boss && random.NextDouble() < 0.2) drops.Add(new Drop { Pos = Offset(enemy.Pos, 16, 12), Kind = "potion" });
-        if (relicOn) health = Math.Min(maxHealth, health + 5);
+        if (relicOn) health = Math.Min(maxHealth, health + RelicKillHealing());
         if (enemies.Count == 0 && room < 2) { int next = room == 0 ? 2 : 1; if ((ownedWeapons & (1 << next)) == 0) drops.Add(CreateWeaponDrop(Offset(enemy.Pos, -16, -8), next)); }
         if (enemies.Count == 0 && drops.Count == 0 && room == 2 && !memoryOverlay) chestChoice = true;
     }
@@ -1002,7 +1002,7 @@ public sealed class Game : Form
         float vigilPressure = vigilActive ? 1 + Math.Min(1.5f, Math.Max(0, vigilFloor - 1) * 0.08f) : 1;
         float aspectPressure = vigilActive && VigilAspectForFloor(vigilFloor) == VigilAspect.Hungry ? 1.3f : 1;
         if (vigilActive && HasCharm(7)) aspectPressure *= 1.1f;
-        float damageTaken = value * vigilPressure * aspectPressure * (armorOn ? 0.7f : 1) * (wardTime > 0 ? 0.45f : 1) * WeaponDamageTakenMultiplier();
+        float damageTaken = value * vigilPressure * aspectPressure * ArmorDamageTakenMultiplier() * (wardTime > 0 ? 0.45f : 1) * WeaponDamageTakenMultiplier();
         health = Math.Max(0, health - damageTaken); invulnerable = 0.6f;
         AddFloatingText(new PointF(player.X, player.Y - 30), $"−{Math.Max(1, (int)Math.Round(damageTaken))}", Color.FromArgb(250, 116, 105));
         if (health <= 0)
@@ -1337,6 +1337,8 @@ public sealed class Game : Form
     }
     private bool HasCharm(int charm) => equippedCharm == charm || equippedCharm2 == charm;
     private bool HasCharmPair(int first, int second) => equippedCharm == first && equippedCharm2 == second || equippedCharm == second && equippedCharm2 == first;
+    private float ArmorDamageTakenMultiplier() => !armorOn ? 1f : relicOn ? 0.65f : 0.7f;
+    private int RelicKillHealing() => !relicOn ? 0 : armorOn ? 8 : 5;
     private float WhirlwindMultiplier() => HasCharmPair(1, 2) ? 2.52f : HasCharm(1) ? 2.16f : 1.6f;
     private float WhirlwindCooldownPenalty() => !HasCharm(1) ? 0f : HasCharmPair(1, 2) ? 0.5f : 1f;
     private float VoiceShardDamage() => damage * (HasCharmPair(3, 5) ? 2.05f : HasCharm(3) ? 1.8f : 1.35f) * WeaponSkillMultiplier() * TechniqueDamageMultiplier();
@@ -2673,8 +2675,8 @@ public sealed class Game : Form
         using var b = new SolidBrush(Color.FromArgb(245, 17, 19, 20)); using var itemFont = new Font("Segoe UI", 11); using var effectFont = new Font("Segoe UI", 9); g.FillRectangle(b, 150, 145, 660, 490);
         DrawCentered(g, "INVENTÁRIO   •   1–3 ARMAS   •   4 ARMADURA   •   5 RELÍQUIA   •   6/7 TALISMÃS   •   I FECHAR", 180, new Font("Segoe UI", 12, FontStyle.Bold), Color.Goldenrod);
         for (int i = 0; i < 3; i++) { bool found = (ownedWeapons & (1 << i)) != 0; Brush rarityBrush = !found ? Brushes.Gray : weaponRarities[i] == 2 ? Brushes.MediumTurquoise : weaponRarities[i] == 1 ? Brushes.Goldenrod : Brushes.AntiqueWhite; g.DrawString($"{i + 1}. {WeaponDisplayName(i)}    DANO {WeaponPower(i) - WeaponPower(weapon):+#;-#;0}    {(weapon == i ? "EQUIPADA" : found ? "DISPONÍVEL" : "NÃO ENCONTRADA")}", itemFont, rarityBrush, 205, 225 + i * 54); if (found) g.DrawString($"{WeaponAffixDescription(i)}\n{WeaponTraitDescription(i)}", effectFont, Brushes.DarkGray, new RectangleF(232, 246 + i * 54, 570, 32)); }
-        g.DrawString($"4. PEITORAL DE PEDRA {(armorOn ? "EQUIPADO" : armor ? "DISPONÍVEL" : "NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 385);
-        g.DrawString($"5. RELICÁRIO VITAL {(relicOn ? "EQUIPADO" : relic ? "DISPONÍVEL" : "NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 420);
+        g.DrawString($"4. PEITORAL DE PEDRA {(armorOn ? relicOn ? "EQUIPADO • -35% DANO • VIGÍLIA DO VEIO" : "EQUIPADO • -30% DANO" : armor ? "DISPONÍVEL" : "NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 385);
+        g.DrawString($"5. RELICÁRIO VITAL {(relicOn ? armorOn ? "EQUIPADO • CURA 8 POR ABATE • VIGÍLIA DO VEIO" : "EQUIPADO • CURA 5 POR ABATE" : relic ? "DISPONÍVEL" : "NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 420);
         g.DrawString($"SELO DA VIGÍLIA {(archiveSeal ? "ENCONTRADO • +8 DANO" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 455);
         g.DrawString($"SINO DE NARA {(riverBell ? "ENCONTRADO • +20 VIDA MÁXIMA" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 490);
         g.DrawString($"PRISMA DO LUME {(lumeLens ? "ENCONTRADO • +12 DANO" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 525);
@@ -2701,7 +2703,7 @@ public sealed class Game : Form
         DrawCentered(g, "FICHA DO ESCUTADOR", 151, heading, Color.FromArgb(230, 193, 129));
         float critical = CriticalChance(), multiplier = CriticalMultiplier(), cooldown = BasicAttackCooldown();
         float expectedDps = damage * (1 + critical * (multiplier - 1)) / cooldown;
-        float mitigation = 1 - (armorOn ? 0.7f : 1f) * WeaponDamageTakenMultiplier();
+        float mitigation = 1 - ArmorDamageTakenMultiplier() * WeaponDamageTakenMultiplier();
         if (wardTime > 0) mitigation = 1 - (1 - mitigation) * 0.45f;
         g.DrawString("ATAQUE", section, Brushes.Goldenrod, 145, 205);
         g.DrawString($"Arma: {WeaponDisplayName(weapon)}", body, Brushes.AntiqueWhite, 145, 232);
@@ -2713,6 +2715,7 @@ public sealed class Game : Form
         g.DrawString("DEFESA E EQUIPAMENTO", section, Brushes.Goldenrod, 515, 205);
         g.DrawString($"Vida máxima: {maxHealth:0} • poção: +45", body, Brushes.AntiqueWhite, 515, 232);
         g.DrawString($"Redução de dano equipada: {mitigation:P0}{(wardTime > 0 ? " • Manto ativo" : "")}", body, Brushes.AntiqueWhite, 515, 258);
+        g.DrawString($"Relicário Vital: cura {RelicKillHealing()} por abate{(armorOn && relicOn ? " • conjunto Vigília do Veio" : "")}", body, Brushes.AntiqueWhite, 145, 388);
         g.DrawString($"Recarga da esquiva: {DashCooldown():0.00} s • duração {DashDuration():0.00} s", body, Brushes.AntiqueWhite, 515, 284);
         g.DrawString($"Afixos: {WeaponAffixDescription(weapon)}", body, Brushes.AntiqueWhite, new RectangleF(515, 310, 315, 48));
         string charmOne = equippedCharm == 0 ? "vazio" : charmNames[equippedCharm]; string charmTwo = equippedCharm2 == 0 ? "vazio" : charmNames[equippedCharm2];
