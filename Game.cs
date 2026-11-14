@@ -834,10 +834,17 @@ public sealed class Game : Form
     private static PointF NonBossAttackCenter(Enemy e) => e.Kind is EnemyKind.Elite or EnemyKind.Mage || RangedImpactRadius(e.Kind) > 0 ? e.Target : e.Pos;
     private static bool NonBossAttackContains(Enemy e, PointF point) => Distance(point, NonBossAttackCenter(e)) < NonBossAttackRadius(e);
 
-    private static bool BossUsesLine(Enemy e) => e.BossPattern == 2 && e.Kind is EnemyKind.FirstKeeper or EnemyKind.NameWeaver or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus;
+    private static bool BossUsesCone(Enemy e) => e.Kind == EnemyKind.GlassHerald && e.BossPattern == 2;
+    private static bool BossUsesLine(Enemy e) => e.BossPattern == 2 && e.Kind is EnemyKind.FirstKeeper or EnemyKind.NameWeaver or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus;
+    private static bool BossConeContains(Enemy e, PointF point)
+    {
+        PointF axis = Normalize(Sub(e.Target, e.Pos), new PointF(1, 0)), direction = Sub(point, e.Pos); float distance = Length(direction);
+        return distance < 245 && distance > 0.01f && Dot(axis, Scale(direction, 1 / distance)) >= MathF.Cos(34 * MathF.PI / 180);
+    }
     private static float BossCircleRadius(Enemy e) => e.BossPattern == 0 ? e.Kind switch { EnemyKind.GlassHerald => 135, EnemyKind.LanternRegent => 150, EnemyKind.RouteScribe => 160, _ => 90 } : e.BossPattern == 2 ? e.Kind switch { EnemyKind.RiverFerryman => 85, EnemyKind.AshWarden => 68, EnemyKind.HollowName => 85, _ => 42 } : 42;
     private static bool BossAttackContains(Enemy e, PointF point)
     {
+        if (BossUsesCone(e)) return BossConeContains(e, point);
         if (!BossUsesLine(e)) return Distance(point, e.BossPattern == 0 ? e.Pos : e.Target) < BossCircleRadius(e);
         float width = e.Kind == EnemyKind.FirstKeeper ? 25 : 24;
         if (DistanceToSegment(point, e.Pos, e.Target) < width) return true;
@@ -853,6 +860,14 @@ public sealed class Game : Form
         (Color fillColor, Color edgeColor) = AttackWarningPalette(highContrastTelegraphs);
         using var outline = new Pen(edgeColor, highContrastTelegraphs ? 4 : 3);
         using var fill = new SolidBrush(fillColor);
+        if (BossUsesCone(e))
+        {
+            float radius = 245, angle = MathF.Atan2(e.Target.Y - e.Pos.Y, e.Target.X - e.Pos.X) * 180 / MathF.PI, sweep = 68;
+            var cone = new RectangleF(e.Pos.X - radius, e.Pos.Y - radius, radius * 2, radius * 2);
+            if (highContrastTelegraphs) { using var shadow = new Pen(Color.FromArgb(245, 12, 13, 15), 9); g.DrawPie(shadow, cone, angle - sweep / 2, sweep); }
+            g.FillPie(fill, cone, angle - sweep / 2, sweep); g.DrawPie(outline, cone, angle - sweep / 2, sweep);
+            return;
+        }
         if (!BossUsesLine(e))
         {
             float radius = BossCircleRadius(e); PointF center = e.BossPattern == 0 ? e.Pos : e.Target;
@@ -2801,7 +2816,11 @@ public sealed class Game : Form
             for (int pattern = 0; pattern < 3; pattern++)
             {
                 var boss = new Enemy { Kind = kind, BossPattern = pattern, Pos = new PointF(300, 300), Target = new PointF(500, 300), Target2Start = new PointF(300, 400), Target2 = new PointF(500, 400) };
-                if (BossUsesLine(boss))
+                if (BossUsesCone(boss))
+                {
+                    if (!BossAttackContains(boss, new PointF(480, 300)) || BossAttackContains(boss, new PointF(400, 450)) || BossAttackContains(boss, new PointF(560, 300))) throw new InvalidOperationException("O cone do Arauto de Vidro não respeitou seu alcance ou abertura lateral.");
+                }
+                else if (BossUsesLine(boss))
                 {
                     float width = kind == EnemyKind.FirstKeeper ? 25 : 24;
                     if (!BossAttackContains(boss, new PointF(400, 300 + width - 1)) || BossAttackContains(boss, new PointF(400, 300 + width + 1))) throw new InvalidOperationException($"A largura do ataque de {kind} não corresponde ao aviso.");
