@@ -537,7 +537,7 @@ public sealed class Game : Form
         foreach (Enemy enemy in enemies.ToArray())
         {
             if (Distance(player, enemy.Pos) >= 110) continue;
-            int dealt = (int)(damage * OutgoingDamageMultiplier(enemy) * WhirlwindMultiplier() * WeaponSkillMultiplier() * TechniqueDamageMultiplier() * (enemy.Armored ? 0.75f : 1));
+            int dealt = (int)(damage * OutgoingDamageMultiplier(enemy) * WhirlwindMultiplier() * WeaponSkillMultiplier() * TechniqueDamageMultiplier() * (IsArmored(enemy) ? 0.75f : 1));
             DamageEnemy(enemy, dealt);
             if (enemy.Hp <= 0) Defeat(enemy);
         }
@@ -595,7 +595,7 @@ public sealed class Game : Form
             if (Distance(player, enemy.Pos) > bellWaveRadius) continue;
             float multiplier = (HasCharm(3) ? 1.25f : 1f) * WeaponSkillMultiplier() * TechniqueDamageMultiplier();
             float power = enemy.Boss ? 0.55f : 0.95f;
-            DamageEnemy(enemy, (int)(damage * power * multiplier * OutgoingDamageMultiplier(enemy) * (enemy.Armored ? 0.75f : 1)));
+            DamageEnemy(enemy, (int)(damage * power * multiplier * OutgoingDamageMultiplier(enemy) * (IsArmored(enemy) ? 0.75f : 1)));
             enemy.Flash = 0.2f;
             if (!enemy.Boss) { enemy.Stagger = 0.95f; enemy.Windup = 0; enemy.Cooldown = Math.Max(enemy.Cooldown, 1.8f); }
             if (enemy.Hp <= 0) Defeat(enemy);
@@ -613,7 +613,7 @@ public sealed class Game : Form
         foreach (Enemy enemy in enemies.ToArray())
         {
             float distance = Distance(player, enemy.Pos); if (distance > 160) continue;
-            DamageEnemy(enemy, damage * (enemy.Boss ? 0.3f : 0.48f) * techniqueBoost * OutgoingDamageMultiplier(enemy) * (enemy.Armored ? 0.75f : 1f));
+            DamageEnemy(enemy, damage * (enemy.Boss ? 0.3f : 0.48f) * techniqueBoost * OutgoingDamageMultiplier(enemy) * (IsArmored(enemy) ? 0.75f : 1f));
             enemy.Flash = 0.22f;
             if (enemy.Boss) enemy.Pos = MoveEnemy(enemy, Scale(Normalize(Sub(player, enemy.Pos), PointF.Empty), 22));
             else { enemy.Pos = MoveEnemy(enemy, Scale(Normalize(Sub(player, enemy.Pos), PointF.Empty), Math.Min(85, Math.Max(0, distance - 36)))); enemy.Windup = 0; enemy.Stagger = 0.55f; enemy.Cooldown = Math.Max(enemy.Cooldown, 1.2f); }
@@ -641,7 +641,7 @@ public sealed class Game : Form
         foreach (Enemy enemy in enemies.ToArray())
         {
             if (Distance(player, enemy.Pos) > refrainWaveRadius) continue;
-            DamageEnemy(enemy, damage * (enemy.Boss ? 0.28f : 0.68f) * boost * OutgoingDamageMultiplier(enemy) * (enemy.Armored ? 0.75f : 1f));
+            DamageEnemy(enemy, damage * (enemy.Boss ? 0.28f : 0.68f) * boost * OutgoingDamageMultiplier(enemy) * (IsArmored(enemy) ? 0.75f : 1f));
             enemy.Flash = 0.24f;
             if (!enemy.Boss) { enemy.Stagger = Math.Max(enemy.Stagger, 0.38f); enemy.Windup = 0; enemy.Cooldown = Math.Max(enemy.Cooldown, 0.8f); }
             if (enemy.Hp <= 0) Defeat(enemy);
@@ -667,7 +667,7 @@ public sealed class Game : Form
         foreach (Enemy enemy in enemies.ToArray())
         {
             if (Distance(player, enemy.Pos) > returnVoiceWaveRadius) continue;
-            DamageEnemy(enemy, damage * (enemy.Boss ? 0.34f : 0.52f) * boost * OutgoingDamageMultiplier(enemy) * (enemy.Armored ? 0.75f : 1f));
+            DamageEnemy(enemy, damage * (enemy.Boss ? 0.34f : 0.52f) * boost * OutgoingDamageMultiplier(enemy) * (IsArmored(enemy) ? 0.75f : 1f));
             enemy.Flash = 0.2f;
             if (!enemy.Boss) { enemy.Windup = 0; enemy.Stagger = Math.Max(enemy.Stagger, 0.32f); enemy.Cooldown = Math.Max(enemy.Cooldown, 0.8f); }
             restored += maxHealth * (enemy.Boss ? 0.025f : 0.045f);
@@ -681,7 +681,7 @@ public sealed class Game : Form
         if (room is 3 or 18 || enemies.Count == 0 || finalStrikeCd > 0) return;
         Enemy target = lockedTarget is not null && enemies.Contains(lockedTarget) ? lockedTarget : enemies.OrderBy(enemy => Distance(player, enemy.Pos)).First();
         facing = Normalize(Sub(target.Pos, player), facing); finalStrikeTarget = target.Pos; finalStrikeFlash = 0.24f;
-        DamageEnemy(target, damage * (target.Boss ? 2.15f : 2.45f) * TechniqueDamageMultiplier() * WeaponSkillMultiplier() * OutgoingDamageMultiplier(target) * (target.Armored ? 0.75f : 1f));
+        DamageEnemy(target, damage * (target.Boss ? 2.15f : 2.45f) * TechniqueDamageMultiplier() * WeaponSkillMultiplier() * OutgoingDamageMultiplier(target) * (IsArmored(target) ? 0.75f : 1f));
         target.Flash = 0.3f; if (!target.Boss) { target.Windup = 0; target.Stagger = Math.Max(target.Stagger, 0.72f); target.Cooldown = Math.Max(target.Cooldown, 1.25f); }
         if (target.Hp <= 0) Defeat(target);
         finalStrikeCd = Math.Max(12f, 19f - skillTalent * 0.65f) * WeaponCooldownMultiplier(); notice = "ÚLTIMA CENTELHA • IMPACTO CONCENTRADO"; noticeTime = 1.4f;
@@ -696,7 +696,7 @@ public sealed class Game : Form
         {
             if (Distance(beaconPos, enemy.Pos) > 128) continue;
             float multiplier = TechniqueDamageMultiplier() * WeaponSkillMultiplier();
-            DamageEnemy(enemy, damage * (enemy.Boss ? 0.18f : 0.34f) * multiplier * OutgoingDamageMultiplier(enemy) * (enemy.Armored ? 0.75f : 1f));
+            DamageEnemy(enemy, damage * (enemy.Boss ? 0.18f : 0.34f) * multiplier * OutgoingDamageMultiplier(enemy) * (IsArmored(enemy) ? 0.75f : 1f));
             enemy.Flash = 0.16f;
             if (enemy.Hp <= 0) Defeat(enemy);
         }
@@ -738,7 +738,7 @@ public sealed class Game : Form
                 foreach (Enemy enemy in enemies.ToArray())
                 {
                     if (shard.Hit.Contains(enemy) || DistanceToSegment(enemy.Pos, Sub(shard.Pos, Scale(shard.Direction, step)), shard.Pos) >= enemy.Radius + 8) continue;
-                    shard.Hit.Add(enemy); DamageEnemy(enemy, shard.Damage * OutgoingDamageMultiplier(enemy) * (enemy.Armored ? 0.75f : 1)); enemy.Flash = 0.16f;
+                    shard.Hit.Add(enemy); DamageEnemy(enemy, shard.Damage * OutgoingDamageMultiplier(enemy) * (IsArmored(enemy) ? 0.75f : 1)); enemy.Flash = 0.16f;
                     if (enemy.Hp <= 0) Defeat(enemy);
                 }
             }
@@ -1352,7 +1352,8 @@ public sealed class Game : Form
     private static float BasicAttackSweepAngle(int weapon) => weapon == 1 ? 142 : weapon == 2 ? 112 : 128;
     private static float BasicAttackArcThreshold(int weapon) => MathF.Cos(BasicAttackSweepAngle(weapon) * MathF.PI / 360f);
     private static bool BasicAttackCoversDirection(float facingDot, int weapon) => facingDot > BasicAttackArcThreshold(weapon);
-    private float BasicAttackDamageMultiplier(Enemy enemy) => enemy.Armored ? weapon == 1 ? 0.9f : 0.75f : 1f;
+    private bool IsArmored(Enemy enemy) => enemy.Armored || (!enemy.Boss && enemy.Kind != EnemyKind.Elite && enemies.Any(elite => elite.Kind == EnemyKind.Elite && elite.EliteAffix == EliteAffix.Armored && Distance(enemy.Pos, elite.Pos) <= 132));
+    private float BasicAttackDamageMultiplier(Enemy enemy) => IsArmored(enemy) ? weapon == 1 ? 0.9f : 0.75f : 1f;
     private string WeaponTraitDescription(int index) => index switch
     {
         1 => "LÂMINA PESADA • ALCANCE LONGO • PERFURA ARMADURA • INTERROMPE ECOS",
@@ -2171,7 +2172,7 @@ public sealed class Game : Form
             if (highContrastTelegraphs) { using var shadow = new Pen(Color.FromArgb(240, 12, 13, 15), 7); g.DrawEllipse(shadow, center.X - radius, center.Y - radius, radius * 2, radius * 2); }
             g.DrawEllipse(p, center.X - radius, center.Y - radius, radius * 2, radius * 2);
         }
-        using var body = new SolidBrush(enemy.Flash > 0 ? Color.White : color); using var edge = new Pen(enemy == lockedTarget ? Color.Gold : enemy.Armored ? Color.LightSteelBlue : Color.FromArgb(35, 25, 22), enemy == lockedTarget ? 4 : 2);
+        using var body = new SolidBrush(enemy.Flash > 0 ? Color.White : color); using var edge = new Pen(enemy == lockedTarget ? Color.Gold : IsArmored(enemy) ? Color.LightSteelBlue : Color.FromArgb(35, 25, 22), enemy == lockedTarget ? 4 : 2);
         int bossSpriteIndex = CampaignBossSpriteIndex(enemy.Kind), enemySpriteRow = EnemySpriteRow(enemy.Kind);
         bool bossSprite = bossSpriteIndex >= 0;
         int spriteRow = bossSprite ? bossSpriteIndex % 4 : enemySpriteRow;
@@ -2189,7 +2190,7 @@ public sealed class Game : Form
             if (EnemyFacesLeft(enemy.Pos.X, player.X)) { g.TranslateTransform(enemy.Pos.X * 2, 0); g.ScaleTransform(-1, 1); }
             g.DrawImage(enemySprites, target, source, GraphicsUnit.Pixel);
             g.Restore(spriteTransform);
-            if (enemy == lockedTarget || enemy.Armored)
+            if (enemy == lockedTarget || IsArmored(enemy))
                 g.DrawEllipse(edge, enemy.Pos.X - r - 3, enemy.Pos.Y - 7, (r + 3) * 2, 12);
             if (enemy.Flash > 0)
             {
@@ -2208,6 +2209,11 @@ public sealed class Game : Form
             {
                 g.FillEllipse(body, enemy.Pos.X - r, enemy.Pos.Y - r, r * 2, r * 2); g.DrawEllipse(edge, enemy.Pos.X - r, enemy.Pos.Y - r, r * 2, r * 2);
             }
+        }
+        if (IsArmored(enemy) && !enemy.Armored)
+        {
+            using var wardRing = new Pen(Color.FromArgb(190, 186, 218, 231), 2) { DashStyle = DashStyle.Dash };
+            g.DrawEllipse(wardRing, enemy.Pos.X - r - 4, enemy.Pos.Y - 9, (r + 4) * 2, 18);
         }
         if (enemy.Kind == EnemyKind.Elite)
         {
@@ -3135,6 +3141,14 @@ public sealed class Game : Form
             if (eliteAffixCheck.health != 76 || bloodboundElite.Hp != 58) throw new InvalidOperationException("O elite Sangrador não causou o dano anunciado nem recuperou vida ao acertar.");
             Enemy armoredElite = new() { Kind = EnemyKind.Elite, EliteAffix = EliteAffix.Armored, Armored = true, Hp = 120, MaxHp = 120 };
             if (!armoredElite.Armored || EnemyName(armoredElite) != "ELITE • BLINDADO") throw new InvalidOperationException("O elite Blindado não preservou sua redução nem seu identificador.");
+            armoredElite.Pos = new PointF(250, 330);
+            Enemy wardedGrunt = new() { Pos = new PointF(350, 330), Kind = EnemyKind.Grunt, Hp = 100, MaxHp = 100 };
+            Enemy unwardedGrunt = new() { Pos = new PointF(400, 330), Kind = EnemyKind.Grunt, Hp = 100, MaxHp = 100 };
+            eliteAffixCheck.enemies.Clear(); eliteAffixCheck.enemies.AddRange(new[] { armoredElite, wardedGrunt, unwardedGrunt });
+            if (!eliteAffixCheck.IsArmored(wardedGrunt) || eliteAffixCheck.IsArmored(unwardedGrunt) || eliteAffixCheck.BasicAttackDamageMultiplier(wardedGrunt) != 0.75f)
+                throw new InvalidOperationException("A aura do elite Blindado não protegeu apenas os ecos dentro do alcance.");
+            eliteAffixCheck.enemies.Remove(armoredElite);
+            if (eliteAffixCheck.IsArmored(wardedGrunt)) throw new InvalidOperationException("A proteção da aura permaneceu depois da queda do elite Blindado.");
         }
         if (EliteWeaponDropRoll(-1) || !EliteWeaponDropRoll(0) || !EliteWeaponDropRoll(34) || EliteWeaponDropRoll(35) || EliteWeaponDropRoll(99))
             throw new InvalidOperationException("A chance de arma dos elites não respeitou os 35% definidos.");
