@@ -42,7 +42,7 @@ Para compilar uma versão de produção:
 dotnet build --configuration Release
 ```
 
-Para executar o autoteste automatizado, que cobre a campanha até o Capítulo XVII, as oito técnicas possíveis (sete por campanha), a Vigília Ascendente, o combate, as poses de impacto, o loot, a progressão, o save e a compatibilidade com saves antigos:
+Para executar o autoteste automatizado, que cobre a campanha principal e as expedições opcionais até o Capítulo XVIII, as oito técnicas possíveis (sete por campanha), a Vigília Ascendente, o combate, as poses de impacto, o loot, a progressão, o save e a compatibilidade com saves antigos:
 
 ```powershell
 dotnet run -- --self-test

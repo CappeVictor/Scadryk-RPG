@@ -4069,6 +4069,21 @@ public sealed class Game : Form
         if (borrowedChapter.questStage != 56 || borrowedChapter.gold != borrowedGold + 1900 || borrowedChapter.techniqueTalent != borrowedTalent + 1 || !ValidSaveData(borrowedChapter.CaptureSaveData())) throw new InvalidOperationException("Aven não registrou a memória nem concedeu a recompensa permanente da expedição.");
         borrowedChapter.memoryOverlay = false; borrowedChapter.Interact();
         if (!borrowedChapter.forgeMenuOpen) throw new InvalidOperationException("Aven não reabriu a têmpera depois de concluída a expedição.");
+        borrowedChapter.forgeMenuOpen = false; borrowedChapter.player = new PointF(850, 330); borrowedChapter.InteractRefuge();
+        if (borrowedChapter.room != 41 || borrowedChapter.questStage != 57 || borrowedChapter.enemies.Count != 6 || !ValidSaveData(borrowedChapter.CaptureSaveData()) || (borrowedChapter.KnownRoomMask() & (1L << 41)) == 0) throw new InvalidOperationException("A Câmara das Badaladas não abriu como expedição opcional ou não validou o progresso salvo.");
+        borrowedChapter.enemies.Clear(); borrowedChapter.drops.Clear(); borrowedChapter.player = new PointF(850, 330); borrowedChapter.Interact();
+        if (borrowedChapter.room != 42 || borrowedChapter.enemies.Single().Kind != EnemyKind.LastTuner) throw new InvalidOperationException("O Poço do Contratempo não abriu com o Afinador original.");
+        Enemy lastTuner = borrowedChapter.enemies.Single(); lastTuner.Hp = 1; borrowedChapter.Defeat(lastTuner);
+        Drop unsentMemory = borrowedChapter.drops.Single(drop => drop.Kind == "unstruck"); borrowedChapter.Collect(unsentMemory); borrowedChapter.memoryOverlay = false;
+        foreach (Drop remainingDrop in borrowedChapter.drops.ToArray()) borrowedChapter.Collect(remainingDrop);
+        SaveData unstruckSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(borrowedChapter.CaptureSaveData()))!;
+        if (!borrowedChapter.unstruckTrace || borrowedChapter.questStage != 58 || !ValidSaveData(unstruckSave) || JsonSerializer.Deserialize<SaveData>("{}")?.UnstruckTrace != false) throw new InvalidOperationException("A lembrança da badalada não persistiu ou deixou de aceitar saves antigos.");
+        borrowedChapter.player = new PointF(850, 330); borrowedChapter.Interact(); borrowedChapter.memoryOverlay = false; borrowedChapter.player = AvenPosition;
+        int chimeGold = borrowedChapter.gold, chimeGlass = borrowedChapter.tideGlass, chimePotions = borrowedChapter.potions, chimeTalent = borrowedChapter.techniqueTalent;
+        borrowedChapter.Interact(); SaveData completedChimeSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(borrowedChapter.CaptureSaveData()))!;
+        if (borrowedChapter.room != 18 || borrowedChapter.questStage != 59 || borrowedChapter.gold != chimeGold + 2200 || borrowedChapter.tideGlass != chimeGlass + 10 || borrowedChapter.potions != chimePotions + 3 || borrowedChapter.techniqueTalent != chimeTalent + 1 || !ValidSaveData(completedChimeSave)) throw new InvalidOperationException("Aven não concluiu a expedição XVIII com recompensa e save válidos.");
+        borrowedChapter.memoryOverlay = false; borrowedChapter.Interact();
+        if (!borrowedChapter.forgeMenuOpen) throw new InvalidOperationException("A forja pós-jogo não permaneceu acessível após a expedição XVIII.");
         borrowedChapter.level = 10; borrowedChapter.healthTalent = 2; borrowedChapter.skillTalent = 1; borrowedChapter.dodgeTalent = 1; borrowedChapter.techniqueTalent = 2;
         borrowedChapter.maxHealth = 180; borrowedChapter.health = 90; borrowedChapter.gold = 5000; borrowedChapter.tideGlass = 10; borrowedChapter.pendingTalents = 0; borrowedChapter.talentChoice = false;
         borrowedChapter.OnKeyDown(borrowedChapter, new KeyEventArgs(Keys.D7));
@@ -4081,6 +4096,6 @@ public sealed class Game : Form
             eliteCircuit.room = eliteRoom; eliteCircuit.SetupRoom(); Enemy[] roomElites = eliteCircuit.enemies.Where(enemy => enemy.Kind == EnemyKind.Elite).ToArray();
             if (roomElites.Length != 1 || roomElites[0].MaxHp != 120 + (eliteRoom - 1) * 6 || !Enum.IsDefined(roomElites[0].EliteAffix)) throw new InvalidOperationException($"A rota avançada {eliteRoom} não recebeu um elite com afixo e vida escalada.");
         }
-        Console.WriteLine("TESTES OK: campanha até o Capítulo XVII, padrões do Afinador do Contratempo, poses próprias dos ecos, expedição opcional, afixos de elite, Arquivista das Marés, epílogos, Vigília Ascendente, chefes, combate, loot, progressão e compatibilidade de saves antigos."); return 0;
+        Console.WriteLine("TESTES OK: campanha e expedições até o Capítulo XVIII, padrões do Afinador do Contratempo, poses próprias dos ecos, expedição opcional, afixos de elite, Arquivista das Marés, epílogos, Vigília Ascendente, chefes, combate, loot, progressão e compatibilidade de saves antigos."); return 0;
     }
 }
