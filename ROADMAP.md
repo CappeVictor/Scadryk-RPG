@@ -83,7 +83,7 @@ O inventário agora lista separadamente os efeitos ativos de cada talismã equip
 
 Elites agora sempre deixam sal vítreo além do ouro: um fragmento nas regiões iniciais, aumentando até quatro nas áreas avançadas. A recompensa alimenta diretamente a Têmpera do Veio Calmo e dá retorno previsível por enfrentar os encontros de elite; a chance de arma permanece em 35%.
 
-O quinto afixo de elite, **Invocador**, anuncia um círculo violeta e chama um Eco de Tinta de apoio a cada 7,5 segundos, se não houver outro eco invocado ativo. O aviso de 0,95 segundo permite priorizar o elite ou reposicionar-se antes da chegada. O eco usa o comportamento de ataque à distância já existente, escala a vida com a região e não concede ouro nem XP, evitando farm infinito; o Invocador também conserva seu ataque normal.
+O quinto afixo de elite, **Invocador**, anuncia um círculo violeta e chama um Eco de Tinta de apoio a cada 7,5 segundos, se não houver outro eco invocado ativo. O aviso de 0,95 segundo permite priorizar o elite ou reposicionar-se antes da chegada; armas e técnicas que interrompem ecos cancelam o canal e atrasam a próxima tentativa. O eco usa o comportamento de ataque à distância já existente, escala a vida com a região e não concede ouro nem XP, evitando farm infinito; o Invocador também conserva seu ataque normal.
 
 ## Capítulo XVII — As marés emprestadas
 

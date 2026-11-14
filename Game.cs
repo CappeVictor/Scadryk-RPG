@@ -985,6 +985,7 @@ public sealed class Game : Form
     {
         if (e.Kind == EnemyKind.Elite && e.EliteAffix == EliteAffix.Summoner)
         {
+            if (e.SummonWindup > 0 && e.Stagger > 0) { e.SummonWindup = 0; e.SummonCooldown = 2.5f; }
             bool hasEliteEcho = enemies.Any(enemy => enemy.EliteMinion);
             if (e.SummonWindup > 0)
             {
@@ -992,7 +993,7 @@ public sealed class Game : Form
                 if (e.SummonWindup <= 0) SummonEliteEcho(e);
                 return;
             }
-            if (!hasEliteEcho && e.SummonCooldown > 0) e.SummonCooldown -= dt;
+            if (!hasEliteEcho && e.Stagger <= 0 && e.SummonCooldown > 0) e.SummonCooldown -= dt;
             if (!hasEliteEcho && e.SummonCooldown <= 0 && e.Windup <= 0 && e.Stagger <= 0)
             {
                 e.SummonWindup = 0.95f;
