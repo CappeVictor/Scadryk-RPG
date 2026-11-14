@@ -799,6 +799,7 @@ public sealed class Game : Form
         if (ReferenceEquals(lockedTarget, enemy)) lockedTarget = enemies.OrderBy(candidate => Distance(player, candidate.Pos)).FirstOrDefault();
         enemiesDefeated++; int goldDrop = enemy.VigilMinion ? 8 + Math.Min(20, vigilFloor * 2) : vigilActive ? 35 + Math.Min(500, vigilFloor * 15) : enemy.Boss ? 35 : enemy.Kind == EnemyKind.Elite ? 20 : 8; drops.Add(new Drop { Pos = enemy.Pos, Kind = "gold", Amount = goldDrop });
         AddXp(enemy.VigilMinion ? 12 : enemy.Boss ? 75 : enemy.Kind == EnemyKind.Elite ? 40 : 22);
+        if (enemy.Kind == EnemyKind.Elite) drops.Add(new Drop { Pos = Offset(enemy.Pos, 24, -20), Kind = "glass", Amount = Math.Clamp(1 + room / 12, 1, 4) });
         if (HasWeaponAffix(weapon, 1)) health = Math.Min(maxHealth, health + (weaponRarities[weapon] == 2 ? 6 : 3));
         if (enemy.Boss && vigilActive) drops.Add(new Drop { Pos = Offset(enemy.Pos, 0, -28), Kind = "glass", Amount = 1 + Math.Min(5, (vigilFloor - 1) / 3) });
         if (enemy.Boss) drops.Add(CreateWeaponDrop(Offset(enemy.Pos, 0, 28), random.Next(1, 3), true));
