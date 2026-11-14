@@ -23,6 +23,7 @@ public sealed class Game : Form
     }
     private sealed class Drop { public PointF Pos; public string Kind = "gold"; public int Amount, Rarity, Bonus, Affix, Affix2; }
     private sealed class EchoShard { public PointF Pos, Direction; public float Life, Damage; public HashSet<Enemy> Hit = new(); }
+    private sealed class FloatingText { public PointF Pos; public string Text = ""; public Color Color; public float TimeLeft, Duration; }
     private sealed class SaveData
     {
         public int Room { get; set; }
@@ -124,6 +125,7 @@ public sealed class Game : Form
     private readonly System.Windows.Forms.Timer timer = new() { Interval = 16 };
     private readonly Random random = new();
     private readonly List<EchoShard> echoShards = new();
+    private readonly List<FloatingText> floatingTexts = new();
     private PointF beaconPos;
     private readonly string[] roomNames = { "VESTÍBULO EM RUÍNAS", "SALÃO DOS OSSOS", "CÂMARA DO GUARDIÃO", "VÉSPERA • PRAÇA DO FAROL", "ARQUIVO NORTE • GALERIA", "ARQUIVO NORTE • COFRE", "RIO CEGO • LEITO SECO", "RIO CEGO • CAPELA AFOGADA", "FAROL • ESCADA DE CINZAS", "FAROL • CÂMARA DO LUME", "ALÉM DO LUME • MARGEM SEM REFLEXO", "RESERVATÓRIO • VOZES RETIDAS", "COSTA DAS VOZES TARDIAS", "CLAUSTRO DO CORO PARTIDO", "BACIA DO PRIMEIRO NOME", "SALA DA PRIMEIRA VIGÍLIA", "VAU DOS NOMES ESCOLHIDOS", "PÁTIO DAS TESTEMUNHAS", "REFÚGIO DO VEIO CALMO", "TRILHA DOS LUMINÁRIOS", "CISTERNA DO REGISTRO VAZIO", "VÁRZEA DAS VOZES SOPRADAS", "PONTE DA MARÉ INVERTIDA", "COTOVELO DOS JUNCAIS", "PÁTIO DAS AMARRAS LIVRES", "MOINHOS DA VAZANTE", "CÂMARA DO VEIO PRESO", "ESCARPA DO CONTRAFLUXO", "CORAÇÃO DAS DUAS MARGENS", "CANTARIA DAS VOZES LIVRES", "CÂMARA DA CONTRAVOZ", "GARGANTA DO VIDRO MUDO", "FONTE SOB A PEDRA", "PASSAGEM DAS LANTERNAS BAIXAS", "OBSERVATÓRIO DA MARÉ INTERIOR", "TRILHA DAS LINHAS ABERTAS", "GALERIA DA ROTA NÃO ESCRITA" };
     private readonly string[] weaponNames = { "ESPADA DE PEDRA", "LÂMINA DO ARQUIVO", "FACA DO CREPÚSCULO" };
@@ -188,7 +190,7 @@ public sealed class Game : Form
         clearedRooms = 0;
         ownedCharms = equippedCharm = equippedCharm2 = 0;
         equippedSkills = new[] { 1, 0, 0 }; skillMenuOpen = false; skillMenuSlot = 0;
-        health = maxHealth = 100; attackCd = skillCd = shardCd = bellCd = bellWaveTime = bellWaveRadius = pullCd = pullWaveTime = wardCd = wardTime = refrainCd = refrainWaveTime = beaconCd = beaconTime = beaconPulseCd = beaconWaveTime = dashCd = dashTime = invulnerable = 0; beaconPos = PointF.Empty; echoShards.Clear(); title = false; storyPage = 0; storyOverlay = true; SetupRoom();
+        health = maxHealth = 100; attackCd = skillCd = shardCd = bellCd = bellWaveTime = bellWaveRadius = pullCd = pullWaveTime = wardCd = wardTime = refrainCd = refrainWaveTime = beaconCd = beaconTime = beaconPulseCd = beaconWaveTime = dashCd = dashTime = invulnerable = 0; beaconPos = PointF.Empty; echoShards.Clear(); floatingTexts.Clear(); title = false; storyPage = 0; storyOverlay = true; SetupRoom();
     }
 
     private void AdvanceStory()
@@ -318,7 +320,7 @@ public sealed class Game : Form
             PointF offset = Sub(enemy.Pos, player); float distance = Length(offset);
             if (distance > BasicAttackReach(enemy) || (distance >= 20 && Dot(facing, Normalize(offset, facing)) <= BasicAttackArcThreshold()) || BlockedLine(player, enemy.Pos)) continue;
             bool critical = random.NextDouble() < CriticalChance(); int dealt = (int)(damage * BasicAttackDamageMultiplier(enemy) * OutgoingDamageMultiplier(enemy) * (critical ? CriticalMultiplier() : 1));
-            enemy.Hp -= dealt; enemy.Flash = 0.2f;
+            DamageEnemy(enemy, dealt, critical); enemy.Flash = 0.2f;
             if (weapon == 1 && !enemy.Boss) { enemy.Stagger = Math.Max(enemy.Stagger, 0.2f); enemy.Windup = 0; }
             if (enemy.Hp <= 0) Defeat(enemy);
         }
@@ -328,7 +330,13 @@ public sealed class Game : Form
     {
         if (skillCd > 0 || talentChoice) return;
         skillCd = (Math.Max(1.5f, 6f - skillTalent * 0.5f) + WhirlwindCooldownPenalty()) * WeaponCooldownMultiplier();
-        foreach (Enemy enemy in enemies.ToArray()) if (Distance(player, enemy.Pos) < 110) { enemy.Hp -= (int)(damage * OutgoingDamageMultiplier(enemy) * WhirlwindMultiplier() * WeaponSkillMultiplier() * TechniqueDamageMultiplier() * (enemy.Armored ? 0.75f : 1)); if (enemy.Hp <= 0) Defeat(enemy); }
+        foreach (Enemy enemy in enemies.ToArray())
+        {
+            if (Distance(player, enemy.Pos) >= 110) continue;
+            int dealt = (int)(damage * OutgoingDamageMultiplier(enemy) * WhirlwindMultiplier() * WeaponSkillMultiplier() * TechniqueDamageMultiplier() * (enemy.Armored ? 0.75f : 1));
+            DamageEnemy(enemy, dealt);
+            if (enemy.Hp <= 0) Defeat(enemy);
+        }
     }
 
     private void CastVoiceShard()
@@ -382,7 +390,7 @@ public sealed class Game : Form
             if (Distance(player, enemy.Pos) > bellWaveRadius) continue;
             float multiplier = (HasCharm(3) ? 1.25f : 1f) * WeaponSkillMultiplier() * TechniqueDamageMultiplier();
             float power = enemy.Boss ? 0.55f : 0.95f;
-            enemy.Hp -= (int)(damage * power * multiplier * OutgoingDamageMultiplier(enemy) * (enemy.Armored ? 0.75f : 1));
+            DamageEnemy(enemy, (int)(damage * power * multiplier * OutgoingDamageMultiplier(enemy) * (enemy.Armored ? 0.75f : 1)));
             enemy.Flash = 0.2f;
             if (!enemy.Boss) { enemy.Stagger = 0.95f; enemy.Windup = 0; enemy.Cooldown = Math.Max(enemy.Cooldown, 1.8f); }
             if (enemy.Hp <= 0) Defeat(enemy);
@@ -400,7 +408,7 @@ public sealed class Game : Form
         foreach (Enemy enemy in enemies.ToArray())
         {
             float distance = Distance(player, enemy.Pos); if (distance > 160) continue;
-            enemy.Hp -= damage * (enemy.Boss ? 0.3f : 0.48f) * techniqueBoost * OutgoingDamageMultiplier(enemy) * (enemy.Armored ? 0.75f : 1f);
+            DamageEnemy(enemy, damage * (enemy.Boss ? 0.3f : 0.48f) * techniqueBoost * OutgoingDamageMultiplier(enemy) * (enemy.Armored ? 0.75f : 1f));
             enemy.Flash = 0.22f;
             if (enemy.Boss) enemy.Pos = MoveEnemy(enemy, Scale(Normalize(Sub(player, enemy.Pos), PointF.Empty), 22));
             else { enemy.Pos = MoveEnemy(enemy, Scale(Normalize(Sub(player, enemy.Pos), PointF.Empty), Math.Min(85, Math.Max(0, distance - 36)))); enemy.Windup = 0; enemy.Stagger = 0.55f; enemy.Cooldown = Math.Max(enemy.Cooldown, 1.2f); }
@@ -428,7 +436,7 @@ public sealed class Game : Form
         foreach (Enemy enemy in enemies.ToArray())
         {
             if (Distance(player, enemy.Pos) > refrainWaveRadius) continue;
-            enemy.Hp -= damage * (enemy.Boss ? 0.28f : 0.68f) * boost * OutgoingDamageMultiplier(enemy) * (enemy.Armored ? 0.75f : 1f);
+            DamageEnemy(enemy, damage * (enemy.Boss ? 0.28f : 0.68f) * boost * OutgoingDamageMultiplier(enemy) * (enemy.Armored ? 0.75f : 1f));
             enemy.Flash = 0.24f;
             if (!enemy.Boss) { enemy.Stagger = Math.Max(enemy.Stagger, 0.38f); enemy.Windup = 0; enemy.Cooldown = Math.Max(enemy.Cooldown, 0.8f); }
             if (enemy.Hp <= 0) Defeat(enemy);
@@ -455,7 +463,7 @@ public sealed class Game : Form
         {
             if (Distance(beaconPos, enemy.Pos) > 128) continue;
             float multiplier = TechniqueDamageMultiplier() * WeaponSkillMultiplier();
-            enemy.Hp -= damage * (enemy.Boss ? 0.18f : 0.34f) * multiplier * OutgoingDamageMultiplier(enemy) * (enemy.Armored ? 0.75f : 1f);
+            DamageEnemy(enemy, damage * (enemy.Boss ? 0.18f : 0.34f) * multiplier * OutgoingDamageMultiplier(enemy) * (enemy.Armored ? 0.75f : 1f));
             enemy.Flash = 0.16f;
             if (enemy.Hp <= 0) Defeat(enemy);
         }
@@ -497,7 +505,7 @@ public sealed class Game : Form
                 foreach (Enemy enemy in enemies.ToArray())
                 {
                     if (shard.Hit.Contains(enemy) || DistanceToSegment(enemy.Pos, Sub(shard.Pos, Scale(shard.Direction, step)), shard.Pos) >= enemy.Radius + 8) continue;
-                    shard.Hit.Add(enemy); enemy.Hp -= shard.Damage * OutgoingDamageMultiplier(enemy) * (enemy.Armored ? 0.75f : 1); enemy.Flash = 0.16f;
+                    shard.Hit.Add(enemy); DamageEnemy(enemy, shard.Damage * OutgoingDamageMultiplier(enemy) * (enemy.Armored ? 0.75f : 1)); enemy.Flash = 0.16f;
                     if (enemy.Hp <= 0) Defeat(enemy);
                 }
             }
@@ -570,7 +578,7 @@ public sealed class Game : Form
 
     private void TickGame()
     {
-        float dt = timer.Interval / 1000f; noticeTime = Math.Max(0, noticeTime - dt); attackCd = Math.Max(0, attackCd - dt); skillCd = Math.Max(0, skillCd - dt); shardCd = Math.Max(0, shardCd - dt); bellCd = Math.Max(0, bellCd - dt); bellWaveTime = Math.Max(0, bellWaveTime - dt); pullCd = Math.Max(0, pullCd - dt); pullWaveTime = Math.Max(0, pullWaveTime - dt); wardCd = Math.Max(0, wardCd - dt); wardTime = Math.Max(0, wardTime - dt); refrainCd = Math.Max(0, refrainCd - dt); refrainWaveTime = Math.Max(0, refrainWaveTime - dt); beaconCd = Math.Max(0, beaconCd - dt); dashCd = Math.Max(0, dashCd - dt); dashTime = Math.Max(0, dashTime - dt); invulnerable = Math.Max(0, invulnerable - dt); windupPulse += dt;
+        float dt = timer.Interval / 1000f; noticeTime = Math.Max(0, noticeTime - dt); attackCd = Math.Max(0, attackCd - dt); skillCd = Math.Max(0, skillCd - dt); shardCd = Math.Max(0, shardCd - dt); bellCd = Math.Max(0, bellCd - dt); bellWaveTime = Math.Max(0, bellWaveTime - dt); pullCd = Math.Max(0, pullCd - dt); pullWaveTime = Math.Max(0, pullWaveTime - dt); wardCd = Math.Max(0, wardCd - dt); wardTime = Math.Max(0, wardTime - dt); refrainCd = Math.Max(0, refrainCd - dt); refrainWaveTime = Math.Max(0, refrainWaveTime - dt); beaconCd = Math.Max(0, beaconCd - dt); dashCd = Math.Max(0, dashCd - dt); dashTime = Math.Max(0, dashTime - dt); invulnerable = Math.Max(0, invulnerable - dt); windupPulse += dt; TickFloatingTexts(dt);
         if (title || dead || victory || storyOverlay || memoryOverlay || inventoryOpen || skillMenuOpen || talentChoice || chestChoice || endingChoiceOpen) { Invalidate(); return; }
         PointF dir = new((down.Contains(Keys.D) || down.Contains(Keys.Right) ? 1 : 0) - (down.Contains(Keys.A) || down.Contains(Keys.Left) ? 1 : 0), (down.Contains(Keys.S) || down.Contains(Keys.Down) ? 1 : 0) - (down.Contains(Keys.W) || down.Contains(Keys.Up) ? 1 : 0));
         dir = Normalize(dir, PointF.Empty); if (dashTime > 0) dir = facing;
@@ -609,7 +617,37 @@ public sealed class Game : Form
     }
 
     private static void BeginWindup(Enemy enemy, PointF target, float duration) { enemy.Target = target; enemy.Windup = enemy.WindupMax = duration; }
-    private void HitPlayer(float value) { float damageTaken = value * (armorOn ? 0.7f : 1) * (wardTime > 0 ? 0.45f : 1) * WeaponDamageTakenMultiplier(); health = Math.Max(0, health - damageTaken); invulnerable = 0.6f; if (health <= 0) dead = true; }
+    private void DamageEnemy(Enemy enemy, float amount, bool critical = false)
+    {
+        enemy.Hp -= amount;
+        if (amount <= 0) return;
+        string value = Math.Max(1, (int)Math.Round(amount)).ToString();
+        AddFloatingText(new PointF(enemy.Pos.X, enemy.Pos.Y - enemy.Radius - 10), critical ? $"CRÍTICO {value}" : value, critical ? Color.FromArgb(255, 211, 123) : Color.AntiqueWhite);
+    }
+
+    private void HitPlayer(float value)
+    {
+        float damageTaken = value * (armorOn ? 0.7f : 1) * (wardTime > 0 ? 0.45f : 1) * WeaponDamageTakenMultiplier();
+        health = Math.Max(0, health - damageTaken); invulnerable = 0.6f;
+        AddFloatingText(new PointF(player.X, player.Y - 30), $"−{Math.Max(1, (int)Math.Round(damageTaken))}", Color.FromArgb(250, 116, 105));
+        if (health <= 0) dead = true;
+    }
+
+    private void AddFloatingText(PointF pos, string text, Color color)
+    {
+        if (floatingTexts.Count >= 48) floatingTexts.RemoveAt(0);
+        float spread = floatingTexts.Count % 5 * 12 - 24;
+        floatingTexts.Add(new FloatingText { Pos = new PointF(pos.X + spread, pos.Y), Text = text, Color = color, TimeLeft = 0.85f, Duration = 0.85f });
+    }
+
+    private void TickFloatingTexts(float dt)
+    {
+        for (int i = floatingTexts.Count - 1; i >= 0; i--)
+        {
+            FloatingText text = floatingTexts[i]; text.TimeLeft -= dt; text.Pos = new PointF(text.Pos.X, text.Pos.Y - 28 * dt);
+            if (text.TimeLeft <= 0) floatingTexts.RemoveAt(i);
+        }
+    }
     private void SalvageNearbyWeapon()
     {
         Drop? item = drops.Where(drop => drop.Kind == "weapon" && Distance(player, drop.Pos) <= 75).OrderBy(drop => Distance(player, drop.Pos)).FirstOrDefault();
@@ -1073,6 +1111,7 @@ public sealed class Game : Form
         foreach (Enemy enemy in enemies) DrawEnemy(g, enemy);
         foreach (Drop item in drops) DrawDrop(g, item);
         DrawPlayer(g);
+        DrawFloatingTexts(g);
         g.DrawString(room == 3 || room == 18 ? roomNames[room] : room < 3 ? $"{room + 1} / 3   {roomNames[room]}" : room < 6 ? $"{room - 3} / 2   {roomNames[room]}" : room < 8 ? $"{room - 5} / 2   {roomNames[room]}" : room < 10 ? $"{room - 7} / 2   {roomNames[room]}" : room < 12 ? $"{room - 9} / 2   {roomNames[room]}" : room < 14 ? $"{room - 11} / 2   {roomNames[room]}" : room < 16 ? $"{room - 13} / 2   {roomNames[room]}" : room < 18 ? $"{room - 15} / 2   {roomNames[room]}" : room < 21 ? $"{room - 18} / 2   {roomNames[room]}" : room < 23 ? $"{room - 20} / 2   {roomNames[room]}" : room < 25 ? $"{room - 22} / 2   {roomNames[room]}" : room < 27 ? $"{room - 24} / 2   {roomNames[room]}" : room < 29 ? $"{room - 26} / 2   {roomNames[room]}" : room < 31 ? $"{room - 28} / 2   {roomNames[room]}" : room < 33 ? $"{room - 30} / 2   {roomNames[room]}" : room < 35 ? $"{room - 32} / 2   {roomNames[room]}" : room < 37 ? $"{room - 34} / 2   {roomNames[room]}" : $"{room - 36} / 2   {roomNames[room]}", roomFont, goldBrush, 67, 572);
         int memoriesRead = (memoriesFound & 1) + ((memoriesFound >> 1) & 1);
         g.DrawString($"ECOS {memoriesRead} / 2", hudFont, goldBrush, 760, 572);
@@ -1654,6 +1693,19 @@ public sealed class Game : Form
         _ => ""
     };
 
+    private void DrawFloatingTexts(Graphics g)
+    {
+        if (floatingTexts.Count == 0) return;
+        using var font = new Font("Segoe UI", 10, FontStyle.Bold);
+        foreach (FloatingText text in floatingTexts)
+        {
+            int alpha = Math.Clamp((int)(255 * text.TimeLeft / text.Duration), 0, 255);
+            using var brush = new SolidBrush(Color.FromArgb(alpha, text.Color));
+            SizeF size = g.MeasureString(text.Text, font);
+            g.DrawString(text.Text, font, brush, text.Pos.X - size.Width / 2, text.Pos.Y - size.Height / 2);
+        }
+    }
+
     private void DrawDrop(Graphics g, Drop item)
     {
         Color color = item.Kind switch
@@ -1895,11 +1947,25 @@ public sealed class Game : Form
             Enemy platedEcho = new() { Pos = new PointF(245, 330), Kind = EnemyKind.Grunt, Hp = 1000, MaxHp = 1000, Armored = true };
             weaponCombat.enemies.Add(platedEcho); weaponCombat.Attack();
             if (platedEcho.Hp != 910 && platedEcho.Hp != 820 || platedEcho.Stagger <= 0 || weaponCombat.BasicAttackDamageMultiplier(platedEcho) != 0.9f || weaponCombat.BasicAttackCooldown() != 0.52f || weaponCombat.BasicAttackReach(platedEcho) != 108f) throw new InvalidOperationException("A Lâmina do Arquivo não alcançou, perfurou a armadura e interrompeu o eco como arma pesada.");
+            string shownHit = weaponCombat.floatingTexts.Single().Text;
+            if (shownHit != (platedEcho.Hp == 820 ? "CRÍTICO 180" : "90")) throw new InvalidOperationException("O número de dano não corresponde ao golpe nem identifica o crítico.");
             weaponCombat.attackCd = 0; weaponCombat.weapon = 0; platedEcho.Hp = 1000; platedEcho.Stagger = 0; platedEcho.Pos = new PointF(245, 330); weaponCombat.Attack();
             if (platedEcho.Hp != 1000 || weaponCombat.BasicAttackReach(platedEcho) != 78f) throw new InvalidOperationException("A Espada de Pedra não manteve seu alcance equilibrado.");
             weaponCombat.attackCd = 0; weaponCombat.weapon = 2; platedEcho.Pos = new PointF(215, 330); weaponCombat.Attack();
             if (platedEcho.Hp >= 1000 || weaponCombat.BasicAttackCooldown() != 0.23f || weaponCombat.CriticalChance() != 0.25f || weaponCombat.WeaponTraitDescription(2) != "FACA RÁPIDA • CURTO ALCANCE • 25% DE CRÍTICO") throw new InvalidOperationException("A Faca do Crepúsculo não manteve seu alcance curto, velocidade e crítico elevados.");
             if (!weaponCombat.WeaponTraitDescription(1).Contains("PERFURA ARMADURA") || !weaponCombat.WeaponTraitDescription(0).Contains("EQUILIBRADA")) throw new InvalidOperationException("A descrição das especializações de arma não corresponde ao combate.");
+        }
+        using (var floatingTextCheck = new Game())
+        {
+            floatingTextCheck.timer.Stop(); floatingTextCheck.StartGame(); floatingTextCheck.storyOverlay = false;
+            var target = new Enemy { Pos = new PointF(500, 300), Kind = EnemyKind.Grunt, Hp = 100, MaxHp = 100 };
+            floatingTextCheck.DamageEnemy(target, 37, true); floatingTextCheck.HitPlayer(12);
+            if (target.Hp != 63 || floatingTextCheck.health != 88 || floatingTextCheck.floatingTexts.Count != 2 || floatingTextCheck.floatingTexts[0].Text != "CRÍTICO 37" || floatingTextCheck.floatingTexts[1].Text != "−12" || floatingTextCheck.floatingTexts[1].Color != Color.FromArgb(250, 116, 105))
+                throw new InvalidOperationException("Os números flutuantes não distinguiram dano crítico de dano recebido.");
+            float initialY = floatingTextCheck.floatingTexts[0].Pos.Y; floatingTextCheck.TickFloatingTexts(0.3f);
+            if (floatingTextCheck.floatingTexts.Count != 2 || floatingTextCheck.floatingTexts[0].Pos.Y >= initialY) throw new InvalidOperationException("Os números de dano não subiram e permaneceram visíveis durante o impacto.");
+            floatingTextCheck.TickFloatingTexts(1f);
+            if (floatingTextCheck.floatingTexts.Count != 0) throw new InvalidOperationException("Os números flutuantes não desapareceram depois da animação.");
         }
         using (var shardGame = new Game())
         {
