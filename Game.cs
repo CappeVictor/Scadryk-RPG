@@ -999,6 +999,7 @@ public sealed class Game : Form
     {
         enemy.Target = target; enemy.Windup = enemy.WindupMax = duration;
         if (enemy.Boss) GameAudio.Play(GameAudio.Cue.BossWarning);
+        else if (enemy.Kind == EnemyKind.Elite) GameAudio.Play(GameAudio.Cue.EliteWarning);
         if (enemy.Kind == EnemyKind.DeepSilence && enemy.BossPattern == 2)
         {
             PointF axis = Normalize(Sub(target, enemy.Pos), new PointF(1, 0)); PointF side = new(-axis.Y, axis.X);

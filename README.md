@@ -94,7 +94,7 @@ A ficha (**P**) resume a build equipada: dano e intervalo do ataque, alcance, ch
 
 O alcance dos avisos de interação **E** agora coincide com o alcance efetivo das conversas, portões e objetos, inclusive inscrições opcionais.
 
-Os efeitos de golpe, esquiva, impacto, técnica, coleta e aviso de ataque de chefe, além da ambiência musical, são sintetizados pelo próprio jogo em C# e reproduzidos pelo áudio do Windows. A camada ambiente combina tons graves lentos com ecos de vidro espaçados; ela toca durante a exploração e para em telas de pausa. O sinal grave do chefe acompanha o aviso visual de cada golpe. Não há pacote, arquivo de som ou ferramenta adicional para instalar. Pressione **N** para silenciar ou reativar toda a camada de áudio.
+Os efeitos de golpe, esquiva, impacto, técnica, coleta e aviso de ataque de chefe, além da ambiência musical, são sintetizados pelo próprio jogo em C# e reproduzidos pelo áudio do Windows. A camada ambiente combina tons graves lentos com ecos de vidro espaçados; ela toca durante a exploração e para em telas de pausa. O sinal grave do chefe acompanha o aviso visual de cada golpe; elites usam um toque curto e mais agudo para distinguir suas investidas. Não há pacote, arquivo de som ou ferramenta adicional para instalar. Pressione **N** para silenciar ou reativar toda a camada de áudio.
 
 Pressione **H** para destacar avisos de ataque com amarelo claro e contorno escuro; a escolha fica salva junto ao progresso. O modo usa cor, contorno mais espesso e uma borda escura para diferenciar as áreas perigosas do cenário.
 
