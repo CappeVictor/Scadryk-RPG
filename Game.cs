@@ -2077,7 +2077,8 @@ public sealed class Game : Form
             int row = PlayerSpriteRow(animationDirection);
             bool moving = dashTime > 0 || Length(MovementInput()) > 0.001f || Length(CurrentDrift()) > 0.001f;
             int frame = PlayerSpriteFrame(playerAnimationTime, moving);
-            Rectangle source = new(frame * 256, row * 256, 256, 256);
+            float cellWidth = sprites.Width / 4f, cellHeight = sprites.Height / 4f;
+            RectangleF source = new(frame * cellWidth, row * cellHeight, cellWidth, cellHeight);
             RectangleF target = new(player.X - 38, player.Y - 73, 76, 76);
             using var shadow = new SolidBrush(Color.FromArgb(100, 5, 7, 9));
             g.FillEllipse(shadow, player.X - 17, player.Y - 5, 34, 10);
@@ -2307,7 +2308,7 @@ public sealed class Game : Form
         string spritePath = Path.Combine(AppContext.BaseDirectory, "Assets", "Aven.png");
         if (!File.Exists(spritePath)) throw new InvalidOperationException("A folha original de sprites de Aven não foi copiada para a saída do jogo.");
         using (var sprite = new Bitmap(spritePath))
-            if (sprite.Width != 1024 || sprite.Height != 1024) throw new InvalidOperationException("A folha de sprites de Aven precisa manter a grade animada de 4 × 4 células.");
+            if (sprite.Width != sprite.Height || sprite.GetPixel(0, 0).A != 0) throw new InvalidOperationException("A folha de sprites de Aven precisa ter células quadradas e fundo transparente.");
         if (PlayerSpriteRow(new PointF(0, 1)) != 0 || PlayerSpriteRow(new PointF(-1, 0)) != 1 || PlayerSpriteRow(new PointF(1, 0)) != 2 || PlayerSpriteRow(new PointF(0, -1)) != 3 || PlayerSpriteFrame(0.5f, false) != 0 || PlayerSpriteFrame(0.5f, true) != 0 || PlayerSpriteFrame(0.61f, true) != 1)
             throw new InvalidOperationException("A orientação ou o ciclo de caminhada da folha de sprites não foi mapeado corretamente.");
         using (var weaponCombat = new Game())
