@@ -99,6 +99,8 @@ A combinação **Maré + Cadência** numa Relíquia ativa a Ressonância da Mar�
 
 A combinação **Trégua + Lastro** numa Relíquia ativa a Ressonância da Trégua: se a vida estiver em metade ou menos, cada abate cura 6 pontos adicionais. Isso dá à build defensiva uma recuperação situacional em encontros com vários alvos; o autoteste cobre o limiar, a cura efetiva e a descrição do afixo.
 
+A combinação **Passo Célere + Lastro** numa Relíquia ativa a Ressonância do Lastro: o Manto de Lastro dura 0,75 segundo a mais, enquanto os dois afixos mantêm seus efeitos próprios de recarga e mitigação. O autoteste verifica duração, dano recebido, recarga e descrição da sinergia.
+
 ## Capítulo XVII — As marés emprestadas
 
 Após o epílogo, Aven abre uma expedição opcional ao Cais dos Ecos Emprestados e ao Arquivo da Maré sem Nome. O Arquivista das Marés anuncia três ataques, deixa uma memória compartilhada e concede uma melhoria permanente para técnicas. A história não vincula Nara a essa região nem revela seu nome escolhido ou paradeiro. São duas salas novas, totalizando 39 salas de combate e 19 chefes; o progresso e a compatibilidade com saves antigos passam pelo autoteste. A próxima etapa é ampliar a variedade de builds, revisar balanceamento e criar animações completas, áudio e distribuição.

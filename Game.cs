@@ -677,11 +677,13 @@ public sealed class Game : Form
     private static int CombatMasteryForSave(SaveData data) => data.CombatMastery ?? (data.Level >= 10 ? 1 : 0);
     private static string WeaponRarityName(int index) => index == 0 ? "COMUM" : index == 1 ? "RARA" : "RELÍQUIA";
     private bool HasWeaponAffix(int index, int affix) => weaponAffixes[index] == affix || weaponAffixes2[index] == affix;
+    private bool HasAnchorWardResonance(int index) => weaponRarities[index] == 2 && HasWeaponAffix(index, 4) && HasWeaponAffix(index, 5);
+    private float AnchorWardDuration() => 2.5f + (HasAnchorWardResonance(weapon) ? 0.75f : 0f);
     private float WeaponCriticalCooldownAdvance(int index) => !HasWeaponAffix(index, 7) ? 0 : (weaponRarities[index] == 2 ? 0.25f : 0.15f) + (HasWeaponAffix(index, 3) && HasWeaponAffix(index, 7) ? 0.1f : 0f);
     private string WeaponAffixName(int index) => string.Join(" + ", new[] { WeaponAffixLabel(weaponAffixes[index]), WeaponAffixLabel(weaponAffixes2[index]) }.Where(label => label.Length > 0));
     private static string WeaponAffixLabel(int affix) => affix switch { 1 => "Trégua", 2 => "Contracanto", 3 => "Maré", 4 => "Passo Célere", 5 => "Lastro", 6 => "Fio Esticado", 7 => "Cadência", _ => "" };
     private string WeaponDisplayName(int index) => weaponRarities[index] == 0 ? $"{weaponNames[index]} [COMUM]" : $"{weaponNames[index]} • {WeaponRarityName(index)} {WeaponAffixName(index)}";
-    private string WeaponAffixDescription(int index) => string.Join(" • ", new[] { WeaponAffixDescription(weaponAffixes[index], weaponRarities[index]), WeaponAffixDescription(weaponAffixes2[index], weaponRarities[index]), weaponRarities[index] == 2 && HasWeaponAffix(index, 3) && HasWeaponAffix(index, 7) ? "Ressonância da Maré: Cadência adianta +0,10 s por crítico" : "", weaponRarities[index] == 2 && HasWeaponAffix(index, 1) && HasWeaponAffix(index, 5) ? "Ressonância da Trégua: abaixo de metade da vida, abates curam +6" : "" }.Where(description => description.Length > 0));
+    private string WeaponAffixDescription(int index) => string.Join(" • ", new[] { WeaponAffixDescription(weaponAffixes[index], weaponRarities[index]), WeaponAffixDescription(weaponAffixes2[index], weaponRarities[index]), weaponRarities[index] == 2 && HasWeaponAffix(index, 3) && HasWeaponAffix(index, 7) ? "Ressonância da Maré: Cadência adianta +0,10 s por crítico" : "", weaponRarities[index] == 2 && HasWeaponAffix(index, 1) && HasWeaponAffix(index, 5) ? "Ressonância da Trégua: abaixo de metade da vida, abates curam +6" : "", HasAnchorWardResonance(index) ? "Ressonância do Lastro: Manto de Lastro dura +0,75 s" : "" }.Where(description => description.Length > 0));
     private static string WeaponAffixDescription(int affix, int rarity) => affix switch { 1 => $"da Trégua: recupera {(rarity == 2 ? 6 : 3)} vida por abate", 2 => $"do Contracanto: +{(rarity == 2 ? 11 : 7)} p.p. de crítico", 3 => $"da Maré: +{(rarity == 2 ? 18 : 12)}% de dano de técnica", 4 => $"do Passo Célere: recarga de técnicas -{(rarity == 2 ? 16 : 10)}%", 5 => $"do Lastro: dano recebido -{(rarity == 2 ? 12 : 8)}%", 6 => $"do Fio Esticado: alcance básico +{(rarity == 2 ? 20 : 12)}%", 7 => $"da Cadência: crítico adianta recargas em {(rarity == 2 ? 0.25f : 0.15f):0.00} s por golpe", _ => "" };
 
     private void CastBellPulse()
@@ -727,7 +729,7 @@ public sealed class Game : Form
     {
         if (!anchorWard) { notice = "O MANTO DE LASTRO AINDA NÃO FOI APRENDIDO"; noticeTime = 1.5f; return; }
         if (room is 3 or 18 || enemies.Count == 0 || wardCd > 0) return;
-        wardTime = 2.5f; wardCd = AnchorWardCooldown();
+        wardTime = AnchorWardDuration(); wardCd = AnchorWardCooldown();
         notice = "MANTO DE LASTRO • PROTEÇÃO ATIVA"; noticeTime = 1.2f;
     }
 
@@ -3600,6 +3602,8 @@ public sealed class Game : Form
             if (wardGame.health != 60) throw new InvalidOperationException("A proteção do Manto de Lastro continuou ativa após expirar.");
             wardGame.wardCd = 0; wardGame.skillTalent = 5; wardGame.CastAnchorWard();
             if (wardGame.wardCd != 16f) throw new InvalidOperationException("Domínio não reduziu a recarga do Manto de Lastro.");
+            wardGame.skillTalent = 0; wardGame.combatMastery = 0; wardGame.weaponRarities[wardGame.weapon] = 2; wardGame.weaponAffixes[wardGame.weapon] = 4; wardGame.weaponAffixes2[wardGame.weapon] = 5; wardGame.wardCd = 0; wardGame.health = 100; wardGame.CastAnchorWard(); wardGame.HitPlayer(40);
+            if (wardGame.wardTime != 3.25f || Math.Abs(wardGame.health - 84.16f) > 0.01f || Math.Abs(wardGame.wardCd - 16.8f) > 0.01f || !wardGame.WeaponAffixDescription(wardGame.weapon).Contains("Ressonância do Lastro: Manto de Lastro dura +0,75 s")) throw new InvalidOperationException("A combinação Passo Célere + Lastro não prolongou o Manto nem preservou seus bônus de Relíquia.");
             wardGame.questStage = 36; wardGame.counterTrace = true; wardGame.anchorWard = true;
             SaveData savedWard = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(wardGame.CaptureSaveData())) ?? throw new InvalidOperationException("O Manto de Lastro não foi serializado.");
             if (!savedWard.AnchorWard) throw new InvalidOperationException("O desbloqueio do Manto de Lastro não persistiu no save.");
