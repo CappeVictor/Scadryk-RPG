@@ -78,3 +78,5 @@ A esquiva agora acompanha WASD ou setas e mantém a direção do olhar como fall
 ## Capítulo XVII — As marés emprestadas
 
 Após o epílogo, Aven abre uma expedição opcional ao Cais dos Ecos Emprestados e ao Arquivo da Maré sem Nome. O Arquivista das Marés anuncia três ataques, deixa uma memória compartilhada e concede uma melhoria permanente para técnicas. A história não vincula Nara a essa região nem revela seu nome escolhido ou paradeiro. São duas salas novas, totalizando 39 salas de combate e 19 chefes; o progresso e a compatibilidade com saves antigos passam pelo autoteste. A próxima etapa é ampliar a variedade de builds, revisar balanceamento e criar animações completas, áudio e distribuição.
+
+Elites agora recebem um afixo de combate: Blindado reduz dano recebido e demora mais para atacar; Veloz se move depressa e usa avisos curtos; Sangrador causa dano maior e recupera vida ao atingir o Escutador. Nome e aro colorido mostram o afixo antes do confronto. O autoteste cobre os três comportamentos; falta validar o ritmo deles em uma partida manual.

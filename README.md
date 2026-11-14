@@ -105,6 +105,8 @@ Ao receber dano, Aven pulsa em vermelho durante a janela de invulnerabilidade, f
 
 Ataques à distância de arqueiros e ecos mostram um círculo fixo no local marcado. Saia desse círculo antes do impacto para evitar o dano.
 
+Elites agora aparecem com um de três afixos, cada um mostrado por nome e aro colorido: **Blindado** reduz dano recebido e golpeia devagar; **Veloz** se move e ataca com mais rapidez, com aviso menor; **Sangrador** causa mais dano e recupera vida ao acertar. Eles mantêm as recompensas de elite já existentes.
+
 Os chefes anunciam golpes circulares com o limite completo e cortes com faixas largas; alguns ataques desenham duas faixas. A área indicada permanece visível até o golpe.
 
 O atlas (**M**) mostra as câmaras já limpas, a sala atual e as regiões ainda desconhecidas. Ele usa o registro de exploração existente e pausa o combate enquanto está aberto; **M** ou **Esc** fecha a consulta. Inventário, montagem de técnicas e escolhas também pausam a ação: recargas e efeitos de combate voltam a contar quando a tela é fechada.
