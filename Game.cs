@@ -219,7 +219,7 @@ public sealed class Game : Form
     private PointF beaconPos;
     private readonly string[] roomNames = { "VESTÍBULO EM RUÍNAS", "SALÃO DOS OSSOS", "CÂMARA DO GUARDIÃO", "VÉSPERA • PRAÇA DO FAROL", "ARQUIVO NORTE • GALERIA", "ARQUIVO NORTE • COFRE", "RIO CEGO • LEITO SECO", "RIO CEGO • CAPELA AFOGADA", "FAROL • ESCADA DE CINZAS", "FAROL • CÂMARA DO LUME", "ALÉM DO LUME • MARGEM SEM REFLEXO", "RESERVATÓRIO • VOZES RETIDAS", "COSTA DAS VOZES TARDIAS", "CLAUSTRO DO CORO PARTIDO", "BACIA DO PRIMEIRO NOME", "SALA DA PRIMEIRA VIGÍLIA", "VAU DOS NOMES ESCOLHIDOS", "PÁTIO DAS TESTEMUNHAS", "REFÚGIO DO VEIO CALMO", "TRILHA DOS LUMINÁRIOS", "CISTERNA DO REGISTRO VAZIO", "VÁRZEA DAS VOZES SOPRADAS", "PONTE DA MARÉ INVERTIDA", "COTOVELO DOS JUNCAIS", "PÁTIO DAS AMARRAS LIVRES", "MOINHOS DA VAZANTE", "CÂMARA DO VEIO PRESO", "ESCARPA DO CONTRAFLUXO", "CORAÇÃO DAS DUAS MARGENS", "CANTARIA DAS VOZES LIVRES", "CÂMARA DA CONTRAVOZ", "GARGANTA DO VIDRO MUDO", "FONTE SOB A PEDRA", "PASSAGEM DAS LANTERNAS BAIXAS", "OBSERVATÓRIO DA MARÉ INTERIOR", "TRILHA DAS LINHAS ABERTAS", "GALERIA DA ROTA NÃO ESCRITA", "SOLEIRA DO SILÊNCIO", "CÂMARA DO ÚLTIMO ECO", "CAIS DOS ECOS EMPRESTADOS", "ARQUIVO DA MARÉ SEM NOME", "CÂMARA DAS BADALADAS NÃO ENVIADAS", "POÇO DO CONTRATEMPO" };
     private readonly string[] weaponNames = { "ESPADA DE PEDRA", "LÂMINA DO ARQUIVO", "FACA DO CREPÚSCULO" };
-    private readonly string[] charmNames = { "", "NÓ DE BRASA", "FIO DE TRAVESSIA", "VIDRO DE VIGÍLIA", "MARCA DA VIGÍLIA", "FIO DA MARGEM", "NÓ DE LUME", "FIO DO RETORNO", "ECO CONVERGENTE" };
+    private readonly string[] charmNames = { "", "NÓ DE BRASA", "FIO DE TRAVESSIA", "VIDRO DE VIGÍLIA", "MARCA DA VIGÍLIA", "FIO DA MARGEM", "NÓ DE LUME", "FIO DO RETORNO", "ECO CONVERGENTE", "COMPASSO FENDIDO", "ÂNCORA COMUM" };
     private readonly string[] skillNames = { "Vazio", "Estilhaço de Voz", "Ressonância do Sino", "Vazante", "Manto de Lastro", "Coro de Retorno", "Farol de Vigília", "Devolução das Vozes", "Última Centelha" };
     private readonly string[] skillDescriptions = { "", "Projétil perfurante de longo alcance", "Onda que fere e interrompe ecos", "Agrupa ecos próximos", "Reduz o dano recebido por 2,5 s", "Onda que fere e interrompe ecos", "Planta um farol que pulsa contra inimigos próximos", "Onda ampla que fere e restaura vida por inimigo atingido", "Golpe concentrado que causa dano elevado a um alvo" };
     private readonly string[] prologue = {
@@ -832,6 +832,8 @@ public sealed class Game : Form
         if (enemy.Boss) drops.Add(CreateWeaponDrop(Offset(enemy.Pos, 0, 28), random.Next(1, 3), true));
         if (enemy.Boss && vigilActive && vigilFloor % 5 == 0 && (ownedCharms & 64) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 0, -48), Kind = "charm", Amount = 7 });
         if (enemy.Boss && vigilActive && vigilFloor % 10 == 0 && (ownedCharms & 128) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 0, -68), Kind = "charm", Amount = 8 });
+        if (enemy.Boss && vigilActive && vigilFloor % 15 == 0 && (ownedCharms & 256) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 0, -88), Kind = "charm", Amount = 9 });
+        if (enemy.Boss && vigilActive && vigilFloor % 20 == 0 && (ownedCharms & 512) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 0, -108), Kind = "charm", Amount = 10 });
         if (enemy.Boss && vigilActive && HasCharm(7)) health = Math.Min(maxHealth, health + maxHealth * 0.12f);
         if (enemy.Kind == EnemyKind.Guardian && !relic) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "relic" });
         if (enemy.Kind == EnemyKind.BlindScribe && !archiveSeal) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "seal" });
@@ -1114,7 +1116,7 @@ public sealed class Game : Form
         float vigilPressure = vigilActive ? 1 + Math.Min(1.5f, Math.Max(0, vigilFloor - 1) * 0.08f) : 1;
         float aspectPressure = vigilActive && VigilAspectForFloor(vigilFloor) == VigilAspect.Hungry ? 1.3f : 1;
         if (vigilActive && HasCharm(7)) aspectPressure *= 1.1f;
-        float damageTaken = value * vigilPressure * aspectPressure * ArmorDamageTakenMultiplier() * (wardTime > 0 ? 0.45f : 1) * WeaponDamageTakenMultiplier();
+        float damageTaken = value * vigilPressure * aspectPressure * ArmorDamageTakenMultiplier() * (wardTime > 0 ? 0.45f : 1) * WeaponDamageTakenMultiplier() * CharmDamageTakenMultiplier();
         health = Math.Max(0, health - damageTaken); invulnerable = 0.6f;
         AddFloatingText(new PointF(player.X, player.Y - 30), $"−{Math.Max(1, (int)Math.Round(damageTaken))}", Color.FromArgb(250, 116, 105));
         if (health <= 0)
@@ -1162,11 +1164,11 @@ public sealed class Game : Form
     {
         if (item.Kind == "charm")
         {
-            if (item.Amount is < 1 or > 8) { drops.Remove(item); return; }
+            if (item.Amount is < 1 or > 10) { drops.Remove(item); return; }
             bool newCharm = (ownedCharms & (1 << (item.Amount - 1))) == 0; ownedCharms |= 1 << (item.Amount - 1);
             if (equippedCharm == 0 && equippedCharm2 != item.Amount) equippedCharm = item.Amount;
             else if (equippedCharm2 == 0 && equippedCharm != item.Amount) equippedCharm2 = item.Amount;
-            notice = item.Amount is 7 or 8 ? $"TALISMÃ DE PÓS-JOGO: {charmNames[item.Amount]}" : newCharm ? $"TALISMÃ: {charmNames[item.Amount]}" : $"ECO DUPLICADO: {charmNames[item.Amount]}";
+            notice = item.Amount >= 7 ? $"TALISMÃ DE PÓS-JOGO: {charmNames[item.Amount]}" : newCharm ? $"TALISMÃ: {charmNames[item.Amount]}" : $"ECO DUPLICADO: {charmNames[item.Amount]}";
             drops.Remove(item); noticeTime = 1.7f; return;
         }
         if (item.Kind == "silence") { silenceMemory = true; questStage = 51; notice = "MEMÓRIA: AS VOZES DEVOLVIDAS"; ShowMemory("AS VOZES DEVOLVIDAS", "O Silêncio não era uma criatura que veio de fora. Era o nome dado ao peso de milhares de lembranças mantidas juntas pelo Lume. Quando a câmara se abre, as vozes não exigem que você as devolva nem que continue prendendo-as: cada uma pode escolher se quer falar, descansar ou partir. Entre elas não há resposta sobre Nara. O que resta é decidir como Véspera cuidará do Lume daqui em diante."); drops.Remove(item); return; }
@@ -1467,14 +1469,15 @@ public sealed class Game : Form
     private float VoiceShardDamage() => damage * (HasCharmPair(3, 5) ? 2.05f : HasCharm(3) ? 1.8f : 1.35f) * WeaponSkillMultiplier() * TechniqueDamageMultiplier();
     private float VoiceShardLifetime() => HasCharm(5) ? 1.8f : 1.25f;
     private float VoiceShardCooldown() => (Math.Max(3.5f, 7f - skillTalent * 0.5f) + (HasCharm(5) ? HasCharmPair(3, 5) ? 0.5f : 1.25f : 0f)) * WeaponCooldownMultiplier();
-    private float WeaponCooldownMultiplier() => HasWeaponAffix(weapon, 4) ? weaponRarities[weapon] == 2 ? 0.84f : 0.9f : 1f;
+    private float WeaponCooldownMultiplier() => (HasWeaponAffix(weapon, 4) ? weaponRarities[weapon] == 2 ? 0.84f : 0.9f : 1f) * (HasCharm(9) ? 0.86f : 1f);
     private float WeaponDamageTakenMultiplier() => HasWeaponAffix(weapon, 5) ? weaponRarities[weapon] == 2 ? 0.88f : 0.92f : 1f;
     private float WeaponReachMultiplier() => HasWeaponAffix(weapon, 6) ? weaponRarities[weapon] == 2 ? 1.2f : 1.12f : 1f;
     private float OutgoingDamageMultiplier(Enemy enemy)
     {
         float bossHunter = !HasCharm(4) ? 1f : enemy.Boss ? 1.25f : 0.8f;
-        return bossHunter * (vigilActive && HasCharm(7) ? 1.4f : 1f) * VeinResonanceMultiplier();
+        return bossHunter * (vigilActive && HasCharm(7) ? 1.4f : 1f) * (HasCharm(10) ? 0.9f : 1f) * VeinResonanceMultiplier();
     }
+    private float CharmDamageTakenMultiplier() => (HasCharm(9) ? 1.1f : 1f) * (HasCharm(10) ? 0.86f : 1f);
     private float DashDuration() => HasCharm(2) ? 0.29f : 0.17f;
     private PointF MovementInput() => new((down.Contains(Keys.D) || down.Contains(Keys.Right) ? 1 : 0) - (down.Contains(Keys.A) || down.Contains(Keys.Left) ? 1 : 0), (down.Contains(Keys.S) || down.Contains(Keys.Down) ? 1 : 0) - (down.Contains(Keys.W) || down.Contains(Keys.Up) ? 1 : 0));
     private void StartDash()
@@ -1596,9 +1599,9 @@ public sealed class Game : Form
             || s.ClearedRooms < 0
             || s.ClearedRooms > 8796093022207L
             || s.Completed && s.Room != 2
-            || s.OwnedCharms is < 0 or > 255
-            || s.EquippedCharm is < 0 or > 8
-            || s.EquippedCharm2 is < 0 or > 8
+            || s.OwnedCharms is < 0 or > 1023
+            || s.EquippedCharm is < 0 or > 10
+            || s.EquippedCharm2 is < 0 or > 10
             || s.EquippedCharm > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm - 1))) == 0
             || s.EquippedCharm2 > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm2 - 1))) == 0
             || s.EquippedCharm > 0 && s.EquippedCharm == s.EquippedCharm2
@@ -2907,6 +2910,8 @@ public sealed class Game : Form
         if (HasCharm(6)) effects.Add("Nó de Lume: Farol +2 s, pulsos a cada 0,85 s; recarga +3,5 s");
         if (HasCharm(7)) effects.Add("Fio do Retorno (Vigília): +40% dano, cura 12% ao abater chefe e +10% dano recebido");
         if (HasCharm(8)) effects.Add("Eco Convergente (Vigília): +18% dano de técnica");
+        if (HasCharm(9)) effects.Add("Compasso Fendido: recargas de técnicas -14%; dano recebido +10%");
+        if (HasCharm(10)) effects.Add("Âncora Comum: dano recebido -14%; dano causado -10%");
         string effect = effects.Count > 0 ? string.Join(" • ", effects) : "Equipe até dois talismãs para ativar efeitos e sintonias.";
         g.DrawString(effect, effectFont, Brushes.AntiqueWhite, new RectangleF(205, 556, 560, 78));
     }
@@ -2918,7 +2923,7 @@ public sealed class Game : Form
         DrawCentered(g, "FICHA DO ESCUTADOR", 151, heading, Color.FromArgb(230, 193, 129));
         float critical = CriticalChance(), multiplier = CriticalMultiplier(), cooldown = BasicAttackCooldown();
         float expectedDps = damage * (1 + critical * (multiplier - 1)) / cooldown;
-        float mitigation = 1 - ArmorDamageTakenMultiplier() * WeaponDamageTakenMultiplier();
+        float mitigation = 1 - ArmorDamageTakenMultiplier() * WeaponDamageTakenMultiplier() * CharmDamageTakenMultiplier();
         if (wardTime > 0) mitigation = 1 - (1 - mitigation) * 0.45f;
         g.DrawString("ATAQUE", section, Brushes.Goldenrod, 145, 205);
         g.DrawString($"Arma: {WeaponDisplayName(weapon)}", body, Brushes.AntiqueWhite, 145, 232);
@@ -4107,6 +4112,12 @@ public sealed class Game : Form
         emberEnding.vigilActive = false; emberEnding.vigilFloor = 0; emberEnding.room = 18; emberEnding.SetupRoom(); emberEnding.drops.Clear(); emberEnding.health = emberEnding.maxHealth; emberEnding.vigilBestFloor = 5;
         SaveData returnThreadSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(emberEnding.CaptureSaveData()))!;
         if (!ValidSaveData(returnThreadSave) || returnThreadSave.OwnedCharms != 64 || returnThreadSave.EquippedCharm != 7 || returnThreadSave.VigilBestFloor != 5) throw new InvalidOperationException("O Fio do Retorno e a melhor marca do quinto andar não foram aceitos pelo save.");
+        using var deepVigil = new Game(); deepVigil.timer.Stop(); deepVigil.StartGame(); deepVigil.storyOverlay = false; deepVigil.vigilActive = true; deepVigil.vigilFloor = 15; deepVigil.room = 38; deepVigil.SetupRoom(); Enemy fifteenthFloorBoss = deepVigil.enemies.Single(); fifteenthFloorBoss.Hp = 1; deepVigil.Defeat(fifteenthFloorBoss);
+        Drop splitCompass = deepVigil.drops.Single(drop => drop.Kind == "charm" && drop.Amount == 9); deepVigil.Collect(splitCompass);
+        if (deepVigil.charmNames[9] != "COMPASSO FENDIDO" || deepVigil.equippedCharm != 9 || Math.Abs(deepVigil.WeaponCooldownMultiplier() - 0.86f) > 0.001f || Math.Abs(deepVigil.CharmDamageTakenMultiplier() - 1.1f) > 0.001f || !ValidSaveData(deepVigil.CaptureSaveData())) throw new InvalidOperationException("O 15º andar não concedeu nem validou a build ofensiva do Compasso Fendido.");
+        deepVigil.drops.Clear(); deepVigil.vigilFloor = 20; deepVigil.SetupRoom(); Enemy twentiethFloorBoss = deepVigil.enemies.Single(); twentiethFloorBoss.Hp = 1; deepVigil.Defeat(twentiethFloorBoss);
+        Drop sharedAnchor = deepVigil.drops.Single(drop => drop.Kind == "charm" && drop.Amount == 10); deepVigil.Collect(sharedAnchor); Enemy buildDummy = new() { Kind = EnemyKind.DeepSilence, Boss = true, Hp = 1000, MaxHp = 1000 };
+        if (deepVigil.charmNames[10] != "ÂNCORA COMUM" || deepVigil.equippedCharm2 != 10 || Math.Abs(deepVigil.OutgoingDamageMultiplier(buildDummy) - 0.9f) > 0.001f || Math.Abs(deepVigil.CharmDamageTakenMultiplier() - 0.86f) > 0.001f || !ValidSaveData(deepVigil.CaptureSaveData())) throw new InvalidOperationException("O 20º andar não concedeu nem validou a build defensiva da Âncora Comum.");
         game.room = 11; game.SetupRoom();
         if (game.enemies.Count != 0 || game.drops.Count != 0) throw new InvalidOperationException("O Reservatório foi recriado após ter sido limpo.");
         game.room = 3; game.SetupRoom();
