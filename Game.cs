@@ -2035,6 +2035,11 @@ public sealed class Game : Form
             {
                 using var hitFlash = new Pen(Color.FromArgb(170, 245, 235, 213), 2);
                 g.DrawEllipse(hitFlash, enemy.Pos.X - r - 4, enemy.Pos.Y - 10, (r + 4) * 2, 16);
+                int alpha = Math.Clamp((int)(190 * enemy.Flash / 0.3f), 0, 190);
+                using var spriteFlash = new Pen(Color.FromArgb(alpha, 255, 233, 183), Math.Max(2, size / 32));
+                using var spriteGlow = new SolidBrush(Color.FromArgb(alpha / 4, 255, 233, 183));
+                RectangleF flashBounds = new(target.X + size * 0.2f, target.Y + size * 0.12f, size * 0.6f, size * 0.7f);
+                g.FillEllipse(spriteGlow, flashBounds); g.DrawEllipse(spriteFlash, flashBounds);
             }
         }
         else
@@ -2126,8 +2131,10 @@ public sealed class Game : Form
         {
             int alpha = Math.Clamp((int)(255 * text.TimeLeft / text.Duration), 0, 255);
             using var brush = new SolidBrush(Color.FromArgb(alpha, text.Color));
+            using var outline = new SolidBrush(Color.FromArgb(alpha, 8, 10, 12));
             SizeF size = g.MeasureString(text.Text, font);
-            g.DrawString(text.Text, font, brush, text.Pos.X - size.Width / 2, text.Pos.Y - size.Height / 2);
+            float x = text.Pos.X - size.Width / 2, y = text.Pos.Y - size.Height / 2;
+            g.DrawString(text.Text, font, outline, x + 1.5f, y + 1.5f); g.DrawString(text.Text, font, brush, x, y);
         }
     }
 

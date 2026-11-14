@@ -89,6 +89,8 @@ Cada nível concede um ponto permanente: **Vigor** aumenta a vida máxima, **Dom
 
 Os golpes exibem números flutuantes por 0,85 segundo: dano causado aparece claro, críticos recebem destaque dourado e dano recebido aparece em vermelho. Os valores usam o dano calculado pelo combate; o efeito não muda o balanceamento.
 
+Ao acertar, ecos e chefes recebem um clarão dourado visível sobre a silhueta. Os números flutuantes usam uma sombra escura para continuarem legíveis sobre o cenário.
+
 Ataques à distância de arqueiros e ecos mostram um círculo fixo no local marcado. Saia desse círculo antes do impacto para evitar o dano.
 
 Os chefes anunciam golpes circulares com o limite completo e cortes com faixas largas; alguns ataques desenham duas faixas. A área indicada permanece visível até o golpe.
