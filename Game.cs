@@ -423,7 +423,7 @@ public sealed class Game : Form
             if (e.KeyCode is >= Keys.D1 and <= Keys.D8) { EquipSkill(skillMenuSlot, (int)e.KeyCode - (int)Keys.D0); return; }
             return;
         }
-        if (forgeMenuOpen) { if (e.KeyCode is >= Keys.D1 and <= Keys.D6) ReforgeWeapon((int)e.KeyCode - (int)Keys.D0); else if (e.KeyCode == Keys.Escape) forgeMenuOpen = false; return; }
+        if (forgeMenuOpen) { if (e.KeyCode is >= Keys.D1 and <= Keys.D7) ReforgeWeapon((int)e.KeyCode - (int)Keys.D0); else if (e.KeyCode == Keys.Escape) forgeMenuOpen = false; return; }
         if (endingChoiceOpen) { if (e.KeyCode == Keys.D1) ChooseTownEnding(1); else if (e.KeyCode == Keys.D2) ChooseTownEnding(2); else if (e.KeyCode == Keys.D3) endingChoiceOpen = false; return; }
         if (vigilChoiceOpen) { if (e.KeyCode == Keys.D1) ResolveVigilFloor(true); else if (e.KeyCode == Keys.D2) ResolveVigilFloor(false); else if (e.KeyCode == Keys.D3 || e.KeyCode == Keys.Escape) vigilChoiceOpen = false; return; }
         if (chestChoice) { if (e.KeyCode == Keys.D1) gold += 75; else if (e.KeyCode == Keys.D2) potions += 2; else if (e.KeyCode == Keys.D3) health = maxHealth; else return; chestChoice = false; EnterVesper(); return; }
@@ -448,6 +448,7 @@ public sealed class Game : Form
     private void ReforgeWeapon(int affix)
     {
         if (!forgeMenuOpen || room != 18 || questStage < 27 || Distance(player, AvenPosition) >= 60) { forgeMenuOpen = false; return; }
+        if (affix == 7) { RespecTalents(); return; }
         if (affix is < 1 or > 6) return;
         if (gold < 75 || tideGlass < 1) { notice = "A TÊMPERA CUSTA 75 OURO E 1 SAL VÍTREO"; noticeTime = 2; return; }
         if (weaponAffixes[weapon] == affix) { notice = "ESSA ARMA JÁ GUARDA ESSE AFFIX"; noticeTime = 2; return; }
@@ -458,6 +459,21 @@ public sealed class Game : Form
         damage += WeaponPower(weapon) - oldPower;
         gold -= 75; tideGlass--; forgeMenuOpen = false;
         notice = $"TÊMPERA: {weaponNames[weapon]} {WeaponRarityName(weaponRarities[weapon])} {WeaponAffixDescription(weapon)}"; noticeTime = 3;
+    }
+
+    private static int TalentRespecGoldCost(int level) => 250 + Math.Max(1, level) * 100;
+    private static int TalentRespecGlassCost(int level) => 5 + Math.Max(1, level) / 5;
+
+    private void RespecTalents()
+    {
+        int spent = healthTalent + skillTalent + dodgeTalent + techniqueTalent;
+        int goldCost = TalentRespecGoldCost(level), glassCost = TalentRespecGlassCost(level);
+        if (pendingTalents > 0 || talentChoice) { notice = "GASTE OS PONTOS DE TALENTO PENDENTES PRIMEIRO"; noticeTime = 2; return; }
+        if (spent == 0) { notice = "NÃO HÁ TALENTOS PARA REDISTRIBUIR"; noticeTime = 2; return; }
+        if (gold < goldCost || tideGlass < glassCost) { notice = $"REDISTRIBUIR CUSTA {goldCost} OURO E {glassCost} SAL VÍTREO"; noticeTime = 2.5f; return; }
+        float healthRatio = maxHealth > 0 ? health / maxHealth : 1;
+        gold -= goldCost; tideGlass -= glassCost; maxHealth = Math.Max(1, maxHealth - healthTalent * 20); healthTalent = skillTalent = dodgeTalent = techniqueTalent = 0; health = Math.Clamp(maxHealth * healthRatio, 1, maxHealth);
+        pendingTalents = 0; talentChoice = false; forgeMenuOpen = false; notice = $"TALENTOS REDISTRIBUÍDOS: {spent} PONTOS DEVOLVIDOS"; noticeTime = 3;
     }
 
     private void SelectTalent(Keys key)
@@ -1191,6 +1207,7 @@ public sealed class Game : Form
             else if (questStage == 51 && silenceMemory && finalEnding == 0) { endingChoiceOpen = true; notice = "O DESTINO DO LUME AGUARDA SUA DECISÃO • 1 OU 2"; noticeTime = 3; }
             else if (finalEnding > 0 && questStage is 52 or 53) { questStage = 54; ShowMemory("O ARQUIVO DAS MARÉS EMPRESTADAS", "Aven encontrou uma nota sem assinatura na mesa comunitária. Ela descreve um cais onde viajantes deixavam sons que aceitavam compartilhar, sem nomes ou destinos. O registro foi levado para um arquivo sob a maré; algo lá tenta transformar muitas vozes numa só. A expedição é sua escolha."); notice = "EXPEDIÇÃO OPCIONAL XVII: CAIS DOS ECOS EMPRESTADOS"; noticeTime = 3; }
             else if (questStage == 55 && borrowedTrace) { questStage = 56; gold += 1900; tideGlass += 8; potions += 3; techniqueTalent++; ShowMemory("UM LUGAR PARA DEIXAR ECO", "Aven guarda a memória com o consentimento de quem a deixou. Não escreve nomes nem rotas. Como agradecimento, a comunidade oferece provisões e ensina uma nova técnica: o Escutador agora causa mais dano com todas as habilidades."); notice = "RECOMPENSA: +1900 OURO • +8 SAL • +3 POÇÕES • TÉCNICA +1"; noticeTime = 4; }
+            else if (finalEnding > 0 && questStage >= 56) { forgeMenuOpen = true; return; }
             else if (finalEnding > 0) ShowMemory(finalEnding == 1 ? "VÉSPERA APRENDE A OUVIR" : "O FAROL SEM CORRENTE", finalEnding == 1 ? "Os arquivos estão abertos e a comunidade divide a proteção da cidade. As memórias devolvidas podem ser ouvidas por quem as reivindicar. Nara permanece livre para escolher quando e se quer voltar." : "O Lume protege Véspera sem chamar as vozes perdidas à força. A comunidade sabe o preço da luz e pode decidir, em conjunto, como mantê-la. Nara permanece livre para escolher quando e se quer voltar.");
             else if (questStage >= 27) { forgeMenuOpen = true; return; }
             else if (questStage >= 24) ShowMemory("AVEN, O BARQUEIRO", "A mesa continua aberta a quem escolhe deixar um relato. A próxima curva fica a oeste; os viajantes que passaram por aqui decidiram compartilhar apenas o início da trilha.");
@@ -2575,9 +2592,19 @@ public sealed class Game : Form
         g.DrawString("4. PASSO CÉLERE • recarga de técnicas -10%/-16%", optionFont, Brushes.AntiqueWhite, 165, 345);
         g.DrawString("5. LASTRO • dano recebido -8%/-12%", optionFont, Brushes.AntiqueWhite, 165, 385);
         g.DrawString("6. FIO ESTICADO • alcance básico +12%/+20%", optionFont, Brushes.AntiqueWhite, 165, 425);
-        g.DrawString("Valores: RARA / RELÍQUIA.", hintFont, Brushes.DarkGray, 165, 460);
-        g.DrawString($"CUSTO: 75 OURO E 1 SAL VÍTREO   •   DISPONÍVEL: {gold} OURO / {tideGlass} SAL", hintFont, gold < 75 || tideGlass < 1 ? Brushes.IndianRed : Brushes.Goldenrod, 165, 485);
-        g.DrawString("1–6 escolhe o afixo • ESC fecha", hintFont, Brushes.DarkGray, 165, 515);
+        if (finalEnding > 0 && questStage >= 56)
+        {
+            int goldCost = TalentRespecGoldCost(level), glassCost = TalentRespecGlassCost(level);
+            g.DrawString("7. REDISTRIBUIR TALENTOS • devolve todos os pontos", optionFont, Brushes.AntiqueWhite, 165, 460);
+            g.DrawString($"CUSTO: {goldCost} OURO E {glassCost} SAL VÍTREO   •   DISPONÍVEL: {gold} OURO / {tideGlass} SAL", hintFont, gold < goldCost || tideGlass < glassCost ? Brushes.IndianRed : Brushes.Goldenrod, 165, 490);
+            g.DrawString("Valores: RARA / RELÍQUIA • 1–6 afixos • 7 redistribui • ESC fecha", hintFont, Brushes.DarkGray, 165, 520);
+        }
+        else
+        {
+            g.DrawString("Valores: RARA / RELÍQUIA.", hintFont, Brushes.DarkGray, 165, 460);
+            g.DrawString($"CUSTO: 75 OURO E 1 SAL VÍTREO   •   DISPONÍVEL: {gold} OURO / {tideGlass} SAL", hintFont, gold < 75 || tideGlass < 1 ? Brushes.IndianRed : Brushes.Goldenrod, 165, 485);
+            g.DrawString("1–6 escolhe o afixo • ESC fecha", hintFont, Brushes.DarkGray, 165, 515);
+        }
     }
 
     private void DrawTalentChoice(Graphics g, int pending)
@@ -3625,6 +3652,14 @@ public sealed class Game : Form
         if (!borrowedChapter.borrowedTrace || borrowedChapter.questStage != 55 || !ValidSaveData(borrowedSave) || JsonSerializer.Deserialize<SaveData>("{}")?.BorrowedTrace != false) throw new InvalidOperationException("A memória da expedição não persistiu nem preservou saves antigos.");
         borrowedChapter.memoryOverlay = false; borrowedChapter.room = 18; borrowedChapter.SetupRoom(); borrowedChapter.player = AvenPosition; int borrowedGold = borrowedChapter.gold, borrowedTalent = borrowedChapter.techniqueTalent; borrowedChapter.Interact();
         if (borrowedChapter.questStage != 56 || borrowedChapter.gold != borrowedGold + 1900 || borrowedChapter.techniqueTalent != borrowedTalent + 1 || !ValidSaveData(borrowedChapter.CaptureSaveData())) throw new InvalidOperationException("Aven não registrou a memória nem concedeu a recompensa permanente da expedição.");
+        borrowedChapter.memoryOverlay = false; borrowedChapter.Interact();
+        if (!borrowedChapter.forgeMenuOpen) throw new InvalidOperationException("Aven não reabriu a têmpera depois de concluída a expedição.");
+        borrowedChapter.level = 10; borrowedChapter.healthTalent = 2; borrowedChapter.skillTalent = 1; borrowedChapter.dodgeTalent = 1; borrowedChapter.techniqueTalent = 2;
+        borrowedChapter.maxHealth = 180; borrowedChapter.health = 90; borrowedChapter.gold = 5000; borrowedChapter.tideGlass = 10; borrowedChapter.pendingTalents = 0; borrowedChapter.talentChoice = false;
+        borrowedChapter.OnKeyDown(borrowedChapter, new KeyEventArgs(Keys.D7));
+        if (borrowedChapter.forgeMenuOpen || borrowedChapter.gold != 3750 || borrowedChapter.tideGlass != 3 || borrowedChapter.healthTalent + borrowedChapter.skillTalent + borrowedChapter.dodgeTalent + borrowedChapter.techniqueTalent != 0 || borrowedChapter.maxHealth != 140 || borrowedChapter.health != 70)
+            throw new InvalidOperationException("A redistribuição não devolveu os talentos, preservou os bônus permanentes de vida ou cobrou os recursos corretos.");
+        if (!ValidSaveData(borrowedChapter.CaptureSaveData())) throw new InvalidOperationException("A redistribuição produziu um estado de save inválido.");
         Console.WriteLine("TESTES OK: campanha até o Capítulo XVII, expedição opcional, afixos de elite, Arquivista das Marés, epílogos, Vigília Ascendente, chefes, combate, loot, progressão e compatibilidade de saves antigos."); return 0;
     }
 }
