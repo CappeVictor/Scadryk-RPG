@@ -108,7 +108,7 @@ Ao receber dano, Aven pulsa em vermelho durante a janela de invulnerabilidade, f
 
 Ataques à distância de arqueiros e ecos mostram um círculo fixo no local marcado. Saia desse círculo antes do impacto para evitar o dano.
 
-Elites agora aparecem com um de três afixos, cada um mostrado por nome e aro colorido: **Blindado** reduz dano recebido e golpeia devagar; **Veloz** se move e ataca com mais rapidez, com aviso menor; **Sangrador** causa mais dano e recupera vida ao acertar. Eles mantêm as recompensas de elite já existentes.
+Elites agora aparecem com um de três afixos, cada um mostrado por nome e aro colorido: **Blindado** reduz dano recebido e golpeia devagar; **Veloz** se move e ataca com mais rapidez, com aviso menor; **Sangrador** causa mais dano e recupera vida ao acertar. Além dos encontros já existentes, salas avançadas antes de chefes selecionados recebem um elite adicional; a vida dele cresce com a região. Eles mantêm as recompensas de elite já existentes.
 
 Os chefes anunciam golpes circulares com o limite completo e cortes com faixas largas; alguns ataques desenham duas faixas. A área indicada permanece visível até o golpe.
 

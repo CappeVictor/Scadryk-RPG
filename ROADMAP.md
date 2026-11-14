@@ -90,3 +90,5 @@ O Arauto de Vidro agora usa um cone amplo de estilhaços como terceiro ataque. O
 O Escriba do Traçado transforma seu primeiro círculo em uma onda anular com um centro seguro. Entrar perto do chefe ou atravessar a borda são respostas válidas, o que amplia o repertório de posicionamento dos confrontos. O autoteste cobre o miolo, o anel de dano e o limite externo.
 
 Os ataques básicos agora percorrem o arco da arma ao longo da animação, com ponta luminosa em movimento e variação de largura para espada, lâmina pesada e faca. Próximo foco: passar de silhuetas animadas a quadros de ataque específicos para o elenco.
+
+Salas avançadas selecionadas antes de chefes agora incluem um elite adicional, com vida escalada pela região. O autoteste percorre as oito salas alteradas e confirma presença única, afixo válido e vida correspondente; a Vigília não recebe esses encontros de campanha.
