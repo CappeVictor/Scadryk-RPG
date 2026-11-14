@@ -81,7 +81,7 @@ O protagonista, o Escutador, usa a folha de caminhada `Assets/Listener.png`, com
 | 6 no inventário | Alternar o talismã do espaço I |
 | 7 no inventário | Alternar o talismã do espaço II |
 | 1–4 ao subir de nível | Escolher talento ou responder quando Sileth apresentar uma decisão |
-| 5 ou 6 ao subir de nível | No nível 5, escolher Forma do Gume ou Forma do Eco; no nível 10, escolher Guarda Serena ou Passo Impetuoso |
+| 5 ou 6 ao subir de nível | No nível 5, escolher Forma do Gume ou Forma do Eco; no nível 10, Guarda Serena ou Passo Impetuoso; no nível 15, Caçador de Ecos ou Quebra-Formação |
 | Tab | Trocar alvo |
 | H | Ativar ou desativar o alto contraste dos avisos de ataque |
 | N | Ativar ou silenciar a ambiência e os efeitos de áudio |
@@ -104,7 +104,7 @@ Os efeitos de golpe, esquiva, impacto, técnica, coleta e aviso de ataque, a tri
 
 Pressione **H** para destacar avisos de ataque com amarelo claro e contorno escuro; a escolha fica salva junto ao progresso. Os contornos de todos os avisos pulsam e ganham intensidade conforme o impacto se aproxima; o modo de alto contraste preserva uma borda escura para separar as áreas perigosas do cenário.
 
-Cada nível concede um ponto: **Vigor** aumenta a vida máxima, **Domínio** reduz as recargas, **Agilidade** acelera a esquiva e **Sintonia** acrescenta 8% de dano às técnicas por ponto. No nível 5, a primeira escolha daquele nível é uma especialização: **Forma do Gume** dá +12% de dano básico e -10% de dano de técnicas; **Forma do Eco** dá +12% de dano de técnicas e -10% de dano básico. No nível 10, uma segunda escolha define a postura defensiva: **Guarda Serena** reduz dano recebido em 10%, mas aumenta a recarga da esquiva em 0,20 s; **Passo Impetuoso** reduz a recarga da esquiva em 0,18 s, mas aumenta dano recebido em 8%. Essas decisões consomem pontos de nível e podem ser redistribuídas na forja. Saves antigos de nível 5 ou superior recebem a Forma do Gume; saves antigos de nível 10 ou superior recebem a Guarda Serena como padrão.
+Cada nível concede um ponto: **Vigor** aumenta a vida máxima, **Domínio** reduz as recargas, **Agilidade** acelera a esquiva e **Sintonia** acrescenta 8% de dano às técnicas por ponto. No nível 5, a primeira escolha daquele nível é uma especialização: **Forma do Gume** dá +12% de dano básico e -10% de dano de técnicas; **Forma do Eco** dá +12% de dano de técnicas e -10% de dano básico. No nível 10, uma segunda escolha define a postura defensiva: **Guarda Serena** reduz dano recebido em 10%, mas aumenta a recarga da esquiva em 0,20 s; **Passo Impetuoso** reduz a recarga da esquiva em 0,18 s, mas aumenta dano recebido em 8%. No nível 15, escolha **Caçador de Ecos**, que causa +15% de dano contra chefes, ou **Quebra-Formação**, que causa +10% contra inimigos comuns enquanto restarem ao menos três inimigos. Essas decisões consomem pontos de nível e podem ser redistribuídas na forja. Saves antigos mantêm suas escolhas existentes; quem já passou do nível 15 recebe a escolha ao avançar de nível ou ao redistribuir talentos.
 
 Os golpes exibem números flutuantes por 0,85 segundo: dano causado aparece claro, críticos recebem destaque dourado e dano recebido aparece em vermelho. Os valores usam o dano calculado pelo combate; o efeito não muda o balanceamento.
 
