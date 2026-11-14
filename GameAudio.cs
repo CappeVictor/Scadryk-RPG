@@ -9,6 +9,7 @@ internal static class GameAudio
     private static readonly SoundPlayer[] players;
     private static readonly MemoryStream[] soundscapeStreams;
     private static readonly SoundPlayer[] soundscapePlayers;
+    private static readonly (float Time, float Frequency)[] UnsentChimeNotes = { (1.25f, 587.33f), (4.5f, 440f), (9.75f, 523.25f), (12.1f, 783.99f) };
     private static bool muted;
     private static bool ambientRequested;
     private static int ambientRoom;
@@ -23,7 +24,7 @@ internal static class GameAudio
             streams[i] = new MemoryStream(CreateWave((Cue)i), writable: false);
             players[i] = new SoundPlayer(streams[i]);
         }
-        soundscapeStreams = new MemoryStream[7]; soundscapePlayers = new SoundPlayer[soundscapeStreams.Length];
+        soundscapeStreams = new MemoryStream[8]; soundscapePlayers = new SoundPlayer[soundscapeStreams.Length];
         byte[] music = CreateAmbientWave();
         for (int i = 0; i < soundscapeStreams.Length; i++)
         {
@@ -47,7 +48,7 @@ internal static class GameAudio
         SyncSoundscape();
     }
 
-    private static int SoundscapeForRoom(int room) => room switch
+    internal static int SoundscapeForRoom(int room) => room switch
     {
         3 or 18 => 0,                         // refúgios: brasa distante e vento
         0 or 1 or 2 or 4 or 5 => 1,           // cripta e arquivos: pedra funda
@@ -55,6 +56,7 @@ internal static class GameAudio
         8 or 9 => 3,                          // câmara do Lume: brasas
         10 or 11 or 12 or 13 or 14 or 15 or 16 or 17 or 19 or 20 or 23 or 24 or 27 or 28 => 4, // ecos, margens e várzea
         29 or 30 or 31 or 32 or 33 or 34 => 5, // vidro, cantoria e lanternas
+        41 or 42 => 7,                         // badaladas não enviadas
         >= 35 => 6,                           // rotas, silêncio e maré emprestada
         _ => 1
     };
@@ -184,7 +186,8 @@ internal static class GameAudio
             3 => (55f, 146.8f, 0.12f, 0.19f, 0.2f),   // brasas
             4 => (55f, 82.4f, 0.09f, 0.055f, 0.26f),   // margem
             5 => (196f, 392f, 0.055f, 0.13f, 0.64f),  // vidro e lanternas
-            _ => (32.7f, 49f, 0.028f, 0.04f, 0.9f)     // silêncio
+            6 => (32.7f, 49f, 0.028f, 0.04f, 0.9f),    // silêncio
+            _ => (130.81f, 196f, 0.018f, 0.035f, 0.18f) // badalada não enviada
         };
         uint random = 0x9E3779B9u + (uint)style * 7919u; float filteredNoise = 0;
         double phaseLow = 0, phaseHigh = 0, phaseGlass = 0;
@@ -199,6 +202,19 @@ internal static class GameAudio
             float moving = 0.76f + 0.24f * (float)Math.Sin(2 * Math.PI * time * pulseHz);
             float crackle = style == 3 && (random & 0x3FF) < 5 ? 0.55f : 0f;
             float resonance = style == 5 ? (float)Math.Sin(phaseGlass) * 0.018f * (0.5f + 0.5f * (float)Math.Sin(2 * Math.PI * time / 7f)) : 0;
+            if (style == 7)
+            {
+                double cycleTime = time % seconds;
+                foreach (var note in UnsentChimeNotes)
+                {
+                    double age = cycleTime - note.Time;
+                    if (age >= 0)
+                    {
+                        double decay = Math.Exp(-age * 1.45);
+                        resonance += (float)((Math.Sin(2 * Math.PI * note.Frequency * age) + Math.Sin(2 * Math.PI * note.Frequency * 2.76 * age) * 0.22) * decay * 0.023);
+                    }
+                }
+            }
             float environmentalNoise = white * (1 - texture) + filteredNoise * texture + crackle;
             float center = ((float)Math.Sin(phaseLow) * 0.026f + (float)Math.Sin(phaseHigh) * 0.012f + resonance
                 + environmentalNoise * noise) * moving;

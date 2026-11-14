@@ -115,7 +115,9 @@ O Lançador recebeu uma arte original de corpo inteiro com lança, integrada com
 
 Uma ambiência musical original agora é sintetizada em C#: camadas graves lentas e ecos de vidro formam um loop estéreo de 16 segundos. Ela toca somente durante a exploração, pausa com as telas e acompanha o controle global de áudio da tecla N; não adiciona arquivos nem dependências.
 
-Sete paisagens sonoras ambientes são sintetizadas em C# para distinguir refúgios, pedra e arquivos, água, brasas, margens, vidro e lanternas, e silêncio. A camada muda com a sala, acompanha a música, pausa com as telas e respeita o controle global de áudio; ruído filtrado e tons harmônicos usam volume baixo para não encobrir os avisos de combate.
+Oito paisagens sonoras ambientes são sintetizadas em C# para distinguir refúgios, pedra e arquivos, água, brasas, margens, vidro e lanternas, silêncio e as badaladas não enviadas. A camada muda com a sala, acompanha a música, pausa com as telas e respeita o controle global de áudio; ruído filtrado e tons harmônicos usam volume baixo para não encobrir os avisos de combate.
+
+As duas salas do Capítulo XVIII ganharam uma paisagem própria: quatro notas de sino espaçadas, com ressonâncias que se apagam dentro do ciclo ambiental. A sonoridade reforça os intervalos e as escolhas de silêncio daquele capítulo sem reutilizar o tema de outras regiões. O roteamento das salas é conferido pelo autoteste.
 
 Os sprites agora acompanham a leitura do ataque: durante o aviso, inclinam-se na direção do alvo e comprimem o corpo até o impacto; o enquadramento continua ancorado no chão. É uma etapa de animação em C# antes de produzir quadros de ataque específicos para cada criatura.
 

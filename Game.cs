@@ -3066,6 +3066,8 @@ public sealed class Game : Form
     public static int SelfTest()
     {
         GameAudio.SilenceForAutomatedRun();
+        if (GameAudio.SoundscapeForRoom(41) != 7 || GameAudio.SoundscapeForRoom(42) != 7 || GameAudio.SoundscapeForRoom(40) != 6)
+            throw new InvalidOperationException("As salas do Capítulo XVIII não receberam a paisagem sonora própria das badaladas.");
         (Color normalFill, Color normalEdge) = AttackWarningPalette(false);
         (Color contrastFill, Color contrastEdge) = AttackWarningPalette(true);
         if (normalEdge == contrastEdge || contrastFill.R < 240 || contrastFill.G < 190 || contrastEdge.R < 240 || contrastEdge.G < 220) throw new InvalidOperationException("A paleta acessível dos avisos não tem contraste suficiente em relação ao modo padrão.");
