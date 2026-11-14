@@ -69,8 +69,9 @@ O protagonista, o Escutador, usa a folha de caminhada `Assets/Listener.png`, com
 | F, V ou G | Usar a técnica equipada no espaço correspondente |
 | B | Abrir a montagem de técnicas; escolha o espaço com F/V/G e equipe uma técnica aprendida com 1–8; Backspace esvazia o espaço |
 | Q | Usar poção |
-| E | Escutar inscrições, falar/investigar em Véspera, abrir passagem ou interagir com o baú |
+| E | Escutar inscrições, falar/investigar, abrir passagem ou baú; recolher uma arma próxima após comparar seus atributos |
 | E no altar do Refúgio após o epílogo | Iniciar a Vigília Ascendente; na arena, interagir com o altar depois de derrotar o eco para subir de andar ou encerrar a tentativa |
+| E perto de uma arma no chão | Recolher a arma mais próxima para seu espaço de equipamento; compare dano, perfil e afixos antes de decidir |
 | X perto de uma arma no chão | Desmontar a arma mais próxima em ouro e, conforme a raridade, sal vítreo |
 | M | Abrir o atlas das câmaras; M ou Esc fecha |
 | I | Abrir ou fechar inventário |

@@ -888,7 +888,7 @@ public sealed class Game : Form
         PointF animationDirection = Length(dir) > 0.001f ? dir : drift;
         if (Length(animationDirection) > 0.001f) playerAnimationTime += dt;
         else playerAnimationTime = 0;
-        for (int i = drops.Count - 1; i >= 0; i--) if (Distance(player, drops[i].Pos) < 30) { GameAudio.Play(GameAudio.Cue.Loot); Collect(drops[i]); }
+        for (int i = drops.Count - 1; i >= 0; i--) if (drops[i].Kind != "weapon" && Distance(player, drops[i].Pos) < 30) { GameAudio.Play(GameAudio.Cue.Loot); Collect(drops[i]); }
         TickBeacon(dt); int roomBeingUpdated = room; foreach (Enemy enemy in enemies.ToArray()) { PointF previousPos = enemy.Pos; UpdateEnemy(enemy, dt); enemy.Moving = Distance(previousPos, enemy.Pos) > 0.01f; if (enemy.Moving) enemy.AnimationTime += dt; if (dead || room != roomBeingUpdated) break; }
         TickVigilMinions(dt);
         AdvanceVoiceShards(dt);
@@ -1139,6 +1139,8 @@ public sealed class Game : Form
     {
         if (room == 3) { InteractTown(); return; }
         if (room == 18) { InteractRefuge(); return; }
+        Drop? weaponDrop = drops.Where(drop => drop.Kind == "weapon" && Distance(player, drop.Pos) <= 75).OrderBy(drop => Distance(player, drop.Pos)).FirstOrDefault();
+        if (weaponDrop is not null) { GameAudio.Play(GameAudio.Cue.Loot); Collect(weaponDrop); return; }
         if (enemies.Count != 0) { notice = "DERROTE OS INIMIGOS PRIMEIRO"; noticeTime = 1.2f; return; }
         if (drops.Count != 0) { notice = "RECOLHA O LOOT ANTES DE AVANÇAR"; noticeTime = 1.5f; return; }
         MarkRoomCleared();
@@ -2586,7 +2588,7 @@ public sealed class Game : Form
         if (item.Kind == "weapon" && dropDistance <= 75)
         {
             (int salvageGold, int salvageGlass) = WeaponSalvageReward(item.Rarity);
-            label += $"\nX desmonta • +{salvageGold} ouro{(salvageGlass > 0 ? $" / +{salvageGlass} sal" : "")}";
+            label += $"\nE recolhe • X desmonta • +{salvageGold} ouro{(salvageGlass > 0 ? $" / +{salvageGlass} sal" : "")}";
         }
         float maxWidth = item.Kind == "weapon" ? 310 : 196;
         SizeF measured = g.MeasureString(label, font, (int)maxWidth - 12);
