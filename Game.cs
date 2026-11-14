@@ -163,6 +163,7 @@ public sealed class Game : Form
     private readonly List<Enemy> enemies = new();
     private readonly List<Drop> drops = new();
     private readonly HashSet<Keys> down = new();
+    private bool focusPaused;
     private readonly System.Windows.Forms.Timer timer = new() { Interval = 16 };
     private readonly Random random = new();
     private readonly List<EchoShard> echoShards = new();
@@ -215,6 +216,8 @@ public sealed class Game : Form
         DoubleBuffered = true; KeyPreview = true; BackColor = Color.FromArgb(16, 19, 23);
         timer.Tick += (_, _) => TickGame(); timer.Start();
         KeyDown += OnKeyDown; KeyUp += (_, e) => down.Remove(e.KeyCode);
+        Deactivate += (_, _) => PauseForLostFocus();
+        Activated += (_, _) => ResumeAfterFocus();
         MouseMove += (_, e) => { mouseAim = Normalize(new PointF(e.X - player.X, e.Y - player.Y), facing); };
         MouseDown += (_, e) =>
         {
@@ -379,6 +382,7 @@ public sealed class Game : Form
 
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
+        if (focusPaused) return;
         down.Add(e.KeyCode);
         if (e.KeyCode == Keys.Enter && (title || dead || victory)) { StartGame(); return; }
         if (e.KeyCode == Keys.C && title) { LoadGame(); return; }
@@ -741,7 +745,9 @@ public sealed class Game : Form
         if (pendingTalents > 0) talentChoice = true;
     }
 
-    private bool GameplayPaused() => title || dead || victory || storyOverlay || memoryOverlay || mapOpen || inventoryOpen || skillMenuOpen || forgeMenuOpen || talentChoice || chestChoice || endingChoiceOpen || vigilChoiceOpen;
+    private void PauseForLostFocus() { focusPaused = true; down.Clear(); dashTime = 0; Invalidate(); }
+    private void ResumeAfterFocus() { focusPaused = false; Invalidate(); }
+    private bool GameplayPaused() => focusPaused || title || dead || victory || storyOverlay || memoryOverlay || mapOpen || inventoryOpen || skillMenuOpen || forgeMenuOpen || talentChoice || chestChoice || endingChoiceOpen || vigilChoiceOpen;
 
     private void TickGame()
     {
@@ -1444,6 +1450,7 @@ public sealed class Game : Form
         if (storyOverlay) DrawStoryOverlay(g);
         if (memoryOverlay) DrawMemoryOverlay(g);
         if (mapOpen) DrawMapOverlay(g);
+        if (focusPaused && !title && !dead && !victory) DrawOverlay(g, "PAUSADO", "VOLTE À JANELA PARA CONTINUAR");
     }
 
     private string TownObjective() => questStage switch
@@ -2426,6 +2433,14 @@ public sealed class Game : Form
 
     public static int SelfTest()
     {
+        using (var focusCheck = new Game())
+        {
+            focusCheck.timer.Stop(); focusCheck.StartGame(); focusCheck.storyOverlay = false; focusCheck.room = 3; focusCheck.SetupRoom(); focusCheck.player = new PointF(500, 330); focusCheck.skillCd = 1; focusCheck.down.Add(Keys.W); focusCheck.dashTime = 0.1f;
+            focusCheck.PauseForLostFocus(); focusCheck.TickGame();
+            if (focusCheck.player != new PointF(500, 330) || focusCheck.skillCd != 1 || focusCheck.down.Count != 0 || focusCheck.dashTime != 0) throw new InvalidOperationException("A perda de foco não pausou a partida ou manteve uma entrada presa.");
+            focusCheck.ResumeAfterFocus(); focusCheck.TickGame();
+            if (focusCheck.player != new PointF(500, 330) || focusCheck.skillCd >= 1) throw new InvalidOperationException("A retomada de foco não preservou a posição ou não retomou o combate.");
+        }
         foreach (EnemyKind kind in new[] { EnemyKind.Guardian, EnemyKind.BlindScribe, EnemyKind.RiverFerryman, EnemyKind.AshWarden, EnemyKind.HollowName, EnemyKind.NameWeaver, EnemyKind.FirstKeeper, EnemyKind.OathCartographer, EnemyKind.NameBroker, EnemyKind.TideWitness, EnemyKind.ReedKeeper, EnemyKind.FlowKeeper, EnemyKind.CounterCurrent, EnemyKind.RiftCantor, EnemyKind.GlassHerald, EnemyKind.LanternRegent, EnemyKind.RouteScribe, EnemyKind.DeepSilence })
         {
             for (int pattern = 0; pattern < 3; pattern++)
