@@ -166,4 +166,4 @@ O 25º andar da Vigília concede o **Pulso Bifurcado**: duas técnicas prontas f
 
 ## Ressonâncias de desafio
 
-Após o epílogo e a expedição XVII, a Têmpera permite alternar entre quatro níveis persistentes de Ressonância. A campanha aumenta vida e dano dos inimigos em troca de mais ouro, experiência e equipamento; cada nível também melhora as rolagens de armas. A Vigília Ascendente conserva seu escalonamento independente. A CI compila e roda os smoke tests gerais do projeto; a calibragem fina dos tiers ainda precisa de observação em partidas reais.
+Após o epílogo e a expedição XVII, a Têmpera permite alternar entre quatro níveis persistentes de Ressonância. A campanha aumenta vida e dano dos inimigos em troca de mais ouro, experiência e equipamento; Contravoz e Contratempo também levam afixos duplos de elite às regiões iniciais, e cada nível melhora as rolagens de armas. A Vigília Ascendente conserva seu escalonamento independente. A CI compila e roda os smoke tests gerais do projeto; a calibragem fina dos tiers ainda precisa de observação em partidas reais.
