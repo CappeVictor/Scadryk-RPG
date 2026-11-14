@@ -455,7 +455,7 @@ public sealed class Game : Form
         foreach (Enemy enemy in enemies.ToArray())
         {
             PointF offset = Sub(enemy.Pos, player); float distance = Length(offset);
-            if (distance > BasicAttackReach(enemy) || (distance >= 20 && Dot(facing, Normalize(offset, facing)) <= BasicAttackArcThreshold()) || BlockedLine(player, enemy.Pos)) continue;
+            if (distance > BasicAttackReach(enemy) || (distance >= 20 && !BasicAttackCoversDirection(Dot(facing, Normalize(offset, facing)), weapon)) || BlockedLine(player, enemy.Pos)) continue;
             bool critical = random.NextDouble() < CriticalChance(); int dealt = (int)(damage * BasicAttackDamageMultiplier(enemy) * OutgoingDamageMultiplier(enemy) * (critical ? CriticalMultiplier() : 1));
             DamageEnemy(enemy, dealt, critical); enemy.Flash = 0.2f;
             if (weapon == 1 && !enemy.Boss) { enemy.Stagger = Math.Max(enemy.Stagger, 0.2f); enemy.Windup = 0; }
@@ -1225,7 +1225,9 @@ public sealed class Game : Form
     private float CriticalMultiplier() => HasCharm(3) ? HasCharmPair(1, 3) ? 2.75f : 2.5f : 2f;
     private float BasicAttackCooldown() => (weapon == 1 ? 0.52f : weapon == 2 ? 0.23f : 0.33f) + (HasCharm(3) ? HasCharmPair(1, 3) ? 0.03f : 0.06f : 0f);
     private float BasicAttackReach(Enemy enemy) => (weapon == 1 ? (enemy.Boss ? 122f : 108f) : weapon == 2 ? (enemy.Boss ? 80f : 68f) : (enemy.Boss ? 95f : 78f)) * WeaponReachMultiplier();
-    private float BasicAttackArcThreshold() => weapon == 1 ? 0.28f : weapon == 2 ? -0.04f : 0.1f;
+    private static float BasicAttackSweepAngle(int weapon) => weapon == 1 ? 142 : weapon == 2 ? 112 : 128;
+    private static float BasicAttackArcThreshold(int weapon) => MathF.Cos(BasicAttackSweepAngle(weapon) * MathF.PI / 360f);
+    private static bool BasicAttackCoversDirection(float facingDot, int weapon) => facingDot > BasicAttackArcThreshold(weapon);
     private float BasicAttackDamageMultiplier(Enemy enemy) => enemy.Armored ? weapon == 1 ? 0.9f : 0.75f : 1f;
     private string WeaponTraitDescription(int index) => index switch
     {
@@ -2275,7 +2277,7 @@ public sealed class Game : Form
         float progress = Math.Clamp(attackFlash / 0.16f, 0, 1);
         float angle = MathF.Atan2(facing.Y, facing.X) * 180 / MathF.PI;
         float radius = weapon == 1 ? 72 : weapon == 2 ? 46 : 57;
-        float sweep = weapon == 2 ? 112 : weapon == 1 ? 142 : 128;
+        float sweep = BasicAttackSweepAngle(weapon);
         var bounds = new RectangleF(player.X - radius, player.Y - radius, radius * 2, radius * 2);
         Color color = weapon == 1 ? Color.FromArgb(255, 220, 155) : weapon == 2 ? Color.FromArgb(163, 222, 223) : Color.FromArgb(224, 213, 181);
         int alpha = (int)(225 * progress);
@@ -2467,6 +2469,21 @@ public sealed class Game : Form
             || ScreenToGame(new PointF(480, 400), new Size(960, 800)) != new PointF(480, 320)
             || ScreenToGame(new PointF(0, 0), new Size(1920, 1080)) != new PointF(0, 0))
             throw new InvalidOperationException("A ampliação da janela distorceu o campo de jogo ou deslocou a mira do mouse.");
+        using (var attackArcCheck = new Game())
+        {
+            attackArcCheck.timer.Stop(); attackArcCheck.StartGame(); attackArcCheck.storyOverlay = false; attackArcCheck.player = new PointF(150, 330); attackArcCheck.mouseAim = attackArcCheck.facing = new PointF(1, 0);
+            for (int weaponIndex = 0; weaponIndex < 3; weaponIndex++)
+            {
+                attackArcCheck.weapon = weaponIndex; float halfAngle = BasicAttackSweepAngle(weaponIndex) * MathF.PI / 360f;
+                if (Math.Abs(BasicAttackArcThreshold(weaponIndex) - MathF.Cos(halfAngle)) > 0.0001f) throw new InvalidOperationException("O ângulo do golpe visual divergiu do limite do ataque.");
+                var outside = new Enemy { Kind = EnemyKind.Grunt, Pos = new PointF(150 + MathF.Cos(halfAngle + 0.08f) * 40, 330 + MathF.Sin(halfAngle + 0.08f) * 40), Hp = 1000, MaxHp = 1000 };
+                attackArcCheck.attackCd = 0; attackArcCheck.enemies.Clear(); attackArcCheck.enemies.Add(outside); attackArcCheck.Attack();
+                if (outside.Hp != 1000) throw new InvalidOperationException($"A arma {weaponIndex} acertou fora do arco desenhado.");
+                var inside = new Enemy { Kind = EnemyKind.Grunt, Pos = new PointF(150 + MathF.Cos(halfAngle - 0.08f) * 40, 330 + MathF.Sin(halfAngle - 0.08f) * 40), Hp = 1000, MaxHp = 1000 };
+                attackArcCheck.attackCd = 0; attackArcCheck.enemies.Clear(); attackArcCheck.enemies.Add(inside); attackArcCheck.Attack();
+                if (inside.Hp >= 1000) throw new InvalidOperationException($"A arma {weaponIndex} não acertou dentro do arco desenhado.");
+            }
+        }
         using (var focusCheck = new Game())
         {
             focusCheck.timer.Stop(); focusCheck.StartGame(); focusCheck.storyOverlay = false; focusCheck.room = 3; focusCheck.SetupRoom(); focusCheck.player = new PointF(500, 330); focusCheck.skillCd = 1; focusCheck.down.Add(Keys.W); focusCheck.dashTime = 0.1f;
