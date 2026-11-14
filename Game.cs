@@ -2733,7 +2733,7 @@ public sealed class Game : Form
         silenceBoss.Windup = 0; silenceBoss.Cooldown = 0; lanternExpedition.UpdateEnemy(silenceBoss, 0.01f); int secondSilencePattern = silenceBoss.BossPattern;
         silenceBoss.Windup = 0; silenceBoss.Cooldown = 0; lanternExpedition.UpdateEnemy(silenceBoss, 0.01f);
         if (firstSilencePattern != 1 || secondSilencePattern != 2 || silenceBoss.BossPattern != 0) throw new InvalidOperationException("Os três padrões anunciados do Silêncio de Baixo não alternaram.");
-        lanternExpedition.Defeat(silenceBoss); Drop silenceDrop = lanternExpedition.drops.Single(d => d.Kind == "silence"); lanternExpedition.Collect(silenceDrop);
+        lanternExpedition.Defeat(silenceBoss); Drop silenceDrop = lanternExpedition.drops.Single(d => d.Kind == "silence"); lanternExpedition.Collect(silenceDrop); lanternExpedition.drops.Clear();
         SaveData silenceSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(lanternExpedition.CaptureSaveData()))!;
         if (!lanternExpedition.silenceMemory || lanternExpedition.questStage != 51 || !ValidSaveData(silenceSave) || JsonSerializer.Deserialize<SaveData>("{}")?.SilenceMemory != false) throw new InvalidOperationException("A memória final não foi coletada, salva ou migrada com segurança.");
         lanternExpedition.memoryOverlay = false; lanternExpedition.player = new PointF(850, 330); lanternExpedition.Interact(); lanternExpedition.memoryOverlay = false; lanternExpedition.player = AvenPosition; lanternExpedition.Interact(); lanternExpedition.OnKeyDown(lanternExpedition, new KeyEventArgs(Keys.D1));
