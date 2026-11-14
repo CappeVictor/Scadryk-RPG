@@ -3922,21 +3922,21 @@ public sealed class Game : Form
         }
         using (var apexGame = new Game())
         {
-            apexGame.timer.Stop(); apexGame.StartGame(); apexGame.level = 20; apexGame.pendingTalents = 1; apexGame.talentChoice = true;
+            apexGame.timer.Stop(); apexGame.StartGame(); apexGame.level = 20; apexGame.combatDiscipline = 2; apexGame.combatMastery = 1; apexGame.combatFocus = 1; apexGame.pendingTalents = 1; apexGame.talentChoice = true;
             apexGame.equippedSkills = new[] { 1, 2, 3 }; apexGame.riverBell = apexGame.ebbSeal = true; apexGame.shardCd = 2; apexGame.bellCd = 3;
             apexGame.SelectTalent(Keys.D4);
             if (apexGame.pendingTalents != 1 || apexGame.combatApex != 0) throw new InvalidOperationException("O nível 20 permitiu gastar o ponto antes da escolha de auge.");
             apexGame.SelectTalent(Keys.D5);
-            if (apexGame.combatApex != 1 || apexGame.TechniquesOnCooldown() != 2 || Math.Abs(apexGame.TechniqueDamageMultiplier() - 1.18f) > 0.001f) throw new InvalidOperationException("Coro Suspenso não fortaleceu técnicas enquanto duas técnicas equipadas recarregam.");
+            if (apexGame.combatApex != 1 || apexGame.TechniquesOnCooldown() != 2 || Math.Abs(apexGame.TechniqueDamageMultiplier() - 1.3216f) > 0.001f) throw new InvalidOperationException("Coro Suspenso não fortaleceu técnicas enquanto duas técnicas equipadas recarregam.");
             apexGame.bellCd = 0;
-            if (Math.Abs(apexGame.TechniqueDamageMultiplier() - 1f) > 0.001f) throw new InvalidOperationException("Coro Suspenso manteve o bônus com apenas uma técnica em recarga.");
+            if (Math.Abs(apexGame.TechniqueDamageMultiplier() - 1.12f) > 0.001f) throw new InvalidOperationException("Coro Suspenso manteve o bônus com apenas uma técnica em recarga.");
             apexGame.shardCd = 0; apexGame.bellCd = 2; apexGame.enemies.Add(new Enemy { Kind = EnemyKind.Grunt, Pos = new PointF(400, 330), Hp = 500, MaxHp = 500 });
             apexGame.CastVoiceShard();
-            if (apexGame.echoShards.Count != 1 || Math.Abs(apexGame.echoShards[0].Damage - apexGame.damage * 1.35f * 1.18f) > 0.01f) throw new InvalidOperationException("O Estilhaço não recebeu Coro Suspenso ao iniciar sua recarga.");
+            if (apexGame.echoShards.Count != 1 || Math.Abs(apexGame.echoShards[0].Damage - apexGame.damage * 1.35f * 1.12f * 1.18f) > 0.01f) throw new InvalidOperationException("O Estilhaço não recebeu Coro Suspenso ao iniciar sua recarga.");
             apexGame.bellCd = 3; SaveData apexSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(apexGame.CaptureSaveData()))!;
             if (apexSave.CombatApex != 1 || !ValidSaveData(apexSave) || JsonSerializer.Deserialize<SaveData>("{}")?.CombatApex != 0) throw new InvalidOperationException("A escolha de auge não persistiu ou não preservou compatibilidade de saves antigos.");
             apexGame.gold = 10000; apexGame.tideGlass = 99; apexGame.RespecTalents();
-            if (apexGame.pendingTalents != 1 || apexGame.combatApex != 0) throw new InvalidOperationException("Redistribuir talentos não devolveu o ponto do auge.");
+            if (apexGame.pendingTalents != 4 || apexGame.combatApex != 0) throw new InvalidOperationException("Redistribuir talentos não devolveu os quatro marcos investidos.");
             apexGame.SelectTalent(Keys.D5); apexGame.SelectTalent(Keys.D5); apexGame.SelectTalent(Keys.D5); apexGame.SelectTalent(Keys.D6);
             if (apexGame.pendingTalents != 0 || apexGame.combatDiscipline != 1 || apexGame.combatMastery != 1 || apexGame.combatFocus != 1 || apexGame.combatApex != 2 || Math.Abs(apexGame.CombatApexDamageTakenMultiplier() - 0.88f) > 0.001f) throw new InvalidOperationException("A redistribuição não permitiu montar a Âncora de Eco no marco de nível 20.");
             apexGame.health = apexGame.maxHealth = 100; apexGame.HitPlayer(100);
