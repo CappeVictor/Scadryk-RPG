@@ -70,6 +70,6 @@ O epílogo também fecha o estilo de combate da campanha: devolver as memórias 
 
 ## Marco recente — Vigília Ascendente
 
-Concluído e publicado no commit `3bd27aa`: altar pós-epílogo no Refúgio, cinco chefes da campanha em rotação, vida e dano crescentes, armas com chance crescente de Relíquia, ouro e sal vítreo por andar, recorde no save, saída voluntária e retorno seguro ao Refúgio em caso de derrota. O README explica como iniciar e jogar a atividade. Release e smoke tests passaram localmente e no GitHub Actions.
+Concluído e publicado no commit `3bd27aa`: altar pós-epílogo no Refúgio, cinco chefes da campanha em rotação, vida e dano crescentes, armas com chance crescente de Relíquia, ouro e sal vítreo por andar, recorde no save, saída voluntária e retorno seguro ao Refúgio em caso de derrota. O README explica como iniciar e jogar a atividade. Release e smoke tests passaram localmente e no GitHub Actions. Nesta revisão, os três aspectos cíclicos — Casca Viva, Fome do Rio e Sussurro Veloz — foram adicionados e validados localmente. O próximo ajuste deve observar sua dificuldade em uma partida real.
 
 Próximo foco: testar o ritmo de progressão e o balanceamento em jogo real; depois ampliar as diferenças entre chefes, afixos e builds. Este marco melhora o ciclo de pós-jogo, mas não conclui o ARPG completo. Animações, arte e áudio originais, acessibilidade, balanceamento amplo e distribuição continuam sendo trabalho da meta de longo prazo.

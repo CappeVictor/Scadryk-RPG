@@ -10,6 +10,7 @@ using System.Windows.Forms;
 public sealed class Game : Form
 {
     private enum EnemyKind { Grunt, Archer, Mage, Elite, Guardian, InkEcho, BlindScribe, DrownedMemory, RiverFerryman, EmberWisp, AshWarden, NameMoth, HollowName, NameWeaver, FirstKeeper, MudCantor, OathCartographer, PaperWraith, NameBroker, SaltEcho, TideWitness, ReedKeeper, FlowKeeper, CounterCurrent, RiftCantor, GlassHerald, LanternRegent, RouteScribe, DeepSilence }
+    private enum VigilAspect { Hardened, Hungry, Swift }
     private sealed class Enemy
     {
         public PointF Pos, Target, Target2, Target2Start;
@@ -218,6 +219,34 @@ public sealed class Game : Form
         2 => EnemyKind.LanternRegent,
         3 => EnemyKind.GlassHerald,
         _ => EnemyKind.RiftCantor
+    };
+
+    private static VigilAspect VigilAspectForFloor(int floor) => (Math.Max(1, floor) % 3) switch
+    {
+        1 => VigilAspect.Hardened,
+        2 => VigilAspect.Hungry,
+        _ => VigilAspect.Swift
+    };
+
+    private static string VigilAspectTitle(int floor) => VigilAspectForFloor(floor) switch
+    {
+        VigilAspect.Hardened => "CASCA VIVA",
+        VigilAspect.Hungry => "FOME DO RIO",
+        _ => "SUSSURRO VELOZ"
+    };
+
+    private static string VigilAspectRule(int floor) => VigilAspectForFloor(floor) switch
+    {
+        VigilAspect.Hardened => "O chefe recebe 25% menos dano",
+        VigilAspect.Hungry => "Os ataques do chefe causam 30% mais dano",
+        _ => "Os ataques começam 20% mais rápido"
+    };
+
+    private static Color VigilAspectColor(int floor) => VigilAspectForFloor(floor) switch
+    {
+        VigilAspect.Hardened => Color.SteelBlue,
+        VigilAspect.Hungry => Color.OrangeRed,
+        _ => Color.Goldenrod
     };
 
     private void StartVigil()
@@ -691,10 +720,11 @@ public sealed class Game : Form
 
     private void UpdateEnemy(Enemy e, float dt)
     {
-        e.Cooldown -= dt; e.Flash = Math.Max(0, e.Flash - dt); PointF offset = Sub(player, e.Pos); float dist = Length(offset);
+        float attackTempo = vigilActive && e.Boss && VigilAspectForFloor(vigilFloor) == VigilAspect.Swift ? 1.25f : 1;
+        e.Cooldown -= dt * attackTempo; e.Flash = Math.Max(0, e.Flash - dt); PointF offset = Sub(player, e.Pos); float dist = Length(offset);
         if (e.Stagger > 0) { e.Stagger = Math.Max(0, e.Stagger - dt); return; }
         if (e.Windup > 0) {
-            e.Windup -= dt;
+            e.Windup -= dt * attackTempo;
             float reach = e.Boss ? e.BossPattern == 0 ? e.Kind == EnemyKind.GlassHerald ? 135 : e.Kind == EnemyKind.LanternRegent ? 150 : e.Kind == EnemyKind.RouteScribe ? 160 : 90 : e.Kind == EnemyKind.RiverFerryman && e.BossPattern == 2 ? 85 : e.Kind == EnemyKind.AshWarden && e.BossPattern == 2 ? 68 : e.Kind == EnemyKind.HollowName && e.BossPattern == 2 ? 85 : e.Kind is EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence && e.BossPattern == 2 ? 230 : (e.Kind is EnemyKind.NameWeaver or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor) && e.BossPattern == 2 ? 230 : 42 : e.Kind == EnemyKind.Elite ? 62 : e.Kind == EnemyKind.Mage ? 52 : e.Kind is EnemyKind.Archer or EnemyKind.InkEcho or EnemyKind.PaperWraith ? 230 : e.Kind == EnemyKind.DrownedMemory ? 195 : e.Kind is EnemyKind.EmberWisp or EnemyKind.NameMoth or EnemyKind.MudCantor ? 210 : 38;
             bool targeted = (e.Boss && (e.BossPattern is 1 or 2)) || (e.Kind is EnemyKind.Mage or EnemyKind.Elite or EnemyKind.Archer or EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth or EnemyKind.MudCantor or EnemyKind.PaperWraith or EnemyKind.SaltEcho);
             bool inFirstVoiceLine = e.Kind == EnemyKind.FirstKeeper && e.BossPattern == 2 && (DistanceToSegment(player, e.Pos, e.Target) < 25 || DistanceToSegment(player, e.Target2Start, e.Target2) < 25);
@@ -706,7 +736,7 @@ public sealed class Game : Form
         if (e.Kind is EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth or EnemyKind.MudCantor or EnemyKind.PaperWraith) { float preferred = e.Kind == EnemyKind.EmberWisp ? 145 : e.Kind == EnemyKind.NameMoth ? 175 : e.Kind == EnemyKind.MudCantor ? 215 : e.Kind == EnemyKind.PaperWraith ? 185 : 110; if (dist < preferred) e.Pos = MoveEnemy(e, Scale(Normalize(Sub(e.Pos, player), PointF.Empty), (e.Kind is EnemyKind.MudCantor or EnemyKind.PaperWraith ? 52 : 72) * dt)); else if (e.Cooldown <= 0) { BeginWindup(e, player, e.Kind == EnemyKind.EmberWisp ? 0.7f : e.Kind == EnemyKind.NameMoth ? 0.62f : e.Kind == EnemyKind.MudCantor ? 0.82f : e.Kind == EnemyKind.PaperWraith ? 0.68f : 0.9f); e.Cooldown = e.Kind == EnemyKind.EmberWisp ? 1.9f : e.Kind == EnemyKind.NameMoth ? 1.7f : e.Kind == EnemyKind.MudCantor ? 2.15f : e.Kind == EnemyKind.PaperWraith ? 1.95f : 2.25f; } SeparateFromPack(e, dt); return; }
         if (e.Kind == EnemyKind.Mage && dist < 165) e.Pos = MoveEnemy(e, Scale(Normalize(Sub(e.Pos, player), PointF.Empty), 42 * dt));
         if (e.Kind == EnemyKind.Elite && e.Cooldown <= 0 && dist < 220) { BeginWindup(e, player, e.Armored ? 0.72f : 0.5f); e.Cooldown = e.Armored ? 2.5f : 2f; return; }
-        if (e.Boss && e.Cooldown <= 0 && (dist < 135 || (e.Kind is EnemyKind.BlindScribe or EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence))) { e.BossPattern = (e.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence) ? (e.BossPattern + 1) % 3 : 1 - e.BossPattern; bool aimed = (e.Kind == EnemyKind.BlindScribe && e.BossPattern == 1) || ((e.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden) && (e.BossPattern is 1 or 2)) || (e.Kind is EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence) && e.BossPattern is 1 or 2; float windup = e.Hp < e.MaxHp * 0.5f ? 0.52f : 0.78f; if (e.Kind == EnemyKind.FirstKeeper && e.BossPattern == 2) { PointF axis = Normalize(Sub(player, e.Pos), new PointF(1, 0)); PointF side = new(-axis.Y, axis.X); e.Target = Add(e.Pos, Scale(axis, 920)); e.Target2Start = Add(player, Scale(side, -460)); e.Target2 = Add(player, Scale(side, 460)); e.Windup = e.WindupMax = windup; } else BeginWindup(e, aimed ? player : e.Pos, windup); e.Cooldown = e.Hp < e.MaxHp * 0.5f ? 1.25f : 2.0f; return; }
+        if (e.Boss && e.Cooldown <= 0 && (dist < 135 || (e.Kind is EnemyKind.BlindScribe or EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence))) { e.BossPattern = (e.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence) ? (e.BossPattern + 1) % 3 : 1 - e.BossPattern; bool aimed = (e.Kind == EnemyKind.BlindScribe && e.BossPattern == 1) || ((e.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden) && (e.BossPattern is 1 or 2)) || (e.Kind is EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence) && e.BossPattern is 1 or 2; float windup = e.Hp < e.MaxHp * 0.5f ? 0.52f : 0.78f; if (vigilActive && VigilAspectForFloor(vigilFloor) == VigilAspect.Swift) windup *= 0.8f; if (e.Kind == EnemyKind.FirstKeeper && e.BossPattern == 2) { PointF axis = Normalize(Sub(player, e.Pos), new PointF(1, 0)); PointF side = new(-axis.Y, axis.X); e.Target = Add(e.Pos, Scale(axis, 920)); e.Target2Start = Add(player, Scale(side, -460)); e.Target2 = Add(player, Scale(side, 460)); e.Windup = e.WindupMax = windup; } else BeginWindup(e, aimed ? player : e.Pos, windup); e.Cooldown = e.Hp < e.MaxHp * 0.5f ? 1.25f : 2.0f; return; }
         if (e.Kind == EnemyKind.Mage && e.Cooldown <= 0) { BeginWindup(e, player, 0.8f); e.Cooldown = 2.2f; SeparateFromPack(e, dt); return; }
         if (dist > (e.Boss ? 40 : 30)) e.Pos = MoveEnemy(e, Scale(Normalize(offset, PointF.Empty), (e.Boss ? 55 : 74 + room * 7) * dt));
         else if (e.Cooldown <= 0) { BeginWindup(e, player, 0.45f); e.Cooldown = 1.35f; }
@@ -716,6 +746,7 @@ public sealed class Game : Form
     private static void BeginWindup(Enemy enemy, PointF target, float duration) { enemy.Target = target; enemy.Windup = enemy.WindupMax = duration; }
     private void DamageEnemy(Enemy enemy, float amount, bool critical = false)
     {
+        if (vigilActive && enemy.Boss && VigilAspectForFloor(vigilFloor) == VigilAspect.Hardened) amount *= 0.75f;
         enemy.Hp -= amount;
         if (amount <= 0) return;
         string value = Math.Max(1, (int)Math.Round(amount)).ToString();
@@ -725,7 +756,8 @@ public sealed class Game : Form
     private void HitPlayer(float value)
     {
         float vigilPressure = vigilActive ? 1 + Math.Min(1.5f, Math.Max(0, vigilFloor - 1) * 0.08f) : 1;
-        float damageTaken = value * vigilPressure * (armorOn ? 0.7f : 1) * (wardTime > 0 ? 0.45f : 1) * WeaponDamageTakenMultiplier();
+        float aspectPressure = vigilActive && VigilAspectForFloor(vigilFloor) == VigilAspect.Hungry ? 1.3f : 1;
+        float damageTaken = value * vigilPressure * aspectPressure * (armorOn ? 0.7f : 1) * (wardTime > 0 ? 0.45f : 1) * WeaponDamageTakenMultiplier();
         health = Math.Max(0, health - damageTaken); invulnerable = 0.6f;
         AddFloatingText(new PointF(player.X, player.Y - 30), $"−{Math.Max(1, (int)Math.Round(damageTaken))}", Color.FromArgb(250, 116, 105));
         if (health <= 0)
@@ -1680,7 +1712,8 @@ public sealed class Game : Form
     {
         using var deep = new SolidBrush(Color.FromArgb(12, 17, 24)); using var stone = new SolidBrush(Color.FromArgb(54, 63, 67));
         using var edge = new Pen(Color.FromArgb(162, 132, 157, 165), 2); using var fissure = new Pen(Color.FromArgb(170, 129, 170, 180), 3);
-        using var hush = new Pen(Color.FromArgb(105, 173, 193, 194), 2); using var warning = new Pen(Color.FromArgb(220, 202, 104, 93), 3);
+        Color ringColor = vigilActive ? VigilAspectColor(vigilFloor) : Color.FromArgb(173, 193, 194);
+        using var hush = new Pen(Color.FromArgb(105, ringColor), 2); using var warning = new Pen(Color.FromArgb(220, 202, 104, 93), 3);
         g.FillRectangle(deep, 65, 108, 830, 445); g.FillRectangle(ground, 94, 132, 772, 397);
         for (int y = 0; y < 7; y++) for (int x = 0; x < 12; x++) g.DrawRectangle(tile, 70 + x * 68, 112 + y * 62, 67, 61);
         RectangleF[] walls = room == 37 ? SilenceThresholdWalls : SilenceChamberWalls;
@@ -1702,6 +1735,7 @@ public sealed class Game : Form
                 g.DrawEllipse(altar, VigilArenaAltarPosition.X - 36, VigilArenaAltarPosition.Y - 36, 72, 72);
                 g.DrawEllipse(altar, VigilArenaAltarPosition.X - 24, VigilArenaAltarPosition.Y - 24, 48, 48);
                 DrawCentered(g, enemies.Count == 0 && drops.Count == 0 ? "E  SUBIR OU ENCERRAR A VIGÍLIA" : $"ECO DA VIGÍLIA • ANDAR {vigilFloor}", 494, new Font("Segoe UI", 9, FontStyle.Bold), Color.FromArgb(222, 202, 226));
+                DrawCentered(g, $"{VigilAspectTitle(vigilFloor)} • {VigilAspectRule(vigilFloor).ToUpperInvariant()}", 511, new Font("Segoe UI", 9, FontStyle.Bold), VigilAspectColor(vigilFloor));
             }
             if (!vigilActive && enemies.FirstOrDefault(e => e.Kind == EnemyKind.DeepSilence) is Enemy boss && boss.Windup > 0)
             {
@@ -1709,7 +1743,7 @@ public sealed class Game : Form
                 else if (boss.BossPattern == 1) { g.DrawEllipse(warning, boss.Target.X - 100, boss.Target.Y - 100, 200, 200); }
                 else g.DrawLine(warning, boss.Pos, boss.Target);
             }
-            DrawCentered(g, "O SILÊNCIO DEVOLVE O QUE O LUME PRENDEU", 493, new Font("Segoe UI", 9, FontStyle.Bold), Color.LightCyan);
+            if (!vigilActive) DrawCentered(g, "O SILÊNCIO DEVOLVE O QUE O LUME PRENDEU", 493, new Font("Segoe UI", 9, FontStyle.Bold), Color.LightCyan);
         }
         using var gate = new Pen(enemies.Count == 0 && drops.Count == 0 ? Color.LightGreen : Color.FromArgb(73, 82, 79), 7);
         g.DrawLine(gate, 885, 290, 885, 370); g.DrawLine(gate, 75, 290, 75, 370);
@@ -2858,6 +2892,8 @@ public sealed class Game : Form
         emberEnding.room = 18; emberEnding.vigilBestFloor = 0; emberEnding.SetupRoom(); emberEnding.memoryOverlay = false; emberEnding.player = VigilAltarPosition; emberEnding.Interact(); emberEnding.memoryOverlay = false;
         Enemy firstVigilBoss = emberEnding.enemies.Single(); float firstVigilHp = firstVigilBoss.MaxHp;
         if (!emberEnding.vigilActive || emberEnding.vigilFloor != 1 || firstVigilBoss.Kind != EnemyKind.DeepSilence || firstVigilHp != 3450) throw new InvalidOperationException("O altar não abriu o primeiro andar da Vigília Ascendente após o epílogo.");
+        Enemy hardenedDummy = new() { Pos = new PointF(500, 300), Kind = EnemyKind.DeepSilence, Hp = 1000, MaxHp = 1000 }; emberEnding.DamageEnemy(hardenedDummy, 100);
+        if (VigilAspectForFloor(1) != VigilAspect.Hardened || hardenedDummy.Hp != 925 || VigilAspectTitle(1) != "CASCA VIVA") throw new InvalidOperationException("A Casca Viva não anunciou nem reduziu em 25% o dano recebido pelo chefe.");
         firstVigilBoss.Hp = 1; emberEnding.Defeat(firstVigilBoss);
         if (!emberEnding.drops.Any(d => d.Kind == "glass") || !emberEnding.drops.Any(d => d.Kind == "weapon")) throw new InvalidOperationException("O chefe da Vigília não deixou sal vítreo e arma.");
         foreach (Drop reward in emberEnding.drops.ToArray()) emberEnding.Collect(reward);
@@ -2865,6 +2901,9 @@ public sealed class Game : Form
         if (!emberEnding.vigilChoiceOpen) throw new InvalidOperationException("O altar da arena não abriu a escolha após limpar o andar.");
         emberEnding.OnKeyDown(emberEnding, new KeyEventArgs(Keys.D1));
         if (emberEnding.vigilFloor != 2 || !emberEnding.vigilActive || emberEnding.enemies.Single().Kind != EnemyKind.RouteScribe || emberEnding.enemies[0].MaxHp <= firstVigilHp || emberEnding.gold <= vigilGoldBefore || emberEnding.tideGlass <= vigilGlassBefore) throw new InvalidOperationException("O segundo andar não elevou a dificuldade, alternou o chefe e concedeu a recompensa do primeiro.");
+        emberEnding.health = emberEnding.maxHealth; float hungryHealth = emberEnding.health; emberEnding.HitPlayer(10);
+        if (VigilAspectForFloor(2) != VigilAspect.Hungry || Math.Abs(hungryHealth - emberEnding.health - 14.04f) > 0.02f || VigilAspectTitle(2) != "FOME DO RIO") throw new InvalidOperationException("A Fome do Rio não aplicou a pressão de ataque anunciada no segundo andar.");
+        emberEnding.health = emberEnding.maxHealth;
         Enemy secondVigilBoss = emberEnding.enemies.Single(); secondVigilBoss.Hp = 1; emberEnding.Defeat(secondVigilBoss);
         foreach (Drop reward in emberEnding.drops.ToArray()) emberEnding.Collect(reward);
         emberEnding.memoryOverlay = false; emberEnding.player = VigilArenaAltarPosition; emberEnding.Interact(); emberEnding.OnKeyDown(emberEnding, new KeyEventArgs(Keys.D2));
@@ -2872,6 +2911,8 @@ public sealed class Game : Form
         if (emberEnding.room != 18 || emberEnding.vigilActive || emberEnding.vigilBestFloor != 2 || emberEnding.health != emberEnding.maxHealth || !ValidSaveData(vigilSave) || vigilSave.VigilBestFloor != 2 || JsonSerializer.Deserialize<SaveData>("{}")?.VigilBestFloor != 0) throw new InvalidOperationException("A Vigília não encerrou no Refúgio com vida restaurada, melhor andar persistente e compatibilidade com saves antigos.");
         emberEnding.memoryOverlay = false; emberEnding.player = VigilAltarPosition; emberEnding.Interact(); emberEnding.memoryOverlay = false;
         if (!emberEnding.vigilActive || emberEnding.vigilFloor != 3) throw new InvalidOperationException("Uma nova tentativa da Vigília não começou após o último andar concluído.");
+        Enemy swiftBoss = emberEnding.enemies.Single(); swiftBoss.Cooldown = 0; emberEnding.UpdateEnemy(swiftBoss, 0.01f);
+        if (VigilAspectForFloor(3) != VigilAspect.Swift || Math.Abs(swiftBoss.WindupMax - 0.624f) > 0.002f || VigilAspectTitle(3) != "SUSSURRO VELOZ") throw new InvalidOperationException("O Sussurro Veloz não encurtou o aviso de ataque do terceiro andar.");
         emberEnding.health = 1; emberEnding.HitPlayer(2); SaveData vigilFallSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(emberEnding.CaptureSaveData()))!;
         if (emberEnding.room != 18 || emberEnding.vigilActive || emberEnding.health != emberEnding.maxHealth * 0.5f || emberEnding.vigilBestFloor != 2 || !ValidSaveData(vigilFallSave)) throw new InvalidOperationException("A derrota na Vigília não retornou ao Refúgio com vida parcial preservando a melhor marca.");
         game.room = 11; game.SetupRoom();
