@@ -3488,11 +3488,14 @@ public sealed class Game : Form
             if (slagWeaverCheck.health != 1000 || slagWeaverCheck.groundHazards.Count != 1 || Distance(slagWeaverCheck.groundHazards[0].Pos, new PointF(500, 330)) > 0.01f) throw new InvalidOperationException("O Eco de Escória não deixou a área persistente no ponto marcado ou atingiu fora do círculo.");
             GroundHazard slagPool = slagWeaverCheck.groundHazards[0];
             if (slagPool.Radius != 48 || slagPool.Damage != 9 || Math.Abs(slagPool.TimeLeft - 3.2f) > 0.03f) throw new InvalidOperationException("A poça de escória não preservou raio, dano e duração esperados.");
+            slagPool.TimeLeft = 4.5f;
             slagWeaverCheck.player = slagPool.Pos; slagWeaverCheck.TickGroundHazards(0.8f);
             if (slagWeaverCheck.health != 991) throw new InvalidOperationException("A poça de escória não causou dano ao jogador que permaneceu sobre ela.");
-            slagWeaverCheck.dashTime = 1; slagWeaverCheck.TickGroundHazards(0.85f);
+            slagWeaverCheck.player = new PointF(600, 330); slagWeaverCheck.TickGroundHazards(0.86f);
+            if (slagWeaverCheck.health != 991) throw new InvalidOperationException("A poça de escória atingiu o jogador depois que ele saiu da área.");
+            slagWeaverCheck.player = slagPool.Pos; slagWeaverCheck.dashTime = 1; slagWeaverCheck.TickGroundHazards(0.86f);
             if (slagWeaverCheck.health != 991) throw new InvalidOperationException("A esquiva não protegeu contra o dano periódico da poça.");
-            slagWeaverCheck.dashTime = 0; slagWeaverCheck.TickGroundHazards(0.85f);
+            slagWeaverCheck.dashTime = 0; slagWeaverCheck.TickGroundHazards(0.86f);
             if (slagWeaverCheck.health != 982) throw new InvalidOperationException("A poça de escória não repetiu o dano depois da esquiva.");
             slagWeaverCheck.TickGroundHazards(1.6f);
             if (slagWeaverCheck.groundHazards.Count != 0) throw new InvalidOperationException("A poça de escória não desapareceu ao fim de sua duração.");
