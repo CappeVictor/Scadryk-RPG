@@ -835,6 +835,8 @@ public sealed class Game : Form
     private static bool NonBossAttackContains(Enemy e, PointF point) => Distance(point, NonBossAttackCenter(e)) < NonBossAttackRadius(e);
 
     private static bool BossUsesCone(Enemy e) => e.Kind == EnemyKind.GlassHerald && e.BossPattern == 2;
+    private static bool BossUsesRing(Enemy e) => e.Kind == EnemyKind.RouteScribe && e.BossPattern == 0;
+    private static float BossRingInnerRadius(Enemy e) => e.Kind == EnemyKind.RouteScribe ? 68 : 0;
     private static bool BossUsesLine(Enemy e) => e.BossPattern == 2 && e.Kind is EnemyKind.FirstKeeper or EnemyKind.NameWeaver or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus;
     private static bool BossConeContains(Enemy e, PointF point)
     {
@@ -845,6 +847,7 @@ public sealed class Game : Form
     private static bool BossAttackContains(Enemy e, PointF point)
     {
         if (BossUsesCone(e)) return BossConeContains(e, point);
+        if (BossUsesRing(e)) { float distance = Distance(point, e.Pos); return distance > BossRingInnerRadius(e) && distance < BossCircleRadius(e); }
         if (!BossUsesLine(e)) return Distance(point, e.BossPattern == 0 ? e.Pos : e.Target) < BossCircleRadius(e);
         float width = e.Kind == EnemyKind.FirstKeeper ? 25 : 24;
         if (DistanceToSegment(point, e.Pos, e.Target) < width) return true;
@@ -866,6 +869,16 @@ public sealed class Game : Form
             var cone = new RectangleF(e.Pos.X - radius, e.Pos.Y - radius, radius * 2, radius * 2);
             if (highContrastTelegraphs) { using var shadow = new Pen(Color.FromArgb(245, 12, 13, 15), 9); g.DrawPie(shadow, cone, angle - sweep / 2, sweep); }
             g.FillPie(fill, cone, angle - sweep / 2, sweep); g.DrawPie(outline, cone, angle - sweep / 2, sweep);
+            return;
+        }
+        if (BossUsesRing(e))
+        {
+            float radius = BossCircleRadius(e), innerRadius = BossRingInnerRadius(e);
+            var outer = new RectangleF(e.Pos.X - radius, e.Pos.Y - radius, radius * 2, radius * 2);
+            var inner = new RectangleF(e.Pos.X - innerRadius, e.Pos.Y - innerRadius, innerRadius * 2, innerRadius * 2);
+            using var ring = new GraphicsPath(FillMode.Alternate); ring.AddEllipse(outer); ring.AddEllipse(inner);
+            if (highContrastTelegraphs) { using var shadow = new Pen(Color.FromArgb(245, 12, 13, 15), 9); g.DrawEllipse(shadow, outer); g.DrawEllipse(shadow, inner); }
+            g.FillPath(fill, ring); g.DrawEllipse(outline, outer); g.DrawEllipse(outline, inner);
             return;
         }
         if (!BossUsesLine(e))
@@ -2819,6 +2832,10 @@ public sealed class Game : Form
                 if (BossUsesCone(boss))
                 {
                     if (!BossAttackContains(boss, new PointF(480, 300)) || BossAttackContains(boss, new PointF(400, 450)) || BossAttackContains(boss, new PointF(560, 300))) throw new InvalidOperationException("O cone do Arauto de Vidro não respeitou seu alcance ou abertura lateral.");
+                }
+                else if (BossUsesRing(boss))
+                {
+                    if (BossAttackContains(boss, boss.Pos) || !BossAttackContains(boss, new PointF(400, 300)) || BossAttackContains(boss, new PointF(461, 300))) throw new InvalidOperationException("A onda do Escriba do Traçado não preservou o miolo seguro nem o limite externo.");
                 }
                 else if (BossUsesLine(boss))
                 {
