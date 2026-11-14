@@ -95,6 +95,8 @@ O **Mordente de Compasso** estreia como arquétipo de longo alcance nas câmaras
 
 A combinação **Maré + Cadência** numa Relíquia ativa a Ressonância da Maré: cada crítico adianta mais 0,10 segundo das recargas de técnica, além do efeito normal da Cadência. A ficha e o inventário identificam a sinergia; o autoteste confere a redução acumulada e sua descrição.
 
+A combinação **Trégua + Lastro** numa Relíquia ativa a Ressonância da Trégua: se a vida estiver em metade ou menos, cada abate cura 6 pontos adicionais. Isso dá à build defensiva uma recuperação situacional em encontros com vários alvos; o autoteste cobre o limiar, a cura efetiva e a descrição do afixo.
+
 ## Capítulo XVII — As marés emprestadas
 
 Após o epílogo, Aven abre uma expedição opcional ao Cais dos Ecos Emprestados e ao Arquivo da Maré sem Nome. O Arquivista das Marés anuncia três ataques, deixa uma memória compartilhada e concede uma melhoria permanente para técnicas. A história não vincula Nara a essa região nem revela seu nome escolhido ou paradeiro. São duas salas novas, totalizando 39 salas de combate e 19 chefes; o progresso e a compatibilidade com saves antigos passam pelo autoteste. A próxima etapa é ampliar a variedade de builds, revisar balanceamento e criar animações completas, áudio e distribuição.

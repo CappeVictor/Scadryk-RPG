@@ -665,6 +665,13 @@ public sealed class Game : Form
     private float TechniqueDamageMultiplier() => (1f + techniqueTalent * 0.08f) * (combatDiscipline == 2 ? 1.12f : combatDiscipline == 1 ? 0.9f : 1f) * (vigilActive && HasCharm(8) ? 1.18f : 1f);
     private float BasicAttackSpecializationMultiplier() => combatDiscipline == 1 ? 1.12f : combatDiscipline == 2 ? 0.9f : 1f;
     private int WeaponPower(int index) => weaponDamage[index] + weaponBonuses[index];
+    private int WeaponKillHealing()
+    {
+        if (!HasWeaponAffix(weapon, 1)) return 0;
+        int healing = weaponRarities[weapon] == 2 ? 6 : 3;
+        if (weaponRarities[weapon] == 2 && health <= maxHealth * 0.5f && HasWeaponAffix(weapon, 5)) healing += 6;
+        return healing;
+    }
     private static int CombatDisciplineForSave(SaveData data) => data.CombatDiscipline ?? (data.Level >= 5 ? 1 : 0);
     private static int CombatMasteryForSave(SaveData data) => data.CombatMastery ?? (data.Level >= 10 ? 1 : 0);
     private static string WeaponRarityName(int index) => index == 0 ? "COMUM" : index == 1 ? "RARA" : "RELÍQUIA";
@@ -673,7 +680,7 @@ public sealed class Game : Form
     private string WeaponAffixName(int index) => string.Join(" + ", new[] { WeaponAffixLabel(weaponAffixes[index]), WeaponAffixLabel(weaponAffixes2[index]) }.Where(label => label.Length > 0));
     private static string WeaponAffixLabel(int affix) => affix switch { 1 => "Trégua", 2 => "Contracanto", 3 => "Maré", 4 => "Passo Célere", 5 => "Lastro", 6 => "Fio Esticado", 7 => "Cadência", _ => "" };
     private string WeaponDisplayName(int index) => weaponRarities[index] == 0 ? $"{weaponNames[index]} [COMUM]" : $"{weaponNames[index]} • {WeaponRarityName(index)} {WeaponAffixName(index)}";
-    private string WeaponAffixDescription(int index) => string.Join(" • ", new[] { WeaponAffixDescription(weaponAffixes[index], weaponRarities[index]), WeaponAffixDescription(weaponAffixes2[index], weaponRarities[index]), weaponRarities[index] == 2 && HasWeaponAffix(index, 3) && HasWeaponAffix(index, 7) ? "Ressonância da Maré: Cadência adianta +0,10 s por crítico" : "" }.Where(description => description.Length > 0));
+    private string WeaponAffixDescription(int index) => string.Join(" • ", new[] { WeaponAffixDescription(weaponAffixes[index], weaponRarities[index]), WeaponAffixDescription(weaponAffixes2[index], weaponRarities[index]), weaponRarities[index] == 2 && HasWeaponAffix(index, 3) && HasWeaponAffix(index, 7) ? "Ressonância da Maré: Cadência adianta +0,10 s por crítico" : "", weaponRarities[index] == 2 && HasWeaponAffix(index, 1) && HasWeaponAffix(index, 5) ? "Ressonância da Trégua: abaixo de metade da vida, abates curam +6" : "" }.Where(description => description.Length > 0));
     private static string WeaponAffixDescription(int affix, int rarity) => affix switch { 1 => $"da Trégua: recupera {(rarity == 2 ? 6 : 3)} vida por abate", 2 => $"do Contracanto: +{(rarity == 2 ? 11 : 7)} p.p. de crítico", 3 => $"da Maré: +{(rarity == 2 ? 18 : 12)}% de dano de técnica", 4 => $"do Passo Célere: recarga de técnicas -{(rarity == 2 ? 16 : 10)}%", 5 => $"do Lastro: dano recebido -{(rarity == 2 ? 12 : 8)}%", 6 => $"do Fio Esticado: alcance básico +{(rarity == 2 ? 20 : 12)}%", 7 => $"da Cadência: crítico adianta recargas em {(rarity == 2 ? 0.25f : 0.15f):0.00} s por golpe", _ => "" };
 
     private void CastBellPulse()
@@ -854,7 +861,7 @@ public sealed class Game : Form
             }
             else eliteWeaponMisses = NextEliteWeaponMisses(eliteWeaponMisses, false);
         }
-        if (HasWeaponAffix(weapon, 1)) health = Math.Min(maxHealth, health + (weaponRarities[weapon] == 2 ? 6 : 3));
+        health = Math.Min(maxHealth, health + WeaponKillHealing());
         if (enemy.Boss && vigilActive) drops.Add(new Drop { Pos = Offset(enemy.Pos, 0, -28), Kind = "glass", Amount = 1 + Math.Min(5, (vigilFloor - 1) / 3) });
         if (enemy.Boss) drops.Add(CreateWeaponDrop(Offset(enemy.Pos, 0, 28), random.Next(1, 3), true));
         if (enemy.Boss && vigilActive && vigilFloor % 5 == 0 && (ownedCharms & 64) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 0, -48), Kind = "charm", Amount = 7 });
@@ -4065,6 +4072,12 @@ public sealed class Game : Form
             if (Math.Abs(affixForge.WeaponCriticalCooldownAdvance(0) - 0.35f) > 0.001f || !affixForge.WeaponAffixDescription(0).Contains("Ressonância da Maré: Cadência adianta +0,10 s por crítico")) throw new InvalidOperationException("A combinação Maré + Cadência da Relíquia não desbloqueou sua sinergia documentada.");
             affixForge.AdvanceTechniqueCooldowns(affixForge.WeaponCriticalCooldownAdvance(0));
             if (Math.Abs(affixForge.skillCd - 0.65f) > 0.001f) throw new InvalidOperationException("A Ressonância da Maré não adiantou a recarga pelo valor combinado dos afixos.");
+            affixForge.weaponRarities[0] = 2; affixForge.weaponAffixes[0] = 1; affixForge.weaponAffixes2[0] = 5; affixForge.health = 50; affixForge.maxHealth = 100;
+            if (affixForge.WeaponKillHealing() != 12 || !affixForge.WeaponAffixDescription(0).Contains("Ressonância da Trégua: abaixo de metade da vida, abates curam +6")) throw new InvalidOperationException("A combinação Trégua + Lastro não revelou a cura de risco baixo.");
+            var sustainDummy = new Enemy { Pos = affixForge.player, Kind = EnemyKind.Grunt, Hp = 1, MaxHp = 1 }; affixForge.enemies.Add(sustainDummy); affixForge.Defeat(sustainDummy);
+            if (affixForge.health != 62) throw new InvalidOperationException("A Ressonância da Trégua não recuperou vida ao abater sob metade da vida.");
+            affixForge.health = 51; var healthyDummy = new Enemy { Pos = affixForge.player, Kind = EnemyKind.Grunt, Hp = 1, MaxHp = 1 }; affixForge.enemies.Add(healthyDummy); affixForge.Defeat(healthyDummy);
+            if (affixForge.health != 57) throw new InvalidOperationException("A cura adicional da Ressonância da Trégua foi aplicada acima do limiar de risco.");
         }
         using var lumeUpstream = new Game(); lumeUpstream.timer.Stop(); lumeUpstream.StartGame(); lumeUpstream.room = 22; lumeUpstream.questStage = 25; lumeUpstream.townEnding = 2; lumeUpstream.SetupRoom();
         if (lumeUpstream.enemies.Single(e => e.Kind == EnemyKind.TideWitness).MaxHp != 920) throw new InvalidOperationException("Manter o Lume não alterou a força da Testemunha da Maré.");
