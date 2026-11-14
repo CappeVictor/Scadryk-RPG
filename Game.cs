@@ -202,7 +202,7 @@ public sealed class Game : Form
     private PointF beaconPos;
     private readonly string[] roomNames = { "VESTÍBULO EM RUÍNAS", "SALÃO DOS OSSOS", "CÂMARA DO GUARDIÃO", "VÉSPERA • PRAÇA DO FAROL", "ARQUIVO NORTE • GALERIA", "ARQUIVO NORTE • COFRE", "RIO CEGO • LEITO SECO", "RIO CEGO • CAPELA AFOGADA", "FAROL • ESCADA DE CINZAS", "FAROL • CÂMARA DO LUME", "ALÉM DO LUME • MARGEM SEM REFLEXO", "RESERVATÓRIO • VOZES RETIDAS", "COSTA DAS VOZES TARDIAS", "CLAUSTRO DO CORO PARTIDO", "BACIA DO PRIMEIRO NOME", "SALA DA PRIMEIRA VIGÍLIA", "VAU DOS NOMES ESCOLHIDOS", "PÁTIO DAS TESTEMUNHAS", "REFÚGIO DO VEIO CALMO", "TRILHA DOS LUMINÁRIOS", "CISTERNA DO REGISTRO VAZIO", "VÁRZEA DAS VOZES SOPRADAS", "PONTE DA MARÉ INVERTIDA", "COTOVELO DOS JUNCAIS", "PÁTIO DAS AMARRAS LIVRES", "MOINHOS DA VAZANTE", "CÂMARA DO VEIO PRESO", "ESCARPA DO CONTRAFLUXO", "CORAÇÃO DAS DUAS MARGENS", "CANTARIA DAS VOZES LIVRES", "CÂMARA DA CONTRAVOZ", "GARGANTA DO VIDRO MUDO", "FONTE SOB A PEDRA", "PASSAGEM DAS LANTERNAS BAIXAS", "OBSERVATÓRIO DA MARÉ INTERIOR", "TRILHA DAS LINHAS ABERTAS", "GALERIA DA ROTA NÃO ESCRITA", "SOLEIRA DO SILÊNCIO", "CÂMARA DO ÚLTIMO ECO", "CAIS DOS ECOS EMPRESTADOS", "ARQUIVO DA MARÉ SEM NOME" };
     private readonly string[] weaponNames = { "ESPADA DE PEDRA", "LÂMINA DO ARQUIVO", "FACA DO CREPÚSCULO" };
-    private readonly string[] charmNames = { "", "NÓ DE BRASA", "FIO DE TRAVESSIA", "VIDRO DE VIGÍLIA", "MARCA DA VIGÍLIA", "FIO DA MARGEM", "NÓ DE LUME", "FIO DO RETORNO" };
+    private readonly string[] charmNames = { "", "NÓ DE BRASA", "FIO DE TRAVESSIA", "VIDRO DE VIGÍLIA", "MARCA DA VIGÍLIA", "FIO DA MARGEM", "NÓ DE LUME", "FIO DO RETORNO", "ECO CONVERGENTE" };
     private readonly string[] skillNames = { "Vazio", "Estilhaço de Voz", "Ressonância do Sino", "Vazante", "Manto de Lastro", "Coro de Retorno", "Farol de Vigília", "Devolução das Vozes", "Última Centelha" };
     private readonly string[] skillDescriptions = { "", "Projétil perfurante de longo alcance", "Onda que fere e interrompe ecos", "Agrupa ecos próximos", "Reduz o dano recebido por 2,5 s", "Onda que fere e interrompe ecos", "Planta um farol que pulsa contra inimigos próximos", "Onda ampla que fere e restaura vida por inimigo atingido", "Golpe concentrado que causa dano elevado a um alvo" };
     private readonly string[] prologue = {
@@ -597,7 +597,7 @@ public sealed class Game : Form
     private float BellPulseRadius() => HasCharm(2) ? 190f : 155f;
     private float BellPulseCooldown() => (Math.Max(7f, 14f - skillTalent * 0.7f) + (HasCharm(2) ? 1.5f : 0f)) * WeaponCooldownMultiplier();
     private float WeaponSkillMultiplier() => HasWeaponAffix(weapon, 3) ? weaponRarities[weapon] == 2 ? 1.18f : 1.12f : 1f;
-    private float TechniqueDamageMultiplier() => 1f + techniqueTalent * 0.08f;
+    private float TechniqueDamageMultiplier() => (1f + techniqueTalent * 0.08f) * (vigilActive && HasCharm(8) ? 1.18f : 1f);
     private int WeaponPower(int index) => weaponDamage[index] + weaponBonuses[index];
     private static string WeaponRarityName(int index) => index == 0 ? "COMUM" : index == 1 ? "RARA" : "RELÍQUIA";
     private bool HasWeaponAffix(int index, int affix) => weaponAffixes[index] == affix || weaponAffixes2[index] == affix;
@@ -778,6 +778,7 @@ public sealed class Game : Form
         if (enemy.Boss && vigilActive) drops.Add(new Drop { Pos = Offset(enemy.Pos, 0, -28), Kind = "glass", Amount = 1 + Math.Min(5, (vigilFloor - 1) / 3) });
         if (enemy.Boss) drops.Add(CreateWeaponDrop(Offset(enemy.Pos, 0, 28), random.Next(1, 3), true));
         if (enemy.Boss && vigilActive && vigilFloor % 5 == 0 && (ownedCharms & 64) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 0, -48), Kind = "charm", Amount = 7 });
+        if (enemy.Boss && vigilActive && vigilFloor % 10 == 0 && (ownedCharms & 128) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 0, -68), Kind = "charm", Amount = 8 });
         if (enemy.Boss && vigilActive && HasCharm(7)) health = Math.Min(maxHealth, health + maxHealth * 0.12f);
         else if (enemy.Kind == EnemyKind.Elite && EliteWeaponDropRoll(random.Next(100))) drops.Add(CreateWeaponDrop(Offset(enemy.Pos, -24, 28), random.Next(1, 3)));
         if (enemy.Kind == EnemyKind.Guardian && !relic) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "relic" });
@@ -1057,11 +1058,11 @@ public sealed class Game : Form
     {
         if (item.Kind == "charm")
         {
-            if (item.Amount is < 1 or > 7) { drops.Remove(item); return; }
+            if (item.Amount is < 1 or > 8) { drops.Remove(item); return; }
             bool newCharm = (ownedCharms & (1 << (item.Amount - 1))) == 0; ownedCharms |= 1 << (item.Amount - 1);
             if (equippedCharm == 0 && equippedCharm2 != item.Amount) equippedCharm = item.Amount;
             else if (equippedCharm2 == 0 && equippedCharm != item.Amount) equippedCharm2 = item.Amount;
-            notice = item.Amount == 7 ? "TALISMÃ DE PÓS-JOGO: FIO DO RETORNO" : newCharm ? $"TALISMÃ: {charmNames[item.Amount]}" : $"ECO DUPLICADO: {charmNames[item.Amount]}";
+            notice = item.Amount is 7 or 8 ? $"TALISMÃ DE PÓS-JOGO: {charmNames[item.Amount]}" : newCharm ? $"TALISMÃ: {charmNames[item.Amount]}" : $"ECO DUPLICADO: {charmNames[item.Amount]}";
             drops.Remove(item); noticeTime = 1.7f; return;
         }
         if (item.Kind == "silence") { silenceMemory = true; questStage = 51; notice = "MEMÓRIA: AS VOZES DEVOLVIDAS"; ShowMemory("AS VOZES DEVOLVIDAS", "O Silêncio não era uma criatura que veio de fora. Era o nome dado ao peso de milhares de lembranças mantidas juntas pelo Lume. Quando a câmara se abre, as vozes não exigem que você as devolva nem que continue prendendo-as: cada uma pode escolher se quer falar, descansar ou partir. Entre elas não há resposta sobre Nara. O que resta é decidir como Véspera cuidará do Lume daqui em diante."); drops.Remove(item); return; }
@@ -1478,9 +1479,9 @@ public sealed class Game : Form
             || s.ClearedRooms < 0
             || s.ClearedRooms > 2199023255551L
             || s.Completed && s.Room != 2
-            || s.OwnedCharms is < 0 or > 127
-            || s.EquippedCharm is < 0 or > 7
-            || s.EquippedCharm2 is < 0 or > 7
+            || s.OwnedCharms is < 0 or > 255
+            || s.EquippedCharm is < 0 or > 8
+            || s.EquippedCharm2 is < 0 or > 8
             || s.EquippedCharm > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm - 1))) == 0
             || s.EquippedCharm2 > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm2 - 1))) == 0
             || s.EquippedCharm > 0 && s.EquippedCharm == s.EquippedCharm2
@@ -2518,7 +2519,7 @@ public sealed class Game : Form
             "lens" => Color.FromArgb(248, 185, 95), "trace" => Color.FromArgb(185, 231, 215), "chorus" => Color.Khaki,
             "first" => Color.Goldenrod, "west" => Color.LightSkyBlue, "register" => Color.LightSteelBlue,
             "deep" => Color.FromArgb(190, 225, 235), "borrowed" => Color.FromArgb(130, 210, 204), "glass" => Color.LightCyan, "beyond" => Color.PaleGreen, "ebb" => Color.DodgerBlue,
-            "counter" => Color.LightGoldenrodYellow, "verse" => Color.Orchid, "charm" => item.Amount == 7 ? Color.MediumTurquoise : item.Amount == 4 ? Color.Goldenrod : item.Amount == 5 ? Color.LightSeaGreen : item.Amount == 6 ? Color.PaleGreen : Color.Plum,
+            "counter" => Color.LightGoldenrodYellow, "verse" => Color.Orchid, "charm" => item.Amount is 7 or 8 ? Color.MediumTurquoise : item.Amount == 4 ? Color.Goldenrod : item.Amount == 5 ? Color.LightSeaGreen : item.Amount == 6 ? Color.PaleGreen : Color.Plum,
             "armor" => Color.MediumAquamarine, "weapon" => item.Rarity == 2 ? Color.Turquoise : item.Rarity == 1 ? Color.Goldenrod : Color.CornflowerBlue,
             "potion" => Color.IndianRed, _ => Color.Goldenrod
         };
@@ -2696,7 +2697,7 @@ public sealed class Game : Form
         g.DrawString($"SINO DE NARA {(riverBell ? "ENCONTRADO • +20 VIDA MÁXIMA" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 490);
         g.DrawString($"PRISMA DO LUME {(lumeLens ? "ENCONTRADO • +12 DANO" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 525);
         g.DrawString($"RASTRO DE NARA {(naraTrace ? "RECUPERADO • MEMÓRIA PRESERVADA" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 560);
-        string[] availableCharms = Enumerable.Range(1, 7).Where(i => (ownedCharms & (1 << (i - 1))) != 0).Select(i => charmNames[i]).ToArray();
+        string[] availableCharms = Enumerable.Range(1, charmNames.Length - 1).Where(i => (ownedCharms & (1 << (i - 1))) != 0).Select(i => charmNames[i]).ToArray();
         string charmList = availableCharms.Length == 0 ? "NENHUM" : string.Join(" • ", availableCharms.Take(3)) + (availableCharms.Length > 3 ? "\n" + string.Join(" • ", availableCharms.Skip(3)) : "");
         g.DrawString($"TALISMÃS: {charmList}   •   SAL VÍTREO: {tideGlass}", effectFont, Brushes.Plum, new RectangleF(205, 574, 560, 27));
         string firstCharm = equippedCharm == 0 ? "VAZIO" : charmNames[equippedCharm]; string secondCharm = equippedCharm2 == 0 ? "VAZIO" : charmNames[equippedCharm2];
@@ -2708,6 +2709,7 @@ public sealed class Game : Form
         if (HasCharm(4)) effect += " • Marca: +25% contra chefes, -20% contra outros inimigos";
         if (HasCharm(6)) effect = "Nó de Lume: Farol dura 8 s e pulsa a cada 0,85 s; recarga +3,5 s";
         if (HasCharm(7)) effect = "Fio do Retorno (Vigília): +40% dano e cura 12% ao abater chefe; dano recebido +10%";
+        if (HasCharm(8)) effect = (HasCharm(7) ? effect + " • " : "") + "Eco Convergente (Vigília): +18% de dano de técnica";
         g.DrawString(effect, effectFont, Brushes.AntiqueWhite, new RectangleF(205, 617, 560, 18));
     }
     private void DrawCharacterSheet(Graphics g)
