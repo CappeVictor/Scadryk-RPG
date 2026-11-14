@@ -31,6 +31,7 @@ public sealed class Game : Form
     private sealed class Drop { public PointF Pos; public string Kind = "gold"; public int Amount, Rarity, Bonus, Affix, Affix2; }
     private sealed class EchoShard { public PointF Pos, Direction; public float Life, Damage; public HashSet<Enemy> Hit = new(); }
     private sealed class FloatingText { public PointF Pos; public string Text = ""; public Color Color; public float TimeLeft, Duration; }
+    private readonly record struct ReadingOverlayLayout(float PanelY, float PanelHeight, float HeadingY, float BodyY, float BodyHeight, float HintY);
     private sealed class SaveData
     {
         public int Room { get; set; }
@@ -2986,39 +2987,40 @@ public sealed class Game : Form
     }
     private void DrawStoryOverlay(Graphics g)
     {
+        DrawReadingOverlay(g, $"MEMÓRIA NA PEDRA   •   {storyPage + 1} / {prologue.Length}", prologue[storyPage], "ENTER, ESPAÇO OU CLIQUE  •  CONTINUAR", FontStyle.Regular);
+    }
+    private void DrawReadingOverlay(Graphics g, string heading, string body, string action, FontStyle bodyStyle)
+    {
         using var shade = new SolidBrush(Color.FromArgb(145, 5, 7, 9));
         using var panelBrush = new SolidBrush(Color.FromArgb(246, 19, 21, 22));
         using var border = new Pen(Color.FromArgb(175, 143, 112, 73), 2);
         using var headingFont = new Font("Georgia", 13, FontStyle.Bold);
-        using var bodyFont = new Font("Segoe UI", 14);
+        using var bodyFont = new Font("Segoe UI", 14, bodyStyle);
         using var hintFont = new Font("Segoe UI", 9, FontStyle.Bold);
         using var headingBrush = new SolidBrush(Color.FromArgb(230, 193, 129));
         using var bodyBrush = new SolidBrush(Color.AntiqueWhite);
         using var hintBrush = new SolidBrush(Color.FromArgb(170, 174, 168));
+        ReadingOverlayLayout layout = MeasureReadingOverlay(g, body, headingFont, bodyFont, hintFont);
         g.FillRectangle(shade, 0, 0, 960, 640);
-        g.FillRectangle(panelBrush, 86, 420, 788, 154);
-        g.DrawRectangle(border, 86, 420, 788, 154);
-        g.DrawString($"MEMÓRIA NA PEDRA   •   {storyPage + 1} / {prologue.Length}", headingFont, headingBrush, 112, 440);
-        g.DrawString(prologue[storyPage], bodyFont, bodyBrush, new RectangleF(112, 472, 736, 64));
-        g.DrawString("ENTER, ESPAÇO OU CLIQUE  •  CONTINUAR", hintFont, hintBrush, 112, 548);
+        g.FillRectangle(panelBrush, 86, layout.PanelY, 788, layout.PanelHeight);
+        g.DrawRectangle(border, 86, layout.PanelY, 788, layout.PanelHeight);
+        g.DrawString(heading, headingFont, headingBrush, 112, layout.HeadingY);
+        g.DrawString(body, bodyFont, bodyBrush, new RectangleF(112, layout.BodyY, 736, layout.BodyHeight));
+        g.DrawString(action, hintFont, hintBrush, 112, layout.HintY);
+    }
+    private static ReadingOverlayLayout MeasureReadingOverlay(Graphics g, string body, Font headingFont, Font bodyFont, Font hintFont)
+    {
+        float bodyHeight = Math.Max(bodyFont.GetHeight(g), g.MeasureString(body, bodyFont, new SizeF(736, 360)).Height + 2);
+        float panelHeight = Math.Max(154, 20 + headingFont.GetHeight(g) + 8 + bodyHeight + 10 + hintFont.GetHeight(g) + 16);
+        float panelY = 574 - panelHeight;
+        float headingY = panelY + 20;
+        float bodyY = headingY + headingFont.GetHeight(g) + 8;
+        float hintY = bodyY + bodyHeight + 10;
+        return new ReadingOverlayLayout(panelY, panelHeight, headingY, bodyY, bodyHeight, hintY);
     }
     private void DrawMemoryOverlay(Graphics g)
     {
-        using var shade = new SolidBrush(Color.FromArgb(165, 5, 7, 9));
-        using var panelBrush = new SolidBrush(Color.FromArgb(246, 19, 21, 22));
-        using var border = new Pen(Color.FromArgb(175, 143, 112, 73), 2);
-        using var headingFont = new Font("Georgia", 13, FontStyle.Bold);
-        using var bodyFont = new Font("Segoe UI", 14, FontStyle.Italic);
-        using var hintFont = new Font("Segoe UI", 9, FontStyle.Bold);
-        using var headingBrush = new SolidBrush(Color.FromArgb(230, 193, 129));
-        using var bodyBrush = new SolidBrush(Color.AntiqueWhite);
-        using var hintBrush = new SolidBrush(Color.FromArgb(170, 174, 168));
-        g.FillRectangle(shade, 0, 0, 960, 640);
-        g.FillRectangle(panelBrush, 86, 420, 788, 154);
-        g.DrawRectangle(border, 86, 420, 788, 154);
-        g.DrawString(memoryTitle, headingFont, headingBrush, 112, 440);
-        g.DrawString(memoryText, bodyFont, bodyBrush, new RectangleF(112, 472, 736, 64));
-        g.DrawString("ENTER, ESPAÇO OU CLIQUE  •  FECHAR", hintFont, hintBrush, 112, 548);
+        DrawReadingOverlay(g, memoryTitle, memoryText, "ENTER, ESPAÇO OU CLIQUE  •  FECHAR", FontStyle.Italic);
     }
     private static void DrawMemoryStone(Graphics g, PointF pos, bool nearby)
     {
@@ -3072,6 +3074,21 @@ public sealed class Game : Form
         GameAudio.SilenceForAutomatedRun();
         if (GameAudio.SoundscapeForRoom(41) != 7 || GameAudio.SoundscapeForRoom(42) != 7 || GameAudio.SoundscapeForRoom(40) != 6)
             throw new InvalidOperationException("As salas do Capítulo XVIII não receberam a paisagem sonora própria das badaladas.");
+        using (var readingLayoutCheck = new Game())
+        using (var readingLayoutBitmap = new Bitmap(960, 640))
+        using (var readingLayoutGraphics = Graphics.FromImage(readingLayoutBitmap))
+        using (var headingFont = new Font("Georgia", 13, FontStyle.Bold))
+        using (var bodyFont = new Font("Segoe UI", 14))
+        using (var hintFont = new Font("Segoe UI", 9, FontStyle.Bold))
+        {
+            readingLayoutCheck.timer.Stop();
+            foreach (string body in new[] { readingLayoutCheck.prologue[1], string.Join(" ", Enumerable.Repeat("memória compartilhada", 80)) })
+            {
+                ReadingOverlayLayout layout = MeasureReadingOverlay(readingLayoutGraphics, body, headingFont, bodyFont, hintFont);
+                if (layout.PanelY < 0 || layout.BodyY + layout.BodyHeight + 10 > layout.HintY || layout.HintY + hintFont.GetHeight(readingLayoutGraphics) > layout.PanelY + layout.PanelHeight - 12)
+                    throw new InvalidOperationException("O texto da história ou memória encostou no comando do painel de leitura.");
+            }
+        }
         (Color normalFill, Color normalEdge) = AttackWarningPalette(false);
         (Color contrastFill, Color contrastEdge) = AttackWarningPalette(true);
         if (normalEdge == contrastEdge || contrastFill.R < 240 || contrastFill.G < 190 || contrastEdge.R < 240 || contrastEdge.G < 220) throw new InvalidOperationException("A paleta acessível dos avisos não tem contraste suficiente em relação ao modo padrão.");

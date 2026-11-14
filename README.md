@@ -89,6 +89,8 @@ O protagonista, o Escutador, usa a folha de caminhada `Assets/Listener.png`, com
 | C na tela inicial | Carregar o save |
 | Enter | Começar ou reiniciar |
 
+Os painéis do prólogo e das lembranças ajustam sua altura ao texto, mantendo a última linha separada do comando para continuar ou fechar.
+
 Quando o alvo marcado é derrotado, o jogo marca automaticamente o inimigo vivo mais próximo. **Tab** continua alternando os alvos manualmente.
 
 A ficha (**P**) resume a build equipada: dano e intervalo do ataque, alcance, chance e multiplicador crítico, dano esperado por segundo contra alvo sem armadura, dano/recarga do Estilhaço, redução de dano, esquiva, talentos, afixos, talismãs e técnicas equipadas. Os números são recalculados ao trocar equipamento; efeitos de chefe, armadura inimiga e bônus temporários não entram no DPS exibido.
@@ -166,4 +168,4 @@ O décimo andar concede o **Eco Convergente**, um segundo talismã exclusivo da 
 
 ## Limites atuais
 
-Este é um protótipo com 39 salas de combate distribuídas por 17 capítulos, sprites originais e algumas silhuetas procedurais 2D. A trilha musical e sete paisagens sonoras regionais já existem; ainda faltam animações completas para o elenco, novas regiões além do Capítulo XVII, mais famílias de equipamento e variedade de builds, balanceamento amplo e testes manuais em diferentes resoluções e computadores. As paisagens sonoras são sintetizadas e discretas; ainda podem ganhar camadas ambientais mais distintas. A história deixa a vontade e o paradeiro atuais de Nara em aberto; qualquer continuação desse arco deverá dar espaço para que ela própria escolha o que revelar. O desempenho ainda não foi medido em máquinas variadas.
+Este é um protótipo com 41 salas de combate distribuídas pela campanha até o Capítulo XVIII opcional, 20 chefes, sprites originais e algumas silhuetas procedurais 2D. A trilha musical e oito paisagens sonoras regionais já existem; ainda faltam animações completas para o elenco, novas regiões, mais famílias de equipamento e variedade de builds, balanceamento amplo e testes manuais em diferentes resoluções e computadores. As paisagens sonoras são sintetizadas e discretas; ainda podem ganhar camadas ambientais mais distintas. A história deixa a vontade e o paradeiro atuais de Nara em aberto; qualquer continuação desse arco deverá dar espaço para que ela própria escolha o que revelar. O desempenho ainda não foi medido em máquinas variadas.
