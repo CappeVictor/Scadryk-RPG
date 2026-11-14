@@ -55,6 +55,8 @@ public sealed class Game : Form
         public int[] EquippedSkills { get; set; } = new[] { 1, 0, 0 };
         public bool Armor { get; set; }
         public bool Relic { get; set; }
+        public int ArmorTrait { get; set; }
+        public int RelicTrait { get; set; }
         public int HealthTalent { get; set; }
         public int SkillTalent { get; set; }
         public int DodgeTalent { get; set; }
@@ -241,6 +243,7 @@ public sealed class Game : Form
     private PointF player = new(150, 330), facing = new(1, 0), mouseAim = new(1, 0), dashDirection = new(1, 0);
     private float playerAnimationTime;
     private int room, level = 1, xp, gold, potions = 2, damage = 25, weapon, ownedWeapons = 1, difficultyTier;
+    private int armorTrait, relicTrait;
     private int healthTalent, skillTalent, dodgeTalent, techniqueTalent, combatDiscipline, combatMastery, combatFocus, combatApex, pendingTalents, enemiesDefeated;
     private int memoriesFound, questStage, tideGlass, finalEnding, eliteWeaponMisses;
     private int vigilBestFloor, vigilFloor;
@@ -250,7 +253,7 @@ public sealed class Game : Form
     private bool silenceMemory;
     private bool borrowedTrace, unstruckTrace;
     private long clearedRooms;
-    private bool chorusMemory, firstMemory, westTrace, upstreamTrace, forgeMenuOpen;
+    private bool chorusMemory, firstMemory, westTrace, upstreamTrace, forgeMenuOpen, defenseForgeOpen;
     private bool beyondTrace, ebbSeal, counterTrace, anchorWard, refrainSong, riftVerse, deepTrace, lanternSignal, beaconLight, routeMemory;
     private int ownedCharms, equippedCharm, equippedCharm2;
     private int[] equippedSkills = { 1, 0, 0 };
@@ -293,7 +296,8 @@ public sealed class Game : Form
     private void StartGame()
     {
         room = 0; level = 1; xp = gold = damage = 0; damage = 25; potions = 2; weapon = 0; ownedWeapons = 1; Array.Clear(weaponBonuses); Array.Clear(weaponRarities); Array.Clear(weaponAffixes); Array.Clear(weaponAffixes2);
-        armor = armorOn = relic = relicOn = archiveSeal = riverBell = lumeLens = naraTrace = chorusMemory = firstMemory = westTrace = upstreamTrace = beyondTrace = ebbSeal = counterTrace = anchorWard = refrainSong = riftVerse = deepTrace = lanternSignal = beaconLight = routeMemory = silenceMemory = inventoryOpen = skillMenuOpen = characterSheetOpen = mapOpen = dead = victory = chestChoice = talentChoice = memoryOverlay = endingChoiceOpen = forgeMenuOpen = vigilActive = vigilChoiceOpen = false;
+        armor = armorOn = relic = relicOn = archiveSeal = riverBell = lumeLens = naraTrace = chorusMemory = firstMemory = westTrace = upstreamTrace = beyondTrace = ebbSeal = counterTrace = anchorWard = refrainSong = riftVerse = deepTrace = lanternSignal = beaconLight = routeMemory = silenceMemory = inventoryOpen = skillMenuOpen = characterSheetOpen = mapOpen = dead = victory = chestChoice = talentChoice = memoryOverlay = endingChoiceOpen = forgeMenuOpen = defenseForgeOpen = vigilActive = vigilChoiceOpen = false;
+        armorTrait = relicTrait = 0;
         borrowedTrace = unstruckTrace = false;
         finalEnding = 0;
         vigilBestFloor = vigilFloor = 0;
@@ -518,7 +522,7 @@ public sealed class Game : Form
             if (e.KeyCode is >= Keys.D1 and <= Keys.D8) { EquipSkill(skillMenuSlot, (int)e.KeyCode - (int)Keys.D0); return; }
             return;
         }
-        if (forgeMenuOpen) { if (e.KeyCode == Keys.D9) CycleDifficultyTier(); else if (e.KeyCode == Keys.D0) ReforgeWeapon(0); else if (e.KeyCode is >= Keys.D1 and <= Keys.D8) ReforgeWeapon((int)e.KeyCode - (int)Keys.D0); else if (e.KeyCode == Keys.Escape) forgeMenuOpen = false; return; }
+        if (forgeMenuOpen) { if (defenseForgeOpen) HandleDefenseForgeKey(e.KeyCode); else if (e.KeyCode == Keys.T) defenseForgeOpen = true; else if (e.KeyCode == Keys.D9) CycleDifficultyTier(); else if (e.KeyCode == Keys.D0) ReforgeWeapon(0); else if (e.KeyCode is >= Keys.D1 and <= Keys.D8) ReforgeWeapon((int)e.KeyCode - (int)Keys.D0); else if (e.KeyCode == Keys.Escape) forgeMenuOpen = false; return; }
         if (endingChoiceOpen) { if (e.KeyCode == Keys.D1) ChooseTownEnding(1); else if (e.KeyCode == Keys.D2) ChooseTownEnding(2); else if (e.KeyCode == Keys.D3) endingChoiceOpen = false; return; }
         if (vigilChoiceOpen) { if (e.KeyCode == Keys.D1) ResolveVigilFloor(true); else if (e.KeyCode == Keys.D2) ResolveVigilFloor(false); else if (e.KeyCode == Keys.D3 || e.KeyCode == Keys.Escape) vigilChoiceOpen = false; return; }
         if (chestChoice) { if (e.KeyCode == Keys.D1) gold += 75; else if (e.KeyCode == Keys.D2) potions += 2; else if (e.KeyCode == Keys.D3) health = maxHealth; else return; chestChoice = false; EnterVesper(); return; }
@@ -557,6 +561,39 @@ public sealed class Game : Form
         gold -= 75; tideGlass--; forgeMenuOpen = false;
         notice = $"TÊMPERA: {weaponNames[weapon]} {WeaponRarityName(weaponRarities[weapon])} {WeaponAffixDescription(weapon)}"; noticeTime = 3;
     }
+
+    private void HandleDefenseForgeKey(Keys key)
+    {
+        if (!forgeMenuOpen || room != 18 || questStage < 27 || Distance(player, AvenPosition) >= 60) { forgeMenuOpen = defenseForgeOpen = false; return; }
+        if (key is Keys.Escape or Keys.T) { defenseForgeOpen = false; return; }
+        if (key is >= Keys.D1 and <= Keys.D3) SetDefenseTrait(true, (int)key - (int)Keys.D0);
+        else if (key is >= Keys.D4 and <= Keys.D6) SetDefenseTrait(false, (int)key - (int)Keys.D3);
+        else if (key == Keys.D0) SetDefenseTrait(true, 0);
+        else if (key == Keys.D7) SetDefenseTrait(false, 0);
+    }
+
+    private void SetDefenseTrait(bool forArmor, int trait)
+    {
+        int current = forArmor ? armorTrait : relicTrait;
+        if ((forArmor && !armor) || (!forArmor && !relic)) { notice = forArmor ? "O PEITORAL AINDA NÃO FOI ENCONTRADO" : "O RELICÁRIO AINDA NÃO FOI ENCONTRADO"; noticeTime = 2; return; }
+        if (trait == current) { notice = "ESSE TRAÇO JÁ ESTÁ GRAVADO"; noticeTime = 1.8f; return; }
+        if (gold < 100 || tideGlass < 2) { notice = "GRAVAR UM TRAÇO CUSTA 100 OURO E 2 SAL VÍTREO"; noticeTime = 2.2f; return; }
+        int previousGold = gold, previousGlass = tideGlass;
+        gold -= 100; tideGlass -= 2;
+        if (forArmor) armorTrait = trait; else relicTrait = trait;
+        if (!SaveGame())
+        {
+            gold = previousGold; tideGlass = previousGlass;
+            if (forArmor) armorTrait = current; else relicTrait = current;
+            notice = "O TRAÇO NÃO MUDOU • NÃO FOI POSSÍVEL SALVAR"; noticeTime = 3; return;
+        }
+        notice = $"TRAÇO GRAVADO: {(forArmor ? ArmorTraitName(trait) : RelicTraitName(trait))}"; noticeTime = 2.5f;
+    }
+
+    private static string ArmorTraitName(int trait) => trait switch { 1 => "Laje Funda", 2 => "Passo Ancorado", 3 => "Último Lastro", _ => "Veio Bruto" };
+    private static string ArmorTraitDescription(int trait) => trait switch { 1 => "Peitoral equipado: recebe 6% menos dano adicional.", 2 => "Peitoral equipado: esquiva recarrega 0,12 s mais rápido.", 3 => "Com 35% da vida ou menos: recebe 15% menos dano.", _ => "Sem efeito adicional." };
+    private static string RelicTraitName(int trait) => trait switch { 1 => "Fio Nutrido", 2 => "Ampola Viva", 3 => "Coro Restaurador", _ => "Eco Silente" };
+    private static string RelicTraitDescription(int trait) => trait switch { 1 => "Relicário equipado: cura +3 por abate.", 2 => "Relicário equipado: poções curam +15 vida.", 3 => "Com o conjunto: Pulso do Veio dura +1 s.", _ => "Sem efeito adicional." };
 
     private static float DifficultyEnemyHealthMultiplier(int tier) => tier switch { 1 => 1.2f, 2 => 1.45f, 3 => 1.8f, _ => 1f };
     private static float DifficultyIncomingDamageMultiplier(int tier) => tier switch { 1 => 1.1f, 2 => 1.22f, 3 => 1.4f, _ => 1f };
@@ -984,7 +1021,7 @@ public sealed class Game : Form
             int recovered = (int)Math.Round(health - healthBeforeRelic);
             if (recovered > 0)
                 AddFloatingText(new PointF(player.X, player.Y - 30), armorOn ? $"VIGÍLIA +{recovered} VIDA" : $"RELICÁRIO +{recovered} VIDA", Color.FromArgb(145, 225, 204));
-            if (armorOn) veinResonanceTime = 2.5f;
+            if (armorOn) veinResonanceTime = 2.5f + (relicTrait == 3 ? 1f : 0f);
         }
         if (enemies.Count == 0 && room < 2) { int next = room == 0 ? 2 : 1; if ((ownedWeapons & (1 << next)) == 0) drops.Add(CreateWeaponDrop(Offset(enemy.Pos, -16, -8), next)); }
         if (enemies.Count == 0 && drops.Count == 0 && room == 2 && !memoryOverlay) chestChoice = true;
@@ -1422,7 +1459,7 @@ public sealed class Game : Form
         return new Drop { Pos = pos, Kind = "weapon", Amount = index, Rarity = roll.Rarity, Bonus = roll.Bonus, Affix = roll.Affix, Affix2 = roll.Affix2 };
     }
 
-    private void UsePotion() { if (potions > 0 && health < maxHealth) { potions--; health = Math.Min(maxHealth, health + 45); notice = "+45 VIDA"; noticeTime = 1.3f; } else { notice = potions == 0 ? "SEM POÇÕES" : "VIDA JÁ ESTÁ CHEIA"; noticeTime = 1.3f; } }
+    private void UsePotion() { if (potions > 0 && health < maxHealth) { int healing = 45 + (relicOn && relicTrait == 2 ? 15 : 0); potions--; health = Math.Min(maxHealth, health + healing); notice = $"+{healing} VIDA"; noticeTime = 1.3f; } else { notice = potions == 0 ? "SEM POÇÕES" : "VIDA JÁ ESTÁ CHEIA"; noticeTime = 1.3f; } }
     private void Interact()
     {
         if (room == 3) { InteractTown(); return; }
@@ -1668,8 +1705,8 @@ public sealed class Game : Form
     }
     private bool HasCharm(int charm) => equippedCharm == charm || equippedCharm2 == charm;
     private bool HasCharmPair(int first, int second) => equippedCharm == first && equippedCharm2 == second || equippedCharm == second && equippedCharm2 == first;
-    private float ArmorDamageTakenMultiplier() => !armorOn ? 1f : relicOn ? 0.65f : 0.7f;
-    private int RelicKillHealing() => !relicOn ? 0 : armorOn ? 8 : 5;
+    private float ArmorDamageTakenMultiplier() => !armorOn ? 1f : (relicOn ? 0.65f : 0.7f) * (armorTrait == 1 ? 0.94f : armorTrait == 3 && health <= maxHealth * 0.35f ? 0.85f : 1f);
+    private int RelicKillHealing() => !relicOn ? 0 : (armorOn ? 8 : 5) + (relicTrait == 1 ? 3 : 0);
     private float VeinResonanceMultiplier() => armorOn && relicOn && veinResonanceTime > 0 ? 1.15f : 1f;
     private float WhirlwindMultiplier() => HasCharmPair(1, 2) ? 2.52f : HasCharm(1) ? 2.16f : 1.6f;
     private float WhirlwindCooldownPenalty() => !HasCharm(1) ? 0f : HasCharmPair(1, 2) ? 0.5f : 1f;
@@ -1697,7 +1734,7 @@ public sealed class Game : Form
         dashTime = DashDuration(); dashCd = DashCooldown();
         GameAudio.Play(GameAudio.Cue.Dash);
     }
-    private float DashCooldown() => Math.Max(0.35f, 1.15f - dodgeTalent * 0.12f + (combatMastery == 1 ? 0.2f : combatMastery == 2 ? -0.18f : 0f)) + (HasCharm(2) && !HasCharmPair(2, 3) ? 0.3f : 0f);
+    private float DashCooldown() => Math.Max(0.35f, 1.15f - dodgeTalent * 0.12f + (combatMastery == 1 ? 0.2f : combatMastery == 2 ? -0.18f : 0f) - (armorOn && armorTrait == 2 ? 0.12f : 0f)) + (HasCharm(2) && !HasCharmPair(2, 3) ? 0.3f : 0f);
     private float CombatMasteryDamageTakenMultiplier() => combatMastery == 1 ? 0.9f : combatMastery == 2 ? 1.08f : 1f;
     private float CombatApexDamageTakenMultiplier() => combatApex == 2 && TechniquesOnCooldown() >= 2 ? 0.88f : 1f;
     private float CriticalChance() => (weapon == 2 ? 0.25f : 0.12f) + (HasCharm(3) ? HasCharmPair(1, 3) ? 0.17f : 0.12f : 0f) + (HasWeaponAffix(weapon, 2) ? weaponRarities[weapon] == 2 ? 0.11f : 0.07f : 0f);
@@ -1748,7 +1785,7 @@ public sealed class Game : Form
         return false;
     }
 
-    private SaveData CaptureSaveData() => new() { Room = room, Level = level, Xp = xp, Gold = gold, Potions = potions, Damage = damage, Health = health, MaxHealth = maxHealth, Weapon = weapon, OwnedWeapons = ownedWeapons, Armor = armor, Relic = relic, HealthTalent = healthTalent, SkillTalent = skillTalent, DodgeTalent = dodgeTalent, TechniqueTalent = techniqueTalent, CombatDiscipline = combatDiscipline, CombatMastery = combatMastery, CombatFocus = combatFocus, CombatApex = combatApex, RoomCleared = room == 3 || enemies.Count == 0 && drops.Count == 0, Completed = victory, MemoriesFound = memoriesFound, QuestStage = questStage, ClearedRooms = clearedRooms | (room != 3 && enemies.Count == 0 && drops.Count == 0 ? 1L << room : 0), ArchiveSeal = archiveSeal, RiverBell = riverBell, LumeLens = lumeLens, NaraTrace = naraTrace, ChorusMemory = chorusMemory, FirstMemory = firstMemory, WestTrace = westTrace, UpstreamTrace = upstreamTrace, TideGlass = tideGlass, BeyondTrace = beyondTrace, EbbSeal = ebbSeal, CounterTrace = counterTrace, AnchorWard = anchorWard, RefrainSong = refrainSong, RiftVerse = riftVerse, DeepTrace = deepTrace, LanternSignal = lanternSignal, BeaconLight = beaconLight, RouteMemory = routeMemory, SilenceMemory = silenceMemory, BorrowedTrace = borrowedTrace, UnstruckTrace = unstruckTrace, FinalEnding = finalEnding, VigilBestFloor = vigilBestFloor, HighContrastTelegraphs = highContrastTelegraphs, EliteWeaponMisses = eliteWeaponMisses, DifficultyTier = difficultyTier, OwnedCharms = ownedCharms, EquippedCharm = equippedCharm, EquippedCharm2 = equippedCharm2, EquippedSkills = equippedSkills.ToArray(), TownEnding = townEnding, WeaponBonuses = weaponBonuses.ToArray(), WeaponRarities = weaponRarities.ToArray(), WeaponAffixes = weaponAffixes.ToArray(), WeaponAffixes2 = weaponAffixes2.ToArray() };
+    private SaveData CaptureSaveData() => new() { Room = room, Level = level, Xp = xp, Gold = gold, Potions = potions, Damage = damage, Health = health, MaxHealth = maxHealth, Weapon = weapon, OwnedWeapons = ownedWeapons, Armor = armor, Relic = relic, ArmorTrait = armorTrait, RelicTrait = relicTrait, HealthTalent = healthTalent, SkillTalent = skillTalent, DodgeTalent = dodgeTalent, TechniqueTalent = techniqueTalent, CombatDiscipline = combatDiscipline, CombatMastery = combatMastery, CombatFocus = combatFocus, CombatApex = combatApex, RoomCleared = room == 3 || enemies.Count == 0 && drops.Count == 0, Completed = victory, MemoriesFound = memoriesFound, QuestStage = questStage, ClearedRooms = clearedRooms | (room != 3 && enemies.Count == 0 && drops.Count == 0 ? 1L << room : 0), ArchiveSeal = archiveSeal, RiverBell = riverBell, LumeLens = lumeLens, NaraTrace = naraTrace, ChorusMemory = chorusMemory, FirstMemory = firstMemory, WestTrace = westTrace, UpstreamTrace = upstreamTrace, TideGlass = tideGlass, BeyondTrace = beyondTrace, EbbSeal = ebbSeal, CounterTrace = counterTrace, AnchorWard = anchorWard, RefrainSong = refrainSong, RiftVerse = riftVerse, DeepTrace = deepTrace, LanternSignal = lanternSignal, BeaconLight = beaconLight, RouteMemory = routeMemory, SilenceMemory = silenceMemory, BorrowedTrace = borrowedTrace, UnstruckTrace = unstruckTrace, FinalEnding = finalEnding, VigilBestFloor = vigilBestFloor, HighContrastTelegraphs = highContrastTelegraphs, EliteWeaponMisses = eliteWeaponMisses, DifficultyTier = difficultyTier, OwnedCharms = ownedCharms, EquippedCharm = equippedCharm, EquippedCharm2 = equippedCharm2, EquippedSkills = equippedSkills.ToArray(), TownEnding = townEnding, WeaponBonuses = weaponBonuses.ToArray(), WeaponRarities = weaponRarities.ToArray(), WeaponAffixes = weaponAffixes.ToArray(), WeaponAffixes2 = weaponAffixes2.ToArray() };
     private static void WriteSaveFile(string path, string contents)
     {
         string directory = Path.GetDirectoryName(path)!;
@@ -1805,6 +1842,10 @@ public sealed class Game : Form
             || s.TideGlass is < 0 or > 999
             || s.EliteWeaponMisses is < 0 or > 2
             || s.DifficultyTier is < 0 or > 3
+            || s.ArmorTrait is < 0 or > 3
+            || s.RelicTrait is < 0 or > 3
+            || s.ArmorTrait > 0 && !s.Armor
+            || s.RelicTrait > 0 && !s.Relic
             || s.Damage < 1
             || s.TechniqueTalent is < 0 or > 10000
             || s.CombatDiscipline is < 0 or > 2
@@ -1888,7 +1929,7 @@ public sealed class Game : Form
 
 
             if (!ValidSaveData(s)) throw new InvalidDataException();
-            StartGame(); room = s.Room; level = s.Level; xp = s.Xp; gold = s.Gold; potions = s.Potions; damage = s.Damage; health = s.Health; maxHealth = s.MaxHealth; weapon = s.Weapon; ownedWeapons = s.OwnedWeapons; RestoreWeaponData(s); armor = s.Armor; relic = s.Relic; healthTalent = s.HealthTalent; skillTalent = s.SkillTalent; dodgeTalent = s.DodgeTalent; techniqueTalent = s.TechniqueTalent; combatDiscipline = CombatDisciplineForSave(s); combatMastery = CombatMasteryForSave(s); combatFocus = s.CombatFocus; combatApex = s.CombatApex; memoriesFound = s.MemoriesFound; questStage = s.QuestStage; clearedRooms = s.ClearedRooms | (s.RoomCleared && s.Room != 3 ? 1L << s.Room : 0); archiveSeal = s.ArchiveSeal; riverBell = s.RiverBell; lumeLens = s.LumeLens; naraTrace = s.NaraTrace; chorusMemory = s.ChorusMemory; firstMemory = s.FirstMemory; westTrace = s.WestTrace; upstreamTrace = s.UpstreamTrace; tideGlass = s.TideGlass; beyondTrace = s.BeyondTrace; ebbSeal = s.EbbSeal; counterTrace = s.CounterTrace; anchorWard = s.AnchorWard || s.QuestStage >= 36; riftVerse = s.RiftVerse; deepTrace = s.DeepTrace; lanternSignal = s.LanternSignal; beaconLight = s.BeaconLight; routeMemory = s.RouteMemory; silenceMemory = s.SilenceMemory; borrowedTrace = s.BorrowedTrace; unstruckTrace = s.UnstruckTrace; finalEnding = s.FinalEnding; difficultyTier = s.DifficultyTier; vigilBestFloor = s.VigilBestFloor; highContrastTelegraphs = s.HighContrastTelegraphs; eliteWeaponMisses = s.EliteWeaponMisses; refrainSong = s.RefrainSong; ownedCharms = s.OwnedCharms; equippedCharm = s.EquippedCharm; equippedCharm2 = s.EquippedCharm2; equippedSkills = s.EquippedSkills.ToArray(); townEnding = s.TownEnding; SetupRoom(); if (s.RoomCleared) enemies.Clear(); victory = s.Completed; title = false; storyOverlay = false;
+            StartGame(); room = s.Room; level = s.Level; xp = s.Xp; gold = s.Gold; potions = s.Potions; damage = s.Damage; health = s.Health; maxHealth = s.MaxHealth; weapon = s.Weapon; ownedWeapons = s.OwnedWeapons; RestoreWeaponData(s); armor = s.Armor; relic = s.Relic; armorTrait = s.ArmorTrait; relicTrait = s.RelicTrait; healthTalent = s.HealthTalent; skillTalent = s.SkillTalent; dodgeTalent = s.DodgeTalent; techniqueTalent = s.TechniqueTalent; combatDiscipline = CombatDisciplineForSave(s); combatMastery = CombatMasteryForSave(s); combatFocus = s.CombatFocus; combatApex = s.CombatApex; memoriesFound = s.MemoriesFound; questStage = s.QuestStage; clearedRooms = s.ClearedRooms | (s.RoomCleared && s.Room != 3 ? 1L << s.Room : 0); archiveSeal = s.ArchiveSeal; riverBell = s.RiverBell; lumeLens = s.LumeLens; naraTrace = s.NaraTrace; chorusMemory = s.ChorusMemory; firstMemory = s.FirstMemory; westTrace = s.WestTrace; upstreamTrace = s.UpstreamTrace; tideGlass = s.TideGlass; beyondTrace = s.BeyondTrace; ebbSeal = s.EbbSeal; counterTrace = s.CounterTrace; anchorWard = s.AnchorWard || s.QuestStage >= 36; riftVerse = s.RiftVerse; deepTrace = s.DeepTrace; lanternSignal = s.LanternSignal; beaconLight = s.BeaconLight; routeMemory = s.RouteMemory; silenceMemory = s.SilenceMemory; borrowedTrace = s.BorrowedTrace; unstruckTrace = s.UnstruckTrace; finalEnding = s.FinalEnding; difficultyTier = s.DifficultyTier; vigilBestFloor = s.VigilBestFloor; highContrastTelegraphs = s.HighContrastTelegraphs; eliteWeaponMisses = s.EliteWeaponMisses; refrainSong = s.RefrainSong; ownedCharms = s.OwnedCharms; equippedCharm = s.EquippedCharm; equippedCharm2 = s.EquippedCharm2; equippedSkills = s.EquippedSkills.ToArray(); townEnding = s.TownEnding; SetupRoom(); if (s.RoomCleared) enemies.Clear(); victory = s.Completed; title = false; storyOverlay = false;
             if (migrated && !SaveGame()) { notice = "SAVE ANTIGO CARREGADO • NÃO FOI POSSÍVEL MIGRAR"; noticeTime = 5; }
             else { notice = migrated ? "SAVE ANTIGO MIGRADO" : "PROGRESSO CARREGADO"; noticeTime = 2; }
         }
@@ -3200,16 +3241,18 @@ public sealed class Game : Form
         DrawCentered(g, "INVENTÁRIO   •   1–4 ARMAS   •   5 ARMADURA   •   6 RELÍQUIA   •   7/8 TALISMÃS   •   I FECHAR", 150, new Font("Segoe UI", 11, FontStyle.Bold), Color.Goldenrod);
         for (int i = 0; i < 4; i++) { int x = i % 2 == 0 ? 150 : 500, y = 188 + i / 2 * 55; bool found = (ownedWeapons & (1 << i)) != 0; Brush rarityBrush = !found ? Brushes.Gray : weaponRarities[i] == 2 ? Brushes.MediumTurquoise : weaponRarities[i] == 1 ? Brushes.Goldenrod : Brushes.AntiqueWhite; g.DrawString($"{i + 1}. {WeaponDisplayName(i)} {(weapon == i ? "• EQUIPADA" : found ? "• DISPONÍVEL" : "• NÃO ENCONTRADA")}", itemFont, rarityBrush, x, y); g.DrawString(found ? $"DANO {WeaponPower(i) - WeaponPower(weapon):+#;-#;0} • {WeaponTraitSummary(i)}" : WeaponTraitSummary(i), effectFont, Brushes.DarkGray, new RectangleF(x + 16, y + 19, 315, 18)); }
         g.DrawString($"5. PEITORAL DE PEDRA {(armorOn ? relicOn ? "EQUIPADO • -35% DANO • VIGÍLIA DO VEIO" : "EQUIPADO • -30% DANO" : armor ? "DISPONÍVEL" : "NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 150, 304);
-        g.DrawString($"6. RELICÁRIO VITAL {(relicOn ? armorOn ? "EQUIPADO • CURA 8/ABATE • PULSO +15% POR 2,5 s" : "EQUIPADO • CURA 5 POR ABATE" : relic ? "DISPONÍVEL" : "NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 150, 330);
-        g.DrawString($"SELO DA VIGÍLIA {(archiveSeal ? "ENCONTRADO • +8 DANO" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 150, 356);
-        g.DrawString($"SINO DE NARA {(riverBell ? "ENCONTRADO • +20 VIDA MÁXIMA" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 150, 382);
-        g.DrawString($"PRISMA DO LUME {(lumeLens ? "ENCONTRADO • +12 DANO" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 150, 408);
-        g.DrawString($"RASTRO DE NARA {(naraTrace ? "RECUPERADO • MEMÓRIA PRESERVADA" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 150, 434);
+        g.DrawString($"   Traço: {ArmorTraitName(armorTrait)} — {ArmorTraitDescription(armorTrait)}", effectFont, Brushes.DarkGray, new RectangleF(150, 321, 650, 17));
+        g.DrawString($"6. RELICÁRIO VITAL {(relicOn ? armorOn ? $"EQUIPADO • CURA {RelicKillHealing()}/ABATE • PULSO +15%" : $"EQUIPADO • CURA {RelicKillHealing()} POR ABATE" : relic ? "DISPONÍVEL" : "NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 150, 340);
+        g.DrawString($"   Traço: {RelicTraitName(relicTrait)} — {RelicTraitDescription(relicTrait)}", effectFont, Brushes.DarkGray, new RectangleF(150, 357, 650, 17));
+        g.DrawString($"SELO DA VIGÍLIA {(archiveSeal ? "ENCONTRADO • +8 DANO" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 150, 382);
+        g.DrawString($"SINO DE NARA {(riverBell ? "ENCONTRADO • +20 VIDA MÁXIMA" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 150, 408);
+        g.DrawString($"PRISMA DO LUME {(lumeLens ? "ENCONTRADO • +12 DANO" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 150, 434);
+        g.DrawString($"RASTRO DE NARA {(naraTrace ? "RECUPERADO • MEMÓRIA PRESERVADA" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 150, 460);
         string[] availableCharms = Enumerable.Range(1, charmNames.Length - 1).Where(i => (ownedCharms & (1 << (i - 1))) != 0).Select(i => charmNames[i]).ToArray();
         string charmList = availableCharms.Length == 0 ? "NENHUM" : string.Join(" • ", availableCharms.Take(3)) + (availableCharms.Length > 3 ? "\n" + string.Join(" • ", availableCharms.Skip(3)) : "");
-        g.DrawString($"TALISMÃS: {charmList}   •   SAL VÍTREO: {tideGlass}", effectFont, Brushes.Plum, new RectangleF(150, 462, 650, 30));
+        g.DrawString($"TALISMÃS: {charmList}   •   SAL VÍTREO: {tideGlass}", effectFont, Brushes.Plum, new RectangleF(150, 488, 650, 30));
         string firstCharm = equippedCharm == 0 ? "VAZIO" : charmNames[equippedCharm]; string secondCharm = equippedCharm2 == 0 ? "VAZIO" : charmNames[equippedCharm2];
-        g.DrawString($"7. ESPAÇO I: {firstCharm}    8. ESPAÇO II: {secondCharm}", effectFont, Brushes.Plum, 150, 488);
+        g.DrawString($"7. ESPAÇO I: {firstCharm}    8. ESPAÇO II: {secondCharm}", effectFont, Brushes.Plum, 150, 514);
         var effects = new List<string>();
         if (HasCharm(1)) effects.Add(HasCharmPair(1, 2) ? "SINTONIA BRASA+TRAVESSIA: Redemoinho +57% dano; recarga +0,5 s" : "Nó de Brasa: Redemoinho +35% dano; recarga +1 s");
         if (HasCharm(2)) effects.Add($"Fio de Travessia: esquiva 0,29 s{(HasCharmPair(2, 3) ? " sem custo extra" : ", recarga +0,3 s")}; Sino +35 alcance e +1,5 s de recarga");
@@ -3224,7 +3267,7 @@ public sealed class Game : Form
         if (HasCharm(11)) effects.Add("Pulso Bifurcado: técnicas +12% com 2 prontas; ataques básicos +12% com 2 em recarga");
         if (HasCharm(12)) effects.Add("Nó do Contratempo: técnicas +20% de dano; recarga +15%");
         string effect = effects.Count > 0 ? string.Join(" • ", effects) : "Equipe até dois talismãs para ativar efeitos e sintonias.";
-        g.DrawString(effect, effectFont, Brushes.AntiqueWhite, new RectangleF(150, 506, 650, 110));
+        g.DrawString(effect, effectFont, Brushes.AntiqueWhite, new RectangleF(150, 532, 650, 85));
     }
     private void DrawCharacterSheet(Graphics g)
     {
@@ -3247,6 +3290,7 @@ public sealed class Game : Form
         g.DrawString($"Vida máxima: {maxHealth:0} • poção: +45", body, Brushes.AntiqueWhite, 515, 232);
         g.DrawString($"Redução de dano: {mitigation:P0}{(combatApex == 2 && TechniquesOnCooldown() >= 2 ? " • Âncora ativa" : wardTime > 0 ? " • Manto ativo" : "")}", body, Brushes.AntiqueWhite, 515, 258);
         g.DrawString($"Relicário Vital: cura {RelicKillHealing()} por abate{(armorOn && relicOn ? $" • Pulso +15% por 2,5 s ({veinResonanceTime:0.0} s restantes)" : "")}", body, Brushes.AntiqueWhite, new RectangleF(145, 388, 670, 38));
+        g.DrawString($"Traços: {ArmorTraitName(armorTrait)} / {RelicTraitName(relicTrait)}", hint, Brushes.DarkGray, new RectangleF(145, 410, 670, 16));
         g.DrawString($"Recarga da esquiva: {DashCooldown():0.00} s • duração {DashDuration():0.00} s", body, Brushes.AntiqueWhite, 515, 284);
         g.DrawString($"Afixos: {WeaponAffixDescription(weapon)}", body, Brushes.AntiqueWhite, new RectangleF(515, 310, 315, 48));
         string charmOne = equippedCharm == 0 ? "vazio" : charmNames[equippedCharm]; string charmTwo = equippedCharm2 == 0 ? "vazio" : charmNames[equippedCharm2];
@@ -3270,6 +3314,23 @@ public sealed class Game : Form
         using var shade = new SolidBrush(Color.FromArgb(190, 5, 7, 9)); using var background = new SolidBrush(Color.FromArgb(248, 15, 17, 18)); using var border = new Pen(Color.FromArgb(175, 143, 112, 73), 2);
         using var optionFont = new Font("Segoe UI", 11); using var hintFont = new Font("Segoe UI", 9);
         g.FillRectangle(shade, 0, 83, 960, 557); g.FillRectangle(background, 120, 135, 720, 455); g.DrawRectangle(border, 120, 135, 720, 455);
+        if (defenseForgeOpen)
+        {
+            DrawCentered(g, "GRAVURA DO VEIO • TRAÇOS DEFENSIVOS", 170, new Font("Georgia", 16, FontStyle.Bold), Color.Goldenrod);
+            g.DrawString($"PEITORAL • ATUAL: {ArmorTraitName(armorTrait)}", optionFont, armor ? Brushes.AntiqueWhite : Brushes.Gray, 155, 208);
+            g.DrawString("1. LAJE FUNDA • peitoral: recebe 6% menos dano adicional", hintFont, Brushes.AntiqueWhite, 155, 238);
+            g.DrawString("2. PASSO ANCORADO • esquiva recarrega 0,12 s mais rápido", hintFont, Brushes.AntiqueWhite, 155, 266);
+            g.DrawString("3. ÚLTIMO LASTRO • com até 35% de vida, recebe 15% menos dano", hintFont, Brushes.AntiqueWhite, new RectangleF(155, 294, 305, 36));
+            g.DrawString("0. VEIO BRUTO • remover o traço", hintFont, Brushes.DarkGray, 155, 338);
+            g.DrawString($"RELICÁRIO • ATUAL: {RelicTraitName(relicTrait)}", optionFont, relic ? Brushes.AntiqueWhite : Brushes.Gray, 500, 208);
+            g.DrawString("4. FIO NUTRIDO • cura +3 por abate", hintFont, Brushes.AntiqueWhite, 500, 238);
+            g.DrawString("5. AMPOLA VIVA • poções curam +15 vida", hintFont, Brushes.AntiqueWhite, 500, 266);
+            g.DrawString("6. CORO RESTAURADOR • Pulso do Veio dura +1 s", hintFont, Brushes.AntiqueWhite, new RectangleF(500, 294, 310, 36));
+            g.DrawString("7. ECO SILENTE • remover o traço", hintFont, Brushes.DarkGray, 500, 338);
+            g.DrawString($"CADA ALTERAÇÃO CUSTA 100 OURO E 2 SAL VÍTREO   •   DISPONÍVEL: {gold} OURO / {tideGlass} SAL", hintFont, gold < 100 || tideGlass < 2 ? Brushes.IndianRed : Brushes.Goldenrod, 155, 405);
+            g.DrawString("1–3 traço do peitoral • 4–6 traço do relicário • 0/7 removem • T ou ESC volta", hintFont, Brushes.DarkGray, 155, 438);
+            return;
+        }
         DrawCentered(g, weaponRarities[weapon] == 0 ? $"TÊMPERA DO VEIO • {weaponNames[weapon]} VIRA RARA" : $"TÊMPERA DO VEIO • {weaponNames[weapon]}", 170, new Font("Georgia", 16, FontStyle.Bold), Color.Goldenrod);
         g.DrawString("1. TRÉGUA • recupera 3/6 vida por abate", optionFont, Brushes.AntiqueWhite, 165, 205);
         g.DrawString("2. CONTRACANTO • crítico +7/+11 pontos percentuais", optionFont, Brushes.AntiqueWhite, 165, 230);
@@ -3284,14 +3345,14 @@ public sealed class Game : Form
             int goldCost = TalentRespecGoldCost(level), glassCost = TalentRespecGlassCost(level);
             g.DrawString("7. REDISTRIBUIR TALENTOS • devolve todos os pontos", optionFont, Brushes.AntiqueWhite, 165, 414);
             g.DrawString($"CUSTO: {goldCost} OURO E {glassCost} SAL VÍTREO   •   DISPONÍVEL: {gold} OURO / {tideGlass} SAL", hintFont, gold < goldCost || tideGlass < glassCost ? Brushes.IndianRed : Brushes.Goldenrod, 165, 449);
-            g.DrawString("1–6 ou 8 afixo • 0 Cadência • 7 redistribui • ESC fecha", hintFont, Brushes.DarkGray, 165, 477);
+            g.DrawString("1–6 ou 8 afixo • 0 Cadência • 7 redistribui • T traços • ESC fecha", hintFont, Brushes.DarkGray, 165, 477);
             g.DrawString($"9. RESSONÂNCIA {difficultyTier} • {DifficultyTierName(difficultyTier)} • HP +{(DifficultyEnemyHealthMultiplier(difficultyTier) - 1) * 100:0}% • dano +{(DifficultyIncomingDamageMultiplier(difficultyTier) - 1) * 100:0}% • recompensas +{(DifficultyRewardMultiplier(difficultyTier) - 1) * 100:0}%", hintFont, Brushes.Orange, 165, 500);
         }
         else
         {
             g.DrawString("Valores: RARA / RELÍQUIA.", hintFont, Brushes.DarkGray, 165, 414);
             g.DrawString($"CUSTO: 75 OURO E 1 SAL VÍTREO   •   DISPONÍVEL: {gold} OURO / {tideGlass} SAL", hintFont, gold < 75 || tideGlass < 1 ? Brushes.IndianRed : Brushes.Goldenrod, 165, 449);
-            g.DrawString("1–6 ou 8 afixo • 0 Cadência • ESC fecha", hintFont, Brushes.DarkGray, 165, 477);
+            g.DrawString("1–6 ou 8 afixo • 0 Cadência • T traços • ESC fecha", hintFont, Brushes.DarkGray, 165, 477);
             g.DrawString("RESSONÂNCIAS de desafio desbloqueiam após o epílogo e a expedição XVII.", hintFont, Brushes.DarkGray, 165, 500);
         }
     }
