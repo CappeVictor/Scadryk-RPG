@@ -99,6 +99,11 @@ public sealed class Game : Form
         string path = Path.Combine(AppContext.BaseDirectory, "Assets", "Enemies.png");
         return File.Exists(path) ? new Bitmap(path) : null;
     });
+    private static readonly Lazy<Bitmap?> SpearboundEliteSprite = new(() =>
+    {
+        string path = Path.Combine(AppContext.BaseDirectory, "Assets", "SpearboundElite.png");
+        return File.Exists(path) ? new Bitmap(path) : null;
+    });
     private static readonly Lazy<Bitmap?> BossSpriteSheet = new(() =>
     {
         string path = Path.Combine(AppContext.BaseDirectory, "Assets", "Bosses.png");
@@ -2184,16 +2189,18 @@ public sealed class Game : Form
         }
         using var body = new SolidBrush(enemy.Flash > 0 ? Color.White : color); using var edge = new Pen(enemy == lockedTarget ? Color.Gold : IsArmored(enemy) ? Color.LightSteelBlue : Color.FromArgb(35, 25, 22), enemy == lockedTarget ? 4 : 2);
         int bossSpriteIndex = CampaignBossSpriteIndex(enemy.Kind), enemySpriteRow = EnemySpriteRow(enemy.Kind);
+        bool spearboundSprite = enemy.Kind == EnemyKind.Elite && enemy.EliteAffix == EliteAffix.Spearbound && SpearboundEliteSprite.Value is not null;
         bool bossSprite = bossSpriteIndex >= 0;
-        int spriteRow = bossSprite ? bossSpriteIndex % 4 : enemySpriteRow;
-        Bitmap? enemySprites = bossSprite ? bossSpriteIndex switch { < 4 => BossSpriteSheet.Value, < 8 => MidBossSpriteSheet.Value, < 12 => LateBossSpriteSheet.Value, < 16 => FinalWaveBossSpriteSheet.Value, _ => EndgameBossSpriteSheet.Value } : enemySpriteRow >= 0 ? EnemySpriteSheet.Value : null;
+        int spriteRow = spearboundSprite ? 0 : bossSprite ? bossSpriteIndex % 4 : enemySpriteRow;
+        Bitmap? enemySprites = spearboundSprite ? SpearboundEliteSprite.Value : bossSprite ? bossSpriteIndex switch { < 4 => BossSpriteSheet.Value, < 8 => MidBossSpriteSheet.Value, < 12 => LateBossSpriteSheet.Value, < 16 => FinalWaveBossSpriteSheet.Value, _ => EndgameBossSpriteSheet.Value } : enemySpriteRow >= 0 ? EnemySpriteSheet.Value : null;
         if (spriteRow >= 0 && enemySprites is not null)
         {
-            float cellWidth = enemySprites.Width / 4f, cellHeight = enemySprites.Height / 4f;
-            int frame = EnemySpriteFrame(enemy.AnimationTime, enemy.Moving && enemy.Windup <= 0 && enemy.Stagger <= 0);
+            float cellWidth = spearboundSprite ? enemySprites.Width : enemySprites.Width / 4f, cellHeight = spearboundSprite ? enemySprites.Height : enemySprites.Height / 4f;
+            int frame = spearboundSprite ? 0 : EnemySpriteFrame(enemy.AnimationTime, enemy.Moving && enemy.Windup <= 0 && enemy.Stagger <= 0);
             RectangleF source = new(frame * cellWidth, spriteRow * cellHeight, cellWidth, cellHeight);
-            float size = bossSprite ? 132 : enemy.Kind == EnemyKind.Elite ? 82 : 70;
-            RectangleF target = new(enemy.Pos.X - size / 2, enemy.Pos.Y - size, size, size);
+            float size = spearboundSprite ? 118 : bossSprite ? 132 : enemy.Kind == EnemyKind.Elite ? 82 : 70;
+            float bob = spearboundSprite && enemy.Moving ? MathF.Sin(enemy.AnimationTime * 15) * 2 : 0;
+            RectangleF target = new(enemy.Pos.X - size / 2, enemy.Pos.Y - size + bob, size, size);
             using var shadow = new SolidBrush(Color.FromArgb(110, 5, 7, 9));
             g.FillEllipse(shadow, enemy.Pos.X - r, enemy.Pos.Y - 5, r * 2, 10);
             var spriteTransform = g.Save();
@@ -2237,7 +2244,7 @@ public sealed class Game : Form
         if (enemy.Kind == EnemyKind.FlowKeeper) { using var ring = new Pen(Color.FromArgb(210, 157, 215, 216), 2); float spin = windupPulse * 40; g.DrawArc(ring, enemy.Pos.X - 18, enemy.Pos.Y - 18, 36, 36, spin, 235); g.DrawArc(ring, enemy.Pos.X - 13, enemy.Pos.Y - 13, 26, 26, spin + 170, 115); }
         if (enemy.Kind == EnemyKind.GlassHerald) { using var shard = new Pen(Color.FromArgb(225, 186, 224, 231), 3); float spin = windupPulse * 24; for (int i = 0; i < 3; i++) { float angle = spin + i * 120; float radians = angle * MathF.PI / 180; PointF tip = new(enemy.Pos.X + MathF.Cos(radians) * 27, enemy.Pos.Y + MathF.Sin(radians) * 27); PointF tail = new(enemy.Pos.X - MathF.Cos(radians) * 18, enemy.Pos.Y - MathF.Sin(radians) * 18); g.DrawLine(shard, tail, tip); } }
         if (enemy.Kind == EnemyKind.RouteScribe) { using var folio = new Pen(Color.FromArgb(225, 196, 216, 226), 2); float spin = windupPulse * 28; for (int i = 0; i < 4; i++) { float angle = (spin + i * 90) * MathF.PI / 180; float x = enemy.Pos.X + MathF.Cos(angle) * 28, y = enemy.Pos.Y + MathF.Sin(angle) * 22; g.DrawRectangle(folio, x - 6, y - 8, 12, 16); } }
-        float hpY = spriteRow >= 0 && enemySprites is not null ? enemy.Pos.Y - (bossSprite ? 141 : enemy.Kind == EnemyKind.Elite ? 88 : 77) : enemy.Pos.Y - r - 10;
+        float hpY = spriteRow >= 0 && enemySprites is not null ? enemy.Pos.Y - (bossSprite ? 141 : spearboundSprite ? 126 : enemy.Kind == EnemyKind.Elite ? 88 : 77) : enemy.Pos.Y - r - 10;
         using var hpBack = new SolidBrush(Color.FromArgb(40, 20, 20)); using var hpBar = new SolidBrush(Color.FromArgb(188, 76, 70)); g.FillRectangle(hpBack, enemy.Pos.X - 22, hpY, 44, 5); g.FillRectangle(hpBar, enemy.Pos.X - 22, hpY, 44 * Math.Max(0, enemy.Hp / enemy.MaxHp), 5);
         string name = EnemyName(enemy); if (name.Length > 0) DrawCentered(g, name, spriteRow >= 0 && enemySprites is not null ? hpY - 17 : enemy.Pos.Y - r - 28, new Font("Segoe UI", 8, FontStyle.Bold), Color.FromArgb(233, 198, 151), enemy.Pos.X);
         if (enemy.Boss) { using var bossBack = new SolidBrush(Color.FromArgb(40, 20, 20)); using var bossHp = new SolidBrush(enemy.Hp <= enemy.MaxHp * 0.5f ? Color.OrangeRed : enemy.Kind == EnemyKind.BlindScribe ? Color.Teal : enemy.Kind == EnemyKind.RiverFerryman ? Color.SteelBlue : enemy.Kind == EnemyKind.AshWarden ? Color.DarkOrange : enemy.Kind == EnemyKind.HollowName ? Color.LightSeaGreen : enemy.Kind == EnemyKind.NameWeaver ? Color.MediumPurple : enemy.Kind == EnemyKind.FirstKeeper ? Color.Goldenrod : enemy.Kind == EnemyKind.OathCartographer ? Color.DarkCyan : enemy.Kind == EnemyKind.ReedKeeper ? Color.DarkOliveGreen : enemy.Kind == EnemyKind.CounterCurrent ? Color.CadetBlue : enemy.Kind == EnemyKind.RiftCantor ? Color.MediumOrchid : enemy.Kind == EnemyKind.FlowKeeper ? Color.DeepSkyBlue : enemy.Kind == EnemyKind.GlassHerald ? Color.LightCyan : enemy.Kind is EnemyKind.NameBroker or EnemyKind.TideWitness ? Color.MediumPurple : enemy.Kind == EnemyKind.RouteScribe ? Color.LightSteelBlue : Color.Firebrick); g.FillRectangle(bossBack, 360, 112, 240, 8); g.FillRectangle(bossHp, 360, 112, 240 * Math.Clamp(enemy.Hp / enemy.MaxHp, 0, 1), 8); string bossName = enemy.Kind == EnemyKind.BlindScribe ? "ESCRIBA CEGO" : enemy.Kind == EnemyKind.RiverFerryman ? "BARQUEIRO OCO" : enemy.Kind == EnemyKind.AshWarden ? "GUARDIÃO DAS CINZAS" : enemy.Kind == EnemyKind.HollowName ? "O NOME VAZIO" : enemy.Kind == EnemyKind.NameWeaver ? "A TECELÃ DE NOMES" : enemy.Kind == EnemyKind.FirstKeeper ? "A PRIMEIRA VIGÍLIA" : enemy.Kind == EnemyKind.OathCartographer ? "CARTÓGRAFA DO VÃO" : enemy.Kind == EnemyKind.NameBroker ? "ESCRIVÃO DE CONTRATO" : enemy.Kind == EnemyKind.TideWitness ? "TESTEMUNHA DA MARÉ" : enemy.Kind == EnemyKind.ReedKeeper ? "GUARDIÃ DO LEITO" : enemy.Kind == EnemyKind.CounterCurrent ? "AFINADOR DAS MARGENS" : enemy.Kind == EnemyKind.RiftCantor ? "A CONTRAVOZ" : enemy.Kind == EnemyKind.FlowKeeper ? "VIGIA DO VEIO PRESO" : enemy.Kind == EnemyKind.GlassHerald ? "ARAUTO DE VIDRO" : enemy.Kind == EnemyKind.LanternRegent ? "REGENTE DAS LANTERNAS" : enemy.Kind == EnemyKind.RouteScribe ? "ESCRIBA DO TRAÇADO" : enemy.Kind == EnemyKind.DeepSilence ? "SILÊNCIO DE BAIXO" : enemy.Kind == EnemyKind.BorrowedChorus ? "ARQUIVISTA DAS MARÉS" : "GUARDIÃO DA CRIPTA"; DrawCentered(g, enemy.Hp <= enemy.MaxHp * 0.5f ? $"{bossName} • SEGUNDA FASE" : bossName, 91, new Font("Georgia", 11, FontStyle.Bold), enemy.Hp <= enemy.MaxHp * 0.5f ? Color.OrangeRed : Color.Goldenrod); }

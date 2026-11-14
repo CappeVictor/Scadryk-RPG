@@ -96,3 +96,5 @@ Salas avançadas selecionadas antes de chefes agora incluem um elite adicional, 
 O afixo Blindado passou a proteger também os ecos num raio de 132 pixels. A borda azul tracejada identifica os aliados afetados, e derrotar ou afastar-se do elite remove a mitigação; o autoteste cobre alcance, redução e desaparecimento da aura.
 
 O quarto afixo de elite, Lançador, cria um papel de alcance: mantém distância, marca uma linha até o alvo e atinge apenas uma área estreita após o aviso. A cor ciano identifica o ataque; o reposicionamento lateral é a resposta tática.
+
+O Lançador recebeu uma arte original de corpo inteiro com lança, integrada como recurso transparente e espelhada conforme a direção do inimigo; o movimento usa a animação temporal já existente. A identidade da arma agora combina com o ataque de alcance.
