@@ -2738,29 +2738,31 @@ public sealed class Game : Form
 
     private void DrawInventory(Graphics g)
     {
-        using var b = new SolidBrush(Color.FromArgb(245, 17, 19, 20)); using var itemFont = new Font("Segoe UI", 11); using var effectFont = new Font("Segoe UI", 9); g.FillRectangle(b, 150, 145, 660, 490);
-        DrawCentered(g, "INVENTÁRIO   •   1–3 ARMAS   •   4 ARMADURA   •   5 RELÍQUIA   •   6/7 TALISMÃS   •   I FECHAR", 180, new Font("Segoe UI", 12, FontStyle.Bold), Color.Goldenrod);
-        for (int i = 0; i < 3; i++) { bool found = (ownedWeapons & (1 << i)) != 0; Brush rarityBrush = !found ? Brushes.Gray : weaponRarities[i] == 2 ? Brushes.MediumTurquoise : weaponRarities[i] == 1 ? Brushes.Goldenrod : Brushes.AntiqueWhite; g.DrawString($"{i + 1}. {WeaponDisplayName(i)}    DANO {WeaponPower(i) - WeaponPower(weapon):+#;-#;0}    {(weapon == i ? "EQUIPADA" : found ? "DISPONÍVEL" : "NÃO ENCONTRADA")}", itemFont, rarityBrush, 205, 225 + i * 54); if (found) g.DrawString($"{WeaponAffixDescription(i)}\n{WeaponTraitDescription(i)}", effectFont, Brushes.DarkGray, new RectangleF(232, 246 + i * 54, 570, 32)); }
-        g.DrawString($"4. PEITORAL DE PEDRA {(armorOn ? relicOn ? "EQUIPADO • -35% DANO • VIGÍLIA DO VEIO" : "EQUIPADO • -30% DANO" : armor ? "DISPONÍVEL" : "NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 385);
-        g.DrawString($"5. RELICÁRIO VITAL {(relicOn ? armorOn ? "EQUIPADO • CURA 8 POR ABATE • VIGÍLIA DO VEIO" : "EQUIPADO • CURA 5 POR ABATE" : relic ? "DISPONÍVEL" : "NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 420);
-        g.DrawString($"SELO DA VIGÍLIA {(archiveSeal ? "ENCONTRADO • +8 DANO" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 455);
-        g.DrawString($"SINO DE NARA {(riverBell ? "ENCONTRADO • +20 VIDA MÁXIMA" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 490);
-        g.DrawString($"PRISMA DO LUME {(lumeLens ? "ENCONTRADO • +12 DANO" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 525);
-        g.DrawString($"RASTRO DE NARA {(naraTrace ? "RECUPERADO • MEMÓRIA PRESERVADA" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 560);
+        using var b = new SolidBrush(Color.FromArgb(245, 17, 19, 20)); using var itemFont = new Font("Segoe UI", 10.5f); using var effectFont = new Font("Segoe UI", 8.5f); g.FillRectangle(b, 120, 120, 720, 520);
+        DrawCentered(g, "INVENTÁRIO   •   1–3 ARMAS   •   4 ARMADURA   •   5 RELÍQUIA   •   6/7 TALISMÃS   •   I FECHAR", 150, new Font("Segoe UI", 11, FontStyle.Bold), Color.Goldenrod);
+        for (int i = 0; i < 3; i++) { bool found = (ownedWeapons & (1 << i)) != 0; Brush rarityBrush = !found ? Brushes.Gray : weaponRarities[i] == 2 ? Brushes.MediumTurquoise : weaponRarities[i] == 1 ? Brushes.Goldenrod : Brushes.AntiqueWhite; g.DrawString($"{i + 1}. {WeaponDisplayName(i)}    DANO {WeaponPower(i) - WeaponPower(weapon):+#;-#;0}    {(weapon == i ? "EQUIPADA" : found ? "DISPONÍVEL" : "NÃO ENCONTRADA")}", itemFont, rarityBrush, 205, 190 + i * 48); if (found) g.DrawString($"{WeaponAffixDescription(i)}\n{WeaponTraitDescription(i)}", effectFont, Brushes.DarkGray, new RectangleF(232, 210 + i * 48, 570, 32)); }
+        g.DrawString($"4. PEITORAL DE PEDRA {(armorOn ? relicOn ? "EQUIPADO • -35% DANO • VIGÍLIA DO VEIO" : "EQUIPADO • -30% DANO" : armor ? "DISPONÍVEL" : "NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 340);
+        g.DrawString($"5. RELICÁRIO VITAL {(relicOn ? armorOn ? "EQUIPADO • CURA 8 POR ABATE • VIGÍLIA DO VEIO" : "EQUIPADO • CURA 5 POR ABATE" : relic ? "DISPONÍVEL" : "NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 368);
+        g.DrawString($"SELO DA VIGÍLIA {(archiveSeal ? "ENCONTRADO • +8 DANO" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 396);
+        g.DrawString($"SINO DE NARA {(riverBell ? "ENCONTRADO • +20 VIDA MÁXIMA" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 424);
+        g.DrawString($"PRISMA DO LUME {(lumeLens ? "ENCONTRADO • +12 DANO" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 452);
+        g.DrawString($"RASTRO DE NARA {(naraTrace ? "RECUPERADO • MEMÓRIA PRESERVADA" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 205, 480);
         string[] availableCharms = Enumerable.Range(1, charmNames.Length - 1).Where(i => (ownedCharms & (1 << (i - 1))) != 0).Select(i => charmNames[i]).ToArray();
         string charmList = availableCharms.Length == 0 ? "NENHUM" : string.Join(" • ", availableCharms.Take(3)) + (availableCharms.Length > 3 ? "\n" + string.Join(" • ", availableCharms.Skip(3)) : "");
-        g.DrawString($"TALISMÃS: {charmList}   •   SAL VÍTREO: {tideGlass}", effectFont, Brushes.Plum, new RectangleF(205, 574, 560, 27));
+        g.DrawString($"TALISMÃS: {charmList}   •   SAL VÍTREO: {tideGlass}", effectFont, Brushes.Plum, new RectangleF(205, 508, 560, 30));
         string firstCharm = equippedCharm == 0 ? "VAZIO" : charmNames[equippedCharm]; string secondCharm = equippedCharm2 == 0 ? "VAZIO" : charmNames[equippedCharm2];
-        g.DrawString($"6. ESPAÇO I: {firstCharm}    7. ESPAÇO II: {secondCharm}", effectFont, Brushes.Plum, 205, 601);
-        string effect = HasCharmPair(1, 2) ? "SINTONIA: Redemoinho +57% dano • penalidade cai para 0,5 s" : HasCharmPair(1, 3) ? "SINTONIA: +17 p.p. crítico • multiplicador 2,75x • ataque básico menos lento" : HasCharmPair(2, 3) ? "SINTONIA: esquiva longa sem acréscimo de recarga" : "Equipar dois talismãs únicos cria uma sintonia entre seus efeitos.";
-        if (HasCharmPair(3, 5)) effect = "SINTONIA: Estilhaço +52% dano • alcance +44% • recarga +0,5 s";
-        else if (HasCharm(5)) effect += " • Fio da Margem: alcance +44%, recarga +1,25 s";
-        if (HasCharm(3) && !HasCharmPair(3, 5)) effect += " • Estilhaço +33% dano";
-        if (HasCharm(4)) effect += " • Marca: +25% contra chefes, -20% contra outros inimigos";
-        if (HasCharm(6)) effect = "Nó de Lume: Farol dura 8 s e pulsa a cada 0,85 s; recarga +3,5 s";
-        if (HasCharm(7)) effect = "Fio do Retorno (Vigília): +40% dano e cura 12% ao abater chefe; dano recebido +10%";
-        if (HasCharm(8)) effect = (HasCharm(7) ? effect + " • " : "") + "Eco Convergente (Vigília): +18% de dano de técnica";
-        g.DrawString(effect, effectFont, Brushes.AntiqueWhite, new RectangleF(205, 617, 560, 18));
+        g.DrawString($"6. ESPAÇO I: {firstCharm}    7. ESPAÇO II: {secondCharm}", effectFont, Brushes.Plum, 205, 538);
+        var effects = new List<string>();
+        if (HasCharm(1)) effects.Add(HasCharmPair(1, 2) ? "SINTONIA BRASA+TRAVESSIA: Redemoinho +57% dano; recarga +0,5 s" : "Nó de Brasa: Redemoinho +35% dano; recarga +1 s");
+        if (HasCharm(2)) effects.Add($"Fio de Travessia: esquiva 0,29 s{(HasCharmPair(2, 3) ? " sem custo extra" : ", recarga +0,3 s")}; Sino +35 alcance e +1,5 s de recarga");
+        if (HasCharm(3)) effects.Add($"Vidro de Vigília: crítico +{(HasCharmPair(1, 3) ? 17 : 12)} p.p. / {(HasCharmPair(1, 3) ? "2,75" : "2,5")}×; Sino/Vazante +25%; Estilhaço +{(HasCharmPair(3, 5) ? 52 : 33)}% dano{(HasCharmPair(1, 3) ? "; ataque +0,03 s" : "; ataque +0,06 s")}");
+        if (HasCharm(4)) effects.Add("Marca da Vigília: +25% dano contra chefes e -20% contra outros ecos");
+        if (HasCharm(5)) effects.Add($"Fio da Margem: Estilhaço +44% alcance e 1,8 s de duração; recarga +{(HasCharmPair(3, 5) ? "0,5" : "1,25")} s");
+        if (HasCharm(6)) effects.Add("Nó de Lume: Farol +2 s, pulsos a cada 0,85 s; recarga +3,5 s");
+        if (HasCharm(7)) effects.Add("Fio do Retorno (Vigília): +40% dano, cura 12% ao abater chefe e +10% dano recebido");
+        if (HasCharm(8)) effects.Add("Eco Convergente (Vigília): +18% dano de técnica");
+        string effect = effects.Count > 0 ? string.Join(" • ", effects) : "Equipe até dois talismãs para ativar efeitos e sintonias.";
+        g.DrawString(effect, effectFont, Brushes.AntiqueWhite, new RectangleF(205, 556, 560, 78));
     }
     private void DrawCharacterSheet(Graphics g)
     {

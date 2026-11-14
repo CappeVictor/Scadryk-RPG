@@ -79,6 +79,8 @@ A Vigília Ascendente agora concede o Eco Convergente ao concluir o décimo anda
 
 A Vigília agora tem um quinto aspecto: **Maré Invertida**. A cada seis segundos, a corrente da arena alterna entre puxar o Escutador para o centro e repeli-lo para a borda; setas na arena mostram o fluxo para o jogador responder com movimento ou esquiva. O ciclo de cinco aspectos mantém as quatro regras existentes e dá nova função à arena do pós-jogo. Compilação Release concluída sem avisos; falta observar o ritmo numa partida manual.
 
+O inventário agora lista separadamente os efeitos ativos de cada talismã equipado e as sintonias entre pares. A área foi reorganizada para que os bônus de pós-jogo e as combinações não sejam ocultados por um talismã especial nem cortados no rodapé.
+
 ## Capítulo XVII — As marés emprestadas
 
 Após o epílogo, Aven abre uma expedição opcional ao Cais dos Ecos Emprestados e ao Arquivo da Maré sem Nome. O Arquivista das Marés anuncia três ataques, deixa uma memória compartilhada e concede uma melhoria permanente para técnicas. A história não vincula Nara a essa região nem revela seu nome escolhido ou paradeiro. São duas salas novas, totalizando 39 salas de combate e 19 chefes; o progresso e a compatibilidade com saves antigos passam pelo autoteste. A próxima etapa é ampliar a variedade de builds, revisar balanceamento e criar animações completas, áudio e distribuição.
