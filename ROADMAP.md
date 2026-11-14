@@ -113,6 +113,8 @@ O Lançador recebeu uma arte original de corpo inteiro com lança, integrada com
 
 Uma ambiência musical original agora é sintetizada em C#: camadas graves lentas e ecos de vidro formam um loop estéreo de 16 segundos. Ela toca somente durante a exploração, pausa com as telas e acompanha o controle global de áudio da tecla N; não adiciona arquivos nem dependências.
 
+Sete paisagens sonoras ambientes são sintetizadas em C# para distinguir refúgios, pedra e arquivos, água, brasas, margens, vidro e lanternas, e silêncio. A camada muda com a sala, acompanha a música, pausa com as telas e respeita o controle global de áudio; ruído filtrado e tons harmônicos usam volume baixo para não encobrir os avisos de combate.
+
 Os sprites agora acompanham a leitura do ataque: durante o aviso, inclinam-se na direção do alvo e comprimem o corpo até o impacto; o enquadramento continua ancorado no chão. É uma etapa de animação em C# antes de produzir quadros de ataque específicos para cada criatura.
 
 O Peitoral de Pedra e o Relicário Vital formam o conjunto Vigília do Veio quando equipados juntos: o peitoral mitiga 35% do dano e o relicário cura 8 por abate, ante 30% e 5 quando usados isoladamente. Cada abate também ativa o Pulso do Veio por 2,5 segundos, aumentando em 15% o dano causado; abates sucessivos renovam o efeito. HUD, inventário e ficha mostram o estado do conjunto. O pulso é temporário e não exige novo campo de save.
