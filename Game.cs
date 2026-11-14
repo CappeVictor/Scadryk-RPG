@@ -955,7 +955,11 @@ public sealed class Game : Form
     private void DrawBossWarning(Graphics g, Enemy e)
     {
         (Color fillColor, Color edgeColor) = AttackWarningPalette(highContrastTelegraphs);
-        using var outline = new Pen(edgeColor, highContrastTelegraphs ? 4 : 3);
+        float urgency = Math.Clamp(1f - e.Windup / Math.Max(0.01f, e.WindupMax), 0f, 1f);
+        float pulse = (0.5f + 0.5f * MathF.Sin(windupPulse * (7f + urgency * 11f))) * urgency;
+        fillColor = Color.FromArgb(Math.Clamp(fillColor.A + (int)(urgency * 24), 0, 255), fillColor);
+        edgeColor = Color.FromArgb(Math.Clamp(edgeColor.A + (int)(urgency * 18 + pulse * 35), 0, 255), edgeColor);
+        using var outline = new Pen(edgeColor, highContrastTelegraphs ? 4 + urgency + pulse : 2.5f + urgency * 2 + pulse * 1.5f);
         using var fill = new SolidBrush(fillColor);
         if (BossUsesCone(e))
         {
@@ -2300,7 +2304,11 @@ public sealed class Game : Form
             (Color fillColor, Color edgeColor) = spearboundElite && !highContrastTelegraphs
                 ? (Color.FromArgb(42, 76, 211, 245), Color.FromArgb(235, 76, 211, 245))
                 : AttackWarningPalette(highContrastTelegraphs);
-            using var p = new Pen(edgeColor, highContrastTelegraphs ? 4 : 3); using var b = new SolidBrush(fillColor);
+            float urgency = Math.Clamp(1f - enemy.Windup / Math.Max(0.01f, enemy.WindupMax), 0f, 1f);
+            float pulse = (0.5f + 0.5f * MathF.Sin(windupPulse * (7f + urgency * 11f))) * urgency;
+            fillColor = Color.FromArgb(Math.Clamp(fillColor.A + (int)(urgency * 24), 0, 255), fillColor);
+            edgeColor = Color.FromArgb(Math.Clamp(edgeColor.A + (int)(urgency * 18 + pulse * 35), 0, 255), edgeColor);
+            using var p = new Pen(edgeColor, highContrastTelegraphs ? 4 + urgency + pulse : 2.5f + urgency * 2 + pulse * 1.5f); using var b = new SolidBrush(fillColor);
             if (RangedImpactRadius(enemy.Kind) > 0 || enemy.Kind == EnemyKind.Elite && enemy.EliteAffix == EliteAffix.Spearbound)
             {
                 if (highContrastTelegraphs) { using var shadow = new Pen(Color.FromArgb(230, 12, 13, 15), 7); g.DrawLine(shadow, enemy.Pos, enemy.Target); }

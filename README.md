@@ -97,7 +97,7 @@ O alcance dos avisos de interação **E** agora coincide com o alcance efetivo d
 
 Os efeitos de golpe, esquiva, impacto, técnica, coleta e aviso de ataque de chefe, além da ambiência musical, são sintetizados pelo próprio jogo em C# e reproduzidos pelo áudio do Windows. A camada ambiente combina tons graves lentos com ecos de vidro espaçados; ela toca durante a exploração e para em telas de pausa. O sinal grave do chefe acompanha o aviso visual de cada golpe; elites usam um toque curto e mais agudo para distinguir suas investidas. Não há pacote, arquivo de som ou ferramenta adicional para instalar. Pressione **N** para silenciar ou reativar toda a camada de áudio.
 
-Pressione **H** para destacar avisos de ataque com amarelo claro e contorno escuro; a escolha fica salva junto ao progresso. O modo usa cor, contorno mais espesso e uma borda escura para diferenciar as áreas perigosas do cenário.
+Pressione **H** para destacar avisos de ataque com amarelo claro e contorno escuro; a escolha fica salva junto ao progresso. Os contornos de todos os avisos pulsam e ganham intensidade conforme o impacto se aproxima; o modo de alto contraste preserva uma borda escura para separar as áreas perigosas do cenário.
 
 Cada nível concede um ponto permanente: **Vigor** aumenta a vida máxima, **Domínio** reduz as recargas, **Agilidade** acelera a esquiva e **Sintonia** acrescenta 8% de dano às técnicas por ponto. A nova especialização é compatível com saves antigos e pode ser escolhida várias vezes.
 
