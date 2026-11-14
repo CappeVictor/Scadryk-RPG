@@ -2248,6 +2248,14 @@ public sealed class Game : Form
             using var shadow = new SolidBrush(Color.FromArgb(100, 5, 7, 9));
             g.FillEllipse(shadow, player.X - 17, player.Y - 5, 34, 10);
             g.DrawImage(sprites, target, source, GraphicsUnit.Pixel);
+            if (invulnerable > 0)
+            {
+                int flashAlpha = PlayerDamageFlashAlpha(invulnerable, windupPulse);
+                using var damageGlow = new SolidBrush(Color.FromArgb(flashAlpha / 3, 239, 83, 76));
+                using var damageEdge = new Pen(Color.FromArgb(flashAlpha, 255, 126, 105), 3);
+                RectangleF damageBounds = new(target.X + 18, target.Y + 14, 40, 50);
+                g.FillEllipse(damageGlow, damageBounds); g.DrawEllipse(damageEdge, damageBounds);
+            }
         }
         else
         {
@@ -2281,6 +2289,7 @@ public sealed class Game : Form
         if (MathF.Abs(direction.X) > MathF.Abs(direction.Y)) return direction.X < 0 ? 1 : 2;
         return direction.Y < 0 ? 3 : 0;
     }
+    private static int PlayerDamageFlashAlpha(float remaining, float pulse) => remaining <= 0 ? 0 : (int)(70 + 55 * (0.5f + 0.5f * MathF.Sin(pulse * 42)));
     private static int PlayerSpriteFrame(float animationTime, bool moving) => moving ? (int)(Math.Max(0, animationTime) / 0.12f) % 4 : 0;
     private void DrawAttackSwing(Graphics g)
     {
@@ -2645,6 +2654,8 @@ public sealed class Game : Form
             floatingTextCheck.DamageEnemy(target, 37, true); floatingTextCheck.HitPlayer(12);
             if (target.Hp != 63 || floatingTextCheck.health != 88 || floatingTextCheck.floatingTexts.Count != 2 || floatingTextCheck.floatingTexts[0].Text != "CRÍTICO 37" || floatingTextCheck.floatingTexts[1].Text != "−12" || floatingTextCheck.floatingTexts[1].Color != Color.FromArgb(250, 116, 105))
                 throw new InvalidOperationException("Os números flutuantes não distinguiram dano crítico de dano recebido.");
+            if (PlayerDamageFlashAlpha(0, 0) != 0 || PlayerDamageFlashAlpha(floatingTextCheck.invulnerable, floatingTextCheck.windupPulse) is < 70 or > 125)
+                throw new InvalidOperationException("O clarão de dano do jogador não acompanhou a janela de invulnerabilidade.");
             float initialY = floatingTextCheck.floatingTexts[0].Pos.Y; floatingTextCheck.TickFloatingTexts(0.3f);
             if (floatingTextCheck.floatingTexts.Count != 2 || floatingTextCheck.floatingTexts[0].Pos.Y >= initialY) throw new InvalidOperationException("Os números de dano não subiram e permaneceram visíveis durante o impacto.");
             floatingTextCheck.TickFloatingTexts(1f);
