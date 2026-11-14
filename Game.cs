@@ -97,6 +97,11 @@ public sealed class Game : Form
         string path = Path.Combine(AppContext.BaseDirectory, "Assets", "Bosses.png");
         return File.Exists(path) ? new Bitmap(path) : null;
     });
+    private static readonly Lazy<Bitmap?> MidBossSpriteSheet = new(() =>
+    {
+        string path = Path.Combine(AppContext.BaseDirectory, "Assets", "BossesMidgame.png");
+        return File.Exists(path) ? new Bitmap(path) : null;
+    });
     private static readonly RectangleF[] ArchiveWalls = { new(275, 155, 38, 155), new(437, 365, 48, 165), new(626, 150, 42, 165), new(765, 374, 42, 150) };
     private static readonly RectangleF[] VaultWalls = { new(280, 170, 58, 118), new(625, 170, 58, 118), new(280, 410, 58, 118), new(625, 410, 58, 118) };
     private static readonly RectangleF[] RiverWalls = { new(250, 175, 80, 48), new(410, 390, 96, 52), new(645, 170, 70, 48), new(760, 390, 75, 55) };
@@ -1895,10 +1900,10 @@ public sealed class Game : Form
         if (enemy.Kind == EnemyKind.FirstKeeper && enemy.Windup > 0 && enemy.BossPattern == 2) { using var fork = new Pen(Color.FromArgb(235, 214, 184, 124), 4); g.DrawLine(fork, enemy.Pos, enemy.Target); g.DrawLine(fork, enemy.Target2Start, enemy.Target2); }
         if (enemy.Kind == EnemyKind.DeepSilence && enemy.Windup > 0 && enemy.BossPattern == 2) { using var echoFork = new Pen(Color.FromArgb(235, 170, 220, 229), 4); using var echoGlow = new Pen(Color.FromArgb(55, 117, 196, 215), 14); g.DrawLine(echoGlow, enemy.Pos, enemy.Target); g.DrawLine(echoGlow, enemy.Target2Start, enemy.Target2); g.DrawLine(echoFork, enemy.Pos, enemy.Target); g.DrawLine(echoFork, enemy.Target2Start, enemy.Target2); }
         using var body = new SolidBrush(enemy.Flash > 0 ? Color.White : color); using var edge = new Pen(enemy == lockedTarget ? Color.Gold : enemy.Armored ? Color.LightSteelBlue : Color.FromArgb(35, 25, 22), enemy == lockedTarget ? 4 : 2);
-        int bossSpriteRow = CampaignBossSpriteRow(enemy.Kind), enemySpriteRow = EnemySpriteRow(enemy.Kind);
-        bool bossSprite = bossSpriteRow >= 0;
-        int spriteRow = bossSprite ? bossSpriteRow : enemySpriteRow;
-        Bitmap? enemySprites = bossSprite ? BossSpriteSheet.Value : enemySpriteRow >= 0 ? EnemySpriteSheet.Value : null;
+        int bossSpriteIndex = CampaignBossSpriteIndex(enemy.Kind), enemySpriteRow = EnemySpriteRow(enemy.Kind);
+        bool bossSprite = bossSpriteIndex >= 0;
+        int spriteRow = bossSprite ? bossSpriteIndex % 4 : enemySpriteRow;
+        Bitmap? enemySprites = bossSprite ? bossSpriteIndex < 4 ? BossSpriteSheet.Value : MidBossSpriteSheet.Value : enemySpriteRow >= 0 ? EnemySpriteSheet.Value : null;
         if (spriteRow >= 0 && enemySprites is not null)
         {
             float cellWidth = enemySprites.Width / 4f, cellHeight = enemySprites.Height / 4f;
@@ -2333,7 +2338,7 @@ public sealed class Game : Form
     private void DrawOverlay(Graphics g, string titleText, string instruction) { using var bg = new SolidBrush(Color.FromArgb(225, 8, 10, 12)); g.FillRectangle(bg, 0, 0, 960, 640); DrawCentered(g, titleText, 250, new Font("Georgia", 36, FontStyle.Bold), Color.FromArgb(230, 193, 129)); DrawCentered(g, instruction, 340, new Font("Segoe UI", 15, FontStyle.Bold), Color.AntiqueWhite); if (noticeTime > 0) DrawCentered(g, notice, 410, new Font("Segoe UI", 12), Color.Goldenrod); }
     private static void DrawCentered(Graphics g, string s, float y, Font f, Color color, float x = 480) { using (f) using (var brush = new SolidBrush(color)) { SizeF size = g.MeasureString(s, f); g.DrawString(s, f, brush, x - size.Width / 2, y); } }
     private static int EnemySpriteRow(EnemyKind kind) => kind switch { EnemyKind.Grunt => 0, EnemyKind.Archer => 1, EnemyKind.Mage => 2, EnemyKind.Elite => 3, _ => -1 };
-    private static int CampaignBossSpriteRow(EnemyKind kind) => kind switch { EnemyKind.Guardian => 0, EnemyKind.BlindScribe => 1, EnemyKind.RiverFerryman => 2, EnemyKind.AshWarden => 3, _ => -1 };
+    private static int CampaignBossSpriteIndex(EnemyKind kind) => kind switch { EnemyKind.Guardian => 0, EnemyKind.BlindScribe => 1, EnemyKind.RiverFerryman => 2, EnemyKind.AshWarden => 3, EnemyKind.HollowName => 4, EnemyKind.NameWeaver => 5, EnemyKind.FirstKeeper => 6, EnemyKind.OathCartographer => 7, _ => -1 };
     private static int EnemySpriteFrame(float animationTime, bool walking) => walking ? (int)(Math.Max(0, animationTime) / 0.13f) % 4 : 0;
     private static bool EnemyFacesLeft(float enemyX, float playerX) => playerX < enemyX;
     private static string EnemyName(Enemy e) => e.Kind switch { EnemyKind.Guardian => "GUARDIÃO SEM NOME", EnemyKind.BlindScribe => "ESCRIBA CEGO", EnemyKind.RiverFerryman => "BARQUEIRO OCO", EnemyKind.AshWarden => "GUARDIÃO DAS CINZAS", EnemyKind.HollowName => "O NOME VAZIO", EnemyKind.NameWeaver => "A TECELÃ DE NOMES", EnemyKind.FirstKeeper => "A PRIMEIRA VIGÍLIA", EnemyKind.OathCartographer => "CARTÓGRAFA DO VÃO", EnemyKind.NameBroker => "ESCRIVÃO DE CONTRATO", EnemyKind.SaltEcho => "ECO SALINO", EnemyKind.TideWitness => "TESTEMUNHA DA MARÉ", EnemyKind.ReedKeeper => "GUARDIÃ DO LEITO", EnemyKind.FlowKeeper => "VIGIA DO VEIO PRESO", EnemyKind.CounterCurrent => "AFINADOR DAS MARGENS", EnemyKind.RiftCantor => "A CONTRAVOZ", EnemyKind.GlassHerald => "ARAUTO DE VIDRO", EnemyKind.LanternRegent => "REGENTE DAS LANTERNAS", EnemyKind.RouteScribe => "ESCRIBA DO TRAÇADO", EnemyKind.DeepSilence => "SILÊNCIO DE BAIXO", EnemyKind.PaperWraith => "ESPECTRO DE PAPEL", EnemyKind.MudCantor => "CANTOR DO LODO", EnemyKind.DrownedMemory => "LEMBRANÇA AFOGADA", EnemyKind.EmberWisp => "VESTÍGIO DE BRASAS", EnemyKind.NameMoth => "MARIPOSA DE NOMES", EnemyKind.Elite => e.Armored ? "ELITE • BLINDADO" : "ELITE • FRENÉTICO", EnemyKind.Archer => "ARQUEIRO", EnemyKind.Mage => "CONJURADOR", EnemyKind.InkEcho => "ECO DE TINTA", _ => "" };
@@ -2363,8 +2368,12 @@ public sealed class Game : Form
         if (!File.Exists(bossSpritePath)) throw new InvalidOperationException("A folha de chefes da campanha não foi copiada para a saída do jogo.");
         using (var sprite = new Bitmap(bossSpritePath))
             if (sprite.Width != sprite.Height || sprite.GetPixel(0, 0).A != 0) throw new InvalidOperationException("A folha de chefes precisa ter células quadradas e fundo transparente.");
-        if (CampaignBossSpriteRow(EnemyKind.Guardian) != 0 || CampaignBossSpriteRow(EnemyKind.BlindScribe) != 1 || CampaignBossSpriteRow(EnemyKind.RiverFerryman) != 2 || CampaignBossSpriteRow(EnemyKind.AshWarden) != 3 || CampaignBossSpriteRow(EnemyKind.DeepSilence) != -1)
-            throw new InvalidOperationException("As silhuetas dos primeiros chefes da campanha foram atribuídas incorretamente.");
+        if (CampaignBossSpriteIndex(EnemyKind.Guardian) != 0 || CampaignBossSpriteIndex(EnemyKind.BlindScribe) != 1 || CampaignBossSpriteIndex(EnemyKind.RiverFerryman) != 2 || CampaignBossSpriteIndex(EnemyKind.AshWarden) != 3 || CampaignBossSpriteIndex(EnemyKind.HollowName) != 4 || CampaignBossSpriteIndex(EnemyKind.NameWeaver) != 5 || CampaignBossSpriteIndex(EnemyKind.FirstKeeper) != 6 || CampaignBossSpriteIndex(EnemyKind.OathCartographer) != 7 || CampaignBossSpriteIndex(EnemyKind.DeepSilence) != -1)
+            throw new InvalidOperationException("As silhuetas dos chefes da campanha foram atribuídas incorretamente.");
+        string midBossSpritePath = Path.Combine(AppContext.BaseDirectory, "Assets", "BossesMidgame.png");
+        if (!File.Exists(midBossSpritePath)) throw new InvalidOperationException("A folha de chefes intermediários não foi copiada para a saída do jogo.");
+        using (var sprite = new Bitmap(midBossSpritePath))
+            if (sprite.Width != sprite.Height || sprite.GetPixel(0, 0).A != 0) throw new InvalidOperationException("A folha de chefes intermediários precisa ter células quadradas e fundo transparente.");
         if (PlayerSpriteRow(new PointF(0, 1)) != 0 || PlayerSpriteRow(new PointF(-1, 0)) != 1 || PlayerSpriteRow(new PointF(1, 0)) != 2 || PlayerSpriteRow(new PointF(0, -1)) != 3 || PlayerSpriteFrame(0.5f, false) != 0 || PlayerSpriteFrame(0.5f, true) != 0 || PlayerSpriteFrame(0.61f, true) != 1)
             throw new InvalidOperationException("A orientação ou o ciclo de caminhada da folha de sprites não foi mapeado corretamente.");
         using (var weaponCombat = new Game())
