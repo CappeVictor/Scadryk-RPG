@@ -385,6 +385,12 @@ public sealed class Game : Form
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
         if (focusPaused) return;
+        if (e.KeyCode == Keys.N)
+        {
+            bool nowMuted = GameAudio.ToggleMute();
+            notice = nowMuted ? "ÁUDIO DESATIVADO" : "ÁUDIO ATIVADO"; noticeTime = 1.5f;
+            Invalidate(); return;
+        }
         down.Add(e.KeyCode);
         if (e.KeyCode == Keys.Enter && (title || dead || victory)) { StartGame(); return; }
         if (e.KeyCode == Keys.C && title) { LoadGame(); return; }
@@ -454,6 +460,7 @@ public sealed class Game : Form
         facing = lockedTarget is not null && enemies.Contains(lockedTarget) ? Normalize(Sub(lockedTarget.Pos, player), facing) : mouseAim;
         attackCd = BasicAttackCooldown();
         attackFlash = 0.16f;
+        GameAudio.Play(GameAudio.Cue.Strike);
         foreach (Enemy enemy in enemies.ToArray())
         {
             PointF offset = Sub(enemy.Pos, player); float distance = Length(offset);
@@ -498,6 +505,7 @@ public sealed class Game : Form
         int skill = equippedSkills[slot];
         if (skill == 0) { notice = $"ESPAÇO {slot + 1} VAZIO • PRESSIONE B PARA MONTAR TÉCNICAS"; noticeTime = 1.5f; return; }
         if (!SkillUnlocked(skill)) { notice = "TÉCNICA AINDA NÃO APRENDIDA"; noticeTime = 1.5f; return; }
+        GameAudio.Play(GameAudio.Cue.Skill);
         switch (skill) { case 1: CastVoiceShard(); break; case 2: CastBellPulse(); break; case 3: CastEbbPull(); break; case 4: CastAnchorWard(); break; case 5: CastRefrain(); break; case 6: CastBeacon(); break; case 7: CastReturnedVoices(); break; case 8: CastFinalSpark(); break; }
     }
     private static bool ValidSkillLoadout(SaveData s)
@@ -764,7 +772,7 @@ public sealed class Game : Form
         PointF animationDirection = Length(dir) > 0.001f ? dir : drift;
         if (Length(animationDirection) > 0.001f) playerAnimationTime += dt;
         else playerAnimationTime = 0;
-        for (int i = drops.Count - 1; i >= 0; i--) if (Distance(player, drops[i].Pos) < 30) Collect(drops[i]);
+        for (int i = drops.Count - 1; i >= 0; i--) if (Distance(player, drops[i].Pos) < 30) { GameAudio.Play(GameAudio.Cue.Loot); Collect(drops[i]); }
         TickBeacon(dt); int roomBeingUpdated = room; foreach (Enemy enemy in enemies.ToArray()) { PointF previousPos = enemy.Pos; UpdateEnemy(enemy, dt); enemy.Moving = Distance(previousPos, enemy.Pos) > 0.01f; if (enemy.Moving) enemy.AnimationTime += dt; if (dead || room != roomBeingUpdated) break; }
         AdvanceVoiceShards(dt);
         if (enemies.Count == 0 && drops.Count == 0 && room == 2 && !memoryOverlay) chestChoice = true;
@@ -860,6 +868,7 @@ public sealed class Game : Form
 
     private void HitPlayer(float value)
     {
+        GameAudio.Play(GameAudio.Cue.Impact);
         float vigilPressure = vigilActive ? 1 + Math.Min(1.5f, Math.Max(0, vigilFloor - 1) * 0.08f) : 1;
         float aspectPressure = vigilActive && VigilAspectForFloor(vigilFloor) == VigilAspect.Hungry ? 1.3f : 1;
         if (vigilActive && HasCharm(7)) aspectPressure *= 1.1f;
@@ -1209,6 +1218,7 @@ public sealed class Game : Form
         dashDirection = Normalize(movement, facing);
         if (Length(movement) > 0.001f) facing = dashDirection;
         dashTime = DashDuration(); dashCd = DashCooldown();
+        GameAudio.Play(GameAudio.Cue.Dash);
     }
     private float DashCooldown() => Math.Max(0.35f, 1.15f - dodgeTalent * 0.12f) + (HasCharm(2) && !HasCharmPair(2, 3) ? 0.3f : 0f);
     private float CriticalChance() => (weapon == 2 ? 0.25f : 0.12f) + (HasCharm(3) ? HasCharmPair(1, 3) ? 0.17f : 0.12f : 0f) + (HasWeaponAffix(weapon, 2) ? weaponRarities[weapon] == 2 ? 0.11f : 0.07f : 0f);
@@ -2485,6 +2495,7 @@ public sealed class Game : Form
 
     public static int SelfTest()
     {
+        GameAudio.SilenceForAutomatedRun();
         using (var targetCheck = new Game())
         {
             targetCheck.timer.Stop(); targetCheck.StartGame(); targetCheck.enemies.Clear(); targetCheck.drops.Clear(); targetCheck.player = new PointF(150, 330);

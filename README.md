@@ -80,6 +80,7 @@ Aven usa uma folha de sprites original incluída em `Assets/Aven.png`: quatro di
 | 7 no inventário | Alternar o talismã do espaço II |
 | 1–4 ao subir de nível | Escolher talento ou responder quando Sileth apresentar uma decisão |
 | Tab | Trocar alvo |
+| N | Ativar ou silenciar os efeitos de áudio |
 | Enter, Espaço ou clique na introdução | Avançar o prólogo e a lembrança |
 | F5 | Salvar depois de limpar a sala e recolher o loot |
 | C na tela inicial | Carregar o save |
@@ -88,6 +89,8 @@ Aven usa uma folha de sprites original incluída em `Assets/Aven.png`: quatro di
 Quando o alvo marcado é derrotado, o jogo marca automaticamente o inimigo vivo mais próximo. **Tab** continua alternando os alvos manualmente.
 
 O alcance dos avisos de interação **E** agora coincide com o alcance efetivo das conversas, portões e objetos, inclusive inscrições opcionais.
+
+Os efeitos de golpe, esquiva, impacto, técnica e coleta são sintetizados pelo próprio jogo em C# e reproduzidos pelo áudio do Windows. Não há pacote, arquivo de som ou ferramenta adicional para instalar. Pressione **N** para ativar ou silenciar os efeitos.
 
 Cada nível concede um ponto permanente: **Vigor** aumenta a vida máxima, **Domínio** reduz as recargas, **Agilidade** acelera a esquiva e **Sintonia** acrescenta 8% de dano às técnicas por ponto. A nova especialização é compatível com saves antigos e pode ser escolhida várias vezes.
 
