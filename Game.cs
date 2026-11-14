@@ -3072,12 +3072,12 @@ public sealed class Game : Form
             PointF tip = Add(player, Scale(facing, reach));
             PointF basePoint = Add(player, Scale(facing, 16));
             PointF cross = new(-facing.Y * 9, facing.X * 9);
-            int alpha = (int)(progress * 230);
-            using var spearGlow = new Pen(Color.FromArgb(alpha / 3, 137, 221, 209), 12) { StartCap = LineCap.Round, EndCap = LineCap.Round };
-            using var spearEdge = new Pen(Color.FromArgb(alpha, 208, 231, 202), 3) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+            int spearAlpha = (int)(progress * 230);
+            using var spearGlow = new Pen(Color.FromArgb(spearAlpha / 3, 137, 221, 209), 12) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+            using var spearEdge = new Pen(Color.FromArgb(spearAlpha, 208, 231, 202), 3) { StartCap = LineCap.Round, EndCap = LineCap.Round };
             g.DrawLine(spearGlow, basePoint, tip); g.DrawLine(spearEdge, basePoint, tip);
             g.DrawLine(spearEdge, Add(basePoint, cross), Add(basePoint, Scale(cross, -1)));
-            using var pointGlow = new SolidBrush(Color.FromArgb(alpha / 2, 150, 238, 224));
+            using var pointGlow = new SolidBrush(Color.FromArgb(spearAlpha / 2, 150, 238, 224));
             g.FillEllipse(pointGlow, tip.X - 5, tip.Y - 5, 10, 10);
             return;
         }
@@ -3707,7 +3707,7 @@ public sealed class Game : Form
             weaponCombat.attackCd = 0; weaponCombat.weapon = 2; platedEcho.Pos = new PointF(215, 330); weaponCombat.Attack();
             if (platedEcho.Hp >= 1000 || weaponCombat.BasicAttackCooldown() != 0.23f || weaponCombat.CriticalChance() != 0.25f || weaponCombat.WeaponTraitDescription(2) != "FACA RÁPIDA • CURTO ALCANCE • 25% DE CRÍTICO") throw new InvalidOperationException("A Faca do Crepúsculo não manteve seu alcance curto, velocidade e crítico elevados.");
             weaponCombat.attackCd = 0; weaponCombat.weapon = 3; platedEcho.Hp = 1000; platedEcho.Pos = new PointF(260, 330); weaponCombat.Attack();
-            if (platedEcho.Hp >= 1000 || weaponCombat.BasicAttackCooldown() != 0.43f || weaponCombat.BasicAttackReach(platedEcho) != 128f || weaponCombat.BasicAttackDamageMultiplier(platedEcho) != 1f || weaponCombat.WeaponTraitSummary(3) != "alcance máximo • preciso • perfura") throw new InvalidOperationException("A Lança da Badalada não perfurou a armadura a longo alcance com seu perfil preciso.");
+            if (platedEcho.Hp >= 1000 || weaponCombat.BasicAttackCooldown() != 0.43f || weaponCombat.BasicAttackReach(platedEcho) != 128f || weaponCombat.BasicAttackDamageMultiplier(platedEcho) != 1f || WeaponTraitSummary(3) != "alcance máximo • preciso • perfura") throw new InvalidOperationException("A Lança da Badalada não perfurou a armadura a longo alcance com seu perfil preciso.");
             weaponCombat.attackCd = 0; platedEcho.Hp = 1000; platedEcho.Pos = new PointF(235, 390); weaponCombat.Attack();
             if (platedEcho.Hp != 1000) throw new InvalidOperationException("A Lança da Badalada atingiu fora do arco estreito anunciado.");
             if (!weaponCombat.WeaponTraitDescription(1).Contains("PERFURA ARMADURA") || !weaponCombat.WeaponTraitDescription(0).Contains("EQUILIBRADA")) throw new InvalidOperationException("A descrição das especializações de arma não corresponde ao combate.");
