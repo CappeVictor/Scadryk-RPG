@@ -778,6 +778,16 @@ public sealed class Game : Form
         _ => 0
     };
 
+    private static float NonBossAttackRadius(Enemy e)
+    {
+        if (e.Kind == EnemyKind.Elite) return 62;
+        if (e.Kind == EnemyKind.Mage) return 52;
+        float ranged = RangedImpactRadius(e.Kind);
+        return ranged > 0 ? ranged : 38;
+    }
+    private static PointF NonBossAttackCenter(Enemy e) => e.Kind is EnemyKind.Elite or EnemyKind.Mage || RangedImpactRadius(e.Kind) > 0 ? e.Target : e.Pos;
+    private static bool NonBossAttackContains(Enemy e, PointF point) => Distance(point, NonBossAttackCenter(e)) < NonBossAttackRadius(e);
+
     private static bool BossUsesLine(Enemy e) => e.BossPattern == 2 && e.Kind is EnemyKind.FirstKeeper or EnemyKind.NameWeaver or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence;
     private static float BossCircleRadius(Enemy e) => e.BossPattern == 0 ? e.Kind switch { EnemyKind.GlassHerald => 135, EnemyKind.LanternRegent => 150, EnemyKind.RouteScribe => 160, _ => 90 } : e.BossPattern == 2 ? e.Kind switch { EnemyKind.RiverFerryman => 85, EnemyKind.AshWarden => 68, EnemyKind.HollowName => 85, _ => 42 } : 42;
     private static bool BossAttackContains(Enemy e, PointF point)
@@ -812,9 +822,7 @@ public sealed class Game : Form
         if (e.Stagger > 0) { e.Stagger = Math.Max(0, e.Stagger - dt); return; }
         if (e.Windup > 0) {
             e.Windup -= dt * attackTempo;
-            float reach = e.Boss ? e.BossPattern == 0 ? e.Kind == EnemyKind.GlassHerald ? 135 : e.Kind == EnemyKind.LanternRegent ? 150 : e.Kind == EnemyKind.RouteScribe ? 160 : 90 : e.Kind == EnemyKind.RiverFerryman && e.BossPattern == 2 ? 85 : e.Kind == EnemyKind.AshWarden && e.BossPattern == 2 ? 68 : e.Kind == EnemyKind.HollowName && e.BossPattern == 2 ? 85 : e.Kind is EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence && e.BossPattern == 2 ? 230 : (e.Kind is EnemyKind.NameWeaver or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor) && e.BossPattern == 2 ? 230 : 42 : e.Kind == EnemyKind.Elite ? 62 : e.Kind == EnemyKind.Mage ? 52 : RangedImpactRadius(e.Kind) > 0 ? RangedImpactRadius(e.Kind) : 38;
-            bool targeted = (e.Boss && (e.BossPattern is 1 or 2)) || (e.Kind is EnemyKind.Mage or EnemyKind.Elite or EnemyKind.Archer or EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth or EnemyKind.MudCantor or EnemyKind.PaperWraith or EnemyKind.SaltEcho);
-            bool inAttack = e.Boss ? BossAttackContains(e, player) : targeted ? Distance(player, e.Target) < reach : dist < reach;
+            bool inAttack = e.Boss ? BossAttackContains(e, player) : NonBossAttackContains(e, player);
             if (e.Windup <= 0 && inAttack && invulnerable <= 0 && dashTime <= 0) HitPlayer(vigilActive ? 112 : e.Boss ? e.Kind == EnemyKind.BlindScribe ? 23 : e.Kind == EnemyKind.RiverFerryman ? 28 : e.Kind == EnemyKind.AshWarden ? 31 : e.Kind == EnemyKind.HollowName ? 36 : e.Kind == EnemyKind.NameWeaver ? 39 : e.Kind == EnemyKind.FirstKeeper ? 44 : e.Kind == EnemyKind.OathCartographer ? 42 : e.Kind == EnemyKind.NameBroker ? 48 : e.Kind == EnemyKind.CounterCurrent ? 68 : e.Kind == EnemyKind.RiftCantor ? 74 : e.Kind == EnemyKind.GlassHerald ? 82 : e.Kind == EnemyKind.LanternRegent ? 88 : e.Kind == EnemyKind.RouteScribe ? 96 : e.Kind == EnemyKind.DeepSilence ? 112 : e.Kind == EnemyKind.FlowKeeper ? 62 : e.Kind == EnemyKind.ReedKeeper ? 56 : e.Kind == EnemyKind.TideWitness ? 52 : 26 : e.Kind == EnemyKind.Elite ? 20 : e.Kind == EnemyKind.Mage ? 16 : e.Kind is EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth or EnemyKind.MudCantor or EnemyKind.PaperWraith or EnemyKind.SaltEcho ? 18 : 10);
             return;
         }
@@ -1977,7 +1985,15 @@ public sealed class Game : Form
     {
         float r = enemy.Radius; Color color = enemy.Kind == EnemyKind.BlindScribe ? Color.FromArgb(89, 128, 135) : enemy.Kind == EnemyKind.RiverFerryman ? Color.FromArgb(69, 120, 124) : enemy.Kind == EnemyKind.AshWarden ? Color.FromArgb(169, 91, 53) : enemy.Kind == EnemyKind.HollowName ? Color.FromArgb(120, 165, 155) : enemy.Kind == EnemyKind.NameWeaver ? Color.FromArgb(139, 108, 162) : enemy.Kind == EnemyKind.FirstKeeper ? Color.FromArgb(202, 173, 112) : enemy.Kind == EnemyKind.OathCartographer ? Color.FromArgb(96, 148, 144) : enemy.Kind == EnemyKind.NameBroker ? Color.FromArgb(126, 82, 132) : enemy.Kind == EnemyKind.ReedKeeper ? Color.FromArgb(158, 149, 98) : enemy.Kind == EnemyKind.FlowKeeper ? Color.FromArgb(71, 148, 164) : enemy.Kind == EnemyKind.TideWitness ? Color.FromArgb(63, 157, 168) : enemy.Kind == EnemyKind.GlassHerald ? Color.FromArgb(124, 204, 218) : enemy.Kind == EnemyKind.LanternRegent ? Color.FromArgb(194, 195, 144) : enemy.Kind == EnemyKind.RouteScribe ? Color.FromArgb(159, 182, 211) : enemy.Kind == EnemyKind.DeepSilence ? Color.FromArgb(119, 183, 190) : enemy.Kind == EnemyKind.SaltEcho ? Color.LightSteelBlue : enemy.Kind == EnemyKind.PaperWraith ? Color.FromArgb(201, 190, 161) : enemy.Kind == EnemyKind.MudCantor ? Color.FromArgb(165, 135, 104) : enemy.Boss ? Color.FromArgb(145, 87, 77) : enemy.Kind switch { EnemyKind.Elite => enemy.Armored ? Color.SlateGray : Color.IndianRed, EnemyKind.Archer => Color.FromArgb(128, 151, 106), EnemyKind.Mage => Color.MediumPurple, EnemyKind.InkEcho => Color.FromArgb(113, 98, 143), EnemyKind.DrownedMemory => Color.FromArgb(95, 145, 142), EnemyKind.EmberWisp => Color.FromArgb(212, 126, 61), EnemyKind.NameMoth => Color.FromArgb(126, 170, 156), _ => Color.FromArgb(183, 181, 166) };
         if (enemy.Stagger > 0) { using var staggerPen = new Pen(Color.FromArgb(200, 125, 211, 203), 2); float pulse = 1 + (0.95f - enemy.Stagger) * 7; g.DrawEllipse(staggerPen, enemy.Pos.X - r - pulse, enemy.Pos.Y - r - pulse, (r + pulse) * 2, (r + pulse) * 2); }
-        if (enemy.Windup > 0 && enemy.Boss) DrawBossWarning(g, enemy); else if (enemy.Windup > 0) { float baseWarn = enemy.Kind == EnemyKind.Elite ? 62 : enemy.Kind == EnemyKind.Mage ? 52 : enemy.Boss && enemy.BossPattern == 0 ? (enemy.Kind == EnemyKind.GlassHerald ? 135 : enemy.Kind == EnemyKind.LanternRegent ? 150 : enemy.Kind == EnemyKind.RouteScribe ? 160 : 90) : enemy.Kind == EnemyKind.Archer ? 26 : enemy.Kind == EnemyKind.InkEcho ? 30 : enemy.Kind == EnemyKind.DrownedMemory ? 28 : (enemy.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent) && enemy.BossPattern == 2 ? 85 : enemy.Kind == EnemyKind.RiftCantor && enemy.BossPattern == 2 ? 42 : enemy.Kind == EnemyKind.NameWeaver && enemy.BossPattern == 2 ? 38 : enemy.Kind is EnemyKind.EmberWisp or EnemyKind.NameMoth ? 28 : 36; float progress = Math.Clamp(enemy.Windup / Math.Max(0.01f, enemy.WindupMax), 0, 1); float warn = RangedImpactRadius(enemy.Kind) > 0 ? RangedImpactRadius(enemy.Kind) : enemy.Kind == EnemyKind.GlassHerald ? enemy.BossPattern switch { 0 => 135, 1 => 42, _ => baseWarn } : baseWarn * (0.4f + progress * 0.6f); using var p = new Pen(Color.FromArgb(235, 115, 75), 3); using var b = new SolidBrush(Color.FromArgb(35, 235, 115, 75)); if ((enemy.Kind is EnemyKind.Archer or EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth or EnemyKind.PaperWraith or EnemyKind.SaltEcho) || ((enemy.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence) && enemy.BossPattern == 2)) g.DrawLine(p, enemy.Pos, enemy.Target); g.FillEllipse(b, enemy.Target.X - warn, enemy.Target.Y - warn, warn * 2, warn * 2); g.DrawEllipse(p, enemy.Target.X - warn, enemy.Target.Y - warn, warn * 2, warn * 2); }
+        if (enemy.Windup > 0 && enemy.Boss) DrawBossWarning(g, enemy);
+        else if (enemy.Windup > 0)
+        {
+            PointF center = NonBossAttackCenter(enemy); float radius = NonBossAttackRadius(enemy);
+            using var p = new Pen(Color.FromArgb(235, 115, 75), 3); using var b = new SolidBrush(Color.FromArgb(35, 235, 115, 75));
+            if (RangedImpactRadius(enemy.Kind) > 0) g.DrawLine(p, enemy.Pos, enemy.Target);
+            g.FillEllipse(b, center.X - radius, center.Y - radius, radius * 2, radius * 2);
+            g.DrawEllipse(p, center.X - radius, center.Y - radius, radius * 2, radius * 2);
+        }
         using var body = new SolidBrush(enemy.Flash > 0 ? Color.White : color); using var edge = new Pen(enemy == lockedTarget ? Color.Gold : enemy.Armored ? Color.LightSteelBlue : Color.FromArgb(35, 25, 22), enemy == lockedTarget ? 4 : 2);
         int bossSpriteIndex = CampaignBossSpriteIndex(enemy.Kind), enemySpriteRow = EnemySpriteRow(enemy.Kind);
         bool bossSprite = bossSpriteIndex >= 0;
@@ -2471,6 +2487,20 @@ public sealed class Game : Form
                 if (rangedCheck.health != 1000) throw new InvalidOperationException($"{kind} atingiu fora do círculo anunciado.");
                 attacker.Windup = 0.01f; rangedCheck.player = new PointF(500 + radius - 1, 330); rangedCheck.UpdateEnemy(attacker, 0.02f);
                 if (rangedCheck.health >= 1000) throw new InvalidOperationException($"{kind} não atingiu dentro do círculo anunciado.");
+            }
+        }
+        using (var meleeCheck = new Game())
+        {
+            meleeCheck.timer.Stop(); meleeCheck.StartGame(); meleeCheck.storyOverlay = false; meleeCheck.enemies.Clear();
+            foreach (EnemyKind kind in new[] { EnemyKind.Grunt, EnemyKind.Elite, EnemyKind.Mage })
+            {
+                var attacker = new Enemy { Kind = kind, Pos = new PointF(300, 330), Target = new PointF(500, 330), Windup = 0.01f, WindupMax = 0.5f, Hp = 100, MaxHp = 100 };
+                PointF center = NonBossAttackCenter(attacker); float radius = NonBossAttackRadius(attacker);
+                meleeCheck.health = meleeCheck.maxHealth = 1000; meleeCheck.invulnerable = meleeCheck.dashTime = 0; meleeCheck.player = new PointF(center.X + radius + 1, center.Y);
+                meleeCheck.UpdateEnemy(attacker, 0.02f);
+                if (meleeCheck.health != 1000) throw new InvalidOperationException($"{kind} atingiu fora do círculo anunciado.");
+                attacker.Windup = 0.01f; meleeCheck.player = new PointF(center.X + radius - 1, center.Y); meleeCheck.UpdateEnemy(attacker, 0.02f);
+                if (meleeCheck.health >= 1000) throw new InvalidOperationException($"{kind} não atingiu dentro do círculo anunciado.");
             }
         }
         string saveCheckDirectory = Path.Combine(Path.GetTempPath(), "Scadryk-save-check-" + Guid.NewGuid().ToString("N"));
