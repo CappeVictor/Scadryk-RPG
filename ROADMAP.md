@@ -67,3 +67,9 @@ O Capítulo XVI acrescenta a Soleira do Silêncio e a Câmara do Último Eco, co
 
 
 O epílogo também fecha o estilo de combate da campanha: devolver as memórias ensina Devolução das Vozes, uma onda que recupera vida ao atingir inimigos; manter o Lume ensina Última Centelha, um golpe concentrado contra um alvo. As técnicas finais são mutuamente exclusivas por save, podem ser equipadas nos três espaços e têm suporte nos saves e no menu de técnicas.
+
+## Próximo marco de trabalho
+
+Implementar e validar uma Vigília Ascendente repetível no Refúgio, incluindo cinco ecos de chefes em rotação, pressão crescente, loot escalável, melhor andar salvo, saída segura e instruções de uso no README. A implementação e a validação local foram concluídas; falta confirmar a execução no GitHub Actions antes de publicar a versão.
+
+Esse marco melhora o ciclo de pós-jogo; não conclui o desenvolvimento completo de um ARPG com o escopo de Diablo. Animações, arte e áudio originais, acessibilidade, balanceamento amplo e distribuição continuam sendo trabalho posterior da meta de longo prazo.

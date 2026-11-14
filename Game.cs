@@ -77,6 +77,7 @@ public sealed class Game : Form
         public bool RouteMemory { get; set; }
         public bool SilenceMemory { get; set; }
         public int FinalEnding { get; set; }
+        public int VigilBestFloor { get; set; }
     }
 
     private static readonly RectangleF[] Walls = { new(345, 235, 48, 90), new(565, 375, 58, 80) };
@@ -117,7 +118,7 @@ public sealed class Game : Form
     private static readonly RectangleF[] SilenceChamberWalls = { new(238, 154, 56, 132), new(666, 408, 56, 132), new(328, 206, 50, 74), new(582, 380, 50, 74) };
     private static readonly RectangleF[] TownBuildings = { new(115, 128, 208, 128), new(677, 128, 208, 128), new(115, 426, 208, 120), new(677, 426, 208, 120) };
     private static readonly PointF CuratorPosition = new(625, 315), BellKeeperPosition = new(352, 347), ArchiveBookPosition = new(785, 355), CryptGatePosition = new(92, 330);
-    private static readonly PointF AvenPosition = new(490, 335), SeraPosition = new(350, 340), NoaPosition = new(640, 360);
+    private static readonly PointF AvenPosition = new(490, 335), SeraPosition = new(350, 340), NoaPosition = new(640, 360), VigilAltarPosition = new(775, 325), VigilArenaAltarPosition = new(480, 500);
     private static readonly PointF[] MemoryStonePositions = { new(260, 165), new(270, 485) };
     private static readonly string[] MemoryStoneTexts = {
         "Nara: “Se os sinos calarem, siga o leito do Rio Cego. A Curadora fechou os arquivos antes da noite começar.”",
@@ -147,6 +148,8 @@ public sealed class Game : Form
     private int room, level = 1, xp, gold, potions = 2, damage = 25, weapon, ownedWeapons = 1;
     private int healthTalent, skillTalent, dodgeTalent, techniqueTalent, pendingTalents, enemiesDefeated;
     private int memoriesFound, questStage, tideGlass, finalEnding;
+    private int vigilBestFloor, vigilFloor;
+    private bool vigilActive, vigilChoiceOpen;
     private bool silenceMemory;
     private long clearedRooms;
     private bool chorusMemory, firstMemory, westTrace, upstreamTrace, forgeMenuOpen;
@@ -190,8 +193,9 @@ public sealed class Game : Form
     private void StartGame()
     {
         room = 0; level = 1; xp = gold = damage = 0; damage = 25; potions = 2; weapon = 0; ownedWeapons = 1; Array.Clear(weaponBonuses); Array.Clear(weaponRarities); Array.Clear(weaponAffixes); Array.Clear(weaponAffixes2);
-        armor = armorOn = relic = relicOn = archiveSeal = riverBell = lumeLens = naraTrace = chorusMemory = firstMemory = westTrace = upstreamTrace = beyondTrace = ebbSeal = counterTrace = anchorWard = refrainSong = riftVerse = deepTrace = lanternSignal = beaconLight = routeMemory = silenceMemory = inventoryOpen = skillMenuOpen = mapOpen = dead = victory = chestChoice = talentChoice = memoryOverlay = endingChoiceOpen = forgeMenuOpen = false;
+        armor = armorOn = relic = relicOn = archiveSeal = riverBell = lumeLens = naraTrace = chorusMemory = firstMemory = westTrace = upstreamTrace = beyondTrace = ebbSeal = counterTrace = anchorWard = refrainSong = riftVerse = deepTrace = lanternSignal = beaconLight = routeMemory = silenceMemory = inventoryOpen = skillMenuOpen = mapOpen = dead = victory = chestChoice = talentChoice = memoryOverlay = endingChoiceOpen = forgeMenuOpen = vigilActive = vigilChoiceOpen = false;
         finalEnding = 0;
+        vigilBestFloor = vigilFloor = 0;
         townEnding = 0;
         healthTalent = skillTalent = dodgeTalent = techniqueTalent = pendingTalents = enemiesDefeated = memoriesFound = questStage = tideGlass = 0;
         clearedRooms = 0;
@@ -207,10 +211,45 @@ public sealed class Game : Form
         if (storyPage >= prologue.Length) storyOverlay = false;
     }
 
+    private static EnemyKind VigilBossKind(int floor) => ((Math.Max(1, floor) - 1) % 5) switch
+    {
+        0 => EnemyKind.DeepSilence,
+        1 => EnemyKind.RouteScribe,
+        2 => EnemyKind.LanternRegent,
+        3 => EnemyKind.GlassHerald,
+        _ => EnemyKind.RiftCantor
+    };
+
+    private void StartVigil()
+    {
+        if (finalEnding == 0) return;
+        vigilActive = true; vigilChoiceOpen = false; vigilFloor = vigilBestFloor + 1;
+        room = 38; SetupRoom();
+        ShowMemory($"VIGÍLIA ASCENDENTE • ANDAR {vigilFloor}", "Aven reúne ecos de antigos guardiões sem lhes devolver os nomes. Cada andar torna a lembrança mais intensa e deixa um prêmio para quem atravessar a prova. Derrote o eco, recolha o saque e interaja com o altar para subir ou encerrar a vigília.");
+    }
+
+    private void ResolveVigilFloor(bool ascend)
+    {
+        if (!vigilActive || enemies.Count > 0 || drops.Count > 0) return;
+        vigilBestFloor = Math.Max(vigilBestFloor, vigilFloor);
+        int goldReward = 100 + Math.Min(900, (vigilFloor - 1) * 25);
+        int glassReward = 1 + Math.Min(5, (vigilFloor - 1) / 3);
+        gold += goldReward; tideGlass = Math.Min(999, tideGlass + glassReward);
+        if (vigilFloor % 3 == 0) potions++;
+        if (ascend)
+        {
+            vigilFloor++; SetupRoom();
+            notice = $"VIGÍLIA {vigilBestFloor} CONCLUÍDA • +{goldReward} OURO • +{glassReward} SAL VÍTREO"; noticeTime = 3;
+            return;
+        }
+        vigilActive = false; vigilChoiceOpen = false; vigilFloor = 0; room = 18; SetupRoom(); health = maxHealth;
+        ShowMemory("A VIGÍLIA SE ENCERRA", $"A comunidade registra sua melhor marca: andar {vigilBestFloor}. Aven recolhe os ecos para que possam repousar. Você recebe {goldReward} ouro e {glassReward} sal vítreo; a jornada pode ser retomada quando quiser.");
+    }
+
     private void SetupRoom()
     {
         player = new PointF(150, 330); enemies.Clear(); drops.Clear(); echoShards.Clear(); lockedTarget = null;
-        if (room != 3 && (clearedRooms & (1L << room)) != 0) return;
+        if (room != 3 && !vigilActive && (clearedRooms & (1L << room)) != 0) return;
         int count = room is 3 or 18 ? 0 : room == 0 ? 3 : room == 1 ? 5 : room == 4 ? 5 : room == 5 ? 4 : room == 6 ? 6 : room is 21 or 29 or 31 or 33 or 35 or 37 ? 6 : room == 22 ? 5 : room == 23 ? 6 : room == 24 ? 5 : room == 25 ? 6 : room is 26 or 28 or 30 or 32 or 34 or 36 ? 5 : room == 38 ? 1 : room == 27 ? 6 : (room is 7 or 9 or 11 or 15 or 17 or 20) ? 4 : room == 8 ? 5 : room is 10 or 12 or 14 or 16 or 19 ? 6 : room == 13 ? 4 : 4;
         for (int i = 0; i < count; i++)
         {
@@ -223,9 +262,11 @@ public sealed class Game : Form
             if (room == 34 && i == 0) kind = EnemyKind.LanternRegent;
             if (room == 36 && i == 0) kind = EnemyKind.RouteScribe;
             if (room == 38 && i == 0) kind = EnemyKind.DeepSilence;
+            if (vigilActive && i == 0) kind = VigilBossKind(vigilFloor);
             if (room >= 27 && i == 2) kind = EnemyKind.SaltEcho;
             if (room >= 27 && i == 3) kind = EnemyKind.MudCantor;
             float hp = kind switch { EnemyKind.Guardian => 160, EnemyKind.BlindScribe => 245, EnemyKind.RiverFerryman => 285, EnemyKind.AshWarden => 340, EnemyKind.HollowName => 390, EnemyKind.NameWeaver => townEnding == 1 ? 410 : 455, EnemyKind.FirstKeeper => townEnding == 1 ? 560 : 620, EnemyKind.OathCartographer => townEnding == 1 ? 610 : 690, EnemyKind.NameBroker => townEnding == 1 ? 720 : 790, EnemyKind.TideWitness => townEnding == 1 ? 820 : 920, EnemyKind.ReedKeeper => townEnding == 1 ? 970 : 1060, EnemyKind.FlowKeeper => townEnding == 1 ? 1120 : 1230, EnemyKind.CounterCurrent => townEnding == 1 ? 1320 : 1440, EnemyKind.RiftCantor => townEnding == 1 ? 1480 : 1600, EnemyKind.GlassHerald => townEnding == 1 ? 1740 : 1880, EnemyKind.LanternRegent => townEnding == 1 ? 1920 : 2080, EnemyKind.RouteScribe => townEnding == 1 ? 2250 : 2450, EnemyKind.DeepSilence => townEnding == 1 ? 3450 : 3750, EnemyKind.Elite => 120, EnemyKind.Archer or EnemyKind.Mage or EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth or EnemyKind.MudCantor or EnemyKind.PaperWraith or EnemyKind.SaltEcho => 72, _ => 58 + room * 8 };
+            if (vigilActive) hp = 3450 * (1 + Math.Max(0, vigilFloor - 1) * 0.28f);
             var enemy = new Enemy { Pos = new PointF(485 + i % 3 * 120, 215 + i / 3 * 165), Kind = kind, Hp = hp, MaxHp = hp, Cooldown = 0.7f + (float)random.NextDouble(), Armored = kind == EnemyKind.Elite && random.Next(2) == 0 };
             if (Blocked(enemy.Pos, enemy.Radius)) enemy.Pos = new PointF(660 + i * 12, 480 - i * 8);
             enemies.Add(enemy);
@@ -291,6 +332,7 @@ public sealed class Game : Form
         }
         if (forgeMenuOpen) { if (e.KeyCode is >= Keys.D1 and <= Keys.D5) ReforgeWeapon((int)e.KeyCode - (int)Keys.D0); else if (e.KeyCode == Keys.Escape) forgeMenuOpen = false; return; }
         if (endingChoiceOpen) { if (e.KeyCode == Keys.D1) ChooseTownEnding(1); else if (e.KeyCode == Keys.D2) ChooseTownEnding(2); else if (e.KeyCode == Keys.D3) endingChoiceOpen = false; return; }
+        if (vigilChoiceOpen) { if (e.KeyCode == Keys.D1) ResolveVigilFloor(true); else if (e.KeyCode == Keys.D2) ResolveVigilFloor(false); else if (e.KeyCode == Keys.D3 || e.KeyCode == Keys.Escape) vigilChoiceOpen = false; return; }
         if (chestChoice) { if (e.KeyCode == Keys.D1) gold += 75; else if (e.KeyCode == Keys.D2) potions += 2; else if (e.KeyCode == Keys.D3) health = maxHealth; else return; chestChoice = false; EnterVesper(); return; }
         if (talentChoice) { SelectTalent(e.KeyCode); return; }
         if (e.KeyCode == Keys.M) { mapOpen = true; inventoryOpen = false; skillMenuOpen = false; return; }
@@ -306,7 +348,7 @@ public sealed class Game : Form
         else if (e.KeyCode == Keys.Q) UsePotion();
         else if (e.KeyCode == Keys.E) Interact();
         else if (e.KeyCode == Keys.X) SalvageNearbyWeapon();
-        else if (e.KeyCode == Keys.F5) { if (enemies.Count == 0 && drops.Count == 0) SaveGame(); else { notice = "LIMPE A SALA E RECOLHA O LOOT ANTES DE SALVAR"; noticeTime = 2; } }
+        else if (e.KeyCode == Keys.F5) { if (vigilActive) { notice = "TERMINE A VIGÍLIA E SALVE NO REFÚGIO"; noticeTime = 2; } else if (enemies.Count == 0 && drops.Count == 0) SaveGame(); else { notice = "LIMPE A SALA E RECOLHA O LOOT ANTES DE SALVAR"; noticeTime = 2; } }
         else if (e.KeyCode == Keys.Tab) CycleTarget();
     }
 
@@ -569,9 +611,10 @@ public sealed class Game : Form
     private void Defeat(Enemy enemy)
     {
         if (!enemies.Remove(enemy)) return;
-        enemiesDefeated++; drops.Add(new Drop { Pos = enemy.Pos, Kind = "gold", Amount = enemy.Boss ? 35 : enemy.Kind == EnemyKind.Elite ? 20 : 8 });
+        enemiesDefeated++; drops.Add(new Drop { Pos = enemy.Pos, Kind = "gold", Amount = vigilActive ? 35 + Math.Min(500, vigilFloor * 15) : enemy.Boss ? 35 : enemy.Kind == EnemyKind.Elite ? 20 : 8 });
         AddXp(enemy.Boss ? 75 : enemy.Kind == EnemyKind.Elite ? 40 : 22);
         if (HasWeaponAffix(weapon, 1)) health = Math.Min(maxHealth, health + (weaponRarities[weapon] == 2 ? 6 : 3));
+        if (enemy.Boss && vigilActive) drops.Add(new Drop { Pos = Offset(enemy.Pos, 0, -28), Kind = "glass", Amount = 1 + Math.Min(5, (vigilFloor - 1) / 3) });
         if (enemy.Boss) drops.Add(CreateWeaponDrop(Offset(enemy.Pos, 0, 28), random.Next(1, 3), true));
         else if (enemy.Kind == EnemyKind.Elite && EliteWeaponDropRoll(random.Next(100))) drops.Add(CreateWeaponDrop(Offset(enemy.Pos, -24, 28), random.Next(1, 3)));
         if (enemy.Kind == EnemyKind.Guardian && !relic) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "relic" });
@@ -633,13 +676,13 @@ public sealed class Game : Form
     private void TickGame()
     {
         float dt = timer.Interval / 1000f; noticeTime = Math.Max(0, noticeTime - dt); attackCd = Math.Max(0, attackCd - dt); skillCd = Math.Max(0, skillCd - dt); shardCd = Math.Max(0, shardCd - dt); bellCd = Math.Max(0, bellCd - dt); bellWaveTime = Math.Max(0, bellWaveTime - dt); pullCd = Math.Max(0, pullCd - dt); pullWaveTime = Math.Max(0, pullWaveTime - dt); wardCd = Math.Max(0, wardCd - dt); wardTime = Math.Max(0, wardTime - dt); refrainCd = Math.Max(0, refrainCd - dt); refrainWaveTime = Math.Max(0, refrainWaveTime - dt); beaconCd = Math.Max(0, beaconCd - dt); returnVoiceCd = Math.Max(0, returnVoiceCd - dt); returnVoiceWaveTime = Math.Max(0, returnVoiceWaveTime - dt); finalStrikeCd = Math.Max(0, finalStrikeCd - dt); finalStrikeFlash = Math.Max(0, finalStrikeFlash - dt); dashCd = Math.Max(0, dashCd - dt); dashTime = Math.Max(0, dashTime - dt); invulnerable = Math.Max(0, invulnerable - dt); windupPulse += dt; TickFloatingTexts(dt);
-        if (title || dead || victory || storyOverlay || memoryOverlay || mapOpen || inventoryOpen || skillMenuOpen || talentChoice || chestChoice || endingChoiceOpen) { Invalidate(); return; }
+        if (title || dead || victory || storyOverlay || memoryOverlay || mapOpen || inventoryOpen || skillMenuOpen || talentChoice || chestChoice || endingChoiceOpen || vigilChoiceOpen) { Invalidate(); return; }
         PointF dir = new((down.Contains(Keys.D) || down.Contains(Keys.Right) ? 1 : 0) - (down.Contains(Keys.A) || down.Contains(Keys.Left) ? 1 : 0), (down.Contains(Keys.S) || down.Contains(Keys.Down) ? 1 : 0) - (down.Contains(Keys.W) || down.Contains(Keys.Up) ? 1 : 0));
         dir = Normalize(dir, PointF.Empty); if (dashTime > 0) dir = facing;
         MovePlayer(Scale(dir, (dashTime > 0 ? 530 : 190) * dt));
         if (dashTime <= 0) MovePlayer(Scale(CurrentDrift(), dt));
         for (int i = drops.Count - 1; i >= 0; i--) if (Distance(player, drops[i].Pos) < 30) Collect(drops[i]);
-        TickBeacon(dt); foreach (Enemy enemy in enemies.ToArray()) { UpdateEnemy(enemy, dt); if (dead) break; }
+        TickBeacon(dt); int roomBeingUpdated = room; foreach (Enemy enemy in enemies.ToArray()) { UpdateEnemy(enemy, dt); if (dead || room != roomBeingUpdated) break; }
         AdvanceVoiceShards(dt);
         if (enemies.Count == 0 && drops.Count == 0 && room == 2 && !memoryOverlay) chestChoice = true;
         MarkRoomCleared();
@@ -656,7 +699,7 @@ public sealed class Game : Form
             bool targeted = (e.Boss && (e.BossPattern is 1 or 2)) || (e.Kind is EnemyKind.Mage or EnemyKind.Elite or EnemyKind.Archer or EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth or EnemyKind.MudCantor or EnemyKind.PaperWraith or EnemyKind.SaltEcho);
             bool inFirstVoiceLine = e.Kind == EnemyKind.FirstKeeper && e.BossPattern == 2 && (DistanceToSegment(player, e.Pos, e.Target) < 25 || DistanceToSegment(player, e.Target2Start, e.Target2) < 25);
             bool inAttack = inFirstVoiceLine || ((e.Kind is EnemyKind.NameWeaver or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence) && e.BossPattern == 2 ? DistanceToSegment(player, e.Pos, e.Target) < 24 : targeted ? Distance(player, e.Target) < reach : dist < reach);
-            if (e.Windup <= 0 && inAttack && invulnerable <= 0 && dashTime <= 0) HitPlayer(e.Boss ? e.Kind == EnemyKind.BlindScribe ? 23 : e.Kind == EnemyKind.RiverFerryman ? 28 : e.Kind == EnemyKind.AshWarden ? 31 : e.Kind == EnemyKind.HollowName ? 36 : e.Kind == EnemyKind.NameWeaver ? 39 : e.Kind == EnemyKind.FirstKeeper ? 44 : e.Kind == EnemyKind.OathCartographer ? 42 : e.Kind == EnemyKind.NameBroker ? 48 : e.Kind == EnemyKind.CounterCurrent ? 68 : e.Kind == EnemyKind.RiftCantor ? 74 : e.Kind == EnemyKind.GlassHerald ? 82 : e.Kind == EnemyKind.LanternRegent ? 88 : e.Kind == EnemyKind.RouteScribe ? 96 : e.Kind == EnemyKind.DeepSilence ? 112 : e.Kind == EnemyKind.FlowKeeper ? 62 : e.Kind == EnemyKind.ReedKeeper ? 56 : e.Kind == EnemyKind.TideWitness ? 52 : 26 : e.Kind == EnemyKind.Elite ? 20 : e.Kind == EnemyKind.Mage ? 16 : e.Kind is EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth or EnemyKind.MudCantor or EnemyKind.PaperWraith or EnemyKind.SaltEcho ? 18 : 10);
+            if (e.Windup <= 0 && inAttack && invulnerable <= 0 && dashTime <= 0) HitPlayer(vigilActive ? 112 : e.Boss ? e.Kind == EnemyKind.BlindScribe ? 23 : e.Kind == EnemyKind.RiverFerryman ? 28 : e.Kind == EnemyKind.AshWarden ? 31 : e.Kind == EnemyKind.HollowName ? 36 : e.Kind == EnemyKind.NameWeaver ? 39 : e.Kind == EnemyKind.FirstKeeper ? 44 : e.Kind == EnemyKind.OathCartographer ? 42 : e.Kind == EnemyKind.NameBroker ? 48 : e.Kind == EnemyKind.CounterCurrent ? 68 : e.Kind == EnemyKind.RiftCantor ? 74 : e.Kind == EnemyKind.GlassHerald ? 82 : e.Kind == EnemyKind.LanternRegent ? 88 : e.Kind == EnemyKind.RouteScribe ? 96 : e.Kind == EnemyKind.DeepSilence ? 112 : e.Kind == EnemyKind.FlowKeeper ? 62 : e.Kind == EnemyKind.ReedKeeper ? 56 : e.Kind == EnemyKind.TideWitness ? 52 : 26 : e.Kind == EnemyKind.Elite ? 20 : e.Kind == EnemyKind.Mage ? 16 : e.Kind is EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth or EnemyKind.MudCantor or EnemyKind.PaperWraith or EnemyKind.SaltEcho ? 18 : 10);
             return;
         }
         if (e.Kind is EnemyKind.Archer or EnemyKind.InkEcho or EnemyKind.SaltEcho) { float preferred = e.Kind == EnemyKind.InkEcho ? 135 : e.Kind == EnemyKind.SaltEcho ? 155 : 170; if (dist < preferred) e.Pos = MoveEnemy(e, Scale(Normalize(Sub(e.Pos, player), PointF.Empty), (e.Kind == EnemyKind.InkEcho ? 68 : e.Kind == EnemyKind.SaltEcho ? 62 : 55) * dt)); else if (e.Cooldown <= 0) { BeginWindup(e, player, e.Kind == EnemyKind.InkEcho ? 0.75f : e.Kind == EnemyKind.SaltEcho ? 0.68f : 0.6f); e.Cooldown = e.Kind == EnemyKind.InkEcho ? 2.0f : e.Kind == EnemyKind.SaltEcho ? 1.85f : 1.8f; } SeparateFromPack(e, dt); return; }
@@ -681,10 +724,19 @@ public sealed class Game : Form
 
     private void HitPlayer(float value)
     {
-        float damageTaken = value * (armorOn ? 0.7f : 1) * (wardTime > 0 ? 0.45f : 1) * WeaponDamageTakenMultiplier();
+        float vigilPressure = vigilActive ? 1 + Math.Min(1.5f, Math.Max(0, vigilFloor - 1) * 0.08f) : 1;
+        float damageTaken = value * vigilPressure * (armorOn ? 0.7f : 1) * (wardTime > 0 ? 0.45f : 1) * WeaponDamageTakenMultiplier();
         health = Math.Max(0, health - damageTaken); invulnerable = 0.6f;
         AddFloatingText(new PointF(player.X, player.Y - 30), $"−{Math.Max(1, (int)Math.Round(damageTaken))}", Color.FromArgb(250, 116, 105));
-        if (health <= 0) dead = true;
+        if (health <= 0)
+        {
+            if (vigilActive)
+            {
+                int failedFloor = vigilFloor; vigilActive = false; vigilChoiceOpen = false; vigilFloor = 0; room = 18; SetupRoom(); health = Math.Max(1, maxHealth * 0.5f);
+                ShowMemory("O ECO SE DESFAZ", $"Aven recolhe as lembranças antes que a Vigília possa prendê-las. Você retorna ao Refúgio com metade da vida. Melhor andar registrado: {vigilBestFloor}; a tentativa terminou no andar {failedFloor}.");
+            }
+            else dead = true;
+        }
     }
 
     private void AddFloatingText(PointF pos, string text, Color color)
@@ -753,7 +805,8 @@ public sealed class Game : Form
 
     private Drop CreateWeaponDrop(PointF pos, int index, bool bossReward = false)
     {
-        var roll = RollWeaponStats(bossReward ? random.Next(BossWeaponRollFloor(room), 100) : random.Next(100), random.Next(5), random.Next(5), random.Next(4));
+        int rarityFloor = vigilActive ? Math.Min(99, 85 + vigilFloor / 2) : BossWeaponRollFloor(room);
+        var roll = RollWeaponStats(bossReward ? random.Next(rarityFloor, 100) : random.Next(100), random.Next(5), random.Next(5), random.Next(4));
         return new Drop { Pos = pos, Kind = "weapon", Amount = index, Rarity = roll.Rarity, Bonus = roll.Bonus, Affix = roll.Affix, Affix2 = roll.Affix2 };
     }
 
@@ -765,6 +818,7 @@ public sealed class Game : Form
         if (enemies.Count != 0) { notice = "DERROTE OS INIMIGOS PRIMEIRO"; noticeTime = 1.2f; return; }
         if (drops.Count != 0) { notice = "RECOLHA O LOOT ANTES DE AVANÇAR"; noticeTime = 1.5f; return; }
         MarkRoomCleared();
+        if (vigilActive && room == 38 && (Distance(player, VigilArenaAltarPosition) < 76 || player.X > 790)) { vigilChoiceOpen = true; return; }
         if (room < MemoryStonePositions.Length && (memoriesFound & (1 << room)) == 0 && Distance(player, MemoryStonePositions[room]) < 52)
         {
             memoriesFound |= 1 << room;
@@ -843,6 +897,7 @@ public sealed class Game : Form
         else if (room == 36 && player.X > 790 && questStage >= 48) { room = 18; SetupRoom(); ShowMemory("REGRESSO À MESA DE AVEN", "O traçado guardado não aponta para Nara. Leve a lembrança a Aven sem transformá-la em uma pista que ela nunca escolheu deixar."); }
         else if (room == 37 && player.X < 115) { room = 18; SetupRoom(); }
         else if (room == 37 && player.X > 790 && enemies.Count == 0 && drops.Count == 0 && questStage >= 50) { room = 38; SetupRoom(); ShowMemory("CÂMARA DO ÚLTIMO ECO", "O corredor termina onde o rio encontra a pedra sob Véspera. O Silêncio não tem corpo próprio: veste fragmentos das vozes que o Lume reteve. Seus três golpes são anunciados pelo chão — uma onda ao redor, um eco que persegue seus passos e uma linha que cruza a câmara."); }
+        else if (room == 38 && player.X < 115 && vigilActive) { notice = "A VIGÍLIA SÓ TERMINA NO ALTAR CENTRAL"; noticeTime = 2; }
         else if (room == 38 && player.X < 115) { room = 37; SetupRoom(); }
         else if (room == 38 && player.X > 790 && silenceMemory) { room = 18; SetupRoom(); ShowMemory("REGRESSO AO REFÚGIO", "A memória final não revela o paradeiro de Nara. Ela devolve ao Escutador a responsabilidade de decidir o destino do Lume com a comunidade, sem falar em nome de quem partiu."); }
         else if (room == 11 && player.X > 790 && questStage >= 13) { room = 12; SetupRoom(); ShowMemory("COSTA DAS VOZES TARDIAS", townEnding == 1 ? "As badaladas com os nomes de Véspera atravessam o rio. Ecos se afastam da trilha; a cidade devolveu força a estas vozes." : "O Lume permanece aceso atrás de você. Sua luz atravessa as águas sem reflexo e atrai para a costa tudo o que foi esquecido."); }
@@ -918,6 +973,12 @@ public sealed class Game : Form
     }
     private void InteractRefuge()
     {
+        if (Distance(player, VigilAltarPosition) < 62)
+        {
+            if (finalEnding == 0) ShowMemory("A VIGÍLIA AINDA NÃO ESTÁ ABERTA", "Aven só consegue reunir estes ecos depois que Véspera decide o destino do Lume. Conclua a campanha e volte quando estiver pronto para uma prova sem fim.");
+            else StartVigil();
+            return;
+        }
         if (Distance(player, AvenPosition) < 60)
         {
             if (questStage == 21) { questStage = 22; ShowMemory("AVEN, O BARQUEIRO", "Não mantemos um livro de nomes. Cada viajante decide o que quer deixar na mesa e quem pode ler. Nara ajudou a marcar a Trilha dos Luminários e seguiu adiante com outras pessoas. Ela pediu que não contássemos o nome que escolheu nem prometêssemos que voltaria. Se quiser continuar, proteja os avisos que cada pessoa decidiu compartilhar."); }
@@ -1032,7 +1093,7 @@ public sealed class Game : Form
         return false;
     }
 
-    private SaveData CaptureSaveData() => new() { Room = room, Level = level, Xp = xp, Gold = gold, Potions = potions, Damage = damage, Health = health, MaxHealth = maxHealth, Weapon = weapon, OwnedWeapons = ownedWeapons, Armor = armor, Relic = relic, HealthTalent = healthTalent, SkillTalent = skillTalent, DodgeTalent = dodgeTalent, TechniqueTalent = techniqueTalent, RoomCleared = room == 3 || enemies.Count == 0 && drops.Count == 0, Completed = victory, MemoriesFound = memoriesFound, QuestStage = questStage, ClearedRooms = clearedRooms | (room != 3 && enemies.Count == 0 && drops.Count == 0 ? 1L << room : 0), ArchiveSeal = archiveSeal, RiverBell = riverBell, LumeLens = lumeLens, NaraTrace = naraTrace, ChorusMemory = chorusMemory, FirstMemory = firstMemory, WestTrace = westTrace, UpstreamTrace = upstreamTrace, TideGlass = tideGlass, BeyondTrace = beyondTrace, EbbSeal = ebbSeal, CounterTrace = counterTrace, AnchorWard = anchorWard, RefrainSong = refrainSong, RiftVerse = riftVerse, DeepTrace = deepTrace, LanternSignal = lanternSignal, BeaconLight = beaconLight, RouteMemory = routeMemory, SilenceMemory = silenceMemory, FinalEnding = finalEnding, OwnedCharms = ownedCharms, EquippedCharm = equippedCharm, EquippedCharm2 = equippedCharm2, EquippedSkills = equippedSkills.ToArray(), TownEnding = townEnding, WeaponBonuses = weaponBonuses.ToArray(), WeaponRarities = weaponRarities.ToArray(), WeaponAffixes = weaponAffixes.ToArray(), WeaponAffixes2 = weaponAffixes2.ToArray() };
+    private SaveData CaptureSaveData() => new() { Room = room, Level = level, Xp = xp, Gold = gold, Potions = potions, Damage = damage, Health = health, MaxHealth = maxHealth, Weapon = weapon, OwnedWeapons = ownedWeapons, Armor = armor, Relic = relic, HealthTalent = healthTalent, SkillTalent = skillTalent, DodgeTalent = dodgeTalent, TechniqueTalent = techniqueTalent, RoomCleared = room == 3 || enemies.Count == 0 && drops.Count == 0, Completed = victory, MemoriesFound = memoriesFound, QuestStage = questStage, ClearedRooms = clearedRooms | (room != 3 && enemies.Count == 0 && drops.Count == 0 ? 1L << room : 0), ArchiveSeal = archiveSeal, RiverBell = riverBell, LumeLens = lumeLens, NaraTrace = naraTrace, ChorusMemory = chorusMemory, FirstMemory = firstMemory, WestTrace = westTrace, UpstreamTrace = upstreamTrace, TideGlass = tideGlass, BeyondTrace = beyondTrace, EbbSeal = ebbSeal, CounterTrace = counterTrace, AnchorWard = anchorWard, RefrainSong = refrainSong, RiftVerse = riftVerse, DeepTrace = deepTrace, LanternSignal = lanternSignal, BeaconLight = beaconLight, RouteMemory = routeMemory, SilenceMemory = silenceMemory, FinalEnding = finalEnding, VigilBestFloor = vigilBestFloor, OwnedCharms = ownedCharms, EquippedCharm = equippedCharm, EquippedCharm2 = equippedCharm2, EquippedSkills = equippedSkills.ToArray(), TownEnding = townEnding, WeaponBonuses = weaponBonuses.ToArray(), WeaponRarities = weaponRarities.ToArray(), WeaponAffixes = weaponAffixes.ToArray(), WeaponAffixes2 = weaponAffixes2.ToArray() };
     private void SaveGame() { Directory.CreateDirectory(Path.GetDirectoryName(SavePath)!); File.WriteAllText(SavePath, JsonSerializer.Serialize(CaptureSaveData())); notice = "PROGRESSO SALVO"; noticeTime = 2; }
     private string LegacySavePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Godot", "app_userdata", "Scadryk RPG", "scadryk-save.cfg");
     private SaveData ReadLegacySave()
@@ -1107,6 +1168,8 @@ public sealed class Game : Form
             || s.SilenceMemory && s.QuestStage < 51
             || s.QuestStage >= 51 && !s.SilenceMemory
             || s.FinalEnding is < 0 or > 2
+            || s.VigilBestFloor is < 0 or > 100000
+            || s.VigilBestFloor > 0 && s.FinalEnding == 0
             || s.QuestStage == 52 && s.FinalEnding != 1
             || s.QuestStage == 53 && s.FinalEnding != 2
             || s.FinalEnding > 0 && s.QuestStage < 52
@@ -1134,7 +1197,7 @@ public sealed class Game : Form
 
 
             if (!ValidSaveData(s)) throw new InvalidDataException();
-            StartGame(); room = s.Room; level = s.Level; xp = s.Xp; gold = s.Gold; potions = s.Potions; damage = s.Damage; health = s.Health; maxHealth = s.MaxHealth; weapon = s.Weapon; ownedWeapons = s.OwnedWeapons; RestoreWeaponData(s); armor = s.Armor; relic = s.Relic; healthTalent = s.HealthTalent; skillTalent = s.SkillTalent; dodgeTalent = s.DodgeTalent; techniqueTalent = s.TechniqueTalent; memoriesFound = s.MemoriesFound; questStage = s.QuestStage; clearedRooms = s.ClearedRooms | (s.RoomCleared && s.Room != 3 ? 1L << s.Room : 0); archiveSeal = s.ArchiveSeal; riverBell = s.RiverBell; lumeLens = s.LumeLens; naraTrace = s.NaraTrace; chorusMemory = s.ChorusMemory; firstMemory = s.FirstMemory; westTrace = s.WestTrace; upstreamTrace = s.UpstreamTrace; tideGlass = s.TideGlass; beyondTrace = s.BeyondTrace; ebbSeal = s.EbbSeal; counterTrace = s.CounterTrace; anchorWard = s.AnchorWard || s.QuestStage >= 36; riftVerse = s.RiftVerse; deepTrace = s.DeepTrace; lanternSignal = s.LanternSignal; beaconLight = s.BeaconLight; routeMemory = s.RouteMemory; silenceMemory = s.SilenceMemory; finalEnding = s.FinalEnding; refrainSong = s.RefrainSong; ownedCharms = s.OwnedCharms; equippedCharm = s.EquippedCharm; equippedCharm2 = s.EquippedCharm2; equippedSkills = s.EquippedSkills.ToArray(); townEnding = s.TownEnding; SetupRoom(); if (s.RoomCleared) enemies.Clear(); victory = s.Completed; title = false; storyOverlay = false;
+            StartGame(); room = s.Room; level = s.Level; xp = s.Xp; gold = s.Gold; potions = s.Potions; damage = s.Damage; health = s.Health; maxHealth = s.MaxHealth; weapon = s.Weapon; ownedWeapons = s.OwnedWeapons; RestoreWeaponData(s); armor = s.Armor; relic = s.Relic; healthTalent = s.HealthTalent; skillTalent = s.SkillTalent; dodgeTalent = s.DodgeTalent; techniqueTalent = s.TechniqueTalent; memoriesFound = s.MemoriesFound; questStage = s.QuestStage; clearedRooms = s.ClearedRooms | (s.RoomCleared && s.Room != 3 ? 1L << s.Room : 0); archiveSeal = s.ArchiveSeal; riverBell = s.RiverBell; lumeLens = s.LumeLens; naraTrace = s.NaraTrace; chorusMemory = s.ChorusMemory; firstMemory = s.FirstMemory; westTrace = s.WestTrace; upstreamTrace = s.UpstreamTrace; tideGlass = s.TideGlass; beyondTrace = s.BeyondTrace; ebbSeal = s.EbbSeal; counterTrace = s.CounterTrace; anchorWard = s.AnchorWard || s.QuestStage >= 36; riftVerse = s.RiftVerse; deepTrace = s.DeepTrace; lanternSignal = s.LanternSignal; beaconLight = s.BeaconLight; routeMemory = s.RouteMemory; silenceMemory = s.SilenceMemory; finalEnding = s.FinalEnding; vigilBestFloor = s.VigilBestFloor; refrainSong = s.RefrainSong; ownedCharms = s.OwnedCharms; equippedCharm = s.EquippedCharm; equippedCharm2 = s.EquippedCharm2; equippedSkills = s.EquippedSkills.ToArray(); townEnding = s.TownEnding; SetupRoom(); if (s.RoomCleared) enemies.Clear(); victory = s.Completed; title = false; storyOverlay = false;
             if (migrated) SaveGame(); notice = migrated ? "SAVE ANTIGO MIGRADO" : "PROGRESSO CARREGADO"; noticeTime = 2;
         }
         catch { notice = "NENHUM SALVAMENTO VÁLIDO"; noticeTime = 2; }
@@ -1185,7 +1248,8 @@ public sealed class Game : Form
         if (returnVoiceWaveTime > 0) DrawReturnedVoicesWave(g);
         if (finalStrikeFlash > 0) DrawFinalSparkFlash(g);
         DrawFloatingTexts(g);
-        g.DrawString(room == 3 || room == 18 ? roomNames[room] : room < 3 ? $"{room + 1} / 3   {roomNames[room]}" : room < 6 ? $"{room - 3} / 2   {roomNames[room]}" : room < 8 ? $"{room - 5} / 2   {roomNames[room]}" : room < 10 ? $"{room - 7} / 2   {roomNames[room]}" : room < 12 ? $"{room - 9} / 2   {roomNames[room]}" : room < 14 ? $"{room - 11} / 2   {roomNames[room]}" : room < 16 ? $"{room - 13} / 2   {roomNames[room]}" : room < 18 ? $"{room - 15} / 2   {roomNames[room]}" : room < 21 ? $"{room - 18} / 2   {roomNames[room]}" : room < 23 ? $"{room - 20} / 2   {roomNames[room]}" : room < 25 ? $"{room - 22} / 2   {roomNames[room]}" : room < 27 ? $"{room - 24} / 2   {roomNames[room]}" : room < 29 ? $"{room - 26} / 2   {roomNames[room]}" : room < 31 ? $"{room - 28} / 2   {roomNames[room]}" : room < 33 ? $"{room - 30} / 2   {roomNames[room]}" : room < 35 ? $"{room - 32} / 2   {roomNames[room]}" : room < 37 ? $"{room - 34} / 2   {roomNames[room]}" : $"{room - 36} / 2   {roomNames[room]}", roomFont, goldBrush, 67, 572);
+        string roomTitle = vigilActive ? $"VIGÍLIA ASCENDENTE • ANDAR {vigilFloor}" : room == 3 || room == 18 ? roomNames[room] : room < 3 ? $"{room + 1} / 3   {roomNames[room]}" : room < 6 ? $"{room - 3} / 2   {roomNames[room]}" : room < 8 ? $"{room - 5} / 2   {roomNames[room]}" : room < 10 ? $"{room - 7} / 2   {roomNames[room]}" : room < 12 ? $"{room - 9} / 2   {roomNames[room]}" : room < 14 ? $"{room - 11} / 2   {roomNames[room]}" : room < 16 ? $"{room - 13} / 2   {roomNames[room]}" : room < 18 ? $"{room - 15} / 2   {roomNames[room]}" : room < 21 ? $"{room - 18} / 2   {roomNames[room]}" : room < 23 ? $"{room - 20} / 2   {roomNames[room]}" : room < 25 ? $"{room - 22} / 2   {roomNames[room]}" : room < 27 ? $"{room - 24} / 2   {roomNames[room]}" : room < 29 ? $"{room - 26} / 2   {roomNames[room]}" : room < 31 ? $"{room - 28} / 2   {roomNames[room]}" : room < 33 ? $"{room - 30} / 2   {roomNames[room]}" : room < 35 ? $"{room - 32} / 2   {roomNames[room]}" : room < 37 ? $"{room - 34} / 2   {roomNames[room]}" : $"{room - 36} / 2   {roomNames[room]}";
+        g.DrawString(roomTitle, roomFont, goldBrush, 67, 572);
         int memoriesRead = (memoriesFound & 1) + ((memoriesFound >> 1) & 1);
         g.DrawString($"ECOS {memoriesRead} / 2", hudFont, goldBrush, 760, 572);
         if (room == 3) g.DrawString(TownObjective(), hudFont, goldBrush, 67, 592);
@@ -1193,7 +1257,7 @@ public sealed class Game : Form
         else if (room is 27 or 28) g.DrawString(room == 27 ? "OBJETIVO: ATRAVESSE A ESCARPA DO CONTRAFLUXO" : questStage < 35 ? "OBJETIVO: DERROTE O AFINADOR E RECOLHA A MEMÓRIA" : "OBJETIVO: RETORNE AO REFÚGIO E FALE COM AVEN", hudFont, goldBrush, 67, 592);
         else if (room is 29 or 30) g.DrawString(room == 29 ? (enemies.Count > 0 || drops.Count > 0 ? "OBJETIVO: ABRA A CANTARIA E LIMPE OS ECOS" : "OBJETIVO: SIGA A CONTRAVOZ ATÉ A CÂMARA") : riftVerse ? "OBJETIVO: LEVE A NOTA RECUPERADA A AVEN" : "OBJETIVO: INTERROMPA A CONTRAVOZ E RECOLHA A NOTA", hudFont, goldBrush, 67, 592);
         else if (room is 35 or 36) g.DrawString(room == 35 ? (enemies.Count > 0 || drops.Count > 0 ? "OBJETIVO: ATRAVESSE AS LINHAS ABERTAS" : "OBJETIVO: SIGA ATÉ A GALERIA") : routeMemory ? "OBJETIVO: LEVE O TRAÇADO A AVEN" : "OBJETIVO: DERROTE O ESCRIBA E RECUPERE O TRAÇADO", hudFont, goldBrush, 67, 592);
-        else if (room is 37 or 38) g.DrawString(room == 37 ? enemies.Count > 0 || drops.Count > 0 ? "OBJETIVO: ATRAVESSE A SOLEIRA DO SILÊNCIO" : "OBJETIVO: DESÇA À CÂMARA DO ÚLTIMO ECO" : silenceMemory ? "OBJETIVO: RETORNE A AVEN E DECIDA O DESTINO DO LUME" : "OBJETIVO: DERROTE O SILÊNCIO E RECOLHA A MEMÓRIA", hudFont, goldBrush, 67, 592);
+        else if (room is 37 or 38) g.DrawString(vigilActive ? enemies.Count > 0 ? $"VIGÍLIA {vigilFloor}: DERROTE O ECO E RECOLHA O SAQUE" : drops.Count > 0 ? $"VIGÍLIA {vigilFloor}: RECOLHA O SAQUE" : $"VIGÍLIA {vigilFloor}: INTERAJA COM O ALTAR PARA SUBIR OU ENCERRAR" : room == 37 ? enemies.Count > 0 || drops.Count > 0 ? "OBJETIVO: ATRAVESSE A SOLEIRA DO SILÊNCIO" : "OBJETIVO: DESÇA À CÂMARA DO ÚLTIMO ECO" : silenceMemory ? "OBJETIVO: RETORNE A AVEN E DECIDA O DESTINO DO LUME" : "OBJETIVO: DERROTE O SILÊNCIO E RECOLHA A MEMÓRIA", hudFont, goldBrush, 67, 592);
         else if (room is 31 or 32) g.DrawString(room == 31 ? (enemies.Count > 0 || drops.Count > 0 ? "OBJETIVO: ATRAVESSE A GARGANTA DO VIDRO MUDO" : "OBJETIVO: SIGA OS PASSOS ATÉ A FONTE") : deepTrace ? "OBJETIVO: LEVE O ECO SEM DONO A AVEN" : "OBJETIVO: DERROTE O ARAUTO E RECOLHA A LEMBRANÇA", hudFont, goldBrush, 67, 592);
         else if (room >= 4 && room < 6) g.DrawString(ArchiveObjective(), hudFont, goldBrush, 67, 592);
         else if (room is 6 or 7) g.DrawString(RiverObjective(), hudFont, goldBrush, 67, 592);
@@ -1201,6 +1265,7 @@ public sealed class Game : Form
         g.DrawString(room is 3 or 18 ? "WASD mover   E falar/investigar   F5 salvar   B técnicas   I inventário" : "WASD mover   ESPAÇO atacar   SHIFT esquivar   R redemoinho   F/V/G técnicas   B montar técnicas   Q poção   E interagir   I inventário", helpFont, textBrush, 67, 619);
         if (room < MemoryStonePositions.Length && (memoriesFound & (1 << room)) == 0) DrawMemoryStone(g, MemoryStonePositions[room], Distance(player, MemoryStonePositions[room]) < 58);
         if (noticeTime > 0) DrawCentered(g, notice, 170, new Font("Segoe UI", 13, FontStyle.Bold), Color.FromArgb(230, 193, 129));
+        if (vigilChoiceOpen) DrawChoice(g, $"VIGÍLIA ASCENDENTE • ANDAR {vigilFloor}", $"1. SUBIR AO ANDAR {vigilFloor + 1} • RECOMPENSA CRESCENTE", $"2. ENCERRAR • MELHOR MARCA: {Math.Max(vigilBestFloor, vigilFloor)}", "3. FICAR AQUI");
         if (title || dead || victory) DrawOverlay(g, title ? "SCADRYK" : victory ? "VITÓRIA" : "VOCÊ CAIU", title ? "ENTER PARA COMEÇAR    •    C CARREGAR SAVE" : "ENTER PARA RECOMEÇAR    •    F5 SALVAR");
         if (inventoryOpen) DrawInventory(g);
         if (skillMenuOpen) DrawSkillMenu(g);
@@ -1442,6 +1507,9 @@ public sealed class Game : Form
         DrawTownPerson(g, SeraPosition, "SERA", Color.FromArgb(144, 103, 78), Distance(player, SeraPosition) < 72);
         DrawTownPerson(g, NoaPosition, "NOA", Color.FromArgb(102, 111, 145), Distance(player, NoaPosition) < 72);
         using var gate = new Pen(finalEnding == 1 ? Color.FromArgb(170, 211, 145) : finalEnding == 2 ? Color.FromArgb(210, 174, 106) : Color.FromArgb(111, 191, 163), 5); g.DrawLine(gate, 75, 296, 75, 364);
+        using var altarGlow = new SolidBrush(finalEnding == 0 ? Color.FromArgb(65, 89, 94) : Color.FromArgb(105, 157, 186, 165)); using var altarEdge = new Pen(finalEnding == 0 ? Color.FromArgb(105, 114, 112) : Color.FromArgb(212, 188, 129), 3);
+        g.FillEllipse(altarGlow, VigilAltarPosition.X - 30, VigilAltarPosition.Y - 30, 60, 60); g.DrawEllipse(altarEdge, VigilAltarPosition.X - 30, VigilAltarPosition.Y - 30, 60, 60); g.DrawEllipse(altarEdge, VigilAltarPosition.X - 17, VigilAltarPosition.Y - 17, 34, 34);
+        if (Distance(player, VigilAltarPosition) < 72) DrawCentered(g, finalEnding == 0 ? "VIGÍLIA BLOQUEADA • CONCLUA A CAMPANHA" : $"E  VIGÍLIA ASCENDENTE • MELHOR ANDAR {vigilBestFloor}", 382, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, (int)VigilAltarPosition.X);
         using var trail = new Pen(questStage >= 22 ? Color.FromArgb(179, 208, 151) : Color.FromArgb(70, 83, 77), 5); g.DrawLine(trail, 885, 296, 885, 364);
         if (questStage >= 27 && Distance(player, AvenPosition) < 72) DrawCentered(g, "E  TÊMPERA • 75 OURO + 1 SAL VÍTREO", 382, new Font("Segoe UI", 9, FontStyle.Bold), Color.LightCyan, 490);
         if (player.X < 150) DrawCentered(g, "E  VOLTAR A VÉSPERA", 382, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, 146);
@@ -1628,7 +1696,14 @@ public sealed class Game : Form
             g.DrawEllipse(hush, 480 - 180 * pulse, 330 - 180 * pulse, 360 * pulse, 360 * pulse);
             g.DrawEllipse(fissure, 365, 215, 230, 230); g.DrawEllipse(edge, 420, 270, 120, 120);
             for (int i = 0; i < 8; i++) { float angle = i * MathF.PI / 4 + windupPulse * 0.12f; float x = 480 + MathF.Cos(angle) * 168, y = 330 + MathF.Sin(angle) * 168; g.DrawLine(fissure, x, y, x - MathF.Cos(angle) * 34, y - MathF.Sin(angle) * 34); }
-            if (enemies.FirstOrDefault(e => e.Kind == EnemyKind.DeepSilence) is Enemy boss && boss.Windup > 0)
+            if (vigilActive)
+            {
+                using var altar = new Pen(Color.FromArgb(180, 202, 170, 112), 3);
+                g.DrawEllipse(altar, VigilArenaAltarPosition.X - 36, VigilArenaAltarPosition.Y - 36, 72, 72);
+                g.DrawEllipse(altar, VigilArenaAltarPosition.X - 24, VigilArenaAltarPosition.Y - 24, 48, 48);
+                DrawCentered(g, enemies.Count == 0 && drops.Count == 0 ? "E  SUBIR OU ENCERRAR A VIGÍLIA" : $"ECO DA VIGÍLIA • ANDAR {vigilFloor}", 494, new Font("Segoe UI", 9, FontStyle.Bold), Color.FromArgb(222, 202, 226));
+            }
+            if (!vigilActive && enemies.FirstOrDefault(e => e.Kind == EnemyKind.DeepSilence) is Enemy boss && boss.Windup > 0)
             {
                 if (boss.BossPattern == 0) { g.DrawEllipse(warning, boss.Pos.X - 90, boss.Pos.Y - 90, 180, 180); }
                 else if (boss.BossPattern == 1) { g.DrawEllipse(warning, boss.Target.X - 100, boss.Target.Y - 100, 200, 200); }
@@ -2780,11 +2855,30 @@ public sealed class Game : Form
         using var emberEnding = new Game(); emberEnding.timer.Stop(); emberEnding.StartGame(); emberEnding.storyOverlay = false; emberEnding.townEnding = 1; emberEnding.finalEnding = 2; emberEnding.questStage = 53; emberEnding.chorusMemory = emberEnding.firstMemory = emberEnding.westTrace = emberEnding.upstreamTrace = emberEnding.beyondTrace = emberEnding.ebbSeal = emberEnding.counterTrace = emberEnding.anchorWard = emberEnding.refrainSong = emberEnding.riftVerse = emberEnding.deepTrace = emberEnding.lanternSignal = emberEnding.beaconLight = emberEnding.routeMemory = emberEnding.silenceMemory = true; emberEnding.room = 38; emberEnding.SetupRoom(); emberEnding.enemies.Clear(); emberEnding.drops.Clear(); emberEnding.EquipSkill(2, 8); Enemy sparkTarget = new() { Pos = new PointF(520, 330), Kind = EnemyKind.DeepSilence, Hp = 1000, MaxHp = 1000 }; emberEnding.enemies.Add(sparkTarget); emberEnding.CastEquippedSkill(2);
         SaveData finalSparkSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(emberEnding.CaptureSaveData()))!;
         if (emberEnding.equippedSkills[2] != 8 || sparkTarget.Hp >= 1000 || emberEnding.finalStrikeCd <= 0 || !ValidSaveData(finalSparkSave)) throw new InvalidOperationException("O epílogo do Lume não liberou o golpe concentrado nem validou seu save.");
+        emberEnding.room = 18; emberEnding.vigilBestFloor = 0; emberEnding.SetupRoom(); emberEnding.memoryOverlay = false; emberEnding.player = VigilAltarPosition; emberEnding.Interact(); emberEnding.memoryOverlay = false;
+        Enemy firstVigilBoss = emberEnding.enemies.Single(); float firstVigilHp = firstVigilBoss.MaxHp;
+        if (!emberEnding.vigilActive || emberEnding.vigilFloor != 1 || firstVigilBoss.Kind != EnemyKind.DeepSilence || firstVigilHp != 3450) throw new InvalidOperationException("O altar não abriu o primeiro andar da Vigília Ascendente após o epílogo.");
+        firstVigilBoss.Hp = 1; emberEnding.Defeat(firstVigilBoss);
+        if (!emberEnding.drops.Any(d => d.Kind == "glass") || !emberEnding.drops.Any(d => d.Kind == "weapon")) throw new InvalidOperationException("O chefe da Vigília não deixou sal vítreo e arma.");
+        foreach (Drop reward in emberEnding.drops.ToArray()) emberEnding.Collect(reward);
+        emberEnding.memoryOverlay = false; emberEnding.player = VigilArenaAltarPosition; emberEnding.Interact(); int vigilGoldBefore = emberEnding.gold, vigilGlassBefore = emberEnding.tideGlass;
+        if (!emberEnding.vigilChoiceOpen) throw new InvalidOperationException("O altar da arena não abriu a escolha após limpar o andar.");
+        emberEnding.OnKeyDown(emberEnding, new KeyEventArgs(Keys.D1));
+        if (emberEnding.vigilFloor != 2 || !emberEnding.vigilActive || emberEnding.enemies.Single().Kind != EnemyKind.RouteScribe || emberEnding.enemies[0].MaxHp <= firstVigilHp || emberEnding.gold <= vigilGoldBefore || emberEnding.tideGlass <= vigilGlassBefore) throw new InvalidOperationException("O segundo andar não elevou a dificuldade, alternou o chefe e concedeu a recompensa do primeiro.");
+        Enemy secondVigilBoss = emberEnding.enemies.Single(); secondVigilBoss.Hp = 1; emberEnding.Defeat(secondVigilBoss);
+        foreach (Drop reward in emberEnding.drops.ToArray()) emberEnding.Collect(reward);
+        emberEnding.memoryOverlay = false; emberEnding.player = VigilArenaAltarPosition; emberEnding.Interact(); emberEnding.OnKeyDown(emberEnding, new KeyEventArgs(Keys.D2));
+        SaveData vigilSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(emberEnding.CaptureSaveData()))!;
+        if (emberEnding.room != 18 || emberEnding.vigilActive || emberEnding.vigilBestFloor != 2 || emberEnding.health != emberEnding.maxHealth || !ValidSaveData(vigilSave) || vigilSave.VigilBestFloor != 2 || JsonSerializer.Deserialize<SaveData>("{}")?.VigilBestFloor != 0) throw new InvalidOperationException("A Vigília não encerrou no Refúgio com vida restaurada, melhor andar persistente e compatibilidade com saves antigos.");
+        emberEnding.memoryOverlay = false; emberEnding.player = VigilAltarPosition; emberEnding.Interact(); emberEnding.memoryOverlay = false;
+        if (!emberEnding.vigilActive || emberEnding.vigilFloor != 3) throw new InvalidOperationException("Uma nova tentativa da Vigília não começou após o último andar concluído.");
+        emberEnding.health = 1; emberEnding.HitPlayer(2); SaveData vigilFallSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(emberEnding.CaptureSaveData()))!;
+        if (emberEnding.room != 18 || emberEnding.vigilActive || emberEnding.health != emberEnding.maxHealth * 0.5f || emberEnding.vigilBestFloor != 2 || !ValidSaveData(vigilFallSave)) throw new InvalidOperationException("A derrota na Vigília não retornou ao Refúgio com vida parcial preservando a melhor marca.");
         game.room = 11; game.SetupRoom();
         if (game.enemies.Count != 0 || game.drops.Count != 0) throw new InvalidOperationException("O Reservatório foi recriado após ter sido limpo.");
         game.room = 3; game.SetupRoom();
         game.memoryOverlay = false; game.player = CryptGatePosition; game.Interact();
         if (game.room != 2 || game.enemies.Count != 4) throw new InvalidOperationException("A passagem da cidade não retornou à cripta.");
-        Console.WriteLine("TESTES OK: campanha até o Capítulo XVI, incluindo os epílogos e suas técnicas exclusivas, o Silêncio de Baixo e os três padrões, além do Regente, do Escriba, das técnicas, do loot, da progressão e da compatibilidade de saves antigos."); return 0;
+        Console.WriteLine("TESTES OK: campanha até o Capítulo XVI, epílogos e técnicas exclusivas, Silêncio de Baixo, Vigília Ascendente, chefes, combate, loot, progressão e compatibilidade de saves antigos."); return 0;
     }
 }

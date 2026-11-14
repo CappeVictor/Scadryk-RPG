@@ -42,7 +42,7 @@ Para compilar uma versão de produção:
 dotnet build --configuration Release
 ```
 
-Para verificar a campanha até o Capítulo XVI, as oito técnicas possíveis (sete por campanha), a compatibilidade de loadouts com saves antigos, as áreas seguras, os chefes, o loot, a progressão, o combate e o save:
+Para verificar a campanha até o Capítulo XVI, as oito técnicas possíveis (sete por campanha), a Vigília Ascendente, a compatibilidade de loadouts com saves antigos, as áreas seguras, os chefes, o loot, a progressão, o combate e o save:
 
 ```powershell
 dotnet run -- --self-test
@@ -66,6 +66,7 @@ dotnet publish --configuration Release --runtime win-x64 --self-contained true
 | B | Abrir a montagem de técnicas; escolha o espaço com F/V/G e equipe uma técnica aprendida com 1–8; Backspace esvazia o espaço |
 | Q | Usar poção |
 | E | Escutar inscrições, falar/investigar em Véspera, abrir passagem ou interagir com o baú |
+| E no altar do Refúgio após o epílogo | Iniciar a Vigília Ascendente; na arena, interagir com o altar depois de derrotar o eco para subir de andar ou encerrar a tentativa |
 | X perto de uma arma no chão | Desmontar a arma mais próxima em ouro e, conforme a raridade, sal vítreo |
 | M | Abrir o atlas das câmaras; M ou Esc fecha |
 | I | Abrir ou fechar inventário |
@@ -102,7 +103,9 @@ Depois de registrar a passagem coletiva com Aven e aprender a Vazante, siga pela
 
 ## Salvamento
 
-O save JSON fica em `%LOCALAPPDATA%\Scadryk\save.json` e guarda armas, bônus, raridades e afixos, a lembrança da nascente, inscrições, etapas das missões, o Selo da Vigília, o Sino de Nara, o Prisma do Lume, os seis talismãs encontrados, os dois espaços equipados, a decisão de Véspera, o Coro dos Nomes Consumidos, a memória de Ilyra, o mapa de Nara, a etapa do Refúgio do Veio Calmo, o registro comunitário, o testemunho do Pátio das Amarras Livres, a memória dos moinhos, a habilidade Vazante, o compasso das margens, o Manto de Lastro, a nota da Contravoz, o Coro de Retorno, o sinal das lanternas, o Farol de Vigília, o traçado das rotas abertas, a memória final, a escolha do epílogo e as câmaras já limpas. Saves anteriores sem os campos mais recentes carregam com valores vazios. Na tela inicial, pressione **C** para carregar. Se não houver um save novo, o jogo também procura o ConfigFile da versão anterior em `%APPDATA%\Godot\app_userdata\Scadryk RPG\scadryk-save.cfg` e migra os dados encontrados para o formato JSON.
+O save JSON fica em `%LOCALAPPDATA%\Scadryk\save.json` e guarda armas, bônus, raridades e afixos, a lembrança da nascente, inscrições, etapas das missões, o Selo da Vigília, o Sino de Nara, o Prisma do Lume, os seis talismãs encontrados, os dois espaços equipados, a decisão de Véspera, o Coro dos Nomes Consumidos, a memória de Ilyra, o mapa de Nara, a etapa do Refúgio do Veio Calmo, o registro comunitário, o testemunho do Pátio das Amarras Livres, a memória dos moinhos, a habilidade Vazante, o compasso das margens, o Manto de Lastro, a nota da Contravoz, o Coro de Retorno, o sinal das lanternas, o Farol de Vigília, o traçado das rotas abertas, a memória final, a escolha do epílogo, a melhor marca da Vigília Ascendente e as câmaras já limpas. Saves anteriores sem os campos mais recentes carregam com valores vazios. Na tela inicial, pressione **C** para carregar. Se não houver um save novo, o jogo também procura o ConfigFile da versão anterior em `%APPDATA%\Godot\app_userdata\Scadryk RPG\scadryk-save.cfg` e migra os dados encontrados para o formato JSON.
+
+Após concluir o epílogo, interaja com o altar circular no Refúgio para iniciar a Vigília Ascendente. Ela reutiliza a Câmara do Último Eco em andares sem fim; cinco chefes da campanha se revezam, a vida deles e o dano recebido crescem por andar, e as armas de chefe têm chance crescente de serem Relíquias. Cada vitória concede ouro e sal vítreo, com poções nos andares múltiplos de três. No altar da arena, **1** começa o próximo andar, **2** encerra a tentativa e restaura a vida no Refúgio, e **3** fecha a escolha. Se a vida acabar, Aven interrompe a prova e devolve o Escutador ao Refúgio com metade da vida, sem apagar a melhor marca. O melhor andar fica no save; durante a tentativa, F5 fica desativado. Salve no Refúgio antes de entrar.
 
 ## Estrutura
 
