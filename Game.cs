@@ -2953,7 +2953,7 @@ public sealed class Game : Form
         PointF echoLineMidpoint = Scale(Add(silenceBoss.Target2Start, silenceBoss.Target2), 0.5f);
         if (secondSilencePattern != 2 || silenceBoss.Target2 == PointF.Empty || DistanceToSegment(echoLineMidpoint, silenceBoss.Pos, silenceBoss.Target) < 60 || DistanceToSegment(echoLineMidpoint, silenceBoss.Target2Start, silenceBoss.Target2) > 1)
             throw new InvalidOperationException("O terceiro padrão do Silêncio não abriu sua segunda linha paralela, visível e evitável.");
-        lanternExpedition.player = echoLineMidpoint; lanternExpedition.health = lanternExpedition.maxHealth = 1000; silenceBoss.Windup = 0.01f; lanternExpedition.UpdateEnemy(silenceBoss, 0.02f);
+        lanternExpedition.player = echoLineMidpoint; lanternExpedition.health = lanternExpedition.maxHealth = 1000; lanternExpedition.invulnerable = lanternExpedition.dashTime = 0; silenceBoss.Windup = 0.01f; lanternExpedition.UpdateEnemy(silenceBoss, 0.02f);
         if (lanternExpedition.health >= 1000) throw new InvalidOperationException("A segunda linha do Rastro Duplo não atingiu quem permaneceu nela.");
         silenceBoss.Windup = 0; silenceBoss.Cooldown = 0; lanternExpedition.UpdateEnemy(silenceBoss, 0.01f);
         if (firstSilencePattern != 1 || secondSilencePattern != 2 || silenceBoss.BossPattern != 0) throw new InvalidOperationException("Os três padrões anunciados do Silêncio de Baixo não alternaram.");
