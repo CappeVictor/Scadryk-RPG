@@ -96,6 +96,8 @@ Quando o alvo marcado é derrotado, o jogo marca automaticamente o inimigo vivo 
 
 A ficha (**P**) resume a build equipada: dano e intervalo do ataque, alcance, chance e multiplicador crítico, dano esperado por segundo contra alvo sem armadura, dano/recarga do Estilhaço, redução de dano, esquiva, talentos, afixos, talismãs e técnicas equipadas. Os números são recalculados ao trocar equipamento; efeitos de chefe, armadura inimiga e bônus temporários não entram no DPS exibido.
 
+Equipar **Vazante** e **Farol de Vigília** juntos ativa uma sinergia: os inimigos atingidos pela Vazante ficam marcados por cinco segundos, e o próximo pulso do Farol que os atingir causa 35% de dano adicional e consome a marca. O aro azul claro identifica os alvos preparados; o menu **B** mostra se a combinação está ativa.
+
 O alcance dos avisos de interação **E** agora coincide com o alcance efetivo das conversas, portões e objetos, inclusive inscrições opcionais.
 
 Os efeitos de golpe, esquiva, impacto, técnica, coleta e aviso de ataque, a trilha musical e oito paisagens sonoras regionais são sintetizados pelo jogo em C# e reproduzidos pelo áudio do Windows. As paisagens mudam ao entrar em refúgios, pedra e arquivos, água, câmaras de brasas, margens, áreas de vidro e lanternas, regiões de silêncio e, no Capítulo XVIII, badaladas ressonantes próprias. Camadas leves de vento, água, ruído e harmônicos acompanham a música durante a exploração e param em telas de pausa. O sinal grave do chefe acompanha o aviso visual de cada golpe; elites usam um toque curto e agudo. Não há pacote, arquivo de som ou ferramenta adicional para instalar. Pressione **N** para silenciar ou reativar toda a camada de áudio.

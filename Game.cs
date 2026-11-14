@@ -20,7 +20,7 @@ public sealed class Game : Form
     {
         public PointF Pos, Target, Target2, Target2Start;
         public EnemyKind Kind;
-        public float Hp, MaxHp, Cooldown, Windup, WindupMax, Flash, AnimationTime, AttackPoseTime, SummonCooldown, SummonWindup, SupportCooldown, SupportWindup;
+        public float Hp, MaxHp, Cooldown, Windup, WindupMax, Flash, AnimationTime, AttackPoseTime, SummonCooldown, SummonWindup, SupportCooldown, SupportWindup, BeaconMarkTime;
         public int BossPattern;
         public bool Armored, Moving;
         public bool VigilMinion;
@@ -639,6 +639,7 @@ public sealed class Game : Form
     }
 
     private bool SkillUnlocked(int skill) => skill switch { 1 => true, 2 => riverBell, 3 => ebbSeal, 4 => anchorWard, 5 => refrainSong, 6 => beaconLight, 7 => finalEnding == 1, 8 => finalEnding == 2, _ => false };
+    private bool EbbBeaconSynergyActive() => equippedSkills.Contains(3) && equippedSkills.Contains(6);
     private void EquipSkill(int slot, int skill)
     {
         if (!SkillUnlocked(skill)) { notice = "ESSA TÉCNICA AINDA NÃO FOI APRENDIDA"; noticeTime = 1.5f; return; }
@@ -711,13 +712,14 @@ public sealed class Game : Form
         foreach (Enemy enemy in enemies.ToArray())
         {
             float distance = Distance(player, enemy.Pos); if (distance > 160) continue;
+            if (EbbBeaconSynergyActive()) enemy.BeaconMarkTime = 5f;
             DamageEnemy(enemy, damage * (enemy.Boss ? 0.3f : 0.48f) * techniqueBoost * OutgoingDamageMultiplier(enemy) * (IsArmored(enemy) ? 0.75f : 1f));
             enemy.Flash = 0.22f;
             if (enemy.Boss) enemy.Pos = MoveEnemy(enemy, Scale(Normalize(Sub(player, enemy.Pos), PointF.Empty), 22));
             else { enemy.Pos = MoveEnemy(enemy, Scale(Normalize(Sub(player, enemy.Pos), PointF.Empty), Math.Min(85, Math.Max(0, distance - 36)))); enemy.Windup = 0; enemy.Stagger = 0.55f; enemy.Cooldown = Math.Max(enemy.Cooldown, 1.2f); }
             if (enemy.Hp <= 0) Defeat(enemy);
         }
-        notice = "VAZANTE • ECOS REUNIDOS"; noticeTime = 1.2f;
+        notice = EbbBeaconSynergyActive() ? "VAZANTE • ECOS PREPARADOS PARA O FAROL" : "VAZANTE • ECOS REUNIDOS"; noticeTime = 1.2f;
     }
 
     private float AnchorWardCooldown() => Math.Max(13f, 20f - skillTalent * 0.8f) * WeaponCooldownMultiplier();
@@ -793,8 +795,10 @@ public sealed class Game : Form
         foreach (Enemy enemy in enemies.ToArray())
         {
             if (Distance(beaconPos, enemy.Pos) > 128) continue;
-            float multiplier = TechniqueDamageMultiplier() * WeaponSkillMultiplier();
+            bool resonantTarget = enemy.BeaconMarkTime > 0;
+            float multiplier = TechniqueDamageMultiplier() * WeaponSkillMultiplier() * (resonantTarget ? 1.35f : 1f);
             DamageEnemy(enemy, damage * (enemy.Boss ? 0.18f : 0.34f) * multiplier * OutgoingDamageMultiplier(enemy) * (IsArmored(enemy) ? 0.75f : 1f));
+            if (resonantTarget) { enemy.BeaconMarkTime = 0; AddFloatingText(new PointF(enemy.Pos.X, enemy.Pos.Y - enemy.Radius - 26), "FAROL SINTONIZADO", Color.LightCyan); }
             enemy.Flash = 0.16f;
             if (enemy.Hp <= 0) Defeat(enemy);
         }
@@ -1050,7 +1054,7 @@ public sealed class Game : Form
 
     private void UpdateEnemy(Enemy e, float dt)
     {
-        e.AttackPoseTime = Math.Max(0, e.AttackPoseTime - dt);
+        e.AttackPoseTime = Math.Max(0, e.AttackPoseTime - dt); e.BeaconMarkTime = Math.Max(0, e.BeaconMarkTime - dt);
         if (e.Kind == EnemyKind.Elite && e.EliteAffix == EliteAffix.Summoner)
         {
             if (e.SummonWindup > 0 && e.Stagger > 0) { e.SummonWindup = 0; e.SummonCooldown = 2.5f; }
@@ -2565,6 +2569,7 @@ public sealed class Game : Form
         }
         if (enemy.VigilMinion) { using var chorusRing = new Pen(Color.FromArgb(235, 194, 133, 230), 3) { DashStyle = DashStyle.Dot }; g.DrawEllipse(chorusRing, enemy.Pos.X - r - 6, enemy.Pos.Y - 12, (r + 6) * 2, 24); }
         if (enemy.EliteMinion) { using var summonedRing = new Pen(Color.FromArgb(235, 192, 112, 220), 3) { DashStyle = DashStyle.Dash }; g.DrawEllipse(summonedRing, enemy.Pos.X - r - 6, enemy.Pos.Y - 12, (r + 6) * 2, 24); }
+        if (enemy.BeaconMarkTime > 0) { using var beaconMark = new Pen(Color.FromArgb(235, 165, 229, 238), 3) { DashStyle = DashStyle.Dot }; g.DrawEllipse(beaconMark, enemy.Pos.X - r - 8, enemy.Pos.Y - 15, (r + 8) * 2, 30); }
         if (enemy.Kind == EnemyKind.ReedKeeper) { using var stalk = new Pen(Color.FromArgb(220, 205, 193, 133), 3); for (int i = -1; i <= 1; i++) g.DrawLine(stalk, enemy.Pos.X + i * 9, enemy.Pos.Y + 13, enemy.Pos.X + i * 5, enemy.Pos.Y - 23); }
         if (enemy.Kind == EnemyKind.FlowKeeper) { using var ring = new Pen(Color.FromArgb(210, 157, 215, 216), 2); float spin = windupPulse * 40; g.DrawArc(ring, enemy.Pos.X - 18, enemy.Pos.Y - 18, 36, 36, spin, 235); g.DrawArc(ring, enemy.Pos.X - 13, enemy.Pos.Y - 13, 26, 26, spin + 170, 115); }
         if (enemy.Kind == EnemyKind.GlassHerald) { using var shard = new Pen(Color.FromArgb(225, 186, 224, 231), 3); float spin = windupPulse * 24; for (int i = 0; i < 3; i++) { float angle = spin + i * 120; float radians = angle * MathF.PI / 180; PointF tip = new(enemy.Pos.X + MathF.Cos(radians) * 27, enemy.Pos.Y + MathF.Sin(radians) * 27); PointF tail = new(enemy.Pos.X - MathF.Cos(radians) * 18, enemy.Pos.Y - MathF.Sin(radians) * 18); g.DrawLine(shard, tail, tip); } }
@@ -2988,6 +2993,7 @@ public sealed class Game : Form
             g.DrawString($"{skill}. {skillNames[skill].ToUpperInvariant()}{state}", body, unlocked ? Brushes.AntiqueWhite : Brushes.Gray, 480, 262 + (skill - 1) * 32);
             g.DrawString(skillDescriptions[skill], small, Brushes.DarkGray, 503, 280 + (skill - 1) * 32);
         }
+        g.DrawString($"SINERGIA {(EbbBeaconSynergyActive() ? "ATIVA" : "INATIVA")}: VAZANTE marca os alvos; o próximo pulso do Farol causa +35% de dano", small, EbbBeaconSynergyActive() ? Brushes.LightCyan : Brushes.DarkGray, new RectangleF(150, 518, 660, 20));
         g.DrawString("BACKSPACE esvazia o espaço • B ou ESC fecha • R continua sendo o Redemoinho", small, Brushes.DarkGray, 150, 544);
     }
 
@@ -3549,6 +3555,19 @@ public sealed class Game : Form
             if (oldLoadoutSave.EquippedSkills is null || !oldLoadoutSave.EquippedSkills.SequenceEqual(new[] { 1, 0, 0 })) throw new InvalidOperationException("Um save antigo não recebeu a configuração padrão de técnicas.");
             loadoutSave.EquippedSkills[2] = 5;
             if (ValidSkillLoadout(loadoutSave)) throw new InvalidOperationException("Um save equipou uma técnica narrativa ainda bloqueada.");
+        }
+        using (var ebbBeaconCombo = new Game())
+        {
+            ebbBeaconCombo.timer.Stop(); ebbBeaconCombo.StartGame(); ebbBeaconCombo.storyOverlay = false; ebbBeaconCombo.room = 26; ebbBeaconCombo.ebbSeal = ebbBeaconCombo.beaconLight = true; ebbBeaconCombo.equippedSkills = new[] { 3, 6, 0 }; ebbBeaconCombo.player = new PointF(300, 330); ebbBeaconCombo.damage = 100; ebbBeaconCombo.enemies.Clear();
+            var comboEcho = new Enemy { Pos = new PointF(400, 330), Kind = EnemyKind.Grunt, Hp = 1000, MaxHp = 1000 }; ebbBeaconCombo.enemies.Add(comboEcho);
+            if (!ebbBeaconCombo.EbbBeaconSynergyActive()) throw new InvalidOperationException("Vazante + Farol não ativaram a sinergia da montagem.");
+            ebbBeaconCombo.CastEbbPull(); float afterPull = comboEcho.Hp;
+            if (comboEcho.BeaconMarkTime != 5f || !ebbBeaconCombo.notice.Contains("PREPARADOS PARA O FAROL")) throw new InvalidOperationException("A Vazante não marcou alvos ao combinar as duas técnicas.");
+            ebbBeaconCombo.beaconPos = ebbBeaconCombo.player; ebbBeaconCombo.beaconTime = 6; ebbBeaconCombo.beaconPulseCd = 0.01f; ebbBeaconCombo.TickBeacon(0.02f);
+            float expectedPulseDamage = 100 * 0.34f * 1.35f;
+            if (Math.Abs(comboEcho.Hp - (afterPull - expectedPulseDamage)) > 0.01f || comboEcho.BeaconMarkTime != 0) throw new InvalidOperationException("O próximo pulso do Farol não consumiu a marca nem recebeu o bônus de 35%.");
+            ebbBeaconCombo.equippedSkills = new[] { 3, 0, 0 }; ebbBeaconCombo.pullCd = 0; var unlinkedEcho = new Enemy { Pos = new PointF(400, 330), Kind = EnemyKind.Grunt, Hp = 1000, MaxHp = 1000 }; ebbBeaconCombo.enemies.Clear(); ebbBeaconCombo.enemies.Add(unlinkedEcho); ebbBeaconCombo.CastEbbPull();
+            if (unlinkedEcho.BeaconMarkTime != 0 || ebbBeaconCombo.notice.Contains("PREPARADOS PARA O FAROL")) throw new InvalidOperationException("A sinergia Vazante + Farol funcionou sem ambas as técnicas equipadas.");
         }
         using (var bellGame = new Game())
         {
