@@ -91,6 +91,8 @@ O sexto afixo de elite, **Condutor**, acrescenta uma prioridade de suporte: a ca
 
 **Cadência** amplia as escolhas de equipamento: um golpe crítico adianta todas as recargas de técnica em 0,15 segundo numa arma Rara ou 0,25 numa Relíquia, uma vez por golpe. O afixo pode aparecer em saques Raros/Relíquia ou ser escolhido na Têmpera pelo atalho **0**, sem alterar o formato do save; a escolha **7** continua reservada para redistribuir talentos no pós-jogo.
 
+A combinação **Maré + Cadência** numa Relíquia ativa a Ressonância da Maré: cada crítico adianta mais 0,10 segundo das recargas de técnica, além do efeito normal da Cadência. A ficha e o inventário identificam a sinergia; o autoteste confere a redução acumulada e sua descrição.
+
 ## Capítulo XVII — As marés emprestadas
 
 Após o epílogo, Aven abre uma expedição opcional ao Cais dos Ecos Emprestados e ao Arquivo da Maré sem Nome. O Arquivista das Marés anuncia três ataques, deixa uma memória compartilhada e concede uma melhoria permanente para técnicas. A história não vincula Nara a essa região nem revela seu nome escolhido ou paradeiro. São duas salas novas, totalizando 39 salas de combate e 19 chefes; o progresso e a compatibilidade com saves antigos passam pelo autoteste. A próxima etapa é ampliar a variedade de builds, revisar balanceamento e criar animações completas, áudio e distribuição.
