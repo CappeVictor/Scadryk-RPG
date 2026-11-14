@@ -94,3 +94,5 @@ Os ataques básicos agora percorrem o arco da arma ao longo da animação, com p
 Salas avançadas selecionadas antes de chefes agora incluem um elite adicional, com vida escalada pela região. O autoteste percorre as oito salas alteradas e confirma presença única, afixo válido e vida correspondente; a Vigília não recebe esses encontros de campanha.
 
 O afixo Blindado passou a proteger também os ecos num raio de 132 pixels. A borda azul tracejada identifica os aliados afetados, e derrotar ou afastar-se do elite remove a mitigação; o autoteste cobre alcance, redução e desaparecimento da aura.
+
+O quarto afixo de elite, Lançador, cria um papel de alcance: mantém distância, marca uma linha até o alvo e atinge apenas uma área estreita após o aviso. A cor ciano identifica o ataque; o reposicionamento lateral é a resposta tática.
