@@ -153,7 +153,7 @@ public sealed class Game : Form
     private bool lumeLens;
     private bool naraTrace;
     private float health = 100, maxHealth = 100, attackCd, skillCd, shardCd, bellCd, bellWaveTime, bellWaveRadius, pullCd, pullWaveTime, wardCd, wardTime, refrainCd, refrainWaveTime, refrainWaveRadius, beaconCd, beaconTime, beaconPulseCd, beaconWaveTime, dashCd, dashTime, invulnerable, noticeTime, windupPulse;
-    private bool armor, armorOn, relic, relicOn, inventoryOpen, skillMenuOpen, title = true, dead, victory, talentChoice, chestChoice, storyOverlay, memoryOverlay, endingChoiceOpen;
+    private bool armor, armorOn, relic, relicOn, inventoryOpen, skillMenuOpen, mapOpen, title = true, dead, victory, talentChoice, chestChoice, storyOverlay, memoryOverlay, endingChoiceOpen;
     private int skillMenuSlot;
     private int townEnding;
     private int storyPage;
@@ -184,7 +184,7 @@ public sealed class Game : Form
     private void StartGame()
     {
         room = 0; level = 1; xp = gold = damage = 0; damage = 25; potions = 2; weapon = 0; ownedWeapons = 1; Array.Clear(weaponBonuses); Array.Clear(weaponRarities); Array.Clear(weaponAffixes); Array.Clear(weaponAffixes2);
-        armor = armorOn = relic = relicOn = archiveSeal = riverBell = lumeLens = naraTrace = chorusMemory = firstMemory = westTrace = upstreamTrace = beyondTrace = ebbSeal = counterTrace = anchorWard = refrainSong = riftVerse = deepTrace = lanternSignal = beaconLight = routeMemory = inventoryOpen = dead = victory = chestChoice = talentChoice = memoryOverlay = endingChoiceOpen = forgeMenuOpen = false;
+        armor = armorOn = relic = relicOn = archiveSeal = riverBell = lumeLens = naraTrace = chorusMemory = firstMemory = westTrace = upstreamTrace = beyondTrace = ebbSeal = counterTrace = anchorWard = refrainSong = riftVerse = deepTrace = lanternSignal = beaconLight = routeMemory = inventoryOpen = skillMenuOpen = mapOpen = dead = victory = chestChoice = talentChoice = memoryOverlay = endingChoiceOpen = forgeMenuOpen = false;
         townEnding = 0;
         healthTalent = skillTalent = dodgeTalent = techniqueTalent = pendingTalents = enemiesDefeated = memoriesFound = questStage = tideGlass = 0;
         clearedRooms = 0;
@@ -257,6 +257,7 @@ public sealed class Game : Form
         if (title || dead || victory) return;
         if (storyOverlay) { if (e.KeyCode is Keys.Enter or Keys.Space) AdvanceStory(); return; }
         if (memoryOverlay) { if (e.KeyCode is Keys.Enter or Keys.Space) memoryOverlay = false; return; }
+        if (mapOpen) { if (e.KeyCode is Keys.M or Keys.Escape) mapOpen = false; return; }
         if (skillMenuOpen)
         {
             if (e.KeyCode == Keys.Escape || e.KeyCode == Keys.B) { skillMenuOpen = false; return; }
@@ -269,6 +270,7 @@ public sealed class Game : Form
         if (endingChoiceOpen) { if (e.KeyCode == Keys.D1) ChooseTownEnding(1); else if (e.KeyCode == Keys.D2) ChooseTownEnding(2); else if (e.KeyCode == Keys.D3) endingChoiceOpen = false; return; }
         if (chestChoice) { if (e.KeyCode == Keys.D1) gold += 75; else if (e.KeyCode == Keys.D2) potions += 2; else if (e.KeyCode == Keys.D3) health = maxHealth; else return; chestChoice = false; EnterVesper(); return; }
         if (talentChoice) { SelectTalent(e.KeyCode); return; }
+        if (e.KeyCode == Keys.M) { mapOpen = true; inventoryOpen = false; skillMenuOpen = false; return; }
         if (e.KeyCode == Keys.I) { inventoryOpen = !inventoryOpen; return; }
         if (e.KeyCode == Keys.B) { skillMenuOpen = true; inventoryOpen = false; return; }
         if (inventoryOpen) { if (e.KeyCode >= Keys.D1 && e.KeyCode <= Keys.D3) EquipWeapon((int)e.KeyCode - (int)Keys.D1); else if (e.KeyCode == Keys.D4 && armor) armorOn = !armorOn; else if (e.KeyCode == Keys.D5 && relic) relicOn = !relicOn; else if (e.KeyCode == Keys.D6) CycleCharm(1); else if (e.KeyCode == Keys.D7) CycleCharm(2); return; }
@@ -579,7 +581,7 @@ public sealed class Game : Form
     private void TickGame()
     {
         float dt = timer.Interval / 1000f; noticeTime = Math.Max(0, noticeTime - dt); attackCd = Math.Max(0, attackCd - dt); skillCd = Math.Max(0, skillCd - dt); shardCd = Math.Max(0, shardCd - dt); bellCd = Math.Max(0, bellCd - dt); bellWaveTime = Math.Max(0, bellWaveTime - dt); pullCd = Math.Max(0, pullCd - dt); pullWaveTime = Math.Max(0, pullWaveTime - dt); wardCd = Math.Max(0, wardCd - dt); wardTime = Math.Max(0, wardTime - dt); refrainCd = Math.Max(0, refrainCd - dt); refrainWaveTime = Math.Max(0, refrainWaveTime - dt); beaconCd = Math.Max(0, beaconCd - dt); dashCd = Math.Max(0, dashCd - dt); dashTime = Math.Max(0, dashTime - dt); invulnerable = Math.Max(0, invulnerable - dt); windupPulse += dt; TickFloatingTexts(dt);
-        if (title || dead || victory || storyOverlay || memoryOverlay || inventoryOpen || skillMenuOpen || talentChoice || chestChoice || endingChoiceOpen) { Invalidate(); return; }
+        if (title || dead || victory || storyOverlay || memoryOverlay || mapOpen || inventoryOpen || skillMenuOpen || talentChoice || chestChoice || endingChoiceOpen) { Invalidate(); return; }
         PointF dir = new((down.Contains(Keys.D) || down.Contains(Keys.Right) ? 1 : 0) - (down.Contains(Keys.A) || down.Contains(Keys.Left) ? 1 : 0), (down.Contains(Keys.S) || down.Contains(Keys.Down) ? 1 : 0) - (down.Contains(Keys.W) || down.Contains(Keys.Up) ? 1 : 0));
         dir = Normalize(dir, PointF.Empty); if (dashTime > 0) dir = facing;
         MovePlayer(Scale(dir, (dashTime > 0 ? 530 : 190) * dt));
@@ -1136,6 +1138,7 @@ public sealed class Game : Form
         if (forgeMenuOpen) DrawForgeMenu(g);
         if (storyOverlay) DrawStoryOverlay(g);
         if (memoryOverlay) DrawMemoryOverlay(g);
+        if (mapOpen) DrawMapOverlay(g);
     }
 
     private string TownObjective() => questStage switch
@@ -1706,6 +1709,57 @@ public sealed class Game : Form
         }
     }
 
+    private long KnownRoomMask()
+    {
+        long known = clearedRooms | (1L << room);
+        if (questStage >= 3) known |= 1L << 3;
+        if (questStage >= 22) known |= 1L << 18;
+        return known;
+    }
+
+    private string AtlasRoomName(int index)
+    {
+        string name = roomNames[index];
+        int separator = name.LastIndexOf(" • ", StringComparison.Ordinal);
+        return separator >= 0 ? name[(separator + 3)..] : name;
+    }
+
+    private void DrawMapOverlay(Graphics g)
+    {
+        using var shade = new SolidBrush(Color.FromArgb(225, 5, 7, 9));
+        using var panel = new SolidBrush(Color.FromArgb(248, 15, 17, 18));
+        using var border = new Pen(Color.FromArgb(190, 143, 112, 73), 2);
+        using var nodeFont = new Font("Segoe UI", 8.5f, FontStyle.Bold);
+        using var format = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+        g.FillRectangle(shade, 0, 0, 960, 640);
+        g.FillRectangle(panel, 28, 105, 904, 488);
+        g.DrawRectangle(border, 28, 105, 904, 488);
+        DrawCentered(g, "ATLAS DAS CÂMARAS", 120, new Font("Georgia", 17, FontStyle.Bold), Color.Goldenrod);
+        DrawCentered(g, roomNames[room], 145, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite);
+
+        long known = KnownRoomMask();
+        const int columns = 5, nodeWidth = 168, nodeHeight = 46, gapX = 8, gapY = 6;
+        for (int index = 0; index < roomNames.Length; index++)
+        {
+            int column = index % columns, row = index / columns;
+            float x = 36 + column * (nodeWidth + gapX), y = 165 + row * (nodeHeight + gapY);
+            bool current = index == room, visited = (known & (1L << index)) != 0, cleared = (clearedRooms & (1L << index)) != 0;
+            Color fill = current ? Color.FromArgb(110, 103, 48) : cleared ? Color.FromArgb(39, 67, 53) : visited ? Color.FromArgb(52, 58, 57) : Color.FromArgb(29, 32, 33);
+            Color line = current ? Color.Goldenrod : cleared ? Color.FromArgb(89, 139, 105) : visited ? Color.FromArgb(95, 103, 96) : Color.FromArgb(54, 58, 56);
+            Color ink = visited ? Color.AntiqueWhite : Color.FromArgb(108, 112, 105);
+            using var nodeBrush = new SolidBrush(fill);
+            using var nodeBorder = new Pen(line, current ? 2 : 1);
+            g.FillRectangle(nodeBrush, x, y, nodeWidth, nodeHeight);
+            g.DrawRectangle(nodeBorder, x, y, nodeWidth, nodeHeight);
+            string label = visited ? $"{index + 1:00}\n{AtlasRoomName(index)}" : $"{index + 1:00}\n???";
+            using var textBrush = new SolidBrush(current ? Color.FromArgb(255, 224, 166) : ink);
+            g.DrawString(label, nodeFont, textBrush, new RectangleF(x + 4, y + 2, nodeWidth - 8, nodeHeight - 4), format);
+        }
+        using var legendFont = new Font("Segoe UI", 9);
+        using var legendBrush = new SolidBrush(Color.FromArgb(180, 185, 176));
+        g.DrawString("DOURADO: AQUI   VERDE: LIMPA   CINZA: VISITADA   ???: DESCONHECIDA   M/ESC FECHA", legendFont, legendBrush, 54, 578);
+    }
+
     private void DrawDrop(Graphics g, Drop item)
     {
         Color color = item.Kind switch
@@ -1966,6 +2020,19 @@ public sealed class Game : Form
             if (floatingTextCheck.floatingTexts.Count != 2 || floatingTextCheck.floatingTexts[0].Pos.Y >= initialY) throw new InvalidOperationException("Os números de dano não subiram e permaneceram visíveis durante o impacto.");
             floatingTextCheck.TickFloatingTexts(1f);
             if (floatingTextCheck.floatingTexts.Count != 0) throw new InvalidOperationException("Os números flutuantes não desapareceram depois da animação.");
+        }
+        using (var atlasCheck = new Game())
+        {
+            atlasCheck.timer.Stop(); atlasCheck.StartGame(); atlasCheck.storyOverlay = false; atlasCheck.room = 4; atlasCheck.questStage = 3;
+            atlasCheck.enemies.Clear(); atlasCheck.clearedRooms = (1L << 0) | (1L << 1);
+            var pausedEnemy = new Enemy { Pos = new PointF(700, 400), Kind = EnemyKind.Grunt, Hp = 100, MaxHp = 100, Stagger = 0.2f };
+            atlasCheck.enemies.Add(pausedEnemy); PointF playerBeforeMap = atlasCheck.player;
+            atlasCheck.OnKeyDown(atlasCheck, new KeyEventArgs(Keys.M)); long knownRooms = atlasCheck.KnownRoomMask(); atlasCheck.TickGame();
+            long expectedKnown = (1L << 0) | (1L << 1) | (1L << 3) | (1L << 4);
+            if (!atlasCheck.mapOpen || (knownRooms & expectedKnown) != expectedKnown || (knownRooms & (1L << 5)) != 0 || atlasCheck.player != playerBeforeMap || pausedEnemy.Stagger != 0.2f)
+                throw new InvalidOperationException("O atlas não distinguiu câmaras conhecidas ou não pausou a exploração.");
+            atlasCheck.OnKeyDown(atlasCheck, new KeyEventArgs(Keys.Escape));
+            if (atlasCheck.mapOpen) throw new InvalidOperationException("ESC não fechou o atlas da campanha.");
         }
         using (var shardGame = new Game())
         {

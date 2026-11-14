@@ -67,6 +67,7 @@ dotnet publish --configuration Release --runtime win-x64 --self-contained true
 | Q | Usar poção |
 | E | Escutar inscrições, falar/investigar em Véspera, abrir passagem ou interagir com o baú |
 | X perto de uma arma no chão | Desmontar a arma mais próxima em ouro e, conforme a raridade, sal vítreo |
+| M | Abrir o atlas das câmaras; M ou Esc fecha |
 | I | Abrir ou fechar inventário |
 | 1–3 no inventário | Equipar arma |
 | 4–5 no inventário | Alternar armadura e relíquia |
@@ -82,6 +83,8 @@ dotnet publish --configuration Release --runtime win-x64 --self-contained true
 Cada nível concede um ponto permanente: **Vigor** aumenta a vida máxima, **Domínio** reduz as recargas, **Agilidade** acelera a esquiva e **Sintonia** acrescenta 8% de dano às técnicas por ponto. A nova especialização é compatível com saves antigos e pode ser escolhida várias vezes.
 
 Os golpes exibem números flutuantes por 0,85 segundo: dano causado aparece claro, críticos recebem destaque dourado e dano recebido aparece em vermelho. Os valores usam o dano calculado pelo combate; o efeito não muda o balanceamento.
+
+O atlas (**M**) mostra as câmaras já limpas, a sala atual e as regiões ainda desconhecidas. Ele usa o registro de exploração existente e pausa o combate enquanto está aberto; **M** ou **Esc** fecha a consulta.
 
 Os ataques corpo a corpo comuns mostram a área de impacto antes do golpe. Saia do círculo para evitar dano. O movimento também desliza pela quina dos obstáculos quando uma direção fica bloqueada. As três armas mudam o golpe básico: a Espada de Pedra tem alcance médio e resposta equilibrada; a Lâmina do Arquivo ataca mais devagar, alcança mais longe, perfura parte da armadura e interrompe ecos comuns; a Faca do Crepúsculo tem alcance curto, ataca mais rápido e começa com 25% de chance crítica. Compare essas características e os afixos no inventário antes de equipar. Use **B** para montar técnicas: **F**, **V** e **G** selecionam um espaço, e **1–6** equipa nele uma das técnicas já aprendidas. Um mesmo poder não pode ocupar dois espaços; **Backspace** deixa o selecionado vazio. Os três espaços ativos e a técnica equipada em cada um aparecem na faixa superior e ficam no save. O Estilhaço de Voz atravessa uma linha de inimigos e para nas paredes; a Ressonância do Sino interrompe ecos comuns, enquanto chefes recebem dano reduzido e mantêm seus ataques. A Vazante agrupa ecos e o Manto de Lastro reduz dano por 2,5 segundos. O Coro de Retorno causa dano em área e interrompe ecos comuns. O Farol de Vigília (**6**) fica plantado por seis segundos e pulsa a cada 1,1 segundo contra inimigos próximos, com dano menor a chefes. Domínio reduz a recarga das técnicas. O Vidro fortalece o Estilhaço e a Ressonância; o Fio de Travessia amplia a onda do Sino à custa de recarga adicional. Ao se aproximar do saque, o chão mostra o nome dos itens e distingue armas Comuns, Raras e Relíquias por cor. Antes da coleta, o rótulo da arma compara o dano atual com o projetado ao equipá-la, o perfil do golpe e os afixos novos diante dos atuais. Pressione **X** perto de uma arma no chão para desmontá-la sem substituir seu equipamento: armas Comuns dão 15 ouro, Raras 40 ouro e 1 sal vítreo, e Relíquias 75 ouro e 2 sal vítreos. Raridade, bônus e afixos são definidos quando ela cai; Relíquias combinam dois afixos distintos.
 
