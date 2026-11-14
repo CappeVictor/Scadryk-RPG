@@ -54,6 +54,10 @@ O executável compilado aparece em `bin/Release/net8.0-windows/`. Para criar uma
 dotnet publish --configuration Release --runtime win-x64 --self-contained true
 ```
 
+## Personagem e animação
+
+Aven usa uma folha de sprites original incluída em `Assets/Aven.png`: quatro direções e quatro quadros de caminhada por direção. A animação acompanha WASD, setas, esquiva e correntes do cenário. O projeto copia o PNG para a saída ao compilar; não precisa baixar recursos nem instalar um motor de jogo.
+
 ## Controles
 
 | Tecla ou ação | Função |

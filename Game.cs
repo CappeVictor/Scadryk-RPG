@@ -82,6 +82,11 @@ public sealed class Game : Form
     }
 
     private static readonly RectangleF[] Walls = { new(345, 235, 48, 90), new(565, 375, 58, 80) };
+    private static readonly Lazy<Bitmap?> AvenSpriteSheet = new(() =>
+    {
+        string path = Path.Combine(AppContext.BaseDirectory, "Assets", "Aven.png");
+        return File.Exists(path) ? new Bitmap(path) : null;
+    });
     private static readonly RectangleF[] ArchiveWalls = { new(275, 155, 38, 155), new(437, 365, 48, 165), new(626, 150, 42, 165), new(765, 374, 42, 150) };
     private static readonly RectangleF[] VaultWalls = { new(280, 170, 58, 118), new(625, 170, 58, 118), new(280, 410, 58, 118), new(625, 410, 58, 118) };
     private static readonly RectangleF[] RiverWalls = { new(250, 175, 80, 48), new(410, 390, 96, 52), new(645, 170, 70, 48), new(760, 390, 75, 55) };
@@ -146,6 +151,7 @@ public sealed class Game : Form
     private readonly int[] weaponDamage = { 0, 10, 4 };
     private readonly int[] weaponBonuses = new int[3], weaponRarities = new int[3], weaponAffixes = new int[3], weaponAffixes2 = new int[3];
     private PointF player = new(150, 330), facing = new(1, 0), mouseAim = new(1, 0), dashDirection = new(1, 0);
+    private float playerAnimationTime;
     private int room, level = 1, xp, gold, potions = 2, damage = 25, weapon, ownedWeapons = 1;
     private int healthTalent, skillTalent, dodgeTalent, techniqueTalent, pendingTalents, enemiesDefeated;
     private int memoriesFound, questStage, tideGlass, finalEnding;
@@ -202,7 +208,7 @@ public sealed class Game : Form
         clearedRooms = 0;
         ownedCharms = equippedCharm = equippedCharm2 = 0;
         equippedSkills = new[] { 1, 0, 0 }; skillMenuOpen = false; skillMenuSlot = 0;
-        health = maxHealth = 100; attackCd = attackFlash = skillCd = shardCd = bellCd = bellWaveTime = bellWaveRadius = pullCd = pullWaveTime = wardCd = wardTime = refrainCd = refrainWaveTime = refrainWaveRadius = beaconCd = beaconTime = beaconPulseCd = beaconWaveTime = returnVoiceCd = returnVoiceWaveTime = returnVoiceWaveRadius = finalStrikeCd = finalStrikeFlash = dashCd = dashTime = invulnerable = 0; beaconPos = finalStrikeTarget = PointF.Empty; facing = mouseAim = dashDirection = new PointF(1, 0); echoShards.Clear(); floatingTexts.Clear(); title = false; storyPage = 0; storyOverlay = true; SetupRoom();
+        health = maxHealth = 100; attackCd = attackFlash = skillCd = shardCd = bellCd = bellWaveTime = bellWaveRadius = pullCd = pullWaveTime = wardCd = wardTime = refrainCd = refrainWaveTime = refrainWaveRadius = beaconCd = beaconTime = beaconPulseCd = beaconWaveTime = returnVoiceCd = returnVoiceWaveTime = returnVoiceWaveRadius = finalStrikeCd = finalStrikeFlash = dashCd = dashTime = invulnerable = 0; beaconPos = finalStrikeTarget = PointF.Empty; facing = mouseAim = dashDirection = new PointF(1, 0); playerAnimationTime = 0; echoShards.Clear(); floatingTexts.Clear(); title = false; storyPage = 0; storyOverlay = true; SetupRoom();
     }
 
     private void AdvanceStory()
@@ -711,7 +717,11 @@ public sealed class Game : Form
         if (title || dead || victory || storyOverlay || memoryOverlay || mapOpen || inventoryOpen || skillMenuOpen || talentChoice || chestChoice || endingChoiceOpen || vigilChoiceOpen) { Invalidate(); return; }
         PointF dir = Normalize(MovementInput(), PointF.Empty); if (dashTime > 0) dir = dashDirection;
         MovePlayer(Scale(dir, (dashTime > 0 ? 530 : 190) * dt));
-        if (dashTime <= 0) MovePlayer(Scale(CurrentDrift(), dt));
+        PointF drift = CurrentDrift();
+        if (dashTime <= 0) MovePlayer(Scale(drift, dt));
+        PointF animationDirection = Length(dir) > 0.001f ? dir : drift;
+        if (Length(animationDirection) > 0.001f) playerAnimationTime += dt;
+        else playerAnimationTime = 0;
         for (int i = drops.Count - 1; i >= 0; i--) if (Distance(player, drops[i].Pos) < 30) Collect(drops[i]);
         TickBeacon(dt); int roomBeingUpdated = room; foreach (Enemy enemy in enemies.ToArray()) { UpdateEnemy(enemy, dt); if (dead || room != roomBeingUpdated) break; }
         AdvanceVoiceShards(dt);
@@ -2058,12 +2068,30 @@ public sealed class Game : Form
     }
     private void DrawPlayer(Graphics g)
     {
-        using var body = new SolidBrush(invulnerable > 0 ? Color.Salmon : Color.FromArgb(90, 143, 138));
-        using var face = new SolidBrush(Color.Bisque);
-        g.FillEllipse(body, player.X - 16, player.Y - 16, 32, 32);
-        g.FillEllipse(face, player.X - 8, player.Y - 11, 16, 16);
-        using var facingLine = new Pen(Color.AntiqueWhite, 4);
-        g.DrawLine(facingLine, player, Add(player, Scale(facing, 24)));
+        PointF animationDirection = dashTime > 0 ? dashDirection : MovementInput();
+        if (Length(animationDirection) <= 0.001f) animationDirection = CurrentDrift();
+        if (Length(animationDirection) <= 0.001f) animationDirection = facing;
+        Bitmap? sprites = AvenSpriteSheet.Value;
+        if (sprites is not null)
+        {
+            int row = PlayerSpriteRow(animationDirection);
+            bool moving = dashTime > 0 || Length(MovementInput()) > 0.001f || Length(CurrentDrift()) > 0.001f;
+            int frame = PlayerSpriteFrame(playerAnimationTime, moving);
+            Rectangle source = new(frame * 256, row * 256, 256, 256);
+            RectangleF target = new(player.X - 38, player.Y - 73, 76, 76);
+            using var shadow = new SolidBrush(Color.FromArgb(100, 5, 7, 9));
+            g.FillEllipse(shadow, player.X - 17, player.Y - 5, 34, 10);
+            g.DrawImage(sprites, target, source, GraphicsUnit.Pixel);
+        }
+        else
+        {
+            using var fallback = new SolidBrush(invulnerable > 0 ? Color.Salmon : Color.FromArgb(90, 143, 138));
+            using var fallbackFace = new SolidBrush(Color.Bisque);
+            g.FillEllipse(fallback, player.X - 16, player.Y - 16, 32, 32);
+            g.FillEllipse(fallbackFace, player.X - 8, player.Y - 11, 16, 16);
+            using var facingLine = new Pen(Color.AntiqueWhite, 4);
+            g.DrawLine(facingLine, player, Add(player, Scale(facing, 24)));
+        }
         if (wardTime > 0)
         {
             int alpha = Math.Clamp((int)(112 + 70 * MathF.Sin(windupPulse * 8)), 35, 190);
@@ -2082,6 +2110,12 @@ public sealed class Game : Form
         if (finalEnding == 1 && returnVoiceCd > 0) { using var returnedVoicesCooldownPen = new Pen(Color.FromArgb(215, 205, 221, 165), 3); g.DrawArc(returnedVoicesCooldownPen, player.X - 81, player.Y - 81, 162, 162, 270, 360 * returnVoiceCd / (Math.Max(14f, 23f - skillTalent * 0.7f) * WeaponCooldownMultiplier())); }
         if (finalEnding == 2 && finalStrikeCd > 0) { using var finalSparkCooldownPen = new Pen(Color.FromArgb(225, 255, 191, 115), 3); g.DrawArc(finalSparkCooldownPen, player.X - 89, player.Y - 89, 178, 178, 0, 360 * finalStrikeCd / (Math.Max(12f, 19f - skillTalent * 0.65f) * WeaponCooldownMultiplier())); }
     }
+    private static int PlayerSpriteRow(PointF direction)
+    {
+        if (MathF.Abs(direction.X) > MathF.Abs(direction.Y)) return direction.X < 0 ? 1 : 2;
+        return direction.Y < 0 ? 3 : 0;
+    }
+    private static int PlayerSpriteFrame(float animationTime, bool moving) => moving ? (int)(Math.Max(0, animationTime) / 0.12f) % 4 : 0;
     private void DrawAttackSwing(Graphics g)
     {
         float progress = Math.Clamp(attackFlash / 0.16f, 0, 1);
@@ -2270,6 +2304,12 @@ public sealed class Game : Form
 
     public static int SelfTest()
     {
+        string spritePath = Path.Combine(AppContext.BaseDirectory, "Assets", "Aven.png");
+        if (!File.Exists(spritePath)) throw new InvalidOperationException("A folha original de sprites de Aven não foi copiada para a saída do jogo.");
+        using (var sprite = new Bitmap(spritePath))
+            if (sprite.Width != 1024 || sprite.Height != 1024) throw new InvalidOperationException("A folha de sprites de Aven precisa manter a grade animada de 4 × 4 células.");
+        if (PlayerSpriteRow(new PointF(0, 1)) != 0 || PlayerSpriteRow(new PointF(-1, 0)) != 1 || PlayerSpriteRow(new PointF(1, 0)) != 2 || PlayerSpriteRow(new PointF(0, -1)) != 3 || PlayerSpriteFrame(0.5f, false) != 0 || PlayerSpriteFrame(0.5f, true) != 0 || PlayerSpriteFrame(0.61f, true) != 1)
+            throw new InvalidOperationException("A orientação ou o ciclo de caminhada da folha de sprites não foi mapeado corretamente.");
         using (var weaponCombat = new Game())
         {
             weaponCombat.timer.Stop(); weaponCombat.StartGame(); weaponCombat.storyOverlay = false; weaponCombat.room = 0; weaponCombat.SetupRoom(); weaponCombat.enemies.Clear(); weaponCombat.damage = 100; weaponCombat.player = new PointF(150, 330); weaponCombat.mouseAim = new PointF(1, 0); weaponCombat.weapon = 1;
