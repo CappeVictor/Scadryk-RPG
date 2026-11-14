@@ -89,6 +89,8 @@ O quinto afixo de elite, **Invocador**, anuncia um círculo violeta e chama um E
 
 O sexto afixo de elite, **Condutor**, acrescenta uma prioridade de suporte: a cada 5,8 segundos, anuncia por 0,9 segundo um pulso que recupera 12% da vida máxima dos inimigos num raio de 165. A marcação verde tracejada liga o elite aos alvos da cura e permite interromper o canal com golpes que causam stagger. O autoteste verifica alcance, cura limitada, telegráfico e interrupção.
 
+O **Mordente de Compasso** estreia como arquétipo de longo alcance nas câmaras 14 e 21. Um círculo violeta anuncia o impacto; se acertar, além de 14 de dano ele atrasa 1,1 segundo as técnicas que já estão em recarga. O autoteste verifica presença nas duas salas, raio do aviso, janela de reação e atraso seletivo das recargas.
+
 **Cadência** amplia as escolhas de equipamento: um golpe crítico adianta todas as recargas de técnica em 0,15 segundo numa arma Rara ou 0,25 numa Relíquia, uma vez por golpe. O afixo pode aparecer em saques Raros/Relíquia ou ser escolhido na Têmpera pelo atalho **0**, sem alterar o formato do save; a escolha **7** continua reservada para redistribuir talentos no pós-jogo.
 
 A combinação **Maré + Cadência** numa Relíquia ativa a Ressonância da Maré: cada crítico adianta mais 0,10 segundo das recargas de técnica, além do efeito normal da Cadência. A ficha e o inventário identificam a sinergia; o autoteste confere a redução acumulada e sua descrição.
