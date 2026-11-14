@@ -2127,7 +2127,10 @@ public sealed class Game : Form
                         PointF outer = new(480 + MathF.Cos(angle) * 184, 330 + MathF.Sin(angle) * 154);
                         g.DrawLine(current, pulling ? outer : inner, pulling ? inner : outer);
                     }
-                    DrawCentered(g, pulling ? "CORRENTE: PUXANDO PARA O CENTRO" : "CORRENTE: REPELINDO PARA A BORDA", 530, new Font("Segoe UI", 9, FontStyle.Bold), VigilAspectColor(vigilFloor));
+                    float changeIn = 6f - vigilTideTime % 6f;
+                    string flow = pulling ? "PUXANDO PARA O CENTRO" : "REPELINDO PARA A BORDA";
+                    Color flowColor = changeIn <= 1f && ((int)(windupPulse * 5) % 2 == 0) ? Color.PaleGoldenrod : VigilAspectColor(vigilFloor);
+                    DrawCentered(g, $"CORRENTE: {flow} • MUDA EM {changeIn:0.0} S", 530, new Font("Segoe UI", 9, FontStyle.Bold), flowColor);
                 }
                 DrawCentered(g, enemies.Count == 0 && drops.Count == 0 ? "E  SUBIR OU ENCERRAR A VIGÍLIA" : $"ECO DA VIGÍLIA • ANDAR {vigilFloor}", 494, new Font("Segoe UI", 9, FontStyle.Bold), Color.FromArgb(222, 202, 226));
                 DrawCentered(g, $"{VigilAspectTitle(vigilFloor)} • {VigilAspectRule(vigilFloor).ToUpperInvariant()}", 511, new Font("Segoe UI", 9, FontStyle.Bold), VigilAspectColor(vigilFloor));
