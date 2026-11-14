@@ -83,6 +83,8 @@ O inventário agora lista separadamente os efeitos ativos de cada talismã equip
 
 Elites agora sempre deixam sal vítreo além do ouro: um fragmento nas regiões iniciais, aumentando até quatro nas áreas avançadas. A recompensa alimenta diretamente a Têmpera do Veio Calmo e dá retorno previsível por enfrentar os encontros de elite; a chance de arma permanece em 35%.
 
+Proteção contra azar no saque de elite: a chance base de arma continua em 35%; depois de duas elites seguidas sem arma, a próxima garante uma. O contador é salvo, limitado a duas falhas e zerado ao obter a arma; saves antigos começam com zero. A intenção é reduzir sequências frustrantes sem elevar a chance em cada encontro.
+
 O quinto afixo de elite, **Invocador**, anuncia um círculo violeta e chama um Eco de Tinta de apoio a cada 7,5 segundos, se não houver outro eco invocado ativo. O aviso de 0,95 segundo permite priorizar o elite ou reposicionar-se antes da chegada; armas e técnicas que interrompem ecos cancelam o canal e atrasam a próxima tentativa. O eco usa o comportamento de ataque à distância já existente, escala a vida com a região e não concede ouro nem XP, evitando farm infinito; o Invocador também conserva seu ataque normal.
 
 **Cadência** amplia as escolhas de equipamento: um golpe crítico adianta todas as recargas de técnica em 0,15 segundo numa arma Rara ou 0,25 numa Relíquia, uma vez por golpe. O afixo pode aparecer em saques Raros/Relíquia ou ser escolhido na Têmpera pelo atalho **0**, sem alterar o formato do save; a escolha **7** continua reservada para redistribuir talentos no pós-jogo.
