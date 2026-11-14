@@ -2407,7 +2407,7 @@ public sealed class Game : Form
             RectangleF source = new(frame * cellWidth, spriteRow * cellHeight, cellWidth, cellHeight);
             float size = spriteHeight;
             float width = individualSpriteLoaded ? size * cellWidth / cellHeight : size;
-            var uniqueAttackPose = individualSpriteLoaded ? EnemyAttackPose(enemy, windupProgress) : (Width: 1f, Height: 1f, OffsetX: 0f, OffsetY: 0f);
+            var uniqueAttackPose = individualSpriteLoaded || bossSprite ? EnemyAttackPose(enemy, windupProgress) : (Width: 1f, Height: 1f, OffsetX: 0f, OffsetY: 0f);
             bool freelyMoving = enemy.Moving && enemy.Windup <= 0 && enemy.AttackPoseTime <= 0 && enemy.Stagger <= 0;
             bool animatedCreature = individualSpriteLoaded && enemy.Kind != EnemyKind.Elite;
             float motionPhase = freelyMoving ? enemy.AnimationTime * 15 : windupPulse * 2.2f;
@@ -3048,6 +3048,10 @@ public sealed class Game : Form
             EnemyKind.MudCantor => (1 + 0.12f * p, 1 + 0.20f * p, 0, 2 * p),
             EnemyKind.PaperWraith => (1 + 0.05f * p, 1 + 0.05f * p, MathF.Sin(enemy.AnimationTime * 18f) * 6f * p, -2 * p),
             EnemyKind.SaltEcho => (1 - 0.08f * p, 1 + 0.18f * p, 0, -3 * p),
+            EnemyKind.GlassHerald when enemy.BossPattern == 2 => (1 + 0.19f * p, 1 - 0.07f * p, 0, -3 * p),
+            EnemyKind.RouteScribe when enemy.BossPattern == 0 => (1 + 0.12f * p, 1 + 0.16f * p, 0, -4 * p),
+            EnemyKind.LastTuner when enemy.BossPattern == 0 => (1 + 0.22f * p, 1 + 0.11f * p, 0, -5 * p),
+            EnemyKind.DeepSilence when enemy.BossPattern == 2 => (1 + 0.04f * p, 1 + 0.21f * p, 0, -4 * p),
             _ => (1, 1, 0, 0)
         };
     }
@@ -3249,6 +3253,12 @@ public sealed class Game : Form
             var creature = new Enemy { Kind = kind, AnimationTime = 0.5f };
             var idlePose = EnemyAttackPose(creature, 0); var attackPose = EnemyAttackPose(creature, 1);
             if (idlePose != (1, 1, 0, 0) || attackPose == idlePose || !attackPoseShapes.Add(attackPose)) throw new InvalidOperationException($"A silhueta de {kind} não recebeu uma pose de ataque própria.");
+        }
+        foreach (var (kind, pattern) in new[] { (EnemyKind.GlassHerald, 2), (EnemyKind.RouteScribe, 0), (EnemyKind.LastTuner, 0), (EnemyKind.DeepSilence, 2) })
+        {
+            var boss = new Enemy { Kind = kind, BossPattern = pattern };
+            var idlePose = EnemyAttackPose(boss, 0); var attackPose = EnemyAttackPose(boss, 1);
+            if (idlePose != (1, 1, 0, 0) || attackPose == idlePose || !attackPoseShapes.Add(attackPose)) throw new InvalidOperationException($"O padrão {pattern} do chefe {kind} não recebeu uma pose própria.");
         }
         using (var proceduralArt = new Bitmap(96, 96))
         using (var proceduralGraphics = Graphics.FromImage(proceduralArt))
