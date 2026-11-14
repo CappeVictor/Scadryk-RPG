@@ -12,7 +12,7 @@ public sealed class Game : Form
     private const float InteractionRadius = 72;
     private const float MemoryStoneInteractionRadius = 58;
     private enum EnemyKind { Grunt, Archer, Mage, Elite, Guardian, InkEcho, BlindScribe, DrownedMemory, RiverFerryman, EmberWisp, AshWarden, NameMoth, HollowName, NameWeaver, FirstKeeper, MudCantor, OathCartographer, PaperWraith, NameBroker, SaltEcho, TideWitness, ReedKeeper, FlowKeeper, CounterCurrent, RiftCantor, GlassHerald, LanternRegent, RouteScribe, DeepSilence, BorrowedChorus }
-    private enum VigilAspect { Hardened, Hungry, Swift }
+    private enum VigilAspect { Hardened, Hungry, Swift, Chorus }
     private enum EliteAffix { Armored, Swift, Bloodbound }
     private sealed class Enemy
     {
@@ -21,6 +21,7 @@ public sealed class Game : Form
         public float Hp, MaxHp, Cooldown, Windup, WindupMax, Flash, AnimationTime;
         public int BossPattern;
         public bool Armored, Moving;
+        public bool VigilMinion;
         public EliteAffix EliteAffix;
         public float Stagger;
         public bool Boss => Kind is EnemyKind.Guardian or EnemyKind.BlindScribe or EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus;
@@ -195,6 +196,7 @@ public sealed class Game : Form
     private int healthTalent, skillTalent, dodgeTalent, techniqueTalent, pendingTalents, enemiesDefeated;
     private int memoriesFound, questStage, tideGlass, finalEnding;
     private int vigilBestFloor, vigilFloor;
+    private float vigilMinionCooldown;
     private bool vigilActive, vigilChoiceOpen;
     private bool highContrastTelegraphs;
     private bool silenceMemory;
@@ -251,7 +253,7 @@ public sealed class Game : Form
         clearedRooms = 0;
         ownedCharms = equippedCharm = equippedCharm2 = 0;
         equippedSkills = new[] { 1, 0, 0 }; skillMenuOpen = false; skillMenuSlot = 0;
-        health = maxHealth = 100; attackCd = attackFlash = skillCd = shardCd = bellCd = bellWaveTime = bellWaveRadius = pullCd = pullWaveTime = wardCd = wardTime = refrainCd = refrainWaveTime = refrainWaveRadius = beaconCd = beaconTime = beaconPulseCd = beaconWaveTime = returnVoiceCd = returnVoiceWaveTime = returnVoiceWaveRadius = finalStrikeCd = finalStrikeFlash = dashCd = dashTime = invulnerable = 0; beaconPos = finalStrikeTarget = PointF.Empty; facing = mouseAim = dashDirection = new PointF(1, 0); playerAnimationTime = 0; echoShards.Clear(); floatingTexts.Clear(); title = false; storyPage = 0; storyOverlay = true; SetupRoom();
+        health = maxHealth = 100; attackCd = attackFlash = skillCd = shardCd = bellCd = bellWaveTime = bellWaveRadius = pullCd = pullWaveTime = wardCd = wardTime = refrainCd = refrainWaveTime = refrainWaveRadius = beaconCd = beaconTime = beaconPulseCd = beaconWaveTime = returnVoiceCd = returnVoiceWaveTime = returnVoiceWaveRadius = finalStrikeCd = finalStrikeFlash = dashCd = dashTime = invulnerable = 0; vigilMinionCooldown = 0; beaconPos = finalStrikeTarget = PointF.Empty; facing = mouseAim = dashDirection = new PointF(1, 0); playerAnimationTime = 0; echoShards.Clear(); floatingTexts.Clear(); title = false; storyPage = 0; storyOverlay = true; SetupRoom();
     }
 
     private void AdvanceStory()
@@ -270,33 +272,53 @@ public sealed class Game : Form
         _ => EnemyKind.RiftCantor
     };
 
-    private static VigilAspect VigilAspectForFloor(int floor) => (Math.Max(1, floor) % 3) switch
+    private static VigilAspect VigilAspectForFloor(int floor) => (Math.Max(1, floor) % 4) switch
     {
         1 => VigilAspect.Hardened,
         2 => VigilAspect.Hungry,
-        _ => VigilAspect.Swift
+        3 => VigilAspect.Swift,
+        _ => VigilAspect.Chorus
     };
 
     private static string VigilAspectTitle(int floor) => VigilAspectForFloor(floor) switch
     {
         VigilAspect.Hardened => "CASCA VIVA",
         VigilAspect.Hungry => "FOME DO RIO",
-        _ => "SUSSURRO VELOZ"
+        VigilAspect.Swift => "SUSSURRO VELOZ",
+        _ => "CORO ERRANTE"
     };
 
     private static string VigilAspectRule(int floor) => VigilAspectForFloor(floor) switch
     {
         VigilAspect.Hardened => "O chefe recebe 25% menos dano",
         VigilAspect.Hungry => "Os ataques do chefe causam 30% mais dano",
-        _ => "Os ataques começam 20% mais rápido"
+        VigilAspect.Swift => "Os ataques começam 20% mais rápido",
+        _ => "Um Eco Salino surge a cada 20 segundos"
     };
 
     private static Color VigilAspectColor(int floor) => VigilAspectForFloor(floor) switch
     {
         VigilAspect.Hardened => Color.SteelBlue,
         VigilAspect.Hungry => Color.OrangeRed,
-        _ => Color.Goldenrod
+        VigilAspect.Swift => Color.Goldenrod,
+        _ => Color.MediumPurple
     };
+
+    private void TickVigilMinions(float dt)
+    {
+        if (!vigilActive || room != 38 || VigilAspectForFloor(vigilFloor) != VigilAspect.Chorus || drops.Count > 0 || enemies.Any(enemy => enemy.VigilMinion)) return;
+        Enemy? boss = enemies.FirstOrDefault(enemy => enemy.Boss);
+        if (boss is null) return;
+        vigilMinionCooldown -= dt;
+        if (vigilMinionCooldown > 0) return;
+        PointF[] spawnPoints = { new(180, 185), new(780, 185), new(180, 465), new(780, 465) };
+        PointF spawn = spawnPoints.Where(point => !Blocked(point, 14)).OrderByDescending(point => Distance(player, point)).FirstOrDefault(new PointF(780, 330));
+        float hp = Math.Clamp(boss.MaxHp * 0.035f, 80, 220);
+        enemies.Add(new Enemy { Pos = spawn, Kind = EnemyKind.SaltEcho, Hp = hp, MaxHp = hp, Cooldown = 0.8f, VigilMinion = true });
+        vigilMinionCooldown = 20;
+        notice = "CORO ERRANTE • UM ECO SALINO ENTROU NA LUTA"; noticeTime = 2.4f;
+        GameAudio.Play(GameAudio.Cue.BossWarning);
+    }
 
     private void StartVigil()
     {
@@ -327,6 +349,7 @@ public sealed class Game : Form
     private void SetupRoom()
     {
         player = new PointF(150, 330); enemies.Clear(); drops.Clear(); echoShards.Clear(); lockedTarget = null;
+        if (vigilActive && room == 38) vigilMinionCooldown = 20;
         if (room != 3 && !vigilActive && (clearedRooms & (1L << room)) != 0) return;
         int count = room is 3 or 18 ? 0 : room == 0 ? 3 : room == 1 ? 5 : room == 4 ? 5 : room == 5 ? 4 : room == 6 ? 6 : room is 21 or 29 or 31 or 33 or 35 or 37 ? 6 : room == 22 ? 5 : room == 23 ? 6 : room == 24 ? 5 : room == 25 ? 6 : room is 26 or 28 or 30 or 32 or 34 or 36 ? 5 : room is 38 or 40 ? 1 : room == 39 ? 5 : room == 27 ? 6 : (room is 7 or 9 or 11 or 15 or 17 or 20) ? 4 : room == 8 ? 5 : room is 10 or 12 or 14 or 16 or 19 ? 6 : room == 13 ? 4 : 4;
         for (int i = 0; i < count; i++)
@@ -726,8 +749,8 @@ public sealed class Game : Form
     {
         if (!enemies.Remove(enemy)) return;
         if (ReferenceEquals(lockedTarget, enemy)) lockedTarget = enemies.OrderBy(candidate => Distance(player, candidate.Pos)).FirstOrDefault();
-        enemiesDefeated++; drops.Add(new Drop { Pos = enemy.Pos, Kind = "gold", Amount = vigilActive ? 35 + Math.Min(500, vigilFloor * 15) : enemy.Boss ? 35 : enemy.Kind == EnemyKind.Elite ? 20 : 8 });
-        AddXp(enemy.Boss ? 75 : enemy.Kind == EnemyKind.Elite ? 40 : 22);
+        enemiesDefeated++; int goldDrop = enemy.VigilMinion ? 8 + Math.Min(20, vigilFloor * 2) : vigilActive ? 35 + Math.Min(500, vigilFloor * 15) : enemy.Boss ? 35 : enemy.Kind == EnemyKind.Elite ? 20 : 8; drops.Add(new Drop { Pos = enemy.Pos, Kind = "gold", Amount = goldDrop });
+        AddXp(enemy.VigilMinion ? 12 : enemy.Boss ? 75 : enemy.Kind == EnemyKind.Elite ? 40 : 22);
         if (HasWeaponAffix(weapon, 1)) health = Math.Min(maxHealth, health + (weaponRarities[weapon] == 2 ? 6 : 3));
         if (enemy.Boss && vigilActive) drops.Add(new Drop { Pos = Offset(enemy.Pos, 0, -28), Kind = "glass", Amount = 1 + Math.Min(5, (vigilFloor - 1) / 3) });
         if (enemy.Boss) drops.Add(CreateWeaponDrop(Offset(enemy.Pos, 0, 28), random.Next(1, 3), true));
@@ -769,13 +792,13 @@ public sealed class Game : Form
         if (enemy.Kind == EnemyKind.RouteScribe && !routeMemory) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "route" });
         if (enemy.Kind == EnemyKind.DeepSilence && !silenceMemory) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "silence" });
         if (enemy.Kind == EnemyKind.BorrowedChorus && !borrowedTrace) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "borrowed" });
-        if (enemy.Kind == EnemyKind.SaltEcho && random.NextDouble() < 0.2) drops.Add(new Drop { Pos = Offset(enemy.Pos, 18, 14), Kind = "glass", Amount = 1 });
+        if (enemy.Kind == EnemyKind.SaltEcho && !enemy.VigilMinion && random.NextDouble() < 0.2) drops.Add(new Drop { Pos = Offset(enemy.Pos, 18, 14), Kind = "glass", Amount = 1 });
         if (enemy.Kind == EnemyKind.FirstKeeper && (ownedCharms & 8) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 24, -12), Kind = "charm", Amount = 4 });
         if (enemy.Kind == EnemyKind.OathCartographer && (ownedCharms & 16) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 24, -12), Kind = "charm", Amount = 5 });
         if (enemy.Kind == EnemyKind.Elite && (ownedCharms & 1) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 24, -12), Kind = "charm", Amount = 1 });
         if (enemy.Kind == EnemyKind.RiverFerryman && (ownedCharms & 2) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, -12), Kind = "charm", Amount = 2 });
         if (enemy.Kind == EnemyKind.BlindScribe && (ownedCharms & 4) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, -12), Kind = "charm", Amount = 3 });
-        if (!enemy.Boss && enemy.Kind != EnemyKind.Elite && random.NextDouble() < 0.06)
+        if (!enemy.Boss && enemy.Kind != EnemyKind.Elite && !enemy.VigilMinion && random.NextDouble() < 0.06)
             drops.Add(new Drop { Pos = Offset(enemy.Pos, 18, 14), Kind = "charm", Amount = random.Next(1, 4) });
         if (enemy.Kind == EnemyKind.Elite && !armor) drops.Add(new Drop { Pos = Offset(enemy.Pos, 24, 0), Kind = "armor" });
         else if (!enemy.Boss && random.NextDouble() < 0.2) drops.Add(new Drop { Pos = Offset(enemy.Pos, 16, 12), Kind = "potion" });
@@ -809,6 +832,7 @@ public sealed class Game : Form
         else playerAnimationTime = 0;
         for (int i = drops.Count - 1; i >= 0; i--) if (Distance(player, drops[i].Pos) < 30) { GameAudio.Play(GameAudio.Cue.Loot); Collect(drops[i]); }
         TickBeacon(dt); int roomBeingUpdated = room; foreach (Enemy enemy in enemies.ToArray()) { PointF previousPos = enemy.Pos; UpdateEnemy(enemy, dt); enemy.Moving = Distance(previousPos, enemy.Pos) > 0.01f; if (enemy.Moving) enemy.AnimationTime += dt; if (dead || room != roomBeingUpdated) break; }
+        TickVigilMinions(dt);
         AdvanceVoiceShards(dt);
         if (enemies.Count == 0 && drops.Count == 0 && room == 2 && !memoryOverlay) chestChoice = true;
         MarkRoomCleared();
@@ -2008,6 +2032,11 @@ public sealed class Game : Form
                 using var altar = new Pen(Color.FromArgb(180, 202, 170, 112), 3);
                 g.DrawEllipse(altar, VigilArenaAltarPosition.X - 36, VigilArenaAltarPosition.Y - 36, 72, 72);
                 g.DrawEllipse(altar, VigilArenaAltarPosition.X - 24, VigilArenaAltarPosition.Y - 24, 48, 48);
+                if (VigilAspectForFloor(vigilFloor) == VigilAspect.Chorus)
+                {
+                    using var driftingEcho = new Pen(Color.FromArgb(135, 194, 133, 222), 3);
+                    for (int i = 0; i < 3; i++) { float angle = windupPulse * 0.42f + i * MathF.PI * 2 / 3; float x = 480 + MathF.Cos(angle) * 222, y = 330 + MathF.Sin(angle) * 148; g.DrawEllipse(driftingEcho, x - 9, y - 9, 18, 18); }
+                }
                 DrawCentered(g, enemies.Count == 0 && drops.Count == 0 ? "E  SUBIR OU ENCERRAR A VIGÍLIA" : $"ECO DA VIGÍLIA • ANDAR {vigilFloor}", 494, new Font("Segoe UI", 9, FontStyle.Bold), Color.FromArgb(222, 202, 226));
                 DrawCentered(g, $"{VigilAspectTitle(vigilFloor)} • {VigilAspectRule(vigilFloor).ToUpperInvariant()}", 511, new Font("Segoe UI", 9, FontStyle.Bold), VigilAspectColor(vigilFloor));
             }
@@ -2186,6 +2215,7 @@ public sealed class Game : Form
             using var affixRing = new Pen(Color.FromArgb(225, affixColor), 3) { DashStyle = dash };
             g.DrawEllipse(affixRing, enemy.Pos.X - r - 6, enemy.Pos.Y - 12, (r + 6) * 2, 24);
         }
+        if (enemy.VigilMinion) { using var chorusRing = new Pen(Color.FromArgb(235, 194, 133, 230), 3) { DashStyle = DashStyle.Dot }; g.DrawEllipse(chorusRing, enemy.Pos.X - r - 6, enemy.Pos.Y - 12, (r + 6) * 2, 24); }
         if (enemy.Kind == EnemyKind.ReedKeeper) { using var stalk = new Pen(Color.FromArgb(220, 205, 193, 133), 3); for (int i = -1; i <= 1; i++) g.DrawLine(stalk, enemy.Pos.X + i * 9, enemy.Pos.Y + 13, enemy.Pos.X + i * 5, enemy.Pos.Y - 23); }
         if (enemy.Kind == EnemyKind.FlowKeeper) { using var ring = new Pen(Color.FromArgb(210, 157, 215, 216), 2); float spin = windupPulse * 40; g.DrawArc(ring, enemy.Pos.X - 18, enemy.Pos.Y - 18, 36, 36, spin, 235); g.DrawArc(ring, enemy.Pos.X - 13, enemy.Pos.Y - 13, 26, 26, spin + 170, 115); }
         if (enemy.Kind == EnemyKind.GlassHerald) { using var shard = new Pen(Color.FromArgb(225, 186, 224, 231), 3); float spin = windupPulse * 24; for (int i = 0; i < 3; i++) { float angle = spin + i * 120; float radians = angle * MathF.PI / 180; PointF tip = new(enemy.Pos.X + MathF.Cos(radians) * 27, enemy.Pos.Y + MathF.Sin(radians) * 27); PointF tail = new(enemy.Pos.X - MathF.Cos(radians) * 18, enemy.Pos.Y - MathF.Sin(radians) * 18); g.DrawLine(shard, tail, tip); } }
@@ -2742,7 +2772,7 @@ public sealed class Game : Form
     private static int CampaignBossSpriteIndex(EnemyKind kind) => kind switch { EnemyKind.Guardian => 0, EnemyKind.BlindScribe => 1, EnemyKind.RiverFerryman => 2, EnemyKind.AshWarden => 3, EnemyKind.HollowName => 4, EnemyKind.NameWeaver => 5, EnemyKind.FirstKeeper => 6, EnemyKind.OathCartographer => 7, EnemyKind.NameBroker => 8, EnemyKind.TideWitness => 9, EnemyKind.ReedKeeper => 10, EnemyKind.FlowKeeper => 11, EnemyKind.CounterCurrent => 12, EnemyKind.RiftCantor => 13, EnemyKind.GlassHerald => 14, EnemyKind.LanternRegent => 15, EnemyKind.RouteScribe => 16, EnemyKind.DeepSilence => 17, _ => -1 };
     private static int EnemySpriteFrame(float animationTime, bool walking) => walking ? (int)(Math.Max(0, animationTime) / 0.13f) % 4 : 0;
     private static bool EnemyFacesLeft(float enemyX, float playerX) => playerX < enemyX;
-    private static string EnemyName(Enemy e) => e.Kind switch { EnemyKind.Guardian => "GUARDIÃO SEM NOME", EnemyKind.BlindScribe => "ESCRIBA CEGO", EnemyKind.RiverFerryman => "BARQUEIRO OCO", EnemyKind.AshWarden => "GUARDIÃO DAS CINZAS", EnemyKind.HollowName => "O NOME VAZIO", EnemyKind.NameWeaver => "A TECELÃ DE NOMES", EnemyKind.FirstKeeper => "A PRIMEIRA VIGÍLIA", EnemyKind.OathCartographer => "CARTÓGRAFA DO VÃO", EnemyKind.NameBroker => "ESCRIVÃO DE CONTRATO", EnemyKind.SaltEcho => "ECO SALINO", EnemyKind.TideWitness => "TESTEMUNHA DA MARÉ", EnemyKind.ReedKeeper => "GUARDIÃ DO LEITO", EnemyKind.FlowKeeper => "VIGIA DO VEIO PRESO", EnemyKind.CounterCurrent => "AFINADOR DAS MARGENS", EnemyKind.RiftCantor => "A CONTRAVOZ", EnemyKind.GlassHerald => "ARAUTO DE VIDRO", EnemyKind.LanternRegent => "REGENTE DAS LANTERNAS", EnemyKind.RouteScribe => "ESCRIBA DO TRAÇADO", EnemyKind.DeepSilence => "SILÊNCIO DE BAIXO", EnemyKind.BorrowedChorus => "ARQUIVISTA DAS MARÉS", EnemyKind.PaperWraith => "ESPECTRO DE PAPEL", EnemyKind.MudCantor => "CANTOR DO LODO", EnemyKind.DrownedMemory => "LEMBRANÇA AFOGADA", EnemyKind.EmberWisp => "VESTÍGIO DE BRASAS", EnemyKind.NameMoth => "MARIPOSA DE NOMES", EnemyKind.Elite => $"ELITE • {EliteAffixName(e.EliteAffix)}", EnemyKind.Archer => "ARQUEIRO", EnemyKind.Mage => "CONJURADOR", EnemyKind.InkEcho => "ECO DE TINTA", _ => "" };
+    private static string EnemyName(Enemy e) => e.VigilMinion ? "ECO ERRANTE • SALINO" : e.Kind switch { EnemyKind.Guardian => "GUARDIÃO SEM NOME", EnemyKind.BlindScribe => "ESCRIBA CEGO", EnemyKind.RiverFerryman => "BARQUEIRO OCO", EnemyKind.AshWarden => "GUARDIÃO DAS CINZAS", EnemyKind.HollowName => "O NOME VAZIO", EnemyKind.NameWeaver => "A TECELÃ DE NOMES", EnemyKind.FirstKeeper => "A PRIMEIRA VIGÍLIA", EnemyKind.OathCartographer => "CARTÓGRAFA DO VÃO", EnemyKind.NameBroker => "ESCRIVÃO DE CONTRATO", EnemyKind.SaltEcho => "ECO SALINO", EnemyKind.TideWitness => "TESTEMUNHA DA MARÉ", EnemyKind.ReedKeeper => "GUARDIÃ DO LEITO", EnemyKind.FlowKeeper => "VIGIA DO VEIO PRESO", EnemyKind.CounterCurrent => "AFINADOR DAS MARGENS", EnemyKind.RiftCantor => "A CONTRAVOZ", EnemyKind.GlassHerald => "ARAUTO DE VIDRO", EnemyKind.LanternRegent => "REGENTE DAS LANTERNAS", EnemyKind.RouteScribe => "ESCRIBA DO TRAÇADO", EnemyKind.DeepSilence => "SILÊNCIO DE BAIXO", EnemyKind.BorrowedChorus => "ARQUIVISTA DAS MARÉS", EnemyKind.PaperWraith => "ESPECTRO DE PAPEL", EnemyKind.MudCantor => "CANTOR DO LODO", EnemyKind.DrownedMemory => "LEMBRANÇA AFOGADA", EnemyKind.EmberWisp => "VESTÍGIO DE BRASAS", EnemyKind.NameMoth => "MARIPOSA DE NOMES", EnemyKind.Elite => $"ELITE • {EliteAffixName(e.EliteAffix)}", EnemyKind.Archer => "ARQUEIRO", EnemyKind.Mage => "CONJURADOR", EnemyKind.InkEcho => "ECO DE TINTA", _ => "" };
     private static PointF Normalize(PointF p, PointF fallback) { float n = Length(p); return n > 0.001f ? new PointF(p.X / n, p.Y / n) : fallback; }
     private static float Length(PointF p) => MathF.Sqrt(p.X * p.X + p.Y * p.Y);
     private static float Distance(PointF a, PointF b) => Length(Sub(a, b));
@@ -3695,13 +3725,22 @@ public sealed class Game : Form
         if (!emberEnding.vigilActive || emberEnding.vigilFloor != 3) throw new InvalidOperationException("Uma nova tentativa da Vigília não começou após o último andar concluído.");
         Enemy swiftBoss = emberEnding.enemies.Single(); swiftBoss.Cooldown = 0; emberEnding.UpdateEnemy(swiftBoss, 0.01f);
         if (VigilAspectForFloor(3) != VigilAspect.Swift || Math.Abs(swiftBoss.WindupMax - 0.624f) > 0.002f || VigilAspectTitle(3) != "SUSSURRO VELOZ") throw new InvalidOperationException("O Sussurro Veloz não encurtou o aviso de ataque do terceiro andar.");
+        emberEnding.memoryOverlay = false; emberEnding.vigilActive = true; emberEnding.vigilFloor = 4; emberEnding.room = 38; emberEnding.SetupRoom(); emberEnding.vigilMinionCooldown = 0.01f;
+        if (VigilAspectForFloor(4) != VigilAspect.Chorus || VigilAspectTitle(4) != "CORO ERRANTE" || !VigilAspectRule(4).Contains("20 segundos")) throw new InvalidOperationException("O Coro Errante não anunciou a regra do quarto andar.");
+        emberEnding.TickVigilMinions(0.02f); Enemy errantEcho = emberEnding.enemies.Single(enemy => enemy.VigilMinion);
+        if (errantEcho.Kind != EnemyKind.SaltEcho || EnemyName(errantEcho) != "ECO ERRANTE • SALINO" || errantEcho.Hp is < 80 or > 220) throw new InvalidOperationException("O Coro Errante não criou um eco salino identificável e escalado.");
+        emberEnding.TickVigilMinions(40); if (emberEnding.enemies.Count(enemy => enemy.VigilMinion) != 1) throw new InvalidOperationException("O Coro Errante acumulou lacaios sem limite durante um mesmo ciclo.");
+        emberEnding.drops.Clear(); int minionXp = emberEnding.level * (emberEnding.level - 1) / 2 * 60 + emberEnding.xp; emberEnding.Defeat(errantEcho);
+        int minionXpAfter = emberEnding.level * (emberEnding.level - 1) / 2 * 60 + emberEnding.xp;
+        if (minionXpAfter != minionXp + 12 || emberEnding.drops.Single(drop => drop.Kind == "gold").Amount != 16 || emberEnding.drops.Any(drop => drop.Kind is "weapon" or "charm" or "glass")) throw new InvalidOperationException("O Eco Errante não concedeu recompensa menor sem duplicar saques raros.");
+        emberEnding.drops.Clear(); emberEnding.TickVigilMinions(20); if (emberEnding.enemies.Count(enemy => enemy.VigilMinion) != 1) throw new InvalidOperationException("O Coro Errante não retomou a invocação após o eco ser derrotado.");
         emberEnding.health = 1; emberEnding.HitPlayer(2); SaveData vigilFallSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(emberEnding.CaptureSaveData()))!;
         if (emberEnding.room != 18 || emberEnding.vigilActive || emberEnding.health != emberEnding.maxHealth * 0.5f || emberEnding.vigilBestFloor != 2 || !ValidSaveData(vigilFallSave)) throw new InvalidOperationException("A derrota na Vigília não retornou ao Refúgio com vida parcial preservando a melhor marca.");
         emberEnding.memoryOverlay = false; emberEnding.vigilActive = true; emberEnding.vigilFloor = 5; emberEnding.room = 38; emberEnding.SetupRoom(); Enemy milestoneBoss = emberEnding.enemies.Single(); milestoneBoss.Hp = 1; emberEnding.Defeat(milestoneBoss);
         Drop returnThread = emberEnding.drops.Single(d => d.Kind == "charm" && d.Amount == 7); emberEnding.Collect(returnThread);
         if ((emberEnding.ownedCharms & 64) == 0 || emberEnding.equippedCharm != 7 || emberEnding.charmNames[7] != "FIO DO RETORNO") throw new InvalidOperationException("O quinto andar não concedeu nem equipou o Fio do Retorno.");
         Enemy aspectDummy = new() { Pos = new PointF(500, 300), Kind = EnemyKind.DeepSilence, Hp = 1000, MaxHp = 1000 }; float threadDamage = emberEnding.OutgoingDamageMultiplier(aspectDummy); emberEnding.health = emberEnding.maxHealth; float threadHealth = emberEnding.health; emberEnding.HitPlayer(10);
-        if (threadDamage != 1.4f || Math.Abs(threadHealth - emberEnding.health - 18.876f) > 0.03f) throw new InvalidOperationException("O Fio do Retorno não aplicou o bônus de dano e o risco de dano recebido na Vigília.");
+        if (threadDamage != 1.4f || Math.Abs(threadHealth - emberEnding.health - 14.52f) > 0.03f) throw new InvalidOperationException("O Fio do Retorno não aplicou o bônus de dano e o risco de dano recebido na Vigília.");
         emberEnding.enemies.Clear(); emberEnding.drops.Clear(); emberEnding.vigilFloor = 6; emberEnding.health = 50; Enemy returnBoss = new() { Pos = new PointF(500, 300), Kind = EnemyKind.LanternRegent, Hp = 1, MaxHp = 1000 }; emberEnding.enemies.Add(returnBoss); emberEnding.Defeat(returnBoss);
         if (emberEnding.health != 62) throw new InvalidOperationException("O Fio do Retorno não recuperou 12% da vida ao abater um chefe da Vigília.");
         emberEnding.vigilActive = false; emberEnding.vigilFloor = 0; emberEnding.room = 18; emberEnding.SetupRoom(); emberEnding.drops.Clear(); emberEnding.health = emberEnding.maxHealth; emberEnding.vigilBestFloor = 5;
