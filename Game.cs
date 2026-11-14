@@ -2239,7 +2239,9 @@ public sealed class Game : Form
         if (spriteRow >= 0 && enemySprites is not null)
         {
             float cellWidth = individualSpriteLoaded ? enemySprites.Width : enemySprites.Width / 4f, cellHeight = individualSpriteLoaded ? enemySprites.Height : enemySprites.Height / 4f;
-            int frame = individualSpriteLoaded ? 0 : EnemySpriteFrame(enemy.AnimationTime, enemy.Moving && enemy.Windup <= 0 && enemy.Stagger <= 0);
+            float windupProgress = enemy.WindupMax > 0 && enemy.Windup > 0 ? Math.Clamp(1f - enemy.Windup / enemy.WindupMax, 0f, 1f) : 0f;
+            int windupFrame = Math.Min(3, 1 + (int)(windupProgress * 3f));
+            int frame = individualSpriteLoaded ? 0 : enemy.Windup > 0 ? windupFrame : EnemySpriteFrame(enemy.AnimationTime, enemy.Moving && enemy.Stagger <= 0);
             RectangleF source = new(frame * cellWidth, spriteRow * cellHeight, cellWidth, cellHeight);
             float size = spriteHeight;
             float width = individualSpriteLoaded ? size * cellWidth / cellHeight : size;
@@ -2247,7 +2249,6 @@ public sealed class Game : Form
             bool animatedCreature = individualSpriteLoaded && enemy.Kind != EnemyKind.Elite;
             float motionPhase = freelyMoving ? enemy.AnimationTime * 15 : windupPulse * 2.2f;
             float bob = animatedCreature ? MathF.Sin(motionPhase) * (freelyMoving ? 2f : 1.1f) : 0;
-            float windupProgress = enemy.WindupMax > 0 && enemy.Windup > 0 ? Math.Clamp(1f - enemy.Windup / enemy.WindupMax, 0f, 1f) : 0f;
             float breath = animatedCreature && !freelyMoving && enemy.Windup <= 0 && enemy.Stagger <= 0 ? MathF.Sin(windupPulse * 2.4f) * 0.009f : 0;
             float posedWidth = width * (1f + windupProgress * 0.07f + breath), posedHeight = size * (1f - windupProgress * 0.035f + breath);
             float lunge = windupProgress * (bossSprite ? 5f : 7f);
