@@ -647,8 +647,8 @@ public sealed class Game : Form
     private float BellPulseRadius() => HasCharm(2) ? 190f : 155f;
     private float BellPulseCooldown() => (Math.Max(7f, 14f - skillTalent * 0.7f) + (HasCharm(2) ? 1.5f : 0f)) * WeaponCooldownMultiplier();
     private float WeaponSkillMultiplier() => HasWeaponAffix(weapon, 3) ? weaponRarities[weapon] == 2 ? 1.18f : 1.12f : 1f;
-    private float TechniqueDamageMultiplier() => (1f + techniqueTalent * 0.08f) * (combatDiscipline == 2 ? 1.12f : 1f) * (vigilActive && HasCharm(8) ? 1.18f : 1f);
-    private float BasicAttackSpecializationMultiplier() => combatDiscipline == 1 ? 1.12f : 1f;
+    private float TechniqueDamageMultiplier() => (1f + techniqueTalent * 0.08f) * (combatDiscipline == 2 ? 1.12f : combatDiscipline == 1 ? 0.9f : 1f) * (vigilActive && HasCharm(8) ? 1.18f : 1f);
+    private float BasicAttackSpecializationMultiplier() => combatDiscipline == 1 ? 1.12f : combatDiscipline == 2 ? 0.9f : 1f;
     private int WeaponPower(int index) => weaponDamage[index] + weaponBonuses[index];
     private static int CombatDisciplineForSave(SaveData data) => data.CombatDiscipline ?? (data.Level >= 5 ? 1 : 0);
     private static string WeaponRarityName(int index) => index == 0 ? "COMUM" : index == 1 ? "RARA" : "RELÍQUIA";
@@ -2952,7 +2952,7 @@ public sealed class Game : Form
         string charmOne = equippedCharm == 0 ? "vazio" : charmNames[equippedCharm]; string charmTwo = equippedCharm2 == 0 ? "vazio" : charmNames[equippedCharm2];
         g.DrawString($"Talismãs: {charmOne} + {charmTwo}", body, Brushes.Plum, new RectangleF(515, 362, 315, 45));
         g.DrawString($"Técnicas: F {ShortSkillName(0)}  •  V {ShortSkillName(1)}  •  G {ShortSkillName(2)}", body, Brushes.AntiqueWhite, new RectangleF(145, 424, 670, 40));
-        g.DrawString($"Especialização: {(combatDiscipline == 1 ? "Forma do Gume • ataques básicos +12%" : combatDiscipline == 2 ? "Forma do Eco • dano de técnicas +12%" : "a escolher no nível 5")}", body, combatDiscipline == 2 ? Brushes.Plum : Brushes.Goldenrod, 145, 458);
+        g.DrawString($"Especialização: {(combatDiscipline == 1 ? "Forma do Gume • básicos +12%, técnicas -10%" : combatDiscipline == 2 ? "Forma do Eco • técnicas +12%, básicos -10%" : "a escolher no nível 5")}", body, combatDiscipline == 2 ? Brushes.Plum : Brushes.Goldenrod, 145, 458);
         g.DrawString("Dano esperado considera apenas acerto básico e críticos; não inclui armadura inimiga, chefes ou efeitos temporários.", hint, Brushes.DarkGray, 145, 510);
         g.DrawString("P ou ESC fecha", hint, Brushes.DarkGray, 145, 540);
     }
@@ -3005,8 +3005,8 @@ public sealed class Game : Form
         if (level < 5) g.DrawString("Especializações 5 e 6 desbloqueiam no nível 5.", optionFont, hintBrush, 220, 424);
         else if (combatDiscipline == 0)
         {
-            g.DrawString("5. FORMA DO GUME  +12% dano de ataques básicos", optionFont, Brushes.Goldenrod, 220, 424);
-            g.DrawString("6. FORMA DO ECO  +12% dano de técnicas", optionFont, Brushes.Plum, 220, 458);
+            g.DrawString("5. FORMA DO GUME  +12% básicos • -10% técnicas", optionFont, Brushes.Goldenrod, 220, 424);
+            g.DrawString("6. FORMA DO ECO  +12% técnicas • -10% básicos", optionFont, Brushes.Plum, 220, 458);
         }
         else g.DrawString($"Especialização: {(combatDiscipline == 1 ? "Forma do Gume" : "Forma do Eco")} • redistribuível na forja.", optionFont, hintBrush, 220, 424);
         g.DrawString("Talentos podem ser repetidos; a especialização escolhe um caminho.", optionFont, hintBrush, 220, 486);
@@ -3582,14 +3582,14 @@ public sealed class Game : Form
             disciplineGame.SelectTalent(Keys.D4);
             if (disciplineGame.pendingTalents != 1 || disciplineGame.combatDiscipline != 0) throw new InvalidOperationException("O talento comum ignorou a escolha obrigatória de especialização do nível 5.");
             disciplineGame.SelectTalent(Keys.D5);
-            if (disciplineGame.combatDiscipline != 1 || disciplineGame.pendingTalents != 0 || Math.Abs(disciplineGame.BasicAttackSpecializationMultiplier() - 1.12f) > 0.001f || Math.Abs(disciplineGame.TechniqueDamageMultiplier() - 1f) > 0.001f) throw new InvalidOperationException("A Forma do Gume não aplicou sua especialização exclusiva.");
+            if (disciplineGame.combatDiscipline != 1 || disciplineGame.pendingTalents != 0 || Math.Abs(disciplineGame.BasicAttackSpecializationMultiplier() - 1.12f) > 0.001f || Math.Abs(disciplineGame.TechniqueDamageMultiplier() - 0.9f) > 0.001f) throw new InvalidOperationException("A Forma do Gume não aplicou sua especialização e seu custo tático.");
             SaveData disciplineSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(disciplineGame.CaptureSaveData()))!;
             if (disciplineSave.CombatDiscipline != 1 || !ValidSaveData(disciplineSave) || JsonSerializer.Deserialize<SaveData>("{}")?.CombatDiscipline is not null || CombatDisciplineForSave(new SaveData { Level = 4 }) != 0 || CombatDisciplineForSave(new SaveData { Level = 5 }) != 1) throw new InvalidOperationException("A Forma do Gume não persistiu ou saves antigos não preservaram a migração de especialização.");
         }
         using (var echoDisciplineGame = new Game())
         {
             echoDisciplineGame.timer.Stop(); echoDisciplineGame.StartGame(); echoDisciplineGame.level = 5; echoDisciplineGame.pendingTalents = 1; echoDisciplineGame.talentChoice = true; echoDisciplineGame.SelectTalent(Keys.D6);
-            if (echoDisciplineGame.combatDiscipline != 2 || Math.Abs(echoDisciplineGame.TechniqueDamageMultiplier() - 1.12f) > 0.001f || echoDisciplineGame.BasicAttackSpecializationMultiplier() != 1f) throw new InvalidOperationException("A Forma do Eco não aplicou sua especialização exclusiva.");
+            if (echoDisciplineGame.combatDiscipline != 2 || Math.Abs(echoDisciplineGame.TechniqueDamageMultiplier() - 1.12f) > 0.001f || Math.Abs(echoDisciplineGame.BasicAttackSpecializationMultiplier() - 0.9f) > 0.001f) throw new InvalidOperationException("A Forma do Eco não aplicou sua especialização e seu custo tático.");
         }
         using var game = new Game(); game.timer.Stop(); game.StartGame();
         if (!game.storyOverlay || game.storyPage != 0) throw new InvalidOperationException("O novo jogo não iniciou no prólogo da história.");
