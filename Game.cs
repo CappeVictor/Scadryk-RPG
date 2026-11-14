@@ -2221,11 +2221,15 @@ public sealed class Game : Form
             float size = spriteHeight;
             float width = individualSpriteLoaded ? size * cellWidth / cellHeight : size;
             float bob = individualSpriteLoaded && enemy.Moving ? MathF.Sin(enemy.AnimationTime * 15) * 2 : 0;
-            RectangleF target = new(enemy.Pos.X - width / 2, enemy.Pos.Y - size + bob, width, size);
+            float windupProgress = enemy.WindupMax > 0 && enemy.Windup > 0 ? Math.Clamp(1f - enemy.Windup / enemy.WindupMax, 0f, 1f) : 0f;
+            float posedWidth = width * (1f + windupProgress * 0.07f), posedHeight = size * (1f - windupProgress * 0.035f);
+            float lunge = windupProgress * (bossSprite ? 5f : 7f);
+            RectangleF target = new(enemy.Pos.X - posedWidth / 2 + lunge, enemy.Pos.Y - posedHeight + bob, posedWidth, posedHeight);
             using var shadow = new SolidBrush(Color.FromArgb(110, 5, 7, 9));
             g.FillEllipse(shadow, enemy.Pos.X - r, enemy.Pos.Y - 5, r * 2, 10);
             var spriteTransform = g.Save();
-            if (EnemyFacesLeft(enemy.Pos.X, player.X)) { g.TranslateTransform(enemy.Pos.X * 2, 0); g.ScaleTransform(-1, 1); }
+            float facingX = enemy.Windup > 0 ? enemy.Target.X : player.X;
+            if (EnemyFacesLeft(enemy.Pos.X, facingX)) { g.TranslateTransform(enemy.Pos.X * 2, 0); g.ScaleTransform(-1, 1); }
             g.DrawImage(enemySprites, target, source, GraphicsUnit.Pixel);
             g.Restore(spriteTransform);
             if (enemy == lockedTarget || IsArmored(enemy))
@@ -2235,9 +2239,9 @@ public sealed class Game : Form
                 using var hitFlash = new Pen(Color.FromArgb(170, 245, 235, 213), 2);
                 g.DrawEllipse(hitFlash, enemy.Pos.X - r - 4, enemy.Pos.Y - 10, (r + 4) * 2, 16);
                 int alpha = Math.Clamp((int)(190 * enemy.Flash / 0.3f), 0, 190);
-                using var spriteFlash = new Pen(Color.FromArgb(alpha, 255, 233, 183), Math.Max(2, size / 32));
+                using var spriteFlash = new Pen(Color.FromArgb(alpha, 255, 233, 183), Math.Max(2, posedHeight / 32));
                 using var spriteGlow = new SolidBrush(Color.FromArgb(alpha / 4, 255, 233, 183));
-                RectangleF flashBounds = new(target.X + width * 0.2f, target.Y + size * 0.12f, width * 0.6f, size * 0.7f);
+                RectangleF flashBounds = new(target.X + posedWidth * 0.2f, target.Y + posedHeight * 0.12f, posedWidth * 0.6f, posedHeight * 0.7f);
                 g.FillEllipse(spriteGlow, flashBounds); g.DrawEllipse(spriteFlash, flashBounds);
             }
         }
