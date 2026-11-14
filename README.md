@@ -56,7 +56,7 @@ dotnet publish --configuration Release --runtime win-x64 --self-contained true
 
 ## Personagem e animação
 
-Aven usa uma folha de sprites original incluída em `Assets/Aven.png`: quatro direções e quatro quadros de caminhada por direção. A animação acompanha WASD, setas, esquiva e correntes do cenário. O projeto copia o PNG para a saída ao compilar; não precisa baixar recursos nem instalar um motor de jogo.
+Aven usa uma folha de sprites original incluída em `Assets/Aven.png`: quatro direções e quatro quadros de caminhada por direção. Ecos comuns, arqueiros, conjuradores e elites usam silhuetas próprias na folha `Assets/Enemies.png`, com quadros animados enquanto avançam. Barras de vida, nomes, alerta de alvo e brilho de dano permanecem legíveis sobre as sprites. O projeto copia as imagens para a saída ao compilar; não precisa baixar recursos nem instalar um motor de jogo.
 
 ## Controles
 
