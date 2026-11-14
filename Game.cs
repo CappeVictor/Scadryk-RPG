@@ -9,6 +9,8 @@ using System.Windows.Forms;
 
 public sealed class Game : Form
 {
+    private const float InteractionRadius = 72;
+    private const float MemoryStoneInteractionRadius = 58;
     private enum EnemyKind { Grunt, Archer, Mage, Elite, Guardian, InkEcho, BlindScribe, DrownedMemory, RiverFerryman, EmberWisp, AshWarden, NameMoth, HollowName, NameWeaver, FirstKeeper, MudCantor, OathCartographer, PaperWraith, NameBroker, SaltEcho, TideWitness, ReedKeeper, FlowKeeper, CounterCurrent, RiftCantor, GlassHerald, LanternRegent, RouteScribe, DeepSilence }
     private enum VigilAspect { Hardened, Hungry, Swift }
     private sealed class Enemy
@@ -964,7 +966,7 @@ public sealed class Game : Form
         if (drops.Count != 0) { notice = "RECOLHA O LOOT ANTES DE AVANÇAR"; noticeTime = 1.5f; return; }
         MarkRoomCleared();
         if (vigilActive && room == 38 && (Distance(player, VigilArenaAltarPosition) < 76 || player.X > 790)) { vigilChoiceOpen = true; return; }
-        if (room < MemoryStonePositions.Length && (memoriesFound & (1 << room)) == 0 && Distance(player, MemoryStonePositions[room]) < 52)
+        if (room < MemoryStonePositions.Length && (memoriesFound & (1 << room)) == 0 && Distance(player, MemoryStonePositions[room]) < MemoryStoneInteractionRadius)
         {
             memoriesFound |= 1 << room;
             ShowMemory(room == 0 ? "INSCRIÇÃO NO VESTÍBULO" : "REGISTRO NO SALÃO DOS OSSOS", MemoryStoneTexts[room]);
@@ -1050,7 +1052,7 @@ public sealed class Game : Form
     }
     private void InteractTown()
     {
-        if (Distance(player, CuratorPosition) < 58)
+        if (Distance(player, CuratorPosition) < InteractionRadius)
         {
             if (questStage == 0)
             {
@@ -1077,7 +1079,7 @@ public sealed class Game : Form
             else ShowMemory("CURADORA SILETH", "O rastro de Nara segue pelo leito do Rio Cego. Com o sino de Edda, a passagem abaixo da capela pode ser aberta.");
             return;
         }
-        if (Distance(player, BellKeeperPosition) < 58)
+        if (Distance(player, BellKeeperPosition) < InteractionRadius)
         {
             if (questStage == 6 && riverBell) { questStage = 7; gold += 100; potions++; ShowMemory("EDDA RECONHECE O SINO", "Esse era o sino de travessia do meu pai. Nara o levou quando desceu ao rio; ela conhecia o caminho e decidiu cruzá-lo. Não foi capturada. Guarde o sino: se ela voltar, vai saber que ainda lembramos seu nome."); notice = "MISSÃO CONCLUÍDA: 100 OURO E 1 POÇÃO"; noticeTime = 3; }
             else if (questStage == 19 && westTrace) { questStage = 20; gold += 375; potions++; ShowMemory("A CARTA DO REFÚGIO", "Nara construiu um lugar onde cada pessoa escolhe como será chamada e partiu para oeste com quem pediu para atravessar. Edda reconhece as marcas do mapa: “Consigo levar vocês até a próxima curva, mas dali em diante será preciso seguir a água.” Sileth deixa o arquivo aberto para a volta do grupo. A notícia não prova onde Nara está agora."); notice = "RECOMPENSA: 375 OURO E 1 POÇÃO"; noticeTime = 3; }
@@ -1087,7 +1089,7 @@ public sealed class Game : Form
             else if (townEnding == 1) ShowMemory("EDDA, TOCADORA DE SINOS", "Os nomes voltaram às badaladas. Vou ensinar as crianças a ler cada sino, para que ninguém precise adivinhar quem foi esquecido."); else if (townEnding == 2) ShowMemory("EDDA, TOCADORA DE SINOS", "Os sinos agora marcam as horas do Lume. Não vou deixar que a luz transforme proteção em silêncio outra vez."); else ShowMemory("EDDA, TOCADORA DE SINOS", "Os sinos continuam inteiros. O que sumiu foram os nomes gravados neles. Quando tento lembrar quem os fundiu, só escuto água debaixo da praça.");
             return;
         }
-        if (Distance(player, ArchiveBookPosition) < 58)
+        if (Distance(player, ArchiveBookPosition) < InteractionRadius)
         {
             if (questStage == 0) ShowMemory("LIVRO DAS AUSÊNCIAS", "O volume está lacrado com o selo da Curadora. Fale com Sileth antes de tentar abri-lo.");
             else if (questStage == 1)
@@ -1098,33 +1100,33 @@ public sealed class Game : Form
             else ShowMemory("LIVRO DAS AUSÊNCIAS", "As páginas registram os nomes entregues ao Lume. A assinatura de Sileth fecha o último volume.");
             return;
         }
-        if (Distance(player, new PointF(480, 135)) < 64)
+        if (Distance(player, new PointF(480, 135)) < InteractionRadius)
         {
             if (questStage >= 3) { room = 4; SetupRoom(); ShowMemory("ARQUIVO NORTE", "O portão cede. Entre as estantes, ecos repetem trechos de depoimentos que foram removidos do registro oficial."); }
             else ShowMemory("PORTÃO DO ARQUIVO NORTE", "O selo da Curadora mantém o portão fechado. Descubra o que o Livro das Ausências prova e fale com Sileth.");
             return;
         }
-        if (Distance(player, new PointF(480, 520)) < 64)
+        if (Distance(player, new PointF(480, 520)) < InteractionRadius)
         {
             if (questStage >= 7) { room = 8; SetupRoom(); ShowMemory("ESCADA DE CINZAS", "O sino abre uma passagem abaixo da Capela Afogada. A cada degrau, o ar fica mais quente e as lembranças parecem chegar antes de você."); }
             else if (questStage >= 5) { room = 6; SetupRoom(); ShowMemory("LEITO DO RIO CEGO", "A água desapareceu da superfície, mas as pedras ainda guardam as últimas palavras de quem cruzou o rio. O sino de Nara aponta para baixo da corrente."); }
             else ShowMemory("PASSAGEM DO RIO", "Edda não reconhece o caminho para o leito seco. Conclua sua investigação com Sileth antes de descer.");
             return;
         }
-        if (Distance(player, CryptGatePosition) < 58)
+        if (Distance(player, CryptGatePosition) < InteractionRadius)
         {
             room = 2; SetupRoom(); ShowMemory("A CRIPTA", "A passagem continua aberta. O Guardião protege o relicário, mas a próxima pista está nos arquivos de Véspera.");
         }
     }
     private void InteractRefuge()
     {
-        if (Distance(player, VigilAltarPosition) < 62)
+        if (Distance(player, VigilAltarPosition) < InteractionRadius)
         {
             if (finalEnding == 0) ShowMemory("A VIGÍLIA AINDA NÃO ESTÁ ABERTA", "Aven só consegue reunir estes ecos depois que Véspera decide o destino do Lume. Conclua a campanha e volte quando estiver pronto para uma prova sem fim.");
             else StartVigil();
             return;
         }
-        if (Distance(player, AvenPosition) < 60)
+        if (Distance(player, AvenPosition) < InteractionRadius)
         {
             if (questStage == 21) { questStage = 22; ShowMemory("AVEN, O BARQUEIRO", "Não mantemos um livro de nomes. Cada viajante decide o que quer deixar na mesa e quem pode ler. Nara ajudou a marcar a Trilha dos Luminários e seguiu adiante com outras pessoas. Ela pediu que não contássemos o nome que escolheu nem prometêssemos que voltaria. Se quiser continuar, proteja os avisos que cada pessoa decidiu compartilhar."); }
             else if (questStage == 23) { questStage = 24; gold += 240; potions += 2; ShowMemory("A MESA CONTINUA ABERTA", "A comunidade escolhe guardar os registros de passagem aqui. A nota de Nara termina antes da próxima curva; ninguém vai preencher a lacuna por ela. Aven oferece provisões para a viagem e aponta as lanternas mais recentes para oeste. Se um dia ela voltar, será ela quem decidirá o que contar."); notice = "REFÚGIO: 240 OURO E 2 POÇÕES"; noticeTime = 3; }
@@ -1148,8 +1150,8 @@ public sealed class Game : Form
             else ShowMemory("AVEN, O BARQUEIRO", "Este barco encalhado virou abrigo. Ninguém precisa escrever um nome para ficar aqui.");
             return;
         }
-        if (Distance(player, SeraPosition) < 58) { ShowMemory("SERA, REPARADORA DE LANTERNAS", finalEnding == 1 ? "Agora que as memórias foram devolvidas, vou cuidar das lanternas junto com quem quiser ajudar. Nenhuma chama precisa guardar tudo sozinha." : finalEnding == 2 ? "O farol ainda ilumina o rio, mas não chama ninguém de volta. Vou manter uma lanterna baixa para quem chegar por vontade própria." : "As lanternas não marcam uma rota para tomar posse dela. Cada pessoa acende uma só quando quer deixar um aviso para quem vier depois."); return; }
-        if (Distance(player, NoaPosition) < 58) { ShowMemory("NOA, APRENDIZ DE CARTÓGRAFA", finalEnding > 0 ? "Deixei um espaço em branco no mapa para as viagens que ainda não começaram. Aven diz que um caminho pode existir sem pertencer a quem o desenha." : "Aprendi a desenhar os trechos que meus amigos me deixam ver. O resto do mapa fica em branco por escolha deles."); return; }
+        if (Distance(player, SeraPosition) < InteractionRadius) { ShowMemory("SERA, REPARADORA DE LANTERNAS", finalEnding == 1 ? "Agora que as memórias foram devolvidas, vou cuidar das lanternas junto com quem quiser ajudar. Nenhuma chama precisa guardar tudo sozinha." : finalEnding == 2 ? "O farol ainda ilumina o rio, mas não chama ninguém de volta. Vou manter uma lanterna baixa para quem chegar por vontade própria." : "As lanternas não marcam uma rota para tomar posse dela. Cada pessoa acende uma só quando quer deixar um aviso para quem vier depois."); return; }
+        if (Distance(player, NoaPosition) < InteractionRadius) { ShowMemory("NOA, APRENDIZ DE CARTÓGRAFA", finalEnding > 0 ? "Deixei um espaço em branco no mapa para as viagens que ainda não começaram. Aven diz que um caminho pode existir sem pertencer a quem o desenha." : "Aprendi a desenhar os trechos que meus amigos me deixam ver. O resto do mapa fica em branco por escolha deles."); return; }
         if (player.X < 150) { room = 3; SetupRoom(); return; }
         if (player.X > 790 && questStage >= 50) { room = 37; SetupRoom(); ShowMemory("SOLEIRA DO SILÊNCIO", "Sob a galeria, uma descida feita de pedras sem inscrição atravessa a rocha. A cada passo, o Lume perde força e as vozes deixam de repetir a mesma frase. Nenhuma marca indica que Nara esteve aqui."); return; }
         if (player.X > 790 && questStage >= 47) { room = 35; SetupRoom(); ShowMemory("TRILHA DAS LINHAS ABERTAS", "A leste da fonte, uma trilha de pedra clara se divide muitas vezes. Algumas marcas indicam retornos, outras terminam sem destino. Nenhuma leva o nome de Nara. Ecos de tinta se movem sobre os traços, tentando obrigá-los a apontar todos para o mesmo lugar."); return; }
@@ -1462,7 +1464,7 @@ public sealed class Game : Form
         else if (room is 6 or 7) g.DrawString(RiverObjective(), hudFont, goldBrush, 67, 592);
         else if (room >= 8) g.DrawString(LumeObjective(), hudFont, goldBrush, 67, 592);
         g.DrawString(room is 3 or 18 ? "WASD mover   E falar/investigar   F5 salvar   B técnicas   I inventário" : "WASD mover   ESPAÇO atacar   SHIFT esquivar   R redemoinho   F/V/G técnicas   B montar técnicas   Q poção   E interagir   I inventário", helpFont, textBrush, 67, 619);
-        if (room < MemoryStonePositions.Length && (memoriesFound & (1 << room)) == 0) DrawMemoryStone(g, MemoryStonePositions[room], Distance(player, MemoryStonePositions[room]) < 58);
+        if (room < MemoryStonePositions.Length && (memoriesFound & (1 << room)) == 0) DrawMemoryStone(g, MemoryStonePositions[room], Distance(player, MemoryStonePositions[room]) < MemoryStoneInteractionRadius);
         if (noticeTime > 0) DrawCentered(g, notice, 170, new Font("Segoe UI", 13, FontStyle.Bold), Color.FromArgb(230, 193, 129));
         if (vigilChoiceOpen) DrawChoice(g, $"VIGÍLIA ASCENDENTE • ANDAR {vigilFloor}", $"1. SUBIR AO ANDAR {vigilFloor + 1} • RECOMPENSA CRESCENTE", $"2. ENCERRAR • MELHOR MARCA: {Math.Max(vigilBestFloor, vigilFloor)}", "3. FICAR AQUI");
         if (title || dead || victory) DrawOverlay(g, title ? "SCADRYK" : victory ? "VITÓRIA" : "VOCÊ CAIU", title ? "ENTER PARA COMEÇAR    •    C CARREGAR SAVE" : "ENTER PARA RECOMEÇAR    •    F5 SALVAR");
@@ -1525,20 +1527,20 @@ public sealed class Game : Form
         g.FillRectangle(gateBrush, 70, 298, 30, 64); g.DrawRectangle(gatePen, 70, 298, 30, 64);
         using var bookBrush = new SolidBrush(Color.FromArgb(107, 56, 43)); using var bookEdge = new Pen(Color.FromArgb(234, 204, 133), 2);
         g.FillRectangle(bookBrush, ArchiveBookPosition.X - 13, ArchiveBookPosition.Y - 7, 26, 18); g.DrawRectangle(bookEdge, ArchiveBookPosition.X - 13, ArchiveBookPosition.Y - 7, 26, 18);
-        DrawTownPerson(g, CuratorPosition, "SILETH", Color.FromArgb(117, 73, 104), Distance(player, CuratorPosition) < 72);
-        DrawTownPerson(g, BellKeeperPosition, "EDDA", Color.FromArgb(111, 137, 124), Distance(player, BellKeeperPosition) < 72);
-        if (Distance(player, ArchiveBookPosition) < 72) DrawCentered(g, "E  LER", ArchiveBookPosition.Y + 22, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, ArchiveBookPosition.X);
-        if (Distance(player, CryptGatePosition) < 72) DrawCentered(g, "E  CRIPTA", CryptGatePosition.Y + 42, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, CryptGatePosition.X + 15);
+        DrawTownPerson(g, CuratorPosition, "SILETH", Color.FromArgb(117, 73, 104), Distance(player, CuratorPosition) < InteractionRadius);
+        DrawTownPerson(g, BellKeeperPosition, "EDDA", Color.FromArgb(111, 137, 124), Distance(player, BellKeeperPosition) < InteractionRadius);
+        if (Distance(player, ArchiveBookPosition) < InteractionRadius) DrawCentered(g, "E  LER", ArchiveBookPosition.Y + 22, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, ArchiveBookPosition.X);
+        if (Distance(player, CryptGatePosition) < InteractionRadius) DrawCentered(g, "E  CRIPTA", CryptGatePosition.Y + 42, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, CryptGatePosition.X + 15);
         PointF archiveGate = new(480, 135);
         using var portal = new Pen(questStage >= 3 ? Color.FromArgb(219, 178, 112) : Color.FromArgb(88, 75, 61), 5);
         g.DrawArc(portal, archiveGate.X - 28, archiveGate.Y - 24, 56, 52, 180, 180);
         DrawCentered(g, questStage >= 3 ? "ARQUIVO NORTE" : "PORTÃO SELADO", archiveGate.Y - 38, new Font("Segoe UI", 8, FontStyle.Bold), Color.FromArgb(230, 193, 129), archiveGate.X);
-        if (Distance(player, archiveGate) < 72) DrawCentered(g, "E  ENTRAR", archiveGate.Y + 28, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, archiveGate.X);
+        if (Distance(player, archiveGate) < InteractionRadius) DrawCentered(g, "E  ENTRAR", archiveGate.Y + 28, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, archiveGate.X);
         PointF riverGate = new(480, 520);
         using var riverPortal = new Pen(questStage >= 5 ? Color.FromArgb(112, 179, 185) : Color.FromArgb(72, 85, 82), 5);
         g.DrawArc(riverPortal, riverGate.X - 28, riverGate.Y - 22, 56, 50, 0, 180);
         DrawCentered(g, questStage >= 7 ? "ESCADA DO LUME" : questStage >= 5 ? "RIO CEGO" : "LEITO SELADO", riverGate.Y - 4, new Font("Segoe UI", 8, FontStyle.Bold), Color.FromArgb(190, 211, 196), riverGate.X);
-        if (Distance(player, riverGate) < 72) DrawCentered(g, "E  DESCER", riverGate.Y - 38, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, riverGate.X);
+        if (Distance(player, riverGate) < InteractionRadius) DrawCentered(g, "E  DESCER", riverGate.Y - 38, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, riverGate.X);
     }
 
     private string ArchiveObjective() => room == 4 ? "OBJETIVO: CRUZE A GALERIA E ENCONTRE O COFRE" : archiveSeal ? "OBJETIVO: VOLTE A VÉSPERA COM O SELO" : "OBJETIVO: RECUPERE O REGISTRO NO COFRE";
@@ -1704,15 +1706,15 @@ public sealed class Game : Form
         g.DrawLine(path, 302, 330, 412, 330); g.DrawLine(path, 550, 330, 662, 330);
         using var table = new SolidBrush(Color.FromArgb(119, 99, 73)); using var ledger = new SolidBrush(Color.FromArgb(47, 62, 58));
         g.FillEllipse(table, 427, 292, 106, 75); g.FillRectangle(ledger, 458, 309, 44, 27); g.DrawEllipse(edge, 427, 292, 106, 75);
-        DrawTownPerson(g, AvenPosition, "AVEN", Color.FromArgb(88, 112, 102), Distance(player, AvenPosition) < 72);
-        DrawTownPerson(g, SeraPosition, "SERA", Color.FromArgb(144, 103, 78), Distance(player, SeraPosition) < 72);
-        DrawTownPerson(g, NoaPosition, "NOA", Color.FromArgb(102, 111, 145), Distance(player, NoaPosition) < 72);
+        DrawTownPerson(g, AvenPosition, "AVEN", Color.FromArgb(88, 112, 102), Distance(player, AvenPosition) < InteractionRadius);
+        DrawTownPerson(g, SeraPosition, "SERA", Color.FromArgb(144, 103, 78), Distance(player, SeraPosition) < InteractionRadius);
+        DrawTownPerson(g, NoaPosition, "NOA", Color.FromArgb(102, 111, 145), Distance(player, NoaPosition) < InteractionRadius);
         using var gate = new Pen(finalEnding == 1 ? Color.FromArgb(170, 211, 145) : finalEnding == 2 ? Color.FromArgb(210, 174, 106) : Color.FromArgb(111, 191, 163), 5); g.DrawLine(gate, 75, 296, 75, 364);
         using var altarGlow = new SolidBrush(finalEnding == 0 ? Color.FromArgb(65, 89, 94) : Color.FromArgb(105, 157, 186, 165)); using var altarEdge = new Pen(finalEnding == 0 ? Color.FromArgb(105, 114, 112) : Color.FromArgb(212, 188, 129), 3);
         g.FillEllipse(altarGlow, VigilAltarPosition.X - 30, VigilAltarPosition.Y - 30, 60, 60); g.DrawEllipse(altarEdge, VigilAltarPosition.X - 30, VigilAltarPosition.Y - 30, 60, 60); g.DrawEllipse(altarEdge, VigilAltarPosition.X - 17, VigilAltarPosition.Y - 17, 34, 34);
-        if (Distance(player, VigilAltarPosition) < 72) DrawCentered(g, finalEnding == 0 ? "VIGÍLIA BLOQUEADA • CONCLUA A CAMPANHA" : $"E  VIGÍLIA ASCENDENTE • MELHOR ANDAR {vigilBestFloor}", 382, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, (int)VigilAltarPosition.X);
+        if (Distance(player, VigilAltarPosition) < InteractionRadius) DrawCentered(g, finalEnding == 0 ? "VIGÍLIA BLOQUEADA • CONCLUA A CAMPANHA" : $"E  VIGÍLIA ASCENDENTE • MELHOR ANDAR {vigilBestFloor}", 382, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, (int)VigilAltarPosition.X);
         using var trail = new Pen(questStage >= 22 ? Color.FromArgb(179, 208, 151) : Color.FromArgb(70, 83, 77), 5); g.DrawLine(trail, 885, 296, 885, 364);
-        if (questStage >= 27 && Distance(player, AvenPosition) < 72) DrawCentered(g, "E  TÊMPERA • 75 OURO + 1 SAL VÍTREO", 382, new Font("Segoe UI", 9, FontStyle.Bold), Color.LightCyan, 490);
+        if (questStage >= 27 && Distance(player, AvenPosition) < InteractionRadius) DrawCentered(g, "E  TÊMPERA • 75 OURO + 1 SAL VÍTREO", 382, new Font("Segoe UI", 9, FontStyle.Bold), Color.LightCyan, 490);
         if (player.X < 150) DrawCentered(g, "E  VOLTAR A VÉSPERA", 382, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, 146);
         if (questStage >= 22 && player.X > 790) DrawCentered(g, questStage >= 50 ? "E  DESCER AO SILÊNCIO" : questStage >= 47 ? "E  SEGUIR AS LINHAS" : questStage >= 41 ? "E  OUVIR O VIDRO" : questStage >= 30 ? "E  SEGUIR AS ÁGUAS" : "E  SEGUIR AS LANTERNAS", 382, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, 820);
     }
@@ -2495,6 +2497,20 @@ public sealed class Game : Form
             if (targetCheck.lockedTarget != next) throw new InvalidOperationException("O bloqueio não acompanhou a derrota sucessiva do alvo.");
             targetCheck.Defeat(next);
             if (targetCheck.lockedTarget is not null) throw new InvalidOperationException("O bloqueio manteve um alvo quando não restavam inimigos.");
+        }
+        using (var interactionRadiusCheck = new Game())
+        {
+            interactionRadiusCheck.timer.Stop(); interactionRadiusCheck.StartGame(); interactionRadiusCheck.storyOverlay = false; interactionRadiusCheck.enemies.Clear(); interactionRadiusCheck.drops.Clear();
+            interactionRadiusCheck.room = 3; interactionRadiusCheck.questStage = 0; interactionRadiusCheck.player = Offset(CuratorPosition, 0, 68); interactionRadiusCheck.InteractTown();
+            if (interactionRadiusCheck.questStage != 1) throw new InvalidOperationException("O aviso de conversa com Sileth apareceu antes de a interação funcionar.");
+            interactionRadiusCheck.questStage = 1; interactionRadiusCheck.player = Offset(ArchiveBookPosition, 0, 68); interactionRadiusCheck.InteractTown();
+            if (interactionRadiusCheck.questStage != 2) throw new InvalidOperationException("O aviso para ler o Livro das Ausências apareceu antes de a interação funcionar.");
+            interactionRadiusCheck.questStage = 3; interactionRadiusCheck.player = new PointF(480, 203); interactionRadiusCheck.InteractTown();
+            if (interactionRadiusCheck.room != 4) throw new InvalidOperationException("O aviso do portão do Arquivo Norte apareceu antes de a interação funcionar.");
+            interactionRadiusCheck.room = 18; interactionRadiusCheck.questStage = 21; interactionRadiusCheck.player = Offset(AvenPosition, 68, 0); interactionRadiusCheck.InteractRefuge();
+            if (interactionRadiusCheck.questStage != 22) throw new InvalidOperationException("O aviso para falar com Aven apareceu antes de a interação funcionar.");
+            interactionRadiusCheck.room = 0; interactionRadiusCheck.memoriesFound = 0; interactionRadiusCheck.enemies.Clear(); interactionRadiusCheck.drops.Clear(); interactionRadiusCheck.player = Offset(MemoryStonePositions[0], 0, 55); interactionRadiusCheck.Interact();
+            if ((interactionRadiusCheck.memoriesFound & 1) == 0) throw new InvalidOperationException("O aviso da inscrição apareceu antes de a interação funcionar.");
         }
         if (ScreenToGame(new PointF(500, 320), new Size(1000, 640)) != new PointF(480, 320)
             || ScreenToGame(new PointF(960, 540), new Size(1920, 1080)) != new PointF(480, 320)

@@ -87,6 +87,8 @@ Aven usa uma folha de sprites original incluída em `Assets/Aven.png`: quatro di
 
 Quando o alvo marcado é derrotado, o jogo marca automaticamente o inimigo vivo mais próximo. **Tab** continua alternando os alvos manualmente.
 
+O alcance dos avisos de interação **E** agora coincide com o alcance efetivo das conversas, portões e objetos, inclusive inscrições opcionais.
+
 Cada nível concede um ponto permanente: **Vigor** aumenta a vida máxima, **Domínio** reduz as recargas, **Agilidade** acelera a esquiva e **Sintonia** acrescenta 8% de dano às técnicas por ponto. A nova especialização é compatível com saves antigos e pode ser escolhida várias vezes.
 
 Os golpes exibem números flutuantes por 0,85 segundo: dano causado aparece claro, críticos recebem destaque dourado e dano recebido aparece em vermelho. Os valores usam o dano calculado pelo combate; o efeito não muda o balanceamento.
