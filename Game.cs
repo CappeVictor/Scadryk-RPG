@@ -2403,7 +2403,7 @@ public sealed class Game : Form
             using (var lockedSave = new FileStream(saveCheckPath, FileMode.Open, FileAccess.Read, FileShare.None))
             {
                 bool rejected = false;
-                try { WriteSaveFile(saveCheckPath, "não deve substituir"); } catch (IOException) { rejected = true; }
+                try { WriteSaveFile(saveCheckPath, "não deve substituir"); } catch (IOException) { rejected = true; } catch (UnauthorizedAccessException) { rejected = true; }
                 if (!rejected) throw new InvalidOperationException("O save bloqueado não rejeitou a substituição.");
             }
             if (File.ReadAllText(saveCheckPath) != "segundo" || Directory.GetFiles(saveCheckDirectory).Length != 1) throw new InvalidOperationException("Uma falha de gravação alterou o save anterior ou deixou arquivo temporário.");
