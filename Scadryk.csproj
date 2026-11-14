@@ -8,7 +8,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="Assets\Aven.png;Assets\Enemies.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\Aven.png;Assets\Enemies.png;Assets\Bosses.png" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
 
