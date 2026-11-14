@@ -58,6 +58,8 @@ dotnet publish --configuration Release --runtime win-x64 --self-contained true
 
 O protagonista, o Escutador, usa a folha de caminhada `Assets/Listener.png`, com quatro direções e quatro quadros por direção; Aven é um NPC distinto no Refúgio. `Assets/PlayerAttack.png` fornece poses de ataque para o jogador, e `Assets/EnemyAttacks.png` dá ciclos próprios ao guerreiro, arqueiro, mago e elite. As outras folhas de `Assets/` contêm os inimigos e os vinte chefes; seus quadros acompanham a movimentação e os avisos de ataque. Nos sprites com quadros de ataque, a última pose permanece por um instante após o impacto, marcando o fim da animação. O Arquivista das Marés e o Afinador do Contratempo têm representações procedurais próprias em C#. Eco de Tinta, Lembrança Afogada, Vestígio de Brasas, Mariposa de Nomes, Cantor do Lodo, Espectro de Papel e Eco Salino agora usam retratos originais com fundo transparente, animação sutil de movimento e escala adequada à silhueta; cada uma também se expande, inclina ou se comprime com um gesto próprio ao anunciar o ataque; as formas procedurais permanecem como fallback. Barras de vida, nomes, alerta de alvo e brilho de dano permanecem legíveis sobre as criaturas. O projeto copia as imagens para a saída ao compilar; não precisa baixar recursos nem instalar um motor de jogo.
 
+As armas têm quatro perfis: a Espada de Pedra mantém alcance e ritmo equilibrados; a Lâmina do Arquivo é lenta, longa e interrompe ecos; a Faca do Crepúsculo troca alcance por velocidade e crítico; e a Lança da Badalada ataca em linha estreita, perfura ecos blindados e alcança mais longe. O Afinador do Contratempo garante a lança ao ser derrotado; seus atributos e afixos são gerados como saque de Relíquia. Armas antigas de saves continuam carregando com as três posições originais e recebem espaço vazio para a quarta.
+
 ## Controles
 
 | Tecla ou ação | Função |
@@ -76,10 +78,10 @@ O protagonista, o Escutador, usa a folha de caminhada `Assets/Listener.png`, com
 | M | Abrir o atlas das câmaras; M ou Esc fecha |
 | I | Abrir ou fechar inventário |
 | P | Abrir a ficha do Escutador; P ou Esc fecha |
-| 1–3 no inventário | Equipar arma |
-| 4–5 no inventário | Alternar armadura e relíquia |
-| 6 no inventário | Alternar o talismã do espaço I |
-| 7 no inventário | Alternar o talismã do espaço II |
+| 1–4 no inventário | Equipar arma |
+| 5–6 no inventário | Alternar armadura e relíquia |
+| 7 no inventário | Alternar o talismã do espaço I |
+| 8 no inventário | Alternar o talismã do espaço II |
 | 1–4 ao subir de nível | Escolher talento ou responder quando Sileth apresentar uma decisão |
 | 5 ou 6 ao subir de nível | No nível 5, escolher Forma do Gume ou Forma do Eco; no nível 10, Guarda Serena ou Passo Impetuoso; no nível 15, Caçador de Ecos ou Quebra-Formação; no nível 20, Coro Suspenso ou Âncora de Eco |
 | Tab | Trocar alvo |
@@ -119,6 +121,8 @@ Nas câmaras 14 e 21, o **Mordente de Compasso** ataca de longe com uma área vi
 Nas câmaras 27, 31 e 41, o **Eco de Escória** pressiona o espaço: seu círculo âmbar de 48 pixels fica marcado por 0,95 segundo e, após o ataque, a escória permanece por 3,2 segundos. O impacto causa 18 de dano e a poça causa 9 a cada 0,85 segundo; sair dela ou usar a esquiva evita os pulsos seguintes. O autoteste cobre o posicionamento, aviso, dano, duração e evasão da poça.
 
 Elites aparecem com um de seis afixos, mostrado por nome e aro colorido: **Blindado** reduz dano recebido, golpeia devagar e protege ecos próximos; os aliados protegidos recebem uma borda azul tracejada, e a aura some quando o elite cai. **Veloz** se move e ataca com mais rapidez, com aviso menor; **Sangrador** causa mais dano e recupera vida ao acertar; **Lançador** tem sprite próprio, mantém distância e anuncia uma estocada em linha azul que pode ser evitada saindo da trajetória. **Invocador** anuncia a conjuração com um círculo violeta e chama um Eco de Tinta de apoio; apenas um eco invocado pode estar ativo por vez. A Lâmina do Arquivo ou técnicas que interrompem ecos podem cancelar o canal; isso atrasa a próxima tentativa do Invocador. O eco não concede ouro ou XP ao ser derrotado, evitando exploração repetida da invocação. **Condutor** canaliza por 0,9 segundo e depois recupera 12% da vida máxima de cada aliado num raio de 165; o círculo tracejado verde mostra quem será curado, e golpes que causam interrupção cancelam o pulso. Nas salas 25 em diante, elites recebem um segundo afixo entre Blindado, Veloz e Sangrador, sem repetir o principal. O nome e os aros concêntricos exibem as combinações; efeitos defensivos, velocidade e cura permanecem ativos junto do papel principal do elite. Cada elite garante sal vítreo escalado pela região e tem 35% de chance de deixar uma arma. Além dos encontros existentes, salas avançadas antes de chefes selecionados recebem um elite adicional; a vida dele cresce com a região.
+
+O Afinador do Contratempo garante a **Lança da Badalada**, arma de Relíquia para o pós-jogo. Seu golpe percorre uma faixa estreita de até 128 pixels, fere ecos blindados sem a penalidade normal de armadura e tem recarga de 0,43 segundo. O alcance alto recompensa mirar com precisão, enquanto o arco de 58 graus deixa flancos e inimigos laterais fora do golpe. Equipe-a com **4** no inventário; a animação mostra uma estocada própria. Saves com as três armas anteriores migram mantendo seus bônus e afixos.
 
 Os chefes anunciam golpes circulares com o limite completo e cortes com faixas largas; alguns ataques desenham duas faixas. A área indicada permanece visível até o golpe. O Arauto de Vidro se inclina e afina o corpo antes do cone de estilhaços; o Escriba do Traçado e o Afinador do Contratempo se expandem antes das ondas; o Silêncio de Baixo se ergue antes dos cortes paralelos. As poses acompanham o aviso sem alterar tempo, alcance ou dano.
 
