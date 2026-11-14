@@ -12,7 +12,7 @@ public sealed class Game : Form
     private const float InteractionRadius = 72;
     private const float MemoryStoneInteractionRadius = 58;
     private enum EnemyKind { Grunt, Archer, Mage, Elite, Guardian, InkEcho, BlindScribe, DrownedMemory, RiverFerryman, EmberWisp, AshWarden, NameMoth, HollowName, NameWeaver, FirstKeeper, MudCantor, OathCartographer, PaperWraith, NameBroker, SaltEcho, TideWitness, ReedKeeper, FlowKeeper, CounterCurrent, RiftCantor, GlassHerald, LanternRegent, RouteScribe, DeepSilence, BorrowedChorus }
-    private enum VigilAspect { Hardened, Hungry, Swift, Chorus }
+    private enum VigilAspect { Hardened, Hungry, Swift, Chorus, Counterflow }
     private enum EliteAffix { Armored, Swift, Bloodbound, Spearbound }
     private sealed class Enemy
     {
@@ -228,7 +228,7 @@ public sealed class Game : Form
     private int healthTalent, skillTalent, dodgeTalent, techniqueTalent, pendingTalents, enemiesDefeated;
     private int memoriesFound, questStage, tideGlass, finalEnding;
     private int vigilBestFloor, vigilFloor;
-    private float vigilMinionCooldown;
+    private float vigilMinionCooldown, vigilTideTime;
     private bool vigilActive, vigilChoiceOpen;
     private bool highContrastTelegraphs;
     private bool silenceMemory;
@@ -285,7 +285,7 @@ public sealed class Game : Form
         clearedRooms = 0;
         ownedCharms = equippedCharm = equippedCharm2 = 0;
         equippedSkills = new[] { 1, 0, 0 }; skillMenuOpen = false; skillMenuSlot = 0;
-        health = maxHealth = 100; attackCd = attackFlash = skillCd = shardCd = bellCd = bellWaveTime = bellWaveRadius = pullCd = pullWaveTime = wardCd = wardTime = refrainCd = refrainWaveTime = refrainWaveRadius = beaconCd = beaconTime = beaconPulseCd = beaconWaveTime = returnVoiceCd = returnVoiceWaveTime = returnVoiceWaveRadius = finalStrikeCd = finalStrikeFlash = dashCd = dashTime = invulnerable = 0; vigilMinionCooldown = 0; beaconPos = finalStrikeTarget = PointF.Empty; facing = mouseAim = dashDirection = new PointF(1, 0); playerAnimationTime = 0; echoShards.Clear(); floatingTexts.Clear(); title = false; storyPage = 0; storyOverlay = true; SetupRoom();
+        health = maxHealth = 100; attackCd = attackFlash = skillCd = shardCd = bellCd = bellWaveTime = bellWaveRadius = pullCd = pullWaveTime = wardCd = wardTime = refrainCd = refrainWaveTime = refrainWaveRadius = beaconCd = beaconTime = beaconPulseCd = beaconWaveTime = returnVoiceCd = returnVoiceWaveTime = returnVoiceWaveRadius = finalStrikeCd = finalStrikeFlash = dashCd = dashTime = invulnerable = 0; vigilMinionCooldown = vigilTideTime = 0; beaconPos = finalStrikeTarget = PointF.Empty; facing = mouseAim = dashDirection = new PointF(1, 0); playerAnimationTime = 0; echoShards.Clear(); floatingTexts.Clear(); title = false; storyPage = 0; storyOverlay = true; SetupRoom();
     }
 
     private void AdvanceStory()
@@ -304,12 +304,13 @@ public sealed class Game : Form
         _ => EnemyKind.RiftCantor
     };
 
-    private static VigilAspect VigilAspectForFloor(int floor) => (Math.Max(1, floor) % 4) switch
+    private static VigilAspect VigilAspectForFloor(int floor) => ((Math.Max(1, floor) - 1) % 5) switch
     {
-        1 => VigilAspect.Hardened,
-        2 => VigilAspect.Hungry,
-        3 => VigilAspect.Swift,
-        _ => VigilAspect.Chorus
+        0 => VigilAspect.Hardened,
+        1 => VigilAspect.Hungry,
+        2 => VigilAspect.Swift,
+        3 => VigilAspect.Chorus,
+        _ => VigilAspect.Counterflow
     };
 
     private static string VigilAspectTitle(int floor) => VigilAspectForFloor(floor) switch
@@ -317,7 +318,8 @@ public sealed class Game : Form
         VigilAspect.Hardened => "CASCA VIVA",
         VigilAspect.Hungry => "FOME DO RIO",
         VigilAspect.Swift => "SUSSURRO VELOZ",
-        _ => "CORO ERRANTE"
+        VigilAspect.Chorus => "CORO ERRANTE",
+        _ => "MARÉ INVERTIDA"
     };
 
     private static string VigilAspectRule(int floor) => VigilAspectForFloor(floor) switch
@@ -325,7 +327,8 @@ public sealed class Game : Form
         VigilAspect.Hardened => "O chefe recebe 25% menos dano",
         VigilAspect.Hungry => "Os ataques do chefe causam 30% mais dano",
         VigilAspect.Swift => "Os ataques começam 20% mais rápido",
-        _ => "Um Eco Salino surge a cada 20 segundos"
+        VigilAspect.Chorus => "Um Eco Salino surge a cada 20 segundos",
+        _ => "A corrente puxa e repele a cada 6 segundos"
     };
 
     private static Color VigilAspectColor(int floor) => VigilAspectForFloor(floor) switch
@@ -333,8 +336,20 @@ public sealed class Game : Form
         VigilAspect.Hardened => Color.SteelBlue,
         VigilAspect.Hungry => Color.OrangeRed,
         VigilAspect.Swift => Color.Goldenrod,
-        _ => Color.MediumPurple
+        VigilAspect.Chorus => Color.MediumPurple,
+        _ => Color.LightSeaGreen
     };
+
+    private static bool VigilTidePulling(float elapsed) => elapsed % 12f < 6f;
+
+    private void ApplyVigilTide(float dt)
+    {
+        if (!vigilActive || room != 38 || VigilAspectForFloor(vigilFloor) != VigilAspect.Counterflow) return;
+        vigilTideTime += dt;
+        PointF outward = Normalize(Sub(player, new PointF(480, 330)), new PointF(1, 0));
+        float direction = VigilTidePulling(vigilTideTime) ? -1 : 1;
+        MovePlayer(Scale(outward, direction * 54 * dt));
+    }
 
     private void TickVigilMinions(float dt)
     {
@@ -381,7 +396,7 @@ public sealed class Game : Form
     private void SetupRoom()
     {
         player = new PointF(150, 330); enemies.Clear(); drops.Clear(); echoShards.Clear(); lockedTarget = null;
-        if (vigilActive && room == 38) vigilMinionCooldown = 20;
+        if (vigilActive && room == 38) { vigilMinionCooldown = 20; vigilTideTime = 0; }
         if (room != 3 && !vigilActive && (clearedRooms & (1L << room)) != 0) return;
         int count = room is 3 or 18 ? 0 : room == 0 ? 3 : room == 1 ? 5 : room == 4 ? 5 : room == 5 ? 4 : room == 6 ? 6 : room is 21 or 29 or 31 or 33 or 35 or 37 ? 6 : room == 22 ? 5 : room == 23 ? 6 : room == 24 ? 5 : room == 25 ? 6 : room is 26 or 28 or 30 or 32 or 34 or 36 ? 5 : room is 38 or 40 ? 1 : room == 39 ? 5 : room == 27 ? 6 : (room is 7 or 9 or 11 or 15 or 17 or 20) ? 4 : room == 8 ? 5 : room is 10 or 12 or 14 or 16 or 19 ? 6 : room == 13 ? 4 : 4;
         for (int i = 0; i < count; i++)
@@ -869,6 +884,7 @@ public sealed class Game : Form
         MovePlayer(Scale(dir, (dashTime > 0 ? 530 : 190) * dt));
         PointF drift = CurrentDrift();
         if (dashTime <= 0) MovePlayer(Scale(drift, dt));
+        ApplyVigilTide(dt);
         PointF animationDirection = Length(dir) > 0.001f ? dir : drift;
         if (Length(animationDirection) > 0.001f) playerAnimationTime += dt;
         else playerAnimationTime = 0;
@@ -2097,6 +2113,19 @@ public sealed class Game : Form
                 {
                     using var driftingEcho = new Pen(Color.FromArgb(135, 194, 133, 222), 3);
                     for (int i = 0; i < 3; i++) { float angle = windupPulse * 0.42f + i * MathF.PI * 2 / 3; float x = 480 + MathF.Cos(angle) * 222, y = 330 + MathF.Sin(angle) * 148; g.DrawEllipse(driftingEcho, x - 9, y - 9, 18, 18); }
+                }
+                if (VigilAspectForFloor(vigilFloor) == VigilAspect.Counterflow)
+                {
+                    bool pulling = VigilTidePulling(vigilTideTime);
+                    using var current = new Pen(Color.FromArgb(185, VigilAspectColor(vigilFloor)), 3) { EndCap = LineCap.Triangle };
+                    for (int i = 0; i < 8; i++)
+                    {
+                        float angle = i * MathF.PI / 4 + windupPulse * 0.04f;
+                        PointF inner = new(480 + MathF.Cos(angle) * 112, 330 + MathF.Sin(angle) * 94);
+                        PointF outer = new(480 + MathF.Cos(angle) * 184, 330 + MathF.Sin(angle) * 154);
+                        g.DrawLine(current, pulling ? outer : inner, pulling ? inner : outer);
+                    }
+                    DrawCentered(g, pulling ? "CORRENTE: PUXANDO PARA O CENTRO" : "CORRENTE: REPELINDO PARA A BORDA", 530, new Font("Segoe UI", 9, FontStyle.Bold), VigilAspectColor(vigilFloor));
                 }
                 DrawCentered(g, enemies.Count == 0 && drops.Count == 0 ? "E  SUBIR OU ENCERRAR A VIGÍLIA" : $"ECO DA VIGÍLIA • ANDAR {vigilFloor}", 494, new Font("Segoe UI", 9, FontStyle.Bold), Color.FromArgb(222, 202, 226));
                 DrawCentered(g, $"{VigilAspectTitle(vigilFloor)} • {VigilAspectRule(vigilFloor).ToUpperInvariant()}", 511, new Font("Segoe UI", 9, FontStyle.Bold), VigilAspectColor(vigilFloor));
