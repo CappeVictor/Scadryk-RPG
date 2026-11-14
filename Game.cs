@@ -681,6 +681,7 @@ public sealed class Game : Form
     private void Defeat(Enemy enemy)
     {
         if (!enemies.Remove(enemy)) return;
+        if (ReferenceEquals(lockedTarget, enemy)) lockedTarget = enemies.OrderBy(candidate => Distance(player, candidate.Pos)).FirstOrDefault();
         enemiesDefeated++; drops.Add(new Drop { Pos = enemy.Pos, Kind = "gold", Amount = vigilActive ? 35 + Math.Min(500, vigilFloor * 15) : enemy.Boss ? 35 : enemy.Kind == EnemyKind.Elite ? 20 : 8 });
         AddXp(enemy.Boss ? 75 : enemy.Kind == EnemyKind.Elite ? 40 : 22);
         if (HasWeaponAffix(weapon, 1)) health = Math.Min(maxHealth, health + (weaponRarities[weapon] == 2 ? 6 : 3));
@@ -2473,6 +2474,19 @@ public sealed class Game : Form
 
     public static int SelfTest()
     {
+        using (var targetCheck = new Game())
+        {
+            targetCheck.timer.Stop(); targetCheck.StartGame(); targetCheck.enemies.Clear(); targetCheck.drops.Clear(); targetCheck.player = new PointF(150, 330);
+            Enemy distant = new() { Kind = EnemyKind.Grunt, Pos = new PointF(520, 330), Hp = 1, MaxHp = 1 };
+            Enemy nearest = new() { Kind = EnemyKind.Grunt, Pos = new PointF(230, 330), Hp = 1, MaxHp = 1 };
+            Enemy next = new() { Kind = EnemyKind.Grunt, Pos = new PointF(320, 330), Hp = 1, MaxHp = 1 };
+            targetCheck.enemies.AddRange(new[] { distant, nearest, next }); targetCheck.lockedTarget = distant; targetCheck.Defeat(distant);
+            if (targetCheck.lockedTarget != nearest) throw new InvalidOperationException("O alvo marcado não mudou para o inimigo vivo mais próximo após ser derrotado.");
+            targetCheck.Defeat(nearest);
+            if (targetCheck.lockedTarget != next) throw new InvalidOperationException("O bloqueio não acompanhou a derrota sucessiva do alvo.");
+            targetCheck.Defeat(next);
+            if (targetCheck.lockedTarget is not null) throw new InvalidOperationException("O bloqueio manteve um alvo quando não restavam inimigos.");
+        }
         if (ScreenToGame(new PointF(500, 320), new Size(1000, 640)) != new PointF(480, 320)
             || ScreenToGame(new PointF(960, 540), new Size(1920, 1080)) != new PointF(480, 320)
             || ScreenToGame(new PointF(480, 400), new Size(960, 800)) != new PointF(480, 320)
