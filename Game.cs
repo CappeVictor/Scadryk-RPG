@@ -211,20 +211,20 @@ public sealed class Game : Form
 
     public Game()
     {
-        Text = "Scadryk — RPG de ação 2D"; ClientSize = new Size(960, 640); MinimumSize = MaximumSize = new Size(976, 679);
-        FormBorderStyle = FormBorderStyle.FixedSingle; MaximizeBox = false; StartPosition = FormStartPosition.CenterScreen;
+        Text = "Scadryk — RPG de ação 2D"; ClientSize = new Size(960, 640); MinimumSize = new Size(816, 579);
+        FormBorderStyle = FormBorderStyle.Sizable; MaximizeBox = true; StartPosition = FormStartPosition.CenterScreen;
         DoubleBuffered = true; KeyPreview = true; BackColor = Color.FromArgb(16, 19, 23);
         timer.Tick += (_, _) => TickGame(); timer.Start();
         KeyDown += OnKeyDown; KeyUp += (_, e) => down.Remove(e.KeyCode);
         Deactivate += (_, _) => PauseForLostFocus();
         Activated += (_, _) => ResumeAfterFocus();
-        MouseMove += (_, e) => { mouseAim = Normalize(new PointF(e.X - player.X, e.Y - player.Y), facing); };
+        MouseMove += (_, e) => { PointF aim = ScreenToGame(new PointF(e.X, e.Y), ClientSize); mouseAim = Normalize(new PointF(aim.X - player.X, aim.Y - player.Y), facing); };
         MouseDown += (_, e) =>
         {
             if (storyOverlay) { if (e.Button == MouseButtons.Left) AdvanceStory(); return; }
             if (memoryOverlay) { if (e.Button == MouseButtons.Left) memoryOverlay = false; return; }
             if (GameplayPaused()) return;
-            mouseAim = Normalize(new PointF(e.X - player.X, e.Y - player.Y), facing);
+            PointF aim = ScreenToGame(new PointF(e.X, e.Y), ClientSize); mouseAim = Normalize(new PointF(aim.X - player.X, aim.Y - player.Y), facing);
             if (e.Button == MouseButtons.Left) Attack();
             if (e.Button == MouseButtons.Right) Whirlwind();
         };
@@ -1384,9 +1384,22 @@ public sealed class Game : Form
         catch { notice = "NENHUM SALVAMENTO VÁLIDO"; noticeTime = 2; }
     }
 
+    private static RectangleF GameViewport(Size clientSize)
+    {
+        float scale = Math.Min(Math.Max(1, clientSize.Width) / 960f, Math.Max(1, clientSize.Height) / 640f);
+        float width = 960 * scale, height = 640 * scale;
+        return new RectangleF((clientSize.Width - width) / 2, (clientSize.Height - height) / 2, width, height);
+    }
+    private static PointF ScreenToGame(PointF point, Size clientSize)
+    {
+        RectangleF viewport = GameViewport(clientSize);
+        return new PointF(Math.Clamp((point.X - viewport.X) * 960 / viewport.Width, 0, 960), Math.Clamp((point.Y - viewport.Y) * 640 / viewport.Height, 0, 640));
+    }
+
     protected override void OnPaint(PaintEventArgs e)
     {
         Graphics g = e.Graphics; g.SmoothingMode = SmoothingMode.AntiAlias; g.Clear(Color.FromArgb(16, 19, 23));
+        RectangleF viewport = GameViewport(ClientSize); g.TranslateTransform(viewport.X, viewport.Y); g.ScaleTransform(viewport.Width / 960, viewport.Height / 640);
         using var goldBrush = new SolidBrush(Color.FromArgb(230, 193, 129)); using var textBrush = new SolidBrush(Color.FromArgb(222, 216, 201));
         using var panel = new SolidBrush(Color.FromArgb(28, 32, 35)); using var floor = new SolidBrush(Color.FromArgb(54, 60, 53)); using var tile = new Pen(Color.FromArgb(70, 78, 68));
         using var headerFont = new Font("Georgia", 22, FontStyle.Bold); using var hudFont = new Font("Segoe UI", 12, FontStyle.Bold); using var roomFont = new Font("Georgia", 13, FontStyle.Bold); using var helpFont = new Font("Segoe UI", 10);
@@ -2449,6 +2462,11 @@ public sealed class Game : Form
 
     public static int SelfTest()
     {
+        if (ScreenToGame(new PointF(500, 320), new Size(1000, 640)) != new PointF(480, 320)
+            || ScreenToGame(new PointF(960, 540), new Size(1920, 1080)) != new PointF(480, 320)
+            || ScreenToGame(new PointF(480, 400), new Size(960, 800)) != new PointF(480, 320)
+            || ScreenToGame(new PointF(0, 0), new Size(1920, 1080)) != new PointF(0, 0))
+            throw new InvalidOperationException("A ampliação da janela distorceu o campo de jogo ou deslocou a mira do mouse.");
         using (var focusCheck = new Game())
         {
             focusCheck.timer.Stop(); focusCheck.StartGame(); focusCheck.storyOverlay = false; focusCheck.room = 3; focusCheck.SetupRoom(); focusCheck.player = new PointF(500, 330); focusCheck.skillCd = 1; focusCheck.down.Add(Keys.W); focusCheck.dashTime = 0.1f;
