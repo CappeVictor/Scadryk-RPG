@@ -80,6 +80,7 @@ Aven usa uma folha de sprites original incluída em `Assets/Aven.png`: quatro di
 | 7 no inventário | Alternar o talismã do espaço II |
 | 1–4 ao subir de nível | Escolher talento ou responder quando Sileth apresentar uma decisão |
 | Tab | Trocar alvo |
+| H | Ativar ou desativar o alto contraste dos avisos de ataque |
 | N | Ativar ou silenciar os efeitos de áudio |
 | Enter, Espaço ou clique na introdução | Avançar o prólogo e a lembrança |
 | F5 | Salvar depois de limpar a sala e recolher o loot |
@@ -91,6 +92,8 @@ Quando o alvo marcado é derrotado, o jogo marca automaticamente o inimigo vivo 
 O alcance dos avisos de interação **E** agora coincide com o alcance efetivo das conversas, portões e objetos, inclusive inscrições opcionais.
 
 Os efeitos de golpe, esquiva, impacto, técnica, coleta e aviso de ataque de chefe são sintetizados pelo próprio jogo em C# e reproduzidos pelo áudio do Windows. O sinal grave do chefe acompanha o aviso visual de cada golpe. Não há pacote, arquivo de som ou ferramenta adicional para instalar. Pressione **N** para ativar ou silenciar os efeitos.
+
+Pressione **H** para destacar avisos de ataque com amarelo claro e contorno escuro; a escolha fica salva junto ao progresso. O modo usa cor, contorno mais espesso e uma borda escura para diferenciar as áreas perigosas do cenário.
 
 Cada nível concede um ponto permanente: **Vigor** aumenta a vida máxima, **Domínio** reduz as recargas, **Agilidade** acelera a esquiva e **Sintonia** acrescenta 8% de dano às técnicas por ponto. A nova especialização é compatível com saves antigos e pode ser escolhida várias vezes.
 

@@ -81,6 +81,7 @@ public sealed class Game : Form
         public bool SilenceMemory { get; set; }
         public int FinalEnding { get; set; }
         public int VigilBestFloor { get; set; }
+        public bool HighContrastTelegraphs { get; set; }
     }
 
     private static readonly RectangleF[] Walls = { new(345, 235, 48, 90), new(565, 375, 58, 80) };
@@ -190,6 +191,7 @@ public sealed class Game : Form
     private int memoriesFound, questStage, tideGlass, finalEnding;
     private int vigilBestFloor, vigilFloor;
     private bool vigilActive, vigilChoiceOpen;
+    private bool highContrastTelegraphs;
     private bool silenceMemory;
     private long clearedRooms;
     private bool chorusMemory, firstMemory, westTrace, upstreamTrace, forgeMenuOpen;
@@ -389,6 +391,12 @@ public sealed class Game : Form
         {
             bool nowMuted = GameAudio.ToggleMute();
             notice = nowMuted ? "ÁUDIO DESATIVADO" : "ÁUDIO ATIVADO"; noticeTime = 1.5f;
+            Invalidate(); return;
+        }
+        if (e.KeyCode == Keys.H)
+        {
+            highContrastTelegraphs = !highContrastTelegraphs;
+            notice = highContrastTelegraphs ? "AVISOS DE ATAQUE EM ALTO CONTRASTE" : "AVISOS DE ATAQUE PADRÃO"; noticeTime = 1.8f;
             Invalidate(); return;
         }
         down.Add(e.KeyCode);
@@ -809,19 +817,26 @@ public sealed class Game : Form
         return e.Kind is EnemyKind.FirstKeeper or EnemyKind.DeepSilence && DistanceToSegment(point, e.Target2Start, e.Target2) < width;
     }
 
-    private static void DrawBossWarning(Graphics g, Enemy e)
+    private static (Color Fill, Color Edge) AttackWarningPalette(bool highContrast) => highContrast
+        ? (Color.FromArgb(78, 255, 217, 36), Color.FromArgb(255, 255, 244, 122))
+        : (Color.FromArgb(45, 235, 115, 75), Color.FromArgb(235, 235, 115, 75));
+
+    private void DrawBossWarning(Graphics g, Enemy e)
     {
-        using var outline = new Pen(Color.FromArgb(235, 235, 115, 75), 3);
-        using var fill = new SolidBrush(Color.FromArgb(45, 235, 115, 75));
+        (Color fillColor, Color edgeColor) = AttackWarningPalette(highContrastTelegraphs);
+        using var outline = new Pen(edgeColor, highContrastTelegraphs ? 4 : 3);
+        using var fill = new SolidBrush(fillColor);
         if (!BossUsesLine(e))
         {
             float radius = BossCircleRadius(e); PointF center = e.BossPattern == 0 ? e.Pos : e.Target;
             g.FillEllipse(fill, center.X - radius, center.Y - radius, radius * 2, radius * 2);
+            if (highContrastTelegraphs) { using var shadow = new Pen(Color.FromArgb(245, 12, 13, 15), 8); g.DrawEllipse(shadow, center.X - radius, center.Y - radius, radius * 2, radius * 2); }
             g.DrawEllipse(outline, center.X - radius, center.Y - radius, radius * 2, radius * 2);
             return;
         }
         float width = e.Kind == EnemyKind.FirstKeeper ? 25 : 24;
-        using var area = new Pen(Color.FromArgb(55, 235, 115, 75), width * 2) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+        using var area = new Pen(fillColor, width * 2) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+        if (highContrastTelegraphs) { using var shadow = new Pen(Color.FromArgb(240, 12, 13, 15), width * 2 + 8) { StartCap = LineCap.Round, EndCap = LineCap.Round }; g.DrawLine(shadow, e.Pos, e.Target); if (e.Kind is EnemyKind.FirstKeeper or EnemyKind.DeepSilence) g.DrawLine(shadow, e.Target2Start, e.Target2); }
         g.DrawLine(area, e.Pos, e.Target); g.DrawLine(outline, e.Pos, e.Target);
         if (e.Kind is EnemyKind.FirstKeeper or EnemyKind.DeepSilence) { g.DrawLine(area, e.Target2Start, e.Target2); g.DrawLine(outline, e.Target2Start, e.Target2); }
     }
@@ -1267,7 +1282,7 @@ public sealed class Game : Form
         return false;
     }
 
-    private SaveData CaptureSaveData() => new() { Room = room, Level = level, Xp = xp, Gold = gold, Potions = potions, Damage = damage, Health = health, MaxHealth = maxHealth, Weapon = weapon, OwnedWeapons = ownedWeapons, Armor = armor, Relic = relic, HealthTalent = healthTalent, SkillTalent = skillTalent, DodgeTalent = dodgeTalent, TechniqueTalent = techniqueTalent, RoomCleared = room == 3 || enemies.Count == 0 && drops.Count == 0, Completed = victory, MemoriesFound = memoriesFound, QuestStage = questStage, ClearedRooms = clearedRooms | (room != 3 && enemies.Count == 0 && drops.Count == 0 ? 1L << room : 0), ArchiveSeal = archiveSeal, RiverBell = riverBell, LumeLens = lumeLens, NaraTrace = naraTrace, ChorusMemory = chorusMemory, FirstMemory = firstMemory, WestTrace = westTrace, UpstreamTrace = upstreamTrace, TideGlass = tideGlass, BeyondTrace = beyondTrace, EbbSeal = ebbSeal, CounterTrace = counterTrace, AnchorWard = anchorWard, RefrainSong = refrainSong, RiftVerse = riftVerse, DeepTrace = deepTrace, LanternSignal = lanternSignal, BeaconLight = beaconLight, RouteMemory = routeMemory, SilenceMemory = silenceMemory, FinalEnding = finalEnding, VigilBestFloor = vigilBestFloor, OwnedCharms = ownedCharms, EquippedCharm = equippedCharm, EquippedCharm2 = equippedCharm2, EquippedSkills = equippedSkills.ToArray(), TownEnding = townEnding, WeaponBonuses = weaponBonuses.ToArray(), WeaponRarities = weaponRarities.ToArray(), WeaponAffixes = weaponAffixes.ToArray(), WeaponAffixes2 = weaponAffixes2.ToArray() };
+    private SaveData CaptureSaveData() => new() { Room = room, Level = level, Xp = xp, Gold = gold, Potions = potions, Damage = damage, Health = health, MaxHealth = maxHealth, Weapon = weapon, OwnedWeapons = ownedWeapons, Armor = armor, Relic = relic, HealthTalent = healthTalent, SkillTalent = skillTalent, DodgeTalent = dodgeTalent, TechniqueTalent = techniqueTalent, RoomCleared = room == 3 || enemies.Count == 0 && drops.Count == 0, Completed = victory, MemoriesFound = memoriesFound, QuestStage = questStage, ClearedRooms = clearedRooms | (room != 3 && enemies.Count == 0 && drops.Count == 0 ? 1L << room : 0), ArchiveSeal = archiveSeal, RiverBell = riverBell, LumeLens = lumeLens, NaraTrace = naraTrace, ChorusMemory = chorusMemory, FirstMemory = firstMemory, WestTrace = westTrace, UpstreamTrace = upstreamTrace, TideGlass = tideGlass, BeyondTrace = beyondTrace, EbbSeal = ebbSeal, CounterTrace = counterTrace, AnchorWard = anchorWard, RefrainSong = refrainSong, RiftVerse = riftVerse, DeepTrace = deepTrace, LanternSignal = lanternSignal, BeaconLight = beaconLight, RouteMemory = routeMemory, SilenceMemory = silenceMemory, FinalEnding = finalEnding, VigilBestFloor = vigilBestFloor, HighContrastTelegraphs = highContrastTelegraphs, OwnedCharms = ownedCharms, EquippedCharm = equippedCharm, EquippedCharm2 = equippedCharm2, EquippedSkills = equippedSkills.ToArray(), TownEnding = townEnding, WeaponBonuses = weaponBonuses.ToArray(), WeaponRarities = weaponRarities.ToArray(), WeaponAffixes = weaponAffixes.ToArray(), WeaponAffixes2 = weaponAffixes2.ToArray() };
     private static void WriteSaveFile(string path, string contents)
     {
         string directory = Path.GetDirectoryName(path)!;
@@ -1393,7 +1408,7 @@ public sealed class Game : Form
 
 
             if (!ValidSaveData(s)) throw new InvalidDataException();
-            StartGame(); room = s.Room; level = s.Level; xp = s.Xp; gold = s.Gold; potions = s.Potions; damage = s.Damage; health = s.Health; maxHealth = s.MaxHealth; weapon = s.Weapon; ownedWeapons = s.OwnedWeapons; RestoreWeaponData(s); armor = s.Armor; relic = s.Relic; healthTalent = s.HealthTalent; skillTalent = s.SkillTalent; dodgeTalent = s.DodgeTalent; techniqueTalent = s.TechniqueTalent; memoriesFound = s.MemoriesFound; questStage = s.QuestStage; clearedRooms = s.ClearedRooms | (s.RoomCleared && s.Room != 3 ? 1L << s.Room : 0); archiveSeal = s.ArchiveSeal; riverBell = s.RiverBell; lumeLens = s.LumeLens; naraTrace = s.NaraTrace; chorusMemory = s.ChorusMemory; firstMemory = s.FirstMemory; westTrace = s.WestTrace; upstreamTrace = s.UpstreamTrace; tideGlass = s.TideGlass; beyondTrace = s.BeyondTrace; ebbSeal = s.EbbSeal; counterTrace = s.CounterTrace; anchorWard = s.AnchorWard || s.QuestStage >= 36; riftVerse = s.RiftVerse; deepTrace = s.DeepTrace; lanternSignal = s.LanternSignal; beaconLight = s.BeaconLight; routeMemory = s.RouteMemory; silenceMemory = s.SilenceMemory; finalEnding = s.FinalEnding; vigilBestFloor = s.VigilBestFloor; refrainSong = s.RefrainSong; ownedCharms = s.OwnedCharms; equippedCharm = s.EquippedCharm; equippedCharm2 = s.EquippedCharm2; equippedSkills = s.EquippedSkills.ToArray(); townEnding = s.TownEnding; SetupRoom(); if (s.RoomCleared) enemies.Clear(); victory = s.Completed; title = false; storyOverlay = false;
+            StartGame(); room = s.Room; level = s.Level; xp = s.Xp; gold = s.Gold; potions = s.Potions; damage = s.Damage; health = s.Health; maxHealth = s.MaxHealth; weapon = s.Weapon; ownedWeapons = s.OwnedWeapons; RestoreWeaponData(s); armor = s.Armor; relic = s.Relic; healthTalent = s.HealthTalent; skillTalent = s.SkillTalent; dodgeTalent = s.DodgeTalent; techniqueTalent = s.TechniqueTalent; memoriesFound = s.MemoriesFound; questStage = s.QuestStage; clearedRooms = s.ClearedRooms | (s.RoomCleared && s.Room != 3 ? 1L << s.Room : 0); archiveSeal = s.ArchiveSeal; riverBell = s.RiverBell; lumeLens = s.LumeLens; naraTrace = s.NaraTrace; chorusMemory = s.ChorusMemory; firstMemory = s.FirstMemory; westTrace = s.WestTrace; upstreamTrace = s.UpstreamTrace; tideGlass = s.TideGlass; beyondTrace = s.BeyondTrace; ebbSeal = s.EbbSeal; counterTrace = s.CounterTrace; anchorWard = s.AnchorWard || s.QuestStage >= 36; riftVerse = s.RiftVerse; deepTrace = s.DeepTrace; lanternSignal = s.LanternSignal; beaconLight = s.BeaconLight; routeMemory = s.RouteMemory; silenceMemory = s.SilenceMemory; finalEnding = s.FinalEnding; vigilBestFloor = s.VigilBestFloor; highContrastTelegraphs = s.HighContrastTelegraphs; refrainSong = s.RefrainSong; ownedCharms = s.OwnedCharms; equippedCharm = s.EquippedCharm; equippedCharm2 = s.EquippedCharm2; equippedSkills = s.EquippedSkills.ToArray(); townEnding = s.TownEnding; SetupRoom(); if (s.RoomCleared) enemies.Clear(); victory = s.Completed; title = false; storyOverlay = false;
             if (migrated && !SaveGame()) { notice = "SAVE ANTIGO CARREGADO • NÃO FOI POSSÍVEL MIGRAR"; noticeTime = 5; }
             else { notice = migrated ? "SAVE ANTIGO MIGRADO" : "PROGRESSO CARREGADO"; noticeTime = 2; }
         }
@@ -2020,9 +2035,15 @@ public sealed class Game : Form
         else if (enemy.Windup > 0)
         {
             PointF center = NonBossAttackCenter(enemy); float radius = NonBossAttackRadius(enemy);
-            using var p = new Pen(Color.FromArgb(235, 115, 75), 3); using var b = new SolidBrush(Color.FromArgb(35, 235, 115, 75));
-            if (RangedImpactRadius(enemy.Kind) > 0) g.DrawLine(p, enemy.Pos, enemy.Target);
+            (Color fillColor, Color edgeColor) = AttackWarningPalette(highContrastTelegraphs);
+            using var p = new Pen(edgeColor, highContrastTelegraphs ? 4 : 3); using var b = new SolidBrush(fillColor);
+            if (RangedImpactRadius(enemy.Kind) > 0)
+            {
+                if (highContrastTelegraphs) { using var shadow = new Pen(Color.FromArgb(230, 12, 13, 15), 7); g.DrawLine(shadow, enemy.Pos, enemy.Target); }
+                g.DrawLine(p, enemy.Pos, enemy.Target);
+            }
             g.FillEllipse(b, center.X - radius, center.Y - radius, radius * 2, radius * 2);
+            if (highContrastTelegraphs) { using var shadow = new Pen(Color.FromArgb(240, 12, 13, 15), 7); g.DrawEllipse(shadow, center.X - radius, center.Y - radius, radius * 2, radius * 2); }
             g.DrawEllipse(p, center.X - radius, center.Y - radius, radius * 2, radius * 2);
         }
         using var body = new SolidBrush(enemy.Flash > 0 ? Color.White : color); using var edge = new Pen(enemy == lockedTarget ? Color.Gold : enemy.Armored ? Color.LightSteelBlue : Color.FromArgb(35, 25, 22), enemy == lockedTarget ? 4 : 2);
@@ -2573,6 +2594,18 @@ public sealed class Game : Form
     public static int SelfTest()
     {
         GameAudio.SilenceForAutomatedRun();
+        (Color normalFill, Color normalEdge) = AttackWarningPalette(false);
+        (Color contrastFill, Color contrastEdge) = AttackWarningPalette(true);
+        if (normalEdge == contrastEdge || contrastFill.R < 240 || contrastFill.G < 190 || contrastEdge.R < 240 || contrastEdge.G < 220) throw new InvalidOperationException("A paleta acessível dos avisos não tem contraste suficiente em relação ao modo padrão.");
+        using (var warningAccessibilityCheck = new Game())
+        {
+            warningAccessibilityCheck.timer.Stop(); warningAccessibilityCheck.StartGame();
+            warningAccessibilityCheck.OnKeyDown(warningAccessibilityCheck, new KeyEventArgs(Keys.H));
+            SaveData accessibleSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(warningAccessibilityCheck.CaptureSaveData()))!;
+            if (!accessibleSave.HighContrastTelegraphs) throw new InvalidOperationException("A preferência de alto contraste não foi ativada ou salva.");
+            warningAccessibilityCheck.OnKeyDown(warningAccessibilityCheck, new KeyEventArgs(Keys.H));
+            if (warningAccessibilityCheck.CaptureSaveData().HighContrastTelegraphs) throw new InvalidOperationException("A preferência de alto contraste não pôde ser desativada.");
+        }
         using (var targetCheck = new Game())
         {
             targetCheck.timer.Stop(); targetCheck.StartGame(); targetCheck.enemies.Clear(); targetCheck.drops.Clear(); targetCheck.player = new PointF(150, 330);
