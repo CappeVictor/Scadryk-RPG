@@ -16,10 +16,16 @@ O prólogo apresenta Véspera, o Escutador e a busca por Nara. Ao derrotar o Gua
 
 O universo, os personagens e o arco planejado estão detalhados em [STORY.md](STORY.md).
 
-## Requisitos
+## Baixar e iniciar uma versão pronta
+
+O CI publica um pacote Windows x64 autossuficiente depois de compilar e validar o jogo. Para baixá-lo, abra [Actions do Scadryk](https://github.com/CappeVictor/Scadryk-RPG/actions/workflows/validate.yml), entre na execução mais recente com resultado **sucesso** e baixe o artefato **scadryk-win-x64**. Extraia o ZIP inteiro e abra **Scadryk.exe** dentro da pasta extraída; mantenha a pasta **Assets** junto dos arquivos do executável. Essa versão não precisa do SDK do .NET. Os artefatos ficam disponíveis por 30 dias após cada execução.
+
+Os saves ficam em `%LOCALAPPDATA%\Scadryk\save.json` e permanecem fora da pasta do jogo.
+
+## Requisitos para desenvolvimento
 
 - Windows 10 ou 11.
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0).
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0), necessário para compilar e editar o projeto.
 - [Visual Studio Code](https://code.visualstudio.com/).
 
 Não é preciso instalar Godot ou um motor de jogo. A extensão C# Dev Kit do VS Code é opcional; o terminal do .NET basta para compilar e iniciar.
@@ -48,11 +54,13 @@ Para executar o autoteste automatizado, que cobre a campanha principal e as expe
 dotnet run -- --self-test
 ```
 
-O executável compilado aparece em `bin/Release/net8.0-windows/`. Para criar uma pasta executável independente de uma instalação do .NET no computador de destino:
+O executável compilado aparece em `bin/Release/net8.0-windows/`. Para criar localmente uma pasta executável independente de uma instalação do .NET no computador de destino:
 
 ```powershell
-dotnet publish --configuration Release --runtime win-x64 --self-contained true
+dotnet publish Scadryk.csproj --configuration Release --runtime win-x64 --self-contained true --output artifacts/Scadryk-win-x64
 ```
+
+O executável e os recursos ficam juntos em `artifacts/Scadryk-win-x64/`. O CI também executa o autoteste no executável publicado e confere os recursos antes de disponibilizar o artefato.
 
 ## Personagem e animação
 

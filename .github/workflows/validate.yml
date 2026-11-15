@@ -16,4 +16,22 @@ jobs:
         run: dotnet build Scadryk.csproj --configuration Release
       - name: Gameplay smoke tests
         run: dotnet run --project Scadryk.csproj --configuration Release --no-build -- --self-test
+      - name: Publish self-contained Windows x64 build
+        run: dotnet publish Scadryk.csproj --configuration Release --runtime win-x64 --self-contained true --output artifacts/Scadryk-win-x64
+      - name: Verify published build and assets
+        shell: pwsh
+        run: |
+          if (-not (Test-Path 'artifacts/Scadryk-win-x64/Scadryk.exe')) { throw 'Scadryk.exe is missing from the published build.' }
+          $requiredAssets = @('Listener.png', 'PlayerAttack.png', 'Enemies.png', 'EnemyAttacks.png', 'SpearboundElite.png', 'InkEcho.png', 'DrownedMemory.png', 'EmberWisp.png', 'NameMoth.png', 'MudCantor.png', 'PaperWraith.png', 'SaltEcho.png', 'Bosses.png', 'BossesMidgame.png', 'BossesLate.png', 'BossesFinalWave.png', 'BossesEndgame.png')
+          foreach ($asset in $requiredAssets) {
+            if (-not (Test-Path "artifacts/Scadryk-win-x64/Assets/$asset")) { throw "Published asset is missing: $asset" }
+          }
+          & 'artifacts/Scadryk-win-x64/Scadryk.exe' --self-test
+      - name: Upload Windows x64 build
+        uses: actions/upload-artifact@v4
+        with:
+          name: scadryk-win-x64
+          path: artifacts/Scadryk-win-x64/
+          if-no-files-found: error
+          retention-days: 30
 
