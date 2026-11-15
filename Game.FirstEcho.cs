@@ -12,6 +12,7 @@ public sealed partial class Game
     private readonly List<Enemy> firstEchoWaitingEnemies = new();
     private readonly List<Drop> firstEchoWaitingDrops = new();
     private bool firstEchoOutsideStored;
+    private float FirstEchoTerrainSpeed() => room == 43 && player.X > 1250 && player.Y > 900 && (player.X < 1640 || player.X > 1840) ? 0.8f : 1f;
     // World-space geometry for the future continuous route from Véspera.
     private static readonly SizeF FirstEchoSize = new(2400, 1400);
     private static readonly PointF FirstEchoTownGate = new(120, 700);
@@ -62,7 +63,7 @@ public sealed partial class Game
                 return;
             }
             if (firstEchoQuest >= 2) health = maxHealth;
-            ShowMemory("IVARA, CARTÓGRAFA", firstEchoQuest == 3 ? "Edda contou que o sino respondeu aos marcos. Os viajantes podem escolher seu caminho e encontrar abrigo outra vez. Ivara oferece um momento de descanso: vida restaurada." : firstEchoQuest == 2 ? "Os marcos voltaram a responder. Edda precisa saber que a estrada está aberta. Ivara oferece um momento de descanso: vida restaurada." : "Os marcos perderam a voz. A estrada segue até a Casa das Comportas; a trilha ao norte leva à Gruta das Raízes. A margem alagada oferece outra travessia.");
+            ShowMemory("IVARA, CARTÓGRAFA", firstEchoQuest == 3 ? "Edda contou que o sino respondeu aos marcos. Os viajantes podem escolher seu caminho e encontrar abrigo outra vez. Ivara oferece um momento de descanso: vida restaurada." : firstEchoQuest == 2 ? "Os marcos voltaram a responder. Edda precisa saber que a estrada está aberta. Ivara oferece um momento de descanso: vida restaurada." : "Os marcos perderam a voz. A estrada segue até a Casa das Comportas; a trilha ao norte leva à Gruta das Raízes. A margem alagada oferece outra travessia, mas a água atrasa os passos.");
         }
         else if (Distance(player, FirstEchoCave) < 90)
         {
@@ -327,6 +328,7 @@ public sealed partial class Game
         g.DrawString("ENCRUZILHADA DOS MARCOS", font, label, 760, 610);
         g.DrawString("GRUTA DAS RAÍZES", font, label, 975, 170);
         g.DrawString("CASA DAS COMPORTAS", font, label, 2100, 620);
+        g.DrawString("MARGEM ALAGADA", font, label, 1360, 915);
         using var sign = new SolidBrush(Color.FromArgb(109, 101, 78));
         g.FillRectangle(sign, FirstEchoRoadSign.X - 10, FirstEchoRoadSign.Y - 22, 20, 40);
         g.DrawRectangle(edge, FirstEchoRoadSign.X - 10, FirstEchoRoadSign.Y - 22, 20, 40);

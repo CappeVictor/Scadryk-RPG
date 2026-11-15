@@ -1406,6 +1406,10 @@ public sealed partial class Game
             navigation.player = new PointF(1500, 900);
             PointF camera = navigation.CameraOffset();
             if (camera != new PointF(1020, 580) || navigation.Blocked(new PointF(1740, 700)) || navigation.Blocked(new PointF(1740, 1050)) || !navigation.Blocked(new PointF(1740, 850))) throw new InvalidOperationException("A câmera ou as travessias das Margens não correspondem ao terreno.");
+            navigation.player = new PointF(1500, 1050);
+            if (Math.Abs(navigation.FirstEchoTerrainSpeed() - 0.8f) > 0.001f) throw new InvalidOperationException("A margem alagada não reduziu a velocidade de caminhada.");
+            navigation.player = new PointF(1740, 1050);
+            if (navigation.FirstEchoTerrainSpeed() != 1f) throw new InvalidOperationException("A ponte não manteve a caminhada livre.");
             navigation.room = 44; navigation.SetupRoom(); navigation.player = new PointF(450, 200);
             Enemy pursuer = new() { Pos = new PointF(200, 200), Kind = EnemyKind.Grunt };
             PointF waypoint = navigation.InteriorDetour(pursuer);
