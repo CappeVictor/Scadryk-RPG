@@ -143,7 +143,7 @@ public sealed partial class Game
 
     private Drop CreateWeaponDrop(PointF pos, int index, bool bossReward = false)
     {
-        int rarityFloor = vigilActive ? Math.Min(99, 85 + vigilFloor / 2) : BossWeaponRollFloor(room, bossReward ? difficultyTier : 0);
+        int rarityFloor = vigilActive ? Math.Min(99, 85 + vigilFloor / 2) : BossWeaponRollFloor(room >= 43 ? 4 : room, bossReward ? difficultyTier : 0);
         var roll = RollWeaponStats(bossReward ? random.Next(rarityFloor, 100) : random.Next(100), random.Next(5), random.Next(8), random.Next(7));
         return new Drop { Pos = pos, Kind = "weapon", Amount = index, Rarity = roll.Rarity, Bonus = roll.Bonus, Affix = roll.Affix, Affix2 = roll.Affix2 };
     }

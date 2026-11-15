@@ -86,7 +86,7 @@ public sealed partial class Game
         drops.Add(new Drop { Pos = enemy.Pos, Kind = "gold", Amount = goldDrop }); AddXp(xpReward);
         if (enemy.Kind == EnemyKind.Elite)
         {
-            drops.Add(new Drop { Pos = Offset(enemy.Pos, 24, -20), Kind = "glass", Amount = Math.Clamp(1 + room / 12, 1, 4) });
+            drops.Add(new Drop { Pos = Offset(enemy.Pos, 24, -20), Kind = "glass", Amount = Math.Clamp(1 + (room >= 43 ? 4 : room) / 12, 1, 4) });
             if (EliteWeaponDropRoll(random.Next(100), eliteWeaponMisses, vigilActive ? 0 : DifficultyEliteWeaponBonus(difficultyTier)))
             {
                 drops.Add(CreateWeaponDrop(Offset(enemy.Pos, -24, 28), random.Next(1, 3)));
@@ -103,7 +103,7 @@ public sealed partial class Game
         if (enemy.Boss && vigilActive && vigilFloor % 20 == 0 && (ownedCharms & 512) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 0, -108), Kind = "charm", Amount = 10 });
         if (enemy.Boss && vigilActive && vigilFloor % 25 == 0 && (ownedCharms & 1024) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 0, -128), Kind = "charm", Amount = 11 });
         if (enemy.Boss && vigilActive && HasCharm(7)) health = Math.Min(maxHealth, health + maxHealth * 0.12f);
-        if (enemy.Kind == EnemyKind.Guardian && !relic) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "relic" });
+        if (room == 2 && enemy.Kind == EnemyKind.Guardian && !relic) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "relic" });
         if (enemy.Kind == EnemyKind.BlindScribe && !archiveSeal) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "seal" });
         if (enemy.Kind == EnemyKind.RiverFerryman && !riverBell) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "bell" });
         if (enemy.Kind == EnemyKind.AshWarden && !lumeLens) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "lens" });

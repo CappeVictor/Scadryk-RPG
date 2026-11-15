@@ -372,7 +372,7 @@ public sealed partial class Game : Form
         else if (e.KeyCode == Keys.Q) UsePotion();
         else if (e.KeyCode == Keys.E) Interact();
         else if (e.KeyCode == Keys.X) SalvageNearbyWeapon();
-        else if (e.KeyCode == Keys.F5) { if (vigilActive) { notice = "TERMINE A VIGÍLIA E SALVE NO REFÚGIO"; noticeTime = 2; } else if (enemies.Count == 0 && drops.Count == 0) SaveGame(); else { notice = "LIMPE A SALA E RECOLHA O LOOT ANTES DE SALVAR"; noticeTime = 2; } }
+        else if (e.KeyCode == Keys.F5) { if (vigilActive) { notice = "TERMINE A VIGÍLIA E SALVE NO REFÚGIO"; noticeTime = 2; } else if (room >= 43) { if (SaveGame()) { notice = "PROGRESSO SALVO • AO CARREGAR, VOLTE DE VÉSPERA"; noticeTime = 4; } } else if (enemies.Count == 0 && drops.Count == 0) SaveGame(); else { notice = "LIMPE A SALA E RECOLHA O LOOT ANTES DE SALVAR"; noticeTime = 2; } }
         else if (e.KeyCode == Keys.Tab) CycleTarget();
     }
 
