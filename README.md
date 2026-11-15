@@ -98,7 +98,7 @@ Quando o alvo marcado é derrotado, o jogo marca automaticamente o inimigo vivo 
 
 A ficha (**P**) resume a build equipada: dano e intervalo do ataque, alcance, chance e multiplicador crítico, dano esperado por segundo contra alvo sem armadura, dano/recarga do Estilhaço, redução de dano, esquiva, talentos, afixos, talismãs e técnicas equipadas. Os números são recalculados ao trocar equipamento; efeitos de chefe, armadura inimiga e bônus temporários não entram no DPS exibido.
 
-Equipar **Vazante** e **Farol de Vigília** juntos ativa uma sinergia: os inimigos atingidos pela Vazante ficam marcados por cinco segundos, e o próximo pulso do Farol que os atingir causa 35% de dano adicional e consome a marca. O aro azul claro identifica os alvos preparados; o menu **B** mostra se a combinação está ativa.
+Equipar **Vazante** e **Farol de Vigília** juntos ativa uma sinergia: os inimigos atingidos pela Vazante ficam marcados por cinco segundos, e o próximo pulso do Farol que os atingir causa 35% de dano adicional e consome a marca. O aro azul claro identifica os alvos preparados; o menu **B** mostra se a combinação está ativa. Duas outras sintonias ampliam as possibilidades de rotação: **Ressonância do Sino + Estilhaço de Voz** marca alvos atingidos pelo Sino; o próximo Estilhaço causa 35% de dano adicional e consome a marca, exibida por um aro dourado. **Manto de Lastro + Devolução das Vozes** fortalece em 35% a cura da Devolução enquanto o Manto estiver ativo. As três combinações e sua condição aparecem no menu **B**.
 
 O alcance dos avisos de interação **E** agora coincide com o alcance efetivo das conversas, portões e objetos, inclusive inscrições opcionais.
 

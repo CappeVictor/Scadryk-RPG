@@ -20,7 +20,7 @@ public sealed class Game : Form
     {
         public PointF Pos, Target, Target2, Target2Start;
         public EnemyKind Kind;
-        public float Hp, MaxHp, Cooldown, Windup, WindupMax, Flash, AnimationTime, AttackPoseTime, SummonCooldown, SummonWindup, SupportCooldown, SupportWindup, BeaconMarkTime, WoundTime, WoundTickCooldown, WoundDamage;
+        public float Hp, MaxHp, Cooldown, Windup, WindupMax, Flash, AnimationTime, AttackPoseTime, SummonCooldown, SummonWindup, SupportCooldown, SupportWindup, BeaconMarkTime, BellMarkTime, WoundTime, WoundTickCooldown, WoundDamage;
         public int BossPattern;
         public bool Armored, Moving;
         public bool VigilMinion;
@@ -724,6 +724,9 @@ public sealed class Game : Form
 
     private bool SkillUnlocked(int skill) => skill switch { 1 => true, 2 => riverBell, 3 => ebbSeal, 4 => anchorWard, 5 => refrainSong, 6 => beaconLight, 7 => finalEnding == 1, 8 => finalEnding == 2, _ => false };
     private bool EbbBeaconSynergyActive() => equippedSkills.Contains(3) && equippedSkills.Contains(6);
+    private bool BellShardSynergyActive() => equippedSkills.Contains(1) && equippedSkills.Contains(2);
+    private bool WardReturnSynergyEquipped() => equippedSkills.Contains(4) && equippedSkills.Contains(7);
+    private bool WardReturnSynergyActive() => WardReturnSynergyEquipped() && wardTime > 0;
     private void CycleSkillVariant(int slot, int direction)
     {
         int skill = equippedSkills[slot];
@@ -829,10 +832,11 @@ public sealed class Game : Form
             float power = enemy.Boss ? 0.55f : 0.95f;
             DamageEnemy(enemy, (int)(damage * power * multiplier * OutgoingDamageMultiplier(enemy) * (IsArmored(enemy) ? 0.75f : 1)));
             enemy.Flash = 0.2f;
+            if (BellShardSynergyActive() && enemy.Hp > 0) enemy.BellMarkTime = 5f;
             if (!enemy.Boss) { enemy.Stagger = 0.95f; enemy.Windup = 0; enemy.Cooldown = Math.Max(enemy.Cooldown, 1.8f); }
             if (enemy.Hp <= 0) Defeat(enemy);
         }
-        notice = HasCharm(2) ? "SINO DE NARA • ONDA AMPLIADA" : "SINO DE NARA • RESSONÂNCIA"; noticeTime = 1.2f;
+        notice = BellShardSynergyActive() ? "SINO DE NARA • ECOS PREPARADOS PARA O ESTILHAÇO" : HasCharm(2) ? "SINO DE NARA • ONDA AMPLIADA" : "SINO DE NARA • RESSONÂNCIA"; noticeTime = 1.2f;
     }
 
     private float EbbPullCooldown() => Math.Max(8f, 12f - skillTalent * 0.5f) * WeaponCooldownMultiplier();
@@ -862,7 +866,7 @@ public sealed class Game : Form
         if (!anchorWard) { notice = "O MANTO DE LASTRO AINDA NÃO FOI APRENDIDO"; noticeTime = 1.5f; return; }
         if (room is 3 or 18 || enemies.Count == 0 || wardCd > 0) return;
         wardTime = AnchorWardDuration(); wardCd = AnchorWardCooldown();
-        notice = "MANTO DE LASTRO • PROTEÇÃO ATIVA"; noticeTime = 1.2f;
+        notice = WardReturnSynergyEquipped() ? "MANTO DE LASTRO • A DEVOLUÇÃO PODE CURAR +35%" : "MANTO DE LASTRO • PROTEÇÃO ATIVA"; noticeTime = 1.2f;
     }
 
     private float RefrainCooldown() => Math.Max(10f, 17f - skillTalent * 0.6f) * WeaponCooldownMultiplier();
@@ -904,10 +908,10 @@ public sealed class Game : Form
             DamageEnemy(enemy, damage * (enemy.Boss ? 0.34f : 0.52f) * boost * OutgoingDamageMultiplier(enemy) * (IsArmored(enemy) ? 0.75f : 1f));
             enemy.Flash = 0.2f;
             if (!enemy.Boss) { enemy.Windup = 0; enemy.Stagger = Math.Max(enemy.Stagger, 0.32f); enemy.Cooldown = Math.Max(enemy.Cooldown, 0.8f); }
-            restored += maxHealth * (enemy.Boss ? 0.025f : 0.045f) * (skillVariants[7] == 1 ? 1.35f : skillVariants[7] == 2 ? 0.7f : 1f);
+            restored += maxHealth * (enemy.Boss ? 0.025f : 0.045f) * (skillVariants[7] == 1 ? 1.35f : skillVariants[7] == 2 ? 0.7f : 1f) * (WardReturnSynergyActive() ? 1.35f : 1f);
             if (enemy.Hp <= 0) Defeat(enemy);
         }
-        health = Math.Min(maxHealth, health + Math.Min(maxHealth * 0.24f, restored)); notice = "DEVOLUÇÃO DAS VOZES • MEMÓRIAS PARTILHADAS"; noticeTime = 1.4f;
+        health = Math.Min(maxHealth, health + Math.Min(maxHealth * 0.24f, restored)); notice = WardReturnSynergyActive() ? "DEVOLUÇÃO DAS VOZES • MANTO AMPLIOU A CURA" : "DEVOLUÇÃO DAS VOZES • MEMÓRIAS PARTILHADAS"; noticeTime = 1.4f;
     }
     private void CastFinalSpark()
     {
@@ -974,7 +978,10 @@ public sealed class Game : Form
                 foreach (Enemy enemy in enemies.ToArray())
                 {
                     if (shard.Hit.Contains(enemy) || DistanceToSegment(enemy.Pos, Sub(shard.Pos, Scale(shard.Direction, step)), shard.Pos) >= enemy.Radius + 8) continue;
-                    shard.Hit.Add(enemy); DamageEnemy(enemy, shard.Damage * OutgoingDamageMultiplier(enemy) * (IsArmored(enemy) ? 0.75f : 1)); enemy.Flash = 0.16f;
+                    shard.Hit.Add(enemy);
+                    bool bellResonantTarget = BellShardSynergyActive() && enemy.BellMarkTime > 0;
+                    DamageEnemy(enemy, shard.Damage * (bellResonantTarget ? 1.35f : 1f) * OutgoingDamageMultiplier(enemy) * (IsArmored(enemy) ? 0.75f : 1)); enemy.Flash = 0.16f;
+                    if (bellResonantTarget) { enemy.BellMarkTime = 0; AddFloatingText(new PointF(enemy.Pos.X, enemy.Pos.Y - enemy.Radius - 26), "SINO + ESTILHAÇO", Color.LightGoldenrodYellow); }
                     if (enemy.Hp <= 0) Defeat(enemy);
                 }
             }
@@ -1208,7 +1215,7 @@ public sealed class Game : Form
 
     private void UpdateEnemy(Enemy e, float dt)
     {
-        e.AttackPoseTime = Math.Max(0, e.AttackPoseTime - dt); e.BeaconMarkTime = Math.Max(0, e.BeaconMarkTime - dt);
+        e.AttackPoseTime = Math.Max(0, e.AttackPoseTime - dt); e.BeaconMarkTime = Math.Max(0, e.BeaconMarkTime - dt); e.BellMarkTime = Math.Max(0, e.BellMarkTime - dt);
         if (HasEliteAffix(e, EliteAffix.Summoner))
         {
             if (e.SummonWindup > 0 && e.Stagger > 0) { e.SummonWindup = 0; e.SummonCooldown = 2.5f; }
@@ -2803,6 +2810,7 @@ public sealed class Game : Form
         if (enemy.VigilMinion) { using var chorusRing = new Pen(Color.FromArgb(235, 194, 133, 230), 3) { DashStyle = DashStyle.Dot }; g.DrawEllipse(chorusRing, enemy.Pos.X - r - 6, enemy.Pos.Y - 12, (r + 6) * 2, 24); }
         if (enemy.EliteMinion) { using var summonedRing = new Pen(Color.FromArgb(235, 192, 112, 220), 3) { DashStyle = DashStyle.Dash }; g.DrawEllipse(summonedRing, enemy.Pos.X - r - 6, enemy.Pos.Y - 12, (r + 6) * 2, 24); }
         if (enemy.BeaconMarkTime > 0) { using var beaconMark = new Pen(Color.FromArgb(235, 165, 229, 238), 3) { DashStyle = DashStyle.Dot }; g.DrawEllipse(beaconMark, enemy.Pos.X - r - 8, enemy.Pos.Y - 15, (r + 8) * 2, 30); }
+        if (enemy.BellMarkTime > 0) { using var bellMark = new Pen(Color.FromArgb(240, 246, 207, 119), 2) { DashStyle = DashStyle.Dot }; g.DrawEllipse(bellMark, enemy.Pos.X - r - 14, enemy.Pos.Y - 20, (r + 14) * 2, 40); }
         if (enemy.Kind == EnemyKind.ReedKeeper) { using var stalk = new Pen(Color.FromArgb(220, 205, 193, 133), 3); for (int i = -1; i <= 1; i++) g.DrawLine(stalk, enemy.Pos.X + i * 9, enemy.Pos.Y + 13, enemy.Pos.X + i * 5, enemy.Pos.Y - 23); }
         if (enemy.Kind == EnemyKind.FlowKeeper) { using var ring = new Pen(Color.FromArgb(210, 157, 215, 216), 2); float spin = windupPulse * 40; g.DrawArc(ring, enemy.Pos.X - 18, enemy.Pos.Y - 18, 36, 36, spin, 235); g.DrawArc(ring, enemy.Pos.X - 13, enemy.Pos.Y - 13, 26, 26, spin + 170, 115); }
         if (enemy.Kind == EnemyKind.GlassHerald) { using var shard = new Pen(Color.FromArgb(225, 186, 224, 231), 3); float spin = windupPulse * 24; for (int i = 0; i < 3; i++) { float angle = spin + i * 120; float radians = angle * MathF.PI / 180; PointF tip = new(enemy.Pos.X + MathF.Cos(radians) * 27, enemy.Pos.Y + MathF.Sin(radians) * 27); PointF tail = new(enemy.Pos.X - MathF.Cos(radians) * 18, enemy.Pos.Y - MathF.Sin(radians) * 18); g.DrawLine(shard, tail, tip); } }
@@ -3279,7 +3287,10 @@ public sealed class Game : Form
             g.DrawString($"{skill}. {skillNames[skill].ToUpperInvariant()}{state}", body, unlocked ? Brushes.AntiqueWhite : Brushes.Gray, 480, 262 + (skill - 1) * 32);
             g.DrawString(skillDescriptions[skill], small, Brushes.DarkGray, 503, 280 + (skill - 1) * 32);
         }
-        g.DrawString($"SINERGIA {(EbbBeaconSynergyActive() ? "ATIVA" : "INATIVA")}: VAZANTE marca os alvos; o próximo pulso do Farol causa +35% de dano", small, EbbBeaconSynergyActive() ? Brushes.LightCyan : Brushes.DarkGray, new RectangleF(150, 518, 660, 20));
+        g.DrawString("SINTONIAS DE TÉCNICAS", small, Brushes.Goldenrod, 150, 472);
+        g.DrawString("1+2 • Sino prepara alvos; Estilhaço causa +35% e consome a marca", small, BellShardSynergyActive() ? Brushes.LightGoldenrodYellow : Brushes.DarkGray, new RectangleF(150, 488, 310, 16));
+        g.DrawString("3+6 • Vazante prepara alvos; Farol causa +35% no próximo pulso", small, EbbBeaconSynergyActive() ? Brushes.LightCyan : Brushes.DarkGray, new RectangleF(150, 504, 310, 16));
+        g.DrawString("4+7 • Manto ativo amplia em 35% a cura da Devolução", small, WardReturnSynergyActive() ? Brushes.LightGreen : WardReturnSynergyEquipped() ? Brushes.Goldenrod : Brushes.DarkGray, new RectangleF(150, 520, 310, 16));
         g.DrawString("↑/↓ altera a memória da técnica equipada • BACKSPACE esvazia • B/ESC fecha • R: Redemoinho", small, Brushes.DarkGray, new RectangleF(150, 544, 660, 18));
     }
 
@@ -3945,6 +3956,19 @@ public sealed class Game : Form
             float cooldown = bellGame.bellCd; bellGame.CastBellPulse();
             if (bellGame.bellCd != cooldown) throw new InvalidOperationException("A Ressonância do Sino ignorou sua recarga.");
         }
+        using (var bellShardSynergy = new Game())
+        {
+            bellShardSynergy.timer.Stop(); bellShardSynergy.StartGame(); bellShardSynergy.storyOverlay = false; bellShardSynergy.room = 6; bellShardSynergy.riverBell = true; bellShardSynergy.equippedSkills = new[] { 1, 2, 0 }; bellShardSynergy.player = new PointF(250, 320); bellShardSynergy.mouseAim = new PointF(1, 0); bellShardSynergy.damage = 100; bellShardSynergy.enemies.Clear();
+            var preparedEcho = new Enemy { Pos = new PointF(330, 320), Kind = EnemyKind.Grunt, Hp = 1000, MaxHp = 1000 }; bellShardSynergy.enemies.Add(preparedEcho);
+            bellShardSynergy.CastBellPulse(); float healthBeforeShard = preparedEcho.Hp;
+            if (preparedEcho.BellMarkTime != 5f || !bellShardSynergy.notice.Contains("PREPARADOS PARA O ESTILHAÇO")) throw new InvalidOperationException("Sino + Estilhaço não prepararam o alvo por cinco segundos.");
+            bellShardSynergy.CastVoiceShard(); float expectedResonantDamage = bellShardSynergy.echoShards.Single().Damage * 1.35f;
+            bellShardSynergy.AdvanceVoiceShards(0.2f);
+            if (Math.Abs((healthBeforeShard - preparedEcho.Hp) - expectedResonantDamage) > 0.01f || preparedEcho.BellMarkTime != 0 || !bellShardSynergy.floatingTexts.Any(text => text.Text == "SINO + ESTILHAÇO")) throw new InvalidOperationException("Estilhaço não consumiu a marca do Sino com +35% de dano e aviso visual.");
+            bellShardSynergy.equippedSkills = new[] { 1, 0, 0 }; preparedEcho.BellMarkTime = 0; bellShardSynergy.bellCd = 0;
+            bellShardSynergy.CastBellPulse();
+            if (preparedEcho.BellMarkTime != 0 || bellShardSynergy.notice.Contains("PREPARADOS PARA O ESTILHAÇO")) throw new InvalidOperationException("Sino + Estilhaço funcionaram sem as duas técnicas equipadas.");
+        }
         using (var lockedBellGame = new Game())
         {
             lockedBellGame.timer.Stop(); lockedBellGame.StartGame(); lockedBellGame.storyOverlay = false; lockedBellGame.room = 6; lockedBellGame.enemies.Add(new Enemy { Pos = new PointF(260, 330), Kind = EnemyKind.Grunt, Hp = 100, MaxHp = 100 }); lockedBellGame.CastBellPulse();
@@ -3967,6 +3991,18 @@ public sealed class Game : Form
             wardGame.questStage = 36; wardGame.counterTrace = true; wardGame.anchorWard = true;
             SaveData savedWard = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(wardGame.CaptureSaveData())) ?? throw new InvalidOperationException("O Manto de Lastro não foi serializado.");
             if (!savedWard.AnchorWard) throw new InvalidOperationException("O desbloqueio do Manto de Lastro não persistiu no save.");
+        }
+        using (var wardReturnSynergy = new Game())
+        {
+            wardReturnSynergy.timer.Stop(); wardReturnSynergy.StartGame(); wardReturnSynergy.storyOverlay = false; wardReturnSynergy.room = 6; wardReturnSynergy.anchorWard = true; wardReturnSynergy.finalEnding = 1; wardReturnSynergy.equippedSkills = new[] { 4, 7, 0 }; wardReturnSynergy.maxHealth = 100; wardReturnSynergy.health = 40; wardReturnSynergy.enemies.Clear();
+            wardReturnSynergy.enemies.Add(new Enemy { Pos = new PointF(300, 320), Kind = EnemyKind.Grunt, Hp = 1000, MaxHp = 1000 });
+            wardReturnSynergy.CastAnchorWard();
+            if (wardReturnSynergy.wardTime <= 0 || !wardReturnSynergy.notice.Contains("+35%")) throw new InvalidOperationException("Manto + Devolução não anunciaram a cura ampliada ao ativar a proteção.");
+            wardReturnSynergy.CastReturnedVoices();
+            if (Math.Abs(wardReturnSynergy.health - 46.075f) > 0.01f || !wardReturnSynergy.notice.Contains("MANTO AMPLIOU A CURA")) throw new InvalidOperationException("Devolução não ampliou a cura em 35% enquanto o Manto estava ativo.");
+            wardReturnSynergy.wardTime = 0; wardReturnSynergy.health = 40; wardReturnSynergy.returnVoiceCd = 0; wardReturnSynergy.equippedSkills = new[] { 0, 7, 0 };
+            wardReturnSynergy.CastReturnedVoices();
+            if (Math.Abs(wardReturnSynergy.health - 44.5f) > 0.01f) throw new InvalidOperationException("A cura ampliada do Manto persistiu após a proteção expirar ou sem o par equipado.");
         }
         using (var lootRollCheck = new Game())
         {
