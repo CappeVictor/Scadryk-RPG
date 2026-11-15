@@ -197,7 +197,7 @@ public sealed partial class Game : Form
     private float playerAnimationTime;
     private int room, level = 1, xp, gold, potions = 2, damage = 25, weapon, ownedWeapons = 1, difficultyTier;
     private HeroClass heroClass;
-    private float stoneFury, nameThread;
+    private float stoneFury, nameThread, screenShakeTime, screenShakeStrength, screenShakePhase;
     private int armorTrait, relicTrait;
     private int healthTalent, skillTalent, dodgeTalent, techniqueTalent, combatDiscipline, combatMastery, combatFocus, combatApex, pendingTalents, enemiesDefeated;
     private int memoriesFound, questStage, tideGlass, finalEnding, eliteWeaponMisses;
@@ -207,6 +207,7 @@ public sealed partial class Game : Form
     private float vigilMinionCooldown, vigilTideTime;
     private bool vigilActive, vigilChoiceOpen;
     private bool highContrastTelegraphs;
+    private bool reducedScreenShake;
     private bool silenceMemory;
     private bool borrowedTrace, unstruckTrace;
     private long clearedRooms;
@@ -294,7 +295,7 @@ public sealed partial class Game : Form
         clearedRooms = 0;
         ownedCharms = equippedCharm = equippedCharm2 = 0;
         equippedSkills = new[] { 1, 0, 0, 0 }; alternateSkills = new int[4]; alternateSkillsActive = skillMenuAlternate = false; Array.Clear(skillVariants); skillMenuOpen = false; skillMenuSlot = 0;
-        health = maxHealth = 100; attackCd = attackFlash = skillCd = shardCd = bellCd = bellWaveTime = bellWaveRadius = pullCd = pullWaveTime = wardCd = wardTime = refrainCd = refrainWaveTime = refrainWaveRadius = beaconCd = beaconTime = beaconPulseCd = beaconWaveTime = returnVoiceCd = returnVoiceWaveTime = returnVoiceWaveRadius = finalStrikeCd = finalStrikeFlash = stoneBastionCd = stoneBastionTime = nameWeaverCd = dashCd = dashTime = invulnerable = veinResonanceTime = stoneFury = nameThread = 0; vigilMinionCooldown = vigilTideTime = 0; beaconPos = finalStrikeTarget = PointF.Empty; facing = mouseAim = dashDirection = new PointF(1, 0); playerAnimationTime = 0; echoShards.Clear(); floatingTexts.Clear(); title = false; storyPage = 0; storyOverlay = true; SetupRoom();
+        health = maxHealth = 100; attackCd = attackFlash = skillCd = shardCd = bellCd = bellWaveTime = bellWaveRadius = pullCd = pullWaveTime = wardCd = wardTime = refrainCd = refrainWaveTime = refrainWaveRadius = beaconCd = beaconTime = beaconPulseCd = beaconWaveTime = returnVoiceCd = returnVoiceWaveTime = returnVoiceWaveRadius = finalStrikeCd = finalStrikeFlash = stoneBastionCd = stoneBastionTime = nameWeaverCd = dashCd = dashTime = invulnerable = veinResonanceTime = stoneFury = nameThread = screenShakeTime = screenShakeStrength = screenShakePhase = 0; vigilMinionCooldown = vigilTideTime = 0; beaconPos = finalStrikeTarget = PointF.Empty; facing = mouseAim = dashDirection = new PointF(1, 0); playerAnimationTime = 0; echoShards.Clear(); floatingTexts.Clear(); title = false; storyPage = 0; storyOverlay = true; SetupRoom();
     }
 
     private void AdvanceStory()
@@ -715,6 +716,7 @@ public sealed partial class Game : Form
     private void TickGame()
     {
         float dt = timer.Interval / 1000f; noticeTime = Math.Max(0, noticeTime - dt);
+        screenShakeTime = Math.Max(0, screenShakeTime - dt); screenShakeStrength = screenShakeTime > 0 ? screenShakeStrength * Math.Max(0, 1 - dt * 5.5f) : 0; screenShakePhase += dt * 55;
         GameAudio.SetAmbientActive(!GameplayPaused(), room);
         if (GameplayPaused()) { Invalidate(); return; }
         attackCd = Math.Max(0, attackCd - dt); attackFlash = Math.Max(0, attackFlash - dt); skillCd = Math.Max(0, skillCd - dt); shardCd = Math.Max(0, shardCd - dt); bellCd = Math.Max(0, bellCd - dt); bellWaveTime = Math.Max(0, bellWaveTime - dt); pullCd = Math.Max(0, pullCd - dt); pullWaveTime = Math.Max(0, pullWaveTime - dt); wardCd = Math.Max(0, wardCd - dt); wardTime = Math.Max(0, wardTime - dt); refrainCd = Math.Max(0, refrainCd - dt); refrainWaveTime = Math.Max(0, refrainWaveTime - dt); beaconCd = Math.Max(0, beaconCd - dt); returnVoiceCd = Math.Max(0, returnVoiceCd - dt); returnVoiceWaveTime = Math.Max(0, returnVoiceWaveTime - dt); finalStrikeCd = Math.Max(0, finalStrikeCd - dt); finalStrikeFlash = Math.Max(0, finalStrikeFlash - dt); stoneBastionCd = Math.Max(0, stoneBastionCd - dt); stoneBastionTime = Math.Max(0, stoneBastionTime - dt); nameWeaverCd = Math.Max(0, nameWeaverCd - dt); dashCd = Math.Max(0, dashCd - dt); dashTime = Math.Max(0, dashTime - dt); invulnerable = Math.Max(0, invulnerable - dt); veinResonanceTime = Math.Max(0, veinResonanceTime - dt); windupPulse += dt; TickFloatingTexts(dt);
@@ -981,6 +983,7 @@ public sealed partial class Game : Form
         if (enemy.NameWeaverMarkTime > 0) amount *= 1.25f;
         enemy.Hp -= amount;
         if (amount <= 0) return;
+        TriggerScreenShake(critical ? 3.2f : amount >= damage * 1.5f ? 2.2f : 0.8f, critical ? 0.14f : 0.1f);
         string value = Math.Max(1, (int)Math.Round(amount)).ToString();
         AddFloatingText(new PointF(enemy.Pos.X, enemy.Pos.Y - enemy.Radius - 10), critical ? $"CRÍTICO {value}" : value, critical ? Color.FromArgb(255, 211, 123) : Color.AntiqueWhite);
     }
@@ -1022,6 +1025,7 @@ public sealed partial class Game : Form
         float campaignPressure = vigilActive ? 1f : DifficultyIncomingDamageMultiplier(difficultyTier);
         float damageTaken = value * vigilPressure * aspectPressure * campaignPressure * HeroDamageTakenMultiplier() * ArmorDamageTakenMultiplier() * (wardTime > 0 ? AnchorWardDamageTakenMultiplier() : 1) * (stoneBastionTime > 0 ? 0.45f : 1f) * WeaponDamageTakenMultiplier() * CharmDamageTakenMultiplier() * CombatMasteryDamageTakenMultiplier() * CombatApexDamageTakenMultiplier();
         health = Math.Max(0, health - damageTaken); invulnerable = 0.6f;
+        TriggerScreenShake(Math.Clamp(damageTaken * 0.13f, 2f, 7f), 0.24f);
         if (heroClass == HeroClass.StoneGuardian && stoneFury < 100)
         {
             stoneFury = Math.Min(100, stoneFury + damageTaken * 2.25f);
@@ -1037,6 +1041,13 @@ public sealed partial class Game : Form
             }
             else dead = true;
         }
+    }
+
+    private void TriggerScreenShake(float strength, float duration)
+    {
+        if (reducedScreenShake) strength *= 0.3f;
+        screenShakeStrength = Math.Max(screenShakeStrength, strength);
+        screenShakeTime = Math.Max(screenShakeTime, duration);
     }
 
     private void AddFloatingText(PointF pos, string text, Color color)
@@ -1394,6 +1405,9 @@ public sealed partial class Game : Form
             g.DrawString($"FIO DE NOMES • {nameThread:0}%{(nameThread >= 40 ? " • SUTURA PRONTA" : "")}", threadFont, threadLabel, 25, 69);
             g.FillRectangle(threadBack, 25, 80, 190, 3); g.FillRectangle(threadBar, 25, 80, 190 * Math.Clamp(nameThread / 100f, 0, 1), 3);
         }
+        GraphicsState worldTransform = g.Save();
+        if (screenShakeStrength > 0.05f)
+            g.TranslateTransform(MathF.Sin(screenShakePhase) * screenShakeStrength, MathF.Cos(screenShakePhase * 1.37f) * screenShakeStrength * 0.72f);
         if (room == 3) DrawTownEnvironment(g, floor, tile);
         else if (room == 18) DrawRefugeEnvironment(g, floor, tile);
         else if (room is 19 or 20) DrawLedgerTrailEnvironment(g, floor, tile);
@@ -1432,6 +1446,7 @@ public sealed partial class Game : Form
         if (returnVoiceWaveTime > 0) DrawReturnedVoicesWave(g);
         if (finalStrikeFlash > 0) DrawFinalSparkFlash(g);
         DrawFloatingTexts(g);
+        g.Restore(worldTransform);
         string roomTitle = vigilActive ? $"VIGÍLIA ASCENDENTE • ANDAR {vigilFloor}" : room == 3 || room == 18 ? roomNames[room] : room < 3 ? $"{room + 1} / 3   {roomNames[room]}" : room < 6 ? $"{room - 3} / 2   {roomNames[room]}" : room < 8 ? $"{room - 5} / 2   {roomNames[room]}" : room < 10 ? $"{room - 7} / 2   {roomNames[room]}" : room < 12 ? $"{room - 9} / 2   {roomNames[room]}" : room < 14 ? $"{room - 11} / 2   {roomNames[room]}" : room < 16 ? $"{room - 13} / 2   {roomNames[room]}" : room < 18 ? $"{room - 15} / 2   {roomNames[room]}" : room < 21 ? $"{room - 18} / 2   {roomNames[room]}" : room < 23 ? $"{room - 20} / 2   {roomNames[room]}" : room < 25 ? $"{room - 22} / 2   {roomNames[room]}" : room < 27 ? $"{room - 24} / 2   {roomNames[room]}" : room < 29 ? $"{room - 26} / 2   {roomNames[room]}" : room < 31 ? $"{room - 28} / 2   {roomNames[room]}" : room < 33 ? $"{room - 30} / 2   {roomNames[room]}" : room < 35 ? $"{room - 32} / 2   {roomNames[room]}" : room < 37 ? $"{room - 34} / 2   {roomNames[room]}" : room < 39 ? $"{room - 36} / 2   {roomNames[room]}" : room < 41 ? $"{room - 38} / 2   {roomNames[room]}" : $"{room - 40} / 2   {roomNames[room]}";
         g.DrawString(roomTitle, roomFont, goldBrush, 67, 572);
         int memoriesRead = (memoriesFound & 1) + ((memoriesFound >> 1) & 1);

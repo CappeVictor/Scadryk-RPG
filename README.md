@@ -103,6 +103,7 @@ As armas têm quatro perfis: a Espada de Pedra mantém alcance e ritmo equilibra
 | Tab | Trocar alvo; no menu B, alternar a montagem que está sendo editada |
 | H | Ativar ou desativar o alto contraste dos avisos de ataque |
 | N | Ativar ou silenciar a ambiência e os efeitos de áudio |
+| M no menu de configurações | Alternar o tremor de câmera reduzido; a escolha fica no save |
 | Enter, Espaço ou clique na introdução | Avançar o prólogo e a lembrança |
 | F5 | Salvar depois de limpar a sala e recolher o loot |
 | C na tela inicial | Carregar o save |
@@ -121,6 +122,8 @@ O alcance dos avisos de interação **E** agora coincide com o alcance efetivo d
 Os efeitos de golpe, esquiva, impacto, técnica, coleta e aviso de ataque, a trilha musical e oito paisagens sonoras regionais são sintetizados pelo jogo em C# e reproduzidos pelo áudio do Windows. As paisagens mudam ao entrar em refúgios, pedra e arquivos, água, câmaras de brasas, margens, áreas de vidro e lanternas, regiões de silêncio e, no Capítulo XVIII, badaladas ressonantes próprias. Camadas leves de vento, água, ruído e harmônicos acompanham a música durante a exploração e param em telas de pausa. O sinal grave do chefe acompanha o aviso visual de cada golpe; elites usam um toque curto e agudo. Não há pacote, arquivo de som ou ferramenta adicional para instalar. Pressione **N** para silenciar ou reativar toda a camada de áudio.
 
 Pressione **H** para destacar avisos de ataque com amarelo claro e contorno escuro; a escolha fica salva junto ao progresso. Os contornos de todos os avisos pulsam e ganham intensidade conforme o impacto se aproxima; o modo de alto contraste preserva uma borda escura para separar as áreas perigosas do cenário.
+
+Os golpes básicos, críticos e ataques recebidos agora aplicam um tremor breve à cena, proporcional à força do impacto. Em **Menu inicial → Configurações**, escolha **Tremor de câmera: Reduzido**; também é possível alternar essa opção com **M** enquanto a linha estiver selecionada. O ajuste reduz a amplitude para 30% e fica registrado no save.
 
 Cada nível concede um ponto: **Vigor** aumenta a vida máxima, **Domínio** reduz as recargas, **Agilidade** acelera a esquiva e **Sintonia** acrescenta 8% de dano às técnicas por ponto. No nível 5, a primeira escolha daquele nível é uma especialização: **Forma do Gume** dá +12% de dano básico e -10% de dano de técnicas; **Forma do Eco** dá +12% de dano de técnicas e -10% de dano básico. No nível 10, uma segunda escolha define a postura defensiva: **Guarda Serena** reduz dano recebido em 10%, mas aumenta a recarga da esquiva em 0,20 s; **Passo Impetuoso** reduz a recarga da esquiva em 0,18 s, mas aumenta dano recebido em 8%. No nível 15, escolha **Caçador de Ecos**, que causa +15% de dano contra chefes, ou **Quebra-Formação**, que causa +10% contra inimigos comuns enquanto restarem ao menos três inimigos. No nível 20, **Coro Suspenso** dá +18% de dano de técnica quando duas ou mais técnicas equipadas estão recarregando; **Âncora de Eco** reduz em 12% o dano recebido na mesma condição. Essas decisões consomem pontos de nível e podem ser redistribuídas na forja. Saves antigos mantêm suas escolhas existentes; quem já passou de cada marco recebe a escolha ao avançar de nível ou ao redistribuir talentos.
 

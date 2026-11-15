@@ -70,9 +70,11 @@ public sealed partial class Game
         }
         if (titlePage == TitlePage.Settings)
         {
-            if (key is Keys.Up or Keys.W or Keys.Down or Keys.S) titleSelection = 1 - titleSelection;
+            if (key is Keys.Up or Keys.W) titleSelection = (titleSelection + 2) % 3;
+            else if (key is Keys.Down or Keys.S) titleSelection = (titleSelection + 1) % 3;
             else if (titleSelection == 0 && (key is Keys.Enter or Keys.Space or Keys.N)) ToggleTitleAudio();
             else if (titleSelection == 1 && (key is Keys.Enter or Keys.Space or Keys.H)) highContrastTelegraphs = !highContrastTelegraphs;
+            else if (titleSelection == 2 && (key is Keys.Enter or Keys.Space or Keys.M)) reducedScreenShake = !reducedScreenShake;
             Invalidate();
         }
     }
@@ -164,6 +166,7 @@ public sealed partial class Game
         {
             if (point.Y is >= 250 and < 345) ToggleTitleAudio();
             else if (point.Y is >= 350 and < 445) highContrastTelegraphs = !highContrastTelegraphs;
+            else if (point.Y is >= 450 and < 535) reducedScreenShake = !reducedScreenShake;
         }
         Invalidate();
     }
@@ -258,7 +261,8 @@ public sealed partial class Game
             bool mutedAudio = GameAudio.Muted;
             DrawTitleSetting(g, 0, "ÁUDIO", mutedAudio ? "DESATIVADO" : "ATIVADO", titleSelection == 0);
             DrawTitleSetting(g, 1, "AVISOS DE ATAQUE", highContrastTelegraphs ? "ALTO CONTRASTE" : "PADRÃO", titleSelection == 1);
-            DrawCentered(g, "N / ENTER ALTERA O ÁUDIO     H / ENTER ALTERA O CONTRASTE", 470, new Font("Segoe UI", 10), Color.FromArgb(171, 177, 164));
+            DrawTitleSetting(g, 2, "TREMOR DE CÂMERA", reducedScreenShake ? "REDUZIDO" : "NORMAL", titleSelection == 2);
+            DrawCentered(g, "N / ENTER ÁUDIO     H / ENTER CONTRASTE     M / ENTER TREMOR", 548, new Font("Segoe UI", 10), Color.FromArgb(171, 177, 164));
             DrawCentered(g, "↑ / ↓ NAVEGAR     ESC VOLTAR", 584, new Font("Segoe UI", 9), Color.FromArgb(158, 164, 154));
         }
         if (confirmNewJourney)
