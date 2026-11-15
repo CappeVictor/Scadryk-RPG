@@ -178,3 +178,5 @@ Cada uma das oito técnicas aprendidas agora tem duas memórias opcionais além 
 A renderização e a interface foram separadas em `Game.Rendering.cs`; os avisos, ataques, IA, dano, feridas, recuos e outros sistemas de combate estão em `Game.CombatRuntime.cs`. Os comportamentos permanecem no mesmo tipo parcial, preservando o fluxo atual enquanto os limites entre sistemas ficam claros.
 
 A criação de salas, as regras da Vigília, as transições da campanha e as interações da praça e do Refúgio agora ficam em `Game.World.cs`. O núcleo `Game.cs` foi reduzido de cerca de 2.800 para 640 linhas. Próximos limites: separar save e progressão, mover as definições de conteúdo para dados verificáveis e retirar colisão e geometria do núcleo.
+
+As regras de progressão e recompensas — redistribuição e escolha de talentos, poderes únicos acionados em abates, recompensas de inimigos e ganho de experiência — agora ficam em `Game.Progression.cs`. Os números e a ordem das recompensas foram mantidos nesta extração. A próxima etapa é separar as definições dos drops do código de execução para tornar o balanceamento mais seguro.
