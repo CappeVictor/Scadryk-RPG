@@ -199,7 +199,7 @@ public sealed partial class Game : Form
     private float playerAnimationTime;
     private int room, level = 1, xp, gold, potions = 2, damage = 25, weapon, ownedWeapons = 1, difficultyTier;
     private HeroClass heroClass;
-    private float stoneFury, nameThread, screenShakeTime, screenShakeStrength, screenShakePhase;
+    private float stoneFury, nameThread, screenShakeTime, screenShakeStrength, screenShakePhase, hitStopTime;
     private int armorTrait, relicTrait;
     private int healthTalent, skillTalent, dodgeTalent, techniqueTalent, combatDiscipline, combatMastery, combatFocus, combatApex, pendingTalents, enemiesDefeated;
     private int memoriesFound, questStage, tideGlass, finalEnding, eliteWeaponMisses;
@@ -298,7 +298,7 @@ public sealed partial class Game : Form
         clearedRooms = 0;
         ownedCharms = equippedCharm = equippedCharm2 = 0;
         equippedSkills = new[] { 1, 0, 0, 0 }; alternateSkills = new int[4]; alternateSkillsActive = skillMenuAlternate = false; Array.Clear(skillVariants); skillMenuOpen = false; skillMenuSlot = 0;
-        health = maxHealth = 100; attackCd = attackFlash = skillCd = shardCd = bellCd = bellWaveTime = bellWaveRadius = pullCd = pullWaveTime = wardCd = wardTime = refrainCd = refrainWaveTime = refrainWaveRadius = beaconCd = beaconTime = beaconPulseCd = beaconWaveTime = returnVoiceCd = returnVoiceWaveTime = returnVoiceWaveRadius = finalStrikeCd = finalStrikeFlash = stoneBastionCd = stoneBastionTime = nameWeaverCd = dashCd = dashTime = invulnerable = veinResonanceTime = stoneFury = nameThread = screenShakeTime = screenShakeStrength = screenShakePhase = 0; vigilMinionCooldown = vigilTideTime = 0; beaconPos = finalStrikeTarget = PointF.Empty; facing = mouseAim = dashDirection = new PointF(1, 0); playerAnimationTime = 0; echoShards.Clear(); floatingTexts.Clear(); title = false; storyPage = 0; storyOverlay = true; SetupRoom();
+        health = maxHealth = 100; attackCd = attackFlash = skillCd = shardCd = bellCd = bellWaveTime = bellWaveRadius = pullCd = pullWaveTime = wardCd = wardTime = refrainCd = refrainWaveTime = refrainWaveRadius = beaconCd = beaconTime = beaconPulseCd = beaconWaveTime = returnVoiceCd = returnVoiceWaveTime = returnVoiceWaveRadius = finalStrikeCd = finalStrikeFlash = stoneBastionCd = stoneBastionTime = nameWeaverCd = dashCd = dashTime = invulnerable = veinResonanceTime = stoneFury = nameThread = screenShakeTime = screenShakeStrength = screenShakePhase = hitStopTime = 0; vigilMinionCooldown = vigilTideTime = 0; beaconPos = finalStrikeTarget = PointF.Empty; facing = mouseAim = dashDirection = new PointF(1, 0); playerAnimationTime = 0; echoShards.Clear(); floatingTexts.Clear(); title = false; storyPage = 0; storyOverlay = true; SetupRoom();
     }
 
     private void AdvanceStory()
@@ -735,10 +735,12 @@ public sealed partial class Game : Form
 
     private void TickGame()
     {
-        float dt = timer.Interval / 1000f; noticeTime = Math.Max(0, noticeTime - dt);
-        screenShakeTime = Math.Max(0, screenShakeTime - dt); screenShakeStrength = screenShakeTime > 0 ? screenShakeStrength * Math.Max(0, 1 - dt * 5.5f) : 0; screenShakePhase += dt * 55;
+        float dt = timer.Interval / 1000f;
         GameAudio.SetAmbientActive(!GameplayPaused(), room);
         if (GameplayPaused()) { Invalidate(); return; }
+        if (hitStopTime > 0) { hitStopTime = Math.Max(0, hitStopTime - dt); Invalidate(); return; }
+        noticeTime = Math.Max(0, noticeTime - dt);
+        screenShakeTime = Math.Max(0, screenShakeTime - dt); screenShakeStrength = screenShakeTime > 0 ? screenShakeStrength * Math.Max(0, 1 - dt * 5.5f) : 0; screenShakePhase += dt * 55;
         attackCd = Math.Max(0, attackCd - dt); attackFlash = Math.Max(0, attackFlash - dt); skillCd = Math.Max(0, skillCd - dt); shardCd = Math.Max(0, shardCd - dt); bellCd = Math.Max(0, bellCd - dt); bellWaveTime = Math.Max(0, bellWaveTime - dt); pullCd = Math.Max(0, pullCd - dt); pullWaveTime = Math.Max(0, pullWaveTime - dt); wardCd = Math.Max(0, wardCd - dt); wardTime = Math.Max(0, wardTime - dt); refrainCd = Math.Max(0, refrainCd - dt); refrainWaveTime = Math.Max(0, refrainWaveTime - dt); beaconCd = Math.Max(0, beaconCd - dt); returnVoiceCd = Math.Max(0, returnVoiceCd - dt); returnVoiceWaveTime = Math.Max(0, returnVoiceWaveTime - dt); finalStrikeCd = Math.Max(0, finalStrikeCd - dt); finalStrikeFlash = Math.Max(0, finalStrikeFlash - dt); stoneBastionCd = Math.Max(0, stoneBastionCd - dt); stoneBastionTime = Math.Max(0, stoneBastionTime - dt); nameWeaverCd = Math.Max(0, nameWeaverCd - dt); dashCd = Math.Max(0, dashCd - dt); dashTime = Math.Max(0, dashTime - dt); invulnerable = Math.Max(0, invulnerable - dt); veinResonanceTime = Math.Max(0, veinResonanceTime - dt); windupPulse += dt; TickFloatingTexts(dt);
         PointF dir = Normalize(MovementInput(), PointF.Empty); if (dashTime > 0) dir = dashDirection;
         MovePlayer(Scale(dir, (dashTime > 0 ? 530 : ClassMovementSpeed()) * dt));
@@ -1046,6 +1048,7 @@ public sealed partial class Game : Form
         float damageTaken = value * vigilPressure * aspectPressure * campaignPressure * HeroDamageTakenMultiplier() * ArmorDamageTakenMultiplier() * (wardTime > 0 ? AnchorWardDamageTakenMultiplier() : 1) * (stoneBastionTime > 0 ? 0.45f : 1f) * WeaponDamageTakenMultiplier() * CharmDamageTakenMultiplier() * CombatMasteryDamageTakenMultiplier() * CombatApexDamageTakenMultiplier();
         health = Math.Max(0, health - damageTaken); invulnerable = 0.6f;
         TriggerScreenShake(Math.Clamp(damageTaken * 0.13f, 2f, 7f), 0.24f);
+        TriggerHitStop(0.055f);
         if (heroClass == HeroClass.StoneGuardian && stoneFury < 100)
         {
             stoneFury = Math.Min(100, stoneFury + damageTaken * 2.25f);
@@ -1069,6 +1072,8 @@ public sealed partial class Game : Form
         screenShakeStrength = Math.Max(screenShakeStrength, strength);
         screenShakeTime = Math.Max(screenShakeTime, duration);
     }
+
+    private void TriggerHitStop(float duration) => hitStopTime = Math.Max(hitStopTime, duration);
 
     private void AddFloatingText(PointF pos, string text, Color color)
     {
