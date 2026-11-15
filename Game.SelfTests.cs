@@ -1397,6 +1397,17 @@ public sealed partial class Game
             SaveData expeditionSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(field.CaptureSaveData()))!;
             if (field.firstEchoQuest != 3 || !expeditionSave.FirstEchoCaveFound || expeditionSave.FirstEchoDiscovered != 7 || !ValidSaveData(expeditionSave)) throw new InvalidOperationException("A expedição não concluiu ou não preservou suas descobertas no save.");
         }
+        using (var navigation = new Game())
+        {
+            navigation.timer.Stop(); navigation.StartGame(); navigation.room = 43; navigation.SetupRoom();
+            navigation.player = new PointF(1500, 900);
+            PointF camera = navigation.CameraOffset();
+            if (camera != new PointF(1020, 580) || navigation.Blocked(new PointF(1740, 700)) || navigation.Blocked(new PointF(1740, 1050)) || !navigation.Blocked(new PointF(1740, 850))) throw new InvalidOperationException("A câmera ou as travessias das Margens não correspondem ao terreno.");
+            navigation.room = 44; navigation.SetupRoom(); navigation.player = new PointF(450, 200);
+            Enemy pursuer = new() { Pos = new PointF(200, 200), Kind = EnemyKind.Grunt };
+            PointF waypoint = navigation.InteriorDetour(pursuer);
+            if (!navigation.BlockedLine(pursuer.Pos, navigation.player) || waypoint == pursuer.Pos || navigation.BlockedEnemyPath(pursuer.Pos, waypoint, pursuer.Radius)) throw new InvalidOperationException("O inimigo não encontrou um primeiro trecho livre ao redor da parede da gruta.");
+        }
         Console.WriteLine("TESTES OK: campanha e expedições, incluindo as Margens do Primeiro Eco, combate, loot, progressão e compatibilidade de saves antigos."); return 0;
     }
 }
