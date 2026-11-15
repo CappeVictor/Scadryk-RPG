@@ -163,6 +163,17 @@ public sealed partial class Game
         g.FillRectangle(meadow, 0, 0, FirstEchoSize.Width, FirstEchoSize.Height);
         g.FillRectangle(grove, 650, 0, 850, 490);
         g.FillRectangle(flooded, 1250, 900, 1150, 500);
+        using var trunk = new SolidBrush(Color.FromArgb(75, 66, 49));
+        using var leaves = new SolidBrush(Color.FromArgb(44, 77, 58));
+        using var rock = new SolidBrush(Color.FromArgb(91, 99, 83));
+        // Fixed landmarks make the road readable each time the region is visited.
+        foreach (PointF tree in new[] { new PointF(700, 110), new(790, 200), new(940, 110), new(1170, 120), new(1320, 260), new(750, 350), new(1280, 390) })
+        {
+            g.FillRectangle(trunk, tree.X - 7, tree.Y, 14, 40);
+            g.FillEllipse(leaves, tree.X - 30, tree.Y - 25, 60, 48);
+        }
+        foreach (PointF stonePos in new[] { new PointF(300, 480), new(620, 850), new(1200, 840), new(1500, 1180), new(1940, 850), new(2220, 980) })
+            g.FillEllipse(rock, stonePos.X - 20, stonePos.Y - 12, 40, 24);
         PointF[] main = { FirstEchoTownGate, new(450, 700), FirstEchoCrossroads, new(1500, 700), new(1870, 700), FirstEchoSluice };
         PointF[] branch = { FirstEchoCrossroads, new(900, 450), FirstEchoCave };
         PointF[] returnPath = { new(1200, 700), new(1400, 1050), new(1900, 1050), new(2100, 700) };
@@ -174,6 +185,11 @@ public sealed partial class Game
         g.FillRectangle(bridge, 1640, 990, 200, 120);
         using var stone = new SolidBrush(Color.FromArgb(111, 108, 92));
         using var edge = new Pen(Color.FromArgb(193, 174, 128), 3);
+        using var building = new SolidBrush(Color.FromArgb(86, 79, 66));
+        g.FillRectangle(building, 2180, 495, 150, 100);
+        g.DrawRectangle(edge, 2180, 495, 150, 100);
+        g.FillEllipse(Brushes.Black, 1005, 185, 90, 50);
+        g.DrawArc(edge, 1005, 165, 90, 70, 180, 180);
         foreach (PointF marker in new[] { FirstEchoTownGate, FirstEchoCrossroads, FirstEchoCave, FirstEchoSluice })
         {
             g.FillRectangle(stone, marker.X - 16, marker.Y - 28, 32, 56);
