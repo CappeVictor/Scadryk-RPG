@@ -39,11 +39,14 @@ public sealed partial class Game
             g.FillRectangle(threadBack, 25, 80, 190, 3); g.FillRectangle(threadBar, 25, 80, 190 * Math.Clamp(nameThread / 100f, 0, 1), 3);
         }
         GraphicsState worldTransform = g.Save();
+        if (room == 43) g.SetClip(new RectangleF(0, 108, 960, 445));
         if (screenShakeStrength > 0.05f)
             g.TranslateTransform(MathF.Sin(screenShakePhase) * screenShakeStrength, MathF.Cos(screenShakePhase * 1.37f) * screenShakeStrength * 0.72f);
         PointF camera = CameraOffset();
         g.TranslateTransform(-camera.X, -camera.Y);
-        if (room == 3) DrawTownEnvironment(g, floor, tile);
+        if (room == 43) DrawFirstEchoEnvironment(g);
+        else if (room is 44 or 45) DrawFirstEchoInterior(g);
+        else if (room == 3) DrawTownEnvironment(g, floor, tile);
         else if (room == 18) DrawRefugeEnvironment(g, floor, tile);
         else if (room is 19 or 20) DrawLedgerTrailEnvironment(g, floor, tile);
         else if (room is 21 or 22) DrawUpstreamEnvironment(g, floor, tile);
@@ -83,7 +86,7 @@ public sealed partial class Game
         if (finalStrikeFlash > 0) DrawFinalSparkFlash(g);
         DrawFloatingTexts(g);
         g.Restore(worldTransform);
-        string roomTitle = vigilActive ? $"VIGÍLIA ASCENDENTE • ANDAR {vigilFloor}" : room == 3 || room == 18 ? roomNames[room] : room < 3 ? $"{room + 1} / 3   {roomNames[room]}" : room < 6 ? $"{room - 3} / 2   {roomNames[room]}" : room < 8 ? $"{room - 5} / 2   {roomNames[room]}" : room < 10 ? $"{room - 7} / 2   {roomNames[room]}" : room < 12 ? $"{room - 9} / 2   {roomNames[room]}" : room < 14 ? $"{room - 11} / 2   {roomNames[room]}" : room < 16 ? $"{room - 13} / 2   {roomNames[room]}" : room < 18 ? $"{room - 15} / 2   {roomNames[room]}" : room < 21 ? $"{room - 18} / 2   {roomNames[room]}" : room < 23 ? $"{room - 20} / 2   {roomNames[room]}" : room < 25 ? $"{room - 22} / 2   {roomNames[room]}" : room < 27 ? $"{room - 24} / 2   {roomNames[room]}" : room < 29 ? $"{room - 26} / 2   {roomNames[room]}" : room < 31 ? $"{room - 28} / 2   {roomNames[room]}" : room < 33 ? $"{room - 30} / 2   {roomNames[room]}" : room < 35 ? $"{room - 32} / 2   {roomNames[room]}" : room < 37 ? $"{room - 34} / 2   {roomNames[room]}" : room < 39 ? $"{room - 36} / 2   {roomNames[room]}" : room < 41 ? $"{room - 38} / 2   {roomNames[room]}" : $"{room - 40} / 2   {roomNames[room]}";
+        string roomTitle = vigilActive ? $"VIGÍLIA ASCENDENTE • ANDAR {vigilFloor}" : room == 3 || room == 18 || room >= 43 ? roomNames[room] : room < 3 ? $"{room + 1} / 3   {roomNames[room]}" : room < 6 ? $"{room - 3} / 2   {roomNames[room]}" : room < 8 ? $"{room - 5} / 2   {roomNames[room]}" : room < 10 ? $"{room - 7} / 2   {roomNames[room]}" : room < 12 ? $"{room - 9} / 2   {roomNames[room]}" : room < 14 ? $"{room - 11} / 2   {roomNames[room]}" : room < 16 ? $"{room - 13} / 2   {roomNames[room]}" : room < 18 ? $"{room - 15} / 2   {roomNames[room]}" : room < 21 ? $"{room - 18} / 2   {roomNames[room]}" : room < 23 ? $"{room - 20} / 2   {roomNames[room]}" : room < 25 ? $"{room - 22} / 2   {roomNames[room]}" : room < 27 ? $"{room - 24} / 2   {roomNames[room]}" : room < 29 ? $"{room - 26} / 2   {roomNames[room]}" : room < 31 ? $"{room - 28} / 2   {roomNames[room]}" : room < 33 ? $"{room - 30} / 2   {roomNames[room]}" : room < 35 ? $"{room - 32} / 2   {roomNames[room]}" : room < 37 ? $"{room - 34} / 2   {roomNames[room]}" : room < 39 ? $"{room - 36} / 2   {roomNames[room]}" : room < 41 ? $"{room - 38} / 2   {roomNames[room]}" : $"{room - 40} / 2   {roomNames[room]}";
         g.DrawString(roomTitle, roomFont, goldBrush, 67, 572);
         int memoriesRead = (memoriesFound & 1) + ((memoriesFound >> 1) & 1);
         g.DrawString($"ECOS {memoriesRead} / 2", hudFont, goldBrush, 760, 572);
@@ -111,6 +114,8 @@ public sealed partial class Game
 
     private string CurrentObjective()
     {
+        if (room == 43) return firstEchoQuest == 0 ? "OBJETIVO: ENCONTRE IVARA NA ENCRUZILHADA" : firstEchoQuest == 1 ? "OBJETIVO: SIGA À CASA DAS COMPORTAS" : firstEchoQuest == 2 ? "OBJETIVO: RETORNE A VÉSPERA E FALE COM EDDA" : "EXPLORE AS MARGENS DO PRIMEIRO ECO";
+        if (room is 44 or 45) return room == 44 ? "OBJETIVO: EXPLORE O ABRIGO NAS RAÍZES" : firstEchoQuest < 2 ? "OBJETIVO: LIBERTE AS VOZES DAS COMPORTAS" : "OBJETIVO: RETORNE ÀS MARGENS";
         if (room == 3) return TownObjective();
         if (room == 18) return "OBJETIVO: " + (questStage == 46 ? "FALE COM AVEN SOBRE AS LINHAS" : questStage == 47 ? "SIGA AS LINHAS ATÉ A GALERIA" : questStage == 48 ? "LEVE O TRAÇADO DE VOLTA A AVEN" : questStage == 49 ? "FALE COM AVEN PARA ABRIR O ÚLTIMO CAPÍTULO" : questStage == 50 ? "DESÇA À SOLEIRA DO SILÊNCIO" : questStage == 51 ? "FALE COM AVEN SOBRE O DESTINO DO LUME" : questStage >= 59 ? "EXPEDIÇÃO XVIII CONCLUÍDA • EXPLORAÇÃO ABERTA" : questStage == 58 ? "LEVE A BADALADA RECUPERADA A AVEN" : questStage == 57 ? "SIGA À CÂMARA DAS BADALADAS" : questStage == 56 ? "EXPEDIÇÃO XVII CONCLUÍDA • NOVA EXPEDIÇÃO DISPONÍVEL A LESTE" : questStage >= 56 ? "EXPEDIÇÃO XVII CONCLUÍDA • EXPLORAÇÃO ABERTA" : questStage == 55 ? "LEVE A MEMÓRIA DO ARQUIVO A AVEN" : questStage == 54 ? "SIGA AO CAIS DOS ECOS EMPRESTADOS" : questStage >= 52 ? "EPÍLOGO CONCLUÍDO • EXPLORAÇÃO ABERTA" : questStage < 22 ? "CONHEÇA A COMUNIDADE E FALE COM AVEN" : questStage == 22 ? "SIGA A TRILHA E RECUPERE O REGISTRO COMPARTILHADO" : questStage == 23 ? "LEVE O REGISTRO DE VOLTA A AVEN" : questStage == 32 ? "LEVE A MEMÓRIA DA VAZANTE A AVEN" : questStage == 30 ? "SIGA O SOM DOS MOINHOS PARA OESTE" : questStage == 35 ? "LEVE A MEMÓRIA DO COMPASSO A AVEN" : questStage == 39 ? "LEVE A NOTA DA CONTRAVOZ A AVEN" : questStage == 40 ? "FALE COM AVEN SOBRE A PRÓXIMA FISSURA" : questStage == 42 ? "LEVE O ECO SEM DONO A AVEN" : questStage >= 41 ? "SIGA OS PASSOS ATÉ A FONTE SOB A PEDRA" : questStage >= 36 ? "MANTO DE LASTRO APRENDIDO • SIGA AS ÁGUAS" : questStage >= 33 ? "SIGA A CORRENTE AO CORAÇÃO DAS DUAS MARGENS" : questStage >= 27 ? "FALE COM AVEN PARA REFORJAR UMA ARMA" : "SIGA A PRÓXIMA CURVA A OESTE");
         if (room is 27 or 28) return room == 27 ? "OBJETIVO: ATRAVESSE A ESCARPA DO CONTRAFLUXO" : questStage < 35 ? "OBJETIVO: DERROTE O AFINADOR E RECOLHA A MEMÓRIA" : "OBJETIVO: RETORNE AO REFÚGIO E FALE COM AVEN";
@@ -172,6 +177,8 @@ public sealed partial class Game
         DrawTownHouse(g, TownBuildings[2], "CASAS"); DrawTownHouse(g, TownBuildings[3], "ARMAZÉM");
         using var gateBrush = new SolidBrush(Color.FromArgb(116, 100, 70)); using var gatePen = new Pen(Color.FromArgb(220, 189, 125), 3);
         g.FillRectangle(gateBrush, 70, 298, 30, 64); g.DrawRectangle(gatePen, 70, 298, 30, 64);
+        g.FillRectangle(gateBrush, 860, 298, 30, 64); g.DrawRectangle(gatePen, 860, 298, 30, 64);
+        if (player.X > 810 && player.Y > 280 && player.Y < 380) DrawCentered(g, "E  MARGENS DO PRIMEIRO ECO", 385, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, 775);
         using var bookBrush = new SolidBrush(Color.FromArgb(107, 56, 43)); using var bookEdge = new Pen(Color.FromArgb(234, 204, 133), 2);
         g.FillRectangle(bookBrush, ArchiveBookPosition.X - 13, ArchiveBookPosition.Y - 7, 26, 18); g.DrawRectangle(bookEdge, ArchiveBookPosition.X - 13, ArchiveBookPosition.Y - 7, 26, 18);
         DrawTownPerson(g, CuratorPosition, "SILETH", Color.FromArgb(117, 73, 104), Distance(player, CuratorPosition) < InteractionRadius);
@@ -1020,7 +1027,7 @@ public sealed partial class Game
         DrawCentered(g, roomNames[room], 145, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite);
 
         long known = KnownRoomMask();
-        const int columns = 5, nodeWidth = 168, nodeHeight = 42, gapX = 8, gapY = 4;
+        const int columns = 5, nodeWidth = 168, nodeHeight = 37, gapX = 8, gapY = 3;
         for (int index = 0; index < roomNames.Length; index++)
         {
             int column = index % columns, row = index / columns;

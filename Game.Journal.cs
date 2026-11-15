@@ -49,8 +49,8 @@ public sealed partial class Game
         using var objectiveBrush = new SolidBrush(Color.FromArgb(237, 232, 213));
         g.DrawString(objective, objectiveFont, objectiveBrush, new RectangleF(466, 285, 388, 68));
 
-        int totalCombatRooms = Enumerable.Range(0, roomNames.Length).Count(index => index is not 3 and not 18);
-        int clearedCombatRooms = Enumerable.Range(0, roomNames.Length).Count(index => index is not 3 and not 18 && (clearedRooms & (1L << index)) != 0);
+        int totalCombatRooms = Enumerable.Range(0, 43).Count(index => index is not 3 and not 18);
+        int clearedCombatRooms = Enumerable.Range(0, 43).Count(index => index is not 3 and not 18 && (clearedRooms & (1L << index)) != 0);
         int inscriptionCount = (memoriesFound & 1) + ((memoriesFound >> 1) & 1);
         g.DrawLine(divider, 464, 367, 856, 367);
         g.DrawString("PROGRESSO DA CAMPANHA", sectionFont, Brushes.Goldenrod, 466, 381);

@@ -121,6 +121,8 @@ public sealed partial class Game
     private void SetupRoom()
     {
         player = new PointF(150, 330); enemies.Clear(); drops.Clear(); groundHazards.Clear(); echoShards.Clear(); lockedTarget = null;
+        if (room == 43) { player = new PointF(180, 700); SpawnFirstEchoEncounters(); return; }
+        if (room is 44 or 45) { SetupFirstEchoInterior(); return; }
         if (vigilActive && room == 38) { vigilMinionCooldown = 20; vigilTideTime = 0; }
         if (room != 3 && !vigilActive && (clearedRooms & (1L << room)) != 0) return;
         int count = room is 3 or 18 ? 0 : room == 0 ? 3 : room == 1 ? 5 : room == 4 ? 5 : room == 5 ? 4 : room == 6 ? 6 : room is 21 or 29 or 31 or 33 or 35 or 37 or 41 ? 6 : room == 22 ? 5 : room == 23 ? 6 : room == 24 ? 5 : room == 25 ? 6 : room is 26 or 28 or 30 or 32 or 34 or 36 ? 5 : room is 38 or 40 or 42 ? 1 : room == 39 ? 5 : room == 27 ? 6 : (room is 7 or 9 or 11 or 15 or 17 or 20) ? 4 : room == 8 ? 5 : room is 10 or 12 or 14 or 16 or 19 ? 6 : room == 13 ? 4 : 4;
@@ -196,6 +198,8 @@ public sealed partial class Game
 
     private void Interact()
     {
+        if (room == 43) { InteractFirstEcho(); return; }
+        if (room is 44 or 45) { InteractFirstEchoInterior(); return; }
         if (room == 3) { InteractTown(); return; }
         if (room == 18) { InteractRefuge(); return; }
         Drop? weaponDrop = drops.Where(drop => drop.Kind == "weapon" && Distance(player, drop.Pos) <= 75).OrderBy(drop => Distance(player, drop.Pos)).FirstOrDefault();
@@ -298,6 +302,12 @@ public sealed partial class Game
     }
     private void InteractTown()
     {
+        if (player.X > 835 && player.Y > 280 && player.Y < 380)
+        {
+            room = 43; SetupRoom();
+            ShowMemory("MARGENS DO PRIMEIRO ECO", "A estrada sai de Véspera em direção aos marcos silenciosos. Procure Ivara na encruzilhada.");
+            return;
+        }
         if (Distance(player, CuratorPosition) < InteractionRadius)
         {
             if (questStage == 0)
@@ -327,7 +337,8 @@ public sealed partial class Game
         }
         if (Distance(player, BellKeeperPosition) < InteractionRadius)
         {
-            if (questStage == 6 && riverBell) { questStage = 7; gold += 100; potions++; ShowMemory("EDDA RECONHECE O SINO", "Esse era o sino de travessia do meu pai. Nara o levou quando desceu ao rio; ela conhecia o caminho e decidiu cruzá-lo. Não foi capturada. Guarde o sino: se ela voltar, vai saber que ainda lembramos seu nome."); notice = "MISSÃO CONCLUÍDA: 100 OURO E 1 POÇÃO"; noticeTime = 3; }
+            if (firstEchoQuest == 2) { firstEchoQuest = 3; gold += 100; potions++; ShowMemory("OS MARCOS RESPONDEM", "Edda escuta o relato e toca o sino para os viajantes que regressam. As vozes estão livres, e a estrada volta a oferecer abrigo. Você recebe 100 de ouro e uma poção."); }
+            else if (questStage == 6 && riverBell) { questStage = 7; gold += 100; potions++; ShowMemory("EDDA RECONHECE O SINO", "Esse era o sino de travessia do meu pai. Nara o levou quando desceu ao rio; ela conhecia o caminho e decidiu cruzá-lo. Não foi capturada. Guarde o sino: se ela voltar, vai saber que ainda lembramos seu nome."); notice = "MISSÃO CONCLUÍDA: 100 OURO E 1 POÇÃO"; noticeTime = 3; }
             else if (questStage == 19 && westTrace) { questStage = 20; gold += 375; potions++; ShowMemory("A CARTA DO REFÚGIO", "Nara construiu um lugar onde cada pessoa escolhe como será chamada e partiu para oeste com quem pediu para atravessar. Edda reconhece as marcas do mapa: “Consigo levar vocês até a próxima curva, mas dali em diante será preciso seguir a água.” Sileth deixa o arquivo aberto para a volta do grupo. A notícia não prova onde Nara está agora."); notice = "RECOMPENSA: 375 OURO E 1 POÇÃO"; noticeTime = 3; }
             else if (questStage is 17 or 18) { questStage = 18; room = 16; SetupRoom(); ShowMemory("A TRAVESSIA DO CONTRA-RIO", "Edda solta o barco de fundo largo. Os nomes devolvidos aos sinos ajudam a encontrar a passagem entre as pedras; o Lume mantido aceso ilumina os marcos submersos, mas chama ecos para o Vau. A cartógrafa da margem guarda a entrada do refúgio de Nara."); }
             else if (questStage == 20) { questStage = 21; room = 18; SetupRoom(); ShowMemory("REFÚGIO DO VEIO CALMO", "O barco de Edda segue as lanternas até uma embarcação antiga, encalhada entre as pedras. Pessoas que partiram de Véspera construíram ali um abrigo. Nara ajudou a traçar as primeiras rotas, mas continuou viagem com quem escolheu partir. Aven, o antigo barqueiro, espera junto à mesa comunitária."); }
@@ -416,7 +427,7 @@ public sealed partial class Game
         notice = questStage < 22 ? "FALE COM AVEN PARA CONHECER A COMUNIDADE" : "E  SEGUIR A TRILHA DOS LUMINÁRIOS"; noticeTime = 1.5f;
     }
     private void ShowMemory(string titleText, string bodyText) { memoryTitle = titleText; memoryText = bodyText; memoryOverlay = true; }
-    private void MarkRoomCleared() { if (room != 3 && enemies.Count == 0 && drops.Count == 0) clearedRooms |= 1L << room; }
+    private void MarkRoomCleared() { if (room != 3 && room < 43 && enemies.Count == 0 && drops.Count == 0) clearedRooms |= 1L << room; }
     private Enemy? lockedTarget;
     private void CycleTarget() { if (enemies.Count == 0) { lockedTarget = null; return; } int i = lockedTarget is null ? -1 : enemies.IndexOf(lockedTarget); lockedTarget = enemies[(i + 1) % enemies.Count]; notice = $"ALVO: {EnemyName(lockedTarget)}"; noticeTime = 1.4f; }
 }
