@@ -197,6 +197,7 @@ O décimo andar concede o **Eco Convergente**, um talismã exclusivo da Vigília
 - `Game.TitleMenu.cs`: entrada, navegação e desenho do menu, prévia dos capítulos e configurações.
 - `Game.CombatSkills.cs`: ataques básicos, habilidades, recargas, loadouts, sinergias e projéteis de voz.
 - `Game.Equipment.cs`: forja, equipamento, recompensas e apresentação do loot e do inventário.
+- `Game.Save.cs`: modelo do save, validação, gravação atômica, migração Godot→JSON e restauração da campanha.
 - `Scadryk.csproj`: projeto C#/.NET 8 Windows Forms.
 - `STORY.md`: universo, personagens e arco narrativo original planejado.
 - `ROADMAP.md`: meta de longo prazo e etapas de desenvolvimento.
