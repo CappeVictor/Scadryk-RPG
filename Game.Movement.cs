@@ -38,8 +38,8 @@ public sealed partial class Game
             PointF[] corners = { new(wall.Left - margin, wall.Top - margin), new(wall.Right + margin, wall.Top - margin), new(wall.Left - margin, wall.Bottom + margin), new(wall.Right + margin, wall.Bottom + margin) };
             foreach (PointF corner in corners)
             {
-                if (corner.X < 85 || corner.X > 875 || corner.Y < 128 || corner.Y > 533 || Blocked(corner, enemy.Radius) || BlockedLine(enemy.Pos, corner)) continue;
-                float cost = Distance(enemy.Pos, corner) + Distance(corner, player);
+                if (corner.X < 85 || corner.X > 875 || corner.Y < 128 || corner.Y > 533 || Distance(enemy.Pos, corner) < 8 || Blocked(corner, enemy.Radius) || BlockedLine(enemy.Pos, corner)) continue;
+                float cost = Distance(enemy.Pos, corner) + Distance(corner, player) + (BlockedLine(corner, player) ? 1000 : 0);
                 if (cost < bestCost) { bestCost = cost; best = corner; }
             }
         }
