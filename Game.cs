@@ -35,6 +35,7 @@ public sealed partial class Game : Form
     }
     private sealed class Drop { public PointF Pos; public string Kind = "gold"; public int Amount, Rarity, Bonus, Affix, Affix2; }
     private sealed class GroundHazard { public PointF Pos; public float Radius = 48, TimeLeft = 3.2f, TickCooldown = 0.8f; public int Damage = 9; }
+    private sealed class NameRiftBurst { public PointF Pos; public float TimeLeft = 0.3f; }
     private sealed class EchoShard { public PointF Pos, Direction; public float Life, Damage; public HashSet<Enemy> Hit = new(); }
     private sealed class FloatingText { public PointF Pos; public string Text = ""; public Color Color; public float TimeLeft, Duration; }
     private readonly record struct ReadingOverlayLayout(float PanelY, float PanelHeight, float HeadingY, float BodyY, float BodyHeight, float HintY);
@@ -163,6 +164,7 @@ public sealed partial class Game : Form
     private readonly List<Enemy> enemies = new();
     private readonly List<Drop> drops = new();
     private readonly List<GroundHazard> groundHazards = new();
+    private readonly List<NameRiftBurst> nameRiftBursts = new();
     private readonly HashSet<Keys> down = new();
     private bool focusPaused;
     private readonly System.Windows.Forms.Timer timer = new() { Interval = 16 };
@@ -284,6 +286,7 @@ public sealed partial class Game : Form
 
     private void StartGame()
     {
+        nameRiftBursts.Clear();
         room = 0; level = 1; xp = gold = damage = 0; damage = 25; potions = 2; weapon = 0; ownedWeapons = 1; Array.Clear(weaponBonuses); Array.Clear(weaponRarities); Array.Clear(weaponAffixes); Array.Clear(weaponAffixes2);
         armor = armorOn = relic = relicOn = archiveSeal = riverBell = lumeLens = naraTrace = chorusMemory = firstMemory = westTrace = upstreamTrace = beyondTrace = ebbSeal = counterTrace = anchorWard = refrainSong = riftVerse = deepTrace = lanternSignal = beaconLight = routeMemory = silenceMemory = inventoryOpen = skillMenuOpen = characterSheetOpen = mapOpen = journalOpen = dead = victory = chestChoice = talentChoice = memoryOverlay = endingChoiceOpen = forgeMenuOpen = defenseForgeOpen = secondaryForgeOpen = vigilActive = vigilChoiceOpen = classSelectionOpen = false;
         armorTrait = relicTrait = 0;
@@ -534,7 +537,7 @@ public sealed partial class Game : Form
             if (e.KeyCode is >= Keys.D1 and <= Keys.D9) { EquipSkill(skillMenuSlot, (int)e.KeyCode - (int)Keys.D0); return; }
             return;
         }
-        if (forgeMenuOpen) { if (defenseForgeOpen) HandleDefenseForgeKey(e.KeyCode); else if (e.KeyCode == Keys.T) defenseForgeOpen = true; else if (e.KeyCode == Keys.A) { secondaryForgeOpen = !secondaryForgeOpen; notice = secondaryForgeOpen ? weaponRarities[weapon] == 2 ? "AFIXO SECUNDÁRIO • ESCOLHA UMA RESSONÂNCIA DE RELÍQUIA" : "AFIXO SECUNDÁRIO • DISPONÍVEL APENAS PARA RELÍQUIAS" : "AFIXO PRINCIPAL • TÊMPERA NORMAL"; noticeTime = 2.5f; } else if (e.KeyCode == Keys.D9) CycleDifficultyTier(); else if (e.KeyCode == Keys.D0) ReforgeWeapon(0); else if (e.KeyCode is >= Keys.D1 and <= Keys.D6 or Keys.D8) ReforgeWeapon((int)e.KeyCode - (int)Keys.D0); else if (e.KeyCode == Keys.D7 && secondaryForgeOpen) { notice = "USE 0 PARA CADÊNCIA • O AFIXO PRINCIPAL NÃO PODE SER REPETIDO"; noticeTime = 2.5f; } else if (e.KeyCode == Keys.D7) ReforgeWeapon(7); else if (e.KeyCode == Keys.Escape) { forgeMenuOpen = false; secondaryForgeOpen = false; } return; }
+        if (forgeMenuOpen) { if (defenseForgeOpen) HandleDefenseForgeKey(e.KeyCode); else if (e.KeyCode == Keys.T) defenseForgeOpen = true; else if (e.KeyCode == Keys.A) { secondaryForgeOpen = !secondaryForgeOpen; notice = secondaryForgeOpen ? weaponRarities[weapon] == 2 ? "AFIXO SECUNDÁRIO • ESCOLHA UMA RESSONÂNCIA DE RELÍQUIA" : "AFIXO SECUNDÁRIO • DISPONÍVEL APENAS PARA RELÍQUIAS" : "AFIXO PRINCIPAL • TÊMPERA NORMAL"; noticeTime = 2.5f; } else if (e.KeyCode == Keys.D9 && secondaryForgeOpen) ReforgeWeapon(9); else if (e.KeyCode == Keys.D9) CycleDifficultyTier(); else if (e.KeyCode == Keys.D0) ReforgeWeapon(0); else if (e.KeyCode is >= Keys.D1 and <= Keys.D6 or Keys.D8) ReforgeWeapon((int)e.KeyCode - (int)Keys.D0); else if (e.KeyCode == Keys.D7 && secondaryForgeOpen) ReforgeWeapon(7); else if (e.KeyCode == Keys.D7) ReforgeWeapon(7); else if (e.KeyCode == Keys.Escape) { forgeMenuOpen = false; secondaryForgeOpen = false; } return; }
         if (endingChoiceOpen) { if (e.KeyCode == Keys.D1) ChooseTownEnding(1); else if (e.KeyCode == Keys.D2) ChooseTownEnding(2); else if (e.KeyCode == Keys.D3) endingChoiceOpen = false; return; }
         if (vigilChoiceOpen) { if (e.KeyCode == Keys.D1) ResolveVigilFloor(true); else if (e.KeyCode == Keys.D2) ResolveVigilFloor(false); else if (e.KeyCode == Keys.D3 || e.KeyCode == Keys.Escape) vigilChoiceOpen = false; return; }
         if (chestChoice) { if (e.KeyCode == Keys.D1) gold += 75; else if (e.KeyCode == Keys.D2) potions += 2; else if (e.KeyCode == Keys.D3) health = maxHealth; else return; chestChoice = false; EnterVesper(); return; }
@@ -613,10 +616,27 @@ public sealed partial class Game : Form
         pendingTalents--; talentChoice = pendingTalents > 0;
     }
 
+    private void TriggerNameRiftBurst(Enemy defeated)
+    {
+        if (!HasNameRiftPower(weapon) || !IsMarkedForRift(defeated)) return;
+        const float radius = 108f;
+        AddFloatingText(new PointF(defeated.Pos.X, defeated.Pos.Y - defeated.Radius - 18), "NOME RISCADO", Color.FromArgb(255, 218, 154, 242));
+        TriggerScreenShake(2.6f, 0.16f);
+        if (nameRiftBursts.Count >= 16) nameRiftBursts.RemoveAt(0);
+        nameRiftBursts.Add(new NameRiftBurst { Pos = defeated.Pos });
+        foreach (Enemy target in enemies.Where(candidate => Distance(candidate.Pos, defeated.Pos) <= radius).ToArray())
+        {
+            float power = WeaponPower(weapon) * (target.Boss ? 0.28f : 0.72f) * OutgoingDamageMultiplier(target) * (IsArmored(target) ? 0.75f : 1f);
+            DamageEnemy(target, power);
+            if (target.Hp <= 0) Defeat(target);
+        }
+    }
+
     private void Defeat(Enemy enemy)
     {
         if (!enemies.Remove(enemy)) return;
         if (ReferenceEquals(lockedTarget, enemy)) lockedTarget = enemies.OrderBy(candidate => Distance(player, candidate.Pos)).FirstOrDefault();
+        TriggerNameRiftBurst(enemy);
         if (enemy.EliteMinion) return;
         enemiesDefeated++; int goldDrop = enemy.VigilMinion ? 8 + Math.Min(20, vigilFloor * 2) : vigilActive ? 35 + Math.Min(500, vigilFloor * 15) : enemy.Boss ? 35 : enemy.Kind == EnemyKind.Elite ? 20 : 8;
         int xpReward = enemy.VigilMinion ? 12 : enemy.Boss ? 75 : enemy.Kind == EnemyKind.Elite ? 40 : 22;
@@ -730,7 +750,7 @@ public sealed partial class Game : Form
         else playerAnimationTime = 0;
         for (int i = drops.Count - 1; i >= 0; i--) if (drops[i].Kind != "weapon" && Distance(player, drops[i].Pos) < 30) { GameAudio.Play(GameAudio.Cue.Loot); Collect(drops[i]); }
         TickBeacon(dt); int roomBeingUpdated = room; foreach (Enemy enemy in enemies.ToArray()) { PointF previousPos = enemy.Pos; UpdateEnemy(enemy, dt); enemy.Moving = Distance(previousPos, enemy.Pos) > 0.01f; if (enemy.Moving) enemy.AnimationTime += dt; if (dead || room != roomBeingUpdated) break; }
-        TickVigilMinions(dt); TickGroundHazards(dt); TickEnemyWounds(dt);
+        TickVigilMinions(dt); TickGroundHazards(dt); TickEnemyWounds(dt); nameRiftBursts.RemoveAll(burst => (burst.TimeLeft -= dt) <= 0);
         AdvanceVoiceShards(dt);
         if (enemies.Count == 0 && drops.Count == 0 && room == 2 && !memoryOverlay) chestChoice = true;
         MarkRoomCleared();
@@ -1435,6 +1455,7 @@ public sealed partial class Game : Form
             using var exitPen = new Pen(enemies.Count == 0 && drops.Count == 0 ? Color.LightGreen : Color.FromArgb(45, 48, 43), 8); g.DrawRectangle(exitPen, 882, 293, 3, 75);
         }
         DrawGroundHazards(g);
+        DrawNameRiftBursts(g);
         if (bellWaveTime > 0) DrawBellWave(g);
         if (pullWaveTime > 0) DrawEbbWave(g);
         if (refrainWaveTime > 0) DrawRefrainWave(g); if (beaconTime > 0) DrawBeacon(g);
@@ -2538,6 +2559,28 @@ public sealed partial class Game : Form
     private void DrawRefrainWave(Graphics g) { float progress = 1f - refrainWaveTime / 0.48f; float radius = refrainWaveRadius * progress; int alpha = (int)(220 * refrainWaveTime / 0.48f); using var wave = new Pen(Color.FromArgb(alpha, 207, 147, 227), 4); using var glow = new Pen(Color.FromArgb(alpha / 3, 207, 147, 227), 14); g.DrawEllipse(glow, player.X - radius, player.Y - radius, radius * 2, radius * 2); g.DrawEllipse(wave, player.X - radius, player.Y - radius, radius * 2, radius * 2); }
     private void DrawReturnedVoicesWave(Graphics g) { float progress = 1f - returnVoiceWaveTime / 0.46f; float radius = returnVoiceWaveRadius * progress; int alpha = (int)(225 * returnVoiceWaveTime / 0.46f); using var wave = new Pen(Color.FromArgb(alpha, 205, 221, 165), 4); using var glow = new Pen(Color.FromArgb(alpha / 3, 205, 221, 165), 15); g.DrawEllipse(glow, player.X - radius, player.Y - radius, radius * 2, radius * 2); g.DrawEllipse(wave, player.X - radius, player.Y - radius, radius * 2, radius * 2); }
     private void DrawFinalSparkFlash(Graphics g) { using var spark = new Pen(Color.FromArgb((int)(220 * finalStrikeFlash / 0.24f), 255, 225, 145), 7); using var glow = new Pen(Color.FromArgb((int)(85 * finalStrikeFlash / 0.24f), 255, 177, 98), 18); PointF start = Add(player, Scale(facing, 20)); g.DrawLine(glow, start, finalStrikeTarget); g.DrawLine(spark, start, finalStrikeTarget); }
+    private void DrawNameRiftBursts(Graphics g)
+    {
+        foreach (NameRiftBurst burst in nameRiftBursts)
+        {
+            float progress = 1f - burst.TimeLeft / 0.3f, radius = 108f * progress;
+            int alpha = Math.Clamp((int)(225 * (1f - progress)), 0, 225);
+            using var outer = new Pen(Color.FromArgb(alpha, 219, 151, 242), 3.5f);
+            using var inner = new Pen(Color.FromArgb(alpha / 2, 239, 211, 248), 1.5f);
+            using var core = new SolidBrush(Color.FromArgb(alpha / 3, 220, 151, 244));
+            g.DrawEllipse(outer, burst.Pos.X - radius, burst.Pos.Y - radius * 0.72f, radius * 2, radius * 1.44f);
+            g.DrawEllipse(inner, burst.Pos.X - radius * 0.72f, burst.Pos.Y - radius * 0.52f, radius * 1.44f, radius * 1.04f);
+            g.FillEllipse(core, burst.Pos.X - 12, burst.Pos.Y - 8, 24, 16);
+            for (int ray = 0; ray < 8; ray++)
+            {
+                float angle = (ray * 45 + 22) * MathF.PI / 180f;
+                PointF start = new(burst.Pos.X + MathF.Cos(angle) * radius * 0.48f, burst.Pos.Y + MathF.Sin(angle) * radius * 0.35f);
+                PointF end = new(burst.Pos.X + MathF.Cos(angle) * radius * 0.78f, burst.Pos.Y + MathF.Sin(angle) * radius * 0.58f);
+                g.DrawLine(inner, start, end);
+            }
+        }
+    }
+
     private void DrawBeacon(Graphics g)
     {
         int alpha = Math.Clamp((int)(165 + 45 * MathF.Sin(windupPulse * 6)), 70, 220);

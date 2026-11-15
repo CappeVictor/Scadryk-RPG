@@ -11,7 +11,8 @@ public sealed partial class Game
         if (!forgeMenuOpen || room != 18 || questStage < 27 || Distance(player, AvenPosition) >= 60) { forgeMenuOpen = secondaryForgeOpen = false; return; }
         if (!secondaryForgeOpen && affix == 7) { RespecTalents(); return; }
         if (affix == 0) affix = 7;
-        if (affix is < 1 or > 8) return;
+        if (affix is < 1 or > 9) return;
+        if (affix == 9 && (!secondaryForgeOpen || weaponRarities[weapon] != 2)) { notice = "NOME RISCADO É UM PODER ÚNICO DO AFIXO SECUNDÁRIO DE RELÍQUIAS"; noticeTime = 2.5f; return; }
         if (secondaryForgeOpen && weaponRarities[weapon] != 2) { notice = "O AFIXO SECUNDÁRIO SÓ PODE SER MUDADO EM UMA RELÍQUIA"; noticeTime = 2.5f; return; }
         int goldCost = secondaryForgeOpen ? 150 : 75, glassCost = secondaryForgeOpen ? 2 : 1;
         if (gold < goldCost || tideGlass < glassCost) { notice = secondaryForgeOpen ? "AFIXO SECUNDÁRIO CUSTA 150 OURO E 2 SAL VÍTREO" : "A TÊMPERA CUSTA 75 OURO E 1 SAL VÍTREO"; noticeTime = 2; return; }
@@ -221,6 +222,7 @@ public sealed partial class Game
         6 => "Fio Esticado • alcance +" + (rarity == 2 ? 20 : 12) + "%",
         7 => "Cadência • crítico adianta recargas em " + (rarity == 2 ? "0,25" : "0,15") + " s",
         8 => "Ruptura • crítico aplica ferida por 3 s",
+        9 when rarity == 2 => "Nome Riscado • ecos marcados explodem ao morrer",
         _ => ""
     };
 
@@ -369,22 +371,23 @@ public sealed partial class Game
         g.DrawString("6. FIO ESTICADO • alcance básico +12%/+20%", optionFont, Brushes.AntiqueWhite, 165, 330);
         g.DrawString("0. CADÊNCIA • críticos adiantam recargas em 0,15/0,25 s por golpe", optionFont, Brushes.AntiqueWhite, 165, 355);
         g.DrawString("8. RUPTURA • críticos ferem por 3 s (6%/8% do dano da arma por segundo)", optionFont, Brushes.Salmon, 165, 380);
+        g.DrawString("9. NOME RISCADO • poder único; exclusivo do afixo secundário de Relíquias", optionFont, Brushes.Plum, 165, 405);
         if (finalEnding > 0 && questStage >= 56)
         {
             int goldCost = TalentRespecGoldCost(level), glassCost = TalentRespecGlassCost(level);
-            g.DrawString("7. REDISTRIBUIR TALENTOS • devolve todos os pontos", optionFont, Brushes.AntiqueWhite, 165, 414);
+            g.DrawString("7. REDISTRIBUIR TALENTOS • devolve todos os pontos", optionFont, Brushes.AntiqueWhite, 165, 430);
             int affixGoldCost = secondaryForgeOpen ? 150 : 75, affixGlassCost = secondaryForgeOpen ? 2 : 1;
-            g.DrawString(secondaryForgeOpen && weaponRarities[weapon] != 2 ? "AFIXO SECUNDÁRIO EXIGE UMA RELÍQUIA." : $"CUSTO: {affixGoldCost} OURO E {affixGlassCost} SAL VÍTREO   •   DISPONÍVEL: {gold} OURO / {tideGlass} SAL", hintFont, secondaryForgeOpen && weaponRarities[weapon] != 2 ? Brushes.IndianRed : gold < affixGoldCost || tideGlass < affixGlassCost ? Brushes.IndianRed : Brushes.Goldenrod, 165, 449);
-            g.DrawString("A alterna principal/secundário • 1–6/8 afixo • 0 Cadência • 7 redistribui só no principal • T traços • ESC fecha", hintFont, Brushes.DarkGray, 165, 477);
-            g.DrawString($"9. RESSONÂNCIA {difficultyTier} • {DifficultyTierName(difficultyTier)} • HP +{(DifficultyEnemyHealthMultiplier(difficultyTier) - 1) * 100:0}% • dano +{(DifficultyIncomingDamageMultiplier(difficultyTier) - 1) * 100:0}% • recompensas +{(DifficultyRewardMultiplier(difficultyTier) - 1) * 100:0}%", hintFont, Brushes.Orange, 165, 500);
+            g.DrawString(secondaryForgeOpen && weaponRarities[weapon] != 2 ? "AFIXO SECUNDÁRIO EXIGE UMA RELÍQUIA." : $"CUSTO: {affixGoldCost} OURO E {affixGlassCost} SAL VÍTREO   •   DISPONÍVEL: {gold} OURO / {tideGlass} SAL", hintFont, secondaryForgeOpen && weaponRarities[weapon] != 2 ? Brushes.IndianRed : gold < affixGoldCost || tideGlass < affixGlassCost ? Brushes.IndianRed : Brushes.Goldenrod, 165, 463);
+            g.DrawString("A alterna principal/secundário • 1–6/8 afixo • 9 poder único secundário • 0 Cadência • 7 redistribui • T traços • ESC fecha", hintFont, Brushes.DarkGray, 165, 488);
+            g.DrawString($"9. RESSONÂNCIA {difficultyTier} • {DifficultyTierName(difficultyTier)} • HP +{(DifficultyEnemyHealthMultiplier(difficultyTier) - 1) * 100:0}% • dano +{(DifficultyIncomingDamageMultiplier(difficultyTier) - 1) * 100:0}% • recompensas +{(DifficultyRewardMultiplier(difficultyTier) - 1) * 100:0}%", hintFont, Brushes.Orange, 165, 512);
         }
         else
         {
-            g.DrawString("Valores: RARA / RELÍQUIA.", hintFont, Brushes.DarkGray, 165, 414);
+            g.DrawString("Valores: RARA / RELÍQUIA.", hintFont, Brushes.DarkGray, 165, 430);
             int affixGoldCost = secondaryForgeOpen ? 150 : 75, affixGlassCost = secondaryForgeOpen ? 2 : 1;
-            g.DrawString(secondaryForgeOpen && weaponRarities[weapon] != 2 ? "AFIXO SECUNDÁRIO EXIGE UMA RELÍQUIA." : $"CUSTO: {affixGoldCost} OURO E {affixGlassCost} SAL VÍTREO   •   DISPONÍVEL: {gold} OURO / {tideGlass} SAL", hintFont, secondaryForgeOpen && weaponRarities[weapon] != 2 ? Brushes.IndianRed : gold < affixGoldCost || tideGlass < affixGlassCost ? Brushes.IndianRed : Brushes.Goldenrod, 165, 449);
-            g.DrawString("A alterna principal/secundário • 1–6/8 afixo • 0 Cadência • T traços • ESC fecha", hintFont, Brushes.DarkGray, 165, 477);
-            g.DrawString("RESSONÂNCIAS de desafio desbloqueiam após o epílogo e a expedição XVII.", hintFont, Brushes.DarkGray, 165, 500);
+            g.DrawString(secondaryForgeOpen && weaponRarities[weapon] != 2 ? "AFIXO SECUNDÁRIO EXIGE UMA RELÍQUIA." : $"CUSTO: {affixGoldCost} OURO E {affixGlassCost} SAL VÍTREO   •   DISPONÍVEL: {gold} OURO / {tideGlass} SAL", hintFont, secondaryForgeOpen && weaponRarities[weapon] != 2 ? Brushes.IndianRed : gold < affixGoldCost || tideGlass < affixGlassCost ? Brushes.IndianRed : Brushes.Goldenrod, 165, 463);
+            g.DrawString("A alterna principal/secundário • 1–6/8 afixo • 9 poder único secundário • 0 Cadência • T traços • ESC fecha", hintFont, Brushes.DarkGray, 165, 488);
+            g.DrawString("RESSONÂNCIAS de desafio desbloqueiam após o epílogo e a expedição XVII.", hintFont, Brushes.DarkGray, 165, 512);
         }
     }
 
@@ -418,7 +421,7 @@ public sealed partial class Game
         for (int i = 0; i < s.WeaponBonuses.Length; i++)
         {
             int rarity = s.WeaponRarities[i], bonus = s.WeaponBonuses[i], affix = s.WeaponAffixes[i], affix2 = s.WeaponAffixes2[i];
-            if (rarity == 0 ? bonus is < 0 or > 2 || affix != 0 || affix2 != 0 : rarity == 1 ? bonus is < 3 or > 6 || affix is < 1 or > 8 || affix2 != 0 : rarity == 2 ? bonus is < 7 or > 11 || affix is < 1 or > 8 || affix2 is < 0 or > 8 || affix2 == affix : true) return false;
+            if (rarity == 0 ? bonus is < 0 or > 2 || affix != 0 || affix2 != 0 : rarity == 1 ? bonus is < 3 or > 6 || affix is < 1 or > 8 || affix2 != 0 : rarity == 2 ? bonus is < 7 or > 11 || affix is < 1 or > 8 || affix2 is < 0 or > 9 || affix2 == affix : true) return false;
             if ((s.OwnedWeapons & (1 << i)) == 0 && (rarity != 0 || bonus != 0 || affix != 0 || affix2 != 0)) return false;
         }
         return true;
