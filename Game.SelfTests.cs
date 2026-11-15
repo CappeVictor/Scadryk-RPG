@@ -12,6 +12,14 @@ public sealed partial class Game
     public static int SelfTest()
     {
         GameAudio.SilenceForAutomatedRun();
+        using (var menuHitTest = new Game())
+        {
+            menuHitTest.timer.Stop(); menuHitTest.titleSelection = 2;
+            menuHitTest.HandleTitleClick(new PointF(280, 220));
+            if (menuHitTest.titleSelection != 2 || menuHitTest.titlePage != TitlePage.Main) throw new InvalidOperationException("Um clique fora dos botões acionou o menu principal.");
+            menuHitTest.HandleTitleClick(new PointF(280, 292));
+            if (menuHitTest.titleSelection != 2 || menuHitTest.titlePage != TitlePage.Main) throw new InvalidOperationException("Um clique entre botões acionou o menu principal.");
+        }
         if (Math.Abs(MeleeChaseSpeed(0) - 74f) > 0.01f || Math.Abs(MeleeChaseSpeed(42) - 168f) > 0.01f
             || MeleeChaseSpeed(42) >= PlayerMoveSpeed || MeleeChaseSpeed(42, true) <= PlayerMoveSpeed
             || Math.Abs(MeleeChaseSpeed(42, true) - 226.8f) > 0.1f)

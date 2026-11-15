@@ -138,8 +138,8 @@ public sealed partial class Game
         }
         if (titlePage == TitlePage.Main)
         {
-            int clicked = (int)((point.Y - 246) / 55);
-            if (point.X >= 85 && point.X <= 470 && clicked >= 0 && clicked < 6)
+            int clicked = point.Y >= 246 ? (int)((point.Y - 246) / 55) : -1;
+            if (point.X >= 105 && point.X <= 455 && clicked >= 0 && clicked < 6 && point.Y < 246 + clicked * 55 + 45)
             {
                 titleSelection = clicked; ActivateTitleSelection();
             }
