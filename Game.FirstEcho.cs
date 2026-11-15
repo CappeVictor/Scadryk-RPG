@@ -124,6 +124,10 @@ public sealed partial class Game
         {
             firstEchoQuest = 2; ShowMemory("AS VOZES DA ESTRADA", "Você abre as comportas e as vozes voltam aos marcos. Volte a Edda em Véspera.");
         }
+        else if (room == 44)
+            ShowMemory("ABRIGO ANTIGO", "O registro e as provisões foram recolhidos. Ivara deixou a gruta aberta para os próximos viajantes.");
+        else
+            ShowMemory("COMPORTAS ABERTAS", "As vozes seguem com a água e os marcos podem responder novamente.");
     }
 
     private void DrawFirstEchoInterior(Graphics g)

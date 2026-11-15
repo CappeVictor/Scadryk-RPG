@@ -755,6 +755,11 @@ public sealed partial class Game
             if (enemy.Kind == EnemyKind.SlagWeaver) DrawCentered(g, "SAL VIVO", center.Y - radius - 14, new Font("Segoe UI", 8, FontStyle.Bold), highContrastTelegraphs ? Color.White : Color.FromArgb(255, 191, 126), center.X);
         }
         if (enemy.WoundTime > 0) { int alpha = (int)(110 + 100 * enemy.WoundTime / 3f); using var woundRing = new Pen(Color.FromArgb(alpha, 237, 111, 105), 2.5f); g.DrawEllipse(woundRing, enemy.Pos.X - r - 5, enemy.Pos.Y - r - 5, (r + 5) * 2, (r + 5) * 2); }
+        if (enemy.NameOverride == "VIGIA DAS COMPORTAS")
+        {
+            using var waterRing = new Pen(Color.FromArgb(190, 97, 190, 186), 3);
+            g.DrawEllipse(waterRing, enemy.Pos.X - 34, enemy.Pos.Y - 15, 68, 30);
+        }
         using var body = new SolidBrush(enemy.Flash > 0 ? Color.White : color); using var edge = new Pen(enemy == lockedTarget ? Color.Gold : IsArmored(enemy) ? Color.LightSteelBlue : Color.FromArgb(35, 25, 22), enemy == lockedTarget ? 4 : 2);
         int bossSpriteIndex = CampaignBossSpriteIndex(enemy.Kind), enemySpriteRow = EnemySpriteRow(enemy.Kind);
         Bitmap? individualSprite = enemy.Kind == EnemyKind.Elite && enemy.EliteAffix == EliteAffix.Spearbound ? SpearboundEliteSprite.Value : AdvancedEnemySprites.Value.GetValueOrDefault(enemy.Kind);
