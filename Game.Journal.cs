@@ -38,8 +38,9 @@ public sealed partial class Game
         }
 
         g.FillRectangle(column, 440, 141, 440, 384); g.DrawRectangle(divider, 440, 141, 440, 384);
-        DrawCentered(g, $"CAPÍTULO {ToRoman(currentChapter.Number)}", 159, new Font("Georgia", 16, FontStyle.Bold), Color.FromArgb(230, 193, 129), 660);
-        DrawCentered(g, currentChapter.Title, 190, new Font("Segoe UI", 10, FontStyle.Bold), Color.FromArgb(224, 220, 203), 660);
+        bool firstEchoArea = room >= 43;
+        DrawCentered(g, firstEchoArea ? "EXPEDIÇÃO OPCIONAL" : $"CAPÍTULO {ToRoman(currentChapter.Number)}", 159, new Font("Georgia", 16, FontStyle.Bold), Color.FromArgb(230, 193, 129), 660);
+        DrawCentered(g, firstEchoArea ? "MARGENS DO PRIMEIRO ECO" : currentChapter.Title, 190, new Font("Segoe UI", 10, FontStyle.Bold), Color.FromArgb(224, 220, 203), 660);
         DrawCentered(g, vigilActive ? $"VIGÍLIA ASCENDENTE • ANDAR {vigilFloor}" : roomNames[room], 221, new Font("Segoe UI", 9, FontStyle.Bold), Color.FromArgb(174, 183, 169), 660);
         g.DrawLine(divider, 464, 247, 856, 247);
         g.DrawString("OBJETIVO ATUAL", sectionFont, Brushes.Goldenrod, 466, 263);
@@ -53,9 +54,9 @@ public sealed partial class Game
         int clearedCombatRooms = Enumerable.Range(0, 43).Count(index => index is not 3 and not 18 && (clearedRooms & (1L << index)) != 0);
         int inscriptionCount = (memoriesFound & 1) + ((memoriesFound >> 1) & 1);
         g.DrawLine(divider, 464, 367, 856, 367);
-        g.DrawString("PROGRESSO DA CAMPANHA", sectionFont, Brushes.Goldenrod, 466, 381);
-        g.DrawString($"Câmaras limpas: {clearedCombatRooms}/{totalCombatRooms}", detailFont, Brushes.AntiqueWhite, 466, 409);
-        g.DrawString($"Inscrições opcionais: {inscriptionCount}/2", detailFont, Brushes.AntiqueWhite, 466, 435);
+        g.DrawString(firstEchoArea ? "CAMINHOS DAS MARGENS" : "PROGRESSO DA CAMPANHA", sectionFont, Brushes.Goldenrod, 466, 381);
+        g.DrawString(firstEchoArea ? (firstEchoQuest >= 2 ? "Comportas: vozes libertadas" : "Comportas: vozes retidas") : $"Câmaras limpas: {clearedCombatRooms}/{totalCombatRooms}", detailFont, Brushes.AntiqueWhite, 466, 409);
+        g.DrawString(firstEchoArea ? (firstEchoCaveFound ? "Gruta: registro encontrado" : "Gruta: registro ainda não encontrado") : $"Inscrições opcionais: {inscriptionCount}/2", detailFont, Brushes.AntiqueWhite, 466, 435);
         g.DrawString($"Ecos nesta área: {enemies.Count}   •   Saques no chão: {drops.Count}", metaFont, Brushes.LightGray, 466, 461);
         g.DrawString($"Ressonância {difficultyTier} • {DifficultyTierName(difficultyTier)}", resonanceFont, Brushes.Orange, 466, 489);
         DrawCentered(g, "L / ESC FECHA • CLIQUE FECHA • M ABRE O MAPA", 546, new Font("Segoe UI", 9, FontStyle.Bold), Color.FromArgb(167, 173, 163));
