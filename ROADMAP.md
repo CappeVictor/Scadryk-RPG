@@ -16,6 +16,7 @@ O documento de história com cenário, personagens e resumo dos capítulos está
 
 ## Estado atual
 
+- A abertura agora apresenta um menu próprio, com continuação segura, nova jornada com confirmação, leitura do prólogo, configurações e prévia cartográfica dos 18 capítulos. O mapa de cada capítulo indica áreas atuais, concluídas, descobertas e bloqueadas; a escolha de prévia não teletransporta o jogador. Uma paisagem original de Véspera dá identidade à tela inicial e é distribuída junto dos demais recursos.
 - A Godot foi removida do projeto. A janela e o desenho usam C#/.NET 8 Windows Forms e GDI+.
 - O protótipo mantém 41 salas de combate, vinte chefes e duas áreas seguras, com inimigos comuns, arqueiro, conjurador, elites com seis afixos, vinte chefes, duas expedições opcionais e conteúdo original até o Capítulo XVIII.
 - Combate: a Espada de Pedra é equilibrada, a Lâmina do Arquivo é lenta e longa, perfura parte da armadura e interrompe ecos comuns, e a Faca do Crepúsculo ataca rápido com 25% de crítico. Após derrotar o Afinador, a Lança da Badalada oferece alcance máximo, arco estreito e perfuração integral da armadura. Há seis técnicas narrativas e uma de duas técnicas finais exclusivas em quatro espaços ativos (F/V/G/C), além do Redemoinho, esquiva, alvo marcado e golpes inimigos anunciados. Números flutuantes exibem dano causado, críticos destacados e dano recebido.

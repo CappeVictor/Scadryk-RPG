@@ -109,6 +109,11 @@ public sealed class Game : Form
     private sealed record CampaignChapter(int Number, string Title, int FirstRoom, int LastRoom);
 
     private static readonly RectangleF[] Walls = { new(345, 235, 48, 90), new(565, 375, 58, 80) };
+    private static readonly Lazy<Bitmap?> TitleBackdrop = new(() =>
+    {
+        string path = Path.Combine(AppContext.BaseDirectory, "Assets", "TitleBackdrop.png");
+        return File.Exists(path) ? new Bitmap(path) : null;
+    });
     private static readonly Lazy<Bitmap?> PlayerSpriteSheet = new(() =>
     {
         string path = Path.Combine(AppContext.BaseDirectory, "Assets", "Listener.png");
@@ -292,6 +297,8 @@ public sealed class Game : Form
     private bool confirmNewJourney;
     private SaveData? titleSavePreview;
     private bool titleSavePreviewRead;
+    private bool titleSaveDetected;
+    private bool titleSaveDetectedRead;
     private string notice = "";
     private string memoryTitle = "";
     private string memoryText = "";
@@ -323,7 +330,18 @@ public sealed class Game : Form
         };
     }
 
-    private bool HasTitleSave => File.Exists(SavePath) || File.Exists(LegacySavePath);
+    private bool HasTitleSave
+    {
+        get
+        {
+            if (!titleSaveDetectedRead)
+            {
+                titleSaveDetected = File.Exists(SavePath) || File.Exists(LegacySavePath);
+                titleSaveDetectedRead = true;
+            }
+            return titleSaveDetected;
+        }
+    }
 
     private SaveData? TitleSavePreview()
     {
@@ -3720,14 +3738,24 @@ public sealed class Game : Form
     }
     private void DrawTitleScreen(Graphics g)
     {
-        using var shade = new SolidBrush(Color.FromArgb(247, 7, 9, 11));
-        using var panel = new SolidBrush(Color.FromArgb(245, 17, 21, 22));
+        Bitmap? backdrop = TitleBackdrop.Value;
+        if (backdrop is null)
+        {
+            using var fallback = new SolidBrush(Color.FromArgb(247, 7, 9, 11));
+            g.FillRectangle(fallback, 0, 0, 960, 640);
+        }
+        else
+        {
+            g.DrawImage(backdrop, new Rectangle(0, 0, 960, 640));
+            using var veil = new SolidBrush(Color.FromArgb(112, 7, 9, 11));
+            g.FillRectangle(veil, 0, 0, 960, 640);
+        }
+        using var panel = new SolidBrush(Color.FromArgb(220, 17, 21, 22));
         using var panelEdge = new Pen(Color.FromArgb(170, 139, 108, 69), 2);
         using var gold = new SolidBrush(Color.FromArgb(230, 193, 129));
         using var pale = new SolidBrush(Color.FromArgb(227, 222, 205));
         using var muted = new SolidBrush(Color.FromArgb(153, 161, 151));
         using var accent = new Pen(Color.FromArgb(129, 105, 69), 1);
-        g.FillRectangle(shade, 0, 0, 960, 640);
         g.DrawLine(accent, 90, 104, 870, 104); g.DrawLine(accent, 90, 111, 870, 111);
 
         if (titlePage == TitlePage.Main)
@@ -3741,7 +3769,7 @@ public sealed class Game : Form
                 float y = 246 + i * 55;
                 bool selected = i == titleSelection;
                 bool disabled = i == 0 && !HasTitleSave;
-                using var button = new SolidBrush(selected ? Color.FromArgb(94, 74, 42) : Color.FromArgb(33, 37, 37));
+                using var button = new SolidBrush(selected ? Color.FromArgb(150, 94, 74, 42) : Color.FromArgb(166, 33, 37, 37));
                 using var outline = new Pen(selected ? Color.FromArgb(230, 193, 129) : Color.FromArgb(71, 74, 68), selected ? 2 : 1);
                 g.FillRectangle(button, 105, y, 350, 45); g.DrawRectangle(outline, 105, y, 350, 45);
                 if (selected) DrawCentered(g, "›", y + 9, new Font("Georgia", 20, FontStyle.Bold), Color.FromArgb(255, 220, 145), 126);
