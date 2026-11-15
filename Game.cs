@@ -253,7 +253,7 @@ public sealed partial class Game : Form
         KeyDown += OnKeyDown; KeyUp += (_, e) => down.Remove(e.KeyCode);
         Deactivate += (_, _) => PauseForLostFocus();
         Activated += (_, _) => ResumeAfterFocus();
-        MouseMove += (_, e) => { PointF point = ScreenToGame(new PointF(e.X, e.Y), ClientSize); mouseAim = Normalize(new PointF(point.X - player.X, point.Y - player.Y), facing); if (title && titlePage == TitlePage.Main && point.X >= 85 && point.X <= 470) { int hover = (int)((point.Y - 246) / 55); if (hover >= 0 && hover < 6 && hover != titleSelection) { titleSelection = hover; Invalidate(); } } };
+        MouseMove += (_, e) => { PointF point = ScreenToGame(new PointF(e.X, e.Y), ClientSize); PointF worldPoint = ScreenToWorld(new PointF(e.X, e.Y)); mouseAim = Normalize(new PointF(worldPoint.X - player.X, worldPoint.Y - player.Y), facing); if (title && titlePage == TitlePage.Main && point.X >= 85 && point.X <= 470) { int hover = (int)((point.Y - 246) / 55); if (hover >= 0 && hover < 6 && hover != titleSelection) { titleSelection = hover; Invalidate(); } } };
         MouseDown += (_, e) =>
         {
             if (title)
@@ -265,7 +265,7 @@ public sealed partial class Game : Form
             if (memoryOverlay) { if (e.Button == MouseButtons.Left) memoryOverlay = false; return; }
             if (journalOpen) { if (e.Button == MouseButtons.Left) journalOpen = false; return; }
             if (GameplayPaused()) return;
-            PointF aim = ScreenToGame(new PointF(e.X, e.Y), ClientSize); mouseAim = Normalize(new PointF(aim.X - player.X, aim.Y - player.Y), facing);
+            PointF aim = ScreenToWorld(new PointF(e.X, e.Y)); mouseAim = Normalize(new PointF(aim.X - player.X, aim.Y - player.Y), facing);
             if (e.Button == MouseButtons.Left) Attack();
             if (e.Button == MouseButtons.Right) Whirlwind();
         };

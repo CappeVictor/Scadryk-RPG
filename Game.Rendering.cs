@@ -41,6 +41,8 @@ public sealed partial class Game
         GraphicsState worldTransform = g.Save();
         if (screenShakeStrength > 0.05f)
             g.TranslateTransform(MathF.Sin(screenShakePhase) * screenShakeStrength, MathF.Cos(screenShakePhase * 1.37f) * screenShakeStrength * 0.72f);
+        PointF camera = CameraOffset();
+        g.TranslateTransform(-camera.X, -camera.Y);
         if (room == 3) DrawTownEnvironment(g, floor, tile);
         else if (room == 18) DrawRefugeEnvironment(g, floor, tile);
         else if (room is 19 or 20) DrawLedgerTrailEnvironment(g, floor, tile);
