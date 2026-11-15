@@ -33,6 +33,9 @@ public sealed partial class Game
             if (menuHitTest.storyPage != 0) throw new InvalidOperationException("Um clique no texto avançou a história.");
             menuHitTest.HandleTitleClick(new PointF(650, 460));
             if (menuHitTest.storyPage != 1) throw new InvalidOperationException("O botão de próxima página não avançou a história.");
+            menuHitTest.titlePage = TitlePage.Campaign; menuHitTest.titleChapterSelection = 0;
+            menuHitTest.HandleTitleClick(new PointF(20, 190)); menuHitTest.HandleTitleClick(new PointF(100, 540));
+            if (menuHitTest.titlePage != TitlePage.Campaign || menuHitTest.titleChapterSelection != 0) throw new InvalidOperationException("Um clique fora dos controles alterou o atlas da campanha.");
         }
         if (Math.Abs(MeleeChaseSpeed(0) - 74f) > 0.01f || Math.Abs(MeleeChaseSpeed(42) - 168f) > 0.01f
             || MeleeChaseSpeed(42) >= PlayerMoveSpeed || MeleeChaseSpeed(42, true) <= PlayerMoveSpeed

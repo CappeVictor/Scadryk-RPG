@@ -157,18 +157,18 @@ public sealed partial class Game
             else if (new RectangleF(520, 445, 280, 45).Contains(point)) storyPage = Math.Min(prologue.Length - 1, storyPage + 1);
             else if (new RectangleF(375, 515, 210, 42).Contains(point)) { titlePage = TitlePage.Main; titleSelection = 3; }
         }
-        else if (point.Y >= 518 && point.Y <= 565)
+        else if (titlePage == TitlePage.Campaign)
         {
-            if (titlePage == TitlePage.Campaign && point.X >= 190 && point.X <= 475)
+            if (new RectangleF(190, 518, 285, 38).Contains(point))
             {
                 if (HasTitleSave) LoadGame(); else BeginClassSelection();
             }
-            else if (titlePage == TitlePage.Campaign && point.X >= 500 && point.X <= 770) { titlePage = TitlePage.Main; titleSelection = 2; }
-            else { titlePage = TitlePage.Main; titleSelection = 2; }
-        }
-        else if (titlePage == TitlePage.Campaign && point.X < 405 && point.Y >= 165 && point.Y < 165 + campaignChapters.Length * 19)
-        {
-            titleChapterSelection = Math.Clamp((int)((point.Y - 165) / 19), 0, campaignChapters.Length - 1);
+            else if (new RectangleF(500, 518, 270, 38).Contains(point)) { titlePage = TitlePage.Main; titleSelection = 2; }
+            else if (point.X >= 45 && point.X < 400 && point.Y >= 166 && point.Y < 166 + campaignChapters.Length * 19)
+            {
+                int chapter = (int)((point.Y - 166) / 19);
+                if (point.Y < 166 + chapter * 19 + 18) titleChapterSelection = chapter;
+            }
         }
         Invalidate();
     }
