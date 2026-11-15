@@ -254,7 +254,7 @@ public sealed class Game : Form
     private bool silenceMemory;
     private bool borrowedTrace, unstruckTrace;
     private long clearedRooms;
-    private bool chorusMemory, firstMemory, westTrace, upstreamTrace, forgeMenuOpen, defenseForgeOpen;
+    private bool chorusMemory, firstMemory, westTrace, upstreamTrace, forgeMenuOpen, defenseForgeOpen, secondaryForgeOpen;
     private bool beyondTrace, ebbSeal, counterTrace, anchorWard, refrainSong, riftVerse, deepTrace, lanternSignal, beaconLight, routeMemory;
     private int ownedCharms, equippedCharm, equippedCharm2;
     private int[] equippedSkills = { 1, 0, 0 };
@@ -298,7 +298,7 @@ public sealed class Game : Form
     private void StartGame()
     {
         room = 0; level = 1; xp = gold = damage = 0; damage = 25; potions = 2; weapon = 0; ownedWeapons = 1; Array.Clear(weaponBonuses); Array.Clear(weaponRarities); Array.Clear(weaponAffixes); Array.Clear(weaponAffixes2);
-        armor = armorOn = relic = relicOn = archiveSeal = riverBell = lumeLens = naraTrace = chorusMemory = firstMemory = westTrace = upstreamTrace = beyondTrace = ebbSeal = counterTrace = anchorWard = refrainSong = riftVerse = deepTrace = lanternSignal = beaconLight = routeMemory = silenceMemory = inventoryOpen = skillMenuOpen = characterSheetOpen = mapOpen = dead = victory = chestChoice = talentChoice = memoryOverlay = endingChoiceOpen = forgeMenuOpen = defenseForgeOpen = vigilActive = vigilChoiceOpen = false;
+        armor = armorOn = relic = relicOn = archiveSeal = riverBell = lumeLens = naraTrace = chorusMemory = firstMemory = westTrace = upstreamTrace = beyondTrace = ebbSeal = counterTrace = anchorWard = refrainSong = riftVerse = deepTrace = lanternSignal = beaconLight = routeMemory = silenceMemory = inventoryOpen = skillMenuOpen = characterSheetOpen = mapOpen = dead = victory = chestChoice = talentChoice = memoryOverlay = endingChoiceOpen = forgeMenuOpen = defenseForgeOpen = secondaryForgeOpen = vigilActive = vigilChoiceOpen = false;
         armorTrait = relicTrait = 0;
         borrowedTrace = unstruckTrace = false;
         finalEnding = 0;
@@ -526,7 +526,7 @@ public sealed class Game : Form
             if (e.KeyCode is >= Keys.D1 and <= Keys.D8) { EquipSkill(skillMenuSlot, (int)e.KeyCode - (int)Keys.D0); return; }
             return;
         }
-        if (forgeMenuOpen) { if (defenseForgeOpen) HandleDefenseForgeKey(e.KeyCode); else if (e.KeyCode == Keys.T) defenseForgeOpen = true; else if (e.KeyCode == Keys.D9) CycleDifficultyTier(); else if (e.KeyCode == Keys.D0) ReforgeWeapon(0); else if (e.KeyCode is >= Keys.D1 and <= Keys.D8) ReforgeWeapon((int)e.KeyCode - (int)Keys.D0); else if (e.KeyCode == Keys.Escape) forgeMenuOpen = false; return; }
+        if (forgeMenuOpen) { if (defenseForgeOpen) HandleDefenseForgeKey(e.KeyCode); else if (e.KeyCode == Keys.T) defenseForgeOpen = true; else if (e.KeyCode == Keys.A) { secondaryForgeOpen = !secondaryForgeOpen; notice = secondaryForgeOpen ? weaponRarities[weapon] == 2 ? "AFIXO SECUNDÁRIO • ESCOLHA UMA RESSONÂNCIA DE RELÍQUIA" : "AFIXO SECUNDÁRIO • DISPONÍVEL APENAS PARA RELÍQUIAS" : "AFIXO PRINCIPAL • TÊMPERA NORMAL"; noticeTime = 2.5f; } else if (e.KeyCode == Keys.D9) CycleDifficultyTier(); else if (e.KeyCode == Keys.D0) ReforgeWeapon(0); else if (e.KeyCode is >= Keys.D1 and <= Keys.D6 or Keys.D8) ReforgeWeapon((int)e.KeyCode - (int)Keys.D0); else if (e.KeyCode == Keys.D7 && secondaryForgeOpen) { notice = "USE 0 PARA CADÊNCIA • O AFIXO PRINCIPAL NÃO PODE SER REPETIDO"; noticeTime = 2.5f; } else if (e.KeyCode == Keys.D7) ReforgeWeapon(7); else if (e.KeyCode == Keys.Escape) { forgeMenuOpen = false; secondaryForgeOpen = false; } return; }
         if (endingChoiceOpen) { if (e.KeyCode == Keys.D1) ChooseTownEnding(1); else if (e.KeyCode == Keys.D2) ChooseTownEnding(2); else if (e.KeyCode == Keys.D3) endingChoiceOpen = false; return; }
         if (vigilChoiceOpen) { if (e.KeyCode == Keys.D1) ResolveVigilFloor(true); else if (e.KeyCode == Keys.D2) ResolveVigilFloor(false); else if (e.KeyCode == Keys.D3 || e.KeyCode == Keys.Escape) vigilChoiceOpen = false; return; }
         if (chestChoice) { if (e.KeyCode == Keys.D1) gold += 75; else if (e.KeyCode == Keys.D2) potions += 2; else if (e.KeyCode == Keys.D3) health = maxHealth; else return; chestChoice = false; EnterVesper(); return; }
@@ -551,18 +551,25 @@ public sealed class Game : Form
 
     private void ReforgeWeapon(int affix)
     {
-        if (!forgeMenuOpen || room != 18 || questStage < 27 || Distance(player, AvenPosition) >= 60) { forgeMenuOpen = false; return; }
-        if (affix == 7) { RespecTalents(); return; }
+        if (!forgeMenuOpen || room != 18 || questStage < 27 || Distance(player, AvenPosition) >= 60) { forgeMenuOpen = secondaryForgeOpen = false; return; }
+        if (!secondaryForgeOpen && affix == 7) { RespecTalents(); return; }
         if (affix == 0) affix = 7;
         if (affix is < 1 or > 8) return;
-        if (gold < 75 || tideGlass < 1) { notice = "A TÊMPERA CUSTA 75 OURO E 1 SAL VÍTREO"; noticeTime = 2; return; }
-        if (weaponAffixes[weapon] == affix) { notice = "ESSA ARMA JÁ GUARDA ESSE AFFIX"; noticeTime = 2; return; }
+        if (secondaryForgeOpen && weaponRarities[weapon] != 2) { notice = "O AFIXO SECUNDÁRIO SÓ PODE SER MUDADO EM UMA RELÍQUIA"; noticeTime = 2.5f; return; }
+        int goldCost = secondaryForgeOpen ? 150 : 75, glassCost = secondaryForgeOpen ? 2 : 1;
+        if (gold < goldCost || tideGlass < glassCost) { notice = secondaryForgeOpen ? "AFIXO SECUNDÁRIO CUSTA 150 OURO E 2 SAL VÍTREO" : "A TÊMPERA CUSTA 75 OURO E 1 SAL VÍTREO"; noticeTime = 2; return; }
+        int currentAffix = secondaryForgeOpen ? weaponAffixes2[weapon] : weaponAffixes[weapon];
+        if (currentAffix == affix || secondaryForgeOpen && weaponAffixes[weapon] == affix) { notice = secondaryForgeOpen ? "AFIXOS PRINCIPAL E SECUNDÁRIO PRECISAM SER DIFERENTES" : "ESSA ARMA JÁ GUARDA ESSE AFFIX"; noticeTime = 2; return; }
         int oldPower = WeaponPower(weapon);
-        if (weaponRarities[weapon] == 0) { weaponRarities[weapon] = 1; weaponBonuses[weapon] = random.Next(3, 7); }
-        if (weaponRarities[weapon] == 2 && weaponAffixes2[weapon] == affix) (weaponAffixes[weapon], weaponAffixes2[weapon]) = (weaponAffixes2[weapon], weaponAffixes[weapon]);
-        else weaponAffixes[weapon] = affix;
+        if (secondaryForgeOpen) weaponAffixes2[weapon] = affix;
+        else
+        {
+            if (weaponRarities[weapon] == 0) { weaponRarities[weapon] = 1; weaponBonuses[weapon] = random.Next(3, 7); }
+            if (weaponRarities[weapon] == 2 && weaponAffixes2[weapon] == affix) (weaponAffixes[weapon], weaponAffixes2[weapon]) = (weaponAffixes2[weapon], weaponAffixes[weapon]);
+            else weaponAffixes[weapon] = affix;
+        }
         damage += WeaponPower(weapon) - oldPower;
-        gold -= 75; tideGlass--; forgeMenuOpen = false;
+        gold -= goldCost; tideGlass -= glassCost; forgeMenuOpen = false; secondaryForgeOpen = false;
         notice = $"TÊMPERA: {weaponNames[weapon]} {WeaponRarityName(weaponRarities[weapon])} {WeaponAffixDescription(weapon)}"; noticeTime = 3;
     }
 
@@ -1710,9 +1717,9 @@ public sealed class Game : Form
             else if (finalEnding > 0 && questStage is 52 or 53) { questStage = 54; ShowMemory("O ARQUIVO DAS MARÉS EMPRESTADAS", "Aven encontrou uma nota sem assinatura na mesa comunitária. Ela descreve um cais onde viajantes deixavam sons que aceitavam compartilhar, sem nomes ou destinos. O registro foi levado para um arquivo sob a maré; algo lá tenta transformar muitas vozes numa só. A expedição é sua escolha."); notice = "EXPEDIÇÃO OPCIONAL XVII: CAIS DOS ECOS EMPRESTADOS"; noticeTime = 3; }
             else if (questStage == 55 && borrowedTrace) { questStage = 56; gold += 1900; tideGlass += 8; potions += 3; techniqueTalent++; ShowMemory("UM LUGAR PARA DEIXAR ECO", "Aven guarda a memória com o consentimento de quem a deixou. Não escreve nomes nem rotas. Como agradecimento, a comunidade oferece provisões e ensina uma nova técnica: o Escutador agora causa mais dano com todas as habilidades."); notice = "RECOMPENSA: +1900 OURO • +8 SAL • +3 POÇÕES • TÉCNICA +1"; noticeTime = 4; }
             else if (questStage == 58 && unstruckTrace) { questStage = 59; gold += 2200; tideGlass += 10; potions += 3; techniqueTalent++; ShowMemory("AS PAUSAS VOLTAM A SER ESCOLHIDAS", "Aven guarda o relato sem registrar quem deixou o sino ou quem escolheu não tocá-lo. A comunidade oferece provisões e reforça sua sintonia com as técnicas. O desenho fica na mesa como convite, não como ordem para preencher o silêncio."); notice = "RECOMPENSA: +2200 OURO • +10 SAL • +3 POÇÕES • TÉCNICA +1"; noticeTime = 4; }
-            else if (finalEnding > 0 && questStage >= 56) { forgeMenuOpen = true; return; }
+            else if (finalEnding > 0 && questStage >= 56) { forgeMenuOpen = true; secondaryForgeOpen = false; return; }
             else if (finalEnding > 0) ShowMemory(finalEnding == 1 ? "VÉSPERA APRENDE A OUVIR" : "O FAROL SEM CORRENTE", finalEnding == 1 ? "Os arquivos estão abertos e a comunidade divide a proteção da cidade. As memórias devolvidas podem ser ouvidas por quem as reivindicar. Nara permanece livre para escolher quando e se quer voltar." : "O Lume protege Véspera sem chamar as vozes perdidas à força. A comunidade sabe o preço da luz e pode decidir, em conjunto, como mantê-la. Nara permanece livre para escolher quando e se quer voltar.");
-            else if (questStage >= 27) { forgeMenuOpen = true; return; }
+            else if (questStage >= 27) { forgeMenuOpen = true; secondaryForgeOpen = false; return; }
             else if (questStage >= 24) ShowMemory("AVEN, O BARQUEIRO", "A mesa continua aberta a quem escolhe deixar um relato. A próxima curva fica a oeste; os viajantes que passaram por aqui decidiram compartilhar apenas o início da trilha.");
             else ShowMemory("AVEN, O BARQUEIRO", "Este barco encalhado virou abrigo. Ninguém precisa escrever um nome para ficar aqui.");
             return;
@@ -3391,6 +3398,9 @@ public sealed class Game : Form
             return;
         }
         DrawCentered(g, weaponRarities[weapon] == 0 ? $"TÊMPERA DO VEIO • {weaponNames[weapon]} VIRA RARA" : $"TÊMPERA DO VEIO • {weaponNames[weapon]}", 170, new Font("Georgia", 16, FontStyle.Bold), Color.Goldenrod);
+        string mainAffix = WeaponAffixLabel(weaponAffixes[weapon]); if (mainAffix.Length == 0) mainAffix = "SEM AFIXO";
+        string secondaryAffix = weaponRarities[weapon] != 2 ? "NÃO DISPONÍVEL" : WeaponAffixLabel(weaponAffixes2[weapon]); if (secondaryAffix.Length == 0) secondaryAffix = "SEM AFIXO";
+        g.DrawString(secondaryForgeOpen ? $"AFIXO SECUNDÁRIO • PRINCIPAL PRESERVADO: {mainAffix} • ATUAL: {secondaryAffix}" : $"AFIXO PRINCIPAL • ATUAL: {mainAffix}{(weaponRarities[weapon] == 2 ? $" • SECUNDÁRIO: {secondaryAffix}" : "")}", hintFont, secondaryForgeOpen ? Brushes.Plum : Brushes.Goldenrod, 165, 190);
         g.DrawString("1. TRÉGUA • recupera 3/6 vida por abate", optionFont, Brushes.AntiqueWhite, 165, 205);
         g.DrawString("2. CONTRACANTO • crítico +7/+11 pontos percentuais", optionFont, Brushes.AntiqueWhite, 165, 230);
         g.DrawString("3. MARÉ • dano de técnica +12%/+18%", optionFont, Brushes.AntiqueWhite, 165, 255);
@@ -3403,15 +3413,17 @@ public sealed class Game : Form
         {
             int goldCost = TalentRespecGoldCost(level), glassCost = TalentRespecGlassCost(level);
             g.DrawString("7. REDISTRIBUIR TALENTOS • devolve todos os pontos", optionFont, Brushes.AntiqueWhite, 165, 414);
-            g.DrawString($"CUSTO: {goldCost} OURO E {glassCost} SAL VÍTREO   •   DISPONÍVEL: {gold} OURO / {tideGlass} SAL", hintFont, gold < goldCost || tideGlass < glassCost ? Brushes.IndianRed : Brushes.Goldenrod, 165, 449);
-            g.DrawString("1–6 ou 8 afixo • 0 Cadência • 7 redistribui • T traços • ESC fecha", hintFont, Brushes.DarkGray, 165, 477);
+            int affixGoldCost = secondaryForgeOpen ? 150 : 75, affixGlassCost = secondaryForgeOpen ? 2 : 1;
+            g.DrawString(secondaryForgeOpen && weaponRarities[weapon] != 2 ? "AFIXO SECUNDÁRIO EXIGE UMA RELÍQUIA." : $"CUSTO: {affixGoldCost} OURO E {affixGlassCost} SAL VÍTREO   •   DISPONÍVEL: {gold} OURO / {tideGlass} SAL", hintFont, secondaryForgeOpen && weaponRarities[weapon] != 2 ? Brushes.IndianRed : gold < affixGoldCost || tideGlass < affixGlassCost ? Brushes.IndianRed : Brushes.Goldenrod, 165, 449);
+            g.DrawString("A alterna principal/secundário • 1–6/8 afixo • 0 Cadência • 7 redistribui só no principal • T traços • ESC fecha", hintFont, Brushes.DarkGray, 165, 477);
             g.DrawString($"9. RESSONÂNCIA {difficultyTier} • {DifficultyTierName(difficultyTier)} • HP +{(DifficultyEnemyHealthMultiplier(difficultyTier) - 1) * 100:0}% • dano +{(DifficultyIncomingDamageMultiplier(difficultyTier) - 1) * 100:0}% • recompensas +{(DifficultyRewardMultiplier(difficultyTier) - 1) * 100:0}%", hintFont, Brushes.Orange, 165, 500);
         }
         else
         {
             g.DrawString("Valores: RARA / RELÍQUIA.", hintFont, Brushes.DarkGray, 165, 414);
-            g.DrawString($"CUSTO: 75 OURO E 1 SAL VÍTREO   •   DISPONÍVEL: {gold} OURO / {tideGlass} SAL", hintFont, gold < 75 || tideGlass < 1 ? Brushes.IndianRed : Brushes.Goldenrod, 165, 449);
-            g.DrawString("1–6 ou 8 afixo • 0 Cadência • T traços • ESC fecha", hintFont, Brushes.DarkGray, 165, 477);
+            int affixGoldCost = secondaryForgeOpen ? 150 : 75, affixGlassCost = secondaryForgeOpen ? 2 : 1;
+            g.DrawString(secondaryForgeOpen && weaponRarities[weapon] != 2 ? "AFIXO SECUNDÁRIO EXIGE UMA RELÍQUIA." : $"CUSTO: {affixGoldCost} OURO E {affixGlassCost} SAL VÍTREO   •   DISPONÍVEL: {gold} OURO / {tideGlass} SAL", hintFont, secondaryForgeOpen && weaponRarities[weapon] != 2 ? Brushes.IndianRed : gold < affixGoldCost || tideGlass < affixGlassCost ? Brushes.IndianRed : Brushes.Goldenrod, 165, 449);
+            g.DrawString("A alterna principal/secundário • 1–6/8 afixo • 0 Cadência • T traços • ESC fecha", hintFont, Brushes.DarkGray, 165, 477);
             g.DrawString("RESSONÂNCIAS de desafio desbloqueiam após o epílogo e a expedição XVII.", hintFont, Brushes.DarkGray, 165, 500);
         }
     }
@@ -4551,6 +4563,13 @@ public sealed class Game : Form
             if (affixForge.health != 62) throw new InvalidOperationException("A Ressonância da Trégua não recuperou vida ao abater sob metade da vida.");
             affixForge.health = 51; var healthyDummy = new Enemy { Pos = affixForge.player, Kind = EnemyKind.Grunt, Hp = 1, MaxHp = 1 }; affixForge.enemies.Add(healthyDummy); affixForge.Defeat(healthyDummy);
             if (affixForge.health != 57) throw new InvalidOperationException("A cura adicional da Ressonância da Trégua foi aplicada acima do limiar de risco.");
+            affixForge.weaponAffixes[0] = 4; affixForge.weaponAffixes2[0] = 3; affixForge.gold = 300; affixForge.tideGlass = 4; affixForge.forgeMenuOpen = true;
+            affixForge.OnKeyDown(affixForge, new KeyEventArgs(Keys.A));
+            if (!affixForge.secondaryForgeOpen || !affixForge.notice.Contains("AFIXO SECUNDÁRIO")) throw new InvalidOperationException("A forja não alternou para a escolha do afixo secundário.");
+            affixForge.OnKeyDown(affixForge, new KeyEventArgs(Keys.D5)); SaveData targetedRelicSave = affixForge.CaptureSaveData();
+            if (affixForge.weaponAffixes[0] != 4 || affixForge.weaponAffixes2[0] != 5 || affixForge.gold != 150 || affixForge.tideGlass != 2 || affixForge.secondaryForgeOpen || !ValidWeaponData(targetedRelicSave)) throw new InvalidOperationException("A têmpera secundária não preservou o afixo principal, cobrou o custo da Relíquia ou manteve o save válido.");
+            affixForge.forgeMenuOpen = true; affixForge.secondaryForgeOpen = true; affixForge.OnKeyDown(affixForge, new KeyEventArgs(Keys.D4));
+            if (affixForge.weaponAffixes[0] != 4 || affixForge.weaponAffixes2[0] != 5 || affixForge.gold != 150 || affixForge.tideGlass != 2 || !affixForge.forgeMenuOpen) throw new InvalidOperationException("A têmpera aceitou afixos iguais ou consumiu recursos ao recusar a escolha.");
         }
         using (var ruptureForge = new Game())
         {
