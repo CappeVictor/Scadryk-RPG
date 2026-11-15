@@ -56,7 +56,8 @@ public sealed partial class Game
         g.DrawLine(divider, 464, 367, 856, 367);
         g.DrawString(firstEchoArea ? "CAMINHOS DAS MARGENS" : "PROGRESSO DA CAMPANHA", sectionFont, Brushes.Goldenrod, 466, 381);
         g.DrawString(firstEchoArea ? (firstEchoQuest == 3 ? "Expedição concluída com Edda" : firstEchoQuest == 2 ? "Vozes livres: relate a Edda" : "Comportas: vozes retidas") : $"Câmaras limpas: {clearedCombatRooms}/{totalCombatRooms}", detailFont, Brushes.AntiqueWhite, 466, 409);
-        g.DrawString(firstEchoArea ? (firstEchoCaveFound ? "Gruta: registro encontrado" : "Gruta: registro ainda não encontrado") : $"Inscrições opcionais: {inscriptionCount}/2", detailFont, Brushes.AntiqueWhite, 466, 435);
+        int fieldDiscoveries = (firstEchoCaveFound ? 1 : 0) + (firstEchoReedCache ? 1 : 0);
+        g.DrawString(firstEchoArea ? $"Descobertas opcionais: {fieldDiscoveries}/2" : $"Inscrições opcionais: {inscriptionCount}/2", detailFont, Brushes.AntiqueWhite, 466, 435);
         g.DrawString($"Ecos nesta área: {enemies.Count}   •   Saques no chão: {drops.Count}", metaFont, Brushes.LightGray, 466, 461);
         if (room == 3 && firstEchoQuest > 0)
             g.DrawString(firstEchoQuest == 1 ? "Margens: siga às comportas" : firstEchoQuest == 2 ? "Margens: relate a Edda" : "Margens: expedição concluída", resonanceFont, Brushes.Goldenrod, 466, 489);

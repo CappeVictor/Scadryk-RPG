@@ -237,6 +237,12 @@ public sealed partial class Game
             PointF loot = Map(drop.Pos);
             g.FillRectangle(Brushes.LightCyan, loot.X - 3, loot.Y - 3, 6, 6);
         }
+        if (firstEchoReedCache)
+        {
+            PointF cachePoint = Map(FirstEchoReedCache);
+            g.FillEllipse(Brushes.LightSteelBlue, cachePoint.X - 5, cachePoint.Y - 5, 10, 10);
+            g.DrawString("CAIXA", font, Brushes.AntiqueWhite, cachePoint.X - 20, cachePoint.Y + 8);
+        }
         PointF here = Map(player);
         g.FillEllipse(Brushes.LightGreen, here.X - 7, here.Y - 7, 14, 14);
         string status = firstEchoQuest == 0 ? "PROCURE IVARA" : firstEchoQuest == 1 ? "SIGA ÀS COMPORTAS" : firstEchoQuest == 2 ? "RETORNE A EDDA" : "MARCOS RESTABELECIDOS";
