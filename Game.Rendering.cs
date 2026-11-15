@@ -1004,6 +1004,9 @@ public sealed partial class Game
         if (questStage >= 22) known |= 1L << 18;
         if (questStage >= 57) known |= 1L << 41;
         if (questStage >= 58) known |= 1L << 42;
+        if (room >= 43 || firstEchoQuest > 0 || firstEchoCaveFound) known |= 1L << 43;
+        if (firstEchoCaveFound) known |= 1L << 44;
+        if (firstEchoQuest >= 2) known |= 1L << 45;
         return known;
     }
 
