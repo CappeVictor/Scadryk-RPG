@@ -177,3 +177,5 @@ Cada uma das oito técnicas aprendidas agora tem duas memórias opcionais além 
 ## Organização do código
 
 A rotina de desenho e a interface do jogo foram separadas de `Game.cs` para `Game.Rendering.cs`, mantendo o mesmo tipo parcial e o comportamento existente. Isso reduz o arquivo central de cerca de 2.800 para 1.400 linhas e dá um ponto claro para futuras mudanças de HUD, cenários, inimigos e efeitos visuais. Próxima etapa técnica: separar mundo e IA de combate, depois consolidar os dados de conteúdo sem alterar saves existentes.
+
+O runtime de combate agora está em `Game.CombatRuntime.cs`: avisos, áreas de impacto, comportamento de inimigos e elites, dano, feridas, recuos e textos de combate. `Game.cs` caiu para cerca de 1.050 linhas; campanha, entrada e interações ainda estão no núcleo e seguem como próximos limites a separar.
