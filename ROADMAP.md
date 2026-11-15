@@ -17,6 +17,7 @@ O documento de história com cenário, personagens e resumo dos capítulos está
 ## Estado atual
 
 - A abertura agora apresenta um menu próprio, com continuação segura, nova jornada com confirmação, leitura do prólogo, configurações e prévia cartográfica dos 18 capítulos. O mapa de cada capítulo indica áreas atuais, concluídas, descobertas e bloqueadas; a escolha de prévia não teletransporta o jogador. Uma paisagem original de Véspera dá identidade à tela inicial e é distribuída junto dos demais recursos.
+- A criação de personagem oferece dois arquétipos jogáveis e persistentes: o Escutador, híbrido de técnicas e mobilidade, e o Guardião da Pedra, que recebe menos dano, golpeia mais lentamente e alimenta uma onda de impacto ao sofrer ataques. O prólogo e a ficha refletem a escolha; sprites e árvores de habilidade próprias para cada classe ainda faltam.
 - O diário acessível por **L** centraliza o objetivo atual, o capítulo, as salas limpas, inscrições opcionais, inimigos e saques da área, mantendo o combate pausado até fechar a tela.
 - A Godot foi removida do projeto. A janela e o desenho usam C#/.NET 8 Windows Forms e GDI+.
 - O protótipo mantém 41 salas de combate, vinte chefes e duas áreas seguras, com inimigos comuns, arqueiro, conjurador, elites com seis afixos, vinte chefes, duas expedições opcionais e conteúdo original até o Capítulo XVIII.

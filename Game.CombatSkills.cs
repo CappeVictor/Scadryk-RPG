@@ -12,17 +12,39 @@ public sealed partial class Game
         attackCd = BasicAttackCooldown();
         attackFlash = 0.16f;
         GameAudio.Play(GameAudio.Cue.Strike);
-        bool cadenceTriggered = false;
+        bool cadenceTriggered = false, landed = false;
         foreach (Enemy enemy in enemies.ToArray())
         {
             PointF offset = Sub(enemy.Pos, player); float distance = Length(offset);
             if (distance > BasicAttackReach(enemy) || (distance >= 20 && !BasicAttackCoversDirection(Dot(facing, Normalize(offset, facing)), weapon)) || BlockedLine(player, enemy.Pos)) continue;
-            bool rangedCriticalResonance = UsesRangedCriticalResonance(enemy); bool critical = random.NextDouble() < BasicAttackCriticalChance(enemy); int dealt = (int)(damage * BasicAttackSpecializationMultiplier() * BasicAttackDamageMultiplier(enemy) * OutgoingDamageMultiplier(enemy) * (critical ? CriticalMultiplier() : 1));
+            landed = true;
+            bool rangedCriticalResonance = UsesRangedCriticalResonance(enemy); bool critical = random.NextDouble() < BasicAttackCriticalChance(enemy); int dealt = (int)(damage * HeroBasicAttackMultiplier() * BasicAttackSpecializationMultiplier() * BasicAttackDamageMultiplier(enemy) * OutgoingDamageMultiplier(enemy) * (critical ? CriticalMultiplier() : 1));
             DamageEnemy(enemy, dealt, critical); enemy.Flash = 0.2f;
             ApplyWeaponWound(enemy, critical);
             if (critical && rangedCriticalResonance) AddFloatingText(new PointF(enemy.Pos.X, enemy.Pos.Y - enemy.Radius - 28), "RESSONÂNCIA DO CONTRACANTO", Color.LightCyan);
             if (critical && !cadenceTriggered && HasWeaponAffix(weapon, 7)) { cadenceTriggered = true; float reduction = WeaponCriticalCooldownAdvance(weapon); AdvanceTechniqueCooldowns(reduction); AddFloatingText(new PointF(player.X, player.Y - 38), $"CADÊNCIA −{reduction:0.00} S", Color.LightCyan); }
             if (weapon == 1 && !enemy.Boss) { enemy.Stagger = Math.Max(enemy.Stagger, 0.2f); enemy.Windup = 0; }
+            if (enemy.Hp <= 0) Defeat(enemy);
+        }
+        if (landed && heroClass == HeroClass.StoneGuardian && stoneFury >= 100) ReleaseStoneFury();
+    }
+
+    private float HeroBasicAttackMultiplier() => heroClass == HeroClass.StoneGuardian ? 1.2f : 1f;
+    private float HeroDamageTakenMultiplier() => heroClass == HeroClass.StoneGuardian ? 0.8f : 1f;
+    private float ClassMovementSpeed() => heroClass == HeroClass.StoneGuardian ? 180f : PlayerMoveSpeed;
+    private string HeroClassTitle() => heroClass == HeroClass.StoneGuardian ? "GUARDIÃO DA PEDRA" : "ESCUTADOR";
+
+    private void ReleaseStoneFury()
+    {
+        stoneFury = 0;
+        AddFloatingText(new PointF(player.X, player.Y - 44), "FÚRIA DE PEDRA", Color.FromArgb(255, 203, 116));
+        GameAudio.Play(GameAudio.Cue.Impact);
+        foreach (Enemy enemy in enemies.ToArray())
+        {
+            if (Distance(player, enemy.Pos) > 112) continue;
+            DamageEnemy(enemy, damage * (enemy.Boss ? 0.55f : 0.9f) * OutgoingDamageMultiplier(enemy) * (IsArmored(enemy) ? 0.75f : 1f));
+            enemy.Flash = 0.22f;
+            if (!enemy.Boss) { enemy.Windup = 0; enemy.Stagger = Math.Max(enemy.Stagger, 0.85f); enemy.Cooldown = Math.Max(enemy.Cooldown, 1.1f); }
             if (enemy.Hp <= 0) Defeat(enemy);
         }
     }

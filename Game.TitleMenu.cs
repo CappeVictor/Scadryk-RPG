@@ -22,9 +22,18 @@ public sealed partial class Game
 
     private void HandleTitleKey(Keys key)
     {
+        if (classSelectionOpen)
+        {
+            if (key is Keys.Escape or Keys.Back) classSelectionOpen = false;
+            else if (key is Keys.Up or Keys.W or Keys.Down or Keys.S) classSelection = 1 - classSelection;
+            else if (key == Keys.D1) ChooseHeroClass(0);
+            else if (key == Keys.D2) ChooseHeroClass(1);
+            else if (key is Keys.Enter or Keys.Space) ChooseHeroClass(classSelection);
+            Invalidate(); return;
+        }
         if (confirmNewJourney)
         {
-            if (key is Keys.Y or Keys.Enter) { confirmNewJourney = false; StartGame(); }
+            if (key is Keys.Y or Keys.Enter) BeginClassSelection();
             else if (key is Keys.N or Keys.Escape) confirmNewJourney = false;
             Invalidate(); return;
         }
@@ -43,7 +52,7 @@ public sealed partial class Game
         }
         if (titlePage == TitlePage.Campaign && (key is Keys.Enter or Keys.Space))
         {
-            if (HasTitleSave) LoadGame(); else StartGame();
+            if (HasTitleSave) LoadGame(); else BeginClassSelection();
             return;
         }
         if (titlePage == TitlePage.Campaign && (key is Keys.Up or Keys.W or Keys.Down or Keys.S))
@@ -74,7 +83,7 @@ public sealed partial class Game
             case 0:
                 if (HasTitleSave) LoadGame(); else notice = "AINDA NÃO HÁ UMA JORNADA SALVA";
                 break;
-            case 1: confirmNewJourney = HasTitleSave; if (!confirmNewJourney) StartGame(); break;
+            case 1: confirmNewJourney = HasTitleSave; if (!confirmNewJourney) BeginClassSelection(); break;
             case 2: titlePage = TitlePage.Campaign; { SaveData? preview = TitleSavePreview(); int index = campaignChapters.ToList().FindIndex(chapter => preview is not null && preview.Room >= chapter.FirstRoom && preview.Room <= chapter.LastRoom); titleChapterSelection = index < 0 ? 0 : index; } break;
             case 3: titlePage = TitlePage.History; storyPage = 0; break;
             case 4: titlePage = TitlePage.Settings; titleSelection = 0; break;
@@ -82,6 +91,21 @@ public sealed partial class Game
         }
         Invalidate();
     }
+
+    private void BeginClassSelection()
+    {
+        confirmNewJourney = false; classSelectionOpen = true; classSelection = 0; Invalidate();
+    }
+
+    private void ChooseHeroClass(int selection)
+    {
+        heroClass = selection == 1 ? HeroClass.StoneGuardian : HeroClass.Listener;
+        classSelectionOpen = false; StartGame();
+    }
+
+    private string ProloguePage(int page) => page == 1 && heroClass == HeroClass.StoneGuardian
+        ? "Você é um Guardião da Pedra: protege os caminhos de Véspera e converte os golpes que recebe em Fúria de Pedra. Entre essas lembranças reconheceu Nara, sua irmã, desaparecida quando os sinos pararam."
+        : prologue[page];
 
     private void ToggleTitleAudio()
     {
@@ -92,9 +116,16 @@ public sealed partial class Game
 
     private void HandleTitleClick(PointF point)
     {
+        if (classSelectionOpen)
+        {
+            if (new RectangleF(85, 205, 380, 260).Contains(point)) ChooseHeroClass(0);
+            else if (new RectangleF(495, 205, 380, 260).Contains(point)) ChooseHeroClass(1);
+            else if (point.Y > 500) classSelectionOpen = false;
+            Invalidate(); return;
+        }
         if (confirmNewJourney)
         {
-            if (new RectangleF(300, 365, 170, 48).Contains(point)) { confirmNewJourney = false; StartGame(); }
+            if (new RectangleF(300, 365, 170, 48).Contains(point)) BeginClassSelection();
             else if (new RectangleF(490, 365, 170, 48).Contains(point)) confirmNewJourney = false;
             Invalidate(); return;
         }
@@ -110,7 +141,7 @@ public sealed partial class Game
         {
             if (titlePage == TitlePage.Campaign && point.X >= 190 && point.X <= 475)
             {
-                if (HasTitleSave) LoadGame(); else StartGame();
+                if (HasTitleSave) LoadGame(); else BeginClassSelection();
             }
             else if (titlePage == TitlePage.Campaign && point.X >= 500 && point.X <= 770) { titlePage = TitlePage.Main; titleSelection = 2; }
             else { titlePage = TitlePage.Main; titleSelection = 2; }
@@ -210,7 +241,7 @@ public sealed partial class Game
             DrawCentered(g, $"{storyPage + 1} / {prologue.Length}", 218, new Font("Segoe UI", 10, FontStyle.Bold), Color.FromArgb(166, 173, 158));
             using var storyFont = new Font("Georgia", 16);
             using var storyBrush = new SolidBrush(Color.FromArgb(235, 231, 215));
-            g.DrawString(prologue[storyPage], storyFont, storyBrush, new RectangleF(145, 265, 670, 150));
+            g.DrawString(ProloguePage(storyPage), storyFont, storyBrush, new RectangleF(145, 265, 670, 150));
             DrawCentered(g, storyPage > 0 ? "← / A  ANTERIOR" : "A HISTÓRIA COMEÇA NA NOITE SEM SINOS", 460, new Font("Segoe UI", 10, FontStyle.Bold), Color.FromArgb(171, 177, 164), 300);
             DrawCentered(g, storyPage < prologue.Length - 1 ? "PRÓXIMA  → / D" : "O RESTO DA HISTÓRIA É DESCOBERTO JOGANDO", 460, new Font("Segoe UI", 10, FontStyle.Bold), Color.FromArgb(171, 177, 164), 670);
             DrawCentered(g, "ENTER AVANÇA • ← / → TROCA A PÁGINA • ESC VOLTA", 584, new Font("Segoe UI", 9), Color.FromArgb(158, 164, 154));
@@ -235,6 +266,30 @@ public sealed partial class Game
             g.FillRectangle(yes, 300, 365, 170, 48); g.FillRectangle(no, 490, 365, 170, 48);
             DrawCentered(g, "COMEÇAR • Y", 377, new Font("Segoe UI", 11, FontStyle.Bold), Color.FromArgb(255, 232, 180), 385);
             DrawCentered(g, "VOLTAR • N", 377, new Font("Segoe UI", 11, FontStyle.Bold), Color.AntiqueWhite, 575);
+        }
+        if (classSelectionOpen)
+        {
+            using var veil = new SolidBrush(Color.FromArgb(224, 0, 0, 0));
+            using var cardFill = new SolidBrush(Color.FromArgb(252, 22, 25, 25));
+            using var listenerEdge = new Pen(classSelection == 0 ? Color.Goldenrod : Color.FromArgb(87, 92, 82), classSelection == 0 ? 3 : 1);
+            using var guardianEdge = new Pen(classSelection == 1 ? Color.Goldenrod : Color.FromArgb(87, 92, 82), classSelection == 1 ? 3 : 1);
+            g.FillRectangle(veil, 0, 0, 960, 640);
+            DrawCentered(g, "ESCOLHA QUEM VAI OUVIR AS PEDRAS", 72, new Font("Georgia", 22, FontStyle.Bold), Color.FromArgb(230, 193, 129));
+            g.FillRectangle(cardFill, 85, 125, 380, 365); g.DrawRectangle(listenerEdge, 85, 125, 380, 365);
+            g.FillRectangle(cardFill, 495, 125, 380, 365); g.DrawRectangle(guardianEdge, 495, 125, 380, 365);
+            DrawCentered(g, "1 • ESCUTADOR", 155, new Font("Georgia", 18, FontStyle.Bold), Color.FromArgb(230, 193, 129), 275);
+            DrawCentered(g, "HÍBRIDO • TÉCNICAS • MOBILIDADE", 196, new Font("Segoe UI", 10, FontStyle.Bold), Color.AntiqueWhite, 275);
+            DrawCentered(g, "Ouve memórias presas à pedra e as transforma", 252, new Font("Segoe UI", 10), Color.FromArgb(204, 207, 192), 275);
+            DrawCentered(g, "em técnicas de alcance, controle e ressonância.", 274, new Font("Segoe UI", 10), Color.FromArgb(204, 207, 192), 275);
+            DrawCentered(g, "Poder equilibrado • esquiva rápida", 360, new Font("Segoe UI", 10, FontStyle.Bold), Color.LightSkyBlue, 275);
+            DrawCentered(g, "2 • GUARDIÃO DA PEDRA", 155, new Font("Georgia", 17, FontStyle.Bold), Color.FromArgb(230, 193, 129), 685);
+            DrawCentered(g, "TANQUE • IMPACTO • FÚRIA", 196, new Font("Segoe UI", 10, FontStyle.Bold), Color.AntiqueWhite, 685);
+            DrawCentered(g, "Resiste a 20% do dano e golpeia com mais força,", 252, new Font("Segoe UI", 10), Color.FromArgb(204, 207, 192), 685);
+            DrawCentered(g, "mas se move e ataca mais devagar.", 274, new Font("Segoe UI", 10), Color.FromArgb(204, 207, 192), 685);
+            DrawCentered(g, "Receber dano alimenta a Fúria de Pedra.", 338, new Font("Segoe UI", 10, FontStyle.Bold), Color.FromArgb(255, 203, 116), 685);
+            DrawCentered(g, "Um golpe básico carregado libera uma onda", 360, new Font("Segoe UI", 10), Color.FromArgb(204, 207, 192), 685);
+            DrawCentered(g, "que interrompe ecos próximos.", 382, new Font("Segoe UI", 10), Color.FromArgb(204, 207, 192), 685);
+            DrawCentered(g, "↑ / ↓ ESCOLHER • 1 / 2 OU ENTER CONFIRMA • ESC VOLTA", 535, new Font("Segoe UI", 10, FontStyle.Bold), Color.AntiqueWhite);
         }
         if (noticeTime > 0 && !string.IsNullOrWhiteSpace(notice)) DrawCentered(g, notice, 612, new Font("Segoe UI", 9, FontStyle.Bold), Color.FromArgb(230, 193, 129));
     }

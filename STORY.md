@@ -15,7 +15,9 @@ O Lume protege a cidade, mas exige lembranças como combustível. A Curadora dos
 
 ## Personagens
 
-- **O Escutador:** protagonista personalizável, capaz de ouvir as lembranças que permanecem nas pedras. Procura a voz da irmã, Nara, desaparecida na noite em que os sinos se calaram.
+- **O protagonista:** irmão de Nara, que parte em busca da voz dela na noite em que os sinos se calam. Na criação, pode seguir o caminho do **Escutador**, que ouve lembranças nas pedras e as transforma em técnicas, ou do **Guardião da Pedra**, que sente os ecos pelo impacto e converte golpes recebidos em Fúria de Pedra. Ambas as escolhas preservam a campanha e a identidade original de Véspera.
+- **O Escutador:** caminho híbrido de técnicas e mobilidade, capaz de ouvir as lembranças que permanecem nas pedras.
+- **O Guardião da Pedra:** caminho defensivo; protege rotas de Véspera, resiste mais a golpes e descarrega a Fúria em uma onda que interrompe ecos próximos.
 - **Nara:** irmã do protagonista. Sua lembrança aparece em fragmentos contraditórios; cada região revela algo sobre quem ela era e sobre o que escolheu fazer.
 - **O Guardião sem Nome:** protetor da cripta e antigo responsável por vigiar o Lume. Continua defendendo a passagem porque seu juramento sobreviveu à memória de seu próprio nome.
 - **Curadora Sileth:** arquivista que apaga nomes para manter o farol aceso. Não acredita estar fazendo o bem sem custo; acredita que todas as alternativas são piores.
