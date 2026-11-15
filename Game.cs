@@ -286,7 +286,7 @@ public sealed class Game : Form
     private bool naraTrace;
     private float health = 100, maxHealth = 100, attackCd, attackFlash, skillCd, shardCd, bellCd, bellWaveTime, bellWaveRadius, pullCd, pullWaveTime, wardCd, wardTime, refrainCd, refrainWaveTime, refrainWaveRadius, beaconCd, beaconTime, beaconPulseCd, beaconWaveTime, returnVoiceCd, returnVoiceWaveTime, returnVoiceWaveRadius, finalStrikeCd, finalStrikeFlash, dashCd, dashTime, invulnerable, noticeTime, windupPulse, veinResonanceTime;
     private PointF finalStrikeTarget;
-    private bool armor, armorOn, relic, relicOn, inventoryOpen, skillMenuOpen, characterSheetOpen, mapOpen, title = true, dead, victory, talentChoice, chestChoice, storyOverlay, memoryOverlay, endingChoiceOpen;
+    private bool armor, armorOn, relic, relicOn, inventoryOpen, skillMenuOpen, characterSheetOpen, mapOpen, journalOpen, title = true, dead, victory, talentChoice, chestChoice, storyOverlay, memoryOverlay, endingChoiceOpen;
     private int skillMenuSlot;
     private bool alternateSkillsActive, skillMenuAlternate;
     private int townEnding;
@@ -323,6 +323,7 @@ public sealed class Game : Form
             }
             if (storyOverlay) { if (e.Button == MouseButtons.Left) AdvanceStory(); return; }
             if (memoryOverlay) { if (e.Button == MouseButtons.Left) memoryOverlay = false; return; }
+            if (journalOpen) { if (e.Button == MouseButtons.Left) journalOpen = false; return; }
             if (GameplayPaused()) return;
             PointF aim = ScreenToGame(new PointF(e.X, e.Y), ClientSize); mouseAim = Normalize(new PointF(aim.X - player.X, aim.Y - player.Y), facing);
             if (e.Button == MouseButtons.Left) Attack();
@@ -486,7 +487,7 @@ public sealed class Game : Form
     private void StartGame()
     {
         room = 0; level = 1; xp = gold = damage = 0; damage = 25; potions = 2; weapon = 0; ownedWeapons = 1; Array.Clear(weaponBonuses); Array.Clear(weaponRarities); Array.Clear(weaponAffixes); Array.Clear(weaponAffixes2);
-        armor = armorOn = relic = relicOn = archiveSeal = riverBell = lumeLens = naraTrace = chorusMemory = firstMemory = westTrace = upstreamTrace = beyondTrace = ebbSeal = counterTrace = anchorWard = refrainSong = riftVerse = deepTrace = lanternSignal = beaconLight = routeMemory = silenceMemory = inventoryOpen = skillMenuOpen = characterSheetOpen = mapOpen = dead = victory = chestChoice = talentChoice = memoryOverlay = endingChoiceOpen = forgeMenuOpen = defenseForgeOpen = secondaryForgeOpen = vigilActive = vigilChoiceOpen = false;
+        armor = armorOn = relic = relicOn = archiveSeal = riverBell = lumeLens = naraTrace = chorusMemory = firstMemory = westTrace = upstreamTrace = beyondTrace = ebbSeal = counterTrace = anchorWard = refrainSong = riftVerse = deepTrace = lanternSignal = beaconLight = routeMemory = silenceMemory = inventoryOpen = skillMenuOpen = characterSheetOpen = mapOpen = journalOpen = dead = victory = chestChoice = talentChoice = memoryOverlay = endingChoiceOpen = forgeMenuOpen = defenseForgeOpen = secondaryForgeOpen = vigilActive = vigilChoiceOpen = false;
         armorTrait = relicTrait = 0;
         borrowedTrace = unstruckTrace = false;
         finalEnding = 0;
@@ -707,6 +708,7 @@ public sealed class Game : Form
         if (storyOverlay) { if (e.KeyCode is Keys.Enter or Keys.Space) AdvanceStory(); return; }
         if (memoryOverlay) { if (e.KeyCode is Keys.Enter or Keys.Space) memoryOverlay = false; return; }
         if (mapOpen) { if (e.KeyCode is Keys.M or Keys.Escape) mapOpen = false; return; }
+        if (journalOpen) { if (e.KeyCode is Keys.L or Keys.Escape) journalOpen = false; Invalidate(); return; }
         if (characterSheetOpen) { if (e.KeyCode is Keys.P or Keys.Escape) characterSheetOpen = false; return; }
         if (skillMenuOpen)
         {
@@ -726,6 +728,7 @@ public sealed class Game : Form
         if (talentChoice) { SelectTalent(e.KeyCode); return; }
         if (e.KeyCode == Keys.P) { characterSheetOpen = true; inventoryOpen = false; skillMenuOpen = false; return; }
         if (e.KeyCode == Keys.M) { mapOpen = true; inventoryOpen = false; skillMenuOpen = false; return; }
+        if (e.KeyCode == Keys.L) { journalOpen = true; inventoryOpen = skillMenuOpen = characterSheetOpen = mapOpen = false; return; }
         if (e.KeyCode == Keys.I) { inventoryOpen = !inventoryOpen; return; }
         if (e.KeyCode == Keys.B) { skillMenuOpen = true; inventoryOpen = false; return; }
         if (inventoryOpen) { if (e.KeyCode >= Keys.D1 && e.KeyCode <= Keys.D4) EquipWeapon((int)e.KeyCode - (int)Keys.D1); else if (e.KeyCode == Keys.D5 && armor) armorOn = !armorOn; else if (e.KeyCode == Keys.D6 && relic) relicOn = !relicOn; else if (e.KeyCode == Keys.D7) CycleCharm(1); else if (e.KeyCode == Keys.D8) CycleCharm(2); return; }
@@ -1306,7 +1309,7 @@ public sealed class Game : Form
 
     private void PauseForLostFocus() { focusPaused = true; down.Clear(); dashTime = 0; Invalidate(); }
     private void ResumeAfterFocus() { focusPaused = false; Invalidate(); }
-    private bool GameplayPaused() => focusPaused || title || dead || victory || storyOverlay || memoryOverlay || mapOpen || inventoryOpen || skillMenuOpen || characterSheetOpen || forgeMenuOpen || talentChoice || chestChoice || endingChoiceOpen || vigilChoiceOpen;
+    private bool GameplayPaused() => focusPaused || title || dead || victory || storyOverlay || memoryOverlay || mapOpen || journalOpen || inventoryOpen || skillMenuOpen || characterSheetOpen || forgeMenuOpen || talentChoice || chestChoice || endingChoiceOpen || vigilChoiceOpen;
 
     private void TickGame()
     {
@@ -2282,20 +2285,9 @@ public sealed class Game : Form
         g.DrawString(roomTitle, roomFont, goldBrush, 67, 572);
         int memoriesRead = (memoriesFound & 1) + ((memoriesFound >> 1) & 1);
         g.DrawString($"ECOS {memoriesRead} / 2", hudFont, goldBrush, 760, 572);
-        if (room == 3) g.DrawString(TownObjective(), hudFont, goldBrush, 67, 592);
-        else if (room == 18) g.DrawString("OBJETIVO: " + (questStage == 46 ? "FALE COM AVEN SOBRE AS LINHAS" : questStage == 47 ? "SIGA AS LINHAS ATÉ A GALERIA" : questStage == 48 ? "LEVE O TRAÇADO DE VOLTA A AVEN" : questStage == 49 ? "FALE COM AVEN PARA ABRIR O ÚLTIMO CAPÍTULO" : questStage == 50 ? "DESÇA À SOLEIRA DO SILÊNCIO" : questStage == 51 ? "FALE COM AVEN SOBRE O DESTINO DO LUME" : questStage >= 59 ? "EXPEDIÇÃO XVIII CONCLUÍDA • EXPLORAÇÃO ABERTA" : questStage == 58 ? "LEVE A BADALADA RECUPERADA A AVEN" : questStage == 57 ? "SIGA À CÂMARA DAS BADALADAS" : questStage == 56 ? "EXPEDIÇÃO XVII CONCLUÍDA • NOVA EXPEDIÇÃO DISPONÍVEL A LESTE" : questStage >= 56 ? "EXPEDIÇÃO XVII CONCLUÍDA • EXPLORAÇÃO ABERTA" : questStage == 55 ? "LEVE A MEMÓRIA DO ARQUIVO A AVEN" : questStage == 54 ? "SIGA AO CAIS DOS ECOS EMPRESTADOS" : questStage >= 52 ? "EPÍLOGO CONCLUÍDO • EXPLORAÇÃO ABERTA" : questStage < 22 ? "CONHEÇA A COMUNIDADE E FALE COM AVEN" : questStage == 22 ? "SIGA A TRILHA E RECUPERE O REGISTRO COMPARTILHADO" : questStage == 23 ? "LEVE O REGISTRO DE VOLTA A AVEN" : questStage == 32 ? "LEVE A MEMÓRIA DA VAZANTE A AVEN" : questStage == 30 ? "SIGA O SOM DOS MOINHOS PARA OESTE" : questStage == 35 ? "LEVE A MEMÓRIA DO COMPASSO A AVEN" : questStage == 39 ? "LEVE A NOTA DA CONTRAVOZ A AVEN" : questStage == 40 ? "FALE COM AVEN SOBRE A PRÓXIMA FISSURA" : questStage == 42 ? "LEVE O ECO SEM DONO A AVEN" : questStage >= 41 ? "SIGA OS PASSOS ATÉ A FONTE SOB A PEDRA" : questStage >= 36 ? "MANTO DE LASTRO APRENDIDO • SIGA AS ÁGUAS" : questStage >= 33 ? "SIGA A CORRENTE AO CORAÇÃO DAS DUAS MARGENS" : questStage >= 27 ? "FALE COM AVEN PARA REFORJAR UMA ARMA" : "SIGA A PRÓXIMA CURVA A OESTE"), hudFont, goldBrush, 67, 592);
-        else if (room is 27 or 28) g.DrawString(room == 27 ? "OBJETIVO: ATRAVESSE A ESCARPA DO CONTRAFLUXO" : questStage < 35 ? "OBJETIVO: DERROTE O AFINADOR E RECOLHA A MEMÓRIA" : "OBJETIVO: RETORNE AO REFÚGIO E FALE COM AVEN", hudFont, goldBrush, 67, 592);
-        else if (room is 29 or 30) g.DrawString(room == 29 ? (enemies.Count > 0 || drops.Count > 0 ? "OBJETIVO: ABRA A CANTARIA E LIMPE OS ECOS" : "OBJETIVO: SIGA A CONTRAVOZ ATÉ A CÂMARA") : riftVerse ? "OBJETIVO: LEVE A NOTA RECUPERADA A AVEN" : "OBJETIVO: INTERROMPA A CONTRAVOZ E RECOLHA A NOTA", hudFont, goldBrush, 67, 592);
-        else if (room is 33 or 34) g.DrawString(LanternObjective(), hudFont, goldBrush, 67, 592);
-        else if (room is 35 or 36) g.DrawString(room == 35 ? (enemies.Count > 0 || drops.Count > 0 ? "OBJETIVO: ATRAVESSE AS LINHAS ABERTAS" : "OBJETIVO: SIGA ATÉ A GALERIA") : routeMemory ? "OBJETIVO: LEVE O TRAÇADO A AVEN" : "OBJETIVO: DERROTE O ESCRIBA E RECUPERE O TRAÇADO", hudFont, goldBrush, 67, 592);
-        else if (room is 41 or 42) g.DrawString(room == 41 ? enemies.Count > 0 || drops.Count > 0 ? "OBJETIVO: ATRAVESSE A CÂMARA DOS SONS PAUSADOS" : "OBJETIVO: DESÇA AO POÇO DO CONTRATEMPO" : unstruckTrace ? "OBJETIVO: RETORNE A AVEN COM A LEMBRANÇA" : "OBJETIVO: INTERROMPA O AFINADOR E RECUPERE A BADALADA", hudFont, goldBrush, 67, 592);
-        else if (room is 39 or 40) g.DrawString(room == 39 ? enemies.Count > 0 || drops.Count > 0 ? "OBJETIVO: ATRAVESSE O CAIS DOS ECOS" : "OBJETIVO: ENTRE NO ARQUIVO DA MARÉ" : borrowedTrace ? "OBJETIVO: RETORNE A AVEN COM A MEMÓRIA" : "OBJETIVO: DERROTE O ARQUIVISTA E RECOLHA O ECO", hudFont, goldBrush, 67, 592);
-        else if (room is 37 or 38) g.DrawString(vigilActive ? enemies.Count > 0 ? $"VIGÍLIA {vigilFloor}: DERROTE O ECO E RECOLHA O SAQUE" : drops.Count > 0 ? $"VIGÍLIA {vigilFloor}: RECOLHA O SAQUE" : $"VIGÍLIA {vigilFloor}: INTERAJA COM O ALTAR PARA SUBIR OU ENCERRAR" : room == 37 ? enemies.Count > 0 || drops.Count > 0 ? "OBJETIVO: ATRAVESSE A SOLEIRA DO SILÊNCIO" : "OBJETIVO: DESÇA À CÂMARA DO ÚLTIMO ECO" : silenceMemory ? "OBJETIVO: RETORNE A AVEN E DECIDA O DESTINO DO LUME" : "OBJETIVO: DERROTE O SILÊNCIO E RECOLHA A MEMÓRIA", hudFont, goldBrush, 67, 592);
-        else if (room is 31 or 32) g.DrawString(room == 31 ? (enemies.Count > 0 || drops.Count > 0 ? "OBJETIVO: ATRAVESSE A GARGANTA DO VIDRO MUDO" : "OBJETIVO: SIGA OS PASSOS ATÉ A FONTE") : deepTrace ? "OBJETIVO: LEVE O ECO SEM DONO A AVEN" : "OBJETIVO: DERROTE O ARAUTO E RECOLHA A LEMBRANÇA", hudFont, goldBrush, 67, 592);
-        else if (room >= 4 && room < 6) g.DrawString(ArchiveObjective(), hudFont, goldBrush, 67, 592);
-        else if (room is 6 or 7) g.DrawString(RiverObjective(), hudFont, goldBrush, 67, 592);
-        else if (room >= 8) g.DrawString(LumeObjective(), hudFont, goldBrush, 67, 592);
-        g.DrawString(room is 3 or 18 ? "WASD mover   E falar/investigar   F5 salvar   B técnicas   I inventário" : "WASD mover   ESPAÇO atacar   SHIFT esquivar   R redemoinho   F/V/G/C técnicas   B montar técnicas   Q poção   E interagir   I inventário", helpFont, textBrush, 67, 619);
+        string currentObjective = CurrentObjective();
+        if (currentObjective.Length > 0) g.DrawString(currentObjective, hudFont, goldBrush, 67, 592);
+        g.DrawString(room is 3 or 18 ? "WASD mover   E falar/investigar   F5 salvar   B técnicas   I inventário   L diário" : "WASD mover   ESPAÇO atacar   SHIFT esquivar   R redemoinho   F/V/G/C técnicas   B montar técnicas   Q poção   E interagir   I inventário   L diário", helpFont, textBrush, 67, 619);
         if (room < MemoryStonePositions.Length && (memoriesFound & (1 << room)) == 0) DrawMemoryStone(g, MemoryStonePositions[room], Distance(player, MemoryStonePositions[room]) < MemoryStoneInteractionRadius);
         if (noticeTime > 0) DrawCentered(g, notice, 170, new Font("Segoe UI", 13, FontStyle.Bold), Color.FromArgb(230, 193, 129));
         if (vigilChoiceOpen) DrawChoice(g, $"VIGÍLIA ASCENDENTE • ANDAR {vigilFloor}", $"1. SUBIR AO ANDAR {vigilFloor + 1} • RECOMPENSA CRESCENTE", $"2. ENCERRAR • MELHOR MARCA: {Math.Max(vigilBestFloor, vigilFloor)}", "3. FICAR AQUI");
@@ -2311,7 +2303,26 @@ public sealed class Game : Form
         if (storyOverlay) DrawStoryOverlay(g);
         if (memoryOverlay) DrawMemoryOverlay(g);
         if (mapOpen) DrawMapOverlay(g);
+        if (journalOpen) DrawQuestJournal(g);
         if (focusPaused && !title && !dead && !victory) DrawOverlay(g, "PAUSADO", "VOLTE À JANELA PARA CONTINUAR");
+    }
+
+    private string CurrentObjective()
+    {
+        if (room == 3) return TownObjective();
+        if (room == 18) return "OBJETIVO: " + (questStage == 46 ? "FALE COM AVEN SOBRE AS LINHAS" : questStage == 47 ? "SIGA AS LINHAS ATÉ A GALERIA" : questStage == 48 ? "LEVE O TRAÇADO DE VOLTA A AVEN" : questStage == 49 ? "FALE COM AVEN PARA ABRIR O ÚLTIMO CAPÍTULO" : questStage == 50 ? "DESÇA À SOLEIRA DO SILÊNCIO" : questStage == 51 ? "FALE COM AVEN SOBRE O DESTINO DO LUME" : questStage >= 59 ? "EXPEDIÇÃO XVIII CONCLUÍDA • EXPLORAÇÃO ABERTA" : questStage == 58 ? "LEVE A BADALADA RECUPERADA A AVEN" : questStage == 57 ? "SIGA À CÂMARA DAS BADALADAS" : questStage == 56 ? "EXPEDIÇÃO XVII CONCLUÍDA • NOVA EXPEDIÇÃO DISPONÍVEL A LESTE" : questStage >= 56 ? "EXPEDIÇÃO XVII CONCLUÍDA • EXPLORAÇÃO ABERTA" : questStage == 55 ? "LEVE A MEMÓRIA DO ARQUIVO A AVEN" : questStage == 54 ? "SIGA AO CAIS DOS ECOS EMPRESTADOS" : questStage >= 52 ? "EPÍLOGO CONCLUÍDO • EXPLORAÇÃO ABERTA" : questStage < 22 ? "CONHEÇA A COMUNIDADE E FALE COM AVEN" : questStage == 22 ? "SIGA A TRILHA E RECUPERE O REGISTRO COMPARTILHADO" : questStage == 23 ? "LEVE O REGISTRO DE VOLTA A AVEN" : questStage == 32 ? "LEVE A MEMÓRIA DA VAZANTE A AVEN" : questStage == 30 ? "SIGA O SOM DOS MOINHOS PARA OESTE" : questStage == 35 ? "LEVE A MEMÓRIA DO COMPASSO A AVEN" : questStage == 39 ? "LEVE A NOTA DA CONTRAVOZ A AVEN" : questStage == 40 ? "FALE COM AVEN SOBRE A PRÓXIMA FISSURA" : questStage == 42 ? "LEVE O ECO SEM DONO A AVEN" : questStage >= 41 ? "SIGA OS PASSOS ATÉ A FONTE SOB A PEDRA" : questStage >= 36 ? "MANTO DE LASTRO APRENDIDO • SIGA AS ÁGUAS" : questStage >= 33 ? "SIGA A CORRENTE AO CORAÇÃO DAS DUAS MARGENS" : questStage >= 27 ? "FALE COM AVEN PARA REFORJAR UMA ARMA" : "SIGA A PRÓXIMA CURVA A OESTE";
+        if (room is 27 or 28) return room == 27 ? "OBJETIVO: ATRAVESSE A ESCARPA DO CONTRAFLUXO" : questStage < 35 ? "OBJETIVO: DERROTE O AFINADOR E RECOLHA A MEMÓRIA" : "OBJETIVO: RETORNE AO REFÚGIO E FALE COM AVEN";
+        if (room is 29 or 30) return room == 29 ? (enemies.Count > 0 || drops.Count > 0 ? "OBJETIVO: ABRA A CANTARIA E LIMPE OS ECOS" : "OBJETIVO: SIGA A CONTRAVOZ ATÉ A CÂMARA") : riftVerse ? "OBJETIVO: LEVE A NOTA RECUPERADA A AVEN" : "OBJETIVO: INTERROMPA A CONTRAVOZ E RECOLHA A NOTA";
+        if (room is 33 or 34) return LanternObjective();
+        if (room is 35 or 36) return room == 35 ? (enemies.Count > 0 || drops.Count > 0 ? "OBJETIVO: ATRAVESSE AS LINHAS ABERTAS" : "OBJETIVO: SIGA ATÉ A GALERIA") : routeMemory ? "OBJETIVO: LEVE O TRAÇADO A AVEN" : "OBJETIVO: DERROTE O ESCRIBA E RECUPERE O TRAÇADO";
+        if (room is 41 or 42) return room == 41 ? enemies.Count > 0 || drops.Count > 0 ? "OBJETIVO: ATRAVESSE A CÂMARA DOS SONS PAUSADOS" : "OBJETIVO: DESÇA AO POÇO DO CONTRATEMPO" : unstruckTrace ? "OBJETIVO: RETORNE A AVEN COM A LEMBRANÇA" : "OBJETIVO: INTERROMPA O AFINADOR E RECUPERE A BADALADA";
+        if (room is 39 or 40) return room == 39 ? enemies.Count > 0 || drops.Count > 0 ? "OBJETIVO: ATRAVESSE O CAIS DOS ECOS" : "OBJETIVO: ENTRE NO ARQUIVO DA MARÉ" : borrowedTrace ? "OBJETIVO: RETORNE A AVEN COM A MEMÓRIA" : "OBJETIVO: DERROTE O ARQUIVISTA E RECOLHA O ECO";
+        if (room is 37 or 38) return vigilActive ? enemies.Count > 0 ? $"VIGÍLIA {vigilFloor}: DERROTE O ECO E RECOLHA O SAQUE" : drops.Count > 0 ? $"VIGÍLIA {vigilFloor}: RECOLHA O SAQUE" : $"VIGÍLIA {vigilFloor}: INTERAJA COM O ALTAR PARA SUBIR OU ENCERRAR" : room == 37 ? enemies.Count > 0 || drops.Count > 0 ? "OBJETIVO: ATRAVESSE A SOLEIRA DO SILÊNCIO" : "OBJETIVO: DESÇA À CÂMARA DO ÚLTIMO ECO" : silenceMemory ? "OBJETIVO: RETORNE A AVEN E DECIDA O DESTINO DO LUME" : "OBJETIVO: DERROTE O SILÊNCIO E RECOLHA A MEMÓRIA";
+        if (room is 31 or 32) return room == 31 ? (enemies.Count > 0 || drops.Count > 0 ? "OBJETIVO: ATRAVESSE A GARGANTA DO VIDRO MUDO" : "OBJETIVO: SIGA OS PASSOS ATÉ A FONTE") : deepTrace ? "OBJETIVO: LEVE O ECO SEM DONO A AVEN" : "OBJETIVO: DERROTE O ARAUTO E RECOLHA A LEMBRANÇA";
+        if (room is >= 4 and < 6) return ArchiveObjective();
+        if (room is 6 or 7) return RiverObjective();
+        if (room >= 8) return LumeObjective();
+        return "";
     }
 
     private string TownObjective() => questStage switch
@@ -3261,6 +3272,65 @@ public sealed class Game : Form
         string name = roomNames[index];
         int separator = name.LastIndexOf(" • ", StringComparison.Ordinal);
         return separator >= 0 ? name[(separator + 3)..] : name;
+    }
+
+    private void DrawQuestJournal(Graphics g)
+    {
+        using var shade = new SolidBrush(Color.FromArgb(232, 5, 7, 9));
+        using var panel = new SolidBrush(Color.FromArgb(248, 17, 20, 21));
+        using var edge = new Pen(Color.FromArgb(184, 143, 112, 73), 2);
+        using var column = new SolidBrush(Color.FromArgb(230, 23, 27, 27));
+        using var divider = new Pen(Color.FromArgb(93, 91, 73), 1);
+        g.FillRectangle(shade, 0, 0, 960, 640);
+        g.FillRectangle(panel, 58, 86, 844, 490); g.DrawRectangle(edge, 58, 86, 844, 490);
+        DrawCentered(g, "DIÁRIO DA JORNADA", 96, new Font("Georgia", 20, FontStyle.Bold), Color.FromArgb(230, 193, 129));
+        int chapterIndex = Array.FindIndex(campaignChapters, chapter => room >= chapter.FirstRoom && room <= chapter.LastRoom);
+        chapterIndex = Math.Max(0, chapterIndex);
+        CampaignChapter currentChapter = campaignChapters[chapterIndex];
+        SaveData progress = new() { Room = room, QuestStage = questStage, ClearedRooms = clearedRooms, RoomCleared = (clearedRooms & (1L << room)) != 0 };
+        long known = PreviewKnownRooms(progress);
+        using var chapterFont = new Font("Segoe UI", 8, FontStyle.Bold);
+        using var sectionFont = new Font("Segoe UI", 9, FontStyle.Bold);
+        using var detailFont = new Font("Segoe UI", 10);
+        using var metaFont = new Font("Segoe UI", 9);
+        using var resonanceFont = new Font("Segoe UI", 9, FontStyle.Bold);
+        using var chapterFormat = new StringFormat { Alignment = StringAlignment.Near, LineAlignment = StringAlignment.Center, Trimming = StringTrimming.EllipsisCharacter };
+        for (int i = 0; i < campaignChapters.Length; i++)
+        {
+            CampaignChapter chapter = campaignChapters[i]; float y = 141 + i * 20;
+            bool selected = i == chapterIndex;
+            string state = CampaignChapterState(chapter, progress, known, clearedRooms);
+            using var fill = new SolidBrush(selected ? Color.FromArgb(91, 69, 38) : Color.FromArgb(29, 33, 32));
+            using var line = new Pen(selected ? Color.FromArgb(224, 181, 104) : Color.FromArgb(58, 62, 57));
+            using var ink = new SolidBrush(state switch { "CONCLUÍDO" => Color.FromArgb(145, 206, 153), "ATUAL" or "INÍCIO" => Color.FromArgb(255, 224, 161), "BLOQUEADO" => Color.FromArgb(111, 115, 106), _ => Color.FromArgb(204, 204, 188) });
+            g.FillRectangle(fill, 76, y, 347, 19); g.DrawRectangle(line, 76, y, 347, 19);
+            g.DrawString($"{ToRoman(chapter.Number)}  {chapter.Title}", chapterFont, selected ? Brushes.Goldenrod : Brushes.AntiqueWhite, new RectangleF(82, y + 1, 270, 17), chapterFormat);
+            using var stateFont = new Font("Segoe UI", 6.5f, FontStyle.Bold);
+            g.DrawString(state, stateFont, ink, new RectangleF(352, y + 1, 66, 17), chapterFormat);
+        }
+
+        g.FillRectangle(column, 440, 141, 440, 384); g.DrawRectangle(divider, 440, 141, 440, 384);
+        DrawCentered(g, $"CAPÍTULO {ToRoman(currentChapter.Number)}", 159, new Font("Georgia", 16, FontStyle.Bold), Color.FromArgb(230, 193, 129), 660);
+        DrawCentered(g, currentChapter.Title, 190, new Font("Segoe UI", 10, FontStyle.Bold), Color.FromArgb(224, 220, 203), 660);
+        DrawCentered(g, vigilActive ? $"VIGÍLIA ASCENDENTE • ANDAR {vigilFloor}" : roomNames[room], 221, new Font("Segoe UI", 9, FontStyle.Bold), Color.FromArgb(174, 183, 169), 660);
+        g.DrawLine(divider, 464, 247, 856, 247);
+        g.DrawString("OBJETIVO ATUAL", sectionFont, Brushes.Goldenrod, 466, 263);
+        string objective = CurrentObjective();
+        if (objective.Length == 0) objective = enemies.Count > 0 || drops.Count > 0 ? "Derrote os ecos e recolha o saque para abrir a passagem." : "Explore esta área e siga pela saída para continuar a jornada.";
+        using var objectiveFont = new Font("Segoe UI", 13, FontStyle.Bold);
+        using var objectiveBrush = new SolidBrush(Color.FromArgb(237, 232, 213));
+        g.DrawString(objective, objectiveFont, objectiveBrush, new RectangleF(466, 285, 388, 68));
+
+        int totalCombatRooms = Enumerable.Range(0, roomNames.Length).Count(index => index is not 3 and not 18);
+        int clearedCombatRooms = Enumerable.Range(0, roomNames.Length).Count(index => index is not 3 and not 18 && (clearedRooms & (1L << index)) != 0);
+        int inscriptionCount = (memoriesFound & 1) + ((memoriesFound >> 1) & 1);
+        g.DrawLine(divider, 464, 367, 856, 367);
+        g.DrawString("PROGRESSO DA CAMPANHA", sectionFont, Brushes.Goldenrod, 466, 381);
+        g.DrawString($"Câmaras limpas: {clearedCombatRooms}/{totalCombatRooms}", detailFont, Brushes.AntiqueWhite, 466, 409);
+        g.DrawString($"Inscrições opcionais: {inscriptionCount}/2", detailFont, Brushes.AntiqueWhite, 466, 435);
+        g.DrawString($"Ecos nesta área: {enemies.Count}   •   Saques no chão: {drops.Count}", metaFont, Brushes.LightGray, 466, 461);
+        g.DrawString($"Ressonância {difficultyTier} • {DifficultyTierName(difficultyTier)}", resonanceFont, Brushes.Orange, 466, 489);
+        DrawCentered(g, "L / ESC FECHA • CLIQUE FECHA • M ABRE O MAPA", 546, new Font("Segoe UI", 9, FontStyle.Bold), Color.FromArgb(167, 173, 163));
     }
 
     private void DrawMapOverlay(Graphics g)

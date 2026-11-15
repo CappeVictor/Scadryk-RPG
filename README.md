@@ -91,6 +91,7 @@ As armas têm quatro perfis: a Espada de Pedra mantém alcance e ritmo equilibra
 | E perto de uma arma no chão | Recolher a arma mais próxima para seu espaço de equipamento; compare dano, perfil e afixos antes de decidir |
 | X perto de uma arma no chão | Desmontar a arma mais próxima em ouro e, conforme a raridade, sal vítreo |
 | M | Abrir o atlas das câmaras; M ou Esc fecha |
+| L | Abrir o diário da jornada com capítulo, objetivo, salas concluídas, inscrições e estado da área; L, Esc ou clique fecha |
 | I | Abrir ou fechar inventário |
 | P | Abrir a ficha do Escutador; P ou Esc fecha |
 | 1–4 no inventário | Equipar arma |
