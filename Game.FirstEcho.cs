@@ -7,7 +7,7 @@ public sealed partial class Game
 {
     // 0: undiscovered, 1: investigate, 2: voices released, 3: reported to Edda.
     private int firstEchoQuest;
-    private bool firstEchoCaveFound;
+    private bool firstEchoCaveFound, firstEchoReedCache;
     private int firstEchoDiscovered;
     private readonly List<Enemy> firstEchoWaitingEnemies = new();
     private readonly List<Drop> firstEchoWaitingDrops = new();
@@ -19,6 +19,7 @@ public sealed partial class Game
     private static readonly PointF FirstEchoCave = new(1050, 250);
     private static readonly PointF FirstEchoSluice = new(2250, 700);
     private static readonly PointF FirstEchoIvara = new(860, 590);
+    private static readonly PointF FirstEchoReedCache = new(1950, 1170);
     private static readonly RectangleF[] FirstEchoCaveWalls = { new(285, 145, 70, 95), new(440, 395, 85, 105), new(610, 145, 70, 80) };
     private static readonly RectangleF[] FirstEchoSluiceWalls = { new(300, 145, 45, 120), new(300, 395, 45, 110), new(555, 145, 45, 95), new(555, 405, 45, 95) };
     private static readonly (PointF Position, EnemyKind Kind)[] FirstEchoEncounters =
@@ -65,6 +66,15 @@ public sealed partial class Game
         else if (Distance(player, FirstEchoCave) < 90)
         {
             EnterFirstEchoInterior(44); ShowMemory("GRUTA DAS RAÍZES", "A trilha desce sob as raízes. Um antigo abrigo permanece no fundo da gruta.");
+        }
+        else if (Distance(player, FirstEchoReedCache) < 75)
+        {
+            if (!firstEchoReedCache)
+            {
+                firstEchoReedCache = true; gold += 35; AddXp(15);
+                ShowMemory("CAIXA DOS JUNCAIS", "Uma caixa presa à ponte guarda moedas e um bilhete: ‘Se a estrada não responder, siga os juncos até a outra margem.’ Você encontrou 35 de ouro e 15 de experiência.");
+            }
+            else ShowMemory("CAIXA DOS JUNCAIS", "O bilhete continua preso à caixa para orientar outros viajantes.");
         }
         else if (Distance(player, FirstEchoSluice) < 90)
         {
@@ -308,6 +318,10 @@ public sealed partial class Game
         g.DrawString("ENCRUZILHADA DOS MARCOS", font, label, 760, 610);
         g.DrawString("GRUTA DAS RAÍZES", font, label, 975, 170);
         g.DrawString("CASA DAS COMPORTAS", font, label, 2100, 620);
+        using var cache = new SolidBrush(Color.FromArgb(121, 87, 57));
+        g.FillRectangle(cache, FirstEchoReedCache.X - 14, FirstEchoReedCache.Y - 9, 28, 18);
+        g.DrawRectangle(edge, FirstEchoReedCache.X - 14, FirstEchoReedCache.Y - 9, 28, 18);
+        if (Distance(player, FirstEchoReedCache) < 75) g.DrawString("E  EXAMINAR", font, label, FirstEchoReedCache.X - 55, FirstEchoReedCache.Y + 25);
         DrawTownPerson(g, FirstEchoIvara, "IVARA", Color.FromArgb(128, 105, 78), Distance(player, FirstEchoIvara) < InteractionRadius);
         if (firstEchoQuest >= 2 && Distance(player, FirstEchoIvara) < InteractionRadius)
             DrawCentered(g, "DESCANSO", FirstEchoIvara.Y - 55, new Font("Segoe UI", 9, FontStyle.Bold), Color.LightGreen, FirstEchoIvara.X);

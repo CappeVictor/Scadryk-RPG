@@ -1382,6 +1382,9 @@ public sealed partial class Game
             if (field.room != 43 || field.enemies.Count == 0) throw new InvalidOperationException("A saída de Véspera não abriu as Margens com encontros.");
             field.player = FirstEchoIvara; field.Interact(); field.memoryOverlay = false;
             if (field.firstEchoQuest != 1) throw new InvalidOperationException("Ivara não iniciou a investigação.");
+            int goldBeforeCache = field.gold;
+            field.player = FirstEchoReedCache; field.Interact(); field.memoryOverlay = false; field.Interact(); field.memoryOverlay = false;
+            if (!field.firstEchoReedCache || field.gold != goldBeforeCache + 35) throw new InvalidOperationException("A caixa dos juncais não concedeu sua recompensa uma única vez.");
             int outdoorCount = field.enemies.Count;
             field.player = FirstEchoCave; field.Interact(); field.memoryOverlay = false;
             if (field.room != 44) throw new InvalidOperationException("A gruta não abriu.");
@@ -1395,7 +1398,7 @@ public sealed partial class Game
             field.player = new PointF(150, 330); field.Interact(); field.player = FirstEchoTownGate; field.Interact(); field.memoryOverlay = false;
             field.player = BellKeeperPosition; field.Interact();
             SaveData expeditionSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(field.CaptureSaveData()))!;
-            if (field.firstEchoQuest != 3 || !expeditionSave.FirstEchoCaveFound || expeditionSave.FirstEchoDiscovered != 7 || !ValidSaveData(expeditionSave)) throw new InvalidOperationException("A expedição não concluiu ou não preservou suas descobertas no save.");
+            if (field.firstEchoQuest != 3 || !expeditionSave.FirstEchoCaveFound || !expeditionSave.FirstEchoReedCache || expeditionSave.FirstEchoDiscovered != 7 || !ValidSaveData(expeditionSave)) throw new InvalidOperationException("A expedição não concluiu ou não preservou suas descobertas no save.");
         }
         using (var navigation = new Game())
         {
