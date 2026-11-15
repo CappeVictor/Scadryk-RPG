@@ -25,7 +25,8 @@ public sealed partial class Game
         if (classSelectionOpen)
         {
             if (key is Keys.Escape or Keys.Back) classSelectionOpen = false;
-            else if (key is Keys.Up or Keys.W or Keys.Down or Keys.S) classSelection = (classSelection + 1) % 3;
+            else if (key is Keys.Up or Keys.W or Keys.Left or Keys.A) classSelection = (classSelection + 2) % 3;
+            else if (key is Keys.Down or Keys.S or Keys.Right or Keys.D) classSelection = (classSelection + 1) % 3;
             else if (key == Keys.D1) ChooseHeroClass(0);
             else if (key == Keys.D2) ChooseHeroClass(1);
             else if (key == Keys.D3) ChooseHeroClass(2);
@@ -319,7 +320,7 @@ public sealed partial class Game
             DrawCentered(g, "Golpes rápidos geram Fio;", 252, new Font("Segoe UI", 10), Color.FromArgb(204, 207, 192), 790);
             DrawCentered(g, "suas técnicas causam mais dano.", 274, new Font("Segoe UI", 10), Color.FromArgb(204, 207, 192), 790);
             DrawCentered(g, "Mais frágil • marca grupos", 360, new Font("Segoe UI", 10, FontStyle.Bold), Color.Plum, 790);
-            DrawCentered(g, "↑ / ↓ ESCOLHER • 1 / 2 / 3 • ENTER CONFIRMA • ESC VOLTA", 535, new Font("Segoe UI", 10, FontStyle.Bold), Color.AntiqueWhite);
+            DrawCentered(g, "← / → ESCOLHER • 1 / 2 / 3 • ENTER CONFIRMA • ESC VOLTA", 535, new Font("Segoe UI", 10, FontStyle.Bold), Color.AntiqueWhite);
         }
         if (noticeTime > 0 && !string.IsNullOrWhiteSpace(notice)) DrawCentered(g, notice, 612, new Font("Segoe UI", 9, FontStyle.Bold), Color.FromArgb(230, 193, 129));
     }

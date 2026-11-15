@@ -19,6 +19,10 @@ public sealed partial class Game
             if (menuHitTest.titleSelection != 2 || menuHitTest.titlePage != TitlePage.Main) throw new InvalidOperationException("Um clique fora dos botões acionou o menu principal.");
             menuHitTest.HandleTitleClick(new PointF(280, 292));
             if (menuHitTest.titleSelection != 2 || menuHitTest.titlePage != TitlePage.Main) throw new InvalidOperationException("Um clique entre botões acionou o menu principal.");
+            menuHitTest.BeginClassSelection(); menuHitTest.HandleTitleKey(Keys.Right);
+            if (menuHitTest.classSelection != 1) throw new InvalidOperationException("A seta direita não selecionou a próxima classe.");
+            menuHitTest.HandleTitleKey(Keys.Left);
+            if (menuHitTest.classSelection != 0) throw new InvalidOperationException("A seta esquerda não retornou à classe anterior.");
         }
         if (Math.Abs(MeleeChaseSpeed(0) - 74f) > 0.01f || Math.Abs(MeleeChaseSpeed(42) - 168f) > 0.01f
             || MeleeChaseSpeed(42) >= PlayerMoveSpeed || MeleeChaseSpeed(42, true) <= PlayerMoveSpeed
