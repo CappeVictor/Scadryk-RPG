@@ -76,7 +76,13 @@ public sealed partial class Game
     private bool BlockedEnemyPath(PointF a, PointF b, float radius)
     {
         int steps = Math.Max(1, (int)(Distance(a, b) / 6));
-        for (int i = 0; i <= steps; i++) { float t = i / (float)steps; if (Blocked(new PointF(a.X + (b.X - a.X) * t, a.Y + (b.Y - a.Y) * t), radius)) return true; }
+        RectangleF[] walls = CurrentRoomWalls();
+        for (int i = 0; i <= steps; i++)
+        {
+            float t = i / (float)steps;
+            RectangleF body = new(a.X + (b.X - a.X) * t - radius, a.Y + (b.Y - a.Y) * t - radius, radius * 2, radius * 2);
+            foreach (RectangleF wall in walls) if (wall.IntersectsWith(body)) return true;
+        }
         return false;
     }
     private bool BlockedLine(PointF a, PointF b)
