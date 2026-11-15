@@ -183,7 +183,7 @@ public sealed partial class Game
         PointF[] south = { FirstEchoCrossroads, new(1400, 1050), new(1900, 1050), FirstEchoSluice };
         foreach (PointF[] path in new[] { main, north, south }) g.DrawLines(road, path.Select(Map).ToArray());
         foreach (var landmark in new[] {
-            (FirstEchoTownGate, "VÉSPERA"), (FirstEchoCrossroads, "IVARA"),
+            (FirstEchoTownGate, "VÉSPERA"), (FirstEchoCrossroads, firstEchoQuest >= 2 ? "IVARA • DESCANSO" : "IVARA"),
             (FirstEchoCave, firstEchoQuest > 0 || (firstEchoDiscovered & 2) != 0 || firstEchoCaveFound ? "GRUTA" : "???"),
             (FirstEchoSluice, firstEchoQuest > 0 || (firstEchoDiscovered & 4) != 0 ? "COMPORTAS" : "???") })
         {
@@ -284,6 +284,8 @@ public sealed partial class Game
         g.DrawString("GRUTA DAS RAÍZES", font, label, 975, 170);
         g.DrawString("CASA DAS COMPORTAS", font, label, 2100, 620);
         DrawTownPerson(g, FirstEchoIvara, "IVARA", Color.FromArgb(128, 105, 78), Distance(player, FirstEchoIvara) < InteractionRadius);
+        if (firstEchoQuest >= 2 && Distance(player, FirstEchoIvara) < InteractionRadius)
+            DrawCentered(g, "DESCANSO", FirstEchoIvara.Y - 55, new Font("Segoe UI", 9, FontStyle.Bold), Color.LightGreen, FirstEchoIvara.X);
         foreach (PointF point in new[] { FirstEchoTownGate, FirstEchoCave, FirstEchoSluice })
             if (Distance(player, point) < 90) g.DrawString("E  INTERAGIR", font, label, point.X - 65, point.Y + 40);
     }
