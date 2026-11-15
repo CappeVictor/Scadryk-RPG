@@ -131,6 +131,12 @@ public sealed partial class Game
         using var ground = new SolidBrush(room == 44 ? Color.FromArgb(55, 60, 48) : Color.FromArgb(59, 67, 67));
         using var accent = new Pen(room == 44 ? Color.FromArgb(112, 115, 76) : Color.FromArgb(113, 155, 153), 5);
         g.FillRectangle(ground, 65, 108, 830, 445);
+        using var floorSeam = new Pen(room == 44 ? Color.FromArgb(69, 75, 59) : Color.FromArgb(77, 88, 86));
+        for (int y = 125; y < 550; y += 54)
+        {
+            g.DrawLine(floorSeam, 70, y, 890, y);
+            for (int x = 100 + ((y / 54) % 2) * 40; x < 890; x += 80) g.DrawLine(floorSeam, x, y, x, y + 48);
+        }
         for (int x = 130; x < 880; x += 125) g.DrawLine(accent, x, 115, x - 35, 175);
         using var obstacle = new SolidBrush(room == 44 ? Color.FromArgb(78, 83, 63) : Color.FromArgb(92, 99, 92));
         foreach (RectangleF wall in room == 44 ? FirstEchoCaveWalls : FirstEchoSluiceWalls)
@@ -199,6 +205,15 @@ public sealed partial class Game
         g.FillRectangle(meadow, 0, 0, FirstEchoSize.Width, FirstEchoSize.Height);
         g.FillRectangle(grove, 650, 0, 850, 490);
         g.FillRectangle(flooded, 1250, 900, 1150, 500);
+        using var grass = new Pen(Color.FromArgb(83, 100, 71), 2);
+        using var reed = new Pen(Color.FromArgb(126, 139, 91), 2);
+        for (int i = 0; i < 210; i++)
+        {
+            int x = 55 + (i * 179 % 2280), y = 120 + (i * 113 % 1150);
+            Pen vegetation = x > 1250 && y > 900 ? reed : grass;
+            g.DrawLine(vegetation, x, y, x - 4, y - 8);
+            g.DrawLine(vegetation, x, y, x + 4, y - 11);
+        }
         using var trunk = new SolidBrush(Color.FromArgb(75, 66, 49));
         using var leaves = new SolidBrush(Color.FromArgb(44, 77, 58));
         using var rock = new SolidBrush(Color.FromArgb(91, 99, 83));
