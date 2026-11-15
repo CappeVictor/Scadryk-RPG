@@ -144,7 +144,7 @@ public sealed partial class Game
             e.Windup -= dt * attackTempo;
             if (e.Windup <= 0) e.AttackPoseTime = 0.16f;
             bool inAttack = e.Boss ? BossAttackContains(e, player) : NonBossAttackContains(e, player);
-            if (e.Windup <= 0 && inAttack && invulnerable <= 0 && dashTime <= 0)
+            if (e.Windup <= 0 && inAttack && invulnerable <= 0 && dashTime <= 0 && (room < 43 || !BlockedLine(e.Pos, player)))
             {
                 if (e.Kind == EnemyKind.SlagWeaver) HitPlayer(18); else HitPlayer(vigilActive ? 112 : e.Boss ? e.Kind == EnemyKind.BlindScribe ? 23 : e.Kind == EnemyKind.RiverFerryman ? 28 : e.Kind == EnemyKind.AshWarden ? 31 : e.Kind == EnemyKind.HollowName ? 36 : e.Kind == EnemyKind.NameWeaver ? 39 : e.Kind == EnemyKind.FirstKeeper ? 44 : e.Kind == EnemyKind.OathCartographer ? 42 : e.Kind == EnemyKind.NameBroker ? 48 : e.Kind == EnemyKind.CounterCurrent ? 68 : e.Kind == EnemyKind.RiftCantor ? 74 : e.Kind == EnemyKind.GlassHerald ? 82 : e.Kind == EnemyKind.LanternRegent ? 88 : e.Kind == EnemyKind.RouteScribe ? 96 : e.Kind == EnemyKind.DeepSilence ? 112 : e.Kind == EnemyKind.LastTuner ? 126 : e.Kind == EnemyKind.BorrowedChorus ? 118 : e.Kind == EnemyKind.FlowKeeper ? 62 : e.Kind == EnemyKind.ReedKeeper ? 56 : e.Kind == EnemyKind.TideWitness ? 52 : 26 : e.Kind == EnemyKind.Elite ? HasEliteAffix(e, EliteAffix.Bloodbound) ? 24 : e.EliteAffix == EliteAffix.Spearbound ? 18 : 20 : e.Kind == EnemyKind.CooldownLeech ? 14 : e.Kind == EnemyKind.Mage ? 16 : e.Kind is EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth or EnemyKind.MudCantor or EnemyKind.PaperWraith or EnemyKind.SaltEcho ? 18 : 10);
                 if (e.Kind == EnemyKind.CooldownLeech) { DelayTechniqueCooldowns(1.1f); AddFloatingText(new PointF(player.X, player.Y - 46), "RECARGAS +1,1 S", Color.MediumOrchid); }
@@ -163,6 +163,13 @@ public sealed partial class Game
             else if (dist > 285) e.Pos = MoveEnemy(e, Scale(Normalize(offset, PointF.Empty), 36 * dt));
             else if (e.Cooldown <= 0) { BeginWindup(e, player, 1.05f); e.Cooldown = 3.25f; }
             SeparateFromPack(e, dt); return;
+        }
+        if (room == 43 && (e.Pos.X < 1820 && player.X > 1820 || e.Pos.X > 1660 && player.X < 1660) && BlockedLine(e.Pos, player))
+        {
+            float bridgeY = Math.Abs(e.Pos.Y - 700) <= Math.Abs(e.Pos.Y - 1050) ? 700 : 1050;
+            PointF waypoint = Math.Abs(e.Pos.Y - bridgeY) > 15 ? new PointF(e.Pos.X, bridgeY) : new PointF(player.X > 1820 ? 1850 : 1630, bridgeY);
+            e.Pos = MoveEnemy(e, Scale(Normalize(Sub(waypoint, e.Pos), PointF.Empty), 70 * dt));
+            return;
         }
         if (room is 44 or 45 && BlockedLine(e.Pos, player))
         {
