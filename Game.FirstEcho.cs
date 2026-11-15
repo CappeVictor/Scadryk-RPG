@@ -10,6 +10,7 @@ public sealed partial class Game
     private bool firstEchoCaveFound;
     private readonly List<Enemy> firstEchoWaitingEnemies = new();
     private readonly List<Drop> firstEchoWaitingDrops = new();
+    private bool firstEchoOutsideStored;
     // World-space geometry for the future continuous route from Véspera.
     private static readonly SizeF FirstEchoSize = new(2400, 1400);
     private static readonly PointF FirstEchoTownGate = new(120, 700);
@@ -45,6 +46,7 @@ public sealed partial class Game
         if (weaponDrop is not null) { GameAudio.Play(GameAudio.Cue.Loot); Collect(weaponDrop); return; }
         if (Distance(player, FirstEchoTownGate) < 90)
         {
+            StoreFirstEchoOutside();
             room = 3; SetupRoom();
             ShowMemory("REGRESSO A VÉSPERA", "A estrada permanece aberta. Os marcos conduzem de volta à encruzilhada.");
         }
@@ -66,9 +68,24 @@ public sealed partial class Game
 
     private void EnterFirstEchoInterior(int destination)
     {
+        StoreFirstEchoOutside();
+        room = destination; SetupRoom();
+    }
+
+    private void StoreFirstEchoOutside()
+    {
         firstEchoWaitingEnemies.Clear(); firstEchoWaitingEnemies.AddRange(enemies);
         firstEchoWaitingDrops.Clear(); firstEchoWaitingDrops.AddRange(drops);
-        room = destination; SetupRoom();
+        firstEchoOutsideStored = true;
+    }
+
+    private void RestoreFirstEchoOutside()
+    {
+        if (!firstEchoOutsideStored) return;
+        enemies.Clear(); enemies.AddRange(firstEchoWaitingEnemies);
+        drops.Clear(); drops.AddRange(firstEchoWaitingDrops);
+        firstEchoWaitingEnemies.Clear(); firstEchoWaitingDrops.Clear();
+        firstEchoOutsideStored = false;
     }
 
     private void SetupFirstEchoInterior()
@@ -93,9 +110,7 @@ public sealed partial class Game
         {
             if (drops.Count > 0) { notice = "RECOLHA O SAQUE ANTES DE SAIR"; noticeTime = 2; return; }
             bool cave = room == 44; room = 43; SetupRoom();
-            enemies.Clear(); enemies.AddRange(firstEchoWaitingEnemies);
-            drops.Clear(); drops.AddRange(firstEchoWaitingDrops);
-            firstEchoWaitingEnemies.Clear(); firstEchoWaitingDrops.Clear();
+            RestoreFirstEchoOutside();
             player = cave ? new PointF(1050, 340) : new PointF(2150, 700); return;
         }
         if (Distance(player, new PointF(760, 330)) > 100) return;

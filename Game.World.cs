@@ -304,7 +304,7 @@ public sealed partial class Game
     {
         if (player.X > 835 && player.Y > 280 && player.Y < 380)
         {
-            room = 43; SetupRoom();
+            room = 43; SetupRoom(); RestoreFirstEchoOutside();
             ShowMemory("MARGENS DO PRIMEIRO ECO", "A estrada sai de Véspera em direção aos marcos silenciosos. Procure Ivara na encruzilhada.");
             return;
         }
