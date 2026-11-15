@@ -215,9 +215,10 @@ public sealed partial class Game
             DrawCentered(g, "O LUME GUARDA O QUE O MUNDO ESCOLHE ESQUECER", 79, new Font("Segoe UI", 11, FontStyle.Bold), Color.FromArgb(177, 183, 168));
             g.FillRectangle(panel, 82, 145, 398, 442); g.DrawRectangle(panelEdge, 82, 145, 398, 442);
             SaveData? preview = TitleSavePreview();
+            bool unreadableSave = preview is null && File.Exists(SavePath);
             string titleHint = titleSelection switch
             {
-                0 => preview is not null ? $"NÍVEL {preview.Level} • {roomNames[preview.Room]}" : HasTitleSave ? "UMA JORNADA ANTERIOR ESTÁ DISPONÍVEL" : "AINDA NÃO HÁ UMA JORNADA SALVA",
+                0 => preview is not null ? $"NÍVEL {preview.Level} • {roomNames[preview.Room]}" : unreadableSave ? "NÃO FOI POSSÍVEL LER O SAVE" : HasTitleSave ? "SAVE ANTERIOR ENCONTRADO" : "AINDA NÃO HÁ UMA JORNADA SALVA",
                 1 => "ESCOLHA SUA CLASSE E INICIE A HISTÓRIA",
                 2 => "CONSULTE OS CAPÍTULOS E CAMINHOS",
                 3 => "CONHEÇA O INÍCIO DA HISTÓRIA DE VÉSPERA",
@@ -255,7 +256,7 @@ public sealed partial class Game
                 g.DrawString(stops[i], stopFont, pale, 578, y);
                 g.DrawString(details[i], detailFont, muted, 578, y + 19);
             }
-            DrawCentered(g, HasTitleSave ? "JORNADA SALVA • C PARA CONTINUAR" : "NOVA JORNADA • SAVE LOCAL EM JSON", 518, new Font("Segoe UI", 9, FontStyle.Bold), Color.FromArgb(174, 179, 163));
+            DrawCentered(g, unreadableSave ? "SAVE ENCONTRADO • NÃO FOI POSSÍVEL LER" : HasTitleSave ? "JORNADA SALVA • C PARA CONTINUAR" : "NOVA JORNADA • SAVE LOCAL EM JSON", 518, new Font("Segoe UI", 9, FontStyle.Bold), Color.FromArgb(174, 179, 163));
             DrawCentered(g, "↑ / ↓ NAVEGAR     ENTER ESCOLHER     ESC VOLTAR", 584, new Font("Segoe UI", 9), Color.FromArgb(158, 164, 154));
         }
         else if (titlePage == TitlePage.Campaign) DrawTitleCampaignMap(g, panel, panelEdge, gold, pale, muted);
