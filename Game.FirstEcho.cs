@@ -98,7 +98,7 @@ public sealed partial class Game
         {
             EnemyKind kind = room == 45 && i == 0 ? EnemyKind.Guardian : i == 1 ? EnemyKind.Archer : EnemyKind.Grunt;
             float hp = (kind == EnemyKind.Guardian ? 180 : kind == EnemyKind.Archer ? 72 : 82) * DifficultyEnemyHealthMultiplier(difficultyTier);
-            enemies.Add(new Enemy { Pos = spawnPoints[i], Kind = kind, Hp = hp, MaxHp = hp, Cooldown = 1, SummonCooldown = 6, SupportCooldown = 3 });
+            enemies.Add(new Enemy { Pos = spawnPoints[i], Kind = kind, NameOverride = kind == EnemyKind.Guardian ? "VIGIA DAS COMPORTAS" : null, Hp = hp, MaxHp = hp, Cooldown = 1, SummonCooldown = 6, SupportCooldown = 3 });
         }
     }
 

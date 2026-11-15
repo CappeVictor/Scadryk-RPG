@@ -21,6 +21,7 @@ public sealed partial class Game : Form
     private sealed class Enemy
     {
         public PointF Pos, Target, Target2, Target2Start, KnockbackVelocity;
+        public string? NameOverride;
         public EnemyKind Kind;
         public float Hp, MaxHp, Cooldown, Windup, WindupMax, Flash, AnimationTime, AttackPoseTime, SummonCooldown, SummonWindup, SupportCooldown, SupportWindup, BeaconMarkTime, BellMarkTime, NameWeaverMarkTime, WoundTime, WoundTickCooldown, WoundDamage;
         public int BossPattern;
