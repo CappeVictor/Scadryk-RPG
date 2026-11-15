@@ -733,6 +733,7 @@ public sealed class Game : Form
     private bool SkillUnlocked(int skill) => skill switch { 1 => true, 2 => riverBell, 3 => ebbSeal, 4 => anchorWard, 5 => refrainSong, 6 => beaconLight, 7 => finalEnding == 1, 8 => finalEnding == 2, _ => false };
     private bool EbbBeaconSynergyActive() => equippedSkills.Contains(3) && equippedSkills.Contains(6);
     private bool BellShardSynergyActive() => equippedSkills.Contains(1) && equippedSkills.Contains(2);
+    private bool BellRefrainSynergyActive() => equippedSkills.Contains(2) && equippedSkills.Contains(5);
     private bool WardReturnSynergyEquipped() => equippedSkills.Contains(4) && equippedSkills.Contains(7);
     private bool WardReturnSynergyActive() => WardReturnSynergyEquipped() && wardTime > 0;
     private void CycleSkillVariant(int slot, int direction)
@@ -841,11 +842,11 @@ public sealed class Game : Form
             float power = enemy.Boss ? 0.55f : 0.95f;
             DamageEnemy(enemy, (int)(damage * power * multiplier * OutgoingDamageMultiplier(enemy) * (IsArmored(enemy) ? 0.75f : 1)));
             enemy.Flash = 0.2f;
-            if (BellShardSynergyActive() && enemy.Hp > 0) enemy.BellMarkTime = 5f;
+            if ((BellShardSynergyActive() || BellRefrainSynergyActive()) && enemy.Hp > 0) enemy.BellMarkTime = 5f;
             if (!enemy.Boss) { enemy.Stagger = 0.95f; enemy.Windup = 0; enemy.Cooldown = Math.Max(enemy.Cooldown, 1.8f); }
             if (enemy.Hp <= 0) Defeat(enemy);
         }
-        notice = BellShardSynergyActive() ? "SINO DE NARA • ECOS PREPARADOS PARA O ESTILHAÇO" : HasCharm(2) ? "SINO DE NARA • ONDA AMPLIADA" : "SINO DE NARA • RESSONÂNCIA"; noticeTime = 1.2f;
+        notice = BellShardSynergyActive() ? "SINO DE NARA • ECOS PREPARADOS PARA O ESTILHAÇO" : BellRefrainSynergyActive() ? "SINO DE NARA • ECOS PREPARADOS PARA O CORO" : HasCharm(2) ? "SINO DE NARA • ONDA AMPLIADA" : "SINO DE NARA • RESSONÂNCIA"; noticeTime = 1.2f;
     }
 
     private float EbbPullCooldown() => Math.Max(8f, 12f - skillTalent * 0.5f) * WeaponCooldownMultiplier();
@@ -888,12 +889,14 @@ public sealed class Game : Form
         foreach (Enemy enemy in enemies.ToArray())
         {
             if (Distance(player, enemy.Pos) > refrainWaveRadius) continue;
-            DamageEnemy(enemy, damage * (enemy.Boss ? 0.28f : 0.68f) * boost * SkillDamageVariant(5) * OutgoingDamageMultiplier(enemy) * (IsArmored(enemy) ? 0.75f : 1f));
+            bool bellResonantTarget = BellRefrainSynergyActive() && enemy.BellMarkTime > 0;
+            DamageEnemy(enemy, damage * (enemy.Boss ? 0.28f : 0.68f) * boost * SkillDamageVariant(5) * (bellResonantTarget ? 1.35f : 1f) * OutgoingDamageMultiplier(enemy) * (IsArmored(enemy) ? 0.75f : 1f));
+            if (bellResonantTarget) { enemy.BellMarkTime = 0; AddFloatingText(new PointF(enemy.Pos.X, enemy.Pos.Y - enemy.Radius - 26), "SINO + CORO", Color.LightGoldenrodYellow); }
             enemy.Flash = 0.24f;
             if (!enemy.Boss) { enemy.Stagger = Math.Max(enemy.Stagger, 0.38f); enemy.Windup = 0; enemy.Cooldown = Math.Max(enemy.Cooldown, 0.8f); }
             if (enemy.Hp <= 0) Defeat(enemy);
         }
-        notice = "CORO DE RETORNO • ECO REBATIDO"; noticeTime = 1.2f;
+        notice = BellRefrainSynergyActive() ? "CORO DE RETORNO • MARCAS DO SINO CONSUMIDAS" : "CORO DE RETORNO • ECO REBATIDO"; noticeTime = 1.2f;
     }
 
     private float BeaconCooldown() => Math.Max(13f, 22f - skillTalent * 0.9f) * WeaponCooldownMultiplier();
@@ -3299,8 +3302,9 @@ public sealed class Game : Form
         g.DrawString("SINTONIAS DE TÉCNICAS", small, Brushes.Goldenrod, 150, 472);
         g.DrawString("1+2 • Sino prepara alvos; Estilhaço causa +35% e consome a marca", small, BellShardSynergyActive() ? Brushes.LightGoldenrodYellow : Brushes.DarkGray, new RectangleF(150, 488, 310, 16));
         g.DrawString("3+6 • Vazante prepara alvos; Farol causa +35% no próximo pulso", small, EbbBeaconSynergyActive() ? Brushes.LightCyan : Brushes.DarkGray, new RectangleF(150, 504, 310, 16));
-        g.DrawString("4+7 • Manto ativo amplia em 35% a cura da Devolução", small, WardReturnSynergyActive() ? Brushes.LightGreen : WardReturnSynergyEquipped() ? Brushes.Goldenrod : Brushes.DarkGray, new RectangleF(150, 520, 310, 16));
-        g.DrawString("↑/↓ altera a memória da técnica equipada • BACKSPACE esvazia • B/ESC fecha • R: Redemoinho", small, Brushes.DarkGray, new RectangleF(150, 544, 660, 18));
+        g.DrawString("2+5 • Sino prepara alvos; Coro causa +35% e consome a marca", small, BellRefrainSynergyActive() ? Brushes.LightGoldenrodYellow : Brushes.DarkGray, new RectangleF(150, 520, 310, 16));
+        g.DrawString("4+7 • Manto ativo amplia em 35% a cura da Devolução", small, WardReturnSynergyActive() ? Brushes.LightGreen : WardReturnSynergyEquipped() ? Brushes.Goldenrod : Brushes.DarkGray, new RectangleF(150, 536, 310, 16));
+        g.DrawString("↑/↓ altera a memória da técnica equipada • BACKSPACE esvazia • B/ESC fecha • R: Redemoinho", small, Brushes.DarkGray, new RectangleF(150, 555, 660, 12));
     }
 
     private void DrawInventory(Graphics g)
@@ -3987,6 +3991,17 @@ public sealed class Game : Form
             bellShardSynergy.equippedSkills = new[] { 1, 0, 0, 0 }; preparedEcho.BellMarkTime = 0; bellShardSynergy.bellCd = 0;
             bellShardSynergy.CastBellPulse();
             if (preparedEcho.BellMarkTime != 0 || bellShardSynergy.notice.Contains("PREPARADOS PARA O ESTILHAÇO")) throw new InvalidOperationException("Sino + Estilhaço funcionaram sem as duas técnicas equipadas.");
+        }
+        using (var bellRefrainSynergy = new Game())
+        {
+            bellRefrainSynergy.timer.Stop(); bellRefrainSynergy.StartGame(); bellRefrainSynergy.storyOverlay = false; bellRefrainSynergy.room = 6; bellRefrainSynergy.riverBell = bellRefrainSynergy.refrainSong = true; bellRefrainSynergy.equippedSkills = new[] { 2, 5, 0, 0 }; bellRefrainSynergy.player = new PointF(250, 320); bellRefrainSynergy.damage = 100; bellRefrainSynergy.enemies.Clear();
+            var refrainedEcho = new Enemy { Pos = new PointF(330, 320), Kind = EnemyKind.Grunt, Hp = 1000, MaxHp = 1000 }; bellRefrainSynergy.enemies.Add(refrainedEcho);
+            bellRefrainSynergy.CastBellPulse(); float beforeRefrain = refrainedEcho.Hp;
+            if (refrainedEcho.BellMarkTime != 5f || !bellRefrainSynergy.notice.Contains("PREPARADOS PARA O CORO")) throw new InvalidOperationException("Sino + Coro não prepararam o alvo por cinco segundos.");
+            bellRefrainSynergy.CastRefrain(); float expectedRefrain = 100 * 0.68f * bellRefrainSynergy.TechniqueDamageMultiplier() * bellRefrainSynergy.WeaponSkillMultiplier() * bellRefrainSynergy.SkillDamageVariant(5) * 1.35f * bellRefrainSynergy.OutgoingDamageMultiplier(refrainedEcho);
+            if (Math.Abs((beforeRefrain - refrainedEcho.Hp) - expectedRefrain) > 0.01f || refrainedEcho.BellMarkTime != 0 || !bellRefrainSynergy.floatingTexts.Any(text => text.Text == "SINO + CORO") || !bellRefrainSynergy.notice.Contains("MARCAS DO SINO CONSUMIDAS")) throw new InvalidOperationException("O Coro não consumiu a marca do Sino com +35% de dano e aviso visual.");
+            bellRefrainSynergy.equippedSkills = new[] { 5, 0, 0, 0 }; refrainedEcho.BellMarkTime = 0; bellRefrainSynergy.bellCd = 0; bellRefrainSynergy.CastBellPulse();
+            if (refrainedEcho.BellMarkTime != 0 || bellRefrainSynergy.notice.Contains("PREPARADOS PARA O CORO")) throw new InvalidOperationException("Sino + Coro funcionaram sem as duas técnicas equipadas.");
         }
         using (var lockedBellGame = new Game())
         {
