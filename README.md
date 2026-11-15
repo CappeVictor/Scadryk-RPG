@@ -64,9 +64,9 @@ O executável e os recursos ficam juntos em `artifacts/Scadryk-win-x64/`. O CI t
 
 ## Menu inicial e campanha
 
-Ao abrir o jogo, use **↑/↓** e **Enter**, ou clique, para escolher **Continuar**, **Nova jornada**, **Campanha e mapas**, **História**, **Configurações** ou **Sair**. Continuar fica indisponível sem um save. Se já existir um save, Nova jornada pede confirmação; o arquivo atual só é substituído quando você salva explicitamente com **F5** dentro do jogo.
+Ao abrir o jogo, use **↑/↓** e **Enter**, ou clique, para escolher **Continuar**, **Nova jornada**, **Campanha e mapas**, **História**, **Configurações** ou **Sair**. Continuar fica indisponível sem um save. Se já existir um save, Nova jornada pede confirmação; o arquivo atual não é apagado ao iniciar, e só muda se você salvar o novo progresso dentro do jogo.
 
-**Campanha e mapas** mostra as 43 áreas da campanha na ordem em que se conectam. O atlas marca a área do save, salas concluídas e descobertas, e mantém áreas futuras bloqueadas até a história abrir a rota. A campanha é progressiva: esse mapa serve para entender o caminho e o andamento, sem pular capítulos. Entre no jogo para explorar o atlas durante a jornada com **M**. **História** apresenta o prólogo original; **Configurações** altera áudio e contraste dos avisos de ataque.
+**Campanha e mapas** lista os 18 capítulos e mostra um pequeno mapa das áreas de cada capítulo. A tela marca o capítulo atual, o que já foi concluído ou descoberto e as rotas bloqueadas pela história. Escolher um capítulo só abre sua prévia; **Enter** continua a jornada do save ou inicia uma nova campanha, sem teletransportar nem pular fases. Entre no jogo para explorar o atlas durante a jornada com **M**. **História** apresenta o prólogo original; **Configurações** altera áudio e contraste dos avisos de ataque.
 
 ## Personagem e animação
 

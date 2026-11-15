@@ -106,6 +106,7 @@ public sealed class Game : Form
         public int EliteWeaponMisses { get; set; }
         public int DifficultyTier { get; set; }
     }
+    private sealed record CampaignChapter(int Number, string Title, int FirstRoom, int LastRoom);
 
     private static readonly RectangleF[] Walls = { new(345, 235, 48, 90), new(565, 375, 58, 80) };
     private static readonly Lazy<Bitmap?> PlayerSpriteSheet = new(() =>
@@ -233,6 +234,17 @@ public sealed class Game : Form
     private readonly List<FloatingText> floatingTexts = new();
     private PointF beaconPos;
     private readonly string[] roomNames = { "VESTÍBULO EM RUÍNAS", "SALÃO DOS OSSOS", "CÂMARA DO GUARDIÃO", "VÉSPERA • PRAÇA DO FAROL", "ARQUIVO NORTE • GALERIA", "ARQUIVO NORTE • COFRE", "RIO CEGO • LEITO SECO", "RIO CEGO • CAPELA AFOGADA", "FAROL • ESCADA DE CINZAS", "FAROL • CÂMARA DO LUME", "ALÉM DO LUME • MARGEM SEM REFLEXO", "RESERVATÓRIO • VOZES RETIDAS", "COSTA DAS VOZES TARDIAS", "CLAUSTRO DO CORO PARTIDO", "BACIA DO PRIMEIRO NOME", "SALA DA PRIMEIRA VIGÍLIA", "VAU DOS NOMES ESCOLHIDOS", "PÁTIO DAS TESTEMUNHAS", "REFÚGIO DO VEIO CALMO", "TRILHA DOS LUMINÁRIOS", "CISTERNA DO REGISTRO VAZIO", "VÁRZEA DAS VOZES SOPRADAS", "PONTE DA MARÉ INVERTIDA", "COTOVELO DOS JUNCAIS", "PÁTIO DAS AMARRAS LIVRES", "MOINHOS DA VAZANTE", "CÂMARA DO VEIO PRESO", "ESCARPA DO CONTRAFLUXO", "CORAÇÃO DAS DUAS MARGENS", "CANTARIA DAS VOZES LIVRES", "CÂMARA DA CONTRAVOZ", "GARGANTA DO VIDRO MUDO", "FONTE SOB A PEDRA", "PASSAGEM DAS LANTERNAS BAIXAS", "OBSERVATÓRIO DA MARÉ INTERIOR", "TRILHA DAS LINHAS ABERTAS", "GALERIA DA ROTA NÃO ESCRITA", "SOLEIRA DO SILÊNCIO", "CÂMARA DO ÚLTIMO ECO", "CAIS DOS ECOS EMPRESTADOS", "ARQUIVO DA MARÉ SEM NOME", "CÂMARA DAS BADALADAS NÃO ENVIADAS", "POÇO DO CONTRATEMPO" };
+    private readonly CampaignChapter[] campaignChapters = {
+        new(1, "A cripta que ainda escuta", 0, 2), new(2, "O arquivo das vidas ausentes", 3, 5),
+        new(3, "A corrente sob o farol", 6, 11), new(4, "A costa das vozes tardias", 12, 13),
+        new(5, "A Bacia do Primeiro Nome", 14, 15), new(6, "O refúgio da margem escolhida", 16, 17),
+        new(7, "O refúgio do Veio Calmo", 18, 20), new(8, "A nascente que não registra nomes", 21, 22),
+        new(9, "As amarras que podem ser desfeitas", 23, 24), new(10, "A vazante não pertence a ninguém", 25, 26),
+        new(11, "O compasso das duas margens", 27, 28), new(12, "A nota que não manda", 29, 30),
+        new(13, "Os passos que o vidro não guarda", 31, 32), new(14, "A luz que espera", 33, 34),
+        new(15, "As linhas que não apontam", 35, 36), new(16, "O silêncio que escolhe", 37, 38),
+        new(17, "As marés emprestadas • opcional", 39, 40), new(18, "A badalada não enviada • opcional", 41, 42)
+    };
     private readonly string[] weaponNames = { "ESPADA DE PEDRA", "LÂMINA DO ARQUIVO", "FACA DO CREPÚSCULO", "LANÇA DA BADALADA" };
     private readonly string[] charmNames = { "", "NÓ DE BRASA", "FIO DE TRAVESSIA", "VIDRO DE VIGÍLIA", "MARCA DA VIGÍLIA", "FIO DA MARGEM", "NÓ DE LUME", "FIO DO RETORNO", "ECO CONVERGENTE", "COMPASSO FENDIDO", "ÂNCORA COMUM", "PULSO BIFURCADO", "NÓ DO CONTRATEMPO" };
     private readonly string[] skillNames = { "Vazio", "Estilhaço de Voz", "Ressonância do Sino", "Vazante", "Manto de Lastro", "Coro de Retorno", "Farol de Vigília", "Devolução das Vozes", "Última Centelha" };
@@ -276,6 +288,7 @@ public sealed class Game : Form
     private int storyPage;
     private TitlePage titlePage;
     private int titleSelection;
+    private int titleChapterSelection;
     private bool confirmNewJourney;
     private SaveData? titleSavePreview;
     private bool titleSavePreviewRead;
@@ -354,6 +367,12 @@ public sealed class Game : Form
             if (HasTitleSave) LoadGame(); else StartGame();
             return;
         }
+        if (titlePage == TitlePage.Campaign && (key is Keys.Up or Keys.W or Keys.Down or Keys.S))
+        {
+            int direction = key is Keys.Up or Keys.W ? -1 : 1;
+            titleChapterSelection = Math.Clamp(titleChapterSelection + direction, 0, campaignChapters.Length - 1);
+            Invalidate(); return;
+        }
         if (titlePage == TitlePage.History)
         {
             if (key is Keys.Left or Keys.A) storyPage = Math.Max(0, storyPage - 1);
@@ -377,7 +396,7 @@ public sealed class Game : Form
                 if (HasTitleSave) LoadGame(); else notice = "AINDA NÃO HÁ UMA JORNADA SALVA";
                 break;
             case 1: confirmNewJourney = HasTitleSave; if (!confirmNewJourney) StartGame(); break;
-            case 2: titlePage = TitlePage.Campaign; _ = TitleSavePreview(); break;
+            case 2: titlePage = TitlePage.Campaign; { SaveData? preview = TitleSavePreview(); int index = campaignChapters.ToList().FindIndex(chapter => preview is not null && preview.Room >= chapter.FirstRoom && preview.Room <= chapter.LastRoom); titleChapterSelection = index < 0 ? 0 : index; } break;
             case 3: titlePage = TitlePage.History; storyPage = 0; break;
             case 4: titlePage = TitlePage.Settings; titleSelection = 0; break;
             case 5: Close(); break;
@@ -417,6 +436,10 @@ public sealed class Game : Form
             else if (titlePage == TitlePage.Campaign && point.X >= 500 && point.X <= 770) { titlePage = TitlePage.Main; titleSelection = 2; }
             else { titlePage = TitlePage.Main; titleSelection = 2; }
         }
+        else if (titlePage == TitlePage.Campaign && point.X < 405 && point.Y >= 165 && point.Y < 165 + campaignChapters.Length * 19)
+        {
+            titleChapterSelection = Math.Clamp((int)((point.Y - 165) / 19), 0, campaignChapters.Length - 1);
+        }
         else if (titlePage == TitlePage.History)
         {
             if (point.X < 480) storyPage = Math.Max(0, storyPage - 1);
@@ -440,12 +463,6 @@ public sealed class Game : Form
         if (save.QuestStage >= 57) known |= 1L << 41;
         if (save.QuestStage >= 58) known |= 1L << 42;
         return known;
-    }
-
-    private static int CampaignMapColumn(int index)
-    {
-        int row = index / 5, offset = index % 5;
-        return row % 2 == 0 ? offset : 4 - offset;
     }
 
     private void StartGame()
@@ -3792,41 +3809,92 @@ public sealed class Game : Form
         SaveData? save = TitleSavePreview();
         long known = PreviewKnownRooms(save), cleared = save?.ClearedRooms ?? 0;
         DrawCentered(g, "ATLAS DA CAMPANHA", 115, new Font("Georgia", 19, FontStyle.Bold), Color.FromArgb(230, 193, 129));
-        DrawCentered(g, "43 áreas conectadas • 18 capítulos • a história abre cada rota", 148, new Font("Segoe UI", 10, FontStyle.Bold), Color.FromArgb(196, 196, 179));
-        using var connector = new Pen(Color.FromArgb(73, 82, 68), 2);
-        const int columns = 5; const float nodeWidth = 168, nodeHeight = 30, gapX = 8, gapY = 4;
-        for (int i = 0; i < roomNames.Length - 1; i++)
+        DrawCentered(g, "43 áreas • 18 capítulos • navegue pela campanha e veja o mapa de cada etapa", 145, new Font("Segoe UI", 9, FontStyle.Bold), Color.FromArgb(196, 196, 179));
+        CampaignChapter selectedChapter = campaignChapters[Math.Clamp(titleChapterSelection, 0, campaignChapters.Length - 1)];
+        string selectedState = CampaignChapterState(selectedChapter, save, known, cleared);
+
+        using var listPanel = new SolidBrush(Color.FromArgb(230, 21, 24, 24)); using var mapPanel = new SolidBrush(Color.FromArgb(230, 21, 24, 24));
+        using var panelLine = new Pen(Color.FromArgb(91, 86, 69), 1);
+        g.FillRectangle(listPanel, 40, 164, 365, 344); g.DrawRectangle(panelLine, 40, 164, 365, 344);
+        g.FillRectangle(mapPanel, 416, 164, 504, 344); g.DrawRectangle(panelLine, 416, 164, 504, 344);
+
+        using var chapterFont = new Font("Segoe UI", 8, FontStyle.Bold);
+        using var chapterFormat = new StringFormat { Alignment = StringAlignment.Near, LineAlignment = StringAlignment.Center, Trimming = StringTrimming.EllipsisCharacter };
+        for (int i = 0; i < campaignChapters.Length; i++)
         {
-            int col = CampaignMapColumn(i), row = i / columns;
-            int nextCol = CampaignMapColumn(i + 1), nextRow = (i + 1) / columns;
-            PointF a = new(44 + col * (nodeWidth + gapX) + nodeWidth / 2, 174 + row * (nodeHeight + gapY) + nodeHeight / 2);
-            PointF b = new(44 + nextCol * (nodeWidth + gapX) + nodeWidth / 2, 174 + nextRow * (nodeHeight + gapY) + nodeHeight / 2);
-            g.DrawLine(connector, a, b);
+            CampaignChapter chapter = campaignChapters[i]; float y = 166 + i * 19;
+            string state = CampaignChapterState(chapter, save, known, cleared);
+            bool selected = i == titleChapterSelection;
+            using var chapterFill = new SolidBrush(selected ? Color.FromArgb(87, 67, 38) : Color.FromArgb(31, 35, 34));
+            using var chapterEdge = new Pen(selected ? Color.FromArgb(222, 181, 105) : Color.FromArgb(56, 60, 56));
+            using var chapterInk = new SolidBrush(state switch { "CONCLUÍDO" => Color.FromArgb(150, 210, 159), "ATUAL" or "INÍCIO" => Color.FromArgb(255, 224, 161), "BLOQUEADO" => Color.FromArgb(112, 116, 107), _ => Color.FromArgb(206, 207, 190) });
+            g.FillRectangle(chapterFill, 45, y, 355, 18); g.DrawRectangle(chapterEdge, 45, y, 355, 18);
+            g.DrawString($"{ToRoman(chapter.Number)}  {chapter.Title}", chapterFont, selected ? gold : pale, new RectangleF(51, y + 1, 276, 16), chapterFormat);
+            using var stateFont = new Font("Segoe UI", 6.5f, FontStyle.Bold);
+            g.DrawString(state, stateFont, chapterInk, new RectangleF(326, y + 1, 70, 16), chapterFormat);
         }
-        using var labelFont = new Font("Segoe UI", 7.4f, FontStyle.Bold);
-        using var format = new StringFormat { Alignment = StringAlignment.Near, LineAlignment = StringAlignment.Center, Trimming = StringTrimming.EllipsisCharacter };
-        for (int i = 0; i < roomNames.Length; i++)
+
+        DrawCentered(g, $"CAPÍTULO {ToRoman(selectedChapter.Number)} • {selectedChapter.Title.ToUpperInvariant()}", 170, new Font("Georgia", 11, FontStyle.Bold), Color.FromArgb(230, 193, 129), 668);
+        DrawCentered(g, selectedState, 190, new Font("Segoe UI", 8, FontStyle.Bold), Color.FromArgb(179, 183, 170), 668);
+        int roomCount = selectedChapter.LastRoom - selectedChapter.FirstRoom + 1;
+        using var route = new Pen(Color.FromArgb(102, 89, 63), 2);
+        const float cardX = 427, cardY = 218, cardWidth = 232, cardHeight = 67, cardGapX = 23, cardGapY = 16;
+        for (int offset = 0; offset < roomCount - 1; offset++)
         {
-            int col = CampaignMapColumn(i), row = i / columns; float x = 44 + col * (nodeWidth + gapX), y = 174 + row * (nodeHeight + gapY);
-            bool mapped = (known & (1L << i)) != 0, done = (cleared & (1L << i)) != 0, here = save is not null ? save.Room == i : !HasTitleSave && i == 0;
-            using var fill = new SolidBrush(here ? Color.FromArgb(107, 81, 42) : done ? Color.FromArgb(40, 68, 52) : mapped ? Color.FromArgb(46, 51, 48) : Color.FromArgb(25, 28, 28));
-            using var line = new Pen(here ? Color.FromArgb(231, 188, 112) : done ? Color.FromArgb(89, 139, 105) : mapped ? Color.FromArgb(102, 108, 96) : Color.FromArgb(56, 59, 55));
-            g.FillRectangle(fill, x, y, nodeWidth, nodeHeight); g.DrawRectangle(line, x, y, nodeWidth, nodeHeight);
-            using var text = new SolidBrush(mapped ? Color.FromArgb(218, 216, 197) : Color.FromArgb(105, 109, 101));
-            string marker = here ? "◆" : done ? "✓" : mapped ? "○" : "·";
-            g.DrawString(marker, labelFont, here ? gold : done ? Brushes.LightGreen : muted, x + 5, y + 3);
-            g.DrawString($"{i + 1:00}  {AtlasRoomName(i)}", labelFont, text, new RectangleF(x + 20, y + 2, nodeWidth - 24, nodeHeight - 4), format);
+            int row = offset / 2, col = row % 2 == 0 ? offset % 2 : 1 - offset % 2;
+            int nextRow = (offset + 1) / 2, nextCol = nextRow % 2 == 0 ? (offset + 1) % 2 : 1 - (offset + 1) % 2;
+            PointF a = new(cardX + col * (cardWidth + cardGapX) + cardWidth / 2, cardY + row * (cardHeight + cardGapY) + cardHeight / 2);
+            PointF b = new(cardX + nextCol * (cardWidth + cardGapX) + cardWidth / 2, cardY + nextRow * (cardHeight + cardGapY) + cardHeight / 2);
+            g.DrawLine(route, a, b);
         }
-        string legend = save is null ? HasTitleSave ? "SAVE ANTIGO: CONTINUE PARA CARREGAR O PROGRESSO" : "DOURADO: INÍCIO  •  ESCURO: ABRE COM A HISTÓRIA" : "DOURADO: SAVE ATUAL  •  VERDE: CONCLUÍDA  •  CINZA: DESCOBERTA  •  ESCURO: BLOQUEADA";
-        DrawCentered(g, legend, 490, new Font("Segoe UI", 8.5f), Color.FromArgb(178, 183, 170));
+        using var roomNameFont = new Font("Segoe UI", 8, FontStyle.Bold);
+        using var roomStatusFont = new Font("Segoe UI", 7);
+        for (int offset = 0; offset < roomCount; offset++)
+        {
+            int index = selectedChapter.FirstRoom + offset;
+            int row = offset / 2, col = row % 2 == 0 ? offset % 2 : 1 - offset % 2;
+            float x = cardX + col * (cardWidth + cardGapX), y = cardY + row * (cardHeight + cardGapY);
+            bool mapped = (known & (1L << index)) != 0, done = (cleared & (1L << index)) != 0;
+            bool here = save is not null && save.Room == index;
+            bool startingArea = save is null && !HasTitleSave && index == 0;
+            Color background = here || startingArea ? Color.FromArgb(91, 67, 35) : done ? Color.FromArgb(34, 61, 44) : mapped ? Color.FromArgb(42, 47, 44) : Color.FromArgb(27, 30, 30);
+            Color outline = here || startingArea ? Color.FromArgb(223, 181, 104) : done ? Color.FromArgb(85, 131, 94) : mapped ? Color.FromArgb(89, 95, 86) : Color.FromArgb(53, 57, 53);
+            using var roomFill = new SolidBrush(background); using var roomEdge = new Pen(outline, here ? 2 : 1);
+            g.FillRectangle(roomFill, x, y, cardWidth, cardHeight); g.DrawRectangle(roomEdge, x, y, cardWidth, cardHeight);
+            using var roomInk = new SolidBrush(mapped ? Color.FromArgb(222, 218, 199) : Color.FromArgb(117, 121, 111));
+            string roomState = here ? "SAVE ATUAL" : startingArea ? "INÍCIO DA CAMPANHA" : done ? "CONCLUÍDA" : mapped ? "DESCOBERTA" : "BLOQUEADA • ABRE PELA HISTÓRIA";
+            g.DrawString($"ÁREA {index + 1:00}  •  {AtlasRoomName(index)}", roomNameFont, roomInk, new RectangleF(x + 10, y + 10, cardWidth - 20, 24));
+            g.DrawString(roomState, roomStatusFont, here ? gold : done ? Brushes.LightGreen : muted, x + 10, y + 42);
+        }
+        int chapterMapped = Enumerable.Range(selectedChapter.FirstRoom, roomCount).Count(index => (known & (1L << index)) != 0);
+        DrawCentered(g, $"MAPA DO CAPÍTULO  •  {chapterMapped}/{roomCount} ÁREAS DESCOBERTAS", 477, new Font("Segoe UI", 8, FontStyle.Bold), Color.FromArgb(178, 183, 170), 668);
         using var startButton = new SolidBrush(Color.FromArgb(77, 63, 40)); using var backButton = new SolidBrush(Color.FromArgb(33, 37, 37));
         using var startEdge = new Pen(Color.FromArgb(230, 193, 129), 1); using var backEdge = new Pen(Color.FromArgb(71, 74, 68), 1);
         g.FillRectangle(startButton, 190, 518, 285, 38); g.DrawRectangle(startEdge, 190, 518, 285, 38);
         g.FillRectangle(backButton, 500, 518, 270, 38); g.DrawRectangle(backEdge, 500, 518, 270, 38);
         DrawCentered(g, save is null ? HasTitleSave ? "CONTINUAR DO SAVE" : "INICIAR CAMPANHA" : "CONTINUAR DO SAVE", 528, new Font("Segoe UI", 10, FontStyle.Bold), Color.FromArgb(255, 232, 180), 332);
         DrawCentered(g, "VOLTAR AO MENU", 528, new Font("Segoe UI", 10, FontStyle.Bold), Color.FromArgb(211, 208, 193), 635);
-        DrawCentered(g, "ENTER INICIA/CONTINUA • ESC VOLTA", 565, new Font("Segoe UI", 8.5f), Color.FromArgb(158, 164, 154));
+        DrawCentered(g, "↑ / ↓ OU CLIQUE ESCOLHE CAPÍTULO • ENTER CONTINUA DO SAVE • ESC VOLTA", 565, new Font("Segoe UI", 8), Color.FromArgb(158, 164, 154));
     }
+
+    private string CampaignChapterState(CampaignChapter chapter, SaveData? save, long known, long cleared)
+    {
+        if (save is null && !HasTitleSave && chapter.Number == 1) return "INÍCIO";
+        bool current = save is not null && save.Room >= chapter.FirstRoom && save.Room <= chapter.LastRoom;
+        if (current) return "ATUAL";
+        bool discovered = Enumerable.Range(chapter.FirstRoom, chapter.LastRoom - chapter.FirstRoom + 1).Any(index => (known & (1L << index)) != 0);
+        if (!discovered) return "BLOQUEADO";
+        bool allCombatAreasCleared = Enumerable.Range(chapter.FirstRoom, chapter.LastRoom - chapter.FirstRoom + 1)
+            .Where(index => index is not 3 and not 18)
+            .All(index => (cleared & (1L << index)) != 0);
+        return allCombatAreasCleared ? "CONCLUÍDO" : "DESCOBERTO";
+    }
+
+    private static string ToRoman(int number) => number switch
+    {
+        1 => "I", 2 => "II", 3 => "III", 4 => "IV", 5 => "V", 6 => "VI", 7 => "VII", 8 => "VIII", 9 => "IX",
+        10 => "X", 11 => "XI", 12 => "XII", 13 => "XIII", 14 => "XIV", 15 => "XV", 16 => "XVI", 17 => "XVII", 18 => "XVIII", _ => number.ToString()
+    };
 
     private void DrawTitleSetting(Graphics g, int row, string name, string value, bool selected)
     {
