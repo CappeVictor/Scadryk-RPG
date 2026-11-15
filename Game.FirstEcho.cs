@@ -17,6 +17,8 @@ public sealed partial class Game
     private static readonly PointF FirstEchoCave = new(1050, 250);
     private static readonly PointF FirstEchoSluice = new(2250, 700);
     private static readonly PointF FirstEchoIvara = new(860, 590);
+    private static readonly RectangleF[] FirstEchoCaveWalls = { new(285, 145, 70, 95), new(440, 395, 85, 105), new(610, 145, 70, 80) };
+    private static readonly RectangleF[] FirstEchoSluiceWalls = { new(300, 145, 45, 120), new(300, 395, 45, 110), new(555, 145, 45, 95), new(555, 405, 45, 95) };
     private static readonly (PointF Position, EnemyKind Kind)[] FirstEchoEncounters =
     {
         (new(480, 650), EnemyKind.Grunt), (new(540, 760), EnemyKind.Archer),
@@ -74,11 +76,12 @@ public sealed partial class Game
         player = new PointF(150, 330);
         if (room == 44 && firstEchoCaveFound || room == 45 && firstEchoQuest >= 2) return;
         int count = room == 44 ? 3 : 4;
+        PointF[] spawnPoints = { new(480, 250), new(660, 270), new(480, 340), new(680, 400) };
         for (int i = 0; i < count; i++)
         {
             EnemyKind kind = room == 45 && i == 0 ? EnemyKind.Guardian : i == 1 ? EnemyKind.Archer : EnemyKind.Grunt;
             float hp = (kind == EnemyKind.Guardian ? 180 : kind == EnemyKind.Archer ? 72 : 82) * DifficultyEnemyHealthMultiplier(difficultyTier);
-            enemies.Add(new Enemy { Pos = new PointF(500 + i % 2 * 130, 240 + i / 2 * 160), Kind = kind, Hp = hp, MaxHp = hp, Cooldown = 1, SummonCooldown = 6, SupportCooldown = 3 });
+            enemies.Add(new Enemy { Pos = spawnPoints[i], Kind = kind, Hp = hp, MaxHp = hp, Cooldown = 1, SummonCooldown = 6, SupportCooldown = 3 });
         }
     }
 
@@ -114,6 +117,12 @@ public sealed partial class Game
         using var accent = new Pen(room == 44 ? Color.FromArgb(112, 115, 76) : Color.FromArgb(113, 155, 153), 5);
         g.FillRectangle(ground, 65, 108, 830, 445);
         for (int x = 130; x < 880; x += 125) g.DrawLine(accent, x, 115, x - 35, 175);
+        using var obstacle = new SolidBrush(room == 44 ? Color.FromArgb(78, 83, 63) : Color.FromArgb(92, 99, 92));
+        foreach (RectangleF wall in room == 44 ? FirstEchoCaveWalls : FirstEchoSluiceWalls)
+        {
+            g.FillRectangle(obstacle, wall);
+            g.DrawRectangle(accent, wall.X, wall.Y, wall.Width, wall.Height);
+        }
         g.DrawEllipse(accent, 710, 280, 100, 100);
         using var font = new Font("Segoe UI", 11, FontStyle.Bold);
         g.DrawString(room == 44 ? "ABRIGO ANTIGO" : "MECANISMO DAS VOZES", font, Brushes.AntiqueWhite, 660, 250);
