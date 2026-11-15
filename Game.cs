@@ -202,6 +202,8 @@ public sealed partial class Game : Form
     private int healthTalent, skillTalent, dodgeTalent, techniqueTalent, combatDiscipline, combatMastery, combatFocus, combatApex, pendingTalents, enemiesDefeated;
     private int memoriesFound, questStage, tideGlass, finalEnding, eliteWeaponMisses;
     private int vigilBestFloor, vigilFloor;
+    private VigilAspect[] vigilAspectOrder = { VigilAspect.Hardened, VigilAspect.Hungry, VigilAspect.Swift, VigilAspect.Chorus, VigilAspect.Counterflow };
+    private EnemyKind[] vigilBossOrder = { EnemyKind.DeepSilence, EnemyKind.RouteScribe, EnemyKind.LanternRegent, EnemyKind.GlassHerald, EnemyKind.RiftCantor };
     private float vigilMinionCooldown, vigilTideTime;
     private bool vigilActive, vigilChoiceOpen;
     private bool highContrastTelegraphs;
@@ -311,6 +313,16 @@ public sealed partial class Game : Form
         _ => EnemyKind.RiftCantor
     };
 
+    private EnemyKind RunVigilBoss(int floor) => vigilBossOrder[(Math.Max(1, floor) - 1) % vigilBossOrder.Length];
+    private VigilAspect RunVigilAspect(int floor) => vigilAspectOrder[(Math.Max(1, floor) - 1) % vigilAspectOrder.Length];
+    private void ShuffleVigilOrder()
+    {
+        vigilAspectOrder = new[] { VigilAspect.Hardened, VigilAspect.Hungry, VigilAspect.Swift, VigilAspect.Chorus, VigilAspect.Counterflow };
+        vigilBossOrder = new[] { EnemyKind.DeepSilence, EnemyKind.RouteScribe, EnemyKind.LanternRegent, EnemyKind.GlassHerald, EnemyKind.RiftCantor };
+        for (int i = vigilAspectOrder.Length - 1; i > 0; i--) { int j = random.Next(i + 1); (vigilAspectOrder[i], vigilAspectOrder[j]) = (vigilAspectOrder[j], vigilAspectOrder[i]); }
+        for (int i = vigilBossOrder.Length - 1; i > 0; i--) { int j = random.Next(i + 1); (vigilBossOrder[i], vigilBossOrder[j]) = (vigilBossOrder[j], vigilBossOrder[i]); }
+    }
+
     private static VigilAspect VigilAspectForFloor(int floor) => ((Math.Max(1, floor) - 1) % 5) switch
     {
         0 => VigilAspect.Hardened,
@@ -346,12 +358,15 @@ public sealed partial class Game : Form
         VigilAspect.Chorus => Color.MediumPurple,
         _ => Color.LightSeaGreen
     };
+    private static string VigilAspectTitle(VigilAspect aspect) => aspect switch { VigilAspect.Hardened => "CASCA VIVA", VigilAspect.Hungry => "FOME DO RIO", VigilAspect.Swift => "SUSSURRO VELOZ", VigilAspect.Chorus => "CORO ERRANTE", _ => "MARÉ INVERTIDA" };
+    private static string VigilAspectRule(VigilAspect aspect) => aspect switch { VigilAspect.Hardened => "O chefe recebe 25% menos dano", VigilAspect.Hungry => "Os ataques do chefe causam 30% mais dano", VigilAspect.Swift => "Os ataques começam 20% mais rápido", VigilAspect.Chorus => "Um Eco Salino surge a cada 20 segundos", _ => "A corrente puxa e repele a cada 6 segundos" };
+    private static Color VigilAspectColor(VigilAspect aspect) => aspect switch { VigilAspect.Hardened => Color.SteelBlue, VigilAspect.Hungry => Color.OrangeRed, VigilAspect.Swift => Color.Goldenrod, VigilAspect.Chorus => Color.MediumPurple, _ => Color.LightSeaGreen };
 
     private static bool VigilTidePulling(float elapsed) => elapsed % 12f < 6f;
 
     private void ApplyVigilTide(float dt)
     {
-        if (!vigilActive || room != 38 || VigilAspectForFloor(vigilFloor) != VigilAspect.Counterflow) return;
+        if (!vigilActive || room != 38 || RunVigilAspect(vigilFloor) != VigilAspect.Counterflow) return;
         vigilTideTime += dt;
         PointF outward = Normalize(Sub(player, new PointF(480, 330)), new PointF(1, 0));
         float direction = VigilTidePulling(vigilTideTime) ? -1 : 1;
@@ -360,7 +375,7 @@ public sealed partial class Game : Form
 
     private void TickVigilMinions(float dt)
     {
-        if (!vigilActive || room != 38 || VigilAspectForFloor(vigilFloor) != VigilAspect.Chorus || drops.Count > 0 || enemies.Any(enemy => enemy.VigilMinion)) return;
+        if (!vigilActive || room != 38 || RunVigilAspect(vigilFloor) != VigilAspect.Chorus || drops.Count > 0 || enemies.Any(enemy => enemy.VigilMinion)) return;
         Enemy? boss = enemies.FirstOrDefault(enemy => enemy.Boss);
         if (boss is null) return;
         vigilMinionCooldown -= dt;
@@ -377,6 +392,7 @@ public sealed partial class Game : Form
     private void StartVigil()
     {
         if (finalEnding == 0) return;
+        if (vigilBestFloor > 0) ShuffleVigilOrder();
         vigilActive = true; vigilChoiceOpen = false; vigilFloor = vigilBestFloor + 1;
         room = 38; SetupRoom();
         ShowMemory($"VIGÍLIA ASCENDENTE • ANDAR {vigilFloor}", "Aven reúne ecos de antigos guardiões sem lhes devolver os nomes. Cada andar torna a lembrança mais intensa e deixa um prêmio para quem atravessar a prova. Derrote o eco, recolha o saque e interaja com o altar para subir ou encerrar a vigília.");
@@ -420,7 +436,7 @@ public sealed partial class Game : Form
             if (room == 40 && i == 0) kind = EnemyKind.BorrowedChorus;
             if (room == 42 && i == 0) kind = EnemyKind.LastTuner;
             if ((room is 14 or 21) && i == count - 1) kind = EnemyKind.CooldownLeech;
-            if (vigilActive && i == 0) kind = VigilBossKind(vigilFloor);
+            if (vigilActive && i == 0) kind = RunVigilBoss(vigilFloor);
             if (room >= 27 && i == 2) kind = EnemyKind.SaltEcho;
             if (room >= 27 && i == 3) kind = EnemyKind.MudCantor;
             if ((room is 27 or 31 or 41) && i == 4) kind = EnemyKind.SlagWeaver;
@@ -841,7 +857,7 @@ public sealed partial class Game : Form
             }
         }
         if (HasEliteAffix(e, EliteAffix.Conductor) && UpdateConductor(e, dt)) return;
-        float attackTempo = vigilActive && e.Boss && VigilAspectForFloor(vigilFloor) == VigilAspect.Swift ? 1.25f : 1;
+        float attackTempo = vigilActive && e.Boss && RunVigilAspect(vigilFloor) == VigilAspect.Swift ? 1.25f : 1;
         e.Cooldown -= dt * attackTempo; e.Flash = Math.Max(0, e.Flash - dt); PointF offset = Sub(player, e.Pos); float dist = Length(offset);
         if (e.Stagger > 0) { e.Stagger = Math.Max(0, e.Stagger - dt); return; }
         if (e.Windup > 0) {
@@ -890,10 +906,10 @@ public sealed partial class Game : Form
         {
             e.BossPattern = (e.BossPattern + 1) % 3;
             float windup = e.Hp < e.MaxHp * 0.5f ? 0.54f : 0.82f;
-            if (vigilActive && VigilAspectForFloor(vigilFloor) == VigilAspect.Swift) windup *= 0.8f;
+            if (vigilActive && RunVigilAspect(vigilFloor) == VigilAspect.Swift) windup *= 0.8f;
             BeginWindup(e, e.BossPattern is 1 or 2 ? player : e.Pos, windup); e.Cooldown = e.Hp < e.MaxHp * 0.5f ? 1.35f : 2.1f; return;
         }
-        if (e.Boss && e.Cooldown <= 0 && (dist < 135 || (e.Kind is EnemyKind.BlindScribe or EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus))) { e.BossPattern = (e.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus) ? (e.BossPattern + 1) % 3 : 1 - e.BossPattern; bool aimed = (e.Kind == EnemyKind.BlindScribe && e.BossPattern == 1) || ((e.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden) && (e.BossPattern is 1 or 2)) || (e.Kind is EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus) && e.BossPattern is 1 or 2; float windup = e.Hp < e.MaxHp * 0.5f ? 0.52f : 0.78f; if (vigilActive && VigilAspectForFloor(vigilFloor) == VigilAspect.Swift) windup *= 0.8f; if (e.Kind == EnemyKind.FirstKeeper && e.BossPattern == 2) { PointF axis = Normalize(Sub(player, e.Pos), new PointF(1, 0)); PointF side = new(-axis.Y, axis.X); e.Target = Add(e.Pos, Scale(axis, 920)); e.Target2Start = Add(player, Scale(side, -460)); e.Target2 = Add(player, Scale(side, 460)); e.Windup = e.WindupMax = windup; GameAudio.Play(GameAudio.Cue.BossWarning); } else BeginWindup(e, aimed ? player : e.Pos, windup); e.Cooldown = e.Hp < e.MaxHp * 0.5f ? 1.25f : 2.0f; return; }
+        if (e.Boss && e.Cooldown <= 0 && (dist < 135 || (e.Kind is EnemyKind.BlindScribe or EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus))) { e.BossPattern = (e.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus) ? (e.BossPattern + 1) % 3 : 1 - e.BossPattern; bool aimed = (e.Kind == EnemyKind.BlindScribe && e.BossPattern == 1) || ((e.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden) && (e.BossPattern is 1 or 2)) || (e.Kind is EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus) && e.BossPattern is 1 or 2; float windup = e.Hp < e.MaxHp * 0.5f ? 0.52f : 0.78f; if (vigilActive && RunVigilAspect(vigilFloor) == VigilAspect.Swift) windup *= 0.8f; if (e.Kind == EnemyKind.FirstKeeper && e.BossPattern == 2) { PointF axis = Normalize(Sub(player, e.Pos), new PointF(1, 0)); PointF side = new(-axis.Y, axis.X); e.Target = Add(e.Pos, Scale(axis, 920)); e.Target2Start = Add(player, Scale(side, -460)); e.Target2 = Add(player, Scale(side, 460)); e.Windup = e.WindupMax = windup; GameAudio.Play(GameAudio.Cue.BossWarning); } else BeginWindup(e, aimed ? player : e.Pos, windup); e.Cooldown = e.Hp < e.MaxHp * 0.5f ? 1.25f : 2.0f; return; }
         if (e.Kind == EnemyKind.Mage && e.Cooldown <= 0) { BeginWindup(e, player, 0.8f); e.Cooldown = 2.2f; SeparateFromPack(e, dt); return; }
         if (dist > (e.Boss ? 40 : 30)) e.Pos = MoveEnemy(e, Scale(Normalize(offset, PointF.Empty), (e.Boss ? 55 : MeleeChaseSpeed(room, HasEliteAffix(e, EliteAffix.Swift))) * dt));
         else if (e.Cooldown <= 0) { BeginWindup(e, player, 0.45f); e.Cooldown = 1.35f; }
@@ -960,7 +976,7 @@ public sealed partial class Game : Form
     }
     private void DamageEnemy(Enemy enemy, float amount, bool critical = false)
     {
-        if (vigilActive && enemy.Boss && VigilAspectForFloor(vigilFloor) == VigilAspect.Hardened) amount *= 0.75f;
+        if (vigilActive && enemy.Boss && RunVigilAspect(vigilFloor) == VigilAspect.Hardened) amount *= 0.75f;
         enemy.Hp -= amount;
         if (amount <= 0) return;
         string value = Math.Max(1, (int)Math.Round(amount)).ToString();
@@ -999,7 +1015,7 @@ public sealed partial class Game : Form
     {
         GameAudio.Play(GameAudio.Cue.Impact);
         float vigilPressure = vigilActive ? 1 + Math.Min(1.5f, Math.Max(0, vigilFloor - 1) * 0.08f) : 1;
-        float aspectPressure = vigilActive && VigilAspectForFloor(vigilFloor) == VigilAspect.Hungry ? 1.3f : 1;
+        float aspectPressure = vigilActive && RunVigilAspect(vigilFloor) == VigilAspect.Hungry ? 1.3f : 1;
         if (vigilActive && HasCharm(7)) aspectPressure *= 1.1f;
         float campaignPressure = vigilActive ? 1f : DifficultyIncomingDamageMultiplier(difficultyTier);
         float damageTaken = value * vigilPressure * aspectPressure * campaignPressure * HeroDamageTakenMultiplier() * ArmorDamageTakenMultiplier() * (wardTime > 0 ? AnchorWardDamageTakenMultiplier() : 1) * (stoneBastionTime > 0 ? 0.45f : 1f) * WeaponDamageTakenMultiplier() * CharmDamageTakenMultiplier() * CombatMasteryDamageTakenMultiplier() * CombatApexDamageTakenMultiplier();
@@ -1855,7 +1871,7 @@ public sealed partial class Game : Form
     {
         using var deep = new SolidBrush(Color.FromArgb(12, 17, 24)); using var stone = new SolidBrush(Color.FromArgb(54, 63, 67));
         using var edge = new Pen(Color.FromArgb(162, 132, 157, 165), 2); using var fissure = new Pen(Color.FromArgb(170, 129, 170, 180), 3);
-        Color ringColor = vigilActive ? VigilAspectColor(vigilFloor) : Color.FromArgb(173, 193, 194);
+        Color ringColor = vigilActive ? VigilAspectColor(RunVigilAspect(vigilFloor)) : Color.FromArgb(173, 193, 194);
         using var hush = new Pen(Color.FromArgb(105, ringColor), 2); using var warning = new Pen(Color.FromArgb(220, 202, 104, 93), 3);
         g.FillRectangle(deep, 65, 108, 830, 445); g.FillRectangle(ground, 94, 132, 772, 397);
         for (int y = 0; y < 7; y++) for (int x = 0; x < 12; x++) g.DrawRectangle(tile, 70 + x * 68, 112 + y * 62, 67, 61);
@@ -1877,15 +1893,15 @@ public sealed partial class Game : Form
                 using var altar = new Pen(Color.FromArgb(180, 202, 170, 112), 3);
                 g.DrawEllipse(altar, VigilArenaAltarPosition.X - 36, VigilArenaAltarPosition.Y - 36, 72, 72);
                 g.DrawEllipse(altar, VigilArenaAltarPosition.X - 24, VigilArenaAltarPosition.Y - 24, 48, 48);
-                if (VigilAspectForFloor(vigilFloor) == VigilAspect.Chorus)
+                if (RunVigilAspect(vigilFloor) == VigilAspect.Chorus)
                 {
                     using var driftingEcho = new Pen(Color.FromArgb(135, 194, 133, 222), 3);
                     for (int i = 0; i < 3; i++) { float angle = windupPulse * 0.42f + i * MathF.PI * 2 / 3; float x = 480 + MathF.Cos(angle) * 222, y = 330 + MathF.Sin(angle) * 148; g.DrawEllipse(driftingEcho, x - 9, y - 9, 18, 18); }
                 }
-                if (VigilAspectForFloor(vigilFloor) == VigilAspect.Counterflow)
+                if (RunVigilAspect(vigilFloor) == VigilAspect.Counterflow)
                 {
                     bool pulling = VigilTidePulling(vigilTideTime);
-                    using var current = new Pen(Color.FromArgb(185, VigilAspectColor(vigilFloor)), 3) { EndCap = LineCap.Triangle };
+                    using var current = new Pen(Color.FromArgb(185, VigilAspectColor(RunVigilAspect(vigilFloor))), 3) { EndCap = LineCap.Triangle };
                     for (int i = 0; i < 8; i++)
                     {
                         float angle = i * MathF.PI / 4 + windupPulse * 0.04f;
@@ -1895,11 +1911,11 @@ public sealed partial class Game : Form
                     }
                     float changeIn = 6f - vigilTideTime % 6f;
                     string flow = pulling ? "PUXANDO PARA O CENTRO" : "REPELINDO PARA A BORDA";
-                    Color flowColor = changeIn <= 1f && ((int)(windupPulse * 5) % 2 == 0) ? Color.PaleGoldenrod : VigilAspectColor(vigilFloor);
+                    Color flowColor = changeIn <= 1f && ((int)(windupPulse * 5) % 2 == 0) ? Color.PaleGoldenrod : VigilAspectColor(RunVigilAspect(vigilFloor));
                     DrawCentered(g, $"CORRENTE: {flow} • MUDA EM {changeIn:0.0} S", 530, new Font("Segoe UI", 9, FontStyle.Bold), flowColor);
                 }
                 DrawCentered(g, enemies.Count == 0 && drops.Count == 0 ? "E  SUBIR OU ENCERRAR A VIGÍLIA" : $"ECO DA VIGÍLIA • ANDAR {vigilFloor}", 494, new Font("Segoe UI", 9, FontStyle.Bold), Color.FromArgb(222, 202, 226));
-                DrawCentered(g, $"{VigilAspectTitle(vigilFloor)} • {VigilAspectRule(vigilFloor).ToUpperInvariant()}", 511, new Font("Segoe UI", 9, FontStyle.Bold), VigilAspectColor(vigilFloor));
+                DrawCentered(g, $"{VigilAspectTitle(RunVigilAspect(vigilFloor))} • {VigilAspectRule(RunVigilAspect(vigilFloor)).ToUpperInvariant()}", 511, new Font("Segoe UI", 9, FontStyle.Bold), VigilAspectColor(RunVigilAspect(vigilFloor)));
             }
             if (!vigilActive && enemies.FirstOrDefault(e => e.Kind == EnemyKind.DeepSilence) is Enemy boss && boss.Windup > 0)
             {
