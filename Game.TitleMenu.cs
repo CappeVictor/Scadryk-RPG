@@ -227,7 +227,7 @@ public sealed partial class Game
             }
             g.FillRectangle(panel, 508, 145, 370, 412); g.DrawRectangle(panelEdge, 508, 145, 370, 412);
             DrawCentered(g, "UMA CAMPANHA, UM MUNDO EM MOVIMENTO", 169, new Font("Georgia", 13, FontStyle.Bold), Color.FromArgb(230, 193, 129));
-            DrawCentered(g, "43 áreas • 18 capítulos • 20 chefes", 208, new Font("Segoe UI", 11, FontStyle.Bold), Color.FromArgb(225, 220, 204));
+            DrawCentered(g, $"{roomNames.Length} áreas • 18 capítulos • expedição opcional", 208, new Font("Segoe UI", 11, FontStyle.Bold), Color.FromArgb(225, 220, 204));
             using var routeLine = new Pen(Color.FromArgb(106, 95, 68), 3);
             g.DrawLine(routeLine, 553, 274, 553, 454);
             string[] stops = { "A cripta sob Véspera", "O Rio Cego e o Lume", "O mapa de Nara", "Rotas além do refúgio", "O destino das vozes" };
@@ -317,7 +317,7 @@ public sealed partial class Game
         SaveData? save = TitleSavePreview();
         long known = PreviewKnownRooms(save), cleared = save?.ClearedRooms ?? 0;
         DrawCentered(g, "ATLAS DA CAMPANHA", 115, new Font("Georgia", 19, FontStyle.Bold), Color.FromArgb(230, 193, 129));
-        DrawCentered(g, "43 áreas • 18 capítulos • navegue pela campanha e veja o mapa de cada etapa", 145, new Font("Segoe UI", 9, FontStyle.Bold), Color.FromArgb(196, 196, 179));
+        DrawCentered(g, $"{roomNames.Length} áreas • 18 capítulos • navegue pela campanha e veja o mapa de cada etapa", 145, new Font("Segoe UI", 9, FontStyle.Bold), Color.FromArgb(196, 196, 179));
         CampaignChapter selectedChapter = campaignChapters[Math.Clamp(titleChapterSelection, 0, campaignChapters.Length - 1)];
         string selectedState = CampaignChapterState(selectedChapter, save, known, cleared);
 

@@ -57,6 +57,7 @@ internal static class GameAudio
         10 or 11 or 12 or 13 or 14 or 15 or 16 or 17 or 19 or 20 or 23 or 24 or 27 or 28 => 4, // ecos, margens e várzea
         29 or 30 or 31 or 32 or 33 or 34 => 5, // vidro, cantoria e lanternas
         41 or 42 => 7,                         // badaladas não enviadas
+        43 => 4, 44 => 1, 45 => 2,            // margens, gruta e comportas
         >= 35 => 6,                           // rotas, silêncio e maré emprestada
         _ => 1
     };
