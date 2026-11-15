@@ -98,6 +98,8 @@ public sealed partial class Game
             g.FillEllipse(fill, center.X - radius, center.Y - radius, radius * 2, radius * 2);
             if (highContrastTelegraphs) { using var shadow = new Pen(Color.FromArgb(245, 12, 13, 15), 8); g.DrawEllipse(shadow, center.X - radius, center.Y - radius, radius * 2, radius * 2); }
             g.DrawEllipse(outline, center.X - radius, center.Y - radius, radius * 2, radius * 2);
+            if (e.NameOverride == "VIGIA DAS COMPORTAS")
+                DrawCentered(g, e.BossPattern == 0 ? "ONDA" : "MARCA", center.Y - radius - 18, new Font("Segoe UI", 9, FontStyle.Bold), highContrastTelegraphs ? Color.White : Color.FromArgb(255, 211, 163), center.X);
             return;
         }
         float width = e.Kind == EnemyKind.FirstKeeper ? 25 : 24;
