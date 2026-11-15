@@ -117,8 +117,8 @@ public sealed partial class Game
         if (enemies.Count > 0) { notice = "DERROTE OS ECOS PRÓXIMOS"; noticeTime = 2; return; }
         if (room == 44 && !firstEchoCaveFound)
         {
-            firstEchoCaveFound = true; gold += 45; potions++;
-            ShowMemory("REGISTRO ENTRE RAÍZES", "Ivara deixou provisões e um registro: os marcos foram erguidos para oferecer abrigo. Você encontrou 45 de ouro e uma poção.");
+            firstEchoCaveFound = true; gold += 45; potions++; AddXp(20);
+            ShowMemory("REGISTRO ENTRE RAÍZES", "Ivara deixou provisões e um registro: os marcos foram erguidos para oferecer abrigo. Você encontrou 45 de ouro, uma poção e 20 de experiência.");
         }
         else if (room == 45 && firstEchoQuest == 1)
         {
