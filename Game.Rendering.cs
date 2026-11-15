@@ -1015,6 +1015,7 @@ public sealed partial class Game
 
     private void DrawMapOverlay(Graphics g)
     {
+        if (room == 43) { DrawFirstEchoMap(g); return; }
         using var shade = new SolidBrush(Color.FromArgb(225, 5, 7, 9));
         using var panel = new SolidBrush(Color.FromArgb(248, 15, 17, 18));
         using var border = new Pen(Color.FromArgb(190, 143, 112, 73), 2);

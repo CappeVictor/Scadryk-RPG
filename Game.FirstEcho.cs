@@ -105,6 +105,30 @@ public sealed partial class Game
         if (player.X < 180) g.DrawString("E  VOLTAR ÀS MARGENS", font, Brushes.AntiqueWhite, 90, 380);
         if (Distance(player, new PointF(760, 330)) < 100) g.DrawString("E  EXAMINAR", font, Brushes.AntiqueWhite, 700, 390);
     }
+
+    private void DrawFirstEchoMap(Graphics g)
+    {
+        using var shade = new SolidBrush(Color.FromArgb(240, 13, 18, 17));
+        using var road = new Pen(Color.FromArgb(174, 150, 105), 4);
+        using var font = new Font("Segoe UI", 10, FontStyle.Bold);
+        using var titleFont = new Font("Georgia", 18, FontStyle.Bold);
+        g.FillRectangle(shade, 35, 95, 890, 500);
+        g.DrawString("MARGENS DO PRIMEIRO ECO", titleFont, Brushes.Goldenrod, 260, 115);
+        PointF Map(PointF p) => new(100 + p.X * 0.31f, 175 + p.Y * 0.25f);
+        PointF[] main = { FirstEchoTownGate, FirstEchoCrossroads, FirstEchoSluice };
+        PointF[] north = { FirstEchoCrossroads, FirstEchoCave };
+        PointF[] south = { FirstEchoCrossroads, new(1400, 1050), new(1900, 1050), FirstEchoSluice };
+        foreach (PointF[] path in new[] { main, north, south }) g.DrawLines(road, path.Select(Map).ToArray());
+        foreach (var landmark in new[] { (FirstEchoTownGate, "VÉSPERA"), (FirstEchoCrossroads, "IVARA"), (FirstEchoCave, "GRUTA"), (FirstEchoSluice, "COMPORTAS") })
+        {
+            PointF p = Map(landmark.Item1);
+            g.FillEllipse(Brushes.Goldenrod, p.X - 5, p.Y - 5, 10, 10);
+            g.DrawString(landmark.Item2, font, Brushes.AntiqueWhite, p.X - 28, p.Y - 27);
+        }
+        PointF here = Map(player);
+        g.FillEllipse(Brushes.LightGreen, here.X - 7, here.Y - 7, 14, 14);
+        g.DrawString("VERDE: VOCÊ  •  M/ESC: FECHAR", font, Brushes.AntiqueWhite, 280, 555);
+    }
     // Water blocks passage except at the two bridges, with enough clearance
     // for both the player and the larger enemies.
     private static readonly RectangleF[] FirstEchoWalls =
