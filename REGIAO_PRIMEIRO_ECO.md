@@ -6,7 +6,7 @@ Proposta de expansão para a primeira jornada a partir de Véspera. A região de
 
 O código já conecta Véspera às Margens contínuas e aos dois interiores. Ivara orienta a missão; a gruta contém um registro opcional; o Vigia protege o mecanismo das comportas; Edda recebe o relato. O save guarda a missão e as descobertas, retomando em Véspera quando for feito na região. O mapa regional indica posição, destino e saque deixado durante a sessão.
 
-A navegação, a leitura visual, o ritmo dos encontros e o equilíbrio das recompensas ainda precisam ser observados em uma partida. O Vigia usa a base visual do Guardião da cripta; ele tem nome e ataque próprios, e ainda precisa de arte própria. A região é uma primeira etapa da expansão e não representa todo o escopo de um ARPG da escala desejada.
+A navegação, a leitura visual, o ritmo dos encontros e o equilíbrio das recompensas ainda precisam ser observados em uma partida. O Vigia tem uma silhueta desenhada em código e ataques próprios; sua arte e animações ainda precisam de refinamento. A região é uma primeira etapa da expansão e não representa todo o escopo de um ARPG da escala desejada.
 
 ## Percurso
 

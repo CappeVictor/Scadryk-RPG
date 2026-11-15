@@ -771,7 +771,9 @@ public sealed partial class Game
         if (!individualSpriteLoaded && !bossSprite && enemySpriteRow >= 0 && attackFrame >= 0)
             enemySprites = EnemyAttackSpriteSheet.Value ?? enemySprites;
         float spriteHeight = individualSpriteLoaded ? enemy.Kind switch { EnemyKind.Elite => 118, EnemyKind.EmberWisp => 72, EnemyKind.MudCantor => 86, EnemyKind.NameMoth => 84, EnemyKind.PaperWraith => 86, EnemyKind.SaltEcho => 82, _ => 80 } : bossSprite ? 132 : enemy.Kind == EnemyKind.Elite ? 82 : 70;
-        if (spriteRow >= 0 && enemySprites is not null)
+        if (enemy.NameOverride == "VIGIA DAS COMPORTAS")
+            DrawSluiceWarden(g, enemy);
+        else if (spriteRow >= 0 && enemySprites is not null)
         {
             float cellWidth = individualSpriteLoaded ? enemySprites.Width : enemySprites.Width / 4f, cellHeight = individualSpriteLoaded ? enemySprites.Height : enemySprites.Height / 4f;
             float windupProgress = enemy.WindupMax > 0 && enemy.Windup > 0 ? Math.Clamp(1f - enemy.Windup / enemy.WindupMax, 0f, 1f) : enemy.AttackPoseTime > 0 ? 1f : 0f;
