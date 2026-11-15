@@ -58,7 +58,10 @@ public sealed partial class Game
         g.DrawString(firstEchoArea ? (firstEchoQuest == 3 ? "Expedição concluída com Edda" : firstEchoQuest == 2 ? "Vozes livres: relate a Edda" : "Comportas: vozes retidas") : $"Câmaras limpas: {clearedCombatRooms}/{totalCombatRooms}", detailFont, Brushes.AntiqueWhite, 466, 409);
         g.DrawString(firstEchoArea ? (firstEchoCaveFound ? "Gruta: registro encontrado" : "Gruta: registro ainda não encontrado") : $"Inscrições opcionais: {inscriptionCount}/2", detailFont, Brushes.AntiqueWhite, 466, 435);
         g.DrawString($"Ecos nesta área: {enemies.Count}   •   Saques no chão: {drops.Count}", metaFont, Brushes.LightGray, 466, 461);
-        g.DrawString($"Ressonância {difficultyTier} • {DifficultyTierName(difficultyTier)}", resonanceFont, Brushes.Orange, 466, 489);
+        if (room == 3 && firstEchoQuest is 1 or 2)
+            g.DrawString(firstEchoQuest == 1 ? "Margens: siga às comportas" : "Margens: relate a Edda", resonanceFont, Brushes.Goldenrod, 466, 489);
+        else
+            g.DrawString($"Ressonância {difficultyTier} • {DifficultyTierName(difficultyTier)}", resonanceFont, Brushes.Orange, 466, 489);
         DrawCentered(g, "L / ESC FECHA • CLIQUE FECHA • M ABRE O MAPA", 546, new Font("Segoe UI", 9, FontStyle.Bold), Color.FromArgb(167, 173, 163));
     }
 }
