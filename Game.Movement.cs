@@ -32,18 +32,39 @@ public sealed partial class Game
     private PointF InteriorDetour(Enemy enemy)
     {
         float margin = enemy.Radius + 12;
-        PointF best = enemy.Pos; float bestCost = float.MaxValue;
+        var nodes = new System.Collections.Generic.List<PointF> { enemy.Pos, player };
         foreach (RectangleF wall in CurrentRoomWalls())
         {
             PointF[] corners = { new(wall.Left - margin, wall.Top - margin), new(wall.Right + margin, wall.Top - margin), new(wall.Left - margin, wall.Bottom + margin), new(wall.Right + margin, wall.Bottom + margin) };
             foreach (PointF corner in corners)
+                if (corner.X >= 85 && corner.X <= 875 && corner.Y >= 128 && corner.Y <= 533 && !Blocked(corner, enemy.Radius)) nodes.Add(corner);
+        }
+        float[] distance = Enumerable.Repeat(float.PositiveInfinity, nodes.Count).ToArray();
+        int[] previous = Enumerable.Repeat(-1, nodes.Count).ToArray();
+        bool[] visited = new bool[nodes.Count]; distance[0] = 0;
+        for (int pass = 0; pass < nodes.Count; pass++)
+        {
+            int current = -1;
+            for (int i = 0; i < nodes.Count; i++) if (!visited[i] && (current < 0 || distance[i] < distance[current])) current = i;
+            if (current < 0 || float.IsPositiveInfinity(distance[current]) || current == 1) break;
+            visited[current] = true;
+            for (int next = 1; next < nodes.Count; next++)
             {
-                if (corner.X < 85 || corner.X > 875 || corner.Y < 128 || corner.Y > 533 || Distance(enemy.Pos, corner) < 8 || Blocked(corner, enemy.Radius) || BlockedLine(enemy.Pos, corner)) continue;
-                float cost = Distance(enemy.Pos, corner) + Distance(corner, player) + (BlockedLine(corner, player) ? 1000 : 0);
-                if (cost < bestCost) { bestCost = cost; best = corner; }
+                if (visited[next] || BlockedEnemyPath(nodes[current], nodes[next], enemy.Radius)) continue;
+                float cost = distance[current] + Distance(nodes[current], nodes[next]);
+                if (cost < distance[next]) { distance[next] = cost; previous[next] = current; }
             }
         }
-        return best;
+        if (previous[1] < 0) return enemy.Pos;
+        int step = 1;
+        while (previous[step] > 0) step = previous[step];
+        return nodes[step];
+    }
+    private bool BlockedEnemyPath(PointF a, PointF b, float radius)
+    {
+        int steps = Math.Max(1, (int)(Distance(a, b) / 6));
+        for (int i = 0; i <= steps; i++) { float t = i / (float)steps; if (Blocked(new PointF(a.X + (b.X - a.X) * t, a.Y + (b.Y - a.Y) * t), radius)) return true; }
+        return false;
     }
     private bool BlockedLine(PointF a, PointF b)
     {
