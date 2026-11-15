@@ -291,7 +291,7 @@ public sealed partial class Game : Form
         armor = armorOn = relic = relicOn = archiveSeal = riverBell = lumeLens = naraTrace = chorusMemory = firstMemory = westTrace = upstreamTrace = beyondTrace = ebbSeal = counterTrace = anchorWard = refrainSong = riftVerse = deepTrace = lanternSignal = beaconLight = routeMemory = silenceMemory = inventoryOpen = skillMenuOpen = characterSheetOpen = mapOpen = journalOpen = dead = victory = chestChoice = talentChoice = memoryOverlay = endingChoiceOpen = forgeMenuOpen = defenseForgeOpen = secondaryForgeOpen = vigilActive = vigilChoiceOpen = classSelectionOpen = false;
         armorTrait = relicTrait = 0;
         borrowedTrace = unstruckTrace = false;
-        firstEchoQuest = 0; firstEchoCaveFound = false;
+        firstEchoQuest = 0; firstEchoCaveFound = false; firstEchoWaitingEnemies.Clear(); firstEchoWaitingDrops.Clear();
         finalEnding = 0;
         vigilBestFloor = vigilFloor = 0;
         townEnding = 0;

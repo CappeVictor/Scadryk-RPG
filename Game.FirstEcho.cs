@@ -1,12 +1,15 @@
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
+using System.Collections.Generic;
 
 public sealed partial class Game
 {
     // 0: undiscovered, 1: investigate, 2: voices released, 3: reported to Edda.
     private int firstEchoQuest;
     private bool firstEchoCaveFound;
+    private readonly List<Enemy> firstEchoWaitingEnemies = new();
+    private readonly List<Drop> firstEchoWaitingDrops = new();
     // World-space geometry for the future continuous route from Véspera.
     private static readonly SizeF FirstEchoSize = new(2400, 1400);
     private static readonly PointF FirstEchoTownGate = new(120, 700);
@@ -50,13 +53,20 @@ public sealed partial class Game
         }
         else if (Distance(player, FirstEchoCave) < 90)
         {
-            room = 44; SetupRoom(); ShowMemory("GRUTA DAS RAÍZES", "A trilha desce sob as raízes. Um antigo abrigo permanece no fundo da gruta.");
+            EnterFirstEchoInterior(44); ShowMemory("GRUTA DAS RAÍZES", "A trilha desce sob as raízes. Um antigo abrigo permanece no fundo da gruta.");
         }
         else if (Distance(player, FirstEchoSluice) < 90)
         {
             if (firstEchoQuest == 0) ShowMemory("CASA DAS COMPORTAS", "As marcas no mecanismo são desconhecidas. Ivara, na encruzilhada, pode ajudar a decifrá-las.");
-            else { room = 45; SetupRoom(); ShowMemory("CASA DAS COMPORTAS", "O som das vozes vem do mecanismo no fundo da casa."); }
+            else { EnterFirstEchoInterior(45); ShowMemory("CASA DAS COMPORTAS", "O som das vozes vem do mecanismo no fundo da casa."); }
         }
+    }
+
+    private void EnterFirstEchoInterior(int destination)
+    {
+        firstEchoWaitingEnemies.Clear(); firstEchoWaitingEnemies.AddRange(enemies);
+        firstEchoWaitingDrops.Clear(); firstEchoWaitingDrops.AddRange(drops);
+        room = destination; SetupRoom();
     }
 
     private void SetupFirstEchoInterior()
@@ -78,7 +88,12 @@ public sealed partial class Game
         if (item is not null) { GameAudio.Play(GameAudio.Cue.Loot); Collect(item); return; }
         if (player.X < 180)
         {
-            bool cave = room == 44; room = 43; SetupRoom(); player = cave ? new PointF(1050, 340) : new PointF(2150, 700); return;
+            if (drops.Count > 0) { notice = "RECOLHA O SAQUE ANTES DE SAIR"; noticeTime = 2; return; }
+            bool cave = room == 44; room = 43; SetupRoom();
+            enemies.Clear(); enemies.AddRange(firstEchoWaitingEnemies);
+            drops.Clear(); drops.AddRange(firstEchoWaitingDrops);
+            firstEchoWaitingEnemies.Clear(); firstEchoWaitingDrops.Clear();
+            player = cave ? new PointF(1050, 340) : new PointF(2150, 700); return;
         }
         if (Distance(player, new PointF(760, 330)) > 100) return;
         if (enemies.Count > 0) { notice = "DERROTE OS ECOS PRÓXIMOS"; noticeTime = 2; return; }
