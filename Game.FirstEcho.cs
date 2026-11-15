@@ -20,6 +20,7 @@ public sealed partial class Game
     private static readonly PointF FirstEchoSluice = new(2250, 700);
     private static readonly PointF FirstEchoIvara = new(860, 590);
     private static readonly PointF FirstEchoReedCache = new(1950, 1170);
+    private static readonly PointF FirstEchoRoadSign = new(540, 800);
     private static readonly RectangleF[] FirstEchoCaveWalls = { new(285, 145, 70, 95), new(440, 395, 85, 105), new(610, 145, 70, 80) };
     private static readonly RectangleF[] FirstEchoSluiceWalls = { new(300, 145, 45, 120), new(300, 395, 45, 110), new(555, 145, 45, 95), new(555, 405, 45, 95) };
     private static readonly (PointF Position, EnemyKind Kind)[] FirstEchoEncounters =
@@ -76,6 +77,8 @@ public sealed partial class Game
             }
             else ShowMemory("CAIXA DOS JUNCAIS", "O bilhete continua preso à caixa para orientar outros viajantes.");
         }
+        else if (Distance(player, FirstEchoRoadSign) < 75)
+            ShowMemory("MARCO DA ESTRADA", firstEchoQuest >= 2 ? "A pedra responde ao toque com uma voz suave: ‘Abrigo adiante. Nenhum nome será pedido.’ A marca de Ivara aponta para a encruzilhada." : "As letras dizem: ‘Abrigo adiante. Nenhum nome será pedido.’ O marco deveria responder aos viajantes, mas permanece silencioso. Uma seta aponta para a encruzilhada.");
         else if (Distance(player, FirstEchoSluice) < 90)
         {
             if (firstEchoQuest == 0) ShowMemory("CASA DAS COMPORTAS", "As marcas no mecanismo são desconhecidas. Ivara, na encruzilhada, pode ajudar a decifrá-las.");
@@ -324,6 +327,10 @@ public sealed partial class Game
         g.DrawString("ENCRUZILHADA DOS MARCOS", font, label, 760, 610);
         g.DrawString("GRUTA DAS RAÍZES", font, label, 975, 170);
         g.DrawString("CASA DAS COMPORTAS", font, label, 2100, 620);
+        using var sign = new SolidBrush(Color.FromArgb(109, 101, 78));
+        g.FillRectangle(sign, FirstEchoRoadSign.X - 10, FirstEchoRoadSign.Y - 22, 20, 40);
+        g.DrawRectangle(edge, FirstEchoRoadSign.X - 10, FirstEchoRoadSign.Y - 22, 20, 40);
+        if (Distance(player, FirstEchoRoadSign) < 75) g.DrawString("E  LER", font, label, FirstEchoRoadSign.X - 35, FirstEchoRoadSign.Y + 25);
         using var cache = new SolidBrush(Color.FromArgb(121, 87, 57));
         g.FillRectangle(cache, FirstEchoReedCache.X - 14, FirstEchoReedCache.Y - 9, 28, 18);
         g.DrawRectangle(edge, FirstEchoReedCache.X - 14, FirstEchoReedCache.Y - 9, 28, 18);
