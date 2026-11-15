@@ -1375,6 +1375,28 @@ public sealed partial class Game
             if (secondary.HasValue) validSecondary = Enum.IsDefined(secondary.Value) && secondary.Value != roomElites[0].EliteAffix && (secondary.Value is EliteAffix.Armored or EliteAffix.Swift or EliteAffix.Bloodbound) && !(roomElites[0].EliteAffix == EliteAffix.Spearbound && secondary.Value == EliteAffix.Swift);
             if (roomElites.Length != 1 || roomElites[0].MaxHp != 120 + (eliteRoom - 1) * 6 || !Enum.IsDefined(roomElites[0].EliteAffix) || secondary.HasValue != (eliteRoom >= 25) || !validSecondary || roomElites[0].Armored != HasEliteAffix(roomElites[0], EliteAffix.Armored)) throw new InvalidOperationException($"A rota avançada {eliteRoom} não recebeu as combinações de afixos e a vida escalada esperadas.");
         }
-        Console.WriteLine("TESTES OK: campanha e expedições até o Capítulo XVIII, padrões do Afinador do Contratempo, poses próprias dos ecos, expedição opcional, combinações de afixos de elite, Arquivista das Marés, epílogos, Vigília Ascendente, quatro marcos de especialização, chefes, combate, loot, progressão e compatibilidade de saves antigos."); return 0;
+        using (var field = new Game())
+        {
+            field.timer.Stop(); field.StartGame(); field.storyOverlay = false; field.room = 3; field.SetupRoom();
+            field.player = new PointF(860, 330); field.Interact(); field.memoryOverlay = false;
+            if (field.room != 43 || field.enemies.Count == 0) throw new InvalidOperationException("A saída de Véspera não abriu as Margens com encontros.");
+            field.player = FirstEchoIvara; field.Interact(); field.memoryOverlay = false;
+            if (field.firstEchoQuest != 1) throw new InvalidOperationException("Ivara não iniciou a investigação.");
+            int outdoorCount = field.enemies.Count;
+            field.player = FirstEchoCave; field.Interact(); field.memoryOverlay = false;
+            if (field.room != 44) throw new InvalidOperationException("A gruta não abriu.");
+            field.enemies.Clear(); field.player = new PointF(760, 330); field.Interact(); field.memoryOverlay = false;
+            if (!field.firstEchoCaveFound) throw new InvalidOperationException("O registro da gruta não foi reconhecido.");
+            field.player = new PointF(150, 330); field.Interact();
+            if (field.room != 43 || field.enemies.Count != outdoorCount) throw new InvalidOperationException("O retorno da gruta não preservou os encontros das Margens.");
+            field.player = FirstEchoSluice; field.Interact(); field.memoryOverlay = false; field.enemies.Clear();
+            field.player = new PointF(760, 330); field.Interact(); field.memoryOverlay = false;
+            if (field.firstEchoQuest != 2) throw new InvalidOperationException("As comportas não libertaram as vozes.");
+            field.player = new PointF(150, 330); field.Interact(); field.player = FirstEchoTownGate; field.Interact(); field.memoryOverlay = false;
+            field.player = BellKeeperPosition; field.Interact();
+            SaveData expeditionSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(field.CaptureSaveData()))!;
+            if (field.firstEchoQuest != 3 || !expeditionSave.FirstEchoCaveFound || expeditionSave.FirstEchoDiscovered != 7 || !ValidSaveData(expeditionSave)) throw new InvalidOperationException("A expedição não concluiu ou não preservou suas descobertas no save.");
+        }
+        Console.WriteLine("TESTES OK: campanha e expedições, incluindo as Margens do Primeiro Eco, combate, loot, progressão e compatibilidade de saves antigos."); return 0;
     }
 }
