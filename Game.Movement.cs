@@ -29,6 +29,22 @@ public sealed partial class Game
         43 => FirstEchoWalls, 44 => FirstEchoCaveWalls, 45 => FirstEchoSluiceWalls, _ => Walls
     };
     private bool Blocked(PointF p, float radius = 12) { RectangleF body = new(p.X - radius, p.Y - radius, radius * 2, radius * 2); return CurrentRoomWalls().Any(w => w.IntersectsWith(body)); }
+    private PointF InteriorDetour(Enemy enemy)
+    {
+        float margin = enemy.Radius + 12;
+        PointF best = enemy.Pos; float bestCost = float.MaxValue;
+        foreach (RectangleF wall in CurrentRoomWalls())
+        {
+            PointF[] corners = { new(wall.Left - margin, wall.Top - margin), new(wall.Right + margin, wall.Top - margin), new(wall.Left - margin, wall.Bottom + margin), new(wall.Right + margin, wall.Bottom + margin) };
+            foreach (PointF corner in corners)
+            {
+                if (corner.X < 85 || corner.X > 875 || corner.Y < 128 || corner.Y > 533 || Blocked(corner, enemy.Radius) || BlockedLine(enemy.Pos, corner)) continue;
+                float cost = Distance(enemy.Pos, corner) + Distance(corner, player);
+                if (cost < bestCost) { bestCost = cost; best = corner; }
+            }
+        }
+        return best;
+    }
     private bool BlockedLine(PointF a, PointF b)
     {
         int steps = Math.Max(1, (int)(Distance(a, b) / 6));

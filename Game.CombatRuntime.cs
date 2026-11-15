@@ -164,6 +164,12 @@ public sealed partial class Game
             else if (e.Cooldown <= 0) { BeginWindup(e, player, 1.05f); e.Cooldown = 3.25f; }
             SeparateFromPack(e, dt); return;
         }
+        if (room is 44 or 45 && BlockedLine(e.Pos, player))
+        {
+            PointF waypoint = InteriorDetour(e);
+            e.Pos = MoveEnemy(e, Scale(Normalize(Sub(waypoint, e.Pos), PointF.Empty), 70 * dt));
+            return;
+        }
         if (e.Kind == EnemyKind.SlagWeaver)
         {
             if (dist < 185) e.Pos = MoveEnemy(e, Scale(Normalize(Sub(e.Pos, player), PointF.Empty), 54 * dt));
