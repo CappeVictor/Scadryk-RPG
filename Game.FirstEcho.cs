@@ -148,9 +148,13 @@ public sealed partial class Game
     // for both the player and the larger enemies.
     private static readonly RectangleF[] FirstEchoWalls =
     {
-        new(1660, 0, 160, 620),
-        new(1660, 780, 160, 190),
-        new(1660, 1130, 160, 270)
+        new(1660, 0, 160, 640),
+        new(1660, 760, 160, 230),
+        new(1660, 1110, 160, 290),
+        new(693, 110, 14, 40), new(783, 200, 14, 40),
+        new(933, 110, 14, 40), new(1163, 120, 14, 40),
+        new(1313, 260, 14, 40), new(743, 350, 14, 40),
+        new(1273, 390, 14, 40), new(2180, 495, 150, 100)
     };
 
     private void DrawFirstEchoEnvironment(Graphics g)
