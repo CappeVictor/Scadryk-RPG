@@ -52,7 +52,7 @@ public sealed class Game : Form
         public int[] WeaponRarities { get; set; } = new int[4];
         public int[] WeaponAffixes { get; set; } = new int[4];
         public int[] WeaponAffixes2 { get; set; } = new int[4];
-        public int[] EquippedSkills { get; set; } = new[] { 1, 0, 0 };
+        public int[] EquippedSkills { get; set; } = new[] { 1, 0, 0, 0 };
         public int[] SkillVariants { get; set; } = new int[9];
         public bool Armor { get; set; }
         public bool Relic { get; set; }
@@ -257,7 +257,7 @@ public sealed class Game : Form
     private bool chorusMemory, firstMemory, westTrace, upstreamTrace, forgeMenuOpen, defenseForgeOpen, secondaryForgeOpen;
     private bool beyondTrace, ebbSeal, counterTrace, anchorWard, refrainSong, riftVerse, deepTrace, lanternSignal, beaconLight, routeMemory;
     private int ownedCharms, equippedCharm, equippedCharm2;
-    private int[] equippedSkills = { 1, 0, 0 };
+    private int[] equippedSkills = { 1, 0, 0, 0 };
     private int[] skillVariants = new int[9];
     private bool archiveSeal;
     private bool riverBell;
@@ -307,7 +307,7 @@ public sealed class Game : Form
         healthTalent = skillTalent = dodgeTalent = techniqueTalent = combatDiscipline = combatMastery = combatFocus = combatApex = pendingTalents = enemiesDefeated = memoriesFound = questStage = tideGlass = eliteWeaponMisses = 0;
         clearedRooms = 0;
         ownedCharms = equippedCharm = equippedCharm2 = 0;
-        equippedSkills = new[] { 1, 0, 0 }; Array.Clear(skillVariants); skillMenuOpen = false; skillMenuSlot = 0;
+        equippedSkills = new[] { 1, 0, 0, 0 }; Array.Clear(skillVariants); skillMenuOpen = false; skillMenuSlot = 0;
         health = maxHealth = 100; attackCd = attackFlash = skillCd = shardCd = bellCd = bellWaveTime = bellWaveRadius = pullCd = pullWaveTime = wardCd = wardTime = refrainCd = refrainWaveTime = refrainWaveRadius = beaconCd = beaconTime = beaconPulseCd = beaconWaveTime = returnVoiceCd = returnVoiceWaveTime = returnVoiceWaveRadius = finalStrikeCd = finalStrikeFlash = dashCd = dashTime = invulnerable = veinResonanceTime = 0; vigilMinionCooldown = vigilTideTime = 0; beaconPos = finalStrikeTarget = PointF.Empty; facing = mouseAim = dashDirection = new PointF(1, 0); playerAnimationTime = 0; echoShards.Clear(); floatingTexts.Clear(); title = false; storyPage = 0; storyOverlay = true; SetupRoom();
     }
 
@@ -519,7 +519,7 @@ public sealed class Game : Form
         if (skillMenuOpen)
         {
             if (e.KeyCode == Keys.Escape || e.KeyCode == Keys.B) { skillMenuOpen = false; return; }
-            if (e.KeyCode is Keys.F or Keys.V or Keys.G) { skillMenuSlot = e.KeyCode == Keys.F ? 0 : e.KeyCode == Keys.V ? 1 : 2; return; }
+            if (e.KeyCode is Keys.F or Keys.V or Keys.G or Keys.C) { skillMenuSlot = e.KeyCode switch { Keys.F => 0, Keys.V => 1, Keys.G => 2, _ => 3 }; return; }
             if (e.KeyCode is Keys.Up or Keys.Right) { CycleSkillVariant(skillMenuSlot, 1); return; }
             if (e.KeyCode is Keys.Down or Keys.Left) { CycleSkillVariant(skillMenuSlot, -1); return; }
             if (e.KeyCode == Keys.Back) { equippedSkills[skillMenuSlot] = 0; return; }
@@ -542,6 +542,7 @@ public sealed class Game : Form
         else if (e.KeyCode == Keys.F) CastEquippedSkill(0);
         else if (e.KeyCode == Keys.V) CastEquippedSkill(1);
         else if (e.KeyCode == Keys.G) CastEquippedSkill(2);
+        else if (e.KeyCode == Keys.C) CastEquippedSkill(3);
         else if (e.KeyCode == Keys.Q) UsePotion();
         else if (e.KeyCode == Keys.E) Interact();
         else if (e.KeyCode == Keys.X) SalvageNearbyWeapon();
@@ -786,9 +787,10 @@ public sealed class Game : Form
     }
     private static bool ValidSkillLoadout(SaveData s)
     {
-        if (s.EquippedSkills is null || s.EquippedSkills.Length != 3 || s.EquippedSkills.Any(skill => skill is < 0 or > 8) || s.EquippedSkills.Where(skill => skill != 0).Distinct().Count() != s.EquippedSkills.Count(skill => skill != 0)) return false;
+        if (s.EquippedSkills is null || s.EquippedSkills.Length is not (3 or 4) || s.EquippedSkills.Any(skill => skill is < 0 or > 8) || s.EquippedSkills.Where(skill => skill != 0).Distinct().Count() != s.EquippedSkills.Count(skill => skill != 0)) return false;
         return s.EquippedSkills.All(skill => skill == 0 || skill switch { 1 => true, 2 => s.RiverBell, 3 => s.EbbSeal, 4 => s.AnchorWard || s.QuestStage >= 36, 5 => s.RefrainSong, 6 => s.BeaconLight, 7 => s.FinalEnding == 1, 8 => s.FinalEnding == 2, _ => false });
     }
+    private static int[] NormalizeSkillLoadout(int[] skills) => skills.Length == 3 ? skills.Append(0).ToArray() : skills.ToArray();
 
     private float SkillDamageVariant(int skill) => (skill, skillVariants[skill]) switch { (1, 1) => 1.25f, (1, 2) => 0.85f, (2, 1) => 0.85f, (2, 2) => 1.25f, (3, 1) => 0.85f, (3, 2) => 1.15f, (5, 1) => 0.85f, (5, 2) => 1.25f, (6, 1) => 0.85f, (7, 1) => 0.8f, (7, 2) => 1.25f, (8, 1) => 1.3f, (8, 2) => 0.85f, _ => 1f };
     private float BellPulseRadius() => (HasCharm(2) ? 190f : 155f) * (skillVariants[2] == 1 ? 1.25f : skillVariants[2] == 2 ? 0.85f : 1f);
@@ -1988,7 +1990,7 @@ public sealed class Game : Form
 
 
             if (!ValidSaveData(s)) throw new InvalidDataException();
-            StartGame(); room = s.Room; level = s.Level; xp = s.Xp; gold = s.Gold; potions = s.Potions; damage = s.Damage; health = s.Health; maxHealth = s.MaxHealth; weapon = s.Weapon; ownedWeapons = s.OwnedWeapons; RestoreWeaponData(s); armor = s.Armor; relic = s.Relic; armorTrait = s.ArmorTrait; relicTrait = s.RelicTrait; healthTalent = s.HealthTalent; skillTalent = s.SkillTalent; dodgeTalent = s.DodgeTalent; techniqueTalent = s.TechniqueTalent; combatDiscipline = CombatDisciplineForSave(s); combatMastery = CombatMasteryForSave(s); combatFocus = s.CombatFocus; combatApex = s.CombatApex; memoriesFound = s.MemoriesFound; questStage = s.QuestStage; clearedRooms = s.ClearedRooms | (s.RoomCleared && s.Room != 3 ? 1L << s.Room : 0); archiveSeal = s.ArchiveSeal; riverBell = s.RiverBell; lumeLens = s.LumeLens; naraTrace = s.NaraTrace; chorusMemory = s.ChorusMemory; firstMemory = s.FirstMemory; westTrace = s.WestTrace; upstreamTrace = s.UpstreamTrace; tideGlass = s.TideGlass; beyondTrace = s.BeyondTrace; ebbSeal = s.EbbSeal; counterTrace = s.CounterTrace; anchorWard = s.AnchorWard || s.QuestStage >= 36; riftVerse = s.RiftVerse; deepTrace = s.DeepTrace; lanternSignal = s.LanternSignal; beaconLight = s.BeaconLight; routeMemory = s.RouteMemory; silenceMemory = s.SilenceMemory; borrowedTrace = s.BorrowedTrace; unstruckTrace = s.UnstruckTrace; finalEnding = s.FinalEnding; difficultyTier = s.DifficultyTier; vigilBestFloor = s.VigilBestFloor; highContrastTelegraphs = s.HighContrastTelegraphs; eliteWeaponMisses = s.EliteWeaponMisses; refrainSong = s.RefrainSong; ownedCharms = s.OwnedCharms; equippedCharm = s.EquippedCharm; equippedCharm2 = s.EquippedCharm2; equippedSkills = s.EquippedSkills.ToArray(); Array.Copy(s.SkillVariants, skillVariants, skillVariants.Length); townEnding = s.TownEnding; SetupRoom(); if (s.RoomCleared) enemies.Clear(); victory = s.Completed; title = false; storyOverlay = false;
+            StartGame(); room = s.Room; level = s.Level; xp = s.Xp; gold = s.Gold; potions = s.Potions; damage = s.Damage; health = s.Health; maxHealth = s.MaxHealth; weapon = s.Weapon; ownedWeapons = s.OwnedWeapons; RestoreWeaponData(s); armor = s.Armor; relic = s.Relic; armorTrait = s.ArmorTrait; relicTrait = s.RelicTrait; healthTalent = s.HealthTalent; skillTalent = s.SkillTalent; dodgeTalent = s.DodgeTalent; techniqueTalent = s.TechniqueTalent; combatDiscipline = CombatDisciplineForSave(s); combatMastery = CombatMasteryForSave(s); combatFocus = s.CombatFocus; combatApex = s.CombatApex; memoriesFound = s.MemoriesFound; questStage = s.QuestStage; clearedRooms = s.ClearedRooms | (s.RoomCleared && s.Room != 3 ? 1L << s.Room : 0); archiveSeal = s.ArchiveSeal; riverBell = s.RiverBell; lumeLens = s.LumeLens; naraTrace = s.NaraTrace; chorusMemory = s.ChorusMemory; firstMemory = s.FirstMemory; westTrace = s.WestTrace; upstreamTrace = s.UpstreamTrace; tideGlass = s.TideGlass; beyondTrace = s.BeyondTrace; ebbSeal = s.EbbSeal; counterTrace = s.CounterTrace; anchorWard = s.AnchorWard || s.QuestStage >= 36; riftVerse = s.RiftVerse; deepTrace = s.DeepTrace; lanternSignal = s.LanternSignal; beaconLight = s.BeaconLight; routeMemory = s.RouteMemory; silenceMemory = s.SilenceMemory; borrowedTrace = s.BorrowedTrace; unstruckTrace = s.UnstruckTrace; finalEnding = s.FinalEnding; difficultyTier = s.DifficultyTier; vigilBestFloor = s.VigilBestFloor; highContrastTelegraphs = s.HighContrastTelegraphs; eliteWeaponMisses = s.EliteWeaponMisses; refrainSong = s.RefrainSong; ownedCharms = s.OwnedCharms; equippedCharm = s.EquippedCharm; equippedCharm2 = s.EquippedCharm2; equippedSkills = NormalizeSkillLoadout(s.EquippedSkills); Array.Copy(s.SkillVariants, skillVariants, skillVariants.Length); townEnding = s.TownEnding; SetupRoom(); if (s.RoomCleared) enemies.Clear(); victory = s.Completed; title = false; storyOverlay = false;
             if (migrated && !SaveGame()) { notice = "SAVE ANTIGO CARREGADO • NÃO FOI POSSÍVEL MIGRAR"; noticeTime = 5; }
             else { notice = migrated ? "SAVE ANTIGO MIGRADO" : "PROGRESSO CARREGADO"; noticeTime = 2; }
         }
@@ -2016,7 +2018,7 @@ public sealed class Game : Form
         using var headerFont = new Font("Georgia", 22, FontStyle.Bold); using var hudFont = new Font("Segoe UI", 12, FontStyle.Bold); using var roomFont = new Font("Georgia", 13, FontStyle.Bold); using var helpFont = new Font("Segoe UI", 10);
         g.FillRectangle(panel, 0, 0, 960, 83); g.DrawString("SCADRYK", headerFont, goldBrush, 24, 18);
         g.DrawString($"VIDA {health:0}/{maxHealth:0}     NÍVEL {level}     XP {xp}/{level * 60}     OURO {gold}     POÇÕES {potions}", hudFont, textBrush, 255, 29);
-        g.DrawString($"F  {ShortSkillName(0)}     V  {ShortSkillName(1)}     G  {ShortSkillName(2)}", helpFont, goldBrush, 255, 61);
+        g.DrawString($"F  {ShortSkillName(0)}  •  V  {ShortSkillName(1)}  •  G  {ShortSkillName(2)}  •  C  {ShortSkillName(3)}", helpFont, goldBrush, 255, 61);
         g.DrawString($"RESSONÂNCIA {difficultyTier} • {DifficultyTierName(difficultyTier)}", helpFont, Brushes.Orange, 690, 61);
         if (armorOn && relicOn)
         {
@@ -2083,7 +2085,7 @@ public sealed class Game : Form
         else if (room >= 4 && room < 6) g.DrawString(ArchiveObjective(), hudFont, goldBrush, 67, 592);
         else if (room is 6 or 7) g.DrawString(RiverObjective(), hudFont, goldBrush, 67, 592);
         else if (room >= 8) g.DrawString(LumeObjective(), hudFont, goldBrush, 67, 592);
-        g.DrawString(room is 3 or 18 ? "WASD mover   E falar/investigar   F5 salvar   B técnicas   I inventário" : "WASD mover   ESPAÇO atacar   SHIFT esquivar   R redemoinho   F/V/G técnicas   B montar técnicas   Q poção   E interagir   I inventário", helpFont, textBrush, 67, 619);
+        g.DrawString(room is 3 or 18 ? "WASD mover   E falar/investigar   F5 salvar   B técnicas   I inventário" : "WASD mover   ESPAÇO atacar   SHIFT esquivar   R redemoinho   F/V/G/C técnicas   B montar técnicas   Q poção   E interagir   I inventário", helpFont, textBrush, 67, 619);
         if (room < MemoryStonePositions.Length && (memoriesFound & (1 << room)) == 0) DrawMemoryStone(g, MemoryStonePositions[room], Distance(player, MemoryStonePositions[room]) < MemoryStoneInteractionRadius);
         if (noticeTime > 0) DrawCentered(g, notice, 170, new Font("Segoe UI", 13, FontStyle.Bold), Color.FromArgb(230, 193, 129));
         if (vigilChoiceOpen) DrawChoice(g, $"VIGÍLIA ASCENDENTE • ANDAR {vigilFloor}", $"1. SUBIR AO ANDAR {vigilFloor + 1} • RECOMPENSA CRESCENTE", $"2. ENCERRAR • MELHOR MARCA: {Math.Max(vigilBestFloor, vigilFloor)}", "3. FICAR AQUI");
@@ -3275,13 +3277,13 @@ public sealed class Game : Form
         using var heading = new Font("Georgia", 17, FontStyle.Bold); using var body = new Font("Segoe UI", 11); using var small = new Font("Segoe UI", 9);
         g.FillRectangle(shade, 0, 83, 960, 557); g.FillRectangle(panelBrush, 105, 132, 750, 435); g.DrawRectangle(edge, 105, 132, 750, 435);
         DrawCentered(g, "TÉCNICAS DO ESCUTADOR", 153, heading, Color.FromArgb(230, 193, 129));
-        g.DrawString("ESCOLHA UM ESPAÇO COM F, V OU G; DEPOIS EQUIPE UMA TÉCNICA COM 1–8", small, Brushes.DarkGray, 140, 188);
+        g.DrawString("ESCOLHA UM ESPAÇO COM F, V, G OU C; DEPOIS EQUIPE UMA TÉCNICA COM 1–8", small, Brushes.DarkGray, 140, 188);
         g.DrawString("ESPAÇOS ATIVOS", body, Brushes.Goldenrod, 150, 224);
-        string[] slotKeys = { "F", "V", "G" };
-        for (int slot = 0; slot < 3; slot++)
+        string[] slotKeys = { "F", "V", "G", "C" };
+        for (int slot = 0; slot < 4; slot++)
         {
             bool selected = slot == skillMenuSlot; Brush slotBrush = selected ? Brushes.Goldenrod : Brushes.AntiqueWhite;
-            g.DrawString($"{slotKeys[slot]}  •  {ShortSkillName(slot)}{(selected ? "  ◀" : "")}", body, slotBrush, 160, 262 + slot * 44);
+            g.DrawString($"{slotKeys[slot]}  •  {ShortSkillName(slot)}{(selected ? "  ◀" : "")}", body, slotBrush, 160, 258 + slot * 32);
         }
         int selectedSkill = equippedSkills[skillMenuSlot];
         g.DrawString(selectedSkill == 0 ? "MEMÓRIA DA TÉCNICA: ESPAÇO VAZIO" : $"MEMÓRIA: {SkillVariantName(selectedSkill, skillVariants[selectedSkill])}", body, Brushes.Goldenrod, new RectangleF(150, 402, 310, 24));
@@ -3361,7 +3363,7 @@ public sealed class Game : Form
         g.DrawString($"Afixos: {WeaponAffixDescription(weapon)}", body, Brushes.AntiqueWhite, new RectangleF(515, 310, 315, 48));
         string charmOne = equippedCharm == 0 ? "vazio" : charmNames[equippedCharm]; string charmTwo = equippedCharm2 == 0 ? "vazio" : charmNames[equippedCharm2];
         g.DrawString($"Talismãs: {charmOne} + {charmTwo}", body, Brushes.Plum, new RectangleF(515, 362, 315, 45));
-        g.DrawString($"Técnicas: F {ShortSkillName(0)}  •  V {ShortSkillName(1)}  •  G {ShortSkillName(2)}", body, Brushes.AntiqueWhite, new RectangleF(145, 424, 670, 40));
+        g.DrawString($"Técnicas: F {ShortSkillName(0)}  •  V {ShortSkillName(1)}  •  G {ShortSkillName(2)}  •  C {ShortSkillName(3)}", body, Brushes.AntiqueWhite, new RectangleF(145, 424, 670, 40));
         g.DrawString($"Especialização: {(combatDiscipline == 1 ? "Forma do Gume • básicos +12%, técnicas -10%" : combatDiscipline == 2 ? "Forma do Eco • técnicas +12%, básicos -10%" : "a escolher no nível 5")}", body, combatDiscipline == 2 ? Brushes.Plum : Brushes.Goldenrod, 145, 458);
         g.DrawString($"Maestria: {(combatMastery == 1 ? "Guarda Serena • dano recebido -10%, esquiva +0,20 s" : combatMastery == 2 ? "Passo Impetuoso • esquiva -0,18 s, dano recebido +8%" : level >= 10 ? "a escolher" : "desbloqueia no nível 10")}", body, combatMastery == 2 ? Brushes.Plum : Brushes.Goldenrod, 145, 482);
         g.DrawString($"Foco: {(combatFocus == 1 ? "Caçador de Ecos • chefes +15%" : combatFocus == 2 ? "Quebra-Formação • comuns +10% com 3+ inimigos" : level >= 15 ? "a escolher" : "desbloqueia no nível 15")}", body, combatFocus == 2 ? Brushes.Plum : Brushes.Goldenrod, 145, 506);
@@ -3935,15 +3937,20 @@ public sealed class Game : Form
             skillLoadoutGame.EquipSkill(2, 2);
             if (skillLoadoutGame.equippedSkills[2] == 2) throw new InvalidOperationException("Uma mesma técnica foi equipada em dois espaços.");
             SaveData loadoutSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(skillLoadoutGame.CaptureSaveData()))!;
-            if (!ValidSkillLoadout(loadoutSave) || !loadoutSave.EquippedSkills.SequenceEqual(new[] { 1, 2, 0 })) throw new InvalidOperationException("A configuração de técnicas não foi salva corretamente.");
+            if (!ValidSkillLoadout(loadoutSave) || !loadoutSave.EquippedSkills.SequenceEqual(new[] { 1, 2, 0, 0 })) throw new InvalidOperationException("A configuração de técnicas não foi salva corretamente.");
             SaveData oldLoadoutSave = JsonSerializer.Deserialize<SaveData>("{}")!;
-            if (oldLoadoutSave.EquippedSkills is null || !oldLoadoutSave.EquippedSkills.SequenceEqual(new[] { 1, 0, 0 })) throw new InvalidOperationException("Um save antigo não recebeu a configuração padrão de técnicas.");
+            if (oldLoadoutSave.EquippedSkills is null || !oldLoadoutSave.EquippedSkills.SequenceEqual(new[] { 1, 0, 0, 0 })) throw new InvalidOperationException("Um save antigo não recebeu a configuração padrão de técnicas.");
             loadoutSave.EquippedSkills[2] = 5;
             if (ValidSkillLoadout(loadoutSave)) throw new InvalidOperationException("Um save equipou uma técnica narrativa ainda bloqueada.");
+            SaveData threeSlotSave = new() { EquippedSkills = new[] { 1, 2, 3 }, RiverBell = true, EbbSeal = true, QuestStage = 33 };
+            if (!ValidSkillLoadout(threeSlotSave) || !NormalizeSkillLoadout(threeSlotSave.EquippedSkills).SequenceEqual(new[] { 1, 2, 3, 0 })) throw new InvalidOperationException("Um save anterior com três espaços não migrou para o quarto espaço vazio.");
+            skillLoadoutGame.room = 26; skillLoadoutGame.ebbSeal = true; skillLoadoutGame.skillMenuOpen = true; skillLoadoutGame.OnKeyDown(skillLoadoutGame, new KeyEventArgs(Keys.C)); skillLoadoutGame.OnKeyDown(skillLoadoutGame, new KeyEventArgs(Keys.D3)); skillLoadoutGame.skillMenuOpen = false;
+            skillLoadoutGame.enemies.Clear(); skillLoadoutGame.player = new PointF(300, 330); var fourthSlotEcho = new Enemy { Pos = new PointF(390, 330), Kind = EnemyKind.Grunt, Hp = 1000, MaxHp = 1000 }; skillLoadoutGame.enemies.Add(fourthSlotEcho); skillLoadoutGame.OnKeyDown(skillLoadoutGame, new KeyEventArgs(Keys.C));
+            if (skillLoadoutGame.equippedSkills[3] != 3 || skillLoadoutGame.pullCd <= 0 || fourthSlotEcho.Hp >= 1000) throw new InvalidOperationException("O quarto espaço não equipou nem acionou a Vazante pela tecla C.");
         }
         using (var ebbBeaconCombo = new Game())
         {
-            ebbBeaconCombo.timer.Stop(); ebbBeaconCombo.StartGame(); ebbBeaconCombo.storyOverlay = false; ebbBeaconCombo.room = 26; ebbBeaconCombo.ebbSeal = ebbBeaconCombo.beaconLight = true; ebbBeaconCombo.equippedSkills = new[] { 3, 6, 0 }; ebbBeaconCombo.player = new PointF(300, 330); ebbBeaconCombo.damage = 100; ebbBeaconCombo.enemies.Clear();
+            ebbBeaconCombo.timer.Stop(); ebbBeaconCombo.StartGame(); ebbBeaconCombo.storyOverlay = false; ebbBeaconCombo.room = 26; ebbBeaconCombo.ebbSeal = ebbBeaconCombo.beaconLight = true; ebbBeaconCombo.equippedSkills = new[] { 3, 6, 0, 0 }; ebbBeaconCombo.player = new PointF(300, 330); ebbBeaconCombo.damage = 100; ebbBeaconCombo.enemies.Clear();
             var comboEcho = new Enemy { Pos = new PointF(400, 330), Kind = EnemyKind.Grunt, Hp = 1000, MaxHp = 1000 }; ebbBeaconCombo.enemies.Add(comboEcho);
             if (!ebbBeaconCombo.EbbBeaconSynergyActive()) throw new InvalidOperationException("Vazante + Farol não ativaram a sinergia da montagem.");
             ebbBeaconCombo.CastEbbPull(); float afterPull = comboEcho.Hp;
@@ -3951,7 +3958,7 @@ public sealed class Game : Form
             ebbBeaconCombo.beaconPos = ebbBeaconCombo.player; ebbBeaconCombo.beaconTime = 6; ebbBeaconCombo.beaconPulseCd = 0.01f; ebbBeaconCombo.TickBeacon(0.02f);
             float expectedPulseDamage = 100 * 0.34f * 1.35f;
             if (Math.Abs(comboEcho.Hp - (afterPull - expectedPulseDamage)) > 0.01f || comboEcho.BeaconMarkTime != 0) throw new InvalidOperationException("O próximo pulso do Farol não consumiu a marca nem recebeu o bônus de 35%.");
-            ebbBeaconCombo.equippedSkills = new[] { 3, 0, 0 }; ebbBeaconCombo.pullCd = 0; var unlinkedEcho = new Enemy { Pos = new PointF(400, 330), Kind = EnemyKind.Grunt, Hp = 1000, MaxHp = 1000 }; ebbBeaconCombo.enemies.Clear(); ebbBeaconCombo.enemies.Add(unlinkedEcho); ebbBeaconCombo.CastEbbPull();
+            ebbBeaconCombo.equippedSkills = new[] { 3, 0, 0, 0 }; ebbBeaconCombo.pullCd = 0; var unlinkedEcho = new Enemy { Pos = new PointF(400, 330), Kind = EnemyKind.Grunt, Hp = 1000, MaxHp = 1000 }; ebbBeaconCombo.enemies.Clear(); ebbBeaconCombo.enemies.Add(unlinkedEcho); ebbBeaconCombo.CastEbbPull();
             if (unlinkedEcho.BeaconMarkTime != 0 || ebbBeaconCombo.notice.Contains("PREPARADOS PARA O FAROL")) throw new InvalidOperationException("A sinergia Vazante + Farol funcionou sem ambas as técnicas equipadas.");
         }
         using (var bellGame = new Game())
@@ -3970,14 +3977,14 @@ public sealed class Game : Form
         }
         using (var bellShardSynergy = new Game())
         {
-            bellShardSynergy.timer.Stop(); bellShardSynergy.StartGame(); bellShardSynergy.storyOverlay = false; bellShardSynergy.room = 6; bellShardSynergy.riverBell = true; bellShardSynergy.equippedSkills = new[] { 1, 2, 0 }; bellShardSynergy.player = new PointF(250, 320); bellShardSynergy.mouseAim = new PointF(1, 0); bellShardSynergy.damage = 100; bellShardSynergy.enemies.Clear();
+            bellShardSynergy.timer.Stop(); bellShardSynergy.StartGame(); bellShardSynergy.storyOverlay = false; bellShardSynergy.room = 6; bellShardSynergy.riverBell = true; bellShardSynergy.equippedSkills = new[] { 1, 2, 0, 0 }; bellShardSynergy.player = new PointF(250, 320); bellShardSynergy.mouseAim = new PointF(1, 0); bellShardSynergy.damage = 100; bellShardSynergy.enemies.Clear();
             var preparedEcho = new Enemy { Pos = new PointF(330, 320), Kind = EnemyKind.Grunt, Hp = 1000, MaxHp = 1000 }; bellShardSynergy.enemies.Add(preparedEcho);
             bellShardSynergy.CastBellPulse(); float healthBeforeShard = preparedEcho.Hp;
             if (preparedEcho.BellMarkTime != 5f || !bellShardSynergy.notice.Contains("PREPARADOS PARA O ESTILHAÇO")) throw new InvalidOperationException("Sino + Estilhaço não prepararam o alvo por cinco segundos.");
             bellShardSynergy.CastVoiceShard(); float expectedResonantDamage = bellShardSynergy.echoShards.Single().Damage * 1.35f;
             bellShardSynergy.AdvanceVoiceShards(0.2f);
             if (Math.Abs((healthBeforeShard - preparedEcho.Hp) - expectedResonantDamage) > 0.01f || preparedEcho.BellMarkTime != 0 || !bellShardSynergy.floatingTexts.Any(text => text.Text == "SINO + ESTILHAÇO")) throw new InvalidOperationException("Estilhaço não consumiu a marca do Sino com +35% de dano e aviso visual.");
-            bellShardSynergy.equippedSkills = new[] { 1, 0, 0 }; preparedEcho.BellMarkTime = 0; bellShardSynergy.bellCd = 0;
+            bellShardSynergy.equippedSkills = new[] { 1, 0, 0, 0 }; preparedEcho.BellMarkTime = 0; bellShardSynergy.bellCd = 0;
             bellShardSynergy.CastBellPulse();
             if (preparedEcho.BellMarkTime != 0 || bellShardSynergy.notice.Contains("PREPARADOS PARA O ESTILHAÇO")) throw new InvalidOperationException("Sino + Estilhaço funcionaram sem as duas técnicas equipadas.");
         }
@@ -4006,13 +4013,13 @@ public sealed class Game : Form
         }
         using (var wardReturnSynergy = new Game())
         {
-            wardReturnSynergy.timer.Stop(); wardReturnSynergy.StartGame(); wardReturnSynergy.storyOverlay = false; wardReturnSynergy.room = 6; wardReturnSynergy.anchorWard = true; wardReturnSynergy.finalEnding = 1; wardReturnSynergy.equippedSkills = new[] { 4, 7, 0 }; wardReturnSynergy.maxHealth = 100; wardReturnSynergy.health = 40; wardReturnSynergy.enemies.Clear();
+            wardReturnSynergy.timer.Stop(); wardReturnSynergy.StartGame(); wardReturnSynergy.storyOverlay = false; wardReturnSynergy.room = 6; wardReturnSynergy.anchorWard = true; wardReturnSynergy.finalEnding = 1; wardReturnSynergy.equippedSkills = new[] { 4, 7, 0, 0 }; wardReturnSynergy.maxHealth = 100; wardReturnSynergy.health = 40; wardReturnSynergy.enemies.Clear();
             wardReturnSynergy.enemies.Add(new Enemy { Pos = new PointF(300, 320), Kind = EnemyKind.Grunt, Hp = 1000, MaxHp = 1000 });
             wardReturnSynergy.CastAnchorWard();
             if (wardReturnSynergy.wardTime <= 0 || !wardReturnSynergy.notice.Contains("+35%")) throw new InvalidOperationException("Manto + Devolução não anunciaram a cura ampliada ao ativar a proteção.");
             wardReturnSynergy.CastReturnedVoices();
             if (Math.Abs(wardReturnSynergy.health - 46.075f) > 0.01f || !wardReturnSynergy.notice.Contains("MANTO AMPLIOU A CURA")) throw new InvalidOperationException("Devolução não ampliou a cura em 35% enquanto o Manto estava ativo.");
-            wardReturnSynergy.wardTime = 0; wardReturnSynergy.health = 40; wardReturnSynergy.returnVoiceCd = 0; wardReturnSynergy.equippedSkills = new[] { 0, 7, 0 };
+            wardReturnSynergy.wardTime = 0; wardReturnSynergy.health = 40; wardReturnSynergy.returnVoiceCd = 0; wardReturnSynergy.equippedSkills = new[] { 0, 7, 0, 0 };
             wardReturnSynergy.CastReturnedVoices();
             if (Math.Abs(wardReturnSynergy.health - 44.5f) > 0.01f) throw new InvalidOperationException("A cura ampliada do Manto persistiu após a proteção expirar ou sem o par equipado.");
         }
@@ -4194,7 +4201,7 @@ public sealed class Game : Form
         using (var apexGame = new Game())
         {
             apexGame.timer.Stop(); apexGame.StartGame(); apexGame.level = 20; apexGame.combatDiscipline = 2; apexGame.combatMastery = 1; apexGame.combatFocus = 1; apexGame.pendingTalents = 1; apexGame.talentChoice = true;
-            apexGame.equippedSkills = new[] { 1, 2, 3 }; apexGame.riverBell = apexGame.ebbSeal = true; apexGame.shardCd = 2; apexGame.bellCd = 3;
+            apexGame.equippedSkills = new[] { 1, 2, 3, 0 }; apexGame.riverBell = apexGame.ebbSeal = true; apexGame.shardCd = 2; apexGame.bellCd = 3;
             apexGame.SelectTalent(Keys.D4);
             if (apexGame.pendingTalents != 1 || apexGame.combatApex != 0) throw new InvalidOperationException("O nível 20 permitiu gastar o ponto antes da escolha de auge.");
             apexGame.SelectTalent(Keys.D5);
@@ -4204,15 +4211,15 @@ public sealed class Game : Form
             apexGame.shardCd = 0; apexGame.bellCd = 2; apexGame.enemies.Add(new Enemy { Kind = EnemyKind.Grunt, Pos = new PointF(400, 330), Hp = 500, MaxHp = 500 });
             apexGame.CastVoiceShard();
             if (apexGame.echoShards.Count != 1 || Math.Abs(apexGame.echoShards[0].Damage - apexGame.damage * 1.35f * 1.12f * 1.18f) > 0.01f) throw new InvalidOperationException("O Estilhaço não recebeu Coro Suspenso ao iniciar sua recarga.");
-            apexGame.equippedSkills = new[] { 1, 0, 0 }; apexGame.riverBell = apexGame.ebbSeal = false; apexGame.bellCd = 3; SaveData apexSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(apexGame.CaptureSaveData()))!;
+            apexGame.equippedSkills = new[] { 1, 0, 0, 0 }; apexGame.riverBell = apexGame.ebbSeal = false; apexGame.bellCd = 3; SaveData apexSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(apexGame.CaptureSaveData()))!;
             if (apexSave.CombatApex != 1 || !ValidSaveData(apexSave) || JsonSerializer.Deserialize<SaveData>("{}")?.CombatApex != 0) throw new InvalidOperationException("A escolha de auge não persistiu ou não preservou compatibilidade de saves antigos.");
-            apexGame.equippedSkills = new[] { 1, 2, 3 }; apexGame.riverBell = apexGame.ebbSeal = true;
+            apexGame.equippedSkills = new[] { 1, 2, 3, 0 }; apexGame.riverBell = apexGame.ebbSeal = true;
             apexGame.gold = 10000; apexGame.tideGlass = 99; apexGame.RespecTalents();
             if (apexGame.pendingTalents != 4 || apexGame.combatApex != 0) throw new InvalidOperationException("Redistribuir talentos não devolveu os quatro marcos investidos.");
             apexGame.SelectTalent(Keys.D5); apexGame.SelectTalent(Keys.D5); apexGame.SelectTalent(Keys.D5); apexGame.SelectTalent(Keys.D6);
             if (apexGame.pendingTalents != 0 || apexGame.combatDiscipline != 1 || apexGame.combatMastery != 1 || apexGame.combatFocus != 1 || apexGame.combatApex != 2 || Math.Abs(apexGame.CombatApexDamageTakenMultiplier() - 0.88f) > 0.001f) throw new InvalidOperationException("A redistribuição não permitiu montar a Âncora de Eco no marco de nível 20.");
             apexGame.health = apexGame.maxHealth = 100; apexGame.HitPlayer(100);
-            apexGame.equippedSkills = new[] { 1, 0, 0 }; apexGame.riverBell = apexGame.ebbSeal = false;
+            apexGame.equippedSkills = new[] { 1, 0, 0, 0 }; apexGame.riverBell = apexGame.ebbSeal = false;
             if (Math.Abs(apexGame.health - 20.8f) > 0.01f || !ValidSaveData(apexGame.CaptureSaveData())) throw new InvalidOperationException("Âncora de Eco não combinou sua redução condicional com a Guarda Serena ou não salvou a build.");
         }
         using var game = new Game(); game.timer.Stop(); game.StartGame();
@@ -4697,7 +4704,7 @@ public sealed class Game : Form
         glassExpedition.enemies.Clear(); glassExpedition.drops.Clear(); glassExpedition.player = new PointF(850, 330); glassExpedition.Interact();
         if (glassExpedition.room != 32 || glassExpedition.enemies.Count != 5) throw new InvalidOperationException("A Fonte sob a Pedra não abriu com o Arauto de Vidro.");
         Enemy herald = glassExpedition.enemies.Single(e => e.Kind == EnemyKind.GlassHerald); glassExpedition.player = herald.Pos;
-        foreach (int pattern in new[] { 1, 2, 0 }) { herald.Windup = 0; herald.Cooldown = 0; glassExpedition.UpdateEnemy(herald, 0.01f); if (herald.BossPattern != pattern || herald.Windup <= 0) throw new InvalidOperationException("O Arauto de Vidro não alternou os três ataques anunciados."); }
+        foreach (int pattern in new[] { 1, 2, 0, 0 }) { herald.Windup = 0; herald.Cooldown = 0; glassExpedition.UpdateEnemy(herald, 0.01f); if (herald.BossPattern != pattern || herald.Windup <= 0) throw new InvalidOperationException("O Arauto de Vidro não alternou os três ataques anunciados."); }
         glassExpedition.Defeat(herald); Drop deepDrop = glassExpedition.drops.Single(d => d.Kind == "deep"); glassExpedition.Collect(deepDrop);
         if (!glassExpedition.deepTrace || glassExpedition.questStage != 42 || glassExpedition.drops.Any(d => d.Kind == "deep")) throw new InvalidOperationException("A lembrança sem nome não atualizou a missão ou não foi coletada.");
         glassExpedition.drops.Clear(); glassExpedition.enemies.Clear(); glassExpedition.MarkRoomCleared(); SaveData glassSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(glassExpedition.CaptureSaveData()))!;
@@ -4711,7 +4718,7 @@ public sealed class Game : Form
         lanternExpedition.enemies.Clear(); lanternExpedition.drops.Clear(); lanternExpedition.player = new PointF(850, 330); lanternExpedition.Interact();
         if (lanternExpedition.room != 34 || lanternExpedition.enemies.Count != 5 || !lanternExpedition.enemies.Any(e => e.Kind == EnemyKind.LanternRegent)) throw new InvalidOperationException("O Observatório da Maré Interior não abriu com o Regente das Lanternas.");
         Enemy regent = lanternExpedition.enemies.Single(e => e.Kind == EnemyKind.LanternRegent); lanternExpedition.player = regent.Pos;
-        foreach (int pattern in new[] { 1, 2, 0 }) { regent.Windup = 0; regent.Cooldown = 0; lanternExpedition.UpdateEnemy(regent, 0.01f); if (regent.BossPattern != pattern || regent.Windup <= 0) throw new InvalidOperationException("O Regente das Lanternas não anunciou os três padrões de ataque."); }
+        foreach (int pattern in new[] { 1, 2, 0, 0 }) { regent.Windup = 0; regent.Cooldown = 0; lanternExpedition.UpdateEnemy(regent, 0.01f); if (regent.BossPattern != pattern || regent.Windup <= 0) throw new InvalidOperationException("O Regente das Lanternas não anunciou os três padrões de ataque."); }
         lanternExpedition.Defeat(regent); Drop signalDrop = lanternExpedition.drops.Single(d => d.Kind == "signal"); Drop lumenKnot = lanternExpedition.drops.Single(d => d.Kind == "charm" && d.Amount == 6); lanternExpedition.Collect(signalDrop); lanternExpedition.Collect(lumenKnot);
         if (!lanternExpedition.lanternSignal || lanternExpedition.questStage != 45 || lanternExpedition.memoryTitle != "A LUZ QUE ESPERA" || (lanternExpedition.ownedCharms & 32) == 0 || lanternExpedition.equippedCharm != 6) throw new InvalidOperationException("O sinal ou o Nó de Lume do Regente não foi recuperado.");
         lanternExpedition.enemies.Clear(); lanternExpedition.drops.Clear(); lanternExpedition.MarkRoomCleared(); SaveData lanternSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(lanternExpedition.CaptureSaveData()))!;
@@ -4723,7 +4730,7 @@ public sealed class Game : Form
         lanternExpedition.room = 34; lanternExpedition.SetupRoom(); lanternExpedition.enemies.Clear(); lanternExpedition.player = new PointF(430, 330); lanternExpedition.memoryOverlay = false; lanternExpedition.skillMenuOpen = true; lanternExpedition.OnKeyDown(lanternExpedition, new KeyEventArgs(Keys.D6)); lanternExpedition.skillMenuOpen = false; lanternExpedition.beaconCd = 0;
         Enemy beaconTarget = new() { Pos = new PointF(470, 330), Kind = EnemyKind.Grunt, Hp = 1000, MaxHp = 1000 }; lanternExpedition.enemies.Add(beaconTarget); lanternExpedition.CastEquippedSkill(0); float beaconHp = beaconTarget.Hp; lanternExpedition.TickBeacon(0.2f); float firstPulseHp = beaconTarget.Hp; lanternExpedition.TickBeacon(0.9f);
         SaveData beaconSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(lanternExpedition.CaptureSaveData()))!;
-        if (!lanternExpedition.beaconLight || Math.Abs(lanternExpedition.beaconTime - 6.9f) > 0.001f || Math.Abs(lanternExpedition.beaconCd - 25.5f) > 0.001f || beaconTarget.Hp >= firstPulseHp || beaconTarget.Hp >= beaconHp || Math.Abs(lanternExpedition.beaconPulseCd - 0.85f) > 0.001f || !ValidSaveData(beaconSave) || !beaconSave.BeaconLight || !beaconSave.EquippedSkills.SequenceEqual(new[] { 6, 0, 0 }) || beaconSave.OwnedCharms != 32 || beaconSave.EquippedCharm != 6 || !lanternSave.EquippedSkills.SequenceEqual(new[] { 1, 0, 0 })) throw new InvalidOperationException("O Nó de Lume não estendeu a duração do Farol, acelerou os pulsos e preservou o talismã em um save válido.");
+        if (!lanternExpedition.beaconLight || Math.Abs(lanternExpedition.beaconTime - 6.9f) > 0.001f || Math.Abs(lanternExpedition.beaconCd - 25.5f) > 0.001f || beaconTarget.Hp >= firstPulseHp || beaconTarget.Hp >= beaconHp || Math.Abs(lanternExpedition.beaconPulseCd - 0.85f) > 0.001f || !ValidSaveData(beaconSave) || !beaconSave.BeaconLight || !beaconSave.EquippedSkills.SequenceEqual(new[] { 6, 0, 0, 0 }) || beaconSave.OwnedCharms != 32 || beaconSave.EquippedCharm != 6 || !lanternSave.EquippedSkills.SequenceEqual(new[] { 1, 0, 0, 0 })) throw new InvalidOperationException("O Nó de Lume não estendeu a duração do Farol, acelerou os pulsos e preservou o talismã em um save válido.");
         lanternExpedition.enemies.Clear(); lanternExpedition.drops.Clear(); lanternExpedition.room = 18; lanternExpedition.SetupRoom(); lanternExpedition.memoryOverlay = false; lanternExpedition.player = AvenPosition; lanternExpedition.Interact();
         if (lanternExpedition.questStage != 47 || lanternExpedition.memoryTitle != "AS LINHAS QUE NÃO APONTAM") throw new InvalidOperationException("Aven não abriu o Capítulo XV após ensinar o Farol de Vigília.");
         lanternExpedition.player = new PointF(850, 330); lanternExpedition.Interact();
@@ -4732,7 +4739,7 @@ public sealed class Game : Form
         if (lanternExpedition.room != 36 || lanternExpedition.enemies.Count != 5 || !lanternExpedition.enemies.Any(e => e.Kind == EnemyKind.RouteScribe)) throw new InvalidOperationException("A Galeria da Rota Não Escrita não abriu com o Escriba do Traçado.");
         Enemy routeBoss = lanternExpedition.enemies.Single(e => e.Kind == EnemyKind.RouteScribe); if (routeBoss.MaxHp != 2250) throw new InvalidOperationException("A decisão de devolver os nomes não enfraqueceu o Escriba do Traçado.");
         lanternExpedition.invulnerable = 10;
-        foreach (int pattern in new[] { 1, 2, 0 }) { routeBoss.Cooldown = 0; lanternExpedition.UpdateEnemy(routeBoss, 0.01f); if (routeBoss.BossPattern != pattern || routeBoss.Windup <= 0) throw new InvalidOperationException("O Escriba do Traçado não anunciou os três ataques do ciclo."); routeBoss.Windup = 0; }
+        foreach (int pattern in new[] { 1, 2, 0, 0 }) { routeBoss.Cooldown = 0; lanternExpedition.UpdateEnemy(routeBoss, 0.01f); if (routeBoss.BossPattern != pattern || routeBoss.Windup <= 0) throw new InvalidOperationException("O Escriba do Traçado não anunciou os três ataques do ciclo."); routeBoss.Windup = 0; }
         lanternExpedition.enemies.Clear(); lanternExpedition.enemies.Add(routeBoss); lanternExpedition.drops.Clear(); routeBoss.Hp = 1; routeBoss.Windup = 0; lanternExpedition.Defeat(routeBoss);
         Drop routeDrop = lanternExpedition.drops.Single(d => d.Kind == "route"); lanternExpedition.Collect(routeDrop);
         if (!lanternExpedition.routeMemory || lanternExpedition.questStage != 48 || lanternExpedition.memoryTitle != "AS ROTAS QUE PERMANECEM ABERTAS") throw new InvalidOperationException("A memória das rotas não atualizou o Capítulo XV.");
@@ -4821,13 +4828,13 @@ public sealed class Game : Form
         if (deepVigil.charmNames[10] != "ÂNCORA COMUM" || deepVigil.equippedCharm2 != 10 || Math.Abs(deepVigil.OutgoingDamageMultiplier(buildDummy) - 0.9f) > 0.001f || Math.Abs(deepVigil.CharmDamageTakenMultiplier() - 0.946f) > 0.001f) throw new InvalidOperationException("O 20º andar não concedeu a build defensiva da Âncora Comum.");
         deepVigil.room = 0; deepVigil.vigilBestFloor = 0; if (!ValidSaveData(deepVigil.CaptureSaveData())) throw new InvalidOperationException("A Âncora Comum não foi aceita por um save válido.");
         deepVigil.drops.Clear(); deepVigil.vigilActive = true; deepVigil.vigilFloor = 25; deepVigil.room = 38; deepVigil.SetupRoom(); Enemy twentyFifthFloorBoss = deepVigil.enemies.Single(); twentyFifthFloorBoss.Hp = 1; deepVigil.Defeat(twentyFifthFloorBoss);
-        Drop splitPulse = deepVigil.drops.Single(drop => drop.Kind == "charm" && drop.Amount == 11); deepVigil.Collect(splitPulse); deepVigil.equippedCharm = 11; deepVigil.equippedCharm2 = 0; deepVigil.equippedSkills = new[] { 1, 2, 3 }; deepVigil.shardCd = deepVigil.bellCd = deepVigil.pullCd = 0;
+        Drop splitPulse = deepVigil.drops.Single(drop => drop.Kind == "charm" && drop.Amount == 11); deepVigil.Collect(splitPulse); deepVigil.equippedCharm = 11; deepVigil.equippedCharm2 = 0; deepVigil.equippedSkills = new[] { 1, 2, 3, 0 }; deepVigil.shardCd = deepVigil.bellCd = deepVigil.pullCd = 0;
         if (deepVigil.charmNames[11] != "PULSO BIFURCADO" || deepVigil.TechniquesReady() != 3 || Math.Abs(deepVigil.TechniqueDamageMultiplier() - 1.12f) > 0.001f || Math.Abs(deepVigil.BasicAttackDamageMultiplier(buildDummy) - 1f) > 0.001f) throw new InvalidOperationException("O Pulso Bifurcado do 25º andar não fortaleceu técnicas quando estavam prontas.");
         deepVigil.bellCd = 2;
         if (deepVigil.TechniquesReady() != 2 || Math.Abs(deepVigil.TechniqueDamageMultiplier() - 1.12f) > 0.001f || Math.Abs(deepVigil.BasicAttackDamageMultiplier(buildDummy) - 1f) > 0.001f) throw new InvalidOperationException("O Pulso Bifurcado não manteve o bônus técnico no limiar de duas técnicas prontas.");
         deepVigil.pullCd = 2;
         if (deepVigil.TechniquesOnCooldown() != 2 || Math.Abs(deepVigil.BasicAttackDamageMultiplier(buildDummy) - 1.12f) > 0.001f || Math.Abs(deepVigil.TechniqueDamageMultiplier() - 1f) > 0.001f) throw new InvalidOperationException("O Pulso Bifurcado não transferiu o bônus aos ataques básicos durante duas recargas.");
-        deepVigil.bellCd = deepVigil.pullCd = 0; deepVigil.room = 0; deepVigil.vigilActive = false; deepVigil.vigilFloor = 0; deepVigil.equippedSkills = new[] { 1, 0, 0 };
+        deepVigil.bellCd = deepVigil.pullCd = 0; deepVigil.room = 0; deepVigil.vigilActive = false; deepVigil.vigilFloor = 0; deepVigil.equippedSkills = new[] { 1, 0, 0, 0 };
         if (!ValidSaveData(deepVigil.CaptureSaveData())) throw new InvalidOperationException("O talismã do 25º andar não foi preservado por um save válido.");
         game.room = 11; game.SetupRoom();
         if (game.enemies.Count != 0 || game.drops.Count != 0) throw new InvalidOperationException("O Reservatório foi recriado após ter sido limpo.");
