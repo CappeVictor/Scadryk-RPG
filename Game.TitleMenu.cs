@@ -151,6 +151,12 @@ public sealed partial class Game
             else if (new RectangleF(190, 355, 580, 76).Contains(point)) { titleSelection = 1; highContrastTelegraphs = !highContrastTelegraphs; }
             else if (new RectangleF(190, 455, 580, 76).Contains(point)) { titleSelection = 2; reducedScreenShake = !reducedScreenShake; }
         }
+        else if (titlePage == TitlePage.History)
+        {
+            if (new RectangleF(160, 445, 280, 45).Contains(point)) storyPage = Math.Max(0, storyPage - 1);
+            else if (new RectangleF(520, 445, 280, 45).Contains(point)) storyPage = Math.Min(prologue.Length - 1, storyPage + 1);
+            else if (new RectangleF(375, 515, 210, 42).Contains(point)) { titlePage = TitlePage.Main; titleSelection = 3; }
+        }
         else if (point.Y >= 518 && point.Y <= 565)
         {
             if (titlePage == TitlePage.Campaign && point.X >= 190 && point.X <= 475)
@@ -163,11 +169,6 @@ public sealed partial class Game
         else if (titlePage == TitlePage.Campaign && point.X < 405 && point.Y >= 165 && point.Y < 165 + campaignChapters.Length * 19)
         {
             titleChapterSelection = Math.Clamp((int)((point.Y - 165) / 19), 0, campaignChapters.Length - 1);
-        }
-        else if (titlePage == TitlePage.History)
-        {
-            if (point.X < 480) storyPage = Math.Max(0, storyPage - 1);
-            else storyPage = Math.Min(prologue.Length - 1, storyPage + 1);
         }
         Invalidate();
     }
@@ -268,8 +269,11 @@ public sealed partial class Game
             using var storyFont = new Font("Georgia", 16);
             using var storyBrush = new SolidBrush(Color.FromArgb(235, 231, 215));
             g.DrawString(ProloguePage(storyPage), storyFont, storyBrush, new RectangleF(145, 265, 670, 150));
-            DrawCentered(g, storyPage > 0 ? "← / A  ANTERIOR" : "A HISTÓRIA COMEÇA NA NOITE SEM SINOS", 460, new Font("Segoe UI", 10, FontStyle.Bold), Color.FromArgb(171, 177, 164), 300);
-            DrawCentered(g, storyPage < prologue.Length - 1 ? "PRÓXIMA  → / D" : "O RESTO DA HISTÓRIA É DESCOBERTO JOGANDO", 460, new Font("Segoe UI", 10, FontStyle.Bold), Color.FromArgb(171, 177, 164), 670);
+            g.DrawRectangle(panelEdge, 160, 445, 280, 45); g.DrawRectangle(panelEdge, 520, 445, 280, 45);
+            g.DrawRectangle(panelEdge, 375, 515, 210, 42);
+            DrawCentered(g, "← / A  ANTERIOR", 457, new Font("Segoe UI", 10, FontStyle.Bold), storyPage > 0 ? Color.AntiqueWhite : Color.Gray, 300);
+            DrawCentered(g, "PRÓXIMA  → / D", 457, new Font("Segoe UI", 10, FontStyle.Bold), storyPage < prologue.Length - 1 ? Color.AntiqueWhite : Color.Gray, 660);
+            DrawCentered(g, "VOLTAR • ESC", 524, new Font("Segoe UI", 10, FontStyle.Bold), Color.AntiqueWhite);
             DrawCentered(g, "ENTER AVANÇA • ← / → TROCA A PÁGINA • ESC VOLTA", 584, new Font("Segoe UI", 9), Color.FromArgb(158, 164, 154));
         }
         else
