@@ -429,5 +429,17 @@ public sealed partial class Game
     private void ShowMemory(string titleText, string bodyText) { memoryTitle = titleText; memoryText = bodyText; memoryOverlay = true; }
     private void MarkRoomCleared() { if (room != 3 && room < 43 && enemies.Count == 0 && drops.Count == 0) clearedRooms |= 1L << room; }
     private Enemy? lockedTarget;
-    private void CycleTarget() { if (enemies.Count == 0) { lockedTarget = null; return; } int i = lockedTarget is null ? -1 : enemies.IndexOf(lockedTarget); lockedTarget = enemies[(i + 1) % enemies.Count]; notice = $"ALVO: {EnemyName(lockedTarget)}"; noticeTime = 1.4f; }
+    private bool TargetVisible(Enemy enemy)
+    {
+        if (room != 43) return true;
+        PointF camera = CameraOffset();
+        return enemy.Pos.X >= camera.X && enemy.Pos.X <= camera.X + 960 && enemy.Pos.Y >= camera.Y + 108 && enemy.Pos.Y <= camera.Y + 553;
+    }
+    private void CycleTarget()
+    {
+        var candidates = enemies.Where(TargetVisible).ToList();
+        if (candidates.Count == 0) { lockedTarget = null; notice = "NENHUM ALVO VISÍVEL"; noticeTime = 1.4f; return; }
+        int index = lockedTarget is null ? -1 : candidates.IndexOf(lockedTarget);
+        lockedTarget = candidates[(index + 1) % candidates.Count]; notice = $"ALVO: {EnemyName(lockedTarget)}"; noticeTime = 1.4f;
+    }
 }

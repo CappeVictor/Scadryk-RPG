@@ -77,7 +77,7 @@ public sealed partial class Game
     private void Defeat(Enemy enemy)
     {
         if (!enemies.Remove(enemy)) return;
-        if (ReferenceEquals(lockedTarget, enemy)) lockedTarget = enemies.OrderBy(candidate => Distance(player, candidate.Pos)).FirstOrDefault();
+        if (ReferenceEquals(lockedTarget, enemy)) lockedTarget = enemies.Where(TargetVisible).OrderBy(candidate => Distance(player, candidate.Pos)).FirstOrDefault();
         TriggerNameRiftBurst(enemy);
         if (enemy.EliteMinion) return;
         enemiesDefeated++; int goldDrop = enemy.VigilMinion ? 8 + Math.Min(20, vigilFloor * 2) : vigilActive ? 35 + Math.Min(500, vigilFloor * 15) : enemy.Boss ? 35 : enemy.Kind == EnemyKind.Elite ? 20 : 8;

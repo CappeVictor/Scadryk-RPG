@@ -324,7 +324,8 @@ public sealed partial class Game
     {
         if (finalEnding != 2) { notice = "A ÚLTIMA CENTELHA AINDA NÃO FOI APRENDIDA"; noticeTime = 1.5f; return; }
         if (room is 3 or 18 || enemies.Count == 0 || finalStrikeCd > 0) return;
-        Enemy target = lockedTarget is not null && enemies.Contains(lockedTarget) ? lockedTarget : enemies.OrderBy(enemy => Distance(player, enemy.Pos)).First();
+        Enemy? target = lockedTarget is not null && enemies.Contains(lockedTarget) && TargetVisible(lockedTarget) ? lockedTarget : enemies.Where(TargetVisible).OrderBy(enemy => Distance(player, enemy.Pos)).FirstOrDefault();
+        if (target is null) { notice = "NENHUM ALVO VISÍVEL"; noticeTime = 1.4f; return; }
         facing = Normalize(Sub(target.Pos, player), facing); finalStrikeTarget = target.Pos; finalStrikeFlash = 0.24f;
         DamageEnemy(target, damage * (target.Boss ? 2.15f : 2.45f) * SkillDamageVariant(8) * TechniqueDamageMultiplier() * WeaponSkillMultiplier() * OutgoingDamageMultiplier(target) * (IsArmored(target) ? 0.75f : 1f));
         target.Flash = 0.3f; if (!target.Boss) { target.Windup = 0; target.Stagger = Math.Max(target.Stagger, 0.72f); target.Cooldown = Math.Max(target.Cooldown, 1.25f); }
