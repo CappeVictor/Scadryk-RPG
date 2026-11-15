@@ -149,6 +149,12 @@ public sealed partial class Game
             g.DrawRectangle(accent, wall.X, wall.Y, wall.Width, wall.Height);
         }
         g.DrawEllipse(accent, 710, 280, 100, 100);
+        if (room == 45 && firstEchoQuest >= 2)
+        {
+            using var released = new Pen(Color.FromArgb(181, 122, 221, 205), 4);
+            g.DrawLine(released, 710, 330, 810, 330);
+            g.DrawArc(released, 725, 295, 70, 70, 200, 140);
+        }
         using var font = new Font("Segoe UI", 11, FontStyle.Bold);
         g.DrawString(room == 44 ? "ABRIGO ANTIGO" : "MECANISMO DAS VOZES", font, Brushes.AntiqueWhite, 660, 250);
         if (player.X < 180) g.DrawString("E  VOLTAR ÀS MARGENS", font, Brushes.AntiqueWhite, 90, 380);
@@ -249,6 +255,11 @@ public sealed partial class Game
         {
             g.FillRectangle(stone, marker.X - 16, marker.Y - 28, 32, 56);
             g.DrawRectangle(edge, marker.X - 16, marker.Y - 28, 32, 56);
+            if (firstEchoQuest >= 2)
+            {
+                using var light = new SolidBrush(Color.FromArgb(210, 154, 225, 205));
+                g.FillEllipse(light, marker.X - 5, marker.Y - 17, 10, 10);
+            }
         }
         using var font = new Font("Segoe UI", 14, FontStyle.Bold);
         using var label = new SolidBrush(Color.FromArgb(232, 218, 182));
