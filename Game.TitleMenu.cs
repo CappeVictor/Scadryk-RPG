@@ -145,6 +145,12 @@ public sealed partial class Game
                 titleSelection = clicked; ActivateTitleSelection();
             }
         }
+        else if (titlePage == TitlePage.Settings)
+        {
+            if (new RectangleF(190, 255, 580, 76).Contains(point)) { titleSelection = 0; ToggleTitleAudio(); }
+            else if (new RectangleF(190, 355, 580, 76).Contains(point)) { titleSelection = 1; highContrastTelegraphs = !highContrastTelegraphs; }
+            else if (new RectangleF(190, 455, 580, 76).Contains(point)) { titleSelection = 2; reducedScreenShake = !reducedScreenShake; }
+        }
         else if (point.Y >= 518 && point.Y <= 565)
         {
             if (titlePage == TitlePage.Campaign && point.X >= 190 && point.X <= 475)
@@ -162,12 +168,6 @@ public sealed partial class Game
         {
             if (point.X < 480) storyPage = Math.Max(0, storyPage - 1);
             else storyPage = Math.Min(prologue.Length - 1, storyPage + 1);
-        }
-        else if (titlePage == TitlePage.Settings)
-        {
-            if (point.Y is >= 250 and < 345) ToggleTitleAudio();
-            else if (point.Y is >= 350 and < 445) highContrastTelegraphs = !highContrastTelegraphs;
-            else if (point.Y is >= 450 and < 535) reducedScreenShake = !reducedScreenShake;
         }
         Invalidate();
     }

@@ -23,6 +23,11 @@ public sealed partial class Game
             if (menuHitTest.classSelection != 1) throw new InvalidOperationException("A seta direita não selecionou a próxima classe.");
             menuHitTest.HandleTitleKey(Keys.Left);
             if (menuHitTest.classSelection != 0) throw new InvalidOperationException("A seta esquerda não retornou à classe anterior.");
+            menuHitTest.classSelectionOpen = false; menuHitTest.titlePage = TitlePage.Settings;
+            menuHitTest.HandleTitleClick(new PointF(480, 525));
+            if (!menuHitTest.reducedScreenShake || menuHitTest.titlePage != TitlePage.Settings) throw new InvalidOperationException("O fim do botão de tremor não alterou a opção corretamente.");
+            menuHitTest.HandleTitleClick(new PointF(100, 470));
+            if (!menuHitTest.reducedScreenShake) throw new InvalidOperationException("Um clique fora das configurações alterou o tremor.");
         }
         if (Math.Abs(MeleeChaseSpeed(0) - 74f) > 0.01f || Math.Abs(MeleeChaseSpeed(42) - 168f) > 0.01f
             || MeleeChaseSpeed(42) >= PlayerMoveSpeed || MeleeChaseSpeed(42, true) <= PlayerMoveSpeed
