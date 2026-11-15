@@ -173,8 +173,13 @@ public sealed partial class Game
         }
         if (room is 44 or 45 && BlockedLine(e.Pos, player))
         {
-            PointF waypoint = InteriorDetour(e);
-            e.Pos = MoveEnemy(e, Scale(Normalize(Sub(waypoint, e.Pos), PointF.Empty), 70 * dt));
+            e.PathRefreshTime -= dt;
+            if (e.PathRefreshTime <= 0 || Distance(e.Pos, e.PathWaypoint) < 8)
+            {
+                e.PathWaypoint = InteriorDetour(e);
+                e.PathRefreshTime = 0.35f;
+            }
+            e.Pos = MoveEnemy(e, Scale(Normalize(Sub(e.PathWaypoint, e.Pos), PointF.Empty), 70 * dt));
             return;
         }
         if (e.Kind == EnemyKind.SlagWeaver)

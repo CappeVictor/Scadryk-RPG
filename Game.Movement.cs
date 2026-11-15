@@ -32,7 +32,20 @@ public sealed partial class Game
     private PointF InteriorDetour(Enemy enemy)
     {
         float margin = enemy.Radius + 12;
-        var nodes = new System.Collections.Generic.List<PointF> { enemy.Pos, player };
+        PointF destination = player;
+        if (Blocked(destination, enemy.Radius))
+        {
+            float bestDistance = float.PositiveInfinity;
+            for (int i = 0; i < 8; i++)
+            {
+                float angle = i * MathF.PI / 4;
+                PointF candidate = new(player.X + MathF.Cos(angle) * margin * 2, player.Y + MathF.Sin(angle) * margin * 2);
+                if (candidate.X < 85 || candidate.X > 875 || candidate.Y < 128 || candidate.Y > 533 || Blocked(candidate, enemy.Radius)) continue;
+                float distanceToEnemy = Distance(enemy.Pos, candidate);
+                if (distanceToEnemy < bestDistance) { bestDistance = distanceToEnemy; destination = candidate; }
+            }
+        }
+        var nodes = new System.Collections.Generic.List<PointF> { enemy.Pos, destination };
         foreach (RectangleF wall in CurrentRoomWalls())
         {
             PointF[] corners = { new(wall.Left - margin, wall.Top - margin), new(wall.Right + margin, wall.Top - margin), new(wall.Left - margin, wall.Bottom + margin), new(wall.Right + margin, wall.Bottom + margin) };
