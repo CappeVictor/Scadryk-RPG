@@ -310,16 +310,21 @@ public sealed partial class Game
             DrawCentered(g, "Converte lembranças em", 252, new Font("Segoe UI", 10), Color.FromArgb(204, 207, 192), 170);
             DrawCentered(g, "alcance, controle e ressonância.", 274, new Font("Segoe UI", 10), Color.FromArgb(204, 207, 192), 170);
             DrawCentered(g, "Equilíbrio • mobilidade", 360, new Font("Segoe UI", 10, FontStyle.Bold), Color.LightSkyBlue, 170);
+            DrawCentered(g, "Dano e defesa equilibrados", 397, new Font("Segoe UI", 9), Color.FromArgb(190, 198, 190), 170);
             DrawCentered(g, "2 • GUARDIÃO", 155, new Font("Georgia", 17, FontStyle.Bold), Color.FromArgb(230, 193, 129), 480);
             DrawCentered(g, "TANQUE • IMPACTO • FÚRIA", 196, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, 480);
             DrawCentered(g, "Resiste mais e golpeia forte,", 252, new Font("Segoe UI", 10), Color.FromArgb(204, 207, 192), 480);
             DrawCentered(g, "mas ataca e se move devagar.", 274, new Font("Segoe UI", 10), Color.FromArgb(204, 207, 192), 480);
             DrawCentered(g, "Dano recebido gera Fúria.", 360, new Font("Segoe UI", 10, FontStyle.Bold), Color.FromArgb(255, 203, 116), 480);
+            DrawCentered(g, "+20% dano básico • −20% dano recebido", 397, new Font("Segoe UI", 9), Color.FromArgb(190, 198, 190), 480);
+            DrawCentered(g, "Recarga de ataque +18%", 419, new Font("Segoe UI", 9), Color.FromArgb(190, 198, 190), 480);
             DrawCentered(g, "3 • TECELÃ DE NOMES", 155, new Font("Georgia", 16, FontStyle.Bold), Color.FromArgb(230, 193, 129), 790);
             DrawCentered(g, "CONJURADORA • ÁREA • FIO", 196, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, 790);
             DrawCentered(g, "Golpes rápidos geram Fio;", 252, new Font("Segoe UI", 10), Color.FromArgb(204, 207, 192), 790);
             DrawCentered(g, "suas técnicas causam mais dano.", 274, new Font("Segoe UI", 10), Color.FromArgb(204, 207, 192), 790);
             DrawCentered(g, "Mais frágil • marca grupos", 360, new Font("Segoe UI", 10, FontStyle.Bold), Color.Plum, 790);
+            DrawCentered(g, "+18% técnicas • −10% dano básico", 397, new Font("Segoe UI", 9), Color.FromArgb(190, 198, 190), 790);
+            DrawCentered(g, "+15% dano recebido", 419, new Font("Segoe UI", 9), Color.FromArgb(190, 198, 190), 790);
             DrawCentered(g, "← / → ESCOLHER • 1 / 2 / 3 • ENTER CONFIRMA • ESC VOLTA", 535, new Font("Segoe UI", 10, FontStyle.Bold), Color.AntiqueWhite);
         }
         if (noticeTime > 0 && !string.IsNullOrWhiteSpace(notice)) DrawCentered(g, notice, 612, new Font("Segoe UI", 9, FontStyle.Bold), Color.FromArgb(230, 193, 129));
