@@ -310,6 +310,7 @@ public sealed partial class Game
         float expectedDps = damage * HeroBasicAttackMultiplier() * BasicAttackSpecializationMultiplier() * (1 + critical * (multiplier - 1)) / cooldown;
         float mitigation = 1 - HeroDamageTakenMultiplier() * ArmorDamageTakenMultiplier() * WeaponDamageTakenMultiplier() * CharmDamageTakenMultiplier() * CombatMasteryDamageTakenMultiplier() * CombatApexDamageTakenMultiplier();
         if (wardTime > 0) mitigation = 1 - (1 - mitigation) * AnchorWardDamageTakenMultiplier();
+        if (stoneBastionTime > 0) mitigation = 1 - (1 - mitigation) * 0.45f;
         g.DrawString("ATAQUE", section, Brushes.Goldenrod, 145, 205);
         g.DrawString($"Arma: {WeaponDisplayName(weapon)}", body, Brushes.AntiqueWhite, 145, 232);
         g.DrawString($"Golpe: {damage:0} dano • intervalo {cooldown:0.00} s • alcance {BasicAttackReach(new Enemy { Kind = EnemyKind.Grunt }):0}", body, Brushes.AntiqueWhite, 145, 258);
@@ -319,7 +320,7 @@ public sealed partial class Game
         g.DrawString($"Talentos: vigor {healthTalent} • domínio {skillTalent} • agilidade {dodgeTalent} • sintonia {techniqueTalent}", body, Brushes.AntiqueWhite, 145, 362);
         g.DrawString("DEFESA E EQUIPAMENTO", section, Brushes.Goldenrod, 515, 205);
         g.DrawString($"Vida máxima: {maxHealth:0} • poção: +45", body, Brushes.AntiqueWhite, 515, 232);
-        g.DrawString($"Redução de dano: {mitigation:P0}{(combatApex == 2 && TechniquesOnCooldown() >= 2 ? " • Âncora ativa" : wardTime > 0 ? " • Manto ativo" : "")}", body, Brushes.AntiqueWhite, 515, 258);
+        g.DrawString($"Redução de dano: {mitigation:P0}{(stoneBastionTime > 0 ? " • Bastião ativo" : combatApex == 2 && TechniquesOnCooldown() >= 2 ? " • Âncora ativa" : wardTime > 0 ? " • Manto ativo" : "")}", body, Brushes.AntiqueWhite, 515, 258);
         g.DrawString($"Relicário Vital: cura {RelicKillHealing()} por abate{(armorOn && relicOn ? $" • Pulso +15% por 2,5 s ({veinResonanceTime:0.0} s restantes)" : "")}", body, Brushes.AntiqueWhite, new RectangleF(145, 388, 670, 38));
         g.DrawString($"Traços: {ArmorTraitName(armorTrait)} / {RelicTraitName(relicTrait)}", hint, Brushes.DarkGray, new RectangleF(145, 410, 670, 16));
         g.DrawString($"Recarga da esquiva: {DashCooldown():0.00} s • duração {DashDuration():0.00} s", body, Brushes.AntiqueWhite, 515, 284);

@@ -184,8 +184,8 @@ public sealed partial class Game : Form
     };
     private readonly string[] weaponNames = { "ESPADA DE PEDRA", "LÂMINA DO ARQUIVO", "FACA DO CREPÚSCULO", "LANÇA DA BADALADA" };
     private readonly string[] charmNames = { "", "NÓ DE BRASA", "FIO DE TRAVESSIA", "VIDRO DE VIGÍLIA", "MARCA DA VIGÍLIA", "FIO DA MARGEM", "NÓ DE LUME", "FIO DO RETORNO", "ECO CONVERGENTE", "COMPASSO FENDIDO", "ÂNCORA COMUM", "PULSO BIFURCADO", "NÓ DO CONTRATEMPO" };
-    private readonly string[] skillNames = { "Vazio", "Estilhaço de Voz", "Ressonância do Sino", "Vazante", "Manto de Lastro", "Coro de Retorno", "Farol de Vigília", "Devolução das Vozes", "Última Centelha" };
-    private readonly string[] skillDescriptions = { "", "Projétil perfurante de longo alcance", "Onda que fere e interrompe ecos", "Agrupa ecos próximos", "Reduz o dano recebido por 2,5 s", "Onda que fere e interrompe ecos", "Planta um farol que pulsa contra inimigos próximos", "Onda ampla que fere e restaura vida por inimigo atingido", "Golpe concentrado que causa dano elevado a um alvo" };
+    private readonly string[] skillNames = { "Vazio", "Estilhaço de Voz", "Ressonância do Sino", "Vazante", "Manto de Lastro", "Coro de Retorno", "Farol de Vigília", "Devolução das Vozes", "Última Centelha", "Bastião de Basalto" };
+    private readonly string[] skillDescriptions = { "", "Projétil perfurante de longo alcance", "Onda que fere e interrompe ecos", "Agrupa ecos próximos", "Reduz o dano recebido por 2,5 s", "Onda que fere e interrompe ecos", "Planta um farol que pulsa contra inimigos próximos", "Onda ampla que fere e restaura vida por inimigo atingido", "Golpe concentrado que causa dano elevado a um alvo", "Gasta 50 de Fúria: reduz dano em 55% por 3,5 s" };
     private readonly string[] prologue = {
         "Na noite sem sinos, Véspera começou a esquecer os nomes de seus mortos. Sob as ruas, o Rio Cego repetiu uma voz que ninguém mais conseguia ouvir.",
         "Você é um Escutador: ouve as lembranças que a pedra não conseguiu guardar em silêncio. Entre elas reconheceu Nara, sua irmã, desaparecida quando os sinos pararam.",
@@ -218,7 +218,7 @@ public sealed partial class Game : Form
     private bool riverBell;
     private bool lumeLens;
     private bool naraTrace;
-    private float health = 100, maxHealth = 100, attackCd, attackFlash, skillCd, shardCd, bellCd, bellWaveTime, bellWaveRadius, pullCd, pullWaveTime, wardCd, wardTime, refrainCd, refrainWaveTime, refrainWaveRadius, beaconCd, beaconTime, beaconPulseCd, beaconWaveTime, returnVoiceCd, returnVoiceWaveTime, returnVoiceWaveRadius, finalStrikeCd, finalStrikeFlash, dashCd, dashTime, invulnerable, noticeTime, windupPulse, veinResonanceTime;
+    private float health = 100, maxHealth = 100, attackCd, attackFlash, skillCd, shardCd, bellCd, bellWaveTime, bellWaveRadius, pullCd, pullWaveTime, wardCd, wardTime, refrainCd, refrainWaveTime, refrainWaveRadius, beaconCd, beaconTime, beaconPulseCd, beaconWaveTime, returnVoiceCd, returnVoiceWaveTime, returnVoiceWaveRadius, finalStrikeCd, finalStrikeFlash, stoneBastionCd, stoneBastionTime, dashCd, dashTime, invulnerable, noticeTime, windupPulse, veinResonanceTime;
     private PointF finalStrikeTarget;
     private bool armor, armorOn, relic, relicOn, inventoryOpen, skillMenuOpen, characterSheetOpen, mapOpen, journalOpen, title = true, dead, victory, talentChoice, chestChoice, storyOverlay, memoryOverlay, endingChoiceOpen;
     private int skillMenuSlot;
@@ -292,7 +292,7 @@ public sealed partial class Game : Form
         clearedRooms = 0;
         ownedCharms = equippedCharm = equippedCharm2 = 0;
         equippedSkills = new[] { 1, 0, 0, 0 }; alternateSkills = new int[4]; alternateSkillsActive = skillMenuAlternate = false; Array.Clear(skillVariants); skillMenuOpen = false; skillMenuSlot = 0;
-        health = maxHealth = 100; attackCd = attackFlash = skillCd = shardCd = bellCd = bellWaveTime = bellWaveRadius = pullCd = pullWaveTime = wardCd = wardTime = refrainCd = refrainWaveTime = refrainWaveRadius = beaconCd = beaconTime = beaconPulseCd = beaconWaveTime = returnVoiceCd = returnVoiceWaveTime = returnVoiceWaveRadius = finalStrikeCd = finalStrikeFlash = dashCd = dashTime = invulnerable = veinResonanceTime = stoneFury = 0; vigilMinionCooldown = vigilTideTime = 0; beaconPos = finalStrikeTarget = PointF.Empty; facing = mouseAim = dashDirection = new PointF(1, 0); playerAnimationTime = 0; echoShards.Clear(); floatingTexts.Clear(); title = false; storyPage = 0; storyOverlay = true; SetupRoom();
+        health = maxHealth = 100; attackCd = attackFlash = skillCd = shardCd = bellCd = bellWaveTime = bellWaveRadius = pullCd = pullWaveTime = wardCd = wardTime = refrainCd = refrainWaveTime = refrainWaveRadius = beaconCd = beaconTime = beaconPulseCd = beaconWaveTime = returnVoiceCd = returnVoiceWaveTime = returnVoiceWaveRadius = finalStrikeCd = finalStrikeFlash = stoneBastionCd = stoneBastionTime = dashCd = dashTime = invulnerable = veinResonanceTime = stoneFury = 0; vigilMinionCooldown = vigilTideTime = 0; beaconPos = finalStrikeTarget = PointF.Empty; facing = mouseAim = dashDirection = new PointF(1, 0); playerAnimationTime = 0; echoShards.Clear(); floatingTexts.Clear(); title = false; storyPage = 0; storyOverlay = true; SetupRoom();
     }
 
     private void AdvanceStory()
@@ -513,7 +513,7 @@ public sealed partial class Game : Form
             if (e.KeyCode is Keys.Up or Keys.Right) { CycleSkillVariant(skillMenuSlot, 1); return; }
             if (e.KeyCode is Keys.Down or Keys.Left) { CycleSkillVariant(skillMenuSlot, -1); return; }
             if (e.KeyCode == Keys.Back) { SkillMenuLoadout()[skillMenuSlot] = 0; return; }
-            if (e.KeyCode is >= Keys.D1 and <= Keys.D8) { EquipSkill(skillMenuSlot, (int)e.KeyCode - (int)Keys.D0); return; }
+            if (e.KeyCode is >= Keys.D1 and <= Keys.D9) { EquipSkill(skillMenuSlot, (int)e.KeyCode - (int)Keys.D0); return; }
             return;
         }
         if (forgeMenuOpen) { if (defenseForgeOpen) HandleDefenseForgeKey(e.KeyCode); else if (e.KeyCode == Keys.T) defenseForgeOpen = true; else if (e.KeyCode == Keys.A) { secondaryForgeOpen = !secondaryForgeOpen; notice = secondaryForgeOpen ? weaponRarities[weapon] == 2 ? "AFIXO SECUNDÁRIO • ESCOLHA UMA RESSONÂNCIA DE RELÍQUIA" : "AFIXO SECUNDÁRIO • DISPONÍVEL APENAS PARA RELÍQUIAS" : "AFIXO PRINCIPAL • TÊMPERA NORMAL"; noticeTime = 2.5f; } else if (e.KeyCode == Keys.D9) CycleDifficultyTier(); else if (e.KeyCode == Keys.D0) ReforgeWeapon(0); else if (e.KeyCode is >= Keys.D1 and <= Keys.D6 or Keys.D8) ReforgeWeapon((int)e.KeyCode - (int)Keys.D0); else if (e.KeyCode == Keys.D7 && secondaryForgeOpen) { notice = "USE 0 PARA CADÊNCIA • O AFIXO PRINCIPAL NÃO PODE SER REPETIDO"; noticeTime = 2.5f; } else if (e.KeyCode == Keys.D7) ReforgeWeapon(7); else if (e.KeyCode == Keys.Escape) { forgeMenuOpen = false; secondaryForgeOpen = false; } return; }
@@ -700,7 +700,7 @@ public sealed partial class Game : Form
         float dt = timer.Interval / 1000f; noticeTime = Math.Max(0, noticeTime - dt);
         GameAudio.SetAmbientActive(!GameplayPaused(), room);
         if (GameplayPaused()) { Invalidate(); return; }
-        attackCd = Math.Max(0, attackCd - dt); attackFlash = Math.Max(0, attackFlash - dt); skillCd = Math.Max(0, skillCd - dt); shardCd = Math.Max(0, shardCd - dt); bellCd = Math.Max(0, bellCd - dt); bellWaveTime = Math.Max(0, bellWaveTime - dt); pullCd = Math.Max(0, pullCd - dt); pullWaveTime = Math.Max(0, pullWaveTime - dt); wardCd = Math.Max(0, wardCd - dt); wardTime = Math.Max(0, wardTime - dt); refrainCd = Math.Max(0, refrainCd - dt); refrainWaveTime = Math.Max(0, refrainWaveTime - dt); beaconCd = Math.Max(0, beaconCd - dt); returnVoiceCd = Math.Max(0, returnVoiceCd - dt); returnVoiceWaveTime = Math.Max(0, returnVoiceWaveTime - dt); finalStrikeCd = Math.Max(0, finalStrikeCd - dt); finalStrikeFlash = Math.Max(0, finalStrikeFlash - dt); dashCd = Math.Max(0, dashCd - dt); dashTime = Math.Max(0, dashTime - dt); invulnerable = Math.Max(0, invulnerable - dt); veinResonanceTime = Math.Max(0, veinResonanceTime - dt); windupPulse += dt; TickFloatingTexts(dt);
+        attackCd = Math.Max(0, attackCd - dt); attackFlash = Math.Max(0, attackFlash - dt); skillCd = Math.Max(0, skillCd - dt); shardCd = Math.Max(0, shardCd - dt); bellCd = Math.Max(0, bellCd - dt); bellWaveTime = Math.Max(0, bellWaveTime - dt); pullCd = Math.Max(0, pullCd - dt); pullWaveTime = Math.Max(0, pullWaveTime - dt); wardCd = Math.Max(0, wardCd - dt); wardTime = Math.Max(0, wardTime - dt); refrainCd = Math.Max(0, refrainCd - dt); refrainWaveTime = Math.Max(0, refrainWaveTime - dt); beaconCd = Math.Max(0, beaconCd - dt); returnVoiceCd = Math.Max(0, returnVoiceCd - dt); returnVoiceWaveTime = Math.Max(0, returnVoiceWaveTime - dt); finalStrikeCd = Math.Max(0, finalStrikeCd - dt); finalStrikeFlash = Math.Max(0, finalStrikeFlash - dt); stoneBastionCd = Math.Max(0, stoneBastionCd - dt); stoneBastionTime = Math.Max(0, stoneBastionTime - dt); dashCd = Math.Max(0, dashCd - dt); dashTime = Math.Max(0, dashTime - dt); invulnerable = Math.Max(0, invulnerable - dt); veinResonanceTime = Math.Max(0, veinResonanceTime - dt); windupPulse += dt; TickFloatingTexts(dt);
         PointF dir = Normalize(MovementInput(), PointF.Empty); if (dashTime > 0) dir = dashDirection;
         MovePlayer(Scale(dir, (dashTime > 0 ? 530 : ClassMovementSpeed()) * dt));
         PointF drift = CurrentDrift();
@@ -1002,7 +1002,7 @@ public sealed partial class Game : Form
         float aspectPressure = vigilActive && VigilAspectForFloor(vigilFloor) == VigilAspect.Hungry ? 1.3f : 1;
         if (vigilActive && HasCharm(7)) aspectPressure *= 1.1f;
         float campaignPressure = vigilActive ? 1f : DifficultyIncomingDamageMultiplier(difficultyTier);
-        float damageTaken = value * vigilPressure * aspectPressure * campaignPressure * HeroDamageTakenMultiplier() * ArmorDamageTakenMultiplier() * (wardTime > 0 ? AnchorWardDamageTakenMultiplier() : 1) * WeaponDamageTakenMultiplier() * CharmDamageTakenMultiplier() * CombatMasteryDamageTakenMultiplier() * CombatApexDamageTakenMultiplier();
+        float damageTaken = value * vigilPressure * aspectPressure * campaignPressure * HeroDamageTakenMultiplier() * ArmorDamageTakenMultiplier() * (wardTime > 0 ? AnchorWardDamageTakenMultiplier() : 1) * (stoneBastionTime > 0 ? 0.45f : 1f) * WeaponDamageTakenMultiplier() * CharmDamageTakenMultiplier() * CombatMasteryDamageTakenMultiplier() * CombatApexDamageTakenMultiplier();
         health = Math.Max(0, health - damageTaken); invulnerable = 0.6f;
         if (heroClass == HeroClass.StoneGuardian && stoneFury < 100)
         {
@@ -2410,6 +2410,14 @@ public sealed partial class Game : Form
             g.DrawEllipse(wardGlow, player.X - 25, player.Y - 25, 50, 50);
             g.DrawEllipse(wardCore, player.X - 20, player.Y - 20, 40, 40);
         }
+        if (stoneBastionTime > 0)
+        {
+            int alpha = Math.Clamp((int)(145 + 80 * MathF.Sin(windupPulse * 11)), 55, 230);
+            using var bastionGlow = new Pen(Color.FromArgb(alpha, 226, 137, 76), 5);
+            using var bastionCore = new Pen(Color.FromArgb(Math.Min(245, alpha + 25), 255, 218, 139), 1.5f);
+            g.DrawEllipse(bastionGlow, player.X - 31, player.Y - 31, 62, 62);
+            g.DrawEllipse(bastionCore, player.X - 25, player.Y - 25, 50, 50);
+        }
         if (skillCd > 0) { using var cooldownPen = new Pen(Color.FromArgb(190, 230, 193, 129), 3); g.DrawArc(cooldownPen, player.X - 25, player.Y - 25, 50, 50, -90, 360 * skillCd / Math.Max(1.5f, 6f - skillTalent * .5f)); }
         if (shardCd > 0) { using var shardCooldownPen = new Pen(Color.FromArgb(205, 107, 202, 196), 3); g.DrawArc(shardCooldownPen, player.X - 33, player.Y - 33, 66, 66, 90, 360 * shardCd / VoiceShardCooldown()); }
         if (riverBell && bellCd > 0) { using var bellCooldownPen = new Pen(Color.FromArgb(210, 205, 169, 118), 3); g.DrawArc(bellCooldownPen, player.X - 41, player.Y - 41, 82, 82, 180, 360 * bellCd / BellPulseCooldown()); }
@@ -2419,6 +2427,7 @@ public sealed partial class Game : Form
         if (beaconLight && beaconCd > 0) { using var beaconCooldownPen = new Pen(Color.FromArgb(220, 182, 238, 220), 3); g.DrawArc(beaconCooldownPen, player.X - 73, player.Y - 73, 146, 146, 180, 360 * beaconCd / BeaconTotalCooldown()); }
         if (finalEnding == 1 && returnVoiceCd > 0) { using var returnedVoicesCooldownPen = new Pen(Color.FromArgb(215, 205, 221, 165), 3); g.DrawArc(returnedVoicesCooldownPen, player.X - 81, player.Y - 81, 162, 162, 270, 360 * returnVoiceCd / (Math.Max(14f, 23f - skillTalent * 0.7f) * WeaponCooldownMultiplier())); }
         if (finalEnding == 2 && finalStrikeCd > 0) { using var finalSparkCooldownPen = new Pen(Color.FromArgb(225, 255, 191, 115), 3); g.DrawArc(finalSparkCooldownPen, player.X - 89, player.Y - 89, 178, 178, 0, 360 * finalStrikeCd / (Math.Max(12f, 19f - skillTalent * 0.65f) * (skillVariants[8] == 1 ? 1.25f : skillVariants[8] == 2 ? 0.75f : 1f) * WeaponCooldownMultiplier())); }
+        if (heroClass == HeroClass.StoneGuardian && stoneBastionCd > 0) { using var bastionCooldownPen = new Pen(Color.FromArgb(225, 226, 137, 76), 3); g.DrawArc(bastionCooldownPen, player.X - 97, player.Y - 97, 194, 194, 90, 360 * stoneBastionCd / (18f * WeaponCooldownMultiplier())); }
     }
     private static int PlayerSpriteRow(PointF direction)
     {
@@ -2515,7 +2524,7 @@ public sealed partial class Game : Form
         using var heading = new Font("Georgia", 17, FontStyle.Bold); using var body = new Font("Segoe UI", 11); using var small = new Font("Segoe UI", 9);
         g.FillRectangle(shade, 0, 83, 960, 557); g.FillRectangle(panelBrush, 105, 132, 750, 435); g.DrawRectangle(edge, 105, 132, 750, 435);
         DrawCentered(g, skillMenuAlternate ? "MONTAGEM ALTERNATIVA" : "MONTAGEM PRINCIPAL", 153, heading, Color.FromArgb(230, 193, 129));
-        g.DrawString("TAB alterna qual montagem editar; T ativa a alternativa durante o combate. F/V/G/C escolhem espaços; 1–8 equipam.", small, Brushes.DarkGray, 140, 188);
+        g.DrawString("TAB alterna qual montagem editar; T ativa a alternativa durante o combate. F/V/G/C escolhem espaços; 1–9 equipam.", small, Brushes.DarkGray, 140, 188);
         g.DrawString("ESPAÇOS DA MONTAGEM", body, Brushes.Goldenrod, 150, 224);
         string[] slotKeys = { "F", "V", "G", "C" };
         int[] menuSkills = SkillMenuLoadout();
@@ -2525,15 +2534,17 @@ public sealed partial class Game : Form
             g.DrawString($"{slotKeys[slot]}  •  {ShortSkillName(menuSkills, slot)}{(selected ? "  ◀" : "")}", body, slotBrush, 160, 258 + slot * 32);
         }
         int selectedSkill = menuSkills[skillMenuSlot];
-        g.DrawString(selectedSkill == 0 ? "MEMÓRIA DA TÉCNICA: ESPAÇO VAZIO" : $"MEMÓRIA: {SkillVariantName(selectedSkill, skillVariants[selectedSkill])}", body, Brushes.Goldenrod, new RectangleF(150, 402, 310, 24));
-        g.DrawString(selectedSkill == 0 ? "Equipe uma técnica e use ↑/↓ para mudar sua forma." : SkillVariantDescription(selectedSkill, skillVariants[selectedSkill]), small, Brushes.DarkGray, new RectangleF(150, 430, 310, 36));
+        int selectedVariant = selectedSkill is >= 1 and <= 8 ? skillVariants[selectedSkill] : 0;
+        g.DrawString(selectedSkill == 0 ? "MEMÓRIA DA TÉCNICA: ESPAÇO VAZIO" : selectedSkill == 9 ? "TÉCNICA DE CLASSE: BASTIÃO DE BASALTO" : $"MEMÓRIA: {SkillVariantName(selectedSkill, selectedVariant)}", body, Brushes.Goldenrod, new RectangleF(150, 402, 310, 24));
+        g.DrawString(selectedSkill == 0 ? "Equipe uma técnica e use ↑/↓ para mudar sua forma." : selectedSkill == 9 ? "Consome 50 de Fúria para reduzir dano em 55% por 3,5 s." : SkillVariantDescription(selectedSkill, selectedVariant), small, Brushes.DarkGray, new RectangleF(150, 430, 310, 36));
         g.DrawString("TÉCNICAS APRENDIDAS", body, Brushes.Goldenrod, 480, 224);
-        for (int skill = 1; skill <= 8; skill++)
+        for (int skill = 1; skill <= 9; skill++)
         {
             bool unlocked = SkillUnlocked(skill); bool equippedElsewhere = menuSkills.Where((_, index) => index != skillMenuSlot).Contains(skill);
             string state = !unlocked ? "  •  NÃO APRENDIDA" : equippedElsewhere ? "  •  EM OUTRO ESPAÇO" : menuSkills[skillMenuSlot] == skill ? "  •  EQUIPADA" : "";
-            g.DrawString($"{skill}. {skillNames[skill].ToUpperInvariant()}{state}", body, unlocked ? Brushes.AntiqueWhite : Brushes.Gray, 480, 262 + (skill - 1) * 32);
-            g.DrawString(skillDescriptions[skill], small, Brushes.DarkGray, 503, 280 + (skill - 1) * 32);
+            int rowY = 258 + (skill - 1) * 32;
+            g.DrawString($"{skill}. {skillNames[skill].ToUpperInvariant()}{state}", body, unlocked ? Brushes.AntiqueWhite : Brushes.Gray, 480, rowY);
+            g.DrawString(skillDescriptions[skill], small, Brushes.DarkGray, 503, rowY + 18);
         }
         g.DrawString("SINTONIAS DE TÉCNICAS", small, Brushes.Goldenrod, 150, 472);
         g.DrawString("1+2 • Sino prepara alvos; Estilhaço causa +35% e consome a marca", small, HasSkillPair(menuSkills, 1, 2) ? Brushes.LightGoldenrodYellow : Brushes.DarkGray, new RectangleF(150, 488, 310, 16));
