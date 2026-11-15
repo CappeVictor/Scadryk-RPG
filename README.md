@@ -62,6 +62,12 @@ dotnet publish Scadryk.csproj --configuration Release --runtime win-x64 --self-c
 
 O executável e os recursos ficam juntos em `artifacts/Scadryk-win-x64/`. O CI também executa o autoteste no executável publicado e confere os recursos antes de disponibilizar o artefato.
 
+## Menu inicial e campanha
+
+Ao abrir o jogo, use **↑/↓** e **Enter**, ou clique, para escolher **Continuar**, **Nova jornada**, **Campanha e mapas**, **História**, **Configurações** ou **Sair**. Continuar fica indisponível sem um save. Se já existir um save, Nova jornada pede confirmação; o arquivo atual só é substituído quando você salva explicitamente com **F5** dentro do jogo.
+
+**Campanha e mapas** mostra as 43 áreas da campanha na ordem em que se conectam. O atlas marca a área do save, salas concluídas e descobertas, e mantém áreas futuras bloqueadas até a história abrir a rota. A campanha é progressiva: esse mapa serve para entender o caminho e o andamento, sem pular capítulos. Entre no jogo para explorar o atlas durante a jornada com **M**. **História** apresenta o prólogo original; **Configurações** altera áudio e contraste dos avisos de ataque.
+
 ## Personagem e animação
 
 O protagonista, o Escutador, usa a folha de caminhada `Assets/Listener.png`, com quatro direções e quatro quadros por direção; Aven é um NPC distinto no Refúgio. `Assets/PlayerAttack.png` fornece poses de ataque para o jogador, e `Assets/EnemyAttacks.png` dá ciclos próprios ao guerreiro, arqueiro, mago e elite. As outras folhas de `Assets/` contêm os inimigos e os vinte chefes; seus quadros acompanham a movimentação e os avisos de ataque. Nos sprites com quadros de ataque, a última pose permanece por um instante após o impacto, marcando o fim da animação. O Arquivista das Marés e o Afinador do Contratempo têm representações procedurais próprias em C#. Eco de Tinta, Lembrança Afogada, Vestígio de Brasas, Mariposa de Nomes, Cantor do Lodo, Espectro de Papel e Eco Salino agora usam retratos originais com fundo transparente, animação sutil de movimento e escala adequada à silhueta; cada uma também se expande, inclina ou se comprime com um gesto próprio ao anunciar o ataque; as formas procedurais permanecem como fallback. Barras de vida, nomes, alerta de alvo e brilho de dano permanecem legíveis sobre as criaturas. O projeto copia as imagens para a saída ao compilar; não precisa baixar recursos nem instalar um motor de jogo.
