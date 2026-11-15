@@ -164,11 +164,17 @@ public sealed partial class Game
             g.FillEllipse(Brushes.Goldenrod, p.X - 5, p.Y - 5, 10, 10);
             g.DrawString(landmark.Item2, font, Brushes.AntiqueWhite, p.X - 28, p.Y - 27);
         }
+        if (firstEchoQuest < 3)
+        {
+            PointF objective = Map(firstEchoQuest == 0 ? FirstEchoCrossroads : firstEchoQuest == 1 ? FirstEchoSluice : FirstEchoTownGate);
+            using var objectiveRing = new Pen(Color.FromArgb(255, 215, 105), 3);
+            g.DrawEllipse(objectiveRing, objective.X - 13, objective.Y - 13, 26, 26);
+        }
         PointF here = Map(player);
         g.FillEllipse(Brushes.LightGreen, here.X - 7, here.Y - 7, 14, 14);
         string status = firstEchoQuest == 0 ? "PROCURE IVARA" : firstEchoQuest == 1 ? "SIGA ÀS COMPORTAS" : firstEchoQuest == 2 ? "RETORNE A EDDA" : "MARCOS RESTABELECIDOS";
         g.DrawString(status, font, Brushes.Goldenrod, 350, 520);
-        g.DrawString("VERDE: VOCÊ  •  M/ESC: FECHAR", font, Brushes.AntiqueWhite, 280, 555);
+        g.DrawString("VERDE: VOCÊ  •  CÍRCULO: OBJETIVO  •  M/ESC: FECHAR", font, Brushes.AntiqueWhite, 210, 555);
     }
     // Water blocks passage except at the two bridges, with enough clearance
     // for both the player and the larger enemies.
