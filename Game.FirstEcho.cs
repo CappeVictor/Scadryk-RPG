@@ -53,7 +53,7 @@ public sealed partial class Game
         else if (Distance(player, FirstEchoIvara) < 90)
         {
             if (firstEchoQuest == 0) firstEchoQuest = 1;
-            ShowMemory("IVARA, CARTÓGRAFA", firstEchoQuest >= 2 ? "Os marcos voltaram a responder. Edda precisa saber que a estrada está aberta." : "Os marcos perderam a voz. A estrada segue até a Casa das Comportas; a trilha ao norte leva à Gruta das Raízes. A margem alagada oferece outra travessia.");
+            ShowMemory("IVARA, CARTÓGRAFA", firstEchoQuest == 3 ? "Edda contou que o sino respondeu aos marcos. Os viajantes podem escolher seu caminho e encontrar abrigo outra vez." : firstEchoQuest == 2 ? "Os marcos voltaram a responder. Edda precisa saber que a estrada está aberta." : "Os marcos perderam a voz. A estrada segue até a Casa das Comportas; a trilha ao norte leva à Gruta das Raízes. A margem alagada oferece outra travessia.");
         }
         else if (Distance(player, FirstEchoCave) < 90)
         {
@@ -166,6 +166,8 @@ public sealed partial class Game
         }
         PointF here = Map(player);
         g.FillEllipse(Brushes.LightGreen, here.X - 7, here.Y - 7, 14, 14);
+        string status = firstEchoQuest == 0 ? "PROCURE IVARA" : firstEchoQuest == 1 ? "SIGA ÀS COMPORTAS" : firstEchoQuest == 2 ? "RETORNE A EDDA" : "MARCOS RESTABELECIDOS";
+        g.DrawString(status, font, Brushes.Goldenrod, 350, 520);
         g.DrawString("VERDE: VOCÊ  •  M/ESC: FECHAR", font, Brushes.AntiqueWhite, 280, 555);
     }
     // Water blocks passage except at the two bridges, with enough clearance

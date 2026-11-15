@@ -55,7 +55,7 @@ public sealed partial class Game
         int inscriptionCount = (memoriesFound & 1) + ((memoriesFound >> 1) & 1);
         g.DrawLine(divider, 464, 367, 856, 367);
         g.DrawString(firstEchoArea ? "CAMINHOS DAS MARGENS" : "PROGRESSO DA CAMPANHA", sectionFont, Brushes.Goldenrod, 466, 381);
-        g.DrawString(firstEchoArea ? (firstEchoQuest >= 2 ? "Comportas: vozes libertadas" : "Comportas: vozes retidas") : $"Câmaras limpas: {clearedCombatRooms}/{totalCombatRooms}", detailFont, Brushes.AntiqueWhite, 466, 409);
+        g.DrawString(firstEchoArea ? (firstEchoQuest == 3 ? "Expedição concluída com Edda" : firstEchoQuest == 2 ? "Vozes livres: relate a Edda" : "Comportas: vozes retidas") : $"Câmaras limpas: {clearedCombatRooms}/{totalCombatRooms}", detailFont, Brushes.AntiqueWhite, 466, 409);
         g.DrawString(firstEchoArea ? (firstEchoCaveFound ? "Gruta: registro encontrado" : "Gruta: registro ainda não encontrado") : $"Inscrições opcionais: {inscriptionCount}/2", detailFont, Brushes.AntiqueWhite, 466, 435);
         g.DrawString($"Ecos nesta área: {enemies.Count}   •   Saques no chão: {drops.Count}", metaFont, Brushes.LightGray, 466, 461);
         g.DrawString($"Ressonância {difficultyTier} • {DifficultyTierName(difficultyTier)}", resonanceFont, Brushes.Orange, 466, 489);
