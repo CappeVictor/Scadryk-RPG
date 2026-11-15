@@ -62,7 +62,7 @@ public sealed partial class Game
         else if (Distance(player, FirstEchoSluice) < 90)
         {
             if (firstEchoQuest == 0) ShowMemory("CASA DAS COMPORTAS", "As marcas no mecanismo são desconhecidas. Ivara, na encruzilhada, pode ajudar a decifrá-las.");
-            else { EnterFirstEchoInterior(45); ShowMemory("CASA DAS COMPORTAS", "O som das vozes vem do mecanismo no fundo da casa."); }
+            else { EnterFirstEchoInterior(45); ShowMemory("CASA DAS COMPORTAS", "O Vigia protege o mecanismo que prende as vozes. Observe os sinais no chão: ele alterna uma onda ao seu redor e uma marca sobre a posição do viajante."); }
         }
     }
 
