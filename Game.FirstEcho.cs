@@ -8,6 +8,7 @@ public sealed partial class Game
     // 0: undiscovered, 1: investigate, 2: voices released, 3: reported to Edda.
     private int firstEchoQuest;
     private bool firstEchoCaveFound;
+    private int firstEchoDiscovered;
     private readonly List<Enemy> firstEchoWaitingEnemies = new();
     private readonly List<Drop> firstEchoWaitingDrops = new();
     private bool firstEchoOutsideStored;
@@ -68,6 +69,7 @@ public sealed partial class Game
 
     private void EnterFirstEchoInterior(int destination)
     {
+        firstEchoDiscovered |= destination == 44 ? 2 : 4;
         StoreFirstEchoOutside();
         room = destination; SetupRoom();
     }

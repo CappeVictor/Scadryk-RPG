@@ -180,9 +180,9 @@ public sealed partial class Game
         if (save.QuestStage >= 22) known |= 1L << 18;
         if (save.QuestStage >= 57) known |= 1L << 41;
         if (save.QuestStage >= 58) known |= 1L << 42;
-        if (save.FirstEchoQuest > 0 || save.FirstEchoCaveFound) known |= 1L << 43;
-        if (save.FirstEchoCaveFound) known |= 1L << 44;
-        if (save.FirstEchoQuest >= 2) known |= 1L << 45;
+        if (save.FirstEchoDiscovered != 0 || save.FirstEchoQuest > 0 || save.FirstEchoCaveFound) known |= 1L << 43;
+        if ((save.FirstEchoDiscovered & 2) != 0 || save.FirstEchoCaveFound) known |= 1L << 44;
+        if ((save.FirstEchoDiscovered & 4) != 0 || save.FirstEchoQuest >= 2) known |= 1L << 45;
         return known;
     }
 
