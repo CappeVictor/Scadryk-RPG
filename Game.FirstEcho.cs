@@ -176,7 +176,10 @@ public sealed partial class Game
         PointF[] north = { FirstEchoCrossroads, FirstEchoCave };
         PointF[] south = { FirstEchoCrossroads, new(1400, 1050), new(1900, 1050), FirstEchoSluice };
         foreach (PointF[] path in new[] { main, north, south }) g.DrawLines(road, path.Select(Map).ToArray());
-        foreach (var landmark in new[] { (FirstEchoTownGate, "VÉSPERA"), (FirstEchoCrossroads, "IVARA"), (FirstEchoCave, "GRUTA"), (FirstEchoSluice, "COMPORTAS") })
+        foreach (var landmark in new[] {
+            (FirstEchoTownGate, "VÉSPERA"), (FirstEchoCrossroads, "IVARA"),
+            (FirstEchoCave, firstEchoQuest > 0 || (firstEchoDiscovered & 2) != 0 || firstEchoCaveFound ? "GRUTA" : "???"),
+            (FirstEchoSluice, firstEchoQuest > 0 || (firstEchoDiscovered & 4) != 0 ? "COMPORTAS" : "???") })
         {
             PointF p = Map(landmark.Item1);
             g.FillEllipse(Brushes.Goldenrod, p.X - 5, p.Y - 5, 10, 10);
