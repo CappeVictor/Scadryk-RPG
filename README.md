@@ -192,7 +192,8 @@ O décimo andar concede o **Eco Convergente**, um talismã exclusivo da Vigília
 ## Estrutura
 
 - `Program.cs`: ponto de entrada do aplicativo Windows.
-- `Game.cs`: janela, desenho 2D, combate, inimigos, loot, progressão e save.
+- `Game.cs`: janela, desenho 2D, combate, inimigos, loot, progressão e save (ainda em processo de divisão em módulos).
+- `Game.Journal.cs`: desenho do diário da jornada, separado como primeiro módulo parcial da interface.
 - `Scadryk.csproj`: projeto C#/.NET 8 Windows Forms.
 - `STORY.md`: universo, personagens e arco narrativo original planejado.
 - `ROADMAP.md`: meta de longo prazo e etapas de desenvolvimento.
