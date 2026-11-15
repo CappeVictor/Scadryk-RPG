@@ -27,12 +27,13 @@ public sealed partial class Game
             if (enemy.Hp <= 0) Defeat(enemy);
         }
         if (landed && heroClass == HeroClass.StoneGuardian && stoneFury >= 100) ReleaseStoneFury();
+        else if (landed && heroClass == HeroClass.NameWeaver) { nameThread = Math.Min(100, nameThread + 18); AddFloatingText(new PointF(player.X, player.Y - 34), "FIO +18", Color.FromArgb(235, 211, 139, 234)); }
     }
 
-    private float HeroBasicAttackMultiplier() => heroClass == HeroClass.StoneGuardian ? 1.2f : 1f;
-    private float HeroDamageTakenMultiplier() => heroClass == HeroClass.StoneGuardian ? 0.8f : 1f;
+    private float HeroBasicAttackMultiplier() => heroClass == HeroClass.StoneGuardian ? 1.2f : heroClass == HeroClass.NameWeaver ? 0.9f : 1f;
+    private float HeroDamageTakenMultiplier() => heroClass == HeroClass.StoneGuardian ? 0.8f : heroClass == HeroClass.NameWeaver ? 1.15f : 1f;
     private float ClassMovementSpeed() => heroClass == HeroClass.StoneGuardian ? 180f : PlayerMoveSpeed;
-    private string HeroClassTitle() => heroClass == HeroClass.StoneGuardian ? "GUARDIÃO DA PEDRA" : "ESCUTADOR";
+    private string HeroClassTitle() => heroClass switch { HeroClass.StoneGuardian => "GUARDIÃO DA PEDRA", HeroClass.NameWeaver => "TECELÃ DE NOMES", _ => "ESCUTADOR" };
 
     private void ReleaseStoneFury()
     {
@@ -51,12 +52,12 @@ public sealed partial class Game
 
     private void AdvanceTechniqueCooldowns(float seconds)
     {
-        skillCd = Math.Max(0, skillCd - seconds); shardCd = Math.Max(0, shardCd - seconds); bellCd = Math.Max(0, bellCd - seconds); pullCd = Math.Max(0, pullCd - seconds); wardCd = Math.Max(0, wardCd - seconds); refrainCd = Math.Max(0, refrainCd - seconds); beaconCd = Math.Max(0, beaconCd - seconds); returnVoiceCd = Math.Max(0, returnVoiceCd - seconds); finalStrikeCd = Math.Max(0, finalStrikeCd - seconds); stoneBastionCd = Math.Max(0, stoneBastionCd - seconds);
+        skillCd = Math.Max(0, skillCd - seconds); shardCd = Math.Max(0, shardCd - seconds); bellCd = Math.Max(0, bellCd - seconds); pullCd = Math.Max(0, pullCd - seconds); wardCd = Math.Max(0, wardCd - seconds); refrainCd = Math.Max(0, refrainCd - seconds); beaconCd = Math.Max(0, beaconCd - seconds); returnVoiceCd = Math.Max(0, returnVoiceCd - seconds); finalStrikeCd = Math.Max(0, finalStrikeCd - seconds); stoneBastionCd = Math.Max(0, stoneBastionCd - seconds); nameWeaverCd = Math.Max(0, nameWeaverCd - seconds);
     }
 
     private void DelayTechniqueCooldowns(float seconds)
     {
-        if (skillCd > 0) skillCd += seconds; if (shardCd > 0) shardCd += seconds; if (bellCd > 0) bellCd += seconds; if (pullCd > 0) pullCd += seconds; if (wardCd > 0) wardCd += seconds; if (refrainCd > 0) refrainCd += seconds; if (beaconCd > 0) beaconCd += seconds; if (returnVoiceCd > 0) returnVoiceCd += seconds; if (finalStrikeCd > 0) finalStrikeCd += seconds; if (stoneBastionCd > 0) stoneBastionCd += seconds;
+        if (skillCd > 0) skillCd += seconds; if (shardCd > 0) shardCd += seconds; if (bellCd > 0) bellCd += seconds; if (pullCd > 0) pullCd += seconds; if (wardCd > 0) wardCd += seconds; if (refrainCd > 0) refrainCd += seconds; if (beaconCd > 0) beaconCd += seconds; if (returnVoiceCd > 0) returnVoiceCd += seconds; if (finalStrikeCd > 0) finalStrikeCd += seconds; if (stoneBastionCd > 0) stoneBastionCd += seconds; if (nameWeaverCd > 0) nameWeaverCd += seconds;
     }
 
     private void Whirlwind()
@@ -96,7 +97,7 @@ public sealed partial class Game
         notice = "ESTILHAÇO DE VOZ"; noticeTime = 0.75f;
     }
 
-    private bool SkillUnlocked(int skill) => skill switch { 1 => true, 2 => riverBell, 3 => ebbSeal, 4 => anchorWard, 5 => refrainSong, 6 => beaconLight, 7 => finalEnding == 1, 8 => finalEnding == 2, 9 => heroClass == HeroClass.StoneGuardian, _ => false };
+    private bool SkillUnlocked(int skill) => skill switch { 1 => true, 2 => riverBell, 3 => ebbSeal, 4 => anchorWard, 5 => refrainSong, 6 => beaconLight, 7 => finalEnding == 1, 8 => finalEnding == 2, 9 => heroClass == HeroClass.StoneGuardian, 10 => heroClass == HeroClass.NameWeaver, _ => false };
     private int[] SkillMenuLoadout() => skillMenuAlternate == alternateSkillsActive ? equippedSkills : alternateSkills;
     private void ToggleSkillLoadout()
     {
@@ -113,7 +114,7 @@ public sealed partial class Game
     {
         int skill = SkillMenuLoadout()[slot];
         if (skill == 0 || !SkillUnlocked(skill)) { notice = "EQUIPE UMA TÉCNICA APRENDIDA PARA ESCOLHER SUA MEMÓRIA"; noticeTime = 2; return; }
-        if (skill == 9) { notice = "O BASTIÃO DE BASALTO NÃO POSSUI VARIAÇÕES"; noticeTime = 1.5f; return; }
+        if (skill >= 9) { notice = skill == 9 ? "O BASTIÃO DE BASALTO NÃO POSSUI VARIAÇÕES" : "A SUTURA DO NOME NÃO POSSUI VARIAÇÕES"; noticeTime = 1.5f; return; }
         skillVariants[skill] = (skillVariants[skill] + direction + 3) % 3;
         notice = $"{skillNames[skill]} • {SkillVariantName(skill, skillVariants[skill])}"; noticeTime = 2;
     }
@@ -159,13 +160,22 @@ public sealed partial class Game
         if (skill == 0) { notice = $"ESPAÇO {slot + 1} VAZIO • PRESSIONE B PARA MONTAR TÉCNICAS"; noticeTime = 1.5f; return; }
         if (!SkillUnlocked(skill)) { notice = "TÉCNICA AINDA NÃO APRENDIDA"; noticeTime = 1.5f; return; }
         GameAudio.Play(GameAudio.Cue.Skill);
-        switch (skill) { case 1: CastVoiceShard(); break; case 2: CastBellPulse(); break; case 3: CastEbbPull(); break; case 4: CastAnchorWard(); break; case 5: CastRefrain(); break; case 6: CastBeacon(); break; case 7: CastReturnedVoices(); break; case 8: CastFinalSpark(); break; case 9: CastStoneBastion(); break; }
+        switch (skill) { case 1: CastVoiceShard(); break; case 2: CastBellPulse(); break; case 3: CastEbbPull(); break; case 4: CastAnchorWard(); break; case 5: CastRefrain(); break; case 6: CastBeacon(); break; case 7: CastReturnedVoices(); break; case 8: CastFinalSpark(); break; case 9: CastStoneBastion(); break; case 10: CastNameSuture(); break; }
+    }
+    private void CastNameSuture()
+    {
+        if (nameWeaverCd > 0 || nameThread < 40) { notice = nameWeaverCd > 0 ? "SUTURA DO NOME EM RECARGA" : "FIO INSUFICIENTE • ACERTE INIMIGOS"; noticeTime = 1.4f; return; }
+        Enemy[] targets = enemies.Where(e => Distance(e.Pos, player) <= 210).ToArray();
+        if (targets.Length == 0) { notice = "NENHUM ECO AO ALCANCE DA SUTURA"; noticeTime = 1.4f; return; }
+        nameThread -= 40; nameWeaverCd = 14f;
+        foreach (Enemy target in targets) target.NameWeaverMarkTime = 5f;
+        notice = $"SUTURA DO NOME • {targets.Length} ECO(S) VULNERÁVEL(IS)"; noticeTime = 1.8f;
     }
     private static bool ValidSkillLoadout(SaveData s)
     {
         return ValidSkillArray(s.EquippedSkills, s) && ValidSkillArray(s.AlternateSkills, s);
     }
-    private static bool ValidSkillArray(int[]? skills, SaveData s) => skills is not null && (skills.Length is 3 or 4) && !skills.Any(skill => skill is < 0 or > 9) && skills.Where(skill => skill != 0).Distinct().Count() == skills.Count(skill => skill != 0) && skills.All(skill => skill == 0 || skill switch { 1 => true, 2 => s.RiverBell, 3 => s.EbbSeal, 4 => s.AnchorWard || s.QuestStage >= 36, 5 => s.RefrainSong, 6 => s.BeaconLight, 7 => s.FinalEnding == 1, 8 => s.FinalEnding == 2, 9 => s.HeroClass == (int)HeroClass.StoneGuardian, _ => false });
+    private static bool ValidSkillArray(int[]? skills, SaveData s) => skills is not null && (skills.Length is 3 or 4) && !skills.Any(skill => skill is < 0 or > 10) && skills.Where(skill => skill != 0).Distinct().Count() == skills.Count(skill => skill != 0) && skills.All(skill => skill == 0 || skill switch { 1 => true, 2 => s.RiverBell, 3 => s.EbbSeal, 4 => s.AnchorWard || s.QuestStage >= 36, 5 => s.RefrainSong, 6 => s.BeaconLight, 7 => s.FinalEnding == 1, 8 => s.FinalEnding == 2, 9 => s.HeroClass == (int)HeroClass.StoneGuardian, 10 => s.HeroClass == (int)HeroClass.NameWeaver, _ => false });
     private static int[] NormalizeSkillLoadout(int[] skills) => skills.Length == 3 ? skills.Append(0).ToArray() : skills.ToArray();
     private void RestoreSkillLoadouts(SaveData s)
     {
@@ -178,10 +188,10 @@ public sealed partial class Game
     private float BellPulseCooldown() => (Math.Max(7f, 14f - skillTalent * 0.7f) + (HasCharm(2) ? 1.5f : 0f)) * (skillVariants[2] == 2 ? 1.15f : 1f) * WeaponCooldownMultiplier();
     private float EbbPullRadius() => 160f * (skillVariants[3] == 1 ? 1.25f : 1f);
     private float WeaponSkillMultiplier() => HasWeaponAffix(weapon, 3) ? weaponRarities[weapon] == 2 ? 1.18f : 1.12f : 1f;
-    private float EquippedSkillCooldown(int skill) => skill switch { 1 => shardCd, 2 => bellCd, 3 => pullCd, 4 => wardCd, 5 => refrainCd, 6 => beaconCd, 7 => returnVoiceCd, 8 => finalStrikeCd, 9 => stoneBastionCd, _ => 0 };
+    private float EquippedSkillCooldown(int skill) => skill switch { 1 => shardCd, 2 => bellCd, 3 => pullCd, 4 => wardCd, 5 => refrainCd, 6 => beaconCd, 7 => returnVoiceCd, 8 => finalStrikeCd, 9 => stoneBastionCd, 10 => nameWeaverCd, _ => 0 };
     private int TechniquesOnCooldown() => equippedSkills.Count(skill => skill > 0 && EquippedSkillCooldown(skill) > 0);
     private int TechniquesReady() => equippedSkills.Count(skill => skill > 0 && EquippedSkillCooldown(skill) <= 0);
-    private float TechniqueDamageMultiplier() => (1f + techniqueTalent * 0.08f) * (combatDiscipline == 2 ? 1.12f : combatDiscipline == 1 ? 0.9f : 1f) * (combatApex == 1 && TechniquesOnCooldown() >= 2 ? 1.18f : 1f) * (vigilActive && HasCharm(8) ? 1.18f : 1f) * (HasCharm(11) && TechniquesReady() >= 2 ? 1.12f : 1f) * (HasCharm(12) ? 1.2f : 1f);
+    private float TechniqueDamageMultiplier() => (heroClass == HeroClass.NameWeaver ? 1.18f : 1f) * (1f + techniqueTalent * 0.08f) * (combatDiscipline == 2 ? 1.12f : combatDiscipline == 1 ? 0.9f : 1f) * (combatApex == 1 && TechniquesOnCooldown() >= 2 ? 1.18f : 1f) * (vigilActive && HasCharm(8) ? 1.18f : 1f) * (HasCharm(11) && TechniquesReady() >= 2 ? 1.12f : 1f) * (HasCharm(12) ? 1.2f : 1f);
     private float BasicAttackCycleMultiplier() => HasCharm(11) && TechniquesOnCooldown() >= 2 ? 1.12f : 1f;
     private float BasicAttackSpecializationMultiplier() => combatDiscipline == 1 ? 1.12f : combatDiscipline == 2 ? 0.9f : 1f;
     private int WeaponPower(int index) => weaponDamage[index] + weaponBonuses[index];
