@@ -213,6 +213,19 @@ public sealed partial class Game
             DrawCentered(g, "SCADRYK", 25, new Font("Georgia", 39, FontStyle.Bold), Color.FromArgb(230, 193, 129));
             DrawCentered(g, "O LUME GUARDA O QUE O MUNDO ESCOLHE ESQUECER", 79, new Font("Segoe UI", 11, FontStyle.Bold), Color.FromArgb(177, 183, 168));
             g.FillRectangle(panel, 82, 145, 398, 442); g.DrawRectangle(panelEdge, 82, 145, 398, 442);
+            SaveData? preview = TitleSavePreview();
+            string titleHint = titleSelection switch
+            {
+                0 => preview is not null ? $"NÍVEL {preview.Level} • {roomNames[preview.Room]}" : HasTitleSave ? "UMA JORNADA ANTERIOR ESTÁ DISPONÍVEL" : "AINDA NÃO HÁ UMA JORNADA SALVA",
+                1 => "ESCOLHA SUA CLASSE E INICIE A HISTÓRIA",
+                2 => "CONSULTE OS CAPÍTULOS E CAMINHOS",
+                3 => "CONHEÇA O INÍCIO DA HISTÓRIA DE VÉSPERA",
+                4 => "AJUSTE ÁUDIO, CONTRASTE E CÂMERA",
+                _ => "ENCERRE O JOGO"
+            };
+            using (var hintFont = new Font("Segoe UI", 9, FontStyle.Bold))
+            using (var hintFormat = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center, Trimming = StringTrimming.EllipsisCharacter })
+                g.DrawString(titleHint, hintFont, pale, new RectangleF(104, 165, 352, 56), hintFormat);
             string[] options = { "CONTINUAR", "NOVA JORNADA", "CAMPANHA E MAPAS", "HISTÓRIA", "CONFIGURAÇÕES", "SAIR" };
             for (int i = 0; i < options.Length; i++)
             {
