@@ -20,7 +20,7 @@ public sealed partial class Game : Form
     private enum EliteAffix { Armored, Swift, Bloodbound, Spearbound, Summoner, Conductor }
     private sealed class Enemy
     {
-        public PointF Pos, Target, Target2, Target2Start;
+        public PointF Pos, Target, Target2, Target2Start, KnockbackVelocity;
         public EnemyKind Kind;
         public float Hp, MaxHp, Cooldown, Windup, WindupMax, Flash, AnimationTime, AttackPoseTime, SummonCooldown, SummonWindup, SupportCooldown, SupportWindup, BeaconMarkTime, BellMarkTime, NameWeaverMarkTime, WoundTime, WoundTickCooldown, WoundDamage;
         public int BossPattern;
@@ -29,7 +29,7 @@ public sealed partial class Game : Form
         public EliteAffix? EliteAffix2;
         public bool EliteMinion;
         public EliteAffix EliteAffix;
-        public float Stagger;
+        public float Stagger, KnockbackTime;
         public bool Boss => Kind is EnemyKind.Guardian or EnemyKind.BlindScribe or EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus or EnemyKind.LastTuner;
         public float Radius => Boss ? 23 : Kind == EnemyKind.Elite ? 18 : 14;
     }
@@ -863,6 +863,14 @@ public sealed partial class Game : Form
     private void UpdateEnemy(Enemy e, float dt)
     {
         e.AttackPoseTime = Math.Max(0, e.AttackPoseTime - dt); e.BeaconMarkTime = Math.Max(0, e.BeaconMarkTime - dt); e.BellMarkTime = Math.Max(0, e.BellMarkTime - dt); e.NameWeaverMarkTime = Math.Max(0, e.NameWeaverMarkTime - dt);
+        if (e.KnockbackTime > 0)
+        {
+            float step = Math.Min(dt, e.KnockbackTime);
+            e.Pos = MoveEnemy(e, Scale(e.KnockbackVelocity, step));
+            e.KnockbackTime = Math.Max(0, e.KnockbackTime - step);
+            e.KnockbackVelocity = Scale(e.KnockbackVelocity, MathF.Pow(0.025f, step / 0.16f));
+            if (e.KnockbackTime <= 0) e.KnockbackVelocity = PointF.Empty;
+        }
         if (HasEliteAffix(e, EliteAffix.Summoner))
         {
             if (e.SummonWindup > 0 && e.Stagger > 0) { e.SummonWindup = 0; e.SummonCooldown = 2.5f; }
@@ -1008,6 +1016,15 @@ public sealed partial class Game : Form
         TriggerScreenShake(critical ? 3.2f : amount >= damage * 1.5f ? 2.2f : 0.8f, critical ? 0.14f : 0.1f);
         string value = Math.Max(1, (int)Math.Round(amount)).ToString();
         AddFloatingText(new PointF(enemy.Pos.X, enemy.Pos.Y - enemy.Radius - 10), critical ? $"CRÍTICO {value}" : value, critical ? Color.FromArgb(255, 211, 123) : Color.AntiqueWhite);
+    }
+
+    private void ApplyHitKnockback(Enemy enemy, bool critical)
+    {
+        float speed = weapon switch { 1 => 220f, 2 => 105f, 3 => 175f, _ => 150f };
+        if (critical) speed *= 1.22f;
+        if (enemy.Boss) speed *= 0.32f;
+        enemy.KnockbackVelocity = Scale(Normalize(Sub(enemy.Pos, player), facing), speed);
+        enemy.KnockbackTime = Math.Max(enemy.KnockbackTime, 0.16f);
     }
 
     private void ApplyWeaponWound(Enemy enemy, bool critical)

@@ -21,6 +21,7 @@ public sealed partial class Game
             bool rangedCriticalResonance = UsesRangedCriticalResonance(enemy); bool critical = random.NextDouble() < BasicAttackCriticalChance(enemy); int dealt = (int)(damage * HeroBasicAttackMultiplier() * BasicAttackSpecializationMultiplier() * BasicAttackDamageMultiplier(enemy) * OutgoingDamageMultiplier(enemy) * (critical ? CriticalMultiplier() : 1));
             landedCritical |= critical;
             DamageEnemy(enemy, dealt, critical); enemy.Flash = 0.2f;
+            if (enemy.Hp > 0) ApplyHitKnockback(enemy, critical);
             ApplyWeaponWound(enemy, critical);
             if (critical && rangedCriticalResonance) AddFloatingText(new PointF(enemy.Pos.X, enemy.Pos.Y - enemy.Radius - 28), "RESSONÂNCIA DO CONTRACANTO", Color.LightCyan);
             if (critical && !cadenceTriggered && HasWeaponAffix(weapon, 7)) { cadenceTriggered = true; float reduction = WeaponCriticalCooldownAdvance(weapon); AdvanceTechniqueCooldowns(reduction); AddFloatingText(new PointF(player.X, player.Y - 38), $"CADÊNCIA −{reduction:0.00} S", Color.LightCyan); }
