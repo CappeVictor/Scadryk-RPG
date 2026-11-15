@@ -68,7 +68,7 @@ O executável e os recursos ficam juntos em `artifacts/Scadryk-win-x64/`. O CI t
 
 ## Menu inicial e campanha
 
-Ao abrir o jogo, use **↑/↓** e **Enter**, ou clique, para escolher **Continuar**, **Nova jornada**, **Campanha e mapas**, **História**, **Configurações** ou **Sair**. Continuar fica indisponível sem um save. Depois de confirmar uma Nova jornada, escolha entre **Escutador**, **Guardião da Pedra** e **Tecelã de Nomes**; a classe escolhida fica registrada no save. O arquivo anterior não é apagado ao iniciar e só muda se você salvar o novo progresso dentro do jogo.
+Ao abrir o jogo, use **↑/↓** e **Enter**, ou clique, para escolher **Continuar**, **Nova jornada**, **Campanha e mapas**, **História**, **Configurações** ou **Sair**. Continuar fica indisponível sem um save. Depois de confirmar uma Nova jornada, escolha entre **Escutador**, **Guardião da Pedra** e **Tecelã de Nomes**; selecione o cartão e confirme em **Iniciar** ou com **Enter**. A classe escolhida fica registrada no save. O arquivo anterior não é apagado ao iniciar e só muda se você salvar o novo progresso dentro do jogo.
 
 **Campanha e mapas** lista os 18 capítulos e mostra um pequeno mapa das áreas de cada capítulo. A tela marca o capítulo atual, o que já foi concluído ou descoberto e as rotas bloqueadas pela história. Escolher um capítulo só abre sua prévia; **Enter** continua a jornada do save ou inicia uma nova campanha, sem teletransportar nem pular fases. A abertura usa uma paisagem original de Véspera sob o brilho do Lume. Entre no jogo para explorar o atlas durante a jornada com **M**. **História** apresenta o prólogo original; **Configurações** altera áudio e contraste dos avisos de ataque.
 

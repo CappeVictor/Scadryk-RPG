@@ -23,6 +23,10 @@ public sealed partial class Game
             if (menuHitTest.classSelection != 1) throw new InvalidOperationException("A seta direita não selecionou a próxima classe.");
             menuHitTest.HandleTitleKey(Keys.Left);
             if (menuHitTest.classSelection != 0) throw new InvalidOperationException("A seta esquerda não retornou à classe anterior.");
+            menuHitTest.HandleTitleClick(new PointF(480, 300));
+            if (!menuHitTest.classSelectionOpen || menuHitTest.classSelection != 1) throw new InvalidOperationException("O clique no cartão não selecionou a classe antes da confirmação.");
+            menuHitTest.HandleTitleClick(new PointF(50, 540));
+            if (!menuHitTest.classSelectionOpen) throw new InvalidOperationException("Um clique fora dos controles fechou a seleção de classe.");
             menuHitTest.classSelectionOpen = false; menuHitTest.titlePage = TitlePage.Settings;
             menuHitTest.HandleTitleClick(new PointF(480, 525));
             if (!menuHitTest.reducedScreenShake || menuHitTest.titlePage != TitlePage.Settings) throw new InvalidOperationException("O fim do botão de tremor não alterou a opção corretamente.");

@@ -27,9 +27,9 @@ public sealed partial class Game
             if (key is Keys.Escape or Keys.Back) classSelectionOpen = false;
             else if (key is Keys.Up or Keys.W or Keys.Left or Keys.A) classSelection = (classSelection + 2) % 3;
             else if (key is Keys.Down or Keys.S or Keys.Right or Keys.D) classSelection = (classSelection + 1) % 3;
-            else if (key == Keys.D1) ChooseHeroClass(0);
-            else if (key == Keys.D2) ChooseHeroClass(1);
-            else if (key == Keys.D3) ChooseHeroClass(2);
+            else if (key == Keys.D1) classSelection = 0;
+            else if (key == Keys.D2) classSelection = 1;
+            else if (key == Keys.D3) classSelection = 2;
             else if (key is Keys.Enter or Keys.Space) ChooseHeroClass(classSelection);
             Invalidate(); return;
         }
@@ -125,10 +125,11 @@ public sealed partial class Game
     {
         if (classSelectionOpen)
         {
-            if (new RectangleF(25, 125, 290, 365).Contains(point)) ChooseHeroClass(0);
-            else if (new RectangleF(335, 125, 290, 365).Contains(point)) ChooseHeroClass(1);
-            else if (new RectangleF(645, 125, 290, 365).Contains(point)) ChooseHeroClass(2);
-            else if (point.Y > 500) classSelectionOpen = false;
+            if (new RectangleF(25, 125, 290, 365).Contains(point)) classSelection = 0;
+            else if (new RectangleF(335, 125, 290, 365).Contains(point)) classSelection = 1;
+            else if (new RectangleF(645, 125, 290, 365).Contains(point)) classSelection = 2;
+            else if (new RectangleF(490, 565, 200, 42).Contains(point)) ChooseHeroClass(classSelection);
+            else if (new RectangleF(270, 565, 200, 42).Contains(point)) classSelectionOpen = false;
             Invalidate(); return;
         }
         if (confirmNewJourney)
@@ -331,6 +332,9 @@ public sealed partial class Game
             DrawCentered(g, "+18% técnicas • −10% dano básico", 397, new Font("Segoe UI", 9), Color.FromArgb(190, 198, 190), 790);
             DrawCentered(g, "+15% dano recebido", 419, new Font("Segoe UI", 9), Color.FromArgb(190, 198, 190), 790);
             DrawCentered(g, "← / → ESCOLHER • 1 / 2 / 3 • ENTER CONFIRMA • ESC VOLTA", 535, new Font("Segoe UI", 10, FontStyle.Bold), Color.AntiqueWhite);
+            g.DrawRectangle(panelEdge, 270, 565, 200, 42); g.DrawRectangle(panelEdge, 490, 565, 200, 42);
+            DrawCentered(g, "VOLTAR", 575, new Font("Segoe UI", 10, FontStyle.Bold), Color.AntiqueWhite, 370);
+            DrawCentered(g, "INICIAR", 575, new Font("Segoe UI", 10, FontStyle.Bold), Color.Goldenrod, 590);
         }
         if (noticeTime > 0 && !string.IsNullOrWhiteSpace(notice)) DrawCentered(g, notice, 612, new Font("Segoe UI", 9, FontStyle.Bold), Color.FromArgb(230, 193, 129));
     }
