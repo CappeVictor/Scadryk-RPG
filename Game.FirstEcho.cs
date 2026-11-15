@@ -178,15 +178,20 @@ public sealed partial class Game
         using var light = new SolidBrush(Color.FromArgb(159, 228, 210));
         using var edge = new Pen(enemy == lockedTarget ? Color.Gold : Color.FromArgb(186, 177, 133), 3);
         g.FillEllipse(shadow, x - 27, y - 6, 54, 13);
+        float windup = enemy.Windup > 0 && enemy.WindupMax > 0 ? 1 - enemy.Windup / enemy.WindupMax : 0;
+        float sway = enemy.Moving ? System.MathF.Sin(enemy.AnimationTime * 10) * 3 : System.MathF.Sin(windupPulse * 2) * 1.5f;
+        var pose = g.Save();
+        g.TranslateTransform(sway, -windup * 4);
         PointF[] mantle = { new(x - 22, y - 66), new(x + 22, y - 66), new(x + 31, y - 5), new(x - 31, y - 5) };
         g.FillPolygon(cloak, mantle); g.DrawPolygon(edge, mantle);
         g.FillEllipse(armor, x - 18, y - 95, 36, 38); g.DrawEllipse(edge, x - 18, y - 95, 36, 38);
         g.FillRectangle(light, x - 11, y - 82, 22, 5);
-        g.DrawLine(edge, x - 29, y - 53, x - 43, y - 11);
-        g.DrawLine(edge, x + 29, y - 53, x + 43, y - 11);
+        g.DrawLine(edge, x - 29, y - 53, x - 43 - windup * 6, y - 11 - windup * 16);
+        g.DrawLine(edge, x + 29, y - 53, x + 43 + windup * 6, y - 11 - windup * 16);
         g.DrawEllipse(edge, x - 12, y - 48, 24, 24);
         g.DrawLine(edge, x - 8, y - 36, x + 8, y - 36);
         g.DrawLine(edge, x, y - 44, x, y - 28);
+        g.Restore(pose);
     }
 
     private void DrawFirstEchoMap(Graphics g)
