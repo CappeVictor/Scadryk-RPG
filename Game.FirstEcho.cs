@@ -54,7 +54,13 @@ public sealed partial class Game
         else if (Distance(player, FirstEchoIvara) < 90)
         {
             if (firstEchoQuest == 0) firstEchoQuest = 1;
-            ShowMemory("IVARA, CARTÓGRAFA", firstEchoQuest == 3 ? "Edda contou que o sino respondeu aos marcos. Os viajantes podem escolher seu caminho e encontrar abrigo outra vez." : firstEchoQuest == 2 ? "Os marcos voltaram a responder. Edda precisa saber que a estrada está aberta." : "Os marcos perderam a voz. A estrada segue até a Casa das Comportas; a trilha ao norte leva à Gruta das Raízes. A margem alagada oferece outra travessia.");
+            if (firstEchoQuest >= 2 && enemies.Any(enemy => Distance(enemy.Pos, FirstEchoIvara) < 200))
+            {
+                ShowMemory("IVARA, CARTÓGRAFA", "Há ecos perto demais para descansar. Afaste-os e volte à encruzilhada.");
+                return;
+            }
+            if (firstEchoQuest >= 2) health = maxHealth;
+            ShowMemory("IVARA, CARTÓGRAFA", firstEchoQuest == 3 ? "Edda contou que o sino respondeu aos marcos. Os viajantes podem escolher seu caminho e encontrar abrigo outra vez. Ivara oferece um momento de descanso: vida restaurada." : firstEchoQuest == 2 ? "Os marcos voltaram a responder. Edda precisa saber que a estrada está aberta. Ivara oferece um momento de descanso: vida restaurada." : "Os marcos perderam a voz. A estrada segue até a Casa das Comportas; a trilha ao norte leva à Gruta das Raízes. A margem alagada oferece outra travessia.");
         }
         else if (Distance(player, FirstEchoCave) < 90)
         {
