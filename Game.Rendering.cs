@@ -178,6 +178,7 @@ public sealed partial class Game
         using var gateBrush = new SolidBrush(Color.FromArgb(116, 100, 70)); using var gatePen = new Pen(Color.FromArgb(220, 189, 125), 3);
         g.FillRectangle(gateBrush, 70, 298, 30, 64); g.DrawRectangle(gatePen, 70, 298, 30, 64);
         g.FillRectangle(gateBrush, 860, 298, 30, 64); g.DrawRectangle(gatePen, 860, 298, 30, 64);
+        DrawCentered(g, "MARGENS", 267, new Font("Segoe UI", 8, FontStyle.Bold), Color.FromArgb(230, 193, 129), 838);
         if (player.X > 810 && player.Y > 280 && player.Y < 380) DrawCentered(g, "E  MARGENS DO PRIMEIRO ECO", 385, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, 775);
         using var bookBrush = new SolidBrush(Color.FromArgb(107, 56, 43)); using var bookEdge = new Pen(Color.FromArgb(234, 204, 133), 2);
         g.FillRectangle(bookBrush, ArchiveBookPosition.X - 13, ArchiveBookPosition.Y - 7, 26, 18); g.DrawRectangle(bookEdge, ArchiveBookPosition.X - 13, ArchiveBookPosition.Y - 7, 26, 18);

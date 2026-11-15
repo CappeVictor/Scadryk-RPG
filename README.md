@@ -107,7 +107,7 @@ As armas têm quatro perfis: a Espada de Pedra mantém alcance e ritmo equilibra
 | N | Ativar ou silenciar a ambiência e os efeitos de áudio |
 | M no menu de configurações | Alternar o tremor de câmera reduzido; a escolha fica no save |
 | Enter, Espaço ou clique na introdução | Avançar o prólogo e a lembrança |
-| F5 | Salvar depois de limpar a sala e recolher o loot |
+| F5 | Salvar em área segura ou sala limpa sem saque; nas Margens, salva a missão e retoma em Véspera |
 | C na tela inicial | Carregar o save |
 | Enter | Começar ou reiniciar |
 
