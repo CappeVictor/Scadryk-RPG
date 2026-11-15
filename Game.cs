@@ -4563,7 +4563,7 @@ public sealed class Game : Form
             if (affixForge.health != 62) throw new InvalidOperationException("A Ressonância da Trégua não recuperou vida ao abater sob metade da vida.");
             affixForge.health = 51; var healthyDummy = new Enemy { Pos = affixForge.player, Kind = EnemyKind.Grunt, Hp = 1, MaxHp = 1 }; affixForge.enemies.Add(healthyDummy); affixForge.Defeat(healthyDummy);
             if (affixForge.health != 57) throw new InvalidOperationException("A cura adicional da Ressonância da Trégua foi aplicada acima do limiar de risco.");
-            affixForge.weaponAffixes[0] = 4; affixForge.weaponAffixes2[0] = 3; affixForge.gold = 300; affixForge.tideGlass = 4; affixForge.forgeMenuOpen = true;
+            affixForge.player = AvenPosition; affixForge.weaponAffixes[0] = 4; affixForge.weaponAffixes2[0] = 3; affixForge.gold = 300; affixForge.tideGlass = 4; affixForge.forgeMenuOpen = true;
             affixForge.OnKeyDown(affixForge, new KeyEventArgs(Keys.A));
             if (!affixForge.secondaryForgeOpen || !affixForge.notice.Contains("AFIXO SECUNDÁRIO")) throw new InvalidOperationException("A forja não alternou para a escolha do afixo secundário.");
             affixForge.OnKeyDown(affixForge, new KeyEventArgs(Keys.D5)); SaveData targetedRelicSave = affixForge.CaptureSaveData();
