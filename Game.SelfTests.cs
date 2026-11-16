@@ -307,6 +307,22 @@ public sealed partial class Game
                 }
             }
         }
+        using (var guardianPhase = new Game())
+        {
+            guardianPhase.timer.Stop(); guardianPhase.StartGame(); guardianPhase.storyOverlay = false; guardianPhase.player = new PointF(470, 300); guardianPhase.maxHealth = guardianPhase.health = 100;
+            Enemy firstPhaseGuardian = new() { Kind = EnemyKind.Guardian, Pos = new PointF(350, 300), Hp = 80, MaxHp = 100, Cooldown = 0 };
+            guardianPhase.enemies.Add(firstPhaseGuardian);
+            for (int i = 0; i < 4; i++) { guardianPhase.UpdateEnemy(firstPhaseGuardian, 0.01f); if (BossUsesCone(firstPhaseGuardian)) throw new InvalidOperationException("A fenda final do Guardião apareceu antes da metade da vida."); firstPhaseGuardian.Windup = 0; firstPhaseGuardian.Cooldown = 0; }
+            guardianPhase.enemies.Clear();
+            Enemy guardian = new() { Kind = EnemyKind.Guardian, Pos = new PointF(350, 300), Hp = 40, MaxHp = 100, Cooldown = 0 };
+            guardianPhase.enemies.Add(guardian); guardianPhase.UpdateEnemy(guardian, 0.01f);
+            if (guardian.BossPattern != 1 || BossUsesCone(guardian) || !BossAttackContains(guardian, guardianPhase.player) || BossAttackContains(guardian, guardian.Pos)) throw new InvalidOperationException("O Guardião sem Nome não anunciou a marca direcionada ou usou o corte final antes da metade da vida.");
+            guardian.Windup = 0; guardian.Cooldown = 0; guardianPhase.UpdateEnemy(guardian, 0.01f);
+            if (guardian.BossPattern != 2 || !BossUsesCone(guardian) || !BossAttackContains(guardian, new PointF(420, 300)) || BossAttackContains(guardian, new PointF(400, 400))) throw new InvalidOperationException("A fase final do Guardião não anunciou um cone direcional com abertura segura pelas laterais.");
+            using (var warning = new Bitmap(960, 640)) using (var warningGraphics = Graphics.FromImage(warning)) guardianPhase.DrawBossWarning(warningGraphics, guardian);
+            guardianPhase.player = new PointF(420, 300); guardian.Windup = guardian.WindupMax = 0.01f; guardianPhase.UpdateEnemy(guardian, 0.02f);
+            if (guardianPhase.health >= guardianPhase.maxHealth) throw new InvalidOperationException("O corte anunciado do Guardião não atingiu a área do cone ao concluir o aviso.");
+        }
         using (var saltJailerPatterns = new Game())
         {
             saltJailerPatterns.timer.Stop(); saltJailerPatterns.StartGame(); saltJailerPatterns.storyOverlay = false; saltJailerPatterns.room = 48;
