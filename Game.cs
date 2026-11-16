@@ -394,7 +394,7 @@ public sealed partial class Game : Form
         else if (e.KeyCode == Keys.Tab) CycleTarget();
     }
 
-    private void UsePotion() { if (potions > 0 && health < maxHealth) { int healing = 45 + (relicOn && relicTrait == 2 ? 15 : 0); potions--; health = Math.Min(maxHealth, health + healing); notice = $"+{healing} VIDA"; noticeTime = 1.3f; } else { notice = potions == 0 ? "SEM POÇÕES" : "VIDA JÁ ESTÁ CHEIA"; noticeTime = 1.3f; } }
+    private void UsePotion() { if (potions > 0 && health < maxHealth) { int healing = 45 + (relicOn && relicTrait == 2 ? 15 : 0); potions--; health = Math.Min(maxHealth, health + healing); if (HasStepAmpouleResonance()) { AdvanceTechniqueCooldowns(1.25f); notice = $"+{healing} VIDA • PASSO −1,25 S RECARGA"; AddFloatingText(new PointF(player.X, player.Y - 38), "RESSONÂNCIA DO PASSO −1,25 S", Color.LightCyan); } else notice = $"+{healing} VIDA"; noticeTime = 1.8f; } else { notice = potions == 0 ? "SEM POÇÕES" : "VIDA JÁ ESTÁ CHEIA"; noticeTime = 1.3f; } }
     private float WhirlwindMultiplier() => HasCharmPair(1, 2) ? 2.52f : HasCharm(1) ? 2.16f : 1.6f;
     private float WhirlwindCooldownPenalty() => !HasCharm(1) ? 0f : HasCharmPair(1, 2) ? 0.5f : 1f;
     private float VoiceShardDamage() => damage * (HasCharmPair(3, 5) ? 2.05f : HasCharm(3) ? 1.8f : 1.35f) * SkillDamageVariant(1) * WeaponSkillMultiplier() * TechniqueDamageMultiplier();

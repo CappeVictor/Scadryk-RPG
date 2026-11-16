@@ -1394,6 +1394,16 @@ public sealed partial class Game
             if (stoneConvergence.HasStoneConvergenceResonance() || stoneConvergence.RelicDamageTakenMultiplier() != 1f)
                 throw new InvalidOperationException("A Ressonância da Laje permaneceu ativa com o Relicário desequipado.");
         }
+        using (var stepAmpoule = new Game())
+        {
+            stepAmpoule.timer.Stop(); stepAmpoule.StartGame(); stepAmpoule.armorOn = stepAmpoule.relicOn = true; stepAmpoule.armorTrait = stepAmpoule.relicTrait = 2; stepAmpoule.health = 20; stepAmpoule.potions = 1;
+            stepAmpoule.skillCd = stepAmpoule.shardCd = stepAmpoule.bellCd = stepAmpoule.pullCd = 3f; stepAmpoule.UsePotion();
+            if (!stepAmpoule.HasStepAmpouleResonance() || stepAmpoule.health != 80 || stepAmpoule.potions != 0 || stepAmpoule.skillCd != 1.75f || stepAmpoule.shardCd != 1.75f || !stepAmpoule.floatingTexts.Any(text => text.Text == "RESSONÂNCIA DO PASSO −1,25 S"))
+                throw new InvalidOperationException("Passo Ancorado + Ampola Viva não adiantaram as recargas ao usar uma poção.");
+            stepAmpoule.relicOn = false; stepAmpoule.potions = 1; stepAmpoule.health = 20; stepAmpoule.skillCd = 3f; stepAmpoule.UsePotion();
+            if (stepAmpoule.HasStepAmpouleResonance() || stepAmpoule.skillCd != 3f || stepAmpoule.health != 65)
+                throw new InvalidOperationException("A Ressonância do Passo permaneceu ativa sem as duas peças equipadas.");
+        }
         using var lumeUpstream = new Game(); lumeUpstream.timer.Stop(); lumeUpstream.StartGame(); lumeUpstream.room = 22; lumeUpstream.questStage = 25; lumeUpstream.townEnding = 2; lumeUpstream.SetupRoom();
         if (lumeUpstream.enemies.Single(e => e.Kind == EnemyKind.TideWitness).MaxHp != 920) throw new InvalidOperationException("Manter o Lume não alterou a força da Testemunha da Maré.");
         using var reedExpedition = new Game(); reedExpedition.timer.Stop(); reedExpedition.StartGame(); reedExpedition.storyOverlay = false; reedExpedition.room = 22; reedExpedition.questStage = 27; reedExpedition.upstreamTrace = true; reedExpedition.townEnding = 1; reedExpedition.enemies.Clear(); reedExpedition.drops.Clear(); reedExpedition.player = new PointF(850, 330); reedExpedition.Interact();
