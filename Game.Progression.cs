@@ -154,7 +154,7 @@ public sealed partial class Game
         if (enemy.Kind == EnemyKind.BorrowedChorus && !borrowedTrace) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "borrowed" });
         if (enemy.Kind == EnemyKind.LastTuner && !unstruckTrace) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "unstruck" });
         if (enemy.Kind == EnemyKind.LastTuner && (ownedWeapons & 8) == 0) drops.Add(CreateRelicWeaponDrop(Offset(enemy.Pos, 26, 0), 3));
-        if (enemy.Kind == EnemyKind.LastTuner && (ownedWeapons & 16) == 0) drops.Add(CreateWeaponDrop(Offset(enemy.Pos, -30, 24), 4, true));
+        if (enemy.Kind == EnemyKind.LastTuner && (ownedWeapons & 16) == 0) drops.Add(CreateRelicWeaponDrop(Offset(enemy.Pos, -30, 24), 4));
         if (enemy.Kind == EnemyKind.LastTuner && (ownedCharms & (1 << 11)) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 0, 30), Kind = "charm", Amount = 12 });
         if (enemy.Kind == EnemyKind.SaltEcho && !enemy.VigilMinion && random.NextDouble() < 0.2) drops.Add(new Drop { Pos = Offset(enemy.Pos, 18, 14), Kind = "glass", Amount = 1 });
         if (enemy.Kind == EnemyKind.FirstKeeper && (ownedCharms & 8) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 24, -12), Kind = "charm", Amount = 4 });
