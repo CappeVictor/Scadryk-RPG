@@ -36,9 +36,9 @@ public sealed partial class Game
         if (!forgeMenuOpen || room != 18 || questStage < 27 || Distance(player, AvenPosition) >= 60) { forgeMenuOpen = defenseForgeOpen = false; return; }
         if (key is Keys.Escape or Keys.T) { defenseForgeOpen = false; return; }
         if (key is >= Keys.D1 and <= Keys.D3) SetDefenseTrait(true, (int)key - (int)Keys.D0);
-        else if (key is >= Keys.D4 and <= Keys.D6) SetDefenseTrait(false, (int)key - (int)Keys.D3);
+        else if (key is >= Keys.D4 and <= Keys.D7) SetDefenseTrait(false, (int)key - (int)Keys.D3);
         else if (key == Keys.D0) SetDefenseTrait(true, 0);
-        else if (key == Keys.D7) SetDefenseTrait(false, 0);
+        else if (key == Keys.D8) SetDefenseTrait(false, 0);
     }
 
     private void SetDefenseTrait(bool forArmor, int trait)
@@ -61,8 +61,8 @@ public sealed partial class Game
 
     private static string ArmorTraitName(int trait) => trait switch { 1 => "Laje Funda", 2 => "Passo Ancorado", 3 => "Último Lastro", _ => "Veio Bruto" };
     private static string ArmorTraitDescription(int trait) => trait switch { 1 => "Peitoral equipado: recebe 6% menos dano adicional.", 2 => "Peitoral equipado: esquiva recarrega 0,12 s mais rápido.", 3 => "Com 35% da vida ou menos: recebe 15% menos dano.", _ => "Sem efeito adicional." };
-    private static string RelicTraitName(int trait) => trait switch { 1 => "Fio Nutrido", 2 => "Ampola Viva", 3 => "Coro Restaurador", _ => "Eco Silente" };
-    private static string RelicTraitDescription(int trait) => trait switch { 1 => "Relicário equipado: cura +3 por abate.", 2 => "Relicário equipado: poções curam +15 vida.", 3 => "Com o conjunto: Pulso do Veio dura +1 s.", _ => "Sem efeito adicional." };
+    private static string RelicTraitName(int trait) => trait switch { 1 => "Fio Nutrido", 2 => "Ampola Viva", 3 => "Coro Restaurador", 4 => "Selo da Convergência", _ => "Eco Silente" };
+    private static string RelicTraitDescription(int trait) => trait switch { 1 => "Relicário equipado: cura +3 por abate.", 2 => "Relicário equipado: poções curam +15 vida.", 3 => "Com o conjunto: Pulso do Veio dura +1 s.", 4 => "Relicário equipado: técnicas causam +10% dano; você recebe +6% dano.", _ => "Sem efeito adicional." };
 
     private static float DifficultyEnemyHealthMultiplier(int tier) => tier switch { 1 => 1.2f, 2 => 1.45f, 3 => 1.8f, _ => 1f };
     private static float DifficultyIncomingDamageMultiplier(int tier) => tier switch { 1 => 1.1f, 2 => 1.22f, 3 => 1.4f, _ => 1f };
@@ -292,7 +292,7 @@ public sealed partial class Game
         DrawCentered(g, $"FICHA DO {HeroClassTitle()}", 151, heading, Color.FromArgb(230, 193, 129));
         float critical = CriticalChance(), multiplier = CriticalMultiplier(), cooldown = BasicAttackCooldown();
         float expectedDps = damage * HeroBasicAttackMultiplier() * BasicAttackSpecializationMultiplier() * (1 + critical * (multiplier - 1)) / cooldown;
-        float mitigation = 1 - HeroDamageTakenMultiplier() * ArmorDamageTakenMultiplier() * WeaponDamageTakenMultiplier() * CharmDamageTakenMultiplier() * CombatMasteryDamageTakenMultiplier() * CombatApexDamageTakenMultiplier();
+        float mitigation = 1 - HeroDamageTakenMultiplier() * ArmorDamageTakenMultiplier() * RelicDamageTakenMultiplier() * WeaponDamageTakenMultiplier() * CharmDamageTakenMultiplier() * CombatMasteryDamageTakenMultiplier() * CombatApexDamageTakenMultiplier();
         if (wardTime > 0) mitigation = 1 - (1 - mitigation) * AnchorWardDamageTakenMultiplier();
         if (stoneBastionTime > 0) mitigation = 1 - (1 - mitigation) * StoneBastionDamageTakenMultiplier();
         g.DrawString("ATAQUE", section, Brushes.Goldenrod, 145, 205);
@@ -328,7 +328,7 @@ public sealed partial class Game
         g.FillRectangle(shade, 0, 83, 960, 557); g.FillRectangle(background, 120, 135, 720, 455); g.DrawRectangle(border, 120, 135, 720, 455);
         if (defenseForgeOpen)
         {
-            DrawCentered(g, "GRAVURA DO VEIO • TRAÇOS DEFENSIVOS", 170, new Font("Georgia", 16, FontStyle.Bold), Color.Goldenrod);
+            DrawCentered(g, "GRAVURA DO VEIO • TRAÇOS DE EQUIPAMENTO", 170, new Font("Georgia", 16, FontStyle.Bold), Color.Goldenrod);
             g.DrawString($"PEITORAL • ATUAL: {ArmorTraitName(armorTrait)}", optionFont, armor ? Brushes.AntiqueWhite : Brushes.Gray, 155, 208);
             g.DrawString("1. LAJE FUNDA • peitoral: recebe 6% menos dano adicional", hintFont, Brushes.AntiqueWhite, 155, 238);
             g.DrawString("2. PASSO ANCORADO • esquiva recarrega 0,12 s mais rápido", hintFont, Brushes.AntiqueWhite, 155, 266);
@@ -338,9 +338,10 @@ public sealed partial class Game
             g.DrawString("4. FIO NUTRIDO • cura +3 por abate", hintFont, Brushes.AntiqueWhite, 500, 238);
             g.DrawString("5. AMPOLA VIVA • poções curam +15 vida", hintFont, Brushes.AntiqueWhite, 500, 266);
             g.DrawString("6. CORO RESTAURADOR • Pulso do Veio dura +1 s", hintFont, Brushes.AntiqueWhite, new RectangleF(500, 294, 310, 36));
-            g.DrawString("7. ECO SILENTE • remover o traço", hintFont, Brushes.DarkGray, 500, 338);
+            g.DrawString("7. SELO DA CONVERGÊNCIA • técnicas +10%; dano recebido +6%", hintFont, Brushes.AntiqueWhite, new RectangleF(500, 338, 310, 36));
+            g.DrawString("8. ECO SILENTE • remover o traço", hintFont, Brushes.DarkGray, 500, 374);
             g.DrawString($"CADA ALTERAÇÃO CUSTA 100 OURO E 2 SAL VÍTREO   •   DISPONÍVEL: {gold} OURO / {tideGlass} SAL", hintFont, gold < 100 || tideGlass < 2 ? Brushes.IndianRed : Brushes.Goldenrod, 155, 405);
-            g.DrawString("1–3 traço do peitoral • 4–6 traço do relicário • 0/7 removem • T ou ESC volta", hintFont, Brushes.DarkGray, 155, 438);
+            g.DrawString("1–3 peitoral • 4–7 relicário • 0/8 removem • T ou ESC volta", hintFont, Brushes.DarkGray, 155, 438);
             return;
         }
         DrawCentered(g, weaponRarities[weapon] == 0 ? $"TÊMPERA DO VEIO • {EquipmentCatalog.Weapon(weapon).Name} VIRA RARA" : $"TÊMPERA DO VEIO • {EquipmentCatalog.Weapon(weapon).Name}", 170, new Font("Georgia", 16, FontStyle.Bold), Color.Goldenrod);
@@ -396,6 +397,7 @@ public sealed partial class Game
     private bool HasCharm(int charm) => equippedCharm == charm || equippedCharm2 == charm;
     private bool HasCharmPair(int first, int second) => equippedCharm == first && equippedCharm2 == second || equippedCharm == second && equippedCharm2 == first;
     private float ArmorDamageTakenMultiplier() => !armorOn ? 1f : (relicOn ? 0.65f : 0.7f) * (armorTrait == 1 ? 0.94f : armorTrait == 3 && health <= maxHealth * 0.35f ? 0.85f : 1f);
+    private float RelicDamageTakenMultiplier() => relicOn && relicTrait == 4 ? 1.06f : 1f;
     private int RelicKillHealing() => !relicOn ? 0 : (armorOn ? 8 : 5) + (relicTrait == 1 ? 3 : 0);
     private float VeinResonanceMultiplier() => armorOn && relicOn && veinResonanceTime > 0 ? 1.15f : 1f;
 
