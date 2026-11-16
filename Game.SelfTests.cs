@@ -1744,6 +1744,8 @@ public sealed partial class Game
             if (!escarpment.firstEchoFerryRestored || escarpment.room != 46 || escarpment.gold != ferryGold + 120 || (ferrySave.FirstEchoDiscovered & 96) != 96 || (ferrySave.FirstEchoDiscovered & 4096) == 0 || !ValidSaveData(ferrySave)) throw new InvalidOperationException("O Vau não entregou a recompensa ou a travessia não abriu a nova região persistente.");
             if (escarpment.WorldSize() != new SizeF(3600, 2100) || escarpment.saltBasinProgress != 0) throw new InvalidOperationException("A Bacia do Sal Imóvel não foi inicializada como uma nova região aberta.");
             using (var mapImage = new Bitmap(960, 640)) using (var mapGraphics = Graphics.FromImage(mapImage)) escarpment.DrawSaltBasinMap(mapGraphics);
+            escarpment.player = SaltBasinFrontierEntrance; escarpment.Interact(); escarpment.memoryOverlay = false;
+            if (escarpment.room != 46 || escarpment.saltFrontierReturnLocation) throw new InvalidOperationException("A Costa das Badaladas abriu antes de Asha reabrir as rotas da Bacia.");
             escarpment.player = SaltBasinAsha; escarpment.Interact(); escarpment.memoryOverlay = false;
             if (!escarpment.saltBasinMissionAccepted || escarpment.enemies.Count(enemy => Distance(enemy.Pos, SaltBasinLanterns[0]) < 205) != 3 || escarpment.enemies.Count(enemy => Distance(enemy.Pos, SaltBasinLanterns[1]) < 205) != 3 || escarpment.enemies.Count(enemy => Distance(enemy.Pos, SaltBasinLanterns[2]) < 205) != 3) throw new InvalidOperationException("Asha não iniciou a cadeia das três lanternas com encontros próprios.");
             int basinGold = escarpment.gold;
@@ -1788,6 +1790,50 @@ public sealed partial class Game
                 if (vaultResume.room != 47 || vaultResume.enemies.Count != 0) throw new InvalidOperationException("A galeria reapareceu após ser limpa e salva.");
                 vaultResume.player = new PointF(850, 330); vaultResume.Interact();
                 if (vaultResume.room != 48 || vaultResume.enemies.Count != 0 || !vaultResume.saltVaultBossDefeated) throw new InvalidOperationException("O Carcereiro reapareceu depois de concluída a masmorra.");
+                vaultResume.player = new PointF(850, 330); vaultResume.Interact();
+                if (vaultResume.room != 46) throw new InvalidOperationException("A saída da fenda não voltou à Bacia antes de abrir a nova costa.");
+                vaultResume.player = SaltBasinFrontierEntrance; vaultResume.Interact(); vaultResume.memoryOverlay = false;
+                if (vaultResume.room != 49 || vaultResume.WorldSize() != new SizeF(4200, 2400) || vaultResume.enemies.Count != 0) throw new InvalidOperationException("A trilha das conchas não abriu a Costa das Badaladas como região explorável.");
+                SaveData frontierEntrySave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(vaultResume.CaptureSaveData()))!;
+                if (!frontierEntrySave.SaltFrontierLocation || !ValidSaveData(frontierEntrySave)) throw new InvalidOperationException("A entrada na costa não foi persistida nem validada.");
+                using (var frontierMap = new Bitmap(960, 640)) using (var frontierGraphics = Graphics.FromImage(frontierMap)) vaultResume.DrawSaltFrontierMap(frontierGraphics);
+                vaultResume.player = SaltFrontierCartographer; vaultResume.Interact(); vaultResume.memoryOverlay = false;
+                if ((vaultResume.saltFrontierProgress & 1) == 0 || vaultResume.enemies.Count != 9) throw new InvalidOperationException("Nemi não iniciou a missão nem ativou as três torres guardadas.");
+                SaveData frontierEncounterSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(vaultResume.CaptureSaveData()))!;
+                if (frontierEncounterSave.RoomCleared || !ValidSaveData(frontierEncounterSave)) throw new InvalidOperationException("O save marcou a região como limpa antes de resolver os encontros das torres.");
+                using (var frontierEncounterResume = new Game())
+                {
+                    frontierEncounterResume.timer.Stop(); frontierEncounterResume.StartGame(); frontierEncounterResume.firstEchoDiscovered = frontierEncounterSave.FirstEchoDiscovered; frontierEncounterResume.saltFrontierReturnLocation = frontierEncounterSave.SaltFrontierLocation; frontierEncounterResume.room = frontierEncounterSave.Room; frontierEncounterResume.SetupRoom();
+                    if (frontierEncounterResume.room != 49 || frontierEncounterResume.enemies.Count != 9) throw new InvalidOperationException("O save da missão não retomou os guardiões das torres ainda não registradas.");
+                }
+                int coastGold = vaultResume.gold;
+                for (int i = 0; i < SaltFrontierTideBells.Length; i++)
+                {
+                    PointF bell = SaltFrontierTideBells[i]; vaultResume.player = bell; vaultResume.Interact(); vaultResume.memoryOverlay = false;
+                    if ((vaultResume.saltFrontierProgress & (1 << (i + 1))) != 0) throw new InvalidOperationException("Uma badalada foi silenciada antes de limpar seus guardiões.");
+                    vaultResume.enemies.RemoveAll(enemy => Distance(enemy.Pos, bell) < 205); vaultResume.drops.RemoveAll(drop => Distance(drop.Pos, bell) < 205); vaultResume.Interact(); vaultResume.memoryOverlay = false;
+                    if ((vaultResume.saltFrontierProgress & (1 << (i + 1))) == 0) throw new InvalidOperationException("Uma torre não registrou sua badalada silenciada.");
+                    if (i == SaltFrontierTideBells.Length - 1)
+                    {
+                        vaultResume.saltFrontierProgress &= ~(1 << (i + 1));
+                        SaveData lastTowerSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(vaultResume.CaptureSaveData()))!;
+                        if (lastTowerSave.RoomCleared || !ValidSaveData(lastTowerSave)) throw new InvalidOperationException("A costa foi marcada como limpa antes de registrar a última badalada.");
+                        using var lastTowerResume = new Game();
+                        lastTowerResume.timer.Stop(); lastTowerResume.StartGame(); lastTowerResume.firstEchoDiscovered = lastTowerSave.FirstEchoDiscovered; lastTowerResume.saltFrontierReturnLocation = true; lastTowerResume.room = lastTowerSave.Room; lastTowerResume.SetupRoom();
+                        if (lastTowerResume.enemies.Count != 9) throw new InvalidOperationException("O save apagou os guardiões após derrotá-los, mas antes de registrar a última badalada.");
+                        vaultResume.saltFrontierProgress |= 1 << (i + 1);
+                    }
+                }
+                vaultResume.player = SaltFrontierCartographer; vaultResume.Interact(); vaultResume.memoryOverlay = false;
+                SaveData frontierCompletedSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(vaultResume.CaptureSaveData()))!;
+                if ((vaultResume.saltFrontierProgress & 31) != 31 || vaultResume.gold != coastGold + 280 || !ValidSaveData(frontierCompletedSave)) throw new InvalidOperationException("A missão de Nemi não concedeu a recompensa única nem salvou seu compasso.");
+                using (var frontierResume = new Game())
+                {
+                    frontierResume.timer.Stop(); frontierResume.StartGame(); frontierResume.firstEchoDiscovered = frontierCompletedSave.FirstEchoDiscovered; frontierResume.saltFrontierReturnLocation = frontierCompletedSave.SaltFrontierLocation; frontierResume.room = frontierCompletedSave.Room; frontierResume.SetupRoom();
+                    if (frontierResume.room != 49 || frontierResume.saltFrontierProgress != 31 || frontierResume.enemies.Count != 0 || !ValidSaveData(frontierResume.CaptureSaveData())) throw new InvalidOperationException("O save não retomou a Costa das Badaladas depois de concluir a missão.");
+                    frontierResume.player = SaltFrontierEntrance; frontierResume.Interact(); frontierResume.memoryOverlay = false;
+                    if (frontierResume.room != 46 || frontierResume.saltFrontierReturnLocation) throw new InvalidOperationException("A saída da costa não retornou à Bacia com o estado concluído.");
+                }
             }
             using (var resume = new Game())
             {

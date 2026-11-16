@@ -5,7 +5,7 @@ public sealed partial class Game
 {
     // Coordinates are measured in the same 960 x 640 space as the HUD.
     // Larger regions can override these dimensions without changing input or drawing.
-    private SizeF WorldSize() => room == 43 ? FirstEchoSize : room == 46 ? SaltBasinSize : new(960, 640);
+    private SizeF WorldSize() => room == 43 ? FirstEchoSize : room == 46 ? SaltBasinSize : room == 49 ? SaltFrontierSize : new(960, 640);
 
     private PointF CameraOffset()
     {

@@ -45,13 +45,14 @@ public sealed partial class Game
             g.FillRectangle(routeBack, 25, 80, 190, 3); g.FillRectangle(routeBar, 25, 80, 190 * Math.Clamp(fordRoute / 100f, 0, 1), 3);
         }
         GraphicsState worldTransform = g.Save();
-        if (room is 43 or 46) g.SetClip(new RectangleF(0, 108, 960, 445));
+        if (room is 43 or 46 or 49) g.SetClip(new RectangleF(0, 108, 960, 445));
         if (screenShakeStrength > 0.05f)
             g.TranslateTransform(MathF.Sin(screenShakePhase) * screenShakeStrength, MathF.Cos(screenShakePhase * 1.37f) * screenShakeStrength * 0.72f);
         PointF camera = CameraOffset();
         g.TranslateTransform(-camera.X, -camera.Y);
         if (room == 43) DrawFirstEchoEnvironment(g);
         else if (room == 46) DrawSaltBasinEnvironment(g);
+        else if (room == 49) DrawSaltFrontierEnvironment(g);
         else if (room is 44 or 45) DrawFirstEchoInterior(g);
         else if (room is 47 or 48) DrawSaltVaultEnvironment(g);
         else if (room == 3) DrawTownEnvironment(g, floor, tile);
@@ -126,6 +127,7 @@ public sealed partial class Game
     {
         if (room == 43) return firstEchoQuest == 0 ? "OBJETIVO: ENCONTRE IVARA NA ENCRUZILHADA" : firstEchoQuest == 1 ? "OBJETIVO: SIGA À CASA DAS COMPORTAS" : firstEchoQuest == 2 ? "OBJETIVO: RETORNE A VÉSPERA E FALE COM EDDA" : !firstEchoBeaconAccepted && !firstEchoBeaconRestored ? "OPCIONAL: VOLTE A IVARA E EXPLORE A ESCARPA" : firstEchoBeaconAccepted && !firstEchoBeaconRestored ? "MISSÃO OPCIONAL: LIMPE A ESCARPA E RESTAURE O MARCO" : !firstEchoFerryAccepted && !firstEchoFerryRestored ? "EXPLORE O VAU DE CINZA E FALE COM NILO" : firstEchoFerryAccepted && !firstEchoFerryRestored ? "MISSÃO OPCIONAL: REACENDA O SINAL DO VAU" : "EXPLORE AS MARGENS DO PRIMEIRO ECO";
         if (room == 46) return SaltBasinObjective();
+        if (room == 49) return SaltFrontierObjective();
         if (room == 47) return enemies.Count > 0 || drops.Count > 0 ? "OBJETIVO: LIMPE A GALERIA E RECOLHA O SAQUE" : "OBJETIVO: ESCOLHA SUBIR À BACIA OU DESCER À CÂMARA";
         if (room == 48) return saltVaultBossDefeated ? drops.Count > 0 ? "OBJETIVO: RECOLHA O SAQUE DO CARCEREIRO" : "OBJETIVO: SAIA PARA A BACIA OU RETORNE À GALERIA" : "OBJETIVO: DERROTE O CARCEREIRO DO SAL SUSPENSO";
         if (room is 44 or 45) return room == 44 ? "OBJETIVO: EXPLORE O ABRIGO NAS RAÍZES" : firstEchoQuest < 2 ? "OBJETIVO: LIBERTE AS VOZES DAS COMPORTAS" : "OBJETIVO: RETORNE ÀS MARGENS";
@@ -1047,6 +1049,7 @@ public sealed partial class Game
         if (firstEchoFerryRestored || saltBasinProgress != 0 || saltBasinReturnLocation) known |= 1L << 46;
         if ((saltBasinSurveyProgress & 16) != 0 || saltVaultLocation != 0 || saltVaultAntechamberCleared || saltVaultBossDefeated) known |= 1L << 47;
         if (saltVaultLocation == 2 || saltVaultAntechamberCleared || saltVaultBossDefeated) known |= 1L << 48;
+        if (saltBasinRewardClaimed || saltFrontierProgress != 0 || saltFrontierReturnLocation) known |= 1L << 49;
         return known;
     }
 
@@ -1061,6 +1064,7 @@ public sealed partial class Game
     {
         if (room == 43) { DrawFirstEchoMap(g); return; }
         if (room == 46) { DrawSaltBasinMap(g); return; }
+        if (room == 49) { DrawSaltFrontierMap(g); return; }
         if (room is 47 or 48) { DrawSaltVaultMap(g); return; }
         using var shade = new SolidBrush(Color.FromArgb(225, 5, 7, 9));
         using var panel = new SolidBrush(Color.FromArgb(248, 15, 17, 18));

@@ -31,7 +31,7 @@ public sealed partial class Game
         if (Length(animationDirection) > 0.001f) playerAnimationTime += dt;
         else playerAnimationTime = 0;
         for (int i = drops.Count - 1; i >= 0; i--) if (drops[i].Kind != "weapon" && Distance(player, drops[i].Pos) < 30) { GameAudio.Play(GameAudio.Cue.Loot); Collect(drops[i]); }
-        TickBeacon(dt); int roomBeingUpdated = room; foreach (Enemy enemy in enemies.ToArray()) { if ((room is 43 or 46) && Distance(enemy.Pos, player) > 500) { enemy.Moving = false; continue; } PointF previousPos = enemy.Pos; UpdateEnemy(enemy, dt); enemy.Moving = Distance(previousPos, enemy.Pos) > 0.01f; if (enemy.Moving) enemy.AnimationTime += dt; if (dead || room != roomBeingUpdated) break; }
+        TickBeacon(dt); int roomBeingUpdated = room; foreach (Enemy enemy in enemies.ToArray()) { if ((room is 43 or 46 or 49) && Distance(enemy.Pos, player) > 500) { enemy.Moving = false; continue; } PointF previousPos = enemy.Pos; UpdateEnemy(enemy, dt); enemy.Moving = Distance(previousPos, enemy.Pos) > 0.01f; if (enemy.Moving) enemy.AnimationTime += dt; if (dead || room != roomBeingUpdated) break; }
         TickVigilMinions(dt); TickVigilHazards(dt); TickGroundHazards(dt); TickEnemyWounds(dt); nameRiftBursts.RemoveAll(burst => (burst.TimeLeft -= dt) <= 0);
         AdvanceVoiceShards(dt);
         AdvanceBowArrows(dt);

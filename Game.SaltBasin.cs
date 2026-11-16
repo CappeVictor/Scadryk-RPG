@@ -97,6 +97,12 @@ public sealed partial class Game
     {
         Drop? weaponDrop = drops.Where(drop => drop.Kind == "weapon" && Distance(player, drop.Pos) <= 75).OrderBy(drop => Distance(player, drop.Pos)).FirstOrDefault();
         if (weaponDrop is not null) { GameAudio.Play(GameAudio.Cue.Loot); Collect(weaponDrop); return; }
+        if (Distance(player, SaltBasinFrontierEntrance) < 105)
+        {
+            if (!saltBasinRewardClaimed) { ShowMemory("TRILHA DAS CONCHAS", "A corrente ainda não alcança a costa. Ajude Asha a reacender as três lanternas do sal para abrir o caminho."); return; }
+            StoreSaltBasinOutside(); saltFrontierReturnLocation = true; room = 49; SetupRoom();
+            ShowMemory("A COSTA DAS BADALADAS", "A trilha atravessa o banco de sal e desce até uma costa onde a maré repete três notas. Um observatório permanece aceso entre o juncal e a maré recuada."); return;
+        }
         if (Distance(player, SaltVaultEntrance) < 100)
         {
             if ((saltBasinSurveyProgress & 16) == 0) { ShowMemory("FENDA SOB OS MENIRES", "Os três sinais de Tavi formam um traçado que aponta para uma abertura sob a baixada. O caminho ainda está coberto de sal endurecido."); return; }
@@ -185,6 +191,7 @@ public sealed partial class Game
         if ((saltBasinSurveyProgress & 14) != 14) return $"OPCIONAL: REGISTRE OS MENIRES DE TAVI • {System.Numerics.BitOperations.PopCount((uint)(saltBasinSurveyProgress & 14))}/3";
         if ((saltBasinSurveyProgress & 16) == 0) return "OPCIONAL: VOLTE A TAVI COM O MAPA COMPLETO";
         if (!saltVaultBossDefeated) return "OPCIONAL: INVESTIGUE A FENDA SOB A BAIXADA";
+        if ((saltFrontierProgress & 16) == 0) return "OPCIONAL: SIGA A TRILHA DAS CONCHAS ATÉ A COSTA";
         return "BACIA DO SAL IMÓVEL • ROTAS ABERTAS • EXPLORAÇÃO LIVRE";
     }
 
@@ -211,6 +218,7 @@ public sealed partial class Game
             g.DrawLines(i == 0 || i == 3 ? route : thin, trails[i].Select(Map).ToArray());
         }
         if ((saltBasinSurveyProgress & 16) != 0) g.DrawLines(route, new[] { Map(SaltBasinLanterns[2]), Map(new PointF(3200, 1670)), Map(SaltVaultEntrance) });
+        if (saltBasinRewardClaimed) g.DrawLines(thin, new[] { Map(SaltBasinLanterns[2]), Map(new PointF(3180, 1540)), Map(SaltBasinFrontierEntrance) });
         foreach (var (position, label, visible) in new[]
         {
             (SaltBasinEntrance, "VAU DE CINZA", true), (SaltBasinAsha, "ASHA • ABRIGO", true),
@@ -238,11 +246,18 @@ public sealed partial class Game
             g.FillRectangle(saltVaultBossDefeated ? Brushes.SlateGray : Brushes.MediumPurple, p.X - 5, p.Y - 5, 10, 10);
             g.DrawString(saltVaultBossDefeated ? "FENDA SILENCIOSA" : "FENDA SOB A BAIXADA", font, Brushes.Plum, p.X - 73, p.Y + 8);
         }
-        bool showObjective = !saltBasinMissionAccepted || saltBasinMarks != 7 || !saltBasinRewardClaimed || (saltBasinSurveyProgress & 16) == 0 || !saltVaultBossDefeated;
+        if (saltBasinRewardClaimed)
+        {
+            PointF p = Map(SaltBasinFrontierEntrance);
+            g.FillEllipse((saltFrontierProgress & 16) != 0 ? Brushes.LightGreen : Brushes.LightSkyBlue, p.X - 5, p.Y - 5, 10, 10);
+            g.DrawString((saltFrontierProgress & 16) != 0 ? "COSTA MAPEADA" : "TRILHA DAS CONCHAS", font, Brushes.LightSkyBlue, p.X - 62, p.Y - 24);
+        }
+        bool showObjective = !saltBasinMissionAccepted || saltBasinMarks != 7 || !saltBasinRewardClaimed || (saltBasinSurveyProgress & 16) == 0 || !saltVaultBossDefeated || (saltFrontierProgress & 16) == 0;
         PointF objective = !saltBasinMissionAccepted ? Map(SaltBasinAsha)
             : saltBasinMarks != 7 ? Map(SaltBasinLanterns[Enumerable.Range(0, 3).First(i => (saltBasinProgress & (1 << (i + 1))) == 0)])
             : !saltBasinRewardClaimed ? Map(SaltBasinAsha)
             : !saltVaultBossDefeated ? Map(SaltVaultEntrance)
+            : (saltFrontierProgress & 16) == 0 ? Map(SaltBasinFrontierEntrance)
             : (saltBasinSurveyProgress & 16) != 0 ? Map(player)
             : (saltBasinSurveyProgress & 1) == 0 || (saltBasinSurveyProgress & 14) == 14 ? Map(SaltBasinTavi)
             : Map(SaltBasinSurveyMarks[Enumerable.Range(0, 3).First(i => (saltBasinSurveyProgress & (1 << (i + 1))) == 0)]);
@@ -301,6 +316,11 @@ public sealed partial class Game
             PointF[] caveTrail = { SaltBasinLanterns[2], new(3200, 1670), SaltVaultEntrance };
             g.DrawLines(road, caveTrail); g.DrawLines(trailLine, caveTrail);
         }
+        if (saltBasinRewardClaimed)
+        {
+            PointF[] coastTrail = { SaltBasinLanterns[2], new(3180, 1540), SaltBasinFrontierEntrance };
+            g.DrawLines(road, coastTrail); g.DrawLines(trailLine, coastTrail);
+        }
         using var timber = new SolidBrush(Color.FromArgb(88, 73, 54));
         using var shelter = new SolidBrush(Color.FromArgb(73, 73, 63));
         g.FillRectangle(shelter, 1570, 820, 195, 130); g.DrawRectangle(rim, 1570, 820, 195, 130);
@@ -326,6 +346,7 @@ public sealed partial class Game
             if (Distance(player, point) < 82) g.DrawString((saltBasinSurveyProgress & (1 << (i + 1))) != 0 ? "E  VER REGISTRO" : "E  REGISTRAR MARCO", menhirPromptFont, menhirPromptInk, point.X - 76, point.Y + 27);
         }
         if ((saltBasinSurveyProgress & 16) != 0 && Distance(player, SaltVaultEntrance) < 100) g.DrawString("E  DESCER À FENDA", menhirPromptFont, menhirPromptInk, SaltVaultEntrance.X - 76, SaltVaultEntrance.Y + 28);
+        if (saltBasinRewardClaimed && Distance(player, SaltBasinFrontierEntrance) < 105) g.DrawString("E  SEGUIR À COSTA", menhirPromptFont, menhirPromptInk, SaltBasinFrontierEntrance.X - 76, SaltBasinFrontierEntrance.Y + 28);
         using var font = new Font("Segoe UI", 14, FontStyle.Bold);
         using var ink = new SolidBrush(Color.FromArgb(231, 221, 193));
         g.DrawString("ESPIGÃO DE SAL", font, ink, 500, 340);
