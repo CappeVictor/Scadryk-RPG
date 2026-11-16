@@ -102,8 +102,9 @@ public sealed partial class Game
         {
             if (item.Amount is < 1 or > 14) { drops.Remove(item); return; }
             bool newCharm = (ownedCharms & (1 << (item.Amount - 1))) == 0; ownedCharms |= 1 << (item.Amount - 1);
-            if (equippedCharm == 0 && equippedCharm2 != item.Amount) equippedCharm = item.Amount;
-            else if (equippedCharm2 == 0 && equippedCharm != item.Amount) equippedCharm2 = item.Amount;
+            if (equippedCharm == 0 && equippedCharm2 != item.Amount && equippedCharm3 != item.Amount) equippedCharm = item.Amount;
+            else if (equippedCharm2 == 0 && equippedCharm != item.Amount && equippedCharm3 != item.Amount) equippedCharm2 = item.Amount;
+            else if (vigilBestFloor >= 30 && equippedCharm3 == 0 && equippedCharm != item.Amount && equippedCharm2 != item.Amount) equippedCharm3 = item.Amount;
             notice = item.Amount >= 7 ? $"TALISMÃ DE PÓS-JOGO: {charmNames[item.Amount]}" : newCharm ? $"TALISMÃ: {charmNames[item.Amount]}" : $"ECO DUPLICADO: {charmNames[item.Amount]}";
             drops.Remove(item); noticeTime = 1.7f; return;
         }
@@ -253,7 +254,7 @@ public sealed partial class Game
     private void DrawInventory(Graphics g)
     {
         using var b = new SolidBrush(Color.FromArgb(245, 17, 19, 20)); using var itemFont = new Font("Segoe UI", 10.5f); using var effectFont = new Font("Segoe UI", 8.5f); g.FillRectangle(b, 120, 120, 720, 520);
-        DrawCentered(g, "INVENTÁRIO   •   1–4, 0 E 9 ARMAS   •   5 ARMADURA   •   6 RELÍQUIA   •   7/8 TALISMÃS   •   I FECHAR", 150, new Font("Segoe UI", 11, FontStyle.Bold), Color.Goldenrod);
+        DrawCentered(g, "INVENTÁRIO   •   1–4, 0 E 9 ARMAS   •   5 ARMADURA   •   6 RELÍQUIA   •   TALISMÃS 7/8/F7   •   I FECHAR", 150, new Font("Segoe UI", 11, FontStyle.Bold), Color.Goldenrod);
         for (int i = 0; i < 6; i++) { int x = i % 2 == 0 ? 150 : 500, y = 188 + i / 2 * 48; string key = i < 4 ? (i + 1).ToString() : i == 4 ? "0" : "9"; bool found = (ownedWeapons & (1 << i)) != 0; Brush rarityBrush = !found ? Brushes.Gray : weaponRarities[i] == 2 ? Brushes.MediumTurquoise : weaponRarities[i] == 1 ? Brushes.Goldenrod : Brushes.AntiqueWhite; g.DrawString($"{key}. {WeaponDisplayName(i)} {(weapon == i ? "• EQUIPADA" : found ? "• DISPONÍVEL" : "• NÃO ENCONTRADA")}", itemFont, rarityBrush, x, y); g.DrawString(found ? $"DANO {WeaponPower(i) - WeaponPower(weapon):+#;-#;0} • {WeaponTraitSummary(i)}" : WeaponTraitSummary(i), effectFont, Brushes.DarkGray, new RectangleF(x + 16, y + 19, 315, 18)); }
         g.DrawString($"5. PEITORAL DE PEDRA {(armorOn ? relicOn ? "EQUIPADO • -35% DANO • VIGÍLIA DO VEIO" : "EQUIPADO • -30% DANO" : armor ? "DISPONÍVEL" : "NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 150, 316);
         g.DrawString($"   Traço: {ArmorTraitName(armorTrait)} — {ArmorTraitDescription(armorTrait)}", effectFont, Brushes.DarkGray, new RectangleF(150, 341, 650, 17));
@@ -272,7 +273,8 @@ public sealed partial class Game
         string charmList = availableCharms.Length == 0 ? "NENHUM" : string.Join("\n", availableCharms.Chunk(5).Select(group => string.Join(" • ", group)));
         g.DrawString($"TALISMÃS: {charmList}   •   SAL VÍTREO: {tideGlass}", effectFont, Brushes.Plum, new RectangleF(150, 506, 650, 45));
         string firstCharm = equippedCharm == 0 ? "VAZIO" : charmNames[equippedCharm]; string secondCharm = equippedCharm2 == 0 ? "VAZIO" : charmNames[equippedCharm2];
-        g.DrawString($"7. ESPAÇO I: {firstCharm}    8. ESPAÇO II: {secondCharm}", effectFont, Brushes.Plum, 150, 553);
+        string thirdCharm = equippedCharm3 == 0 ? vigilBestFloor >= 30 ? "VAZIO" : "BLOQUEADO • ANDAR 30" : charmNames[equippedCharm3];
+        g.DrawString($"7/I: {firstCharm}    8/II: {secondCharm}    F7/III: {thirdCharm}", effectFont, Brushes.Plum, new RectangleF(150, 553, 650, 16));
         var effects = new List<string>();
         if (HasCharm(1)) effects.Add(HasCharmPair(1, 2) ? "SINTONIA BRASA+TRAVESSIA: Redemoinho +57% dano; recarga +0,5 s" : "Nó de Brasa: Redemoinho +35% dano; recarga +1 s");
         if (HasCharm(2)) effects.Add($"Fio de Travessia: esquiva 0,29 s{(HasCharmPair(2, 3) ? " sem custo extra" : ", recarga +0,3 s")}; Sino +35 alcance e +1,5 s de recarga");
@@ -288,7 +290,7 @@ public sealed partial class Game
         if (HasCharm(12)) effects.Add("Nó do Contratempo: técnicas +20% de dano; recarga +15%");
         if (HasCharm(13)) effects.Add("Sino da Contramaré: abates de ecos marcados adiantam recargas de técnica em 1,5 s");
         if (HasCharm(14)) effects.Add(HasCharmPair(2, 14) ? "Ritmo das Bóias + Fio de Travessia: esquiva de golpe anunciado adianta recargas em 1 s (intervalo: 1,1 s)" : "Ritmo das Bóias: esquivar de golpe anunciado de chefe adianta recargas em 0,8 s (recarga interna: 1,5 s)");
-        string effect = effects.Count > 0 ? string.Join(" • ", effects) : "Equipe até dois talismãs para ativar efeitos e sintonias.";
+        string effect = effects.Count > 0 ? string.Join(" • ", effects) : "Equipe talismãs para ativar efeitos e sintonias.";
         g.DrawString(effect, effectFont, Brushes.AntiqueWhite, new RectangleF(150, 570, 650, 59));
     }
     private void DrawCharacterSheet(Graphics g)
@@ -394,23 +396,25 @@ public sealed partial class Game
     private void EquipWeapon(int index) { if (index is < 0 or > 5) return; if ((ownedWeapons & (1 << index)) == 0) { notice = "ARMA AINDA NÃO ENCONTRADA"; noticeTime = 1.4f; return; } damage += WeaponPower(index) - WeaponPower(weapon); weapon = index; }
     private void CycleCharm(int slot)
     {
-        int current = slot == 1 ? equippedCharm : equippedCharm2;
-        int other = slot == 1 ? equippedCharm2 : equippedCharm;
+        if (slot == 3 && vigilBestFloor < 30) { notice = "O TERCEIRO ESPAÇO ABRE AO CONCLUIR O 30º ANDAR DA VIGÍLIA"; noticeTime = 2.2f; return; }
+        if (slot is < 1 or > 3) return;
+        int current = slot switch { 1 => equippedCharm, 2 => equippedCharm2, _ => equippedCharm3 };
         int charmCount = charmNames.Length - 1;
         for (int i = 1; i <= charmCount; i++)
         {
             int candidate = ((current - 1 + i + charmCount) % charmCount) + 1;
-            if (candidate == current || candidate == other || (ownedCharms & (1 << (candidate - 1))) == 0) continue;
-            if (slot == 1) equippedCharm = candidate; else equippedCharm2 = candidate;
+            if (candidate == current || candidate == equippedCharm && slot != 1 || candidate == equippedCharm2 && slot != 2 || candidate == equippedCharm3 && slot != 3 || (ownedCharms & (1 << (candidate - 1))) == 0) continue;
+            SetEquippedCharm(slot, candidate);
             notice = $"ESPAÇO {slot}: {charmNames[candidate]}";
             noticeTime = 1.6f; return;
         }
-        if (current != 0) { if (slot == 1) equippedCharm = 0; else equippedCharm2 = 0; notice = $"ESPAÇO {slot} DE TALISMÃ VAZIO"; }
+        if (current != 0) { SetEquippedCharm(slot, 0); notice = $"ESPAÇO {slot} DE TALISMÃ VAZIO"; }
         else notice = "NENHUM TALISMÃ DISPONÍVEL PARA ESTE ESPAÇO";
         noticeTime = 1.6f;
     }
-    private bool HasCharm(int charm) => equippedCharm == charm || equippedCharm2 == charm;
-    private bool HasCharmPair(int first, int second) => equippedCharm == first && equippedCharm2 == second || equippedCharm == second && equippedCharm2 == first;
+    private void SetEquippedCharm(int slot, int charm) { if (slot == 1) equippedCharm = charm; else if (slot == 2) equippedCharm2 = charm; else equippedCharm3 = charm; }
+    private bool HasCharm(int charm) => equippedCharm == charm || equippedCharm2 == charm || vigilBestFloor >= 30 && equippedCharm3 == charm;
+    private bool HasCharmPair(int first, int second) => HasCharm(first) && HasCharm(second);
     private float BuoyRhythmCooldownAdvance() => HasCharmPair(2, 14) ? 1f : 0.8f;
     private float BuoyRhythmInternalCooldown() => HasCharmPair(2, 14) ? 1.1f : 1.5f;
     private float ArmorDamageTakenMultiplier() => !armorOn ? 1f : (relicOn ? 0.65f : 0.7f) * (armorTrait == 1 ? 0.94f : armorTrait == 3 && health <= maxHealth * 0.35f ? 0.85f : 1f);

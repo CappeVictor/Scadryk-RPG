@@ -1175,6 +1175,14 @@ public sealed partial class Game
         if (lootGame.equippedCharm != 2 || lootGame.equippedCharm2 != 3 || lootGame.DashCooldown() >= 1.45f) throw new InvalidOperationException("A sintonia entre Travessia e Vigília não removeu a recarga adicional da esquiva.");
         SaveData charmSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(lootGame.CaptureSaveData()))!;
         if (charmSave.OwnedCharms != 7 || charmSave.EquippedCharm != 2 || charmSave.EquippedCharm2 != 3) throw new InvalidOperationException("Os espaços de talismã não foram serializados no save.");
+        using var thirdCharmGame = new Game(); thirdCharmGame.timer.Stop(); thirdCharmGame.StartGame(); thirdCharmGame.enemies.Clear(); thirdCharmGame.drops.Clear(); thirdCharmGame.vigilBestFloor = 29; thirdCharmGame.vigilFloor = 30; thirdCharmGame.vigilActive = true; thirdCharmGame.ResolveVigilFloor(false);
+        if (thirdCharmGame.vigilBestFloor != 30 || thirdCharmGame.vigilActive) throw new InvalidOperationException("Concluir o 30º andar não registrou a marca nem encerrou a Vigília.");
+        thirdCharmGame.storyOverlay = false; thirdCharmGame.memoryOverlay = false; thirdCharmGame.ownedCharms = 7; thirdCharmGame.equippedCharm = 1; thirdCharmGame.equippedCharm2 = 2; thirdCharmGame.inventoryOpen = true;
+        thirdCharmGame.OnKeyDown(null, new KeyEventArgs(Keys.F7));
+        SaveData thirdCharmSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(thirdCharmGame.CaptureSaveData()))!;
+        if (thirdCharmGame.equippedCharm3 != 3 || !thirdCharmGame.HasCharmPair(2, 3) || thirdCharmSave.EquippedCharm3 != 3 || !ValidSaveData(thirdCharmSave)) throw new InvalidOperationException("O terceiro espaço da Vigília não ativou talismãs e sintonias nem persistiu no save.");
+        using var lockedCharmGame = new Game(); lockedCharmGame.timer.Stop(); lockedCharmGame.StartGame(); lockedCharmGame.vigilBestFloor = 29; lockedCharmGame.ownedCharms = 7; lockedCharmGame.CycleCharm(3);
+        if (lockedCharmGame.equippedCharm3 != 0) throw new InvalidOperationException("O terceiro espaço de talismã foi liberado antes do 30º andar.");
         using var advancedCharmGame = new Game(); advancedCharmGame.timer.Stop(); advancedCharmGame.StartGame(); advancedCharmGame.damage = 100; advancedCharmGame.ownedCharms = 24; advancedCharmGame.equippedCharm = 4; advancedCharmGame.equippedCharm2 = 5;
         var bossDummy = new Enemy { Kind = EnemyKind.OathCartographer, Hp = 500, MaxHp = 500 }; var commonDummy = new Enemy { Kind = EnemyKind.Grunt, Hp = 500, MaxHp = 500 };
         if (advancedCharmGame.OutgoingDamageMultiplier(bossDummy) != 1.25f || advancedCharmGame.OutgoingDamageMultiplier(commonDummy) != 0.8f || advancedCharmGame.VoiceShardLifetime() != 1.8f || advancedCharmGame.VoiceShardCooldown() != 8.25f) throw new InvalidOperationException("A Marca da Vigília ou o Fio da Margem não aplicou seus bônus e custo.");

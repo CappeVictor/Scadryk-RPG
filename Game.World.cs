@@ -119,6 +119,7 @@ public sealed partial class Game
     private void ResolveVigilFloor(bool ascend)
     {
         if (!vigilActive || enemies.Count > 0 || drops.Count > 0) return;
+        bool thirdCharmSlotUnlocked = vigilBestFloor < 30 && vigilFloor >= 30;
         vigilBestFloor = Math.Max(vigilBestFloor, vigilFloor);
         int goldReward = 100 + Math.Min(900, (vigilFloor - 1) * 25);
         int glassReward = 1 + Math.Min(5, (vigilFloor - 1) / 3);
@@ -127,11 +128,11 @@ public sealed partial class Game
         if (ascend)
         {
             vigilFloor++; SetupRoom();
-            notice = $"VIGÍLIA {vigilBestFloor} CONCLUÍDA • +{goldReward} OURO • +{glassReward} SAL VÍTREO"; noticeTime = 3;
+            notice = $"VIGÍLIA {vigilBestFloor} CONCLUÍDA • +{goldReward} OURO • +{glassReward} SAL VÍTREO{(thirdCharmSlotUnlocked ? " • 3º TALISMÃ DESBLOQUEADO (F7)" : "")}"; noticeTime = 3;
             return;
         }
         vigilActive = false; vigilChoiceOpen = false; vigilFloor = 0; room = 18; SetupRoom(); health = maxHealth;
-        ShowMemory("A VIGÍLIA SE ENCERRA", $"A comunidade registra sua melhor marca: andar {vigilBestFloor}. Aven recolhe os ecos para que possam repousar. Você recebe {goldReward} ouro e {glassReward} sal vítreo; a jornada pode ser retomada quando quiser.");
+        ShowMemory("A VIGÍLIA SE ENCERRA", $"A comunidade registra sua melhor marca: andar {vigilBestFloor}. Aven recolhe os ecos para que possam repousar. Você recebe {goldReward} ouro e {glassReward} sal vítreo{(thirdCharmSlotUnlocked ? "; o 30º andar também abriu o terceiro espaço de talismã, ajustável no inventário com F7" : "")}; a jornada pode ser retomada quando quiser.");
     }
 
     private void SetupRoom()

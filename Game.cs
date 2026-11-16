@@ -233,7 +233,7 @@ public sealed partial class Game : Form
     private long clearedRooms;
     private bool chorusMemory, firstMemory, westTrace, upstreamTrace, forgeMenuOpen, defenseForgeOpen, secondaryForgeOpen;
     private bool beyondTrace, ebbSeal, counterTrace, anchorWard, refrainSong, riftVerse, deepTrace, lanternSignal, beaconLight, routeMemory;
-    private int ownedCharms, equippedCharm, equippedCharm2;
+    private int ownedCharms, equippedCharm, equippedCharm2, equippedCharm3;
     private int[] equippedSkills = { 1, 0, 0, 0 };
     private int[] alternateSkills = new int[4];
     private int[] skillVariants = new int[13];
@@ -321,7 +321,7 @@ public sealed partial class Game : Form
         townEnding = 0;
         healthTalent = skillTalent = dodgeTalent = techniqueTalent = combatDiscipline = combatMastery = combatFocus = combatApex = combatTempo = combatInstinct = combatCapstone = combatParagon = pendingTalents = enemiesDefeated = memoriesFound = questStage = tideGlass = eliteWeaponMisses = 0;
         clearedRooms = 0;
-        ownedCharms = equippedCharm = equippedCharm2 = 0;
+        ownedCharms = equippedCharm = equippedCharm2 = equippedCharm3 = 0;
         equippedSkills = new[] { 1, 0, 0, 0 }; alternateSkills = new int[4]; alternateSkillsActive = skillMenuAlternate = false; Array.Clear(skillVariants); skillMenuOpen = false; skillMenuSlot = 0;
         health = maxHealth = 100; attackCd = attackFlash = skillCd = shardCd = bellCd = bellWaveTime = bellWaveRadius = pullCd = pullWaveTime = wardCd = wardTime = refrainCd = refrainWaveTime = refrainWaveRadius = beaconCd = beaconTime = beaconPulseCd = beaconWaveTime = returnVoiceCd = returnVoiceWaveTime = returnVoiceWaveRadius = finalStrikeCd = finalStrikeFlash = stoneBastionCd = stoneBastionTime = nameWeaverCd = listenerMarkCd = fordShortcutCd = dashCd = dashTime = invulnerable = veinResonanceTime = stoneFury = nameThread = fordRoute = fordBurstTime = fordBurstDuration = fordBurstRadius = screenShakeTime = screenShakeStrength = screenShakePhase = hitStopTime = buoyRhythmCooldown = 0; vigilMinionCooldown = vigilTideTime = vigilHazardCooldown = 0; beaconPos = finalStrikeTarget = rangedAttackTarget = fordBurstPosition = PointF.Empty; facing = mouseAim = dashDirection = new PointF(1, 0); playerAnimationTime = 0; echoShards.Clear(); floatingTexts.Clear(); title = false; storyPage = 0; storyOverlay = true; SetupRoom();
     }
@@ -393,7 +393,7 @@ public sealed partial class Game : Form
         if (e.KeyCode == Keys.L) { journalOpen = true; inventoryOpen = skillMenuOpen = characterSheetOpen = mapOpen = false; return; }
         if (e.KeyCode == Keys.I) { inventoryOpen = !inventoryOpen; return; }
         if (e.KeyCode == Keys.B) { skillMenuOpen = true; inventoryOpen = false; return; }
-        if (inventoryOpen) { if (e.KeyCode == Keys.Escape) inventoryOpen = false; else if (e.KeyCode >= Keys.D1 && e.KeyCode <= Keys.D4) EquipWeapon((int)e.KeyCode - (int)Keys.D1); else if (e.KeyCode == Keys.D0) EquipWeapon(4); else if (e.KeyCode == Keys.D9) EquipWeapon(5); else if (e.KeyCode == Keys.D5 && armor) armorOn = !armorOn; else if (e.KeyCode == Keys.D6 && relic) relicOn = !relicOn; else if (e.KeyCode == Keys.D7) CycleCharm(1); else if (e.KeyCode == Keys.D8) CycleCharm(2); return; }
+        if (inventoryOpen) { if (e.KeyCode == Keys.Escape) inventoryOpen = false; else if (e.KeyCode >= Keys.D1 && e.KeyCode <= Keys.D4) EquipWeapon((int)e.KeyCode - (int)Keys.D1); else if (e.KeyCode == Keys.D0) EquipWeapon(4); else if (e.KeyCode == Keys.D9) EquipWeapon(5); else if (e.KeyCode == Keys.D5 && armor) armorOn = !armorOn; else if (e.KeyCode == Keys.D6 && relic) relicOn = !relicOn; else if (e.KeyCode == Keys.D7) CycleCharm(1); else if (e.KeyCode == Keys.D8) CycleCharm(2); else if (e.KeyCode == Keys.F7) CycleCharm(3); return; }
         if (e.KeyCode == Keys.T) { ToggleSkillLoadout(); return; }
         if (e.KeyCode == Keys.Space || e.KeyCode == Keys.J) Attack();
         else if (e.KeyCode == Keys.ShiftKey || e.KeyCode == Keys.K) StartDash();
