@@ -166,9 +166,9 @@ public sealed partial class Game
             || s.ClearedRooms < 0
             || s.ClearedRooms > 8796093022207L
             || s.Completed && s.Room != 2
-            || s.OwnedCharms is < 0 or > 4095
-            || s.EquippedCharm is < 0 or > 12
-            || s.EquippedCharm2 is < 0 or > 12
+            || s.OwnedCharms is < 0 or > 8191
+            || s.EquippedCharm is < 0 or > 13
+            || s.EquippedCharm2 is < 0 or > 13
             || s.EquippedCharm > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm - 1))) == 0
             || s.EquippedCharm2 > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm2 - 1))) == 0
             || s.EquippedCharm > 0 && s.EquippedCharm == s.EquippedCharm2

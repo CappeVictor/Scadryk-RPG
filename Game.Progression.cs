@@ -102,6 +102,12 @@ public sealed partial class Game
             health += restored;
             if (restored > 0) AddFloatingText(new PointF(enemy.Pos.X, enemy.Pos.Y - enemy.Radius - 16), $"+{restored:0} VIDA", Color.LightCyan);
         }
+        if (HasCharm(13) && (enemy.BeaconMarkTime > 0 || enemy.BellMarkTime > 0 || enemy.NameWeaverMarkTime > 0 || enemy.ListenerMarkTime > 0 || enemy.SparkMarkTime > 0))
+        {
+            const float cooldownRefund = 1.5f;
+            AdvanceTechniqueCooldowns(cooldownRefund);
+            AddFloatingText(new PointF(player.X, player.Y - 56), $"CONTRAMARÉ −{cooldownRefund:0.0} S", Color.LightCyan);
+        }
         if (enemy.EliteMinion) return;
         enemiesDefeated++; int goldDrop = enemy.VigilMinion ? 8 + Math.Min(20, vigilFloor * 2) : vigilActive ? 35 + Math.Min(500, vigilFloor * 15) : enemy.Boss ? 35 : enemy.Kind == EnemyKind.Elite ? 20 : 8;
         int xpReward = enemy.VigilMinion ? 12 : enemy.Boss ? 75 : enemy.Kind == EnemyKind.Elite ? 40 : 22;
@@ -131,6 +137,7 @@ public sealed partial class Game
         if (enemy.Boss && vigilActive && vigilFloor % 15 == 0 && (ownedCharms & 256) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 0, -88), Kind = "charm", Amount = 9 });
         if (enemy.Boss && vigilActive && vigilFloor % 20 == 0 && (ownedCharms & 512) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 0, -108), Kind = "charm", Amount = 10 });
         if (enemy.Boss && vigilActive && vigilFloor % 25 == 0 && (ownedCharms & 1024) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 0, -128), Kind = "charm", Amount = 11 });
+        if (enemy.Boss && vigilActive && vigilFloor % 30 == 0 && (ownedCharms & 4096) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 0, -148), Kind = "charm", Amount = 13 });
         if (enemy.Boss && vigilActive && HasCharm(7)) health = Math.Min(maxHealth, health + maxHealth * 0.12f);
         if (room == 2 && enemy.Kind == EnemyKind.Guardian && !relic) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "relic" });
         if (enemy.Kind == EnemyKind.BlindScribe && !archiveSeal) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "seal" });
