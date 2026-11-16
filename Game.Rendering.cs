@@ -1230,15 +1230,25 @@ public sealed partial class Game
     private void DrawFordBurst(Graphics g) { float duration = fordBurstRadius > 68 ? 0.38f : 0.28f; float progress = 1f - fordBurstTime / duration; float radius = fordBurstRadius * progress; int alpha = (int)(220 * fordBurstTime / duration); using var wave = new Pen(Color.FromArgb(alpha, 125, 213, 199), 4); using var glow = new Pen(Color.FromArgb(alpha / 3, 125, 213, 199), 14); g.DrawEllipse(glow, fordBurstPosition.X - radius, fordBurstPosition.Y - radius, radius * 2, radius * 2); g.DrawEllipse(wave, fordBurstPosition.X - radius, fordBurstPosition.Y - radius, radius * 2, radius * 2); }
     private void DrawFordCartographer(Graphics g, PointF direction)
     {
+        bool moving = dashTime > 0 || Length(MovementInput()) > 0.001f || Length(CurrentDrift()) > 0.001f;
+        float phase = playerAnimationTime * (dashTime > 0 ? 24f : 17f);
+        float stride = moving ? MathF.Sin(phase) * 4f : 0;
+        float bob = moving ? MathF.Abs(MathF.Sin(phase)) * 1.7f : MathF.Sin(windupPulse * 2.2f) * 0.7f;
+        float capeFlick = moving ? MathF.Sin(phase + 0.9f) * 3f : MathF.Sin(windupPulse * 1.4f) * 1.2f;
         float angle = MathF.Atan2(direction.Y, direction.X) * 180 / MathF.PI;
-        var state = g.Save(); g.TranslateTransform(player.X, player.Y - 8); g.RotateTransform(angle);
+        var state = g.Save(); g.TranslateTransform(player.X, player.Y - 8 - bob); g.RotateTransform(angle);
         using var shadow = new SolidBrush(Color.FromArgb(105, 5, 7, 9)); using var cloak = new SolidBrush(invulnerable > 0 ? Color.Salmon : Color.FromArgb(45, 126, 121)); using var cloakEdge = new Pen(Color.FromArgb(235, 180, 218, 193), 2); using var hood = new SolidBrush(Color.FromArgb(29, 51, 54)); using var face = new SolidBrush(Color.FromArgb(226, 205, 167)); using var brass = new SolidBrush(Color.FromArgb(226, 192, 119)); using var line = new Pen(Color.FromArgb(230, 221, 208), 3);
         g.FillEllipse(shadow, -20, 24, 40, 10);
-        PointF[] mantle = { new(-12, -5), new(10, -8), new(20, 24), new(7, 29), new(-19, 21) };
+        using var boots = new SolidBrush(Color.FromArgb(230, 42, 37, 32));
+        g.DrawLine(line, -5, 13, -7 - stride, 26 + Math.Max(0, stride)); g.DrawLine(line, 5, 13, 7 + stride, 26 + Math.Max(0, -stride));
+        g.FillEllipse(boots, -12 - stride, 23 + Math.Max(0, stride), 10, 5); g.FillEllipse(boots, 3 + stride, 23 + Math.Max(0, -stride), 10, 5);
+        float flare = dashTime > 0 ? 8 : 0;
+        PointF[] mantle = { new(-12, -5), new(10, -8), new(20 + flare, 22 + capeFlick), new(7 + flare * 0.6f, 29 + capeFlick), new(-19, 21) };
         g.FillPolygon(cloak, mantle); g.DrawPolygon(cloakEdge, mantle);
         g.FillEllipse(hood, -12, -27, 24, 23); g.FillEllipse(face, -6, -22, 12, 12);
         g.DrawLine(line, 5, 1, 23, 14); g.FillEllipse(brass, 13, -3, 12, 12); g.FillEllipse(hood, 16, 0, 6, 6);
-        if (attackFlash > 0) { using var slash = new Pen(Color.FromArgb(210, 125, 213, 199), 4); g.DrawArc(slash, 8, -25, 48, 48, -95, 120); }
+        if (dashTime > 0) { using var wake = new Pen(Color.FromArgb(150, 125, 213, 199), 2) { DashStyle = DashStyle.Dash }; g.DrawLine(wake, -23, 3, -38, 3); g.DrawLine(wake, -19, 10, -31, 10); }
+        if (attackFlash > 0) { float progress = 1 - attackFlash / 0.16f; int alpha = (int)(220 * Math.Clamp(1 - progress, 0, 1)); using var slashGlow = new Pen(Color.FromArgb(alpha / 3, 125, 213, 199), 10); using var slash = new Pen(Color.FromArgb(alpha, 179, 241, 219), 3.5f) { StartCap = LineCap.Round, EndCap = LineCap.Round }; g.DrawArc(slashGlow, 8, -25, 48, 48, -135 + 50 * progress, 120); g.DrawArc(slash, 8, -25, 48, 48, -135 + 50 * progress, 120); }
         g.Restore(state);
         if (invulnerable > 0) { int alpha = PlayerDamageFlashAlpha(invulnerable, windupPulse); using var edge = new Pen(Color.FromArgb(alpha, 255, 126, 105), 3); g.DrawEllipse(edge, player.X - 22, player.Y - 39, 44, 60); }
     }
