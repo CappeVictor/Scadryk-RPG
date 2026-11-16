@@ -225,11 +225,14 @@ public sealed partial class Game
     }
     private void CastFordShortcut()
     {
-        if (fordShortcutCd > 0 || fordRoute < 50) { notice = fordShortcutCd > 0 ? "ATALHO DO VÃO EM RECARGA" : "ATALHO DO VÃO • PRECISA DE 50 DE ROTA"; noticeTime = 1.4f; return; }
+        bool traversalResonance = HasWaycurrentResonance(weapon);
+        float routeCost = traversalResonance ? 40f : 50f;
+        if (fordShortcutCd > 0 || fordRoute < routeCost) { notice = fordShortcutCd > 0 ? "ATALHO DO VÃO EM RECARGA" : $"ATALHO DO VÃO • PRECISA DE {routeCost:0} DE ROTA"; noticeTime = 1.4f; return; }
         facing = lockedTarget is not null && enemies.Contains(lockedTarget) ? Normalize(Sub(lockedTarget.Pos, player), facing) : Normalize(mouseAim, facing);
         int variant = skillVariants[11]; float travel = variant == 1 ? 132f : variant == 2 ? 72f : 96f;
         float radius = variant == 1 ? 54f : variant == 2 ? 78f : 68f;
-        fordRoute -= 50; fordShortcutCd = 13f * (variant == 1 ? 1.2f : 1f) * WeaponCooldownMultiplier();
+        fordRoute -= routeCost; if (traversalResonance) travel *= 1.15f;
+        fordShortcutCd = 13f * (variant == 1 ? 1.2f : 1f) * WeaponCooldownMultiplier();
         for (int step = 0; step < 8; step++) MovePlayer(Scale(facing, travel / 8));
         fordBurstPosition = player; fordBurstTime = fordBurstDuration = 0.28f; fordBurstRadius = radius;
         foreach (Enemy target in enemies.ToArray())
@@ -240,7 +243,7 @@ public sealed partial class Game
             if (target.Hp > 0 && !target.Boss && target.Kind != EnemyKind.Elite) { target.Stagger = Math.Max(target.Stagger, 0.42f); target.Windup = 0; }
             if (target.Hp <= 0) Defeat(target);
         }
-        notice = "ATALHO DO VÃO • PASSAGEM ABERTA"; noticeTime = 1.6f; GameAudio.Play(GameAudio.Cue.Dash);
+        notice = traversalResonance ? "RESSONÂNCIA DA TRAVESSIA • PASSAGEM ABERTA" : "ATALHO DO VÃO • PASSAGEM ABERTA"; noticeTime = 1.6f; GameAudio.Play(GameAudio.Cue.Dash);
     }
     private void CastNameSuture()
     {
@@ -291,6 +294,7 @@ public sealed partial class Game
     private bool HasWeaponAffix(int index, int affix) => weaponAffixes[index] == affix || weaponAffixes2[index] == affix;
     private float WeaponAffixValue(int index, int affix) => EquipmentCatalog.WeaponAffix(affix).ValueForRarity(weaponRarities[index]);
     private bool HasAnchorWardResonance(int index) => weaponRarities[index] == 2 && HasWeaponAffix(index, 4) && HasWeaponAffix(index, 5);
+    private bool HasWaycurrentResonance(int index) => heroClass == HeroClass.FordCartographer && weaponRarities[index] == 2 && HasWeaponAffix(index, 4) && HasWeaponAffix(index, 6);
     private bool HasMercyTempoResonance(int index) => weaponRarities[index] == 2 && HasWeaponAffix(index, 1) && HasWeaponAffix(index, 4);
     private bool HasRangedCriticalResonance(int index) => weaponRarities[index] == 2 && HasWeaponAffix(index, 2) && HasWeaponAffix(index, 6);
     private bool HasWoundResonance(int index) => weaponRarities[index] == 2 && HasWeaponAffix(index, 2) && HasWeaponAffix(index, 8);
@@ -306,7 +310,7 @@ public sealed partial class Game
     private string WeaponAffixName(int index) => string.Join(" + ", new[] { WeaponAffixLabel(weaponAffixes[index]), WeaponAffixLabel(weaponAffixes2[index]) }.Where(label => label.Length > 0));
     private static string WeaponAffixLabel(int affix) => EquipmentCatalog.WeaponAffix(affix).Name;
     private string WeaponDisplayName(int index) => weaponRarities[index] == 0 ? $"{EquipmentCatalog.Weapon(index).Name} [COMUM]" : $"{EquipmentCatalog.Weapon(index).Name} • {WeaponRarityName(index)} {WeaponAffixName(index)}";
-    private string WeaponAffixDescription(int index) => string.Join(" • ", new[] { WeaponAffixDescription(weaponAffixes[index], weaponRarities[index]), WeaponAffixDescription(weaponAffixes2[index], weaponRarities[index]), weaponRarities[index] == 2 && HasWeaponAffix(index, 3) && HasWeaponAffix(index, 7) ? "Ressonância da Maré: Cadência adianta +0,10 s por crítico" : "", weaponRarities[index] == 2 && HasWeaponAffix(index, 1) && HasWeaponAffix(index, 5) ? "Ressonância da Trégua: abaixo de metade da vida, abates curam +6" : "", HasMercyTempoResonance(index) ? "Ressonância da Misericórdia: abates adiantam recargas em 0,25 s" : "", HasAnchorWardResonance(index) ? "Ressonância do Lastro: Manto de Lastro dura +0,75 s" : "", HasRangedCriticalResonance(index) ? "Ressonância do Contracanto: +10 p.p. de crítico no alcance longo" : "", HasWoundResonance(index) ? "Ressonância da Cicatriz: Ruptura causa +40% de dano" : "", HasEchoWoundResonance(index) ? "Ressonância do Eco Ferido: +15% de dano contra alvos sob Ruptura" : "", HasNameRiftPower(index) ? "Poder único • Nome Riscado: ecos marcados explodem ao morrer" : "" }.Where(description => description.Length > 0));
+    private string WeaponAffixDescription(int index) => string.Join(" • ", new[] { WeaponAffixDescription(weaponAffixes[index], weaponRarities[index]), WeaponAffixDescription(weaponAffixes2[index], weaponRarities[index]), weaponRarities[index] == 2 && HasWeaponAffix(index, 3) && HasWeaponAffix(index, 7) ? "Ressonância da Maré: Cadência adianta +0,10 s por crítico" : "", weaponRarities[index] == 2 && HasWeaponAffix(index, 1) && HasWeaponAffix(index, 5) ? "Ressonância da Trégua: abaixo de metade da vida, abates curam +6" : "", HasMercyTempoResonance(index) ? "Ressonância da Misericórdia: abates adiantam recargas em 0,25 s" : "", HasAnchorWardResonance(index) ? "Ressonância do Lastro: Manto de Lastro dura +0,75 s" : "", HasWaycurrentResonance(index) ? "Ressonância da Travessia (Cartógrafa): Atalho custa 40 de Rota e avança +15%" : "", HasRangedCriticalResonance(index) ? "Ressonância do Contracanto: +10 p.p. de crítico no alcance longo" : "", HasWoundResonance(index) ? "Ressonância da Cicatriz: Ruptura causa +40% de dano" : "", HasEchoWoundResonance(index) ? "Ressonância do Eco Ferido: +15% de dano contra alvos sob Ruptura" : "", HasNameRiftPower(index) ? "Poder único • Nome Riscado: ecos marcados explodem ao morrer" : "" }.Where(description => description.Length > 0));
     private static string WeaponAffixDescription(int affix, int rarity) => EquipmentCatalog.WeaponAffix(affix).Description(rarity);
 
     private void CastBellPulse()
