@@ -12,6 +12,7 @@ public sealed partial class Game
     public static int SelfTest()
     {
         GameAudio.SilenceForAutomatedRun();
+        if (!EquipmentCatalog.IsValid()) throw new InvalidOperationException("O catálogo de armas contém perfis incompletos ou duplicados.");
         foreach ((string Name, Bitmap? Sheet) sheet in new[]
         {
             ("Guardião: movimento", StoneGuardianSpriteSheet.Value),
@@ -585,7 +586,7 @@ public sealed partial class Game
                 throw new InvalidOperationException("O Fio Esticado não escalou para o bônus de Relíquia.");
             lootRollCheck.weaponRarities[0] = lootRollCheck.weaponBonuses[0] = lootRollCheck.weaponAffixes[0] = lootRollCheck.weaponAffixes2[0] = 0;
             Drop drop = lootRollCheck.CreateWeaponDrop(lootRollCheck.player, 1); int rarity = drop.Rarity, bonus = drop.Bonus, affix = drop.Affix, affix2 = drop.Affix2;
-            string label = lootRollCheck.DropLabel(drop); int expectedDropDamage = lootRollCheck.damage - lootRollCheck.WeaponPower(lootRollCheck.weapon) + lootRollCheck.weaponDamage[1] + bonus; lootRollCheck.Collect(drop);
+            string label = lootRollCheck.DropLabel(drop); int expectedDropDamage = lootRollCheck.damage - lootRollCheck.WeaponPower(lootRollCheck.weapon) + EquipmentCatalog.Weapon(1).BaseDamage + bonus; lootRollCheck.Collect(drop);
             if (lootRollCheck.weaponRarities[1] != rarity || lootRollCheck.weaponBonuses[1] != bonus || lootRollCheck.weaponAffixes[1] != affix || lootRollCheck.weaponAffixes2[1] != affix2 || !label.Contains(WeaponRarityName(rarity)) || !label.Contains(WeaponGroundAffix(drop)) || !label.Contains($"DANO: 25 → {expectedDropDamage}") || !label.Contains("longo") || !label.Contains("ATUAL: sem afixo"))
                 throw new InvalidOperationException("A arma mudou ao ser recolhida ou não foi identificada no chão.");
         }

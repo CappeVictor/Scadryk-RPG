@@ -28,7 +28,7 @@ public sealed partial class Game
         }
         damage += WeaponPower(weapon) - oldPower;
         gold -= goldCost; tideGlass -= glassCost; forgeMenuOpen = false; secondaryForgeOpen = false;
-        notice = $"TÊMPERA: {weaponNames[weapon]} {WeaponRarityName(weaponRarities[weapon])} {WeaponAffixDescription(weapon)}"; noticeTime = 3;
+        notice = $"TÊMPERA: {EquipmentCatalog.Weapon(weapon).Name} {WeaponRarityName(weaponRarities[weapon])} {WeaponAffixDescription(weapon)}"; noticeTime = 3;
     }
 
     private void HandleDefenseForgeKey(Keys key)
@@ -188,23 +188,17 @@ public sealed partial class Game
 
     private string WeaponDropComparison(Drop item)
     {
-        int proposedDamage = damage - WeaponPower(weapon) + weaponDamage[item.Amount] + item.Bonus;
+        int proposedDamage = damage - WeaponPower(weapon) + EquipmentCatalog.Weapon(item.Amount).BaseDamage + item.Bonus;
         int damageChange = proposedDamage - damage;
         string currentAffixes = WeaponGroundAffix(weaponAffixes[weapon], weaponAffixes2[weapon], weaponRarities[weapon]);
         if (currentAffixes.Length == 0) currentAffixes = "sem afixo";
         string profile = weapon == item.Amount
             ? WeaponTraitSummary(item.Amount)
             : $"{WeaponTraitSummary(weapon)} → {WeaponTraitSummary(item.Amount)}";
-        return $"{WeaponRarityName(item.Rarity)} {weaponNames[item.Amount]}\nDANO: {damage} → {proposedDamage} ({damageChange:+#;-#;0})\nPERFIL: {profile}\nAFIXOS NOVOS: {WeaponGroundAffix(item)}\nATUAL: {currentAffixes}";
+        return $"{WeaponRarityName(item.Rarity)} {EquipmentCatalog.Weapon(item.Amount).Name}\nDANO: {damage} → {proposedDamage} ({damageChange:+#;-#;0})\nPERFIL: {profile}\nAFIXOS NOVOS: {WeaponGroundAffix(item)}\nATUAL: {currentAffixes}";
     }
 
-    private static string WeaponTraitSummary(int index) => index switch
-    {
-        1 => "longo • perfura • interrompe",
-        2 => "curto • veloz • crítico",
-        3 => "alcance máximo • preciso • perfura",
-        _ => "médio • equilibrado"
-    };
+    private static string WeaponTraitSummary(int index) => EquipmentCatalog.Weapon(index).TraitSummary;
 
     private static string WeaponGroundAffix(Drop item) => WeaponGroundAffix(item.Affix, item.Affix2, item.Rarity);
     private static string WeaponGroundAffix(int affix, int affix2, int rarity)
@@ -359,7 +353,7 @@ public sealed partial class Game
             g.DrawString("1–3 traço do peitoral • 4–6 traço do relicário • 0/7 removem • T ou ESC volta", hintFont, Brushes.DarkGray, 155, 438);
             return;
         }
-        DrawCentered(g, weaponRarities[weapon] == 0 ? $"TÊMPERA DO VEIO • {weaponNames[weapon]} VIRA RARA" : $"TÊMPERA DO VEIO • {weaponNames[weapon]}", 170, new Font("Georgia", 16, FontStyle.Bold), Color.Goldenrod);
+        DrawCentered(g, weaponRarities[weapon] == 0 ? $"TÊMPERA DO VEIO • {EquipmentCatalog.Weapon(weapon).Name} VIRA RARA" : $"TÊMPERA DO VEIO • {EquipmentCatalog.Weapon(weapon).Name}", 170, new Font("Georgia", 16, FontStyle.Bold), Color.Goldenrod);
         string mainAffix = WeaponAffixLabel(weaponAffixes[weapon]); if (mainAffix.Length == 0) mainAffix = "SEM AFIXO";
         string secondaryAffix = weaponRarities[weapon] != 2 ? "NÃO DISPONÍVEL" : WeaponAffixLabel(weaponAffixes2[weapon]); if (secondaryAffix.Length == 0) secondaryAffix = "SEM AFIXO";
         g.DrawString(secondaryForgeOpen ? $"AFIXO SECUNDÁRIO • PRINCIPAL PRESERVADO: {mainAffix} • ATUAL: {secondaryAffix}" : $"AFIXO PRINCIPAL • ATUAL: {mainAffix}{(weaponRarities[weapon] == 2 ? $" • SECUNDÁRIO: {secondaryAffix}" : "")}", hintFont, secondaryForgeOpen ? Brushes.Plum : Brushes.Goldenrod, 165, 190);
@@ -428,11 +422,5 @@ public sealed partial class Game
     }
     private void RestoreWeaponData(SaveData s) { Array.Copy(s.WeaponBonuses, weaponBonuses, s.WeaponBonuses.Length); Array.Copy(s.WeaponRarities, weaponRarities, s.WeaponRarities.Length); Array.Copy(s.WeaponAffixes, weaponAffixes, s.WeaponAffixes.Length); Array.Copy(s.WeaponAffixes2, weaponAffixes2, s.WeaponAffixes2.Length); for (int i = 0; i < weaponRarities.Length; i++) if (weaponRarities[i] == 2 && weaponAffixes2[i] == 0) weaponAffixes2[i] = weaponAffixes[i] % 5 + 1; }
 
-    private string WeaponTraitDescription(int index) => index switch
-    {
-        1 => "LÂMINA PESADA • ALCANCE LONGO • PERFURA ARMADURA • INTERROMPE ECOS",
-        2 => "FACA RÁPIDA • CURTO ALCANCE • 25% DE CRÍTICO",
-        3 => "LANÇA PRECISA • ALCANCE MÁXIMO • PERFURA ARMADURA • ARCO ESTREITO",
-        _ => "ESPADA EQUILIBRADA • ALCANCE MÉDIO"
-    };
+    private string WeaponTraitDescription(int index) => EquipmentCatalog.Weapon(index).TraitDescription;
 }

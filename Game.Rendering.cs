@@ -1146,7 +1146,8 @@ public sealed partial class Game
     private void DrawAttackSwing(Graphics g)
     {
         float progress = Math.Clamp(attackFlash / 0.16f, 0, 1);
-        if (weapon == 3)
+        WeaponDefinition weaponStyle = EquipmentCatalog.Weapon(weapon);
+        if (weaponStyle.IsThrust)
         {
             float reach = 20 + 108 * MathF.Sin(MathF.PI * (1 - progress));
             PointF tip = Add(player, Scale(facing, reach));
@@ -1163,21 +1164,21 @@ public sealed partial class Game
         }
         float elapsed = 1 - progress;
         float angle = MathF.Atan2(facing.Y, facing.X) * 180 / MathF.PI;
-        float radius = weapon == 1 ? 72 : weapon == 2 ? 46 : 57;
+        float radius = weaponStyle.VisualRadius;
         float sweep = BasicAttackSweepAngle(weapon);
-        float activeSweep = sweep * (weapon == 1 ? 0.42f : weapon == 2 ? 0.28f : 0.35f);
+        float activeSweep = sweep * weaponStyle.ActiveSweepFraction;
         float startAngle = angle - sweep / 2 + (sweep - activeSweep) * elapsed;
         var bounds = new RectangleF(player.X - radius, player.Y - radius, radius * 2, radius * 2);
-        Color color = weapon == 1 ? Color.FromArgb(255, 220, 155) : weapon == 2 ? Color.FromArgb(163, 222, 223) : Color.FromArgb(224, 213, 181);
+        Color color = weaponStyle.AttackColor;
         int alpha = (int)(progress * (115 + 110 * MathF.Sin(MathF.PI * elapsed)));
-        using var glow = new Pen(Color.FromArgb(alpha / 3, color), weapon == 1 ? 13 : 9) { StartCap = LineCap.Round, EndCap = LineCap.Round };
-        using var edge = new Pen(Color.FromArgb(alpha, color), weapon == 1 ? 5 : 3) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+        using var glow = new Pen(Color.FromArgb(alpha / 3, color), weaponStyle.GlowWidth) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+        using var edge = new Pen(Color.FromArgb(alpha, color), weaponStyle.EdgeWidth) { StartCap = LineCap.Round, EndCap = LineCap.Round };
         g.DrawArc(glow, bounds, startAngle, activeSweep);
         g.DrawArc(edge, bounds, startAngle, activeSweep);
         float tipAngle = (startAngle + activeSweep) * MathF.PI / 180;
         PointF tipDirection = new(MathF.Cos(tipAngle), MathF.Sin(tipAngle));
         PointF bladeTip = Add(player, Scale(tipDirection, radius + 7));
-        PointF bladeBase = Add(player, Scale(tipDirection, radius - (weapon == 1 ? 16 : 11)));
+        PointF bladeBase = Add(player, Scale(tipDirection, radius - weaponStyle.BaseInset));
         g.DrawLine(glow, bladeBase, bladeTip); g.DrawLine(edge, bladeBase, bladeTip);
         using var tipGlow = new SolidBrush(Color.FromArgb(alpha / 2, color));
         g.FillEllipse(tipGlow, bladeTip.X - 5, bladeTip.Y - 5, 10, 10);

@@ -25,7 +25,7 @@ public sealed partial class Game
             ApplyWeaponWound(enemy, critical);
             if (critical && rangedCriticalResonance) AddFloatingText(new PointF(enemy.Pos.X, enemy.Pos.Y - enemy.Radius - 28), "RESSONÂNCIA DO CONTRACANTO", Color.LightCyan);
             if (critical && !cadenceTriggered && HasWeaponAffix(weapon, 7)) { cadenceTriggered = true; float reduction = WeaponCriticalCooldownAdvance(weapon); AdvanceTechniqueCooldowns(reduction); AddFloatingText(new PointF(player.X, player.Y - 38), $"CADÊNCIA −{reduction:0.00} S", Color.LightCyan); }
-            if (weapon == 1 && !enemy.Boss) { enemy.Stagger = Math.Max(enemy.Stagger, 0.2f); enemy.Windup = 0; }
+            if (EquipmentCatalog.Weapon(weapon).InterruptsCommon && !enemy.Boss) { enemy.Stagger = Math.Max(enemy.Stagger, 0.2f); enemy.Windup = 0; }
             if (enemy.Hp <= 0) Defeat(enemy);
         }
         if (landed) TriggerHitStop(landedCritical ? 0.075f : 0.045f);
@@ -197,7 +197,7 @@ public sealed partial class Game
     private float TechniqueDamageMultiplier() => (heroClass == HeroClass.NameWeaver ? 1.18f : 1f) * (1f + techniqueTalent * 0.08f) * (combatDiscipline == 2 ? 1.12f : combatDiscipline == 1 ? 0.9f : 1f) * (combatApex == 1 && TechniquesOnCooldown() >= 2 ? 1.18f : 1f) * (vigilActive && HasCharm(8) ? 1.18f : 1f) * (HasCharm(11) && TechniquesReady() >= 2 ? 1.12f : 1f) * (HasCharm(12) ? 1.2f : 1f);
     private float BasicAttackCycleMultiplier() => HasCharm(11) && TechniquesOnCooldown() >= 2 ? 1.12f : 1f;
     private float BasicAttackSpecializationMultiplier() => combatDiscipline == 1 ? 1.12f : combatDiscipline == 2 ? 0.9f : 1f;
-    private int WeaponPower(int index) => weaponDamage[index] + weaponBonuses[index];
+    private int WeaponPower(int index) => EquipmentCatalog.Weapon(index).BaseDamage + weaponBonuses[index];
     private int WeaponKillHealing()
     {
         if (!HasWeaponAffix(weapon, 1)) return 0;
@@ -221,7 +221,7 @@ public sealed partial class Game
     private float WeaponCriticalCooldownAdvance(int index) => !HasWeaponAffix(index, 7) ? 0 : (weaponRarities[index] == 2 ? 0.25f : 0.15f) + (HasWeaponAffix(index, 3) && HasWeaponAffix(index, 7) ? 0.1f : 0f);
     private string WeaponAffixName(int index) => string.Join(" + ", new[] { WeaponAffixLabel(weaponAffixes[index]), WeaponAffixLabel(weaponAffixes2[index]) }.Where(label => label.Length > 0));
     private static string WeaponAffixLabel(int affix) => affix switch { 1 => "Trégua", 2 => "Contracanto", 3 => "Maré", 4 => "Passo Célere", 5 => "Lastro", 6 => "Fio Esticado", 7 => "Cadência", 8 => "Ruptura", 9 => "Nome Riscado", _ => "" };
-    private string WeaponDisplayName(int index) => weaponRarities[index] == 0 ? $"{weaponNames[index]} [COMUM]" : $"{weaponNames[index]} • {WeaponRarityName(index)} {WeaponAffixName(index)}";
+    private string WeaponDisplayName(int index) => weaponRarities[index] == 0 ? $"{EquipmentCatalog.Weapon(index).Name} [COMUM]" : $"{EquipmentCatalog.Weapon(index).Name} • {WeaponRarityName(index)} {WeaponAffixName(index)}";
     private string WeaponAffixDescription(int index) => string.Join(" • ", new[] { WeaponAffixDescription(weaponAffixes[index], weaponRarities[index]), WeaponAffixDescription(weaponAffixes2[index], weaponRarities[index]), weaponRarities[index] == 2 && HasWeaponAffix(index, 3) && HasWeaponAffix(index, 7) ? "Ressonância da Maré: Cadência adianta +0,10 s por crítico" : "", weaponRarities[index] == 2 && HasWeaponAffix(index, 1) && HasWeaponAffix(index, 5) ? "Ressonância da Trégua: abaixo de metade da vida, abates curam +6" : "", HasAnchorWardResonance(index) ? "Ressonância do Lastro: Manto de Lastro dura +0,75 s" : "", HasRangedCriticalResonance(index) ? "Ressonância do Contracanto: +10 p.p. de crítico no alcance longo" : "", HasWoundResonance(index) ? "Ressonância da Cicatriz: Ruptura causa +40% de dano" : "", HasNameRiftPower(index) ? "Poder único • Nome Riscado: ecos marcados explodem ao morrer" : "" }.Where(description => description.Length > 0));
     private static string WeaponAffixDescription(int affix, int rarity) => affix switch { 1 => $"da Trégua: recupera {(rarity == 2 ? 6 : 3)} vida por abate", 2 => $"do Contracanto: +{(rarity == 2 ? 11 : 7)} p.p. de crítico", 3 => $"da Maré: +{(rarity == 2 ? 18 : 12)}% de dano de técnica", 4 => $"do Passo Célere: recarga de técnicas -{(rarity == 2 ? 16 : 10)}%", 5 => $"do Lastro: dano recebido -{(rarity == 2 ? 12 : 8)}%", 6 => $"do Fio Esticado: alcance básico +{(rarity == 2 ? 20 : 12)}%", 7 => $"da Cadência: crítico adianta recargas em {(rarity == 2 ? 0.25f : 0.15f):0.00} s por golpe", 8 => $"da Ruptura: críticos ferem por 3 s ({(rarity == 2 ? 8 : 6)}% do dano da arma/s)", 9 when rarity == 2 => "do Nome Riscado: ecos marcados explodem ao morrer", _ => "" };
 
