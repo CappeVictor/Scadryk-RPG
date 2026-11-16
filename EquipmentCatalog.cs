@@ -53,7 +53,9 @@ internal static class EquipmentCatalog
         new WeaponDefinition("LANÇA DA BADALADA", 6, 0.43f, 128f, 148f, 58f, 0.35f, 57f, 11f, 9f, 3f, Color.FromArgb(224, 213, 181), 0.12f, 1f, false, true,
             false, "alcance máximo • preciso • perfura", "LANÇA PRECISA • ALCANCE MÁXIMO • PERFURA ARMADURA • ARCO ESTREITO"),
         new WeaponDefinition("ARCO DO LIMIAR", 0, 0.48f, 238f, 260f, 9f, 1f, 238f, 18f, 5f, 2f, Color.FromArgb(126, 220, 235), 0.16f, 0.7f, false, false,
-            true, "distância • preciso • fraco contra armadura", "ARCO DE LONGO ALCANCE • UM ALVO POR DISPARO • DANO REDUZIDO CONTRA ARMADURA")
+            true, "distância • preciso • fraco contra armadura", "ARCO DE LONGO ALCANCE • UM ALVO POR DISPARO • DANO REDUZIDO CONTRA ARMADURA"),
+        new WeaponDefinition("CORRENTE DO VAU", 2, 0.56f, 92f, 108f, 112f, 0.42f, 76f, 14f, 12f, 4f, Color.FromArgb(127, 196, 184), 0.1f, 0.8f, false, false,
+            false, "arco amplo • agrupa ecos comuns • lenta", "CORRENTE DE ALCANCE CURTO • ARCO AMPLO • PUXA ECOS COMUNS PARA PERTO")
     });
 
     // IDs remain stable because weapon saves store affixes as integers.
@@ -77,7 +79,7 @@ internal static class EquipmentCatalog
     public static bool IsValidPrimaryAffix(int id) => id >= 1 && id <= WeaponAffixes.Count && !WeaponAffix(id).RelicOnly;
     public static bool IsValidSecondaryAffix(int id, int rarity) => id == 0 || id >= 1 && id <= WeaponAffixes.Count && WeaponAffix(id).IsAvailableAtRarity(rarity);
 
-    public static bool IsValid() => Weapons.Count == 5
+    public static bool IsValid() => Weapons.Count == 6
         && Weapons.All(weapon => !string.IsNullOrWhiteSpace(weapon.Name)
             && weapon.BaseDamage >= 0 && weapon.AttackCooldown > 0
             && weapon.NormalReach > 0 && weapon.BossReach >= weapon.NormalReach

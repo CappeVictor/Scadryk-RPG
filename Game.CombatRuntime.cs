@@ -255,7 +255,14 @@ public sealed partial class Game
 
     private void ApplyHitKnockback(Enemy enemy, bool critical, int? weaponIndex = null)
     {
-        float speed = (weaponIndex ?? weapon) switch { 1 => 220f, 2 => 105f, 3 => 175f, _ => 150f };
+        int index = weaponIndex ?? weapon;
+        if (index == 5 && !enemy.Boss && enemy.Kind != EnemyKind.Elite)
+        {
+            enemy.KnockbackVelocity = Scale(Normalize(Sub(player, enemy.Pos), facing), critical ? 108f : 88f);
+            enemy.KnockbackTime = Math.Max(enemy.KnockbackTime, 0.2f);
+            return;
+        }
+        float speed = index switch { 1 => 220f, 2 => 105f, 3 => 175f, 5 => 70f, _ => 150f };
         if (critical) speed *= 1.22f;
         if (enemy.Boss) speed *= 0.32f;
         enemy.KnockbackVelocity = Scale(Normalize(Sub(enemy.Pos, player), facing), speed);

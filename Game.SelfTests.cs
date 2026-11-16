@@ -496,6 +496,10 @@ public sealed partial class Game
             weaponCombat.player = new PointF(150, 280); weaponCombat.facing = weaponCombat.mouseAim = new PointF(1, 0); platedEcho.Hp = 1000; platedEcho.Pos = new PointF(380, 280); weaponCombat.attackCd = 0; weaponCombat.Attack();
             if (!weaponCombat.BlockedLine(weaponCombat.player, platedEcho.Pos) || platedEcho.Hp != 1000 || weaponCombat.bowArrows.Count != 0) throw new InvalidOperationException("O Arco do Limiar atravessou uma parede ao escolher o alvo.");
             if (weaponCombat.BasicAttackReach(new Enemy { Kind = EnemyKind.Guardian }) != 260f) throw new InvalidOperationException("O Arco do Limiar não respeitou seu alcance especial contra chefes.");
+            weaponCombat.weapon = 5; weaponCombat.player = new PointF(150, 330); weaponCombat.facing = weaponCombat.mouseAim = new PointF(1, 0); platedEcho.Pos = new PointF(225, 330); platedEcho.Hp = 1000; platedEcho.KnockbackTime = 0; platedEcho.KnockbackVelocity = PointF.Empty; weaponCombat.enemies.Clear(); weaponCombat.enemies.Add(platedEcho); weaponCombat.attackCd = 0; weaponCombat.Attack();
+            if (platedEcho.Hp >= 1000 || platedEcho.KnockbackTime < 0.2f || platedEcho.KnockbackVelocity.X >= 0 || weaponCombat.BasicAttackCooldown() != 0.56f || weaponCombat.BasicAttackReach(platedEcho) != 92f || weaponCombat.WeaponTraitDescription(5) != "CORRENTE DE ALCANCE CURTO • ARCO AMPLO • PUXA ECOS COMUNS PARA PERTO") throw new InvalidOperationException("A Corrente do Vau não puxou o eco comum nem manteve o perfil amplo e lento.");
+            var resistantBoss = new Enemy { Pos = new PointF(225, 330), Kind = EnemyKind.Guardian, Hp = 1000, MaxHp = 1000 }; weaponCombat.ApplyHitKnockback(resistantBoss, false, 5);
+            if (resistantBoss.KnockbackVelocity.X <= 0) throw new InvalidOperationException("A Corrente do Vau puxou um chefe que deveria resistir ao controle.");
             if (!weaponCombat.WeaponTraitDescription(1).Contains("PERFURA ARMADURA") || !weaponCombat.WeaponTraitDescription(0).Contains("EQUILIBRADA")) throw new InvalidOperationException("A descrição das especializações de arma não corresponde ao combate.");
         }
         using (var floatingTextCheck = new Game())
@@ -1078,7 +1082,7 @@ public sealed partial class Game
         using var migratedRelic = new Game(); migratedRelic.timer.Stop(); migratedRelic.ownedWeapons = legacyRelic.OwnedWeapons; migratedRelic.RestoreWeaponData(legacyRelic);
         if (migratedRelic.weaponAffixes2[2] != 4 || !ValidWeaponData(migratedRelic.CaptureSaveData())) throw new InvalidOperationException("Uma relíquia antiga sem segundo afixo não foi migrada com segurança.");
         SaveData legacyLootSave = JsonSerializer.Deserialize<SaveData>("{\"Room\":0}")!;
-        if (!ValidWeaponData(legacyLootSave) || legacyLootSave.WeaponBonuses.Length != 5 || legacyLootSave.WeaponRarities.Length != 5 || legacyLootSave.WeaponAffixes.Length != 5 || legacyLootSave.WeaponAffixes2.Length != 5) throw new InvalidOperationException("Um save novo não recebeu os cinco espaços de arma padrão.");
+        if (!ValidWeaponData(legacyLootSave) || legacyLootSave.WeaponBonuses.Length != 6 || legacyLootSave.WeaponRarities.Length != 6 || legacyLootSave.WeaponAffixes.Length != 6 || legacyLootSave.WeaponAffixes2.Length != 6) throw new InvalidOperationException("Um save novo não recebeu os seis espaços de arma padrão.");
         SaveData fourWeaponSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(raritySave))!; fourWeaponSave.WeaponBonuses = fourWeaponSave.WeaponBonuses[..4]; fourWeaponSave.WeaponRarities = fourWeaponSave.WeaponRarities[..4]; fourWeaponSave.WeaponAffixes = fourWeaponSave.WeaponAffixes[..4]; fourWeaponSave.WeaponAffixes2 = fourWeaponSave.WeaponAffixes2[..4];
         if (!ValidWeaponData(fourWeaponSave)) throw new InvalidOperationException("A estrutura de quatro armas de um save anterior deixou de ser aceita.");
         rarityGame.Collect(new Drop { Pos = rarityGame.player, Kind = "weapon", Amount = 1 });
@@ -1584,7 +1588,14 @@ public sealed partial class Game
         if (borrowedBoss.BossPattern != 2 || !BossUsesLine(borrowedBoss)) throw new InvalidOperationException("O Arquivista das Marés não anunciou o corte em linha.");
         borrowedBoss.Windup = 0; borrowedBoss.Cooldown = 0; borrowedChapter.UpdateEnemy(borrowedBoss, 0.01f);
         if (borrowedBoss.BossPattern != 0) throw new InvalidOperationException("O Arquivista das Marés não concluiu seu ciclo de três ataques.");
-        borrowedBoss.Hp = 1; borrowedChapter.Defeat(borrowedBoss); Drop borrowedDrop = borrowedChapter.drops.Single(d => d.Kind == "borrowed"); borrowedChapter.Collect(borrowedDrop);
+        borrowedBoss.Hp = 1; borrowedChapter.Defeat(borrowedBoss);
+        if (borrowedChapter.drops.Count(drop => drop.Kind == "weapon" && drop.Amount == 5 && drop.Rarity == 2) != 1) throw new InvalidOperationException("O Arquivista das Marés não garantiu a Corrente do Vau como Relíquia.");
+        borrowedChapter.Collect(borrowedChapter.drops.Single(drop => drop.Kind == "weapon" && drop.Amount == 5));
+        if ((borrowedChapter.ownedWeapons & 32) == 0 || borrowedChapter.WeaponTraitDescription(5) != "CORRENTE DE ALCANCE CURTO • ARCO AMPLO • PUXA ECOS COMUNS PARA PERTO" || !ValidSaveData(borrowedChapter.CaptureSaveData())) throw new InvalidOperationException("A Corrente do Vau não foi recolhida nem salva antes da memória do chefe.");
+        borrowedChapter.EquipWeapon(5);
+        SaveData chainSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(borrowedChapter.CaptureSaveData()))!;
+        if (borrowedChapter.weapon != 5 || chainSave.Weapon != 5 || !ValidSaveData(chainSave)) throw new InvalidOperationException("A Corrente do Vau não pôde ser equipada e persistida.");
+        borrowedChapter.Collect(borrowedChapter.drops.Single(drop => drop.Kind == "borrowed"));
         SaveData borrowedSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(borrowedChapter.CaptureSaveData()))!;
         if (!borrowedChapter.borrowedTrace || borrowedChapter.questStage != 55 || !ValidSaveData(borrowedSave) || JsonSerializer.Deserialize<SaveData>("{}")?.BorrowedTrace != false) throw new InvalidOperationException("A memória da expedição não persistiu nem preservou saves antigos.");
         borrowedChapter.memoryOverlay = false; borrowedChapter.room = 18; borrowedChapter.SetupRoom(); borrowedChapter.player = AvenPosition; int borrowedGold = borrowedChapter.gold, borrowedTalent = borrowedChapter.techniqueTalent; borrowedChapter.Interact();

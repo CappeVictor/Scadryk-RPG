@@ -153,6 +153,7 @@ public sealed partial class Game
         if (enemy.Kind == EnemyKind.RouteScribe && !routeMemory) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "route" });
         if (enemy.Kind == EnemyKind.DeepSilence && !silenceMemory) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "silence" });
         if (enemy.Kind == EnemyKind.BorrowedChorus && !borrowedTrace) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "borrowed" });
+        if (enemy.Kind == EnemyKind.BorrowedChorus && (ownedWeapons & 32) == 0) drops.Add(CreateRelicWeaponDrop(Offset(enemy.Pos, 26, 0), 5));
         if (enemy.Kind == EnemyKind.LastTuner && !unstruckTrace) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "unstruck" });
         if (enemy.Kind == EnemyKind.LastTuner && (ownedWeapons & 8) == 0) drops.Add(CreateRelicWeaponDrop(Offset(enemy.Pos, 26, 0), 3));
         if (enemy.Kind == EnemyKind.LastTuner && (ownedWeapons & 16) == 0) drops.Add(CreateRelicWeaponDrop(Offset(enemy.Pos, -30, 24), 4));

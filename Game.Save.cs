@@ -19,10 +19,10 @@ public sealed partial class Game
         public float MaxHealth { get; set; } = 100;
         public int Weapon { get; set; }
         public int OwnedWeapons { get; set; } = 1;
-        public int[] WeaponBonuses { get; set; } = new int[5];
-        public int[] WeaponRarities { get; set; } = new int[5];
-        public int[] WeaponAffixes { get; set; } = new int[5];
-        public int[] WeaponAffixes2 { get; set; } = new int[5];
+        public int[] WeaponBonuses { get; set; } = new int[6];
+        public int[] WeaponRarities { get; set; } = new int[6];
+        public int[] WeaponAffixes { get; set; } = new int[6];
+        public int[] WeaponAffixes2 { get; set; } = new int[6];
         public int[] EquippedSkills { get; set; } = new[] { 1, 0, 0, 0 };
         public int[] AlternateSkills { get; set; } = new int[4];
         public bool AlternateSkillsActive { get; set; }
@@ -132,11 +132,12 @@ public sealed partial class Game
             || s.Level is < 1 or > 10000
             || s.Xp < 0
             || s.Xp >= s.Level * 60
-            || s.Weapon is < 0 or > 4
+            || s.Weapon is < 0 or > 5
             || s.OwnedWeapons < 1
-            || s.OwnedWeapons > 31
+            || s.OwnedWeapons > 63
             || (s.OwnedWeapons & 8) != 0 && (!s.UnstruckTrace || s.QuestStage < 58)
             || (s.OwnedWeapons & 16) != 0 && (!s.UnstruckTrace || s.QuestStage < 58)
+            || (s.OwnedWeapons & 32) != 0 && s.QuestStage < 55 && (s.Room != 40 || s.QuestStage < 54)
             || (s.OwnedWeapons & (1 << s.Weapon)) == 0
             || s.MaxHealth < 1
             || s.Health <= 0
