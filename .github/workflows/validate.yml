@@ -22,7 +22,7 @@ jobs:
         shell: pwsh
         run: |
           if (-not (Test-Path 'artifacts/Scadryk-win-x64/Scadryk.exe')) { throw 'Scadryk.exe is missing from the published build.' }
-          $requiredAssets = @('Listener.png', 'PlayerAttack.png', 'Enemies.png', 'EnemyAttacks.png', 'SpearboundElite.png', 'InkEcho.png', 'DrownedMemory.png', 'EmberWisp.png', 'NameMoth.png', 'MudCantor.png', 'PaperWraith.png', 'SaltEcho.png', 'Bosses.png', 'BossesMidgame.png', 'BossesLate.png', 'BossesFinalWave.png', 'BossesEndgame.png')
+          $requiredAssets = @('Listener.png', 'PlayerAttack.png', 'StoneGuardian.png', 'StoneGuardianAttack.png', 'NameWeaver.png', 'NameWeaverAttack.png', 'Enemies.png', 'EnemyAttacks.png', 'SpearboundElite.png', 'InkEcho.png', 'DrownedMemory.png', 'EmberWisp.png', 'NameMoth.png', 'MudCantor.png', 'PaperWraith.png', 'SaltEcho.png', 'Bosses.png', 'BossesMidgame.png', 'BossesLate.png', 'BossesFinalWave.png', 'BossesEndgame.png')
           foreach ($asset in $requiredAssets) {
             if (-not (Test-Path "artifacts/Scadryk-win-x64/Assets/$asset")) { throw "Published asset is missing: $asset" }
           }

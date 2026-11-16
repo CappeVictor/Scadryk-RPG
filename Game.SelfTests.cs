@@ -12,6 +12,20 @@ public sealed partial class Game
     public static int SelfTest()
     {
         GameAudio.SilenceForAutomatedRun();
+        foreach ((string Name, Bitmap? Sheet) sheet in new[]
+        {
+            ("Guardião: movimento", StoneGuardianSpriteSheet.Value),
+            ("Guardião: ataque", StoneGuardianAttackSpriteSheet.Value),
+            ("Tecelã: movimento", NameWeaverSpriteSheet.Value),
+            ("Tecelã: ataque", NameWeaverAttackSpriteSheet.Value)
+        })
+        {
+            if (sheet.Sheet is null || sheet.Sheet.Width < 4 || sheet.Sheet.Height < 4)
+                throw new InvalidOperationException($"A folha 4×4 da classe ({sheet.Name}) não foi carregada do pacote.");
+        }
+        if (StoneGuardianSpriteSheet.Value == PlayerSpriteSheet.Value || NameWeaverSpriteSheet.Value == PlayerSpriteSheet.Value
+            || StoneGuardianAttackSpriteSheet.Value == PlayerAttackSpriteSheet.Value || NameWeaverAttackSpriteSheet.Value == PlayerAttackSpriteSheet.Value)
+            throw new InvalidOperationException("Uma classe voltou a usar a folha visual do Escutador em vez de seu sprite próprio.");
         using (var menuHitTest = new Game())
         {
             menuHitTest.timer.Stop(); menuHitTest.titleSelection = 2;

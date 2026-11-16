@@ -1,6 +1,5 @@
 using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
 using System.Linq;
 using System.Windows.Forms;
 
@@ -1070,14 +1069,14 @@ public sealed partial class Game
         if (Length(animationDirection) <= 0.001f) animationDirection = facing;
         Bitmap? attackSprites = attackFlash > 0 ? heroClass switch
         {
-            HeroClass.StoneGuardian => StoneGuardianAttackSpriteSheet.Value,
-            HeroClass.NameWeaver => NameWeaverAttackSpriteSheet.Value,
+            HeroClass.StoneGuardian => StoneGuardianAttackSpriteSheet.Value ?? PlayerAttackSpriteSheet.Value,
+            HeroClass.NameWeaver => NameWeaverAttackSpriteSheet.Value ?? PlayerAttackSpriteSheet.Value,
             _ => PlayerAttackSpriteSheet.Value
         } : null;
         Bitmap? sprites = attackSprites ?? heroClass switch
         {
-            HeroClass.StoneGuardian => StoneGuardianSpriteSheet.Value,
-            HeroClass.NameWeaver => NameWeaverSpriteSheet.Value,
+            HeroClass.StoneGuardian => StoneGuardianSpriteSheet.Value ?? PlayerSpriteSheet.Value,
+            HeroClass.NameWeaver => NameWeaverSpriteSheet.Value ?? PlayerSpriteSheet.Value,
             _ => PlayerSpriteSheet.Value
         };
         if (sprites is not null)
@@ -1136,23 +1135,6 @@ public sealed partial class Game
         if (finalEnding == 2 && finalStrikeCd > 0) { using var finalSparkCooldownPen = new Pen(Color.FromArgb(225, 255, 191, 115), 3); g.DrawArc(finalSparkCooldownPen, player.X - 89, player.Y - 89, 178, 178, 0, 360 * finalStrikeCd / (Math.Max(12f, 19f - skillTalent * 0.65f) * (skillVariants[8] == 1 ? 1.25f : skillVariants[8] == 2 ? 0.75f : 1f) * WeaponCooldownMultiplier())); }
         if (heroClass == HeroClass.StoneGuardian && stoneBastionCd > 0) { using var bastionCooldownPen = new Pen(Color.FromArgb(225, 226, 137, 76), 3); g.DrawArc(bastionCooldownPen, player.X - 97, player.Y - 97, 194, 194, 90, 360 * stoneBastionCd / (18f * WeaponCooldownMultiplier())); }
         if (heroClass == HeroClass.NameWeaver && nameWeaverCd > 0) { using var threadCooldownPen = new Pen(Color.FromArgb(225, 193, 151, 224), 3); g.DrawArc(threadCooldownPen, player.X - 97, player.Y - 97, 194, 194, 90, 360 * nameWeaverCd / (14f * WeaponCooldownMultiplier())); }
-    }
-    private static Bitmap? TintPlayerSpriteSheet(Bitmap? source, float red, float green, float blue)
-    {
-        if (source is null) return null;
-        var tinted = new Bitmap(source.Width, source.Height, PixelFormat.Format32bppArgb);
-        using Graphics graphics = Graphics.FromImage(tinted);
-        using var attributes = new ImageAttributes();
-        attributes.SetColorMatrix(new ColorMatrix(new[]
-        {
-            new[] { red, 0f, 0f, 0f, 0f },
-            new[] { 0f, green, 0f, 0f, 0f },
-            new[] { 0f, 0f, blue, 0f, 0f },
-            new[] { 0f, 0f, 0f, 1f, 0f },
-            new[] { 0f, 0f, 0f, 0f, 1f }
-        }));
-        graphics.DrawImage(source, new Rectangle(0, 0, tinted.Width, tinted.Height), 0, 0, source.Width, source.Height, GraphicsUnit.Pixel, attributes);
-        return tinted;
     }
     private static int PlayerSpriteRow(PointF direction)
     {
