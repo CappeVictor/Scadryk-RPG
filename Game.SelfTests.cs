@@ -2074,14 +2074,28 @@ public sealed partial class Game
                 int cacheGold = vaultResume.gold, cacheGlass = vaultResume.tideGlass;
                 vaultResume.player = SaltFrontierCache; vaultResume.Interact(); vaultResume.memoryOverlay = false;
                 SaveData cacheSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(vaultResume.CaptureSaveData()))!;
-                if (!vaultResume.saltFrontierCacheFound || vaultResume.gold != cacheGold + 180 || vaultResume.tideGlass != cacheGlass + 1 || !ValidSaveData(cacheSave)) throw new InvalidOperationException("O estojo opcional da costa não entregou sua recompensa única nem salvou a descoberta.");
+                if (!vaultResume.saltFrontierCacheFound || !vaultResume.tideBoots || !vaultResume.tideBootsOn || vaultResume.gold != cacheGold + 180 || vaultResume.tideGlass != cacheGlass + 1 || !cacheSave.TideBoots || !cacheSave.TideBootsOn || !ValidSaveData(cacheSave)) throw new InvalidOperationException("O estojo opcional da costa não entregou suas Grevas de Ressaca, a recompensa única ou o estado salvo.");
+                SaveData previousCacheSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(cacheSave))!; previousCacheSave.TideBoots = previousCacheSave.TideBootsOn = false;
+                if (!ValidSaveData(previousCacheSave)) throw new InvalidOperationException("Um save de antes das Grevas deixou de ser aceito após a expansão do estojo.");
+                using (var cacheMigration = new Game())
+                {
+                    cacheMigration.timer.Stop(); cacheMigration.StartGame(); cacheMigration.RestoreSaltFrontierCacheGear(previousCacheSave);
+                    if (!cacheMigration.saltFrontierCacheFound || !cacheMigration.tideBoots || !cacheMigration.tideBootsOn) throw new InvalidOperationException("Um save que já abriu o estojo antes das Grevas deixou de receber o equipamento na migração.");
+                }
                 using (var cacheResume = new Game())
                 {
                     cacheResume.timer.Stop(); cacheResume.StartGame(); cacheResume.firstEchoDiscovered = cacheSave.FirstEchoDiscovered; cacheResume.saltFrontierReturnLocation = cacheSave.SaltFrontierLocation;
-                    cacheResume.saltFrontierBossAwakened = cacheSave.SaltFrontierBossAwakened; cacheResume.saltFrontierBossDefeated = cacheSave.SaltFrontierBossDefeated; cacheResume.saltFrontierCacheFound = cacheSave.SaltFrontierCacheFound; cacheResume.room = 49; cacheResume.gold = cacheSave.Gold; cacheResume.tideGlass = cacheSave.TideGlass; cacheResume.SetupRoom();
+                    cacheResume.saltFrontierBossAwakened = cacheSave.SaltFrontierBossAwakened; cacheResume.saltFrontierBossDefeated = cacheSave.SaltFrontierBossDefeated; cacheResume.saltFrontierCacheFound = cacheSave.SaltFrontierCacheFound; cacheResume.tideBoots = cacheSave.TideBoots; cacheResume.tideBootsOn = cacheSave.TideBootsOn; cacheResume.room = 49; cacheResume.gold = cacheSave.Gold; cacheResume.tideGlass = cacheSave.TideGlass; cacheResume.SetupRoom();
                     int savedCacheGold = cacheResume.gold, savedCacheGlass = cacheResume.tideGlass;
                     cacheResume.player = SaltFrontierCache; cacheResume.Interact();
                     if (!cacheResume.saltFrontierCacheFound || cacheResume.gold != savedCacheGold || cacheResume.tideGlass != savedCacheGlass) throw new InvalidOperationException("O estojo foi repetido após carregar o progresso salvo.");
+                    cacheResume.storyOverlay = cacheResume.memoryOverlay = false; cacheResume.inventoryOpen = true; cacheResume.OnKeyDown(null, new KeyEventArgs(Keys.F8)); cacheResume.player = SaltFrontierBuoys; cacheResume.windupPulse = 2;
+                    if (cacheResume.tideBootsOn || cacheResume.CurrentDrift() != new PointF(24, 0)) throw new InvalidOperationException("As Grevas de Ressaca não puderam ser retiradas para comparar o empurrão da corrente.");
+                    SaveData unequippedBootsSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(cacheResume.CaptureSaveData()))!;
+                    if (unequippedBootsSave.TideBootsOn || !unequippedBootsSave.TideBoots) throw new InvalidOperationException("O estado sem as Grevas equipadas não foi preservado no save.");
+                    cacheResume.OnKeyDown(null, new KeyEventArgs(Keys.F8));
+                    SaveData equippedBootsSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(cacheResume.CaptureSaveData()))!;
+                    if (!cacheResume.tideBootsOn || Math.Abs(cacheResume.CurrentDrift().X - 13.2f) > 0.01f || cacheResume.CurrentDrift().Y != 0 || !equippedBootsSave.TideBootsOn) throw new InvalidOperationException("As Grevas de Ressaca não reduziram o empurrão em 45% nem voltaram ao save.");
                     using var cacheMap = new Bitmap(960, 640); using var cacheGraphics = Graphics.FromImage(cacheMap); cacheResume.DrawSaltFrontierMap(cacheGraphics);
                 }
                 vaultResume.player = SaltFrontierBellheart; vaultResume.Interact(); vaultResume.memoryOverlay = false;

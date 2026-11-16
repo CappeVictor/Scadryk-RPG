@@ -219,6 +219,7 @@ public sealed partial class Game : Form
     private float stoneFury, nameThread, fordRoute, fordBurstTime, fordBurstDuration, fordBurstRadius, fordShortcutCd, screenShakeTime, screenShakeStrength, screenShakePhase, hitStopTime, buoyRhythmCooldown;
     private PointF fordBurstPosition;
     private int armorTrait, relicTrait;
+    private bool tideBoots, tideBootsOn;
     private int healthTalent, skillTalent, dodgeTalent, techniqueTalent, combatDiscipline, combatMastery, combatFocus, combatApex, combatTempo, combatInstinct, combatCapstone, combatParagon, pendingTalents, enemiesDefeated;
     private int memoriesFound, questStage, tideGlass, finalEnding, eliteWeaponMisses;
     private int vigilBestFloor, vigilFloor;
@@ -311,7 +312,7 @@ public sealed partial class Game : Form
     {
         nameRiftBursts.Clear();
         room = 0; level = 1; xp = gold = damage = 0; damage = 25; potions = 2; weapon = 0; ownedWeapons = 1; Array.Clear(weaponBonuses); Array.Clear(weaponRarities); Array.Clear(weaponAffixes); Array.Clear(weaponAffixes2);
-        armor = armorOn = relic = relicOn = archiveSeal = riverBell = lumeLens = naraTrace = chorusMemory = firstMemory = westTrace = upstreamTrace = beyondTrace = ebbSeal = counterTrace = anchorWard = refrainSong = riftVerse = deepTrace = lanternSignal = beaconLight = routeMemory = silenceMemory = inventoryOpen = skillMenuOpen = characterSheetOpen = mapOpen = journalOpen = dead = victory = chestChoice = talentChoice = memoryOverlay = endingChoiceOpen = forgeMenuOpen = defenseForgeOpen = secondaryForgeOpen = vigilActive = vigilChoiceOpen = classSelectionOpen = false;
+        armor = armorOn = relic = relicOn = tideBoots = tideBootsOn = archiveSeal = riverBell = lumeLens = naraTrace = chorusMemory = firstMemory = westTrace = upstreamTrace = beyondTrace = ebbSeal = counterTrace = anchorWard = refrainSong = riftVerse = deepTrace = lanternSignal = beaconLight = routeMemory = silenceMemory = inventoryOpen = skillMenuOpen = characterSheetOpen = mapOpen = journalOpen = dead = victory = chestChoice = talentChoice = memoryOverlay = endingChoiceOpen = forgeMenuOpen = defenseForgeOpen = secondaryForgeOpen = vigilActive = vigilChoiceOpen = classSelectionOpen = false;
         armorTrait = relicTrait = 0;
         dashAttackTime = 0;
         borrowedTrace = unstruckTrace = false;
@@ -393,7 +394,7 @@ public sealed partial class Game : Form
         if (e.KeyCode == Keys.L) { journalOpen = true; inventoryOpen = skillMenuOpen = characterSheetOpen = mapOpen = false; return; }
         if (e.KeyCode == Keys.I) { inventoryOpen = !inventoryOpen; return; }
         if (e.KeyCode == Keys.B) { skillMenuOpen = true; inventoryOpen = false; return; }
-        if (inventoryOpen) { if (e.KeyCode == Keys.Escape) inventoryOpen = false; else if (e.KeyCode >= Keys.D1 && e.KeyCode <= Keys.D4) EquipWeapon((int)e.KeyCode - (int)Keys.D1); else if (e.KeyCode == Keys.D0) EquipWeapon(4); else if (e.KeyCode == Keys.D9) EquipWeapon(5); else if (e.KeyCode == Keys.D5 && armor) armorOn = !armorOn; else if (e.KeyCode == Keys.D6 && relic) relicOn = !relicOn; else if (e.KeyCode == Keys.D7) CycleCharm(1); else if (e.KeyCode == Keys.D8) CycleCharm(2); else if (e.KeyCode == Keys.F7) CycleCharm(3); return; }
+        if (inventoryOpen) { if (e.KeyCode == Keys.Escape) inventoryOpen = false; else if (e.KeyCode >= Keys.D1 && e.KeyCode <= Keys.D4) EquipWeapon((int)e.KeyCode - (int)Keys.D1); else if (e.KeyCode == Keys.D0) EquipWeapon(4); else if (e.KeyCode == Keys.D9) EquipWeapon(5); else if (e.KeyCode == Keys.D5 && armor) armorOn = !armorOn; else if (e.KeyCode == Keys.D6 && relic) relicOn = !relicOn; else if (e.KeyCode == Keys.F8 && tideBoots) tideBootsOn = !tideBootsOn; else if (e.KeyCode == Keys.D7) CycleCharm(1); else if (e.KeyCode == Keys.D8) CycleCharm(2); else if (e.KeyCode == Keys.F7) CycleCharm(3); return; }
         if (e.KeyCode == Keys.T) { ToggleSkillLoadout(); return; }
         if (e.KeyCode == Keys.Space || e.KeyCode == Keys.J) Attack();
         else if (e.KeyCode == Keys.ShiftKey || e.KeyCode == Keys.K) StartDash();

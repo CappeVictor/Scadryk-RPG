@@ -160,8 +160,8 @@ public sealed partial class Game
         {
             if ((saltFrontierProgress & 16) == 0) { ShowMemory("BORDA SUDOESTE", "Nemi ainda não marcou esta margem no compasso da costa."); return; }
             if (saltFrontierCacheFound) { ShowMemory("ESTOJO DO INTERVALO", "O estojo já foi aberto. As provisões foram divididas entre os barqueiros que escolheram permanecer na costa."); return; }
-            saltFrontierCacheFound = true; gold += 180; AddXp(120); tideGlass++;
-            ShowMemory("ESTOJO DO INTERVALO", "Sob uma laje de basalto, você encontra um estojo de provisões deixado para quem precisasse esperar a maré. Nemi marca sua localização no atlas. Você recebe 180 de ouro, 120 de experiência e 1 sal vítreo."); return;
+            saltFrontierCacheFound = true; tideBoots = tideBootsOn = true; gold += 180; AddXp(120); tideGlass++;
+            ShowMemory("ESTOJO DO INTERVALO", "Sob uma laje de basalto, você encontra um estojo deixado por barqueiros que precisavam esperar a maré: 180 de ouro, 120 de experiência, 1 sal vítreo e as Grevas de Ressaca. Equipadas, elas reduzem em 45% o empurrão das correntes costeiras; ajuste-as com F8 no inventário. Nemi registra o achado no atlas."); return;
         }
         if (saltFrontierBossDefeated && Distance(player, SaltFrontierTeren) < 95)
         {

@@ -254,7 +254,7 @@ public sealed partial class Game
     private void DrawInventory(Graphics g)
     {
         using var b = new SolidBrush(Color.FromArgb(245, 17, 19, 20)); using var itemFont = new Font("Segoe UI", 10.5f); using var effectFont = new Font("Segoe UI", 8.5f); g.FillRectangle(b, 120, 120, 720, 520);
-        DrawCentered(g, "INVENTÁRIO   •   1–4, 0 E 9 ARMAS   •   5 ARMADURA   •   6 RELÍQUIA   •   TALISMÃS 7/8/F7   •   I FECHAR", 150, new Font("Segoe UI", 11, FontStyle.Bold), Color.Goldenrod);
+        DrawCentered(g, "INVENTÁRIO • 1–4/0/9 ARMAS • 5 PEITORAL • 6 RELICÁRIO • F8 GREVAS • TALISMÃS 7/8/F7 • I FECHAR", 150, new Font("Segoe UI", 10.5f, FontStyle.Bold), Color.Goldenrod);
         for (int i = 0; i < 6; i++) { int x = i % 2 == 0 ? 150 : 500, y = 188 + i / 2 * 48; string key = i < 4 ? (i + 1).ToString() : i == 4 ? "0" : "9"; bool found = (ownedWeapons & (1 << i)) != 0; Brush rarityBrush = !found ? Brushes.Gray : weaponRarities[i] == 2 ? Brushes.MediumTurquoise : weaponRarities[i] == 1 ? Brushes.Goldenrod : Brushes.AntiqueWhite; g.DrawString($"{key}. {WeaponDisplayName(i)} {(weapon == i ? "• EQUIPADA" : found ? "• DISPONÍVEL" : "• NÃO ENCONTRADA")}", itemFont, rarityBrush, x, y); g.DrawString(found ? $"DANO {WeaponPower(i) - WeaponPower(weapon):+#;-#;0} • {WeaponTraitSummary(i)}" : WeaponTraitSummary(i), effectFont, Brushes.DarkGray, new RectangleF(x + 16, y + 19, 315, 18)); }
         g.DrawString($"5. PEITORAL DE PEDRA {(armorOn ? relicOn ? "EQUIPADO • -35% DANO • VIGÍLIA DO VEIO" : "EQUIPADO • -30% DANO" : armor ? "DISPONÍVEL" : "NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 150, 316);
         g.DrawString($"   Traço: {ArmorTraitName(armorTrait)} — {ArmorTraitDescription(armorTrait)}", effectFont, Brushes.DarkGray, new RectangleF(150, 341, 650, 17));
@@ -269,6 +269,8 @@ public sealed partial class Game
         g.DrawString($"SINO DE NARA {(riverBell ? "ENCONTRADO • +20 VIDA MÁXIMA" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 150, 433);
         g.DrawString($"PRISMA DO LUME {(lumeLens ? "ENCONTRADO • +12 DANO" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 150, 459);
         g.DrawString($"RASTRO DE NARA {(naraTrace ? "RECUPERADO • MEMÓRIA PRESERVADA" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 150, 485);
+        g.DrawString($"GREAVAS DE RESSACA {(tideBootsOn ? "EQUIPADAS" : tideBoots ? "DISPONÍVEIS" : "NÃO ENCONTRADAS")}", itemFont, tideBoots ? Brushes.LightCyan : Brushes.Gray, 500, 407);
+        g.DrawString(tideBoots ? "F8 alterna • correntes da costa empurram 45% menos" : "Estojo do Intervalo • Costa das Badaladas", effectFont, Brushes.DarkGray, new RectangleF(500, 431, 315, 30));
         string[] availableCharms = Enumerable.Range(1, charmNames.Length - 1).Where(i => (ownedCharms & (1 << (i - 1))) != 0).Select(i => charmNames[i]).ToArray();
         string charmList = availableCharms.Length == 0 ? "NENHUM" : string.Join("\n", availableCharms.Chunk(5).Select(group => string.Join(" • ", group)));
         g.DrawString($"TALISMÃS: {charmList}   •   SAL VÍTREO: {tideGlass}", effectFont, Brushes.Plum, new RectangleF(150, 506, 650, 45));
