@@ -1740,10 +1740,20 @@ public sealed partial class Game
             escarpment.player = SaltBasinAsha; escarpment.Interact(); escarpment.memoryOverlay = false; escarpment.Interact(); escarpment.memoryOverlay = false;
             SaveData basinSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(escarpment.CaptureSaveData()))!;
             if (!escarpment.saltBasinRewardClaimed || escarpment.gold != basinGold + 235 || escarpment.saltBasinMarks != 7 || !ValidSaveData(basinSave)) throw new InvalidOperationException("A cadeia das lanternas não concluiu com a recompensa única e o estado salvo.");
+            escarpment.player = SaltBasinTavi; escarpment.Interact(); escarpment.memoryOverlay = false;
+            if ((escarpment.saltBasinSurveyProgress & 1) == 0) throw new InvalidOperationException("Tavi não iniciou o levantamento opcional após a missão de Asha.");
+            for (int i = 0; i < SaltBasinSurveyMarks.Length; i++)
+            {
+                escarpment.player = SaltBasinSurveyMarks[i]; escarpment.Interact(); escarpment.memoryOverlay = false;
+                if ((escarpment.saltBasinSurveyProgress & (1 << (i + 1))) == 0) throw new InvalidOperationException("Um menir não registrou sua descoberta no mapa.");
+            }
+            int surveyGold = escarpment.gold; escarpment.player = SaltBasinTavi; escarpment.Interact(); escarpment.memoryOverlay = false;
+            SaveData surveySave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(escarpment.CaptureSaveData()))!;
+            if ((escarpment.saltBasinSurveyProgress & 31) != 31 || escarpment.gold != surveyGold + 110 || !ValidSaveData(surveySave)) throw new InvalidOperationException("Tavi não concluiu o mapa com recompensa única e progresso válido no save.");
             using (var resume = new Game())
             {
-                resume.timer.Stop(); resume.StartGame(); resume.firstEchoDiscovered = basinSave.FirstEchoDiscovered; resume.room = 3; resume.SetupRoom();
-                if (resume.room != 46 || !resume.saltBasinRewardClaimed || resume.saltBasinMarks != 7 || resume.WorldSize() != new SizeF(3600, 2100)) throw new InvalidOperationException("O save não retomou a nova região e o progresso das lanternas.");
+                resume.timer.Stop(); resume.StartGame(); resume.firstEchoDiscovered = surveySave.FirstEchoDiscovered; resume.room = 3; resume.SetupRoom();
+                if (resume.room != 46 || !resume.saltBasinRewardClaimed || resume.saltBasinMarks != 7 || (resume.saltBasinSurveyProgress & 31) != 31 || resume.WorldSize() != new SizeF(3600, 2100)) throw new InvalidOperationException("O save não retomou a nova região e o progresso das lanternas e do mapa de Tavi.");
                 resume.player = SaltBasinEntrance; resume.Interact(); resume.memoryOverlay = false;
                 if (resume.room != 43 || resume.saltBasinReturnLocation || resume.player != FirstEchoAshSignal) throw new InvalidOperationException("A saída da bacia não voltou ao sinal do Vau com transição limpa.");
                 resume.Interact(); resume.memoryOverlay = false;

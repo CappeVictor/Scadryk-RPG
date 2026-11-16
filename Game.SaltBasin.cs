@@ -12,6 +12,11 @@ public sealed partial class Game
         get => (firstEchoDiscovered >> 7) & 31;
         set => firstEchoDiscovered = (firstEchoDiscovered & ~3968) | ((value & 31) << 7);
     }
+    private int saltBasinSurveyProgress
+    {
+        get => (firstEchoDiscovered >> 16) & 31;
+        set => firstEchoDiscovered = (firstEchoDiscovered & ~2031616) | ((value & 31) << 16);
+    }
     private int saltBasinMarks => (saltBasinProgress >> 1) & 7;
     private bool saltBasinMissionAccepted => (saltBasinProgress & 1) != 0;
     private bool saltBasinRewardClaimed => (saltBasinProgress & 16) != 0;
@@ -20,6 +25,7 @@ public sealed partial class Game
     private static readonly PointF SaltBasinAsha = new(1690, 910);
     private static readonly PointF SaltBasinTavi = new(1830, 1035);
     private static readonly PointF[] SaltBasinLanterns = { new(640, 420), new(2010, 350), new(2890, 1450) };
+    private static readonly PointF[] SaltBasinSurveyMarks = { new(930, 740), new(2260, 720), new(3130, 1570) };
     private readonly List<Enemy> saltBasinWaitingEnemies = new();
     private readonly List<Drop> saltBasinWaitingDrops = new();
     private bool saltBasinOutsideStored;
@@ -110,10 +116,34 @@ public sealed partial class Game
         }
         if (Distance(player, SaltBasinTavi) < 85)
         {
-            string taviText = !saltBasinMissionAccepted ? "Sou Tavi. Asha cuida do abrigo e conhece as três rotas. As lanternas ficam em colinas, não dentro de masmorras."
-                : saltBasinRewardClaimed ? "A trilha sul passa pelos juncos brancos; a norte cruza o bosque de vidro. Agora os viajantes conseguem escolher por onde seguir."
-                : "As marcas de Asha foram talhadas para quem chega cansado. Reacenda cada uma e a própria bacia vai revelar o caminho.";
-            ShowMemory("TAVI, APRENDIZ DE CARTÓGRAFA", taviText); return;
+            if (!saltBasinMissionAccepted) ShowMemory("TAVI, APRENDIZ DE CARTÓGRAFA", "Sou Tavi. Asha cuida do abrigo e conhece as três rotas. As lanternas ficam em colinas, não dentro de masmorras.");
+            else if (!saltBasinRewardClaimed) ShowMemory("TAVI, APRENDIZ DE CARTÓGRAFA", "As marcas de Asha foram talhadas para quem chega cansado. Reacenda cada uma e a própria bacia vai revelar o caminho.");
+            else if ((saltBasinSurveyProgress & 1) == 0)
+            {
+                saltBasinSurveyProgress |= 1;
+                ShowMemory("O MAPA INACABADO DE TAVI", "Asha reabriu as trilhas, mas três marcos antigos ainda faltam no meu mapa. Encontre os menires gravados no espigão, no bosque e na baixada; toque cada um para registrar o caminho.");
+            }
+            else if ((saltBasinSurveyProgress & 14) == 14 && (saltBasinSurveyProgress & 16) == 0)
+            {
+                saltBasinSurveyProgress |= 16; gold += 110; AddXp(70);
+                ShowMemory("MAPA DAS TRÊS ROTAS", "Tavi liga os três traços num mapa seguro. Viajantes agora podem atravessar a bacia sem se perder na névoa. Você recebe 110 de ouro e 70 de experiência.");
+            }
+            else if ((saltBasinSurveyProgress & 16) != 0) ShowMemory("TAVI, CARTÓGRAFA", "As rotas estão registradas. Deixo o mapa aberto para quem ainda não conhece a bacia.");
+            else ShowMemory("O MAPA INACABADO DE TAVI", $"Marcos registrados: {System.Numerics.BitOperations.PopCount((uint)(saltBasinSurveyProgress & 14))}/3. Procure menires gravados longe da trilha principal.");
+            return;
+        }
+        for (int i = 0; i < SaltBasinSurveyMarks.Length; i++)
+        {
+            if (Distance(player, SaltBasinSurveyMarks[i]) >= 75) continue;
+            int mark = 1 << (i + 1);
+            if ((saltBasinSurveyProgress & 1) == 0) ShowMemory("MENIR SEM REGISTRO", "Tavi procura marcos antigos para completar seu mapa. Volte ao abrigo e fale com ela depois de ajudar Asha.");
+            else if ((saltBasinSurveyProgress & mark) != 0) ShowMemory("MARCO CARTOGRAFADO", "O sinal já está registrado no mapa de Tavi.");
+            else
+            {
+                saltBasinSurveyProgress |= mark;
+                ShowMemory(i switch { 0 => "MENIR DO ESPIGÃO", 1 => "MENIR DO BOSQUE DE VIDRO", _ => "MENIR DA BAIXADA" }, "Você registra os sulcos de orientação. O marco agora aparece no mapa da região.");
+            }
+            return;
         }
         for (int i = 0; i < SaltBasinLanterns.Length; i++)
         {
@@ -137,6 +167,9 @@ public sealed partial class Game
         if (!saltBasinMissionAccepted) return "OBJETIVO: FALE COM ASHA NO ABRIGO DAS TRÊS LANTERNAS";
         if (saltBasinMarks != 7) return $"OBJETIVO: REACENDA AS LANTERNAS DA BACIA • {System.Numerics.BitOperations.PopCount((uint)saltBasinMarks)}/3";
         if (!saltBasinRewardClaimed) return "OBJETIVO: VOLTE AO ABRIGO E CONTE A ASHA";
+        if ((saltBasinSurveyProgress & 1) == 0) return "OPCIONAL: FALE COM TAVI SOBRE O MAPA INACABADO";
+        if ((saltBasinSurveyProgress & 14) != 14) return $"OPCIONAL: REGISTRE OS MENIRES DE TAVI • {System.Numerics.BitOperations.PopCount((uint)(saltBasinSurveyProgress & 14))}/3";
+        if ((saltBasinSurveyProgress & 16) == 0) return "OPCIONAL: VOLTE A TAVI COM O MAPA COMPLETO";
         return "BACIA DO SAL IMÓVEL • ROTAS ABERTAS • EXPLORAÇÃO LIVRE";
     }
 
@@ -157,7 +190,11 @@ public sealed partial class Game
             new[] { SaltBasinAsha, new PointF(1900, 650), SaltBasinLanterns[1], new PointF(2430, 520), SaltBasinLanterns[2] },
             new[] { SaltBasinAsha, new PointF(2240, 1110), new PointF(2590, 1320), SaltBasinLanterns[2] }
         };
-        for (int i = 0; i < trails.Length; i++) g.DrawLines(i == 0 || i == 3 ? route : thin, trails[i].Select(Map).ToArray());
+        for (int i = 0; i < trails.Length; i++)
+        {
+            if (i >= 2 && !saltBasinMissionAccepted) continue;
+            g.DrawLines(i == 0 || i == 3 ? route : thin, trails[i].Select(Map).ToArray());
+        }
         foreach (var (position, label, visible) in new[]
         {
             (SaltBasinEntrance, "VAU DE CINZA", true), (SaltBasinAsha, "ASHA • ABRIGO", true),
@@ -172,16 +209,28 @@ public sealed partial class Game
             bool lit = isLantern && (saltBasinProgress & (position == SaltBasinLanterns[0] ? 2 : position == SaltBasinLanterns[1] ? 4 : 8)) != 0;
             if (visible) { g.FillEllipse(lit ? Brushes.LightCyan : Brushes.Goldenrod, p.X - 5, p.Y - 5, 10, 10); g.DrawString(label, font, Brushes.AntiqueWhite, p.X - 29, p.Y - 22); }
         }
+        for (int i = 0; i < SaltBasinSurveyMarks.Length; i++)
+        {
+            if ((saltBasinSurveyProgress & (1 << (i + 1))) == 0) continue;
+            PointF p = Map(SaltBasinSurveyMarks[i]);
+            g.FillRectangle(Brushes.LightSkyBlue, p.X - 4, p.Y - 4, 8, 8);
+            g.DrawString($"MENIR {i + 1}", font, Brushes.LightSkyBlue, p.X + 7, p.Y - 7);
+        }
+        bool showObjective = !saltBasinMissionAccepted || saltBasinMarks != 7 || !saltBasinRewardClaimed || (saltBasinSurveyProgress & 16) == 0;
         PointF objective = !saltBasinMissionAccepted ? Map(SaltBasinAsha)
             : saltBasinMarks != 7 ? Map(SaltBasinLanterns[Enumerable.Range(0, 3).First(i => (saltBasinProgress & (1 << (i + 1))) == 0)])
-            : Map(SaltBasinAsha);
+            : !saltBasinRewardClaimed ? Map(SaltBasinAsha)
+            : (saltBasinSurveyProgress & 16) != 0 ? Map(player)
+            : (saltBasinSurveyProgress & 1) == 0 || (saltBasinSurveyProgress & 14) == 14 ? Map(SaltBasinTavi)
+            : Map(SaltBasinSurveyMarks[Enumerable.Range(0, 3).First(i => (saltBasinSurveyProgress & (1 << (i + 1))) == 0)]);
         using var ring = new Pen(Color.FromArgb(255, 218, 111), 3);
-        g.DrawEllipse(ring, objective.X - 12, objective.Y - 12, 24, 24);
+        if (showObjective) g.DrawEllipse(ring, objective.X - 12, objective.Y - 12, 24, 24);
         PointF here = Map(player);
         g.FillEllipse(Brushes.LightGreen, here.X - 7, here.Y - 7, 14, 14);
-        string status = saltBasinMissionAccepted ? $"LANTERNAS {System.Numerics.BitOperations.PopCount((uint)saltBasinMarks)}/3" : "PROCURE ASHA";
+        string status = !saltBasinMissionAccepted ? "PROCURE ASHA"
+            : $"LANTERNAS {System.Numerics.BitOperations.PopCount((uint)saltBasinMarks)}/3" + ((saltBasinSurveyProgress & 1) != 0 ? $" • MENIRES {System.Numerics.BitOperations.PopCount((uint)(saltBasinSurveyProgress & 14))}/3" : "");
         g.DrawString(status, font, Brushes.Goldenrod, 397, 531);
-        g.DrawString("VERDE: VOCÊ  •  CÍRCULO: OBJETIVO  •  M/ESC: FECHAR", font, Brushes.AntiqueWhite, 190, 562);
+        g.DrawString("VERDE: VOCÊ  •  CÍRCULO: OBJETIVO  •  AZUL: MENIR REGISTRADO  •  M/ESC: FECHAR", font, Brushes.AntiqueWhite, 123, 562);
     }
 
     private static readonly RectangleF[] SaltBasinWalls =
@@ -236,6 +285,17 @@ public sealed partial class Game
             g.FillEllipse(glow, point.X - 42, point.Y - 42, 84, 84);
             g.FillRectangle(lanternLight, point.X - 12, point.Y - 23, 24, 46); g.DrawRectangle(rim, point.X - 12, point.Y - 23, 24, 46);
             g.FillEllipse(lit ? Brushes.LightCyan : Brushes.Goldenrod, point.X - 6, point.Y - 17, 12, 12);
+        }
+        using var menhir = new SolidBrush(Color.FromArgb(111, 122, 116));
+        using var menhirEdge = new Pen(Color.FromArgb(188, 176, 141), 2);
+        using var menhirPromptFont = new Font("Segoe UI", 10, FontStyle.Bold);
+        using var menhirPromptInk = new SolidBrush(Color.FromArgb(231, 221, 193));
+        for (int i = 0; i < SaltBasinSurveyMarks.Length; i++)
+        {
+            PointF point = SaltBasinSurveyMarks[i];
+            PointF[] stone = { new(point.X, point.Y - 23), new(point.X + 15, point.Y - 10), new(point.X + 12, point.Y + 18), new(point.X - 12, point.Y + 18), new(point.X - 15, point.Y - 10) };
+            g.FillPolygon(menhir, stone); g.DrawPolygon(menhirEdge, stone);
+            if (Distance(player, point) < 82) g.DrawString((saltBasinSurveyProgress & (1 << (i + 1))) != 0 ? "E  VER REGISTRO" : "E  REGISTRAR MARCO", menhirPromptFont, menhirPromptInk, point.X - 76, point.Y + 27);
         }
         using var font = new Font("Segoe UI", 14, FontStyle.Bold);
         using var ink = new SolidBrush(Color.FromArgb(231, 221, 193));
