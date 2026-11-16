@@ -2063,6 +2063,19 @@ public sealed partial class Game
                 vaultResume.player = SaltFrontierCartographer; vaultResume.Interact(); vaultResume.memoryOverlay = false;
                 SaveData frontierCompletedSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(vaultResume.CaptureSaveData()))!;
                 if ((vaultResume.saltFrontierProgress & 31) != 31 || vaultResume.gold != coastGold + 280 || !ValidSaveData(frontierCompletedSave)) throw new InvalidOperationException("A missão de Nemi não concedeu a recompensa única nem salvou seu compasso.");
+                int cacheGold = vaultResume.gold, cacheGlass = vaultResume.tideGlass;
+                vaultResume.player = SaltFrontierCache; vaultResume.Interact(); vaultResume.memoryOverlay = false;
+                SaveData cacheSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(vaultResume.CaptureSaveData()))!;
+                if (!vaultResume.saltFrontierCacheFound || vaultResume.gold != cacheGold + 180 || vaultResume.tideGlass != cacheGlass + 1 || !ValidSaveData(cacheSave)) throw new InvalidOperationException("O estojo opcional da costa não entregou sua recompensa única nem salvou a descoberta.");
+                using (var cacheResume = new Game())
+                {
+                    cacheResume.timer.Stop(); cacheResume.StartGame(); cacheResume.firstEchoDiscovered = cacheSave.FirstEchoDiscovered; cacheResume.saltFrontierReturnLocation = cacheSave.SaltFrontierLocation;
+                    cacheResume.saltFrontierBossAwakened = cacheSave.SaltFrontierBossAwakened; cacheResume.saltFrontierBossDefeated = cacheSave.SaltFrontierBossDefeated; cacheResume.room = 49; cacheResume.gold = cacheSave.Gold; cacheResume.tideGlass = cacheSave.TideGlass; cacheResume.SetupRoom();
+                    int savedCacheGold = cacheResume.gold, savedCacheGlass = cacheResume.tideGlass;
+                    cacheResume.player = SaltFrontierCache; cacheResume.Interact();
+                    if (!cacheResume.saltFrontierCacheFound || cacheResume.gold != savedCacheGold || cacheResume.tideGlass != savedCacheGlass) throw new InvalidOperationException("O estojo foi repetido após carregar o progresso salvo.");
+                    using var cacheMap = new Bitmap(960, 640); using var cacheGraphics = Graphics.FromImage(cacheMap); cacheResume.DrawSaltFrontierMap(cacheGraphics);
+                }
                 vaultResume.player = SaltFrontierBellheart; vaultResume.Interact(); vaultResume.memoryOverlay = false;
                 Enemy bellheartBoss = vaultResume.enemies.SingleOrDefault(enemy => EnemyName(enemy) == "CORO DA MARÉ FALSA") ?? throw new InvalidOperationException("O coração da torre não despertou seu chefe original após a missão de Nemi.");
                 SaveData awakenedBossSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(vaultResume.CaptureSaveData()))!;
