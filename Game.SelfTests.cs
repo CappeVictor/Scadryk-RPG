@@ -21,6 +21,15 @@ public sealed partial class Game
             || EnemyData(EnemyKind.Elite).HealthAt(42, 0) != 366
             || EnemyData(EnemyKind.NameWeaver).HealthAt(13, 1) != 410 || EnemyData(EnemyKind.NameWeaver).HealthAt(13, 2) != 455)
             throw new InvalidOperationException("A progressão de vida dos inimigos mudou ao migrar para o catálogo.");
+        using (var cryptArtCheck = new Game())
+        {
+            cryptArtCheck.timer.Stop(); Color[] floorSamples = new Color[3];
+            for (int introRoom = 0; introRoom < 3; introRoom++)
+            {
+                using var map = new Bitmap(960, 640); using var graphics = Graphics.FromImage(map); cryptArtCheck.room = introRoom; cryptArtCheck.DrawCryptIntroEnvironment(graphics); floorSamples[introRoom] = map.GetPixel(100, 130);
+            }
+            if (floorSamples.Distinct().Count() != 3) throw new InvalidOperationException("O vestíbulo, o Salão dos Ossos e a Câmara do Guardião não têm pisos visualmente distintos.");
+        }
         using (var enemyContactCatalogCheck = new Game())
         {
             enemyContactCatalogCheck.timer.Stop();

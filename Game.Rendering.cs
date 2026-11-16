@@ -75,6 +75,7 @@ public sealed partial class Game
         else if (room is 16 or 17) DrawWestWitnessEnvironment(g, floor, tile);
         else if (room is 14 or 15) DrawFirstVigilEnvironment(g, floor, tile);
         else if (room is 12 or 13) DrawFarReachEnvironment(g, floor, tile);
+        else if (room < 3) DrawCryptIntroEnvironment(g);
         else if (room >= 10) DrawNameShoreEnvironment(g, floor, tile);
         else if (room >= 8) DrawLumeEnvironment(g, floor, tile);
         else
@@ -125,6 +126,57 @@ public sealed partial class Game
         if (journalOpen) DrawQuestJournal(g);
         if (settingsOpen) DrawGameSettings(g);
         if (focusPaused && !title && !dead && !victory) DrawOverlay(g, "PAUSADO", "VOLTE À JANELA PARA CONTINUAR");
+    }
+
+    private void DrawCryptIntroEnvironment(Graphics g)
+    {
+        Color baseColor = room switch { 0 => Color.FromArgb(48, 59, 60), 1 => Color.FromArgb(58, 54, 43), _ => Color.FromArgb(42, 49, 58) };
+        Color jointColor = room switch { 0 => Color.FromArgb(67, 81, 78), 1 => Color.FromArgb(83, 76, 58), _ => Color.FromArgb(63, 70, 77) };
+        using var floor = new SolidBrush(baseColor); using var joints = new Pen(jointColor, 1.2f);
+        g.FillRectangle(floor, 65, 108, 830, 445);
+        int row = 0;
+        for (int y = 112; y < 548; y += 58, row++)
+        {
+            int offset = row % 2 == 0 ? 0 : 34;
+            for (int x = 68 - offset; x < 900; x += 68) g.DrawRectangle(joints, x, y, 67, 57);
+        }
+        if (room == 0)
+        {
+            using var grooves = new Pen(Color.FromArgb(81, 111, 110), 2);
+            foreach (int y in new[] { 151, 214, 455, 516 }) { g.DrawLine(grooves, 105, y, 835, y); g.DrawLine(grooves, 105, y + 6, 835, y + 6); }
+            foreach (PointF rune in new[] { new PointF(260, 165), new PointF(700, 490) })
+            {
+                g.DrawEllipse(grooves, rune.X - 24, rune.Y - 24, 48, 48); g.DrawEllipse(grooves, rune.X - 14, rune.Y - 14, 28, 28);
+                g.DrawLine(grooves, rune.X - 34, rune.Y, rune.X - 25, rune.Y); g.DrawLine(grooves, rune.X + 25, rune.Y, rune.X + 34, rune.Y);
+            }
+        }
+        else if (room == 1)
+        {
+            using var shadow = new SolidBrush(Color.FromArgb(85, 20, 18, 15)); using var bone = new Pen(Color.FromArgb(155, 167, 151, 121), 3); using var skull = new SolidBrush(Color.FromArgb(180, 179, 164, 134));
+            foreach (PointF pile in new[] { new PointF(170, 260), new PointF(410, 430), new PointF(625, 190), new PointF(790, 470), new PointF(735, 310) })
+            {
+                g.FillEllipse(shadow, pile.X - 28, pile.Y - 9, 56, 18);
+                g.DrawLine(bone, pile.X - 22, pile.Y + 3, pile.X + 18, pile.Y - 3); g.DrawLine(bone, pile.X - 12, pile.Y - 8, pile.X + 24, pile.Y + 7);
+                g.FillEllipse(skull, pile.X - 4, pile.Y - 5, 10, 9); g.DrawEllipse(bone, pile.X - 4, pile.Y - 5, 10, 9);
+            }
+        }
+        else
+        {
+            PointF center = new(480, 330); using var sigil = new Pen(Color.FromArgb(106, 147, 157), 2); using var fractures = new Pen(Color.FromArgb(94, 113, 132), 2);
+            foreach (float radius in new[] { 82f, 118f, 190f }) g.DrawEllipse(sigil, center.X - radius, center.Y - radius, radius * 2, radius * 2);
+            for (int i = 0; i < 12; i++)
+            {
+                float angle = i * MathF.PI / 6, cos = MathF.Cos(angle), sin = MathF.Sin(angle);
+                g.DrawLine(sigil, center.X + cos * 120, center.Y + sin * 120, center.X + cos * 145, center.Y + sin * 145);
+                if (i % 3 == 0) g.DrawLine(fractures, center.X + cos * 194, center.Y + sin * 194, center.X + cos * 276, center.Y + sin * 276);
+            }
+            g.DrawEllipse(fractures, center.X - 12, center.Y - 12, 24, 24);
+        }
+        using var wallBrush = new SolidBrush(room == 1 ? Color.FromArgb(92, 76, 52) : Color.FromArgb(82, 79, 66));
+        using var wallEdge = new Pen(room == 2 ? Color.FromArgb(151, 174, 183) : Color.FromArgb(149, 133, 99), 3);
+        foreach (RectangleF wall in Walls) { g.FillRectangle(wallBrush, wall); g.DrawRectangle(wallEdge, wall.X, wall.Y, wall.Width, wall.Height); }
+        using var exitPen = new Pen(enemies.Count == 0 && drops.Count == 0 ? Color.LightGreen : Color.FromArgb(45, 48, 43), 8);
+        g.DrawRectangle(exitPen, 882, 293, 3, 75);
     }
 
     private string CurrentObjective()
