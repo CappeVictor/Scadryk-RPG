@@ -1432,7 +1432,7 @@ public sealed partial class Game
             fendaForge.ApplyWeaponWound(armoredTarget, true);
             if (fendaForge.HasSunderedWoundResonance(0) || Math.Abs(armoredTarget.WoundDamage - 4.5f) > 0.01f)
                 throw new InvalidOperationException("A Ressonância da Fenda foi aplicada fora de uma Relíquia.");
-            fendaForge.weaponAffixes2[0] = 0; fendaForge.room = 18; fendaForge.questStage = 27; fendaForge.player = AvenPosition; fendaForge.gold = 75; fendaForge.tideGlass = 1; fendaForge.forgeMenuOpen = true;
+            fendaForge.weaponBonuses[0] = 3; fendaForge.weaponAffixes2[0] = 0; fendaForge.room = 18; fendaForge.questStage = 27; fendaForge.player = AvenPosition; fendaForge.gold = 75; fendaForge.tideGlass = 1; fendaForge.forgeMenuOpen = true;
             fendaForge.OnKeyDown(fendaForge, new KeyEventArgs(Keys.I));
             Enemy inscriptionTarget = new() { Kind = EnemyKind.Grunt, ListenerMarkTime = 2, Hp = 100, MaxHp = 100 };
             Enemy unmarkedInscriptionTarget = new() { Kind = EnemyKind.Grunt, Hp = 100, MaxHp = 100 };
@@ -1441,8 +1441,8 @@ public sealed partial class Game
             if (fendaForge.weaponAffixes[0] != 11 || Math.Abs(fendaForge.OutgoingDamageMultiplier(inscriptionTarget) - unmarkedInscriptionMultiplier * 1.12f) > 0.001f
                 || !fendaForge.WeaponAffixDescription(0).Contains("da Inscrição: dano contra alvos marcados +12%")
                 || !ValidWeaponData(inscriptionRareSave))
-                throw new InvalidOperationException($"Inscrição Rara: afixo={fendaForge.weaponAffixes[0]}, arma={fendaForge.weapon}, raridade={inscriptionRareSave.WeaponRarities[0]}, bônus={inscriptionRareSave.WeaponBonuses[0]}, principal={inscriptionRareSave.WeaponAffixes[0]}, secundário={inscriptionRareSave.WeaponAffixes2[0]}, owned={inscriptionRareSave.OwnedWeapons}, dano={fendaForge.OutgoingDamageMultiplier(inscriptionTarget):0.000}/{unmarkedInscriptionMultiplier:0.000}, save={ValidWeaponData(inscriptionRareSave)}.");
-            fendaForge.weaponRarities[0] = 2; fendaForge.weaponAffixes[0] = 10; fendaForge.weaponAffixes2[0] = 11;
+                throw new InvalidOperationException("A Inscrição não apareceu na têmpera, não fortaleceu apenas alvos marcados ou falhou no save.");
+            fendaForge.weaponRarities[0] = 2; fendaForge.weaponBonuses[0] = 7; fendaForge.weaponAffixes[0] = 10; fendaForge.weaponAffixes2[0] = 11;
             inscriptionTarget.ListenerMarkTime = 0; inscriptionTarget.SparkMarkTime = 1;
             if (Math.Abs(fendaForge.OutgoingDamageMultiplier(inscriptionTarget) - fendaForge.OutgoingDamageMultiplier(unmarkedInscriptionTarget) * 1.2f) > 0.001f
                 || !fendaForge.WeaponAffixDescription(0).Contains("da Inscrição: dano contra alvos marcados +20%")
