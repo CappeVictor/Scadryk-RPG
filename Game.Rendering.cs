@@ -14,6 +14,8 @@ public sealed partial class Game
         using var headerFont = new Font("Georgia", 22, FontStyle.Bold); using var hudFont = new Font("Segoe UI", 12, FontStyle.Bold); using var roomFont = new Font("Georgia", 13, FontStyle.Bold); using var helpFont = new Font("Segoe UI", 10);
         g.FillRectangle(panel, 0, 0, 960, 83); g.DrawString("SCADRYK", headerFont, goldBrush, 24, 18);
         g.DrawString($"VIDA {health:0}/{maxHealth:0}     NÍVEL {level}     XP {xp}/{level * 60}     OURO {gold}     POÇÕES {potions}", hudFont, textBrush, 255, 29);
+        using var experienceBack = new SolidBrush(Color.FromArgb(58, 53, 45)); using var experienceFill = new SolidBrush(Color.FromArgb(196, 155, 83));
+        g.FillRectangle(experienceBack, 255, 49, 640, 5); g.FillRectangle(experienceFill, 255, 49, 640 * ExperienceProgress(), 5);
         g.DrawString($"M{(alternateSkillsActive ? 2 : 1)}  •  F  {ShortSkillName(0)}  •  V  {ShortSkillName(1)}  •  G  {ShortSkillName(2)}  •  C  {ShortSkillName(3)}", helpFont, goldBrush, 255, 61);
         g.DrawString($"RESSONÂNCIA {difficultyTier} • {DifficultyTierName(difficultyTier)}", helpFont, Brushes.Orange, 690, 61);
         if (armorOn && relicOn)

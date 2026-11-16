@@ -989,6 +989,12 @@ public sealed partial class Game
         if (game.health < game.maxHealth) throw new InvalidOperationException("A esquiva antes do golpe não evitou o dano.");
         game.AddXp(60);
         if (game.level != 2 || !game.talentChoice || game.pendingTalents != 1) throw new InvalidOperationException("A progressão por nível não concedeu uma escolha de talento.");
+        if (game.ExperienceProgress() != 0) throw new InvalidOperationException("A barra de experiência não reiniciou ao subir de nível.");
+        game.xp = 60;
+        if (Math.Abs(game.ExperienceProgress() - 0.5f) > 0.001f) throw new InvalidOperationException("A barra de experiência não refletiu metade do progresso do nível atual.");
+        game.xp = 120;
+        if (game.ExperienceProgress() != 1) throw new InvalidOperationException("A barra de experiência não atingiu o limite do nível atual.");
+        game.xp = 0;
         game.talentChoice = false; int goldBeforeTown = game.gold, potionsBeforeTown = game.potions; game.EnterVesper(); game.memoryOverlay = false;
         if (game.room != 3 || game.enemies.Count != 0) throw new InvalidOperationException("A praça de Véspera não abriu como área segura explorável.");
         game.player = new PointF(350, 200); game.MovePlayer(new PointF(-40, 0));

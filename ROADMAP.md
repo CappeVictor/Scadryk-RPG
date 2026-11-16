@@ -27,6 +27,7 @@ O documento de história com cenário, personagens e resumo dos capítulos está
 - Progressão de build: seis marcos de combate entre os níveis 5 e 30 agora ganham uma sétima escolha no nível 40. **Maré de Retorno** acelera recargas após abates de elite/chefe; **Último Abrigo** recupera vida em situação crítica. A ficha, a forja de redistribuição e saves antigos reconhecem o novo marco.
 - Equipamentos defensivos: Passo Ancorado no Peitoral e Ampola Viva no Relicário formam a **Ressonância do Passo**. Cada poção usada adianta todas as recargas de técnica em 1,25 segundo; inventário, descrição dos traços e CI cobrem a combinação e sua condição de equipamento.
 - A **Ressonância do Lastro** conecta Último Lastro e Fio Nutrido: abaixo de 35% da vida, abates restauram mais 7 pontos além da cura regular do Relicário. A ficha de inventário mostra quais ressonâncias estão ativas; o autoteste cobre o limiar e a cura total.
+- A barra dourada de experiência no HUD mostra visualmente quanto falta para o próximo nível e reinicia ao receber o nível novo; os limites do progresso entram no autoteste.
 - A Gravura do Veio amplia as builds defensivas: três traços para o Peitoral de Pedra e quatro para o Relicário Vital, com custos em ouro e sal vítreo na forja de Aven. As escolhas persistem no save; equipamento antigo e saves existentes migram para o traço neutro.
 - Salvamento local em JSON com migração do save ConfigFile da versão Godot.
 - Movimento com colisão por eixo, permitindo deslizar pelas quinas.

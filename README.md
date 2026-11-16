@@ -115,6 +115,8 @@ Os inimigos à distância têm faixas de combate próprias. O Conjurador recua s
 | C na tela inicial | Carregar o save |
 | Enter | Começar ou reiniciar |
 
+O HUD mostra vida, nível, XP atual/necessário, ouro e poções. A barra dourada sob o XP acompanha o progresso do nível atual; ela reinicia quando você sobe de nível.
+
 Os painéis do prólogo e das lembranças ajustam sua altura ao texto, mantendo a última linha separada do comando para continuar ou fechar.
 
 Quando o alvo marcado é derrotado, o jogo marca automaticamente o inimigo vivo mais próximo. **Tab** continua alternando os alvos manualmente.

@@ -8,6 +8,7 @@ public sealed partial class Game
     private static int TalentRespecGoldCost(int level) => 250 + Math.Max(1, level) * 100;
     private static int TalentRespecGlassCost(int level) => 5 + Math.Max(1, level) / 5;
     private static int CombatMilestonesAtLevel(int level) => (level >= 5 ? 1 : 0) + (level >= 10 ? 1 : 0) + (level >= 15 ? 1 : 0) + (level >= 20 ? 1 : 0) + (level >= 25 ? 1 : 0) + (level >= 30 ? 1 : 0) + (level >= 40 ? 1 : 0);
+    private float ExperienceProgress() => Math.Clamp(xp / (float)Math.Max(1, level * 60), 0f, 1f);
 
     private void RespecTalents()
     {
