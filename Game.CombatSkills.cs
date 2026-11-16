@@ -156,6 +156,7 @@ public sealed partial class Game
     private bool RefrainBeaconSynergyActive() => equippedSkills.Contains(5) && equippedSkills.Contains(6);
     private bool WardReturnSynergyEquipped() => equippedSkills.Contains(4) && equippedSkills.Contains(7);
     private bool WardReturnSynergyActive() => WardReturnSynergyEquipped() && wardTime > 0;
+    private bool FinalSparkListenerSynergyActive() => equippedSkills.Contains(8) && equippedSkills.Contains(12);
     private void CycleSkillVariant(int slot, int direction)
     {
         int skill = SkillMenuLoadout()[slot];
@@ -440,11 +441,13 @@ public sealed partial class Game
         if (target is null) { notice = "NENHUM ALVO VISÍVEL"; noticeTime = 1.4f; return; }
         facing = Normalize(Sub(target.Pos, player), facing); finalStrikeTarget = target.Pos; finalStrikeFlash = 0.24f;
         bool shardResonance = FinalSparkShardSynergyActive() && target.SparkMarkTime > 0;
-        DamageEnemy(target, damage * (target.Boss ? 2.15f : 2.45f) * SkillDamageVariant(8) * TechniqueDamageMultiplier() * WeaponSkillMultiplier() * (shardResonance ? 1.35f : 1f) * OutgoingDamageMultiplier(target) * (IsArmored(target) ? 0.75f : 1f));
+        bool listenerResonance = FinalSparkListenerSynergyActive() && target.ListenerMarkTime > 0;
+        DamageEnemy(target, damage * (target.Boss ? 2.15f : 2.45f) * SkillDamageVariant(8) * TechniqueDamageMultiplier() * WeaponSkillMultiplier() * (shardResonance || listenerResonance ? 1.35f : 1f) * OutgoingDamageMultiplier(target) * (IsArmored(target) ? 0.75f : 1f));
         if (shardResonance) { target.SparkMarkTime = 0; AddFloatingText(new PointF(target.Pos.X, target.Pos.Y - target.Radius - 26), "ESTILHAÇO + CENTELHA", Color.LightCyan); }
+        if (listenerResonance) { target.ListenerMarkTime = 0; health = Math.Min(maxHealth, health + maxHealth * 0.02f); AddFloatingText(new PointF(target.Pos.X, target.Pos.Y - target.Radius - 42), "CHAMADO + CENTELHA • +2% VIDA", Color.LightCyan); }
         target.Flash = 0.3f; if (!target.Boss) { target.Windup = 0; target.Stagger = Math.Max(target.Stagger, 0.72f); target.Cooldown = Math.Max(target.Cooldown, 1.25f); }
         if (target.Hp <= 0) Defeat(target);
-        finalStrikeCd = Math.Max(12f, 19f - skillTalent * 0.65f) * (skillVariants[8] == 1 ? 1.25f : skillVariants[8] == 2 ? 0.75f : 1f) * WeaponCooldownMultiplier(); notice = shardResonance ? "ÚLTIMA CENTELHA • ESTILHAÇO AMPLIFICADO" : "ÚLTIMA CENTELHA • IMPACTO CONCENTRADO"; noticeTime = 1.4f;
+        finalStrikeCd = Math.Max(12f, 19f - skillTalent * 0.65f) * (skillVariants[8] == 1 ? 1.25f : skillVariants[8] == 2 ? 0.75f : 1f) * WeaponCooldownMultiplier(); notice = listenerResonance ? "ÚLTIMA CENTELHA • CHAMADO CONSUMIDO" : shardResonance ? "ÚLTIMA CENTELHA • ESTILHAÇO AMPLIFICADO" : "ÚLTIMA CENTELHA • IMPACTO CONCENTRADO"; noticeTime = 1.4f;
     }
     private void TickBeacon(float dt)
     {

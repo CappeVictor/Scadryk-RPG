@@ -213,3 +213,6 @@ A Vigília Ascendente agora alterna entre seis aspectos: a **Chuva de Escória**
 
 
 O Escutador agora tem uma técnica exclusiva, **Chamado do Veio**: marca alvos próximos para que recebam dano aumentado e devolvam parte da vida máxima ao serem derrotados. As formas **Eco Distante** e **Nome Profundo** trocam alcance e quantidade de alvos por duração, vulnerabilidade e cura. O menu de técnicas, a ficha de formas, os atalhos e o save aceitam o 12º poder; os vetores de variantes antigos de 9 e 12 posições continuam válidos.
+
+
+Nova sintonia de build: com **Chamado do Veio** e **Última Centelha** equipados, a Centelha contra um alvo marcado causa 35% mais dano, consome a marca e recupera 2% da vida máxima. Consumir a marca troca a cura maior ao abate por dano concentrado e cura imediata; os dois caminhos favorecem decisões diferentes. O menu de técnicas sinaliza essa combinação.

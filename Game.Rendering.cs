@@ -1381,7 +1381,7 @@ public sealed partial class Game
         Brush wardSynergyBrush = HasSkillPair(menuSkills, 4, 7) ? skillMenuAlternate == alternateSkillsActive && wardTime > 0 ? Brushes.LightGreen : Brushes.Goldenrod : Brushes.DarkGray;
         g.DrawString("4+7 • Manto ativo amplia em 35% a cura da Devolução", small, wardSynergyBrush, new RectangleF(150, 536, 310, 16));
         g.DrawString("5+6 • Coro acerta ecos no Farol ativo; próximo pulso adianta 0,4 s", small, HasSkillPair(menuSkills, 5, 6) ? Brushes.LightCyan : Brushes.DarkGray, new RectangleF(150, 552, 385, 16));
-        g.DrawString("1+8 • Estilhaço marca; Centelha causa +35% e consome", small, HasSkillPair(menuSkills, 1, 8) ? Brushes.LightCyan : Brushes.DarkGray, new RectangleF(150, 568, 345, 16));
+        g.DrawString("1+8 Estilhaço / 8+12 Chamado • Centelha +35%", small, HasSkillPair(menuSkills, 1, 8) || HasSkillPair(menuSkills, 8, 12) ? Brushes.LightCyan : Brushes.DarkGray, new RectangleF(150, 568, 310, 16));
         g.DrawString("↑/↓ altera a memória da técnica equipada • 1–0/F11/F12 equipa • BACKSPACE esvazia • B/ESC fecha", small, Brushes.DarkGray, new RectangleF(150, 587, 660, 12));
     }
 
