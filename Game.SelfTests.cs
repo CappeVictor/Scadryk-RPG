@@ -1701,6 +1701,8 @@ public sealed partial class Game
             if (Math.Abs(navigation.FirstEchoTerrainSpeed() - 0.8f) > 0.001f) throw new InvalidOperationException("A margem alagada não reduziu a velocidade de caminhada.");
             navigation.player = new PointF(1740, 1050);
             if (navigation.FirstEchoTerrainSpeed() != 1f) throw new InvalidOperationException("A ponte não manteve a caminhada livre.");
+            navigation.player = new PointF(2800, 700);
+            if (navigation.WorldSize() != new SizeF(3200, 1400) || Math.Abs(navigation.FirstEchoTerrainSpeed() - 0.88f) > 0.001f || !navigation.Blocked(new PointF(2550, 210)) || navigation.Blocked(FirstEchoAshSignal)) throw new InvalidOperationException("O Vau de Cinza não estendeu o mundo contínuo, distinguiu o terreno ou preservou a passagem ao sinal.");
             navigation.room = 44; navigation.SetupRoom(); navigation.player = new PointF(450, 200);
             Enemy pursuer = new() { Pos = new PointF(200, 200), Kind = EnemyKind.Grunt };
             PointF waypoint = navigation.InteriorDetour(pursuer);
@@ -1709,13 +1711,20 @@ public sealed partial class Game
         using (var escarpment = new Game())
         {
             escarpment.timer.Stop(); escarpment.StartGame(); escarpment.storyOverlay = false; escarpment.room = 43; escarpment.firstEchoQuest = 3; escarpment.SetupRoom();
-            escarpment.enemies.Clear(); escarpment.player = FirstEchoIvara; escarpment.Interact(); escarpment.memoryOverlay = false;
-            if (!escarpment.firstEchoBeaconAccepted || escarpment.enemies.Count(enemy => Distance(enemy.Pos, FirstEchoBeacon) < 250) != 3) throw new InvalidOperationException("Ivara não desbloqueou o desvio da escarpa com seu encontro próprio.");
+            int encountersBeforeIvara = escarpment.enemies.Count; escarpment.player = FirstEchoIvara; escarpment.Interact(); escarpment.memoryOverlay = false;
+            if (!escarpment.firstEchoBeaconAccepted || escarpment.enemies.Count(enemy => Distance(enemy.Pos, FirstEchoBeacon) < 250) != 3 || escarpment.enemies.Count != encountersBeforeIvara + 3) throw new InvalidOperationException("Ivara não desbloqueou o desvio da escarpa sem duplicar os encontros externos.");
             escarpment.player = FirstEchoBeacon; int rewardBefore = escarpment.gold; escarpment.Interact(); escarpment.memoryOverlay = false;
             if (escarpment.firstEchoBeaconRestored || !escarpment.enemies.Any(enemy => Distance(enemy.Pos, FirstEchoBeacon) < 250)) throw new InvalidOperationException("O marco permitiu interação antes de limpar a escarpa.");
             escarpment.enemies.Clear(); escarpment.Interact(); escarpment.memoryOverlay = false; escarpment.Interact(); escarpment.memoryOverlay = false;
             SaveData escarpmentSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(escarpment.CaptureSaveData()))!;
             if (!escarpment.firstEchoBeaconRestored || escarpment.gold != rewardBefore + 90 || (escarpmentSave.FirstEchoDiscovered & 24) != 24 || !ValidSaveData(escarpmentSave)) throw new InvalidOperationException("A escarpa não concedeu uma recompensa única ou não persistiu o marco restaurado.");
+            escarpment.enemies.Clear(); escarpment.player = FirstEchoFerryman; escarpment.Interact(); escarpment.memoryOverlay = false;
+            if (!escarpment.firstEchoFerryAccepted || escarpment.enemies.Count(enemy => Distance(enemy.Pos, FirstEchoAshSignal) < 450) != 3) throw new InvalidOperationException("Nilo não abriu o Vau de Cinza com o encontro guardando o sinalizador.");
+            int ferryGold = escarpment.gold; escarpment.player = FirstEchoAshSignal; escarpment.Interact(); escarpment.memoryOverlay = false;
+            if (escarpment.firstEchoFerryRestored) throw new InvalidOperationException("O sinal do Vau foi reacendido antes de afastar os ecos.");
+            escarpment.enemies.Clear(); escarpment.Interact(); escarpment.memoryOverlay = false; escarpment.Interact(); escarpment.memoryOverlay = false;
+            SaveData ferrySave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(escarpment.CaptureSaveData()))!;
+            if (!escarpment.firstEchoFerryRestored || escarpment.gold != ferryGold + 120 || (ferrySave.FirstEchoDiscovered & 96) != 96 || !ValidSaveData(ferrySave)) throw new InvalidOperationException("O Vau não entregou a recompensa única nem persistiu a travessia restaurada.");
         }
         Console.WriteLine("TESTES OK: campanha e expedições, incluindo as Margens do Primeiro Eco, combate, loot, progressão e compatibilidade de saves antigos."); return 0;
     }

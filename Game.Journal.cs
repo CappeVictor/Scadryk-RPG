@@ -56,11 +56,11 @@ public sealed partial class Game
         g.DrawLine(divider, 464, 367, 856, 367);
         g.DrawString(firstEchoArea ? "CAMINHOS DAS MARGENS" : "PROGRESSO DA CAMPANHA", sectionFont, Brushes.Goldenrod, 466, 381);
         g.DrawString(firstEchoArea ? (firstEchoQuest == 3 ? "Expedição concluída com Edda" : firstEchoQuest == 2 ? "Vozes livres: relate a Edda" : "Comportas: vozes retidas") : $"Câmaras limpas: {clearedCombatRooms}/{totalCombatRooms}", detailFont, Brushes.AntiqueWhite, 466, 409);
-        int fieldDiscoveries = (firstEchoCaveFound ? 1 : 0) + (firstEchoReedCache ? 1 : 0) + (firstEchoBeaconRestored ? 1 : 0);
-        g.DrawString(firstEchoArea ? $"Descobertas opcionais: {fieldDiscoveries}/3" : $"Inscrições opcionais: {inscriptionCount}/2", detailFont, Brushes.AntiqueWhite, 466, 435);
+        int fieldDiscoveries = (firstEchoCaveFound ? 1 : 0) + (firstEchoReedCache ? 1 : 0) + (firstEchoBeaconRestored ? 1 : 0) + (firstEchoFerryRestored ? 1 : 0);
+        g.DrawString(firstEchoArea ? $"Descobertas opcionais: {fieldDiscoveries}/4" : $"Inscrições opcionais: {inscriptionCount}/2", detailFont, Brushes.AntiqueWhite, 466, 435);
         g.DrawString($"Ecos nesta área: {enemies.Count}   •   Saques no chão: {drops.Count}", metaFont, Brushes.LightGray, 466, 461);
         if (room == 3 && firstEchoQuest > 0)
-            g.DrawString(firstEchoQuest == 1 ? "Margens: siga às comportas" : firstEchoQuest == 2 ? "Margens: relate a Edda" : firstEchoBeaconAccepted && !firstEchoBeaconRestored ? "Margens: restaure o marco da escarpa" : "Margens: expedição concluída", resonanceFont, Brushes.Goldenrod, 466, 489);
+            g.DrawString(firstEchoQuest == 1 ? "Margens: siga às comportas" : firstEchoQuest == 2 ? "Margens: relate a Edda" : firstEchoFerryAccepted && !firstEchoFerryRestored ? "Vau: reacenda o sinalizador" : firstEchoBeaconAccepted && !firstEchoBeaconRestored ? "Margens: restaure o marco da escarpa" : firstEchoBeaconRestored && !firstEchoFerryAccepted ? "Vau de Cinza: procure Nilo" : "Expedição das Margens concluída", resonanceFont, Brushes.Goldenrod, 466, 489);
         else
             g.DrawString($"Ressonância {difficultyTier} • {DifficultyTierName(difficultyTier)}", resonanceFont, Brushes.Orange, 466, 489);
         DrawCentered(g, "L / ESC FECHA • CLIQUE FECHA • M ABRE O MAPA", 546, new Font("Segoe UI", 9, FontStyle.Bold), Color.FromArgb(167, 173, 163));
