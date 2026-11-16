@@ -241,7 +241,7 @@ public sealed partial class Game : Form
     private bool riverBell;
     private bool lumeLens;
     private bool naraTrace;
-    private float health = 100, maxHealth = 100, attackCd, attackFlash, skillCd, shardCd, bellCd, bellWaveTime, bellWaveRadius, pullCd, pullWaveTime, wardCd, wardTime, refrainCd, refrainWaveTime, refrainWaveRadius, beaconCd, beaconTime, beaconPulseCd, beaconWaveTime, returnVoiceCd, returnVoiceWaveTime, returnVoiceWaveRadius, finalStrikeCd, finalStrikeFlash, stoneBastionCd, stoneBastionTime, nameWeaverCd, listenerMarkCd, dashCd, dashTime, invulnerable, noticeTime, windupPulse, veinResonanceTime;
+    private float health = 100, maxHealth = 100, attackCd, attackFlash, skillCd, shardCd, bellCd, bellWaveTime, bellWaveRadius, pullCd, pullWaveTime, wardCd, wardTime, refrainCd, refrainWaveTime, refrainWaveRadius, beaconCd, beaconTime, beaconPulseCd, beaconWaveTime, returnVoiceCd, returnVoiceWaveTime, returnVoiceWaveRadius, finalStrikeCd, finalStrikeFlash, stoneBastionCd, stoneBastionTime, nameWeaverCd, listenerMarkCd, dashCd, dashTime, dashAttackTime, invulnerable, noticeTime, windupPulse, veinResonanceTime;
     private PointF finalStrikeTarget, rangedAttackTarget;
     private bool armor, armorOn, relic, relicOn, inventoryOpen, skillMenuOpen, characterSheetOpen, mapOpen, journalOpen, title = true, dead, victory, talentChoice, chestChoice, storyOverlay, memoryOverlay, endingChoiceOpen;
     private int skillMenuSlot;
@@ -313,6 +313,7 @@ public sealed partial class Game : Form
         room = 0; level = 1; xp = gold = damage = 0; damage = 25; potions = 2; weapon = 0; ownedWeapons = 1; Array.Clear(weaponBonuses); Array.Clear(weaponRarities); Array.Clear(weaponAffixes); Array.Clear(weaponAffixes2);
         armor = armorOn = relic = relicOn = archiveSeal = riverBell = lumeLens = naraTrace = chorusMemory = firstMemory = westTrace = upstreamTrace = beyondTrace = ebbSeal = counterTrace = anchorWard = refrainSong = riftVerse = deepTrace = lanternSignal = beaconLight = routeMemory = silenceMemory = inventoryOpen = skillMenuOpen = characterSheetOpen = mapOpen = journalOpen = dead = victory = chestChoice = talentChoice = memoryOverlay = endingChoiceOpen = forgeMenuOpen = defenseForgeOpen = secondaryForgeOpen = vigilActive = vigilChoiceOpen = classSelectionOpen = false;
         armorTrait = relicTrait = 0;
+        dashAttackTime = 0;
         borrowedTrace = unstruckTrace = false;
         firstEchoQuest = firstEchoDiscovered = 0; firstEchoCaveFound = firstEchoReedCache = false; firstEchoOutsideStored = false; firstEchoWaitingEnemies.Clear(); firstEchoWaitingDrops.Clear(); saltVaultReliquaryCleared = false; saltFrontierReturnLocation = saltFrontierBossAwakened = saltFrontierBossDefeated = saltFrontierOutsideStored = false; saltFrontierSideProgress = 0; saltFrontierWaitingEnemies.Clear(); saltFrontierWaitingDrops.Clear();
         finalEnding = 0;
@@ -438,7 +439,7 @@ public sealed partial class Game : Form
     private static float BasicAttackArcThreshold(int weapon) => MathF.Cos(BasicAttackSweepAngle(weapon) * MathF.PI / 360f);
     private static bool BasicAttackCoversDirection(float facingDot, int weapon) => facingDot > BasicAttackArcThreshold(weapon);
     private bool IsArmored(Enemy enemy) => enemy.Armored || (!enemy.Boss && enemy.Kind != EnemyKind.Elite && enemies.Any(elite => HasEliteAffix(elite, EliteAffix.Armored) && Distance(enemy.Pos, elite.Pos) <= 132));
-    private float BasicAttackDamageMultiplier(Enemy enemy) => (IsArmored(enemy) ? EquipmentCatalog.Weapon(weapon).ArmoredDamageMultiplier * (1f + (HasWeaponAffix(weapon, 10) ? WeaponAffixValue(weapon, 10) / 100f : 0f)) : 1f) * BasicAttackCycleMultiplier();
+    private float BasicAttackDamageMultiplier(Enemy enemy) => (IsArmored(enemy) ? EquipmentCatalog.Weapon(weapon).ArmoredDamageMultiplier * (1f + (HasWeaponAffix(weapon, 10) ? WeaponAffixValue(weapon, 10) / 100f : 0f)) : 1f) * BasicAttackCycleMultiplier() * VeinReturnAttackMultiplier();
     private static RectangleF GameViewport(Size clientSize)
     {
         float scale = Math.Min(Math.Max(1, clientSize.Width) / 960f, Math.Max(1, clientSize.Height) / 640f);

@@ -1423,6 +1423,31 @@ public sealed partial class Game
             if (stoneConvergence.HasStoneConvergenceResonance() || stoneConvergence.RelicDamageTakenMultiplier() != 1f)
                 throw new InvalidOperationException("A Ressonância da Laje permaneceu ativa com o Relicário desequipado.");
         }
+        using (var veinReturn = new Game())
+        {
+            veinReturn.timer.Stop(); veinReturn.StartGame(); veinReturn.armor = veinReturn.relic = veinReturn.armorOn = veinReturn.relicOn = true; veinReturn.armorTrait = 4; veinReturn.relicTrait = 3;
+            if (!veinReturn.HasVeinReturnResonance() || Math.Abs(veinReturn.VeinReturnWindow() - 1.9f) > 0.001f || Math.Abs(veinReturn.VeinReturnAttackMultiplier() - 1f) > 0.001f)
+                throw new InvalidOperationException("Resposta do Veio + Coro Restaurador não ativaram a janela estendida sem uma esquiva.");
+            veinReturn.dashCd = 0; veinReturn.StartDash();
+            if (Math.Abs(veinReturn.dashAttackTime - 1.9f) > 0.001f || Math.Abs(veinReturn.VeinReturnAttackMultiplier() - 1.18f) > 0.001f)
+                throw new InvalidOperationException("A esquiva não preparou o bônus de ataque nem aplicou a Ressonância do Retorno.");
+            veinReturn.player = new PointF(150, 330); veinReturn.mouseAim = new PointF(1, 0); veinReturn.attackCd = 0;
+            var returnTarget = new Enemy { Kind = EnemyKind.Grunt, Pos = new PointF(185, 330), Hp = 1000, MaxHp = 1000 };
+            veinReturn.enemies.Clear(); veinReturn.enemies.Add(returnTarget); veinReturn.Attack();
+            if (returnTarget.Hp >= 1000 || veinReturn.dashAttackTime != 0 || Math.Abs(veinReturn.VeinReturnAttackMultiplier() - 1f) > 0.001f)
+                throw new InvalidOperationException("O próximo ataque básico não consumiu a preparação de Resposta do Veio.");
+            veinReturn.weapon = 4; veinReturn.ownedWeapons |= 1 << 4; veinReturn.attackCd = 0; veinReturn.dashAttackTime = veinReturn.VeinReturnWindow();
+            veinReturn.enemies.Clear(); veinReturn.enemies.Add(new Enemy { Kind = EnemyKind.Grunt, Pos = new PointF(300, 330), Hp = 1000, MaxHp = 1000 }); veinReturn.Attack();
+            if (veinReturn.bowArrows.Count != 1 || veinReturn.dashAttackTime != 0)
+                throw new InvalidOperationException("A flecha válida não consumiu a preparação de Resposta do Veio.");
+            veinReturn.weapon = 0; veinReturn.ownedWeapons = 1;
+            SaveData returnSave = veinReturn.CaptureSaveData();
+            if (!ValidSaveData(returnSave) || returnSave.ArmorTrait != 4)
+                throw new InvalidOperationException("O quarto traço do peitoral não foi aceito pelo save.");
+            veinReturn.relicTrait = 0;
+            if (veinReturn.HasVeinReturnResonance() || Math.Abs(veinReturn.VeinReturnWindow() - 1.35f) > 0.001f)
+                throw new InvalidOperationException("Resposta do Veio não voltou à janela normal sem Coro Restaurador.");
+        }
         using (var stepAmpoule = new Game())
         {
             stepAmpoule.timer.Stop(); stepAmpoule.StartGame(); stepAmpoule.armorOn = stepAmpoule.relicOn = true; stepAmpoule.armorTrait = stepAmpoule.relicTrait = 2; stepAmpoule.health = 20; stepAmpoule.potions = 1;

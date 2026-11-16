@@ -13,7 +13,7 @@ public sealed partial class Game
         PointF movement = MovementInput();
         dashDirection = Normalize(movement, facing);
         if (Length(movement) > 0.001f) facing = dashDirection;
-        dashTime = DashDuration(); dashCd = DashCooldown();
+        dashTime = DashDuration(); dashCd = DashCooldown(); dashAttackTime = armorOn && armorTrait == 4 ? VeinReturnWindow() : 0; if (dashAttackTime > 0) AddFloatingText(new PointF(player.X, player.Y - 38), "RIPOSTA DO VEIO", Color.LightCyan);
         GameAudio.Play(GameAudio.Cue.Dash);
     }
     private float DashCooldown() => Math.Max(0.35f, 1.15f - dodgeTalent * 0.12f + (combatMastery == 1 ? 0.2f : combatMastery == 2 ? -0.18f : 0f) - (armorOn && armorTrait == 2 ? 0.12f : 0f)) + (HasCharm(2) && !HasCharmPair(2, 3) ? 0.3f : 0f);

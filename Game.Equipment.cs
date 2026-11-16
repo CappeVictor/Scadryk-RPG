@@ -39,6 +39,7 @@ public sealed partial class Game
         else if (key is >= Keys.D4 and <= Keys.D7) SetDefenseTrait(false, (int)key - (int)Keys.D3);
         else if (key == Keys.D0) SetDefenseTrait(true, 0);
         else if (key == Keys.D8) SetDefenseTrait(false, 0);
+        else if (key == Keys.D9) SetDefenseTrait(true, 4);
     }
 
     private void SetDefenseTrait(bool forArmor, int trait)
@@ -59,10 +60,10 @@ public sealed partial class Game
         notice = $"TRAÇO GRAVADO: {(forArmor ? ArmorTraitName(trait) : RelicTraitName(trait))}"; noticeTime = 2.5f;
     }
 
-    private static string ArmorTraitName(int trait) => trait switch { 1 => "Laje Funda", 2 => "Passo Ancorado", 3 => "Último Lastro", _ => "Veio Bruto" };
-    private static string ArmorTraitDescription(int trait) => trait switch { 1 => "Peitoral equipado: recebe 6% menos dano adicional.", 2 => "Peitoral equipado: esquiva recarrega 0,12 s mais rápido; com Ampola Viva, poções adiantam recargas.", 3 => "Com 35% da vida ou menos: recebe 15% menos dano; com Fio Nutrido, abates curam +7.", _ => "Sem efeito adicional." };
+    private static string ArmorTraitName(int trait) => trait switch { 1 => "Laje Funda", 2 => "Passo Ancorado", 3 => "Último Lastro", 4 => "Riposta do Veio", _ => "Veio Bruto" };
+    private static string ArmorTraitDescription(int trait) => trait switch { 1 => "Peitoral equipado: recebe 6% menos dano adicional.", 2 => "Peitoral equipado: esquiva recarrega 0,12 s mais rápido; com Ampola Viva, poções adiantam recargas.", 3 => "Com 35% da vida ou menos: recebe 15% menos dano; com Fio Nutrido, abates curam +7.", 4 => "Após esquivar: o próximo ataque básico causa +18% por 1,35 s; com Coro Restaurador, janela de 1,9 s.", _ => "Sem efeito adicional." };
     private static string RelicTraitName(int trait) => trait switch { 1 => "Fio Nutrido", 2 => "Ampola Viva", 3 => "Coro Restaurador", 4 => "Selo da Convergência", _ => "Eco Silente" };
-    private static string RelicTraitDescription(int trait) => trait switch { 1 => "Relicário equipado: cura +3 por abate; com Último Lastro, abates curam +7 em vida crítica.", 2 => "Relicário equipado: poções curam +15 vida; com Passo Ancorado, também adiantam recargas.", 3 => "Com o conjunto: Pulso do Veio dura +1 s.", 4 => "Técnicas +10%; recebe +6% dano (Laje Funda pode anular com ambas as peças equipadas).", _ => "Sem efeito adicional." };
+    private static string RelicTraitDescription(int trait) => trait switch { 1 => "Relicário equipado: cura +3 por abate; com Último Lastro, abates curam +7 em vida crítica.", 2 => "Relicário equipado: poções curam +15 vida; com Passo Ancorado, também adiantam recargas.", 3 => "Com o conjunto: Pulso do Veio dura +1 s; com Riposta do Veio, janela pós-esquiva de 1,9 s.", 4 => "Técnicas +10%; recebe +6% dano (Laje Funda pode anular com ambas as peças equipadas).", _ => "Sem efeito adicional." };
 
     private static float DifficultyEnemyHealthMultiplier(int tier) => tier switch { 1 => 1.2f, 2 => 1.45f, 3 => 1.8f, _ => 1f };
     private static float DifficultyIncomingDamageMultiplier(int tier) => tier switch { 1 => 1.1f, 2 => 1.22f, 3 => 1.4f, _ => 1f };
@@ -342,15 +343,16 @@ public sealed partial class Game
             g.DrawString("1. LAJE FUNDA • peitoral: recebe 6% menos dano adicional", hintFont, Brushes.AntiqueWhite, 155, 238);
             g.DrawString("2. PASSO ANCORADO • esquiva recarrega 0,12 s mais rápido", hintFont, Brushes.AntiqueWhite, 155, 266);
             g.DrawString("3. ÚLTIMO LASTRO • com até 35% de vida, recebe 15% menos dano", hintFont, Brushes.AntiqueWhite, new RectangleF(155, 294, 305, 36));
-            g.DrawString("0. VEIO BRUTO • remover o traço", hintFont, Brushes.DarkGray, 155, 338);
+            g.DrawString("9. RIPOSTA DO VEIO • esquiva prepara +18% no próximo básico", hintFont, Brushes.LightCyan, new RectangleF(155, 330, 305, 34));
+            g.DrawString("0. VEIO BRUTO • remover o traço", hintFont, Brushes.DarkGray, 155, 369);
             g.DrawString($"RELICÁRIO • ATUAL: {RelicTraitName(relicTrait)}", optionFont, relic ? Brushes.AntiqueWhite : Brushes.Gray, 500, 208);
             g.DrawString("4. FIO NUTRIDO • cura +3 por abate", hintFont, Brushes.AntiqueWhite, 500, 238);
             g.DrawString("5. AMPOLA VIVA • poções curam +15 vida", hintFont, Brushes.AntiqueWhite, 500, 266);
             g.DrawString("6. CORO RESTAURADOR • Pulso do Veio dura +1 s", hintFont, Brushes.AntiqueWhite, new RectangleF(500, 294, 310, 36));
             g.DrawString("7. SELO DA CONVERGÊNCIA • técnicas +10%; dano recebido +6%", hintFont, Brushes.AntiqueWhite, new RectangleF(500, 338, 310, 36));
             g.DrawString("8. ECO SILENTE • remover o traço", hintFont, Brushes.DarkGray, 500, 374);
-            g.DrawString($"CADA ALTERAÇÃO CUSTA 100 OURO E 2 SAL VÍTREO   •   DISPONÍVEL: {gold} OURO / {tideGlass} SAL", hintFont, gold < 100 || tideGlass < 2 ? Brushes.IndianRed : Brushes.Goldenrod, 155, 405);
-            g.DrawString("1–3 peitoral • 4–7 relicário • 0/8 removem • T ou ESC volta", hintFont, Brushes.DarkGray, 155, 438);
+            g.DrawString($"CADA ALTERAÇÃO CUSTA 100 OURO E 2 SAL VÍTREO   •   DISPONÍVEL: {gold} OURO / {tideGlass} SAL", hintFont, gold < 100 || tideGlass < 2 ? Brushes.IndianRed : Brushes.Goldenrod, new RectangleF(155, 412, 650, 22));
+            g.DrawString("1–3 peitoral • 9 quarto traço • 4–7 relicário • 0/8 removem • T ou ESC volta", hintFont, Brushes.DarkGray, new RectangleF(155, 442, 650, 24));
             return;
         }
         DrawCentered(g, weaponRarities[weapon] == 0 ? $"TÊMPERA DO VEIO • {EquipmentCatalog.Weapon(weapon).Name} VIRA RARA" : $"TÊMPERA DO VEIO • {EquipmentCatalog.Weapon(weapon).Name}", 170, new Font("Georgia", 16, FontStyle.Bold), Color.Goldenrod);
@@ -411,6 +413,9 @@ public sealed partial class Game
     private bool HasStoneConvergenceResonance() => armorOn && armorTrait == 1 && relicOn && relicTrait == 4;
     private bool HasStepAmpouleResonance() => armorOn && armorTrait == 2 && relicOn && relicTrait == 2;
     private bool HasLastStandNourishResonance() => armorOn && armorTrait == 3 && relicOn && relicTrait == 1 && health <= maxHealth * 0.35f;
+    private bool HasVeinReturnResonance() => armorOn && armorTrait == 4 && relicOn && relicTrait == 3;
+    private float VeinReturnWindow() => HasVeinReturnResonance() ? 1.9f : 1.35f;
+    private float VeinReturnAttackMultiplier() => armorOn && armorTrait == 4 && dashAttackTime > 0 ? 1.18f : 1f;
     private float RelicDamageTakenMultiplier() => relicOn && relicTrait == 4 && !HasStoneConvergenceResonance() ? 1.06f : 1f;
     private int RelicKillHealing() => !relicOn ? 0 : (armorOn ? 8 : 5) + (relicTrait == 1 ? 3 : 0) + (HasLastStandNourishResonance() ? 7 : 0);
     private float VeinResonanceMultiplier() => armorOn && relicOn && veinResonanceTime > 0 ? 1.15f : 1f;

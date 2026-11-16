@@ -24,10 +24,12 @@ public sealed partial class Game
             rangedAttackTarget = target?.Pos ?? Add(player, Scale(facing, weaponStyle.NormalReach * WeaponReachMultiplier()));
             if (target is not null)
             {
+                bool empoweredByDodge = armorOn && armorTrait == 4 && dashAttackTime > 0;
                 bool resonantCritical = UsesRangedCriticalResonance(target);
                 bool critical = random.NextDouble() < BasicAttackCriticalChance(target);
                 float shotDamage = damage * HeroBasicAttackMultiplier() * BasicAttackSpecializationMultiplier() * BasicAttackDamageMultiplier(target) * (critical ? CriticalMultiplier() : 1);
                 bowArrows.Add(new BowArrow { Pos = Add(player, Scale(facing, 8)), Direction = facing, Remaining = Math.Max(0, Distance(player, target.Pos) - 8), Damage = shotDamage, WoundBaseDamage = damage, WeaponIndex = weapon, Critical = critical, RangedCriticalResonance = resonantCritical, FordRouteBurst = heroClass == HeroClass.FordCartographer && fordRoute >= 100 });
+                if (empoweredByDodge) { dashAttackTime = 0; AddFloatingText(new PointF(player.X, player.Y - 54), "RIPOSTA DO VEIO • +18%", Color.LightCyan); }
             }
             return;
         }
@@ -48,6 +50,7 @@ public sealed partial class Game
             if (weaponStyle.InterruptsCommon && !enemy.Boss) { enemy.Stagger = Math.Max(enemy.Stagger, 0.2f); enemy.Windup = 0; }
             if (enemy.Hp <= 0) Defeat(enemy);
         }
+        if (landed && armorOn && armorTrait == 4 && dashAttackTime > 0) { dashAttackTime = 0; AddFloatingText(new PointF(player.X, player.Y - 54), "RIPOSTA DO VEIO • +18%", Color.LightCyan); }
         if (landed && heroClass == HeroClass.FordCartographer && fordRoute >= 100) ReleaseFordRouteBurst(routeBurstCenter, routeBurstDamageSource);
         if (landed) TriggerHitStop(landedCritical ? 0.075f : 0.045f);
         if (landed && heroClass == HeroClass.StoneGuardian && stoneFury >= 100) ReleaseStoneFury();
