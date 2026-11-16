@@ -87,7 +87,7 @@ public sealed partial class Game
                 throw new InvalidOperationException($"O afixo {i + 1} perdeu seu valor balanceado entre Rara e Relíquia.");
         if (Math.Abs(EquipmentCatalog.WeaponAffix(10).ValueForRarity(1) - 12) > 0.001f || Math.Abs(EquipmentCatalog.WeaponAffix(10).ValueForRarity(2) - 18) > 0.001f
             || EquipmentCatalog.RandomlyRolledAffixCount != 9 || EquipmentCatalog.RolledWeaponAffix(7) != 8 || EquipmentCatalog.RolledWeaponAffix(8) != 10
-            || EquipmentCatalog.RolledSecondaryWeaponAffix(8, 8) != 10
+            || EquipmentCatalog.RolledSecondaryWeaponAffix(7, 8) != 10
             || EquipmentCatalog.IsValidPrimaryAffix(9) || EquipmentCatalog.IsValidSecondaryAffix(9, 1) || !EquipmentCatalog.IsValidSecondaryAffix(9, 2)
             || EquipmentCatalog.WeaponAffix(9).Description(1) != "" || EquipmentCatalog.WeaponAffix(9).Description(2) != "do Nome Riscado: ecos marcados explodem ao morrer")
             throw new InvalidOperationException("O Nome Riscado deixou de ser exclusivo do espaço secundário de Relíquias.");
