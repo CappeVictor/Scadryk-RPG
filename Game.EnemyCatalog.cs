@@ -61,7 +61,7 @@ public sealed partial class Game
 
     private static bool IsEnemyCatalogValid() => EnemyCatalog.Count == Enum.GetValues<EnemyKind>().Length
         && Enum.GetValues<EnemyKind>().All(kind => EnemyCatalog.TryGetValue(kind, out EnemyDefinition? definition)
-            && (kind == EnemyKind.Grunt || !string.IsNullOrWhiteSpace(definition.Name))
+            && (kind is EnemyKind.Grunt or EnemyKind.Elite || !string.IsNullOrWhiteSpace(definition.Name))
             && definition.BaseHealth > 0 && definition.HealthPerRoom >= 0 && definition.AlternateEndingHealth >= 0
             && definition.BodyRadius > 0 && definition.ContactDamage > 0 && definition.RangedImpactRadius >= 0)
         && Enum.GetValues<EnemyKind>().Count(kind => EnemyData(kind).IsBoss) == 20;
