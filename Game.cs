@@ -204,7 +204,7 @@ public sealed partial class Game : Form
         "Você é um Escutador: ouve as lembranças que a pedra não conseguiu guardar em silêncio. Entre elas reconheceu Nara, sua irmã, desaparecida quando os sinos pararam.",
         "A memória dela chega partida: “Desça. Ele ainda lembra.” O Guardião sem Nome espera na cripta, diante da única pista que pode explicar por que Nara foi até lá."
     };
-    private readonly int[] weaponBonuses = new int[4], weaponRarities = new int[4], weaponAffixes = new int[4], weaponAffixes2 = new int[4];
+    private readonly int[] weaponBonuses = new int[5], weaponRarities = new int[5], weaponAffixes = new int[5], weaponAffixes2 = new int[5];
     private PointF player = new(150, 330), facing = new(1, 0), mouseAim = new(1, 0), dashDirection = new(1, 0);
     private float playerAnimationTime;
     private int room, level = 1, xp, gold, potions = 2, damage = 25, weapon, ownedWeapons = 1, difficultyTier;
@@ -234,7 +234,7 @@ public sealed partial class Game : Form
     private bool lumeLens;
     private bool naraTrace;
     private float health = 100, maxHealth = 100, attackCd, attackFlash, skillCd, shardCd, bellCd, bellWaveTime, bellWaveRadius, pullCd, pullWaveTime, wardCd, wardTime, refrainCd, refrainWaveTime, refrainWaveRadius, beaconCd, beaconTime, beaconPulseCd, beaconWaveTime, returnVoiceCd, returnVoiceWaveTime, returnVoiceWaveRadius, finalStrikeCd, finalStrikeFlash, stoneBastionCd, stoneBastionTime, nameWeaverCd, dashCd, dashTime, invulnerable, noticeTime, windupPulse, veinResonanceTime;
-    private PointF finalStrikeTarget;
+    private PointF finalStrikeTarget, rangedAttackTarget;
     private bool armor, armorOn, relic, relicOn, inventoryOpen, skillMenuOpen, characterSheetOpen, mapOpen, journalOpen, title = true, dead, victory, talentChoice, chestChoice, storyOverlay, memoryOverlay, endingChoiceOpen;
     private int skillMenuSlot;
     private bool alternateSkillsActive, skillMenuAlternate;
@@ -309,7 +309,7 @@ public sealed partial class Game : Form
         clearedRooms = 0;
         ownedCharms = equippedCharm = equippedCharm2 = 0;
         equippedSkills = new[] { 1, 0, 0, 0 }; alternateSkills = new int[4]; alternateSkillsActive = skillMenuAlternate = false; Array.Clear(skillVariants); skillMenuOpen = false; skillMenuSlot = 0;
-        health = maxHealth = 100; attackCd = attackFlash = skillCd = shardCd = bellCd = bellWaveTime = bellWaveRadius = pullCd = pullWaveTime = wardCd = wardTime = refrainCd = refrainWaveTime = refrainWaveRadius = beaconCd = beaconTime = beaconPulseCd = beaconWaveTime = returnVoiceCd = returnVoiceWaveTime = returnVoiceWaveRadius = finalStrikeCd = finalStrikeFlash = stoneBastionCd = stoneBastionTime = nameWeaverCd = dashCd = dashTime = invulnerable = veinResonanceTime = stoneFury = nameThread = screenShakeTime = screenShakeStrength = screenShakePhase = hitStopTime = 0; vigilMinionCooldown = vigilTideTime = 0; beaconPos = finalStrikeTarget = PointF.Empty; facing = mouseAim = dashDirection = new PointF(1, 0); playerAnimationTime = 0; echoShards.Clear(); floatingTexts.Clear(); title = false; storyPage = 0; storyOverlay = true; SetupRoom();
+        health = maxHealth = 100; attackCd = attackFlash = skillCd = shardCd = bellCd = bellWaveTime = bellWaveRadius = pullCd = pullWaveTime = wardCd = wardTime = refrainCd = refrainWaveTime = refrainWaveRadius = beaconCd = beaconTime = beaconPulseCd = beaconWaveTime = returnVoiceCd = returnVoiceWaveTime = returnVoiceWaveRadius = finalStrikeCd = finalStrikeFlash = stoneBastionCd = stoneBastionTime = nameWeaverCd = dashCd = dashTime = invulnerable = veinResonanceTime = stoneFury = nameThread = screenShakeTime = screenShakeStrength = screenShakePhase = hitStopTime = 0; vigilMinionCooldown = vigilTideTime = 0; beaconPos = finalStrikeTarget = rangedAttackTarget = PointF.Empty; facing = mouseAim = dashDirection = new PointF(1, 0); playerAnimationTime = 0; echoShards.Clear(); floatingTexts.Clear(); title = false; storyPage = 0; storyOverlay = true; SetupRoom();
     }
 
     private void AdvanceStory()
@@ -370,7 +370,7 @@ public sealed partial class Game : Form
         if (e.KeyCode == Keys.L) { journalOpen = true; inventoryOpen = skillMenuOpen = characterSheetOpen = mapOpen = false; return; }
         if (e.KeyCode == Keys.I) { inventoryOpen = !inventoryOpen; return; }
         if (e.KeyCode == Keys.B) { skillMenuOpen = true; inventoryOpen = false; return; }
-        if (inventoryOpen) { if (e.KeyCode >= Keys.D1 && e.KeyCode <= Keys.D4) EquipWeapon((int)e.KeyCode - (int)Keys.D1); else if (e.KeyCode == Keys.D5 && armor) armorOn = !armorOn; else if (e.KeyCode == Keys.D6 && relic) relicOn = !relicOn; else if (e.KeyCode == Keys.D7) CycleCharm(1); else if (e.KeyCode == Keys.D8) CycleCharm(2); return; }
+        if (inventoryOpen) { if (e.KeyCode >= Keys.D1 && e.KeyCode <= Keys.D4) EquipWeapon((int)e.KeyCode - (int)Keys.D1); else if (e.KeyCode == Keys.D0) EquipWeapon(4); else if (e.KeyCode == Keys.D5 && armor) armorOn = !armorOn; else if (e.KeyCode == Keys.D6 && relic) relicOn = !relicOn; else if (e.KeyCode == Keys.D7) CycleCharm(1); else if (e.KeyCode == Keys.D8) CycleCharm(2); return; }
         if (e.KeyCode == Keys.T) { ToggleSkillLoadout(); return; }
         if (e.KeyCode == Keys.Space || e.KeyCode == Keys.J) Attack();
         else if (e.KeyCode == Keys.ShiftKey || e.KeyCode == Keys.K) StartDash();

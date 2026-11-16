@@ -232,8 +232,9 @@ public sealed partial class Game
         using (var attackArcCheck = new Game())
         {
             attackArcCheck.timer.Stop(); attackArcCheck.StartGame(); attackArcCheck.storyOverlay = false; attackArcCheck.player = new PointF(150, 330); attackArcCheck.mouseAim = attackArcCheck.facing = new PointF(1, 0);
-            for (int weaponIndex = 0; weaponIndex < 4; weaponIndex++)
+            for (int weaponIndex = 0; weaponIndex < EquipmentCatalog.Weapons.Count; weaponIndex++)
             {
+                if (EquipmentCatalog.Weapon(weaponIndex).IsRanged) continue;
                 attackArcCheck.weapon = weaponIndex; float halfAngle = BasicAttackSweepAngle(weaponIndex) * MathF.PI / 360f;
                 if (Math.Abs(BasicAttackArcThreshold(weaponIndex) - MathF.Cos(halfAngle)) > 0.0001f) throw new InvalidOperationException("O ângulo do golpe visual divergiu do limite do ataque.");
                 var outside = new Enemy { Kind = EnemyKind.Grunt, Pos = new PointF(150 + MathF.Cos(halfAngle + 0.08f) * 40, 330 + MathF.Sin(halfAngle + 0.08f) * 40), Hp = 1000, MaxHp = 1000 };
@@ -475,6 +476,14 @@ public sealed partial class Game
             if (platedEcho.Hp >= 1000 || weaponCombat.BasicAttackCooldown() != 0.43f || weaponCombat.BasicAttackReach(platedEcho) != 128f || weaponCombat.BasicAttackDamageMultiplier(platedEcho) != 1f || WeaponTraitSummary(3) != "alcance máximo • preciso • perfura") throw new InvalidOperationException("A Lança da Badalada não perfurou a armadura a longo alcance com seu perfil preciso.");
             weaponCombat.attackCd = 0; platedEcho.Hp = 1000; platedEcho.Pos = new PointF(235, 390); weaponCombat.Attack();
             if (platedEcho.Hp != 1000) throw new InvalidOperationException("A Lança da Badalada atingiu fora do arco estreito anunciado.");
+            weaponCombat.attackCd = 0; weaponCombat.weapon = 4; platedEcho.Hp = 1000; platedEcho.Armored = false; platedEcho.Pos = new PointF(360, 330);
+            var secondBowTarget = new Enemy { Kind = EnemyKind.Grunt, Pos = new PointF(390, 330), Hp = 1000, MaxHp = 1000 };
+            weaponCombat.enemies.Clear(); weaponCombat.enemies.Add(platedEcho); weaponCombat.enemies.Add(secondBowTarget); weaponCombat.Attack();
+            if (platedEcho.Hp >= 1000 || secondBowTarget.Hp != 1000 || weaponCombat.rangedAttackTarget != platedEcho.Pos || weaponCombat.BasicAttackReach(platedEcho) != 238f || weaponCombat.BasicAttackCooldown() != 0.48f || WeaponTraitSummary(4) != "distância • preciso • fraco contra armadura") throw new InvalidOperationException("O Arco do Limiar não acertou somente o alvo mais próximo dentro do alcance.");
+            weaponCombat.attackCd = 0; platedEcho.Hp = 1000; platedEcho.Pos = new PointF(380, 330); platedEcho.Armored = true; weaponCombat.enemies.Clear(); weaponCombat.enemies.Add(platedEcho); weaponCombat.Attack();
+            if (platedEcho.Hp is not (930 or 860) || weaponCombat.BasicAttackDamageMultiplier(platedEcho) != 0.7f || weaponCombat.rangedAttackTarget != platedEcho.Pos) throw new InvalidOperationException("O Arco do Limiar não aplicou seu dano reduzido contra armadura e seu alcance longo.");
+            weaponCombat.attackCd = 0; platedEcho.Hp = 1000; platedEcho.Pos = new PointF(420, 390); weaponCombat.Attack();
+            if (platedEcho.Hp != 1000) throw new InvalidOperationException("O Arco do Limiar atingiu fora do cone estreito anunciado.");
             if (!weaponCombat.WeaponTraitDescription(1).Contains("PERFURA ARMADURA") || !weaponCombat.WeaponTraitDescription(0).Contains("EQUILIBRADA")) throw new InvalidOperationException("A descrição das especializações de arma não corresponde ao combate.");
         }
         using (var floatingTextCheck = new Game())
@@ -776,7 +785,7 @@ public sealed partial class Game
             var boss = new Enemy { Pos = new PointF(500, 330), Kind = EnemyKind.Guardian, Hp = 1, MaxHp = 1 };
             bossLootCheck.enemies.Add(boss); bossLootCheck.Defeat(boss);
             Drop bossWeapon = bossLootCheck.drops.Single(d => d.Kind == "weapon");
-            if (bossWeapon.Amount is < 1 or > 2 || bossWeapon.Rarity is < 1 or > 2 || bossWeapon.Affix == 0 || bossWeapon.Rarity == 2 && (bossWeapon.Affix2 == 0 || bossWeapon.Affix2 == bossWeapon.Affix))
+            if (bossWeapon.Amount is < 1 or > 3 || bossWeapon.Rarity is < 1 or > 2 || bossWeapon.Affix == 0 || bossWeapon.Rarity == 2 && (bossWeapon.Affix2 == 0 || bossWeapon.Affix2 == bossWeapon.Affix))
                 throw new InvalidOperationException("A recompensa do chefe não gerou uma arma Rara ou Relíquia válida.");
             bossLootCheck.Collect(bossWeapon);
             SaveData bossLootSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(bossLootCheck.CaptureSaveData()))!;
@@ -1057,7 +1066,9 @@ public sealed partial class Game
         using var migratedRelic = new Game(); migratedRelic.timer.Stop(); migratedRelic.ownedWeapons = legacyRelic.OwnedWeapons; migratedRelic.RestoreWeaponData(legacyRelic);
         if (migratedRelic.weaponAffixes2[2] != 4 || !ValidWeaponData(migratedRelic.CaptureSaveData())) throw new InvalidOperationException("Uma relíquia antiga sem segundo afixo não foi migrada com segurança.");
         SaveData legacyLootSave = JsonSerializer.Deserialize<SaveData>("{\"Room\":0}")!;
-        if (!ValidWeaponData(legacyLootSave) || legacyLootSave.WeaponBonuses.Length != 4 || legacyLootSave.WeaponRarities.Length != 4 || legacyLootSave.WeaponAffixes.Length != 4 || legacyLootSave.WeaponAffixes2.Length != 4) throw new InvalidOperationException("Um save antigo sem raridade não recebeu valores padrão compatíveis.");
+        if (!ValidWeaponData(legacyLootSave) || legacyLootSave.WeaponBonuses.Length != 5 || legacyLootSave.WeaponRarities.Length != 5 || legacyLootSave.WeaponAffixes.Length != 5 || legacyLootSave.WeaponAffixes2.Length != 5) throw new InvalidOperationException("Um save novo não recebeu os cinco espaços de arma padrão.");
+        SaveData fourWeaponSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(raritySave))!; fourWeaponSave.WeaponBonuses = fourWeaponSave.WeaponBonuses[..4]; fourWeaponSave.WeaponRarities = fourWeaponSave.WeaponRarities[..4]; fourWeaponSave.WeaponAffixes = fourWeaponSave.WeaponAffixes[..4]; fourWeaponSave.WeaponAffixes2 = fourWeaponSave.WeaponAffixes2[..4];
+        if (!ValidWeaponData(fourWeaponSave)) throw new InvalidOperationException("A estrutura de quatro armas de um save anterior deixou de ser aceita.");
         rarityGame.Collect(new Drop { Pos = rarityGame.player, Kind = "weapon", Amount = 1 });
         if ((rarityGame.ownedWeapons & 2) == 0 || rarityGame.weaponRarities[1] is < 0 or > 2 || !ValidWeaponData(rarityGame.CaptureSaveData())) throw new InvalidOperationException("A coleta de arma não gerou uma configuração de loot válida.");
         var elite = new Enemy { Pos = new PointF(500, 330), Kind = EnemyKind.Elite, Hp = 1, MaxHp = 1 };
@@ -1574,13 +1585,19 @@ public sealed partial class Game
         if (borrowedChapter.room != 42 || borrowedChapter.enemies.Single().Kind != EnemyKind.LastTuner) throw new InvalidOperationException("O Poço do Contratempo não abriu com o Afinador original.");
         Enemy lastTuner = borrowedChapter.enemies.Single(); lastTuner.Hp = 1; borrowedChapter.Defeat(lastTuner);
         if (borrowedChapter.drops.Count(drop => drop.Kind == "weapon" && drop.Amount == 3 && drop.Rarity == 2) != 1) throw new InvalidOperationException("O Afinador do Contratempo não garantiu a Relíquia original de pós-jogo.");
+        if (borrowedChapter.drops.Count(drop => drop.Kind == "weapon" && drop.Amount == 4 && drop.Rarity == 2) != 1) throw new InvalidOperationException("O Afinador do Contratempo não garantiu o Arco do Limiar como Relíquia.");
         if (borrowedChapter.drops.Count(drop => drop.Kind == "charm" && drop.Amount == 12) != 1) throw new InvalidOperationException("O Afinador do Contratempo não deixou o talismã original do pós-jogo.");
         Drop unsentMemory = borrowedChapter.drops.Single(drop => drop.Kind == "unstruck"); borrowedChapter.Collect(unsentMemory); borrowedChapter.memoryOverlay = false;
         foreach (Drop remainingDrop in borrowedChapter.drops.ToArray()) borrowedChapter.Collect(remainingDrop);
         SaveData unstruckSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(borrowedChapter.CaptureSaveData()))!;
-        if (!borrowedChapter.unstruckTrace || borrowedChapter.questStage != 58 || (borrowedChapter.ownedWeapons & 8) == 0 || (borrowedChapter.ownedCharms & (1 << 11)) == 0 || !ValidSaveData(unstruckSave) || JsonSerializer.Deserialize<SaveData>("{}")?.UnstruckTrace != false) throw new InvalidOperationException("A memória, a Lança da Badalada, o Nó do Contratempo ou o save do capítulo final não persistiram corretamente.");
+        if (!borrowedChapter.unstruckTrace || borrowedChapter.questStage != 58 || (borrowedChapter.ownedWeapons & 8) == 0 || (borrowedChapter.ownedWeapons & 16) == 0 || (borrowedChapter.ownedCharms & (1 << 11)) == 0 || !ValidSaveData(unstruckSave) || JsonSerializer.Deserialize<SaveData>("{}")?.UnstruckTrace != false) throw new InvalidOperationException("A memória, a Lança da Badalada, o Arco do Limiar, o Nó do Contratempo ou o save do capítulo final não persistiram corretamente.");
         borrowedChapter.EquipWeapon(3);
         if (borrowedChapter.weapon != 3 || borrowedChapter.WeaponTraitDescription(3) != "LANÇA PRECISA • ALCANCE MÁXIMO • PERFURA ARMADURA • ARCO ESTREITO" || !ValidWeaponData(borrowedChapter.CaptureSaveData())) throw new InvalidOperationException("A arma de pós-jogo não pôde ser equipada ou salva após o desbloqueio.");
+        borrowedChapter.EquipWeapon(4);
+        SaveData bowSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(borrowedChapter.CaptureSaveData()))!;
+        if (borrowedChapter.weapon != 4 || borrowedChapter.WeaponTraitDescription(4) != "ARCO DE LONGO ALCANCE • UM ALVO POR DISPARO • DANO REDUZIDO CONTRA ARMADURA" || !ValidWeaponData(bowSave) || bowSave.Weapon != 4 || (bowSave.OwnedWeapons & 16) == 0) throw new InvalidOperationException("O Arco do Limiar não pôde ser equipado e persistido no save.");
+        SaveData prematureBowSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(bowSave))!; prematureBowSave.UnstruckTrace = false; prematureBowSave.QuestStage = 0; prematureBowSave.OwnedWeapons = 17; prematureBowSave.WeaponBonuses[3] = prematureBowSave.WeaponRarities[3] = prematureBowSave.WeaponAffixes[3] = prematureBowSave.WeaponAffixes2[3] = 0;
+        if (ValidSaveData(prematureBowSave)) throw new InvalidOperationException("Um save aceitou o Arco do Limiar antes da expedição que o apresenta.");
         using (var intervalCharmCheck = new Game())
         {
             intervalCharmCheck.ownedCharms = 1 << 11; intervalCharmCheck.equippedCharm2 = 12;

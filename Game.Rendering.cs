@@ -1148,6 +1148,17 @@ public sealed partial class Game
     {
         float progress = Math.Clamp(attackFlash / 0.16f, 0, 1);
         WeaponDefinition weaponStyle = EquipmentCatalog.Weapon(weapon);
+        if (weaponStyle.IsRanged)
+        {
+            PointF tail = Add(player, Scale(facing, 20)), tip = rangedAttackTarget == PointF.Empty ? Add(player, Scale(facing, weaponStyle.NormalReach)) : rangedAttackTarget;
+            PointF perpendicular = new(-facing.Y, facing.X), headBase = Add(tip, Scale(facing, -12));
+            Color color = weaponStyle.AttackColor; int alpha = (int)(progress * 230);
+            using var bowGlow = new Pen(Color.FromArgb(alpha / 3, color), 9) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+            using var arrowEdge = new Pen(Color.FromArgb(alpha, color), 2.5f) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+            g.DrawLine(bowGlow, tail, tip); g.DrawLine(arrowEdge, tail, tip);
+            g.DrawLine(arrowEdge, Add(headBase, Scale(perpendicular, 5)), tip); g.DrawLine(arrowEdge, Add(headBase, Scale(perpendicular, -5)), tip);
+            return;
+        }
         if (weaponStyle.IsThrust)
         {
             float reach = 20 + 108 * MathF.Sin(MathF.PI * (1 - progress));

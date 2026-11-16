@@ -13,7 +13,18 @@ public sealed partial class Game
         attackFlash = 0.16f;
         GameAudio.Play(GameAudio.Cue.Strike);
         bool cadenceTriggered = false, landed = false, landedCritical = false;
-        foreach (Enemy enemy in enemies.ToArray())
+        WeaponDefinition weaponStyle = EquipmentCatalog.Weapon(weapon);
+        Enemy[] attackTargets = enemies.ToArray();
+        if (weaponStyle.IsRanged)
+        {
+            Enemy? target = attackTargets.Where(enemy => Distance(player, enemy.Pos) <= BasicAttackReach(enemy)
+                && BasicAttackCoversDirection(Dot(facing, Normalize(Sub(enemy.Pos, player), facing)), weapon)
+                && !BlockedLine(player, enemy.Pos)).OrderBy(enemy => Distance(player, enemy.Pos)).FirstOrDefault();
+            rangedAttackTarget = target?.Pos ?? Add(player, Scale(facing, weaponStyle.NormalReach * WeaponReachMultiplier()));
+            attackTargets = target is null ? Array.Empty<Enemy>() : new[] { target };
+        }
+        else rangedAttackTarget = PointF.Empty;
+        foreach (Enemy enemy in attackTargets)
         {
             PointF offset = Sub(enemy.Pos, player); float distance = Length(offset);
             if (distance > BasicAttackReach(enemy) || (distance >= 20 && !BasicAttackCoversDirection(Dot(facing, Normalize(offset, facing)), weapon)) || BlockedLine(player, enemy.Pos)) continue;
@@ -25,7 +36,7 @@ public sealed partial class Game
             ApplyWeaponWound(enemy, critical);
             if (critical && rangedCriticalResonance) AddFloatingText(new PointF(enemy.Pos.X, enemy.Pos.Y - enemy.Radius - 28), "RESSONÂNCIA DO CONTRACANTO", Color.LightCyan);
             if (critical && !cadenceTriggered && HasWeaponAffix(weapon, 7)) { cadenceTriggered = true; float reduction = WeaponCriticalCooldownAdvance(weapon); AdvanceTechniqueCooldowns(reduction); AddFloatingText(new PointF(player.X, player.Y - 38), $"CADÊNCIA −{reduction:0.00} S", Color.LightCyan); }
-            if (EquipmentCatalog.Weapon(weapon).InterruptsCommon && !enemy.Boss) { enemy.Stagger = Math.Max(enemy.Stagger, 0.2f); enemy.Windup = 0; }
+            if (weaponStyle.InterruptsCommon && !enemy.Boss) { enemy.Stagger = Math.Max(enemy.Stagger, 0.2f); enemy.Windup = 0; }
             if (enemy.Hp <= 0) Defeat(enemy);
         }
         if (landed) TriggerHitStop(landedCritical ? 0.075f : 0.045f);
