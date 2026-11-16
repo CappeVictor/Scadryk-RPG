@@ -1437,10 +1437,11 @@ public sealed partial class Game
             Enemy inscriptionTarget = new() { Kind = EnemyKind.Grunt, ListenerMarkTime = 2, Hp = 100, MaxHp = 100 };
             Enemy unmarkedInscriptionTarget = new() { Kind = EnemyKind.Grunt, Hp = 100, MaxHp = 100 };
             float unmarkedInscriptionMultiplier = fendaForge.OutgoingDamageMultiplier(unmarkedInscriptionTarget);
+            SaveData inscriptionRareSave = fendaForge.CaptureSaveData();
             if (fendaForge.weaponAffixes[0] != 11 || Math.Abs(fendaForge.OutgoingDamageMultiplier(inscriptionTarget) - unmarkedInscriptionMultiplier * 1.12f) > 0.001f
                 || !fendaForge.WeaponAffixDescription(0).Contains("da Inscrição: dano contra alvos marcados +12%")
-                || !ValidWeaponData(fendaForge.CaptureSaveData()))
-                throw new InvalidOperationException("A Inscrição não apareceu na têmpera, não fortaleceu apenas alvos marcados ou falhou no save.");
+                || !ValidWeaponData(inscriptionRareSave))
+                throw new InvalidOperationException($"Inscrição Rara: afixo={fendaForge.weaponAffixes[0]}, arma={fendaForge.weapon}, raridade={inscriptionRareSave.WeaponRarities[0]}, bônus={inscriptionRareSave.WeaponBonuses[0]}, principal={inscriptionRareSave.WeaponAffixes[0]}, secundário={inscriptionRareSave.WeaponAffixes2[0]}, owned={inscriptionRareSave.OwnedWeapons}, dano={fendaForge.OutgoingDamageMultiplier(inscriptionTarget):0.000}/{unmarkedInscriptionMultiplier:0.000}, save={ValidWeaponData(inscriptionRareSave)}.");
             fendaForge.weaponRarities[0] = 2; fendaForge.weaponAffixes[0] = 10; fendaForge.weaponAffixes2[0] = 11;
             inscriptionTarget.ListenerMarkTime = 0; inscriptionTarget.SparkMarkTime = 1;
             if (Math.Abs(fendaForge.OutgoingDamageMultiplier(inscriptionTarget) - fendaForge.OutgoingDamageMultiplier(unmarkedInscriptionTarget) * 1.2f) > 0.001f
