@@ -11,8 +11,8 @@ public sealed partial class Game
         if (!forgeMenuOpen || room != 18 || questStage < 27 || Distance(player, AvenPosition) >= 60) { forgeMenuOpen = secondaryForgeOpen = false; return; }
         if (!secondaryForgeOpen && affix == 7) { RespecTalents(); return; }
         if (affix == 0) affix = 7;
-        if (affix is < 1 or > 9) return;
-        if (affix == 9 && (!secondaryForgeOpen || weaponRarities[weapon] != 2)) { notice = "NOME RISCADO É UM PODER ÚNICO DO AFIXO SECUNDÁRIO DE RELÍQUIAS"; noticeTime = 2.5f; return; }
+        if (affix < 1 || affix > EquipmentCatalog.WeaponAffixes.Count) return;
+        if (EquipmentCatalog.WeaponAffix(affix).RelicOnly && (!secondaryForgeOpen || weaponRarities[weapon] != 2)) { notice = "NOME RISCADO É UM PODER ÚNICO DO AFIXO SECUNDÁRIO DE RELÍQUIAS"; noticeTime = 2.5f; return; }
         if (secondaryForgeOpen && weaponRarities[weapon] != 2) { notice = "O AFIXO SECUNDÁRIO SÓ PODE SER MUDADO EM UMA RELÍQUIA"; noticeTime = 2.5f; return; }
         int goldCost = secondaryForgeOpen ? 150 : 75, glassCost = secondaryForgeOpen ? 2 : 1;
         if (gold < goldCost || tideGlass < glassCost) { notice = secondaryForgeOpen ? "AFIXO SECUNDÁRIO CUSTA 150 OURO E 2 SAL VÍTREO" : "A TÊMPERA CUSTA 75 OURO E 1 SAL VÍTREO"; noticeTime = 2; return; }
@@ -131,7 +131,7 @@ public sealed partial class Game
     {
         int rarity = rarityRoll < 62 ? 0 : rarityRoll < 95 ? 1 : 2;
         int bonus = rarity switch { 0 => bonusRoll % 3, 1 => 3 + bonusRoll % 4, _ => 7 + bonusRoll % 5 };
-        int affix = rarity == 0 ? 0 : 1 + affixRoll % 8;
+        int affix = rarity == 0 ? 0 : EquipmentCatalog.RolledWeaponAffix(affixRoll % EquipmentCatalog.RandomlyRolledAffixCount);
         int affix2 = rarity == 2 ? 1 + secondAffixRoll % 7 : 0;
         if (affix2 >= affix && affix2 != 0) affix2++;
         return (rarity, bonus, affix, affix2);
@@ -206,19 +206,7 @@ public sealed partial class Game
         string affixes = string.Join(" + ", new[] { WeaponGroundAffix(affix, rarity), WeaponGroundAffix(affix2, rarity) }.Where(description => description.Length > 0));
         return affixes.Length == 0 ? "sem afixo" : affixes;
     }
-    private static string WeaponGroundAffix(int affix, int rarity) => affix switch
-    {
-        1 => "Trégua • cura " + (rarity == 2 ? 6 : 3) + " por abate",
-        2 => "Contracanto • crítico +" + (rarity == 2 ? 11 : 7) + " p.p.",
-        3 => "Maré • técnica +" + (rarity == 2 ? 18 : 12) + "%",
-        4 => "Passo Célere • recarga -" + (rarity == 2 ? 16 : 10) + "%",
-        5 => "Lastro • dano recebido -" + (rarity == 2 ? 12 : 8) + "%",
-        6 => "Fio Esticado • alcance +" + (rarity == 2 ? 20 : 12) + "%",
-        7 => "Cadência • crítico adianta recargas em " + (rarity == 2 ? "0,25" : "0,15") + " s",
-        8 => "Ruptura • crítico aplica ferida por 3 s",
-        9 when rarity == 2 => "Nome Riscado • ecos marcados explodem ao morrer",
-        _ => ""
-    };
+    private static string WeaponGroundAffix(int affix, int rarity) => EquipmentCatalog.WeaponAffix(affix).GroundText(rarity);
 
     private void DrawDrop(Graphics g, Drop item)
     {
@@ -415,7 +403,7 @@ public sealed partial class Game
         for (int i = 0; i < s.WeaponBonuses.Length; i++)
         {
             int rarity = s.WeaponRarities[i], bonus = s.WeaponBonuses[i], affix = s.WeaponAffixes[i], affix2 = s.WeaponAffixes2[i];
-            if (rarity == 0 ? bonus is < 0 or > 2 || affix != 0 || affix2 != 0 : rarity == 1 ? bonus is < 3 or > 6 || affix is < 1 or > 8 || affix2 != 0 : rarity == 2 ? bonus is < 7 or > 11 || affix is < 1 or > 8 || affix2 is < 0 or > 9 || affix2 == affix : true) return false;
+            if (rarity == 0 ? bonus is < 0 or > 2 || affix != 0 || affix2 != 0 : rarity == 1 ? bonus is < 3 or > 6 || !EquipmentCatalog.IsValidPrimaryAffix(affix) || affix2 != 0 : rarity == 2 ? bonus is < 7 or > 11 || !EquipmentCatalog.IsValidPrimaryAffix(affix) || !EquipmentCatalog.IsValidSecondaryAffix(affix2, rarity) || affix2 == affix : true) return false;
             if ((s.OwnedWeapons & (1 << i)) == 0 && (rarity != 0 || bonus != 0 || affix != 0 || affix2 != 0)) return false;
         }
         return true;

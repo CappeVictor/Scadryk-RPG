@@ -190,7 +190,7 @@ public sealed partial class Game
     private float BellPulseRadius() => (HasCharm(2) ? 190f : 155f) * (skillVariants[2] == 1 ? 1.25f : skillVariants[2] == 2 ? 0.85f : 1f);
     private float BellPulseCooldown() => (Math.Max(7f, 14f - skillTalent * 0.7f) + (HasCharm(2) ? 1.5f : 0f)) * (skillVariants[2] == 2 ? 1.15f : 1f) * WeaponCooldownMultiplier();
     private float EbbPullRadius() => 160f * (skillVariants[3] == 1 ? 1.25f : 1f);
-    private float WeaponSkillMultiplier() => HasWeaponAffix(weapon, 3) ? weaponRarities[weapon] == 2 ? 1.18f : 1.12f : 1f;
+    private float WeaponSkillMultiplier() => HasWeaponAffix(weapon, 3) ? 1f + WeaponAffixValue(weapon, 3) / 100f : 1f;
     private float EquippedSkillCooldown(int skill) => skill switch { 1 => shardCd, 2 => bellCd, 3 => pullCd, 4 => wardCd, 5 => refrainCd, 6 => beaconCd, 7 => returnVoiceCd, 8 => finalStrikeCd, 9 => stoneBastionCd, 10 => nameWeaverCd, _ => 0 };
     private int TechniquesOnCooldown() => equippedSkills.Count(skill => skill > 0 && EquippedSkillCooldown(skill) > 0);
     private int TechniquesReady() => equippedSkills.Count(skill => skill > 0 && EquippedSkillCooldown(skill) <= 0);
@@ -201,14 +201,15 @@ public sealed partial class Game
     private int WeaponKillHealing()
     {
         if (!HasWeaponAffix(weapon, 1)) return 0;
-        int healing = weaponRarities[weapon] == 2 ? 6 : 3;
-        if (weaponRarities[weapon] == 2 && health <= maxHealth * 0.5f && HasWeaponAffix(weapon, 5)) healing += 6;
+        int healing = (int)WeaponAffixValue(weapon, 1);
+        if (weaponRarities[weapon] == 2 && health <= maxHealth * 0.5f && HasWeaponAffix(weapon, 5)) healing += (int)WeaponAffixValue(weapon, 1);
         return healing;
     }
     private static int CombatDisciplineForSave(SaveData data) => data.CombatDiscipline ?? (data.Level >= 5 ? 1 : 0);
     private static int CombatMasteryForSave(SaveData data) => data.CombatMastery ?? (data.Level >= 10 ? 1 : 0);
     private static string WeaponRarityName(int index) => index == 0 ? "COMUM" : index == 1 ? "RARA" : "RELÍQUIA";
     private bool HasWeaponAffix(int index, int affix) => weaponAffixes[index] == affix || weaponAffixes2[index] == affix;
+    private float WeaponAffixValue(int index, int affix) => EquipmentCatalog.WeaponAffix(affix).ValueForRarity(weaponRarities[index]);
     private bool HasAnchorWardResonance(int index) => weaponRarities[index] == 2 && HasWeaponAffix(index, 4) && HasWeaponAffix(index, 5);
     private bool HasRangedCriticalResonance(int index) => weaponRarities[index] == 2 && HasWeaponAffix(index, 2) && HasWeaponAffix(index, 6);
     private bool HasWoundResonance(int index) => weaponRarities[index] == 2 && HasWeaponAffix(index, 2) && HasWeaponAffix(index, 8);
@@ -218,12 +219,12 @@ public sealed partial class Game
     private float BasicAttackCriticalChance(Enemy enemy) => CriticalChance() + (UsesRangedCriticalResonance(enemy) ? 0.1f : 0f);
     private float AnchorWardDuration() => Math.Max(1f, (2.5f + (HasAnchorWardResonance(weapon) ? 0.75f : 0f)) * (skillVariants[4] == 1 ? 1.4f : skillVariants[4] == 2 ? 0.7f : 1f));
     private float AnchorWardDamageTakenMultiplier() => skillVariants[4] == 1 ? 0.55f : skillVariants[4] == 2 ? 0.32f : 0.45f;
-    private float WeaponCriticalCooldownAdvance(int index) => !HasWeaponAffix(index, 7) ? 0 : (weaponRarities[index] == 2 ? 0.25f : 0.15f) + (HasWeaponAffix(index, 3) && HasWeaponAffix(index, 7) ? 0.1f : 0f);
+    private float WeaponCriticalCooldownAdvance(int index) => !HasWeaponAffix(index, 7) ? 0 : WeaponAffixValue(index, 7) + (HasWeaponAffix(index, 3) && HasWeaponAffix(index, 7) ? 0.1f : 0f);
     private string WeaponAffixName(int index) => string.Join(" + ", new[] { WeaponAffixLabel(weaponAffixes[index]), WeaponAffixLabel(weaponAffixes2[index]) }.Where(label => label.Length > 0));
-    private static string WeaponAffixLabel(int affix) => affix switch { 1 => "Trégua", 2 => "Contracanto", 3 => "Maré", 4 => "Passo Célere", 5 => "Lastro", 6 => "Fio Esticado", 7 => "Cadência", 8 => "Ruptura", 9 => "Nome Riscado", _ => "" };
+    private static string WeaponAffixLabel(int affix) => EquipmentCatalog.WeaponAffix(affix).Name;
     private string WeaponDisplayName(int index) => weaponRarities[index] == 0 ? $"{EquipmentCatalog.Weapon(index).Name} [COMUM]" : $"{EquipmentCatalog.Weapon(index).Name} • {WeaponRarityName(index)} {WeaponAffixName(index)}";
     private string WeaponAffixDescription(int index) => string.Join(" • ", new[] { WeaponAffixDescription(weaponAffixes[index], weaponRarities[index]), WeaponAffixDescription(weaponAffixes2[index], weaponRarities[index]), weaponRarities[index] == 2 && HasWeaponAffix(index, 3) && HasWeaponAffix(index, 7) ? "Ressonância da Maré: Cadência adianta +0,10 s por crítico" : "", weaponRarities[index] == 2 && HasWeaponAffix(index, 1) && HasWeaponAffix(index, 5) ? "Ressonância da Trégua: abaixo de metade da vida, abates curam +6" : "", HasAnchorWardResonance(index) ? "Ressonância do Lastro: Manto de Lastro dura +0,75 s" : "", HasRangedCriticalResonance(index) ? "Ressonância do Contracanto: +10 p.p. de crítico no alcance longo" : "", HasWoundResonance(index) ? "Ressonância da Cicatriz: Ruptura causa +40% de dano" : "", HasNameRiftPower(index) ? "Poder único • Nome Riscado: ecos marcados explodem ao morrer" : "" }.Where(description => description.Length > 0));
-    private static string WeaponAffixDescription(int affix, int rarity) => affix switch { 1 => $"da Trégua: recupera {(rarity == 2 ? 6 : 3)} vida por abate", 2 => $"do Contracanto: +{(rarity == 2 ? 11 : 7)} p.p. de crítico", 3 => $"da Maré: +{(rarity == 2 ? 18 : 12)}% de dano de técnica", 4 => $"do Passo Célere: recarga de técnicas -{(rarity == 2 ? 16 : 10)}%", 5 => $"do Lastro: dano recebido -{(rarity == 2 ? 12 : 8)}%", 6 => $"do Fio Esticado: alcance básico +{(rarity == 2 ? 20 : 12)}%", 7 => $"da Cadência: crítico adianta recargas em {(rarity == 2 ? 0.25f : 0.15f):0.00} s por golpe", 8 => $"da Ruptura: críticos ferem por 3 s ({(rarity == 2 ? 8 : 6)}% do dano da arma/s)", 9 when rarity == 2 => "do Nome Riscado: ecos marcados explodem ao morrer", _ => "" };
+    private static string WeaponAffixDescription(int affix, int rarity) => EquipmentCatalog.WeaponAffix(affix).Description(rarity);
 
     private void CastBellPulse()
     {

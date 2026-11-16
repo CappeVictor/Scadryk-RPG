@@ -13,6 +13,16 @@ public sealed partial class Game
     {
         GameAudio.SilenceForAutomatedRun();
         if (!EquipmentCatalog.IsValid()) throw new InvalidOperationException("O catálogo de armas contém perfis incompletos ou duplicados.");
+        float[] expectedRareAffixes = { 3, 7, 12, 10, 8, 12, 0.15f, 6 };
+        float[] expectedRelicAffixes = { 6, 11, 18, 16, 12, 20, 0.25f, 8 };
+        for (int i = 0; i < expectedRareAffixes.Length; i++)
+            if (Math.Abs(EquipmentCatalog.WeaponAffix(i + 1).ValueForRarity(1) - expectedRareAffixes[i]) > 0.001f
+                || Math.Abs(EquipmentCatalog.WeaponAffix(i + 1).ValueForRarity(2) - expectedRelicAffixes[i]) > 0.001f)
+                throw new InvalidOperationException($"O afixo {i + 1} perdeu seu valor balanceado entre Rara e Relíquia.");
+        if (EquipmentCatalog.RandomlyRolledAffixCount != 8 || EquipmentCatalog.RolledWeaponAffix(7) != 8
+            || EquipmentCatalog.IsValidPrimaryAffix(9) || EquipmentCatalog.IsValidSecondaryAffix(9, 1) || !EquipmentCatalog.IsValidSecondaryAffix(9, 2)
+            || EquipmentCatalog.WeaponAffix(9).Description(1) != "" || EquipmentCatalog.WeaponAffix(9).Description(2) != "do Nome Riscado: ecos marcados explodem ao morrer")
+            throw new InvalidOperationException("O Nome Riscado deixou de ser exclusivo do espaço secundário de Relíquias.");
         foreach ((string Name, Bitmap? Sheet) sheet in new[]
         {
             ("Guardião: movimento", StoneGuardianSpriteSheet.Value),

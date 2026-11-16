@@ -184,3 +184,6 @@ O Guardião e a Tecelã agora usam folhas 4×4 próprias para movimento e ataque
 
 
 Primeiro passo de catálogo de conteúdo: os quatro perfis de arma agora vivem em EquipmentCatalog.cs como definições únicas de dano, cadência, alcance por tipo de alvo, arco, impacto visual, crítico, interação com armadura, interrupção e texto. Combate, inventário, têmpera e comparação de saque consultam as mesmas definições; o autoteste valida a integridade do catálogo e conserva as verificações de balanceamento existentes. Os índices e campos de save continuam estáveis. Próxima parte: migrar metadados e valores dos afixos, depois definir dados de inimigos e encontros.
+
+
+O mesmo catálogo agora descreve os oito afixos comuns às Raras e Relíquias e o poder Nome Riscado, restrito ao segundo afixo de Relíquias. Valores de cura, crítico, dano técnico, recarga, mitigação, alcance, avanço de recargas e ferida são lidos das definições; descrições no chão e no inventário usam os mesmos valores. Rolagem, têmpera e validação de save consultam a lista estável de IDs. O autoteste mantém os valores atuais, compara as duas raridades e confirma a regra do poder exclusivo.

@@ -297,7 +297,7 @@ public sealed partial class Game
     private void ApplyWeaponWound(Enemy enemy, bool critical)
     {
         if (!critical || enemy.Hp <= 0 || !HasWeaponAffix(weapon, 8)) return;
-        float perSecond = weaponRarities[weapon] == 2 ? 0.08f : 0.06f;
+        float perSecond = WeaponAffixValue(weapon, 8) / 100f;
         float resonance = HasWoundResonance(weapon) ? 1.4f : 1f;
         if (enemy.WoundTime <= 0) enemy.WoundTickCooldown = 1f;
         enemy.WoundTime = 3f;

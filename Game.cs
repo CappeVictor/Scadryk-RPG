@@ -392,9 +392,9 @@ public sealed partial class Game : Form
     private float VoiceShardDamage() => damage * (HasCharmPair(3, 5) ? 2.05f : HasCharm(3) ? 1.8f : 1.35f) * SkillDamageVariant(1) * WeaponSkillMultiplier() * TechniqueDamageMultiplier();
     private float VoiceShardLifetime() => (HasCharm(5) ? 1.8f : 1.25f) * (skillVariants[1] == 2 ? 1.35f : 1f);
     private float VoiceShardCooldown() => (Math.Max(3.5f, 7f - skillTalent * 0.5f) + (HasCharm(5) ? HasCharmPair(3, 5) ? 0.5f : 1.25f : 0f)) * (skillVariants[1] == 1 ? 1.2f : skillVariants[1] == 2 ? 1.1f : 1f) * WeaponCooldownMultiplier();
-    private float WeaponCooldownMultiplier() => (HasWeaponAffix(weapon, 4) ? weaponRarities[weapon] == 2 ? 0.84f : 0.9f : 1f) * (HasCharm(9) ? 0.86f : 1f) * (HasCharm(12) ? 1.15f : 1f);
-    private float WeaponDamageTakenMultiplier() => HasWeaponAffix(weapon, 5) ? weaponRarities[weapon] == 2 ? 0.88f : 0.92f : 1f;
-    private float WeaponReachMultiplier() => HasWeaponAffix(weapon, 6) ? weaponRarities[weapon] == 2 ? 1.2f : 1.12f : 1f;
+    private float WeaponCooldownMultiplier() => (HasWeaponAffix(weapon, 4) ? 1f - WeaponAffixValue(weapon, 4) / 100f : 1f) * (HasCharm(9) ? 0.86f : 1f) * (HasCharm(12) ? 1.15f : 1f);
+    private float WeaponDamageTakenMultiplier() => HasWeaponAffix(weapon, 5) ? 1f - WeaponAffixValue(weapon, 5) / 100f : 1f;
+    private float WeaponReachMultiplier() => HasWeaponAffix(weapon, 6) ? 1f + WeaponAffixValue(weapon, 6) / 100f : 1f;
     private float OutgoingDamageMultiplier(Enemy enemy)
     {
         float bossHunter = !HasCharm(4) ? 1f : enemy.Boss ? 1.25f : 0.8f;
@@ -404,7 +404,7 @@ public sealed partial class Game : Form
     private float CharmDamageTakenMultiplier() => (HasCharm(9) ? 1.1f : 1f) * (HasCharm(10) ? 0.86f : 1f);
     private float CombatMasteryDamageTakenMultiplier() => combatMastery == 1 ? 0.9f : combatMastery == 2 ? 1.08f : 1f;
     private float CombatApexDamageTakenMultiplier() => combatApex == 2 && TechniquesOnCooldown() >= 2 ? 0.88f : 1f;
-    private float CriticalChance() => EquipmentCatalog.Weapon(weapon).BaseCriticalChance + (HasCharm(3) ? HasCharmPair(1, 3) ? 0.17f : 0.12f : 0f) + (HasWeaponAffix(weapon, 2) ? weaponRarities[weapon] == 2 ? 0.11f : 0.07f : 0f);
+    private float CriticalChance() => EquipmentCatalog.Weapon(weapon).BaseCriticalChance + (HasCharm(3) ? HasCharmPair(1, 3) ? 0.17f : 0.12f : 0f) + (HasWeaponAffix(weapon, 2) ? WeaponAffixValue(weapon, 2) / 100f : 0f);
 
     private float CriticalMultiplier() => HasCharm(3) ? HasCharmPair(1, 3) ? 2.75f : 2.5f : 2f;
     private float BasicAttackCooldown() => (EquipmentCatalog.Weapon(weapon).AttackCooldown + (HasCharm(3) ? HasCharmPair(1, 3) ? 0.03f : 0.06f : 0f)) * (heroClass == HeroClass.StoneGuardian ? 1.18f : heroClass == HeroClass.NameWeaver ? 0.94f : 1f);
