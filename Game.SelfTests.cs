@@ -53,6 +53,31 @@ public sealed partial class Game
                     || Math.Abs(kitingEnemy.Windup - profile.AttackWindup) > 0.001f || Math.Abs(kitingEnemy.Cooldown - profile.AttackCooldown) > 0.001f)
                     throw new InvalidOperationException($"O perfil à distância de {kind} não preservou seu aviso ou intervalo de ataque.");
             }
+            EnemyDefinition mageProfile = EnemyData(EnemyKind.Mage);
+            var mage = new Enemy { Kind = EnemyKind.Mage, Pos = new PointF(700, 330), Cooldown = 0, Hp = 100, MaxHp = 100 };
+            enemyBehaviorCatalogCheck.player = new PointF(300, 330);
+            float mageFarDistance = Length(Sub(mage.Pos, enemyBehaviorCatalogCheck.player));
+            if (!enemyBehaviorCatalogCheck.UpdateDataDrivenEnemyBehavior(mage, 0.1f, mageFarDistance, new PointF(-mageFarDistance, 0))
+                || Length(Sub(mage.Pos, enemyBehaviorCatalogCheck.player)) >= mageFarDistance - 0.05f || mage.Windup > 0)
+                throw new InvalidOperationException("O conjurador não avançou para dentro de seu alcance de combate.");
+            mage.Pos = new PointF(550, 330); mage.Cooldown = 0;
+            float mageAttackDistance = Length(Sub(mage.Pos, enemyBehaviorCatalogCheck.player));
+            if (mageAttackDistance > mageProfile.AttackRange || !enemyBehaviorCatalogCheck.UpdateDataDrivenEnemyBehavior(mage, 0, mageAttackDistance, new PointF(-mageAttackDistance, 0))
+                || Math.Abs(mage.Windup - mageProfile.AttackWindup) > 0.001f || Math.Abs(mage.Cooldown - mageProfile.AttackCooldown) > 0.001f)
+                throw new InvalidOperationException("O conjurador não respeitou o perfil catalogado de ataque.");
+
+            EnemyDefinition spearboundProfile = EnemyData(EnemyKind.Elite);
+            var spearbound = new Enemy { Kind = EnemyKind.Elite, EliteAffix = EliteAffix.Spearbound, Pos = new PointF(600, 330), Cooldown = 0, Hp = 100, MaxHp = 100 };
+            float spearboundAttackDistance = Length(Sub(spearbound.Pos, enemyBehaviorCatalogCheck.player));
+            if (!enemyBehaviorCatalogCheck.UpdateDataDrivenEnemyBehavior(spearbound, 0, spearboundAttackDistance, new PointF(-spearboundAttackDistance, 0))
+                || spearboundAttackDistance > spearboundProfile.SpearboundAttackRange || Math.Abs(spearbound.Windup - spearboundProfile.SpearboundAttackWindup) > 0.001f
+                || Math.Abs(spearbound.Cooldown - spearboundProfile.SpearboundAttackCooldown) > 0.001f)
+                throw new InvalidOperationException("O Lançador não respeitou seu alcance ou aviso de ataque catalogado.");
+            spearbound = new Enemy { Kind = EnemyKind.Elite, EliteAffix = EliteAffix.Spearbound, Pos = new PointF(600, 330), Cooldown = 1, Hp = 100, MaxHp = 100 };
+            float spearboundFarDistance = Length(Sub(spearbound.Pos, enemyBehaviorCatalogCheck.player));
+            if (!enemyBehaviorCatalogCheck.UpdateDataDrivenEnemyBehavior(spearbound, 0.1f, spearboundFarDistance, new PointF(-spearboundFarDistance, 0))
+                || Length(Sub(spearbound.Pos, enemyBehaviorCatalogCheck.player)) >= spearboundFarDistance - 0.05f || spearbound.Windup > 0)
+                throw new InvalidOperationException("O Lançador não voltou à distância de combate catalogada.");
         }
         float[] expectedRareAffixes = { 3, 7, 12, 10, 8, 12, 0.15f, 6 };
         float[] expectedRelicAffixes = { 6, 11, 18, 16, 12, 20, 0.25f, 8 };
@@ -281,7 +306,7 @@ public sealed partial class Game
         using (var rangedCheck = new Game())
         {
             rangedCheck.timer.Stop(); rangedCheck.StartGame(); rangedCheck.storyOverlay = false; rangedCheck.enemies.Clear();
-            foreach (EnemyKind kind in new[] { EnemyKind.Archer, EnemyKind.InkEcho, EnemyKind.DrownedMemory, EnemyKind.EmberWisp, EnemyKind.NameMoth, EnemyKind.MudCantor, EnemyKind.PaperWraith, EnemyKind.SaltEcho, EnemyKind.CooldownLeech })
+            foreach (EnemyKind kind in new[] { EnemyKind.Archer, EnemyKind.Mage, EnemyKind.InkEcho, EnemyKind.DrownedMemory, EnemyKind.EmberWisp, EnemyKind.NameMoth, EnemyKind.MudCantor, EnemyKind.PaperWraith, EnemyKind.SaltEcho, EnemyKind.CooldownLeech })
             {
                 float radius = RangedImpactRadius(kind);
                 var attacker = new Enemy { Kind = kind, Pos = new PointF(300, 330), Target = new PointF(500, 330), Windup = 0.01f, WindupMax = 0.5f, Hp = 100, MaxHp = 100 };

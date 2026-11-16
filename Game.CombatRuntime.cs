@@ -25,7 +25,7 @@ public sealed partial class Game
     private static float NonBossAttackRadius(Enemy e)
     {
         if (e.Kind == EnemyKind.Elite) return e.EliteAffix == EliteAffix.Spearbound ? 36 : 62;
-        if (e.Kind == EnemyKind.Mage) return 52;
+        if (e.Kind == EnemyKind.Mage) return RangedImpactRadius(e.Kind);
         float ranged = RangedImpactRadius(e.Kind);
         return ranged > 0 ? ranged : 38;
     }
@@ -170,14 +170,6 @@ public sealed partial class Game
         }
         if (UpdateDataDrivenEnemyBehavior(e, dt, dist, offset)) return;
         EnemyDefinition behavior = EnemyData(e.Kind);
-        if (behavior.AiStyle == EnemyAiStyle.Mage && dist < behavior.PreferredDistance) e.Pos = MoveEnemy(e, Scale(Normalize(Sub(e.Pos, player), PointF.Empty), behavior.RetreatSpeed * dt));
-        if (e.Kind == EnemyKind.Elite && e.EliteAffix == EliteAffix.Spearbound)
-        {
-            if (dist < 150) e.Pos = MoveEnemy(e, Scale(Normalize(Sub(e.Pos, player), PointF.Empty), 66 * dt));
-            else if (dist < 380 && e.Cooldown <= 0) { BeginWindup(e, player, 0.82f); e.Cooldown = 2.45f; }
-            else if (dist > 210) e.Pos = MoveEnemy(e, Scale(Normalize(offset, PointF.Empty), 48 * dt));
-            SeparateFromPack(e, dt); return;
-        }
         if (e.Kind == EnemyKind.Elite && e.Cooldown <= 0 && dist < behavior.AttackRange) { bool swift = HasEliteAffix(e, EliteAffix.Swift), armored = HasEliteAffix(e, EliteAffix.Armored); BeginWindup(e, player, swift ? armored ? 0.48f : 0.38f : armored ? 0.72f : behavior.AttackWindup); e.Cooldown = swift ? armored ? 2f : 1.55f : armored ? 2.5f : behavior.AttackCooldown; return; }
         if (e.Kind == EnemyKind.LastTuner && e.Cooldown <= 0)
         {
@@ -187,7 +179,6 @@ public sealed partial class Game
             BeginWindup(e, e.BossPattern is 1 or 2 ? player : e.Pos, windup); e.Cooldown = e.Hp < e.MaxHp * 0.5f ? 1.35f : 2.1f; return;
         }
         if (e.Boss && e.Cooldown <= 0 && (dist < 135 || (e.Kind is EnemyKind.BlindScribe or EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus))) { e.BossPattern = (e.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus) ? (e.BossPattern + 1) % 3 : 1 - e.BossPattern; bool aimed = (e.Kind == EnemyKind.BlindScribe && e.BossPattern == 1) || ((e.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden) && (e.BossPattern is 1 or 2)) || (e.Kind is EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus) && e.BossPattern is 1 or 2; float windup = e.Hp < e.MaxHp * 0.5f ? 0.52f : 0.78f; if (vigilActive && RunVigilAspect(vigilFloor) == VigilAspect.Swift) windup *= 0.8f; if (e.Kind == EnemyKind.FirstKeeper && e.BossPattern == 2) { PointF axis = Normalize(Sub(player, e.Pos), new PointF(1, 0)); PointF side = new(-axis.Y, axis.X); e.Target = Add(e.Pos, Scale(axis, 920)); e.Target2Start = Add(player, Scale(side, -460)); e.Target2 = Add(player, Scale(side, 460)); e.Windup = e.WindupMax = windup; GameAudio.Play(GameAudio.Cue.BossWarning); } else BeginWindup(e, aimed || e.NameOverride == "VIGIA DAS COMPORTAS" && e.BossPattern == 1 ? player : e.Pos, windup); e.Cooldown = e.Hp < e.MaxHp * 0.5f ? 1.25f : 2.0f; return; }
-        if (behavior.AiStyle == EnemyAiStyle.Mage && e.Cooldown <= 0) { BeginWindup(e, player, behavior.AttackWindup); e.Cooldown = behavior.AttackCooldown; SeparateFromPack(e, dt); return; }
         if (dist > (e.Boss ? 40 : 30)) e.Pos = MoveEnemy(e, Scale(Normalize(offset, PointF.Empty), (e.Boss ? 55 : MeleeChaseSpeed(room >= 43 ? 4 : room, HasEliteAffix(e, EliteAffix.Swift))) * dt));
         else if (e.Cooldown <= 0) { BeginWindup(e, player, 0.45f); e.Cooldown = 1.35f; }
         if (!e.Boss) SeparateFromPack(e, dt);
