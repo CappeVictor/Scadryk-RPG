@@ -288,7 +288,7 @@ public sealed partial class Game
     {
         using var shade = new SolidBrush(Color.FromArgb(190, 5, 7, 9)); using var background = new SolidBrush(Color.FromArgb(248, 15, 17, 18)); using var border = new Pen(Color.FromArgb(175, 143, 112, 73), 2);
         using var heading = new Font("Georgia", 17, FontStyle.Bold); using var section = new Font("Segoe UI", 11, FontStyle.Bold); using var body = new Font("Segoe UI", 10); using var hint = new Font("Segoe UI", 9);
-        g.FillRectangle(shade, 0, 83, 960, 557); g.FillRectangle(background, 105, 125, 750, 490); g.DrawRectangle(border, 105, 125, 750, 490);
+        g.FillRectangle(shade, 0, 83, 960, 557); g.FillRectangle(background, 105, 125, 750, 500); g.DrawRectangle(border, 105, 125, 750, 500);
         DrawCentered(g, $"FICHA DO {HeroClassTitle()}", 151, heading, Color.FromArgb(230, 193, 129));
         float critical = CriticalChance(), multiplier = CriticalMultiplier(), cooldown = BasicAttackCooldown();
         float expectedDps = damage * HeroBasicAttackMultiplier() * BasicAttackSpecializationMultiplier() * (1 + critical * (multiplier - 1)) / cooldown;
@@ -318,7 +318,9 @@ public sealed partial class Game
         g.DrawString($"Auge: {(combatApex == 1 ? "Coro Suspenso • técnicas +18% com 2+ recargas" : combatApex == 2 ? "Âncora de Eco • dano recebido -12% com 2+ recargas" : level >= 20 ? "a escolher" : "desbloqueia no nível 20")}", body, combatApex == 2 ? Brushes.Plum : Brushes.Goldenrod, new RectangleF(145, 530, 670, 20));
         string tempoDescription = combatTempo == 1 ? "Abertura da Vigília • técnicas +15% se todas prontas" : combatTempo == 2 ? "Resposta do Veio • básicos +12% com 2+ recargas" : level >= 25 ? "a escolher" : "desbloqueia no nível 25";
         g.DrawString($"Ritmo: {tempoDescription}", body, combatTempo == 2 ? Brushes.Plum : Brushes.Goldenrod, new RectangleF(145, 550, 670, 20));
-        g.DrawString("P ou ESC fecha", hint, Brushes.DarkGray, 145, 581);
+        string instinctDescription = combatInstinct == 1 ? "Primeira Ressonância • +18% contra alvos com 80%+ de vida" : combatInstinct == 2 ? "Último Eco • +18% contra alvos com 30% ou menos de vida" : level >= 30 ? "a escolher" : "desbloqueia no nível 30";
+        g.DrawString($"Instinto: {instinctDescription}", body, combatInstinct == 2 ? Brushes.Plum : Brushes.Goldenrod, new RectangleF(145, 570, 670, 20));
+        g.DrawString("P ou ESC fecha", hint, Brushes.DarkGray, 145, 595);
     }
 
     private void DrawForgeMenu(Graphics g)

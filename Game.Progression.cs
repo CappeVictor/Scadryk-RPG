@@ -7,7 +7,7 @@ public sealed partial class Game
 {
     private static int TalentRespecGoldCost(int level) => 250 + Math.Max(1, level) * 100;
     private static int TalentRespecGlassCost(int level) => 5 + Math.Max(1, level) / 5;
-    private static int CombatMilestonesAtLevel(int level) => (level >= 5 ? 1 : 0) + (level >= 10 ? 1 : 0) + (level >= 15 ? 1 : 0) + (level >= 20 ? 1 : 0) + (level >= 25 ? 1 : 0);
+    private static int CombatMilestonesAtLevel(int level) => (level >= 5 ? 1 : 0) + (level >= 10 ? 1 : 0) + (level >= 15 ? 1 : 0) + (level >= 20 ? 1 : 0) + (level >= 25 ? 1 : 0) + (level >= 30 ? 1 : 0);
 
     private void RespecTalents()
     {
@@ -17,7 +17,7 @@ public sealed partial class Game
         if (spent == 0) { notice = "NÃO HÁ TALENTOS PARA REDISTRIBUIR"; noticeTime = 2; return; }
         if (gold < goldCost || tideGlass < glassCost) { notice = $"REDISTRIBUIR CUSTA {goldCost} OURO E {glassCost} SAL VÍTREO"; noticeTime = 2.5f; return; }
         float healthRatio = maxHealth > 0 ? health / maxHealth : 1;
-        gold -= goldCost; tideGlass -= glassCost; maxHealth = Math.Max(1, maxHealth - healthTalent * 20); healthTalent = skillTalent = dodgeTalent = techniqueTalent = combatDiscipline = combatMastery = combatFocus = combatApex = combatTempo = 0; health = Math.Clamp(maxHealth * healthRatio, 1, maxHealth);
+        gold -= goldCost; tideGlass -= glassCost; maxHealth = Math.Max(1, maxHealth - healthTalent * 20); healthTalent = skillTalent = dodgeTalent = techniqueTalent = combatDiscipline = combatMastery = combatFocus = combatApex = combatTempo = combatInstinct = 0; health = Math.Clamp(maxHealth * healthRatio, 1, maxHealth);
         pendingTalents = spent; talentChoice = pendingTalents > 0; forgeMenuOpen = false; notice = $"TALENTOS REDISTRIBUÍDOS: {spent} PONTOS DEVOLVIDOS"; noticeTime = 3;
     }
 
@@ -55,6 +55,13 @@ public sealed partial class Game
         {
             if (key == Keys.D5) combatTempo = 1;
             else if (key == Keys.D6) combatTempo = 2;
+            else return;
+            pendingTalents--; talentChoice = pendingTalents > 0; return;
+        }
+        if (level >= 30 && combatInstinct == 0)
+        {
+            if (key == Keys.D5) combatInstinct = 1;
+            else if (key == Keys.D6) combatInstinct = 2;
             else return;
             pendingTalents--; talentChoice = pendingTalents > 0; return;
         }

@@ -245,6 +245,7 @@ public sealed partial class Game
     }
     private void DamageEnemy(Enemy enemy, float amount, bool critical = false)
     {
+        if ((combatInstinct == 1 && enemy.Hp >= enemy.MaxHp * 0.8f) || (combatInstinct == 2 && enemy.Hp <= enemy.MaxHp * 0.3f)) amount *= 1.18f;
         if (vigilActive && enemy.Boss && RunVigilAspect(vigilFloor) == VigilAspect.Hardened) amount *= 0.75f;
         if (enemy.NameWeaverMarkTime > 0) amount *= enemy.NameWeaverMarkMultiplier;
         if (enemy.ListenerMarkTime > 0) amount *= enemy.ListenerMarkMultiplier;
