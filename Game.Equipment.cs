@@ -62,7 +62,7 @@ public sealed partial class Game
     private static string ArmorTraitName(int trait) => trait switch { 1 => "Laje Funda", 2 => "Passo Ancorado", 3 => "Último Lastro", _ => "Veio Bruto" };
     private static string ArmorTraitDescription(int trait) => trait switch { 1 => "Peitoral equipado: recebe 6% menos dano adicional.", 2 => "Peitoral equipado: esquiva recarrega 0,12 s mais rápido.", 3 => "Com 35% da vida ou menos: recebe 15% menos dano.", _ => "Sem efeito adicional." };
     private static string RelicTraitName(int trait) => trait switch { 1 => "Fio Nutrido", 2 => "Ampola Viva", 3 => "Coro Restaurador", 4 => "Selo da Convergência", _ => "Eco Silente" };
-    private static string RelicTraitDescription(int trait) => trait switch { 1 => "Relicário equipado: cura +3 por abate.", 2 => "Relicário equipado: poções curam +15 vida.", 3 => "Com o conjunto: Pulso do Veio dura +1 s.", 4 => "Relicário equipado: técnicas causam +10% dano; você recebe +6% dano.", _ => "Sem efeito adicional." };
+    private static string RelicTraitDescription(int trait) => trait switch { 1 => "Relicário equipado: cura +3 por abate.", 2 => "Relicário equipado: poções curam +15 vida.", 3 => "Com o conjunto: Pulso do Veio dura +1 s.", 4 => "Técnicas +10%; recebe +6% dano (Laje Funda pode anular com ambas as peças equipadas).", _ => "Sem efeito adicional." };
 
     private static float DifficultyEnemyHealthMultiplier(int tier) => tier switch { 1 => 1.2f, 2 => 1.45f, 3 => 1.8f, _ => 1f };
     private static float DifficultyIncomingDamageMultiplier(int tier) => tier switch { 1 => 1.1f, 2 => 1.22f, 3 => 1.4f, _ => 1f };
@@ -258,15 +258,16 @@ public sealed partial class Game
         g.DrawString($"   Traço: {ArmorTraitName(armorTrait)} — {ArmorTraitDescription(armorTrait)}", effectFont, Brushes.DarkGray, new RectangleF(150, 341, 650, 17));
         g.DrawString($"6. RELICÁRIO VITAL {(relicOn ? armorOn ? $"EQUIPADO • CURA {RelicKillHealing()}/ABATE • PULSO +15%" : $"EQUIPADO • CURA {RelicKillHealing()} POR ABATE" : relic ? "DISPONÍVEL" : "NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 150, 360);
         g.DrawString($"   Traço: {RelicTraitName(relicTrait)} — {RelicTraitDescription(relicTrait)}", effectFont, Brushes.DarkGray, new RectangleF(150, 377, 650, 17));
-        g.DrawString($"SELO DA VIGÍLIA {(archiveSeal ? "ENCONTRADO • +8 DANO" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 150, 394);
-        g.DrawString($"SINO DE NARA {(riverBell ? "ENCONTRADO • +20 VIDA MÁXIMA" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 150, 420);
-        g.DrawString($"PRISMA DO LUME {(lumeLens ? "ENCONTRADO • +12 DANO" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 150, 446);
-        g.DrawString($"RASTRO DE NARA {(naraTrace ? "RECUPERADO • MEMÓRIA PRESERVADA" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 150, 472);
+        if (HasStoneConvergenceResonance()) g.DrawString("RESSONÂNCIA DA LAJE • Laje Funda cancela a penalidade de dano recebido do Selo da Convergência.", effectFont, Brushes.LightSteelBlue, new RectangleF(150, 394, 650, 17));
+        g.DrawString($"SELO DA VIGÍLIA {(archiveSeal ? "ENCONTRADO • +8 DANO" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 150, 407);
+        g.DrawString($"SINO DE NARA {(riverBell ? "ENCONTRADO • +20 VIDA MÁXIMA" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 150, 433);
+        g.DrawString($"PRISMA DO LUME {(lumeLens ? "ENCONTRADO • +12 DANO" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 150, 459);
+        g.DrawString($"RASTRO DE NARA {(naraTrace ? "RECUPERADO • MEMÓRIA PRESERVADA" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 150, 485);
         string[] availableCharms = Enumerable.Range(1, charmNames.Length - 1).Where(i => (ownedCharms & (1 << (i - 1))) != 0).Select(i => charmNames[i]).ToArray();
         string charmList = availableCharms.Length == 0 ? "NENHUM" : string.Join("\n", availableCharms.Chunk(5).Select(group => string.Join(" • ", group)));
-        g.DrawString($"TALISMÃS: {charmList}   •   SAL VÍTREO: {tideGlass}", effectFont, Brushes.Plum, new RectangleF(150, 493, 650, 45));
+        g.DrawString($"TALISMÃS: {charmList}   •   SAL VÍTREO: {tideGlass}", effectFont, Brushes.Plum, new RectangleF(150, 506, 650, 45));
         string firstCharm = equippedCharm == 0 ? "VAZIO" : charmNames[equippedCharm]; string secondCharm = equippedCharm2 == 0 ? "VAZIO" : charmNames[equippedCharm2];
-        g.DrawString($"7. ESPAÇO I: {firstCharm}    8. ESPAÇO II: {secondCharm}", effectFont, Brushes.Plum, 150, 540);
+        g.DrawString($"7. ESPAÇO I: {firstCharm}    8. ESPAÇO II: {secondCharm}", effectFont, Brushes.Plum, 150, 553);
         var effects = new List<string>();
         if (HasCharm(1)) effects.Add(HasCharmPair(1, 2) ? "SINTONIA BRASA+TRAVESSIA: Redemoinho +57% dano; recarga +0,5 s" : "Nó de Brasa: Redemoinho +35% dano; recarga +1 s");
         if (HasCharm(2)) effects.Add($"Fio de Travessia: esquiva 0,29 s{(HasCharmPair(2, 3) ? " sem custo extra" : ", recarga +0,3 s")}; Sino +35 alcance e +1,5 s de recarga");
@@ -282,7 +283,7 @@ public sealed partial class Game
         if (HasCharm(12)) effects.Add("Nó do Contratempo: técnicas +20% de dano; recarga +15%");
         if (HasCharm(13)) effects.Add("Sino da Contramaré: abates de ecos marcados adiantam recargas de técnica em 1,5 s");
         string effect = effects.Count > 0 ? string.Join(" • ", effects) : "Equipe até dois talismãs para ativar efeitos e sintonias.";
-        g.DrawString(effect, effectFont, Brushes.AntiqueWhite, new RectangleF(150, 557, 650, 72));
+        g.DrawString(effect, effectFont, Brushes.AntiqueWhite, new RectangleF(150, 570, 650, 59));
     }
     private void DrawCharacterSheet(Graphics g)
     {
@@ -401,7 +402,8 @@ public sealed partial class Game
     private bool HasCharm(int charm) => equippedCharm == charm || equippedCharm2 == charm;
     private bool HasCharmPair(int first, int second) => equippedCharm == first && equippedCharm2 == second || equippedCharm == second && equippedCharm2 == first;
     private float ArmorDamageTakenMultiplier() => !armorOn ? 1f : (relicOn ? 0.65f : 0.7f) * (armorTrait == 1 ? 0.94f : armorTrait == 3 && health <= maxHealth * 0.35f ? 0.85f : 1f);
-    private float RelicDamageTakenMultiplier() => relicOn && relicTrait == 4 ? 1.06f : 1f;
+    private bool HasStoneConvergenceResonance() => armorOn && armorTrait == 1 && relicOn && relicTrait == 4;
+    private float RelicDamageTakenMultiplier() => relicOn && relicTrait == 4 && !HasStoneConvergenceResonance() ? 1.06f : 1f;
     private int RelicKillHealing() => !relicOn ? 0 : (armorOn ? 8 : 5) + (relicTrait == 1 ? 3 : 0);
     private float VeinResonanceMultiplier() => armorOn && relicOn && veinResonanceTime > 0 ? 1.15f : 1f;
 

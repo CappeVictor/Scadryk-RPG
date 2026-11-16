@@ -218,7 +218,7 @@ O Escutador agora tem uma técnica exclusiva, **Chamado do Veio**: marca alvos p
 Nova sintonia de build: com **Chamado do Veio** e **Última Centelha** equipados, a Centelha contra um alvo marcado causa 35% mais dano, consome a marca e recupera 2% da vida máxima. Consumir a marca troca a cura maior ao abate por dano concentrado e cura imediata; os dois caminhos favorecem decisões diferentes. O menu de técnicas sinaliza essa combinação.
 
 
-A Gravura do Veio recebeu um quarto traço para o relicário: **Selo da Convergência** aumenta em 10% o dano das técnicas e em 6% o dano recebido enquanto equipado. A escolha orienta o build para dano de habilidades com custo defensivo, aparece na ficha e no inventário e mantém o save validado.
+A Gravura do Veio recebeu um quarto traço para o relicário: **Selo da Convergência** aumenta em 10% o dano das técnicas e em 6% o dano recebido enquanto equipado. A escolha orienta a build para dano de habilidades com custo defensivo, aparece na ficha e no inventário e mantém o save validado. Combinar Selo da Convergência com Laje Funda, usando as duas peças, ativa a Ressonância da Laje e remove a penalidade de dano recebido; o inventário informa quando essa sinergia está ativa.
 
 ### Margens do Primeiro Eco: trilha da escarpa
 

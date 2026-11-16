@@ -1369,6 +1369,21 @@ public sealed partial class Game
                 || !ValidWeaponData(fendaForge.CaptureSaveData()))
                 throw new InvalidOperationException("A Fenda secundária de Relíquia não aplicou seu valor elevado ou falhou na validação do save.");
         }
+        using (var stoneConvergence = new Game())
+        {
+            stoneConvergence.timer.Stop(); stoneConvergence.StartGame();
+            stoneConvergence.armorOn = true; stoneConvergence.relicOn = true; stoneConvergence.armorTrait = 1; stoneConvergence.relicTrait = 4;
+            float resonantMitigation = stoneConvergence.ArmorDamageTakenMultiplier() * stoneConvergence.RelicDamageTakenMultiplier();
+            if (!stoneConvergence.HasStoneConvergenceResonance() || Math.Abs(resonantMitigation - 0.611f) > 0.001f
+                || Math.Abs(stoneConvergence.TechniqueDamageMultiplier() - 1.1f) > 0.001f)
+                throw new InvalidOperationException("Laje Funda + Selo da Convergência não preservaram o bônus de técnica e removeram sua penalidade de dano.");
+            stoneConvergence.armorTrait = 0;
+            if (stoneConvergence.HasStoneConvergenceResonance() || stoneConvergence.RelicDamageTakenMultiplier() != 1.06f)
+                throw new InvalidOperationException("A Ressonância da Laje permaneceu ativa sem o traço Laje Funda.");
+            stoneConvergence.armorTrait = 1; stoneConvergence.relicOn = false;
+            if (stoneConvergence.HasStoneConvergenceResonance() || stoneConvergence.RelicDamageTakenMultiplier() != 1f)
+                throw new InvalidOperationException("A Ressonância da Laje permaneceu ativa com o Relicário desequipado.");
+        }
         using var lumeUpstream = new Game(); lumeUpstream.timer.Stop(); lumeUpstream.StartGame(); lumeUpstream.room = 22; lumeUpstream.questStage = 25; lumeUpstream.townEnding = 2; lumeUpstream.SetupRoom();
         if (lumeUpstream.enemies.Single(e => e.Kind == EnemyKind.TideWitness).MaxHp != 920) throw new InvalidOperationException("Manter o Lume não alterou a força da Testemunha da Maré.");
         using var reedExpedition = new Game(); reedExpedition.timer.Stop(); reedExpedition.StartGame(); reedExpedition.storyOverlay = false; reedExpedition.room = 22; reedExpedition.questStage = 27; reedExpedition.upstreamTrace = true; reedExpedition.townEnding = 1; reedExpedition.enemies.Clear(); reedExpedition.drops.Clear(); reedExpedition.player = new PointF(850, 330); reedExpedition.Interact();
