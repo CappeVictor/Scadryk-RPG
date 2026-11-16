@@ -785,7 +785,7 @@ public sealed partial class Game
             var boss = new Enemy { Pos = new PointF(500, 330), Kind = EnemyKind.Guardian, Hp = 1, MaxHp = 1 };
             bossLootCheck.enemies.Add(boss); bossLootCheck.Defeat(boss);
             Drop bossWeapon = bossLootCheck.drops.Single(d => d.Kind == "weapon");
-            if (bossWeapon.Amount is < 1 or > 3 || bossWeapon.Rarity is < 1 or > 2 || bossWeapon.Affix == 0 || bossWeapon.Rarity == 2 && (bossWeapon.Affix2 == 0 || bossWeapon.Affix2 == bossWeapon.Affix))
+            if (bossWeapon.Amount is < 1 or > 2 || bossWeapon.Rarity is < 1 or > 2 || bossWeapon.Affix == 0 || bossWeapon.Rarity == 2 && (bossWeapon.Affix2 == 0 || bossWeapon.Affix2 == bossWeapon.Affix))
                 throw new InvalidOperationException("A recompensa do chefe não gerou uma arma Rara ou Relíquia válida.");
             bossLootCheck.Collect(bossWeapon);
             SaveData bossLootSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(bossLootCheck.CaptureSaveData()))!;

@@ -97,7 +97,7 @@ public sealed partial class Game
             drops.Add(new Drop { Pos = Offset(enemy.Pos, 24, -20), Kind = "glass", Amount = Math.Clamp(1 + (room >= 43 ? 4 : room) / 12, 1, 4) });
             if (EliteWeaponDropRoll(random.Next(100), eliteWeaponMisses, vigilActive ? 0 : DifficultyEliteWeaponBonus(difficultyTier)))
             {
-                drops.Add(CreateWeaponDrop(Offset(enemy.Pos, -24, 28), random.Next(1, unstruckTrace && questStage >= 58 ? 5 : 4)));
+                drops.Add(CreateWeaponDrop(Offset(enemy.Pos, -24, 28), random.Next(1, unstruckTrace && questStage >= 58 ? 5 : 3)));
                 eliteWeaponMisses = NextEliteWeaponMisses(eliteWeaponMisses, true);
             }
             else eliteWeaponMisses = NextEliteWeaponMisses(eliteWeaponMisses, false);
@@ -110,7 +110,7 @@ public sealed partial class Game
             AddFloatingText(new PointF(player.X, player.Y - 38), $"RESSONÂNCIA −{killCooldownAdvance:0.00} S", Color.LightCyan);
         }
         if (enemy.Boss && vigilActive) drops.Add(new Drop { Pos = Offset(enemy.Pos, 0, -28), Kind = "glass", Amount = 1 + Math.Min(5, (vigilFloor - 1) / 3) });
-        if (enemy.Boss) drops.Add(CreateWeaponDrop(Offset(enemy.Pos, 0, 28), random.Next(1, enemy.Kind == EnemyKind.LastTuner ? 4 : unstruckTrace && questStage >= 58 ? 5 : 4), true));
+        if (enemy.Boss) drops.Add(CreateWeaponDrop(Offset(enemy.Pos, 0, 28), random.Next(1, enemy.Kind == EnemyKind.LastTuner ? 3 : unstruckTrace && questStage >= 58 ? 5 : 3), true));
         if (enemy.Boss && vigilActive && vigilFloor % 5 == 0 && (ownedCharms & 64) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 0, -48), Kind = "charm", Amount = 7 });
         if (enemy.Boss && vigilActive && vigilFloor % 10 == 0 && (ownedCharms & 128) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 0, -68), Kind = "charm", Amount = 8 });
         if (enemy.Boss && vigilActive && vigilFloor % 15 == 0 && (ownedCharms & 256) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 0, -88), Kind = "charm", Amount = 9 });
