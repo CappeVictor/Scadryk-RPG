@@ -160,6 +160,17 @@ public sealed partial class Game
             if (!menuHitTest.reducedScreenShake || menuHitTest.titlePage != TitlePage.Settings) throw new InvalidOperationException("O fim do botão de tremor não alterou a opção corretamente.");
             menuHitTest.HandleTitleClick(new PointF(100, 470));
             if (!menuHitTest.reducedScreenShake) throw new InvalidOperationException("Um clique fora das configurações alterou o tremor.");
+            menuHitTest.title = false; menuHitTest.storyOverlay = false;
+            menuHitTest.OnKeyDown(menuHitTest, new KeyEventArgs(Keys.F10));
+            if (!menuHitTest.settingsOpen || !menuHitTest.GameplayPaused()) throw new InvalidOperationException("F10 não abriu as configurações nem pausou a simulação durante a jornada.");
+            using (var settingsPanel = new Bitmap(960, 640)) using (var settingsGraphics = Graphics.FromImage(settingsPanel)) menuHitTest.DrawGameSettings(settingsGraphics);
+            bool shakeBeforeSettingsClick = menuHitTest.reducedScreenShake;
+            menuHitTest.HandleGameSettingsClick(new PointF(600, 470));
+            if (menuHitTest.reducedScreenShake == shakeBeforeSettingsClick) throw new InvalidOperationException("O painel de configurações da jornada não respondeu ao clique do mouse.");
+            menuHitTest.HandleGameSettingsClick(new PointF(100, 470));
+            if (menuHitTest.reducedScreenShake == shakeBeforeSettingsClick) throw new InvalidOperationException("Um clique fora do painel da jornada alterou o tremor.");
+            menuHitTest.OnKeyDown(menuHitTest, new KeyEventArgs(Keys.Escape));
+            if (menuHitTest.settingsOpen || menuHitTest.GameplayPaused()) throw new InvalidOperationException("Escape não fechou as configurações para retomar a jornada.");
             menuHitTest.titlePage = TitlePage.History; menuHitTest.storyPage = 0;
             menuHitTest.HandleTitleClick(new PointF(600, 300));
             if (menuHitTest.storyPage != 0) throw new InvalidOperationException("Um clique no texto avançou a história.");

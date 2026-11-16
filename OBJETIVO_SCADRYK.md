@@ -30,6 +30,6 @@ Marco de expansão da Costa: depois do Coro da Maré Falsa, Teren conduz a uma m
 
 Marco de exploração: a Fenda dos Menires agora contém uma galeria, a câmara do Carcereiro e o Arquivo dos Menires, uma sala opcional pós-chefe com encontro, loot e conclusão persistente. Marco de build: Relíquias com Fenda + Ruptura ativam uma combinação de perfuração. Acertos críticos removem a redução da ferida contra inimigos blindados; a CI verifica dano, descrição e restrição à raridade Relíquia.
 
-Marco de acessibilidade: o menu separa o volume dos efeitos e do ambiente, permite ajuste por teclado ou mouse e persiste essas preferências independentemente do save da campanha. O processamento PCM dos sons é coberto pela CI.
+Marco de acessibilidade: o painel de configurações abre também durante a jornada, pausa a simulação e aceita teclado e mouse. Ele separa o volume dos efeitos e do ambiente e reúne contraste e tremor reduzido; os níveis de áudio persistem independentemente do save da campanha. A CI cobre abertura, pausa, fechamento, clique fora do painel e escala PCM.
 
 O jogo não será considerado concluído apenas por ter muitos capítulos ou por compilar: todas as partes acima precisam funcionar juntas, ser verificadas no alcance correspondente e oferecer uma jornada completa e coesa.

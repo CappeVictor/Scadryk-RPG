@@ -72,7 +72,7 @@ O executável e os recursos ficam juntos em `artifacts/Scadryk-win-x64/`. O CI t
 
 A tela inicial oferece **Continuar**, **Nova jornada**, **Campanha e mapas**, **História**, **Configurações** ou **Sair**. Depois de confirmar uma nova jornada, escolha entre **Escutador**, **Guardião da Pedra**, **Tecelã de Nomes** e **Cartógrafa do Vão** no seletor 2×2; use as setas, **1–4** ou clique, e confirme em **Iniciar**. A classe escolhida fica registrada no save. O arquivo anterior não é apagado ao iniciar e só muda se você salvar o novo progresso dentro do jogo.
 
-**Campanha e mapas** lista os 19 capítulos e mostra um pequeno mapa das áreas de cada capítulo. A tela marca o capítulo atual, o que já foi concluído ou descoberto e as rotas bloqueadas pela história. Escolher um capítulo só abre sua prévia; **Enter** continua a jornada do save ou inicia uma nova campanha, sem teletransportar nem pular fases. A abertura usa uma paisagem original de Véspera sob o brilho do Lume. Entre no jogo para explorar o atlas durante a jornada com **M**. **História** apresenta o prólogo original. Em **Configurações**, use **↑/↓** para escolher uma opção, **←/→** para ajustar efeitos e ambiente em passos de 10%, **Enter** para alternar áudio, contraste ou tremor e também para aumentar o volume selecionado; clique nos controles para usar o mouse. Os volumes e o estado de áudio ficam salvos separadamente da jornada em `%LOCALAPPDATA%\Scadryk\settings.json`.
+**Campanha e mapas** lista os 19 capítulos e mostra um pequeno mapa das áreas de cada capítulo. A tela marca o capítulo atual, o que já foi concluído ou descoberto e as rotas bloqueadas pela história. Escolher um capítulo só abre sua prévia; **Enter** continua a jornada do save ou inicia uma nova campanha, sem teletransportar nem pular fases. A abertura usa uma paisagem original de Véspera sob o brilho do Lume. Entre no jogo para explorar o atlas durante a jornada com **M**. **História** apresenta o prólogo original. Em **Configurações**, use **↑/↓** para escolher uma opção, **←/→** para ajustar efeitos e ambiente em passos de 10%, **Enter** para alternar áudio, contraste ou tremor e também para aumentar o volume selecionado; clique nos controles para usar o mouse. O painel também abre durante a campanha com **F10**. Os volumes e o estado de áudio ficam salvos separadamente da jornada em `%LOCALAPPDATA%\Scadryk\settings.json`.
 
 ## Personagem e animação
 
@@ -102,6 +102,7 @@ Os inimigos à distância têm faixas de combate próprias. O Conjurador recua s
 | L | Abrir o diário da jornada com capítulo, objetivo, salas concluídas, inscrições e estado da área; L, Esc ou clique fecha |
 | I | Abrir ou fechar inventário |
 | P | Abrir a ficha do Escutador; P ou Esc fecha |
+| F10 | Abrir ou fechar configurações durante a jornada; o jogo pausa enquanto o painel está aberto |
 | 1–4, 0 e 9 no inventário | Equipar uma das seis armas; 0 seleciona o Arco do Limiar e 9 a Corrente do Vau |
 | 5–6 no inventário | Alternar armadura e relíquia |
 | 7 no inventário | Alternar o talismã do espaço I |
@@ -111,6 +112,7 @@ Os inimigos à distância têm faixas de combate próprias. O Conjurador recua s
 | Tab | Trocar alvo; no menu B, alternar a montagem que está sendo editada |
 | H | Ativar ou desativar o alto contraste dos avisos de ataque |
 | N | Ativar ou silenciar a ambiência e os efeitos de áudio |
+| Esc durante o jogo | Abrir configurações quando nenhum outro painel estiver aberto; dentro de um painel, voltar ou fechá-lo |
 | M no menu de configurações | Alternar o tremor de câmera reduzido; a escolha fica no save |
 | Enter, Espaço ou clique na introdução | Avançar o prólogo e a lembrança |
 | F5 | Salvar em área segura ou sala limpa sem saque; nas Margens, salva a missão e retoma em Véspera |

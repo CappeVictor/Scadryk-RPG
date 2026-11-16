@@ -133,6 +133,49 @@ public sealed partial class Game
         else GameAudio.SetAmbienceVolume(GameAudio.AmbienceVolume + delta);
     }
 
+    private void HandleGameSettingsKey(Keys key)
+    {
+        if (key is Keys.Escape or Keys.F10) { settingsOpen = false; down.Clear(); Invalidate(); return; }
+        if (key is Keys.Up or Keys.W) settingsSelection = (settingsSelection + 4) % 5;
+        else if (key is Keys.Down or Keys.S) settingsSelection = (settingsSelection + 1) % 5;
+        else if (settingsSelection == 0 && (key is Keys.Enter or Keys.Space or Keys.N)) ToggleTitleAudio();
+        else if (settingsSelection == 1 && (key is Keys.Left or Keys.A or Keys.Right or Keys.D or Keys.Enter or Keys.Space)) AdjustTitleVolume(true, (key is Keys.Left or Keys.A) ? -10 : 10);
+        else if (settingsSelection == 2 && (key is Keys.Left or Keys.A or Keys.Right or Keys.D or Keys.Enter or Keys.Space)) AdjustTitleVolume(false, (key is Keys.Left or Keys.A) ? -10 : 10);
+        else if (settingsSelection == 3 && (key is Keys.Enter or Keys.Space or Keys.H)) highContrastTelegraphs = !highContrastTelegraphs;
+        else if (settingsSelection == 4 && (key is Keys.Enter or Keys.Space or Keys.M)) reducedScreenShake = !reducedScreenShake;
+        Invalidate();
+    }
+
+    private void HandleGameSettingsClick(PointF point)
+    {
+        int row = (int)((point.Y - 222) / 56);
+        if (point.X >= 190 && point.X <= 770 && row is >= 0 and < 5 && new RectangleF(190, 222 + row * 56, 580, 48).Contains(point))
+        {
+            settingsSelection = row;
+            if (row == 0) ToggleTitleAudio();
+            else if (row is 1 or 2) AdjustTitleVolume(row == 1, point.X < 480 ? -10 : 10);
+            else if (row == 3) highContrastTelegraphs = !highContrastTelegraphs;
+            else reducedScreenShake = !reducedScreenShake;
+        }
+        Invalidate();
+    }
+
+    private void DrawGameSettings(Graphics g)
+    {
+        using var veil = new SolidBrush(Color.FromArgb(205, 0, 0, 0));
+        using var panel = new SolidBrush(Color.FromArgb(252, 22, 25, 25));
+        using var edge = new Pen(Color.FromArgb(230, 193, 129), 2);
+        g.FillRectangle(veil, 0, 0, 960, 640); g.FillRectangle(panel, 82, 145, 796, 412); g.DrawRectangle(edge, 82, 145, 796, 412);
+        DrawCentered(g, "CONFIGURAÇÕES", 176, new Font("Georgia", 22, FontStyle.Bold), Color.FromArgb(230, 193, 129));
+        DrawTitleSetting(g, 0, "ÁUDIO", GameAudio.Muted ? "DESATIVADO" : "ATIVADO", settingsSelection == 0);
+        DrawTitleSetting(g, 1, "EFEITOS", $"{GameAudio.EffectsVolume}%  ← / →", settingsSelection == 1);
+        DrawTitleSetting(g, 2, "AMBIENTE", $"{GameAudio.AmbienceVolume}%  ← / →", settingsSelection == 2);
+        DrawTitleSetting(g, 3, "AVISOS DE ATAQUE", highContrastTelegraphs ? "ALTO CONTRASTE" : "PADRÃO", settingsSelection == 3);
+        DrawTitleSetting(g, 4, "TREMOR DE CÂMERA", reducedScreenShake ? "REDUZIDO" : "NORMAL", settingsSelection == 4);
+        DrawCentered(g, "← / → AJUSTA O VOLUME • H CONTRASTE • M TREMOR", 525, new Font("Segoe UI", 9, FontStyle.Bold), Color.FromArgb(171, 177, 164));
+        DrawCentered(g, "↑ / ↓ NAVEGAR     ENTER APLICAR     ESC / F10 VOLTAR", 584, new Font("Segoe UI", 9), Color.FromArgb(158, 164, 154));
+    }
+
     private void HandleTitleClick(PointF point)
     {
         if (classSelectionOpen)

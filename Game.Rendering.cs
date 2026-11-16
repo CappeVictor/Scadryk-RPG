@@ -106,7 +106,7 @@ public sealed partial class Game
         g.DrawString($"ECOS {memoriesRead} / 2", hudFont, goldBrush, 760, 572);
         string currentObjective = CurrentObjective();
         if (currentObjective.Length > 0) g.DrawString(currentObjective, hudFont, goldBrush, 67, 592);
-        g.DrawString(room is 3 or 18 ? "WASD mover   E falar/investigar   F5 salvar   B técnicas   I inventário   L diário" : "WASD mover   ESPAÇO atacar   SHIFT esquivar   R redemoinho   F/V/G/C técnicas   B montar técnicas   Q poção   E interagir   I inventário   L diário", helpFont, textBrush, 67, 619);
+        g.DrawString(room is 3 or 18 ? "WASD mover   E falar/investigar   F5 salvar   B técnicas   I inventário   L diário   F10 opções" : "WASD mover   ESPAÇO atacar   SHIFT esquivar   R redemoinho   F/V/G/C técnicas   B montar técnicas   Q poção   E interagir   I inventário   L diário   F10 opções", helpFont, textBrush, 67, 619);
         if (room < MemoryStonePositions.Length && (memoriesFound & (1 << room)) == 0) DrawMemoryStone(g, MemoryStonePositions[room], Distance(player, MemoryStonePositions[room]) < MemoryStoneInteractionRadius);
         if (noticeTime > 0) DrawCentered(g, notice, 170, new Font("Segoe UI", 13, FontStyle.Bold), Color.FromArgb(230, 193, 129));
         if (vigilChoiceOpen) DrawChoice(g, $"VIGÍLIA ASCENDENTE • ANDAR {vigilFloor}", $"1. SUBIR AO ANDAR {vigilFloor + 1} • RECOMPENSA CRESCENTE", $"2. ENCERRAR • MELHOR MARCA: {Math.Max(vigilBestFloor, vigilFloor)}", "3. FICAR AQUI");
@@ -123,6 +123,7 @@ public sealed partial class Game
         if (memoryOverlay) DrawMemoryOverlay(g);
         if (mapOpen) DrawMapOverlay(g);
         if (journalOpen) DrawQuestJournal(g);
+        if (settingsOpen) DrawGameSettings(g);
         if (focusPaused && !title && !dead && !victory) DrawOverlay(g, "PAUSADO", "VOLTE À JANELA PARA CONTINUAR");
     }
 

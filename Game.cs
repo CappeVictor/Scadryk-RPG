@@ -182,6 +182,8 @@ public sealed partial class Game : Form
     private readonly List<NameRiftBurst> nameRiftBursts = new();
     private readonly HashSet<Keys> down = new();
     private bool focusPaused;
+    private bool settingsOpen;
+    private int settingsSelection;
     private readonly System.Windows.Forms.Timer timer = new() { Interval = 16 };
     private readonly Random random = new();
     private readonly List<EchoShard> echoShards = new();
@@ -277,6 +279,11 @@ public sealed partial class Game : Form
                 if (e.Button == MouseButtons.Left) HandleTitleClick(ScreenToGame(new PointF(e.X, e.Y), ClientSize));
                 return;
             }
+            if (settingsOpen)
+            {
+                if (e.Button == MouseButtons.Left) HandleGameSettingsClick(ScreenToGame(new PointF(e.X, e.Y), ClientSize));
+                return;
+            }
             if (storyOverlay) { if (e.Button == MouseButtons.Left) AdvanceStory(); return; }
             if (memoryOverlay) { if (e.Button == MouseButtons.Left) memoryOverlay = false; return; }
             if (journalOpen) { if (e.Button == MouseButtons.Left) journalOpen = false; return; }
@@ -333,6 +340,13 @@ public sealed partial class Game : Form
             HandleTitleKey(e.KeyCode);
             return;
         }
+        if (e.KeyCode == Keys.F10)
+        {
+            settingsOpen = !settingsOpen;
+            if (settingsOpen) settingsSelection = 0;
+            down.Clear(); dashTime = 0; Invalidate(); return;
+        }
+        if (settingsOpen) { HandleGameSettingsKey(e.KeyCode); return; }
         if (e.KeyCode == Keys.N)
         {
             bool nowMuted = GameAudio.ToggleMute();
@@ -378,7 +392,7 @@ public sealed partial class Game : Form
         if (e.KeyCode == Keys.L) { journalOpen = true; inventoryOpen = skillMenuOpen = characterSheetOpen = mapOpen = false; return; }
         if (e.KeyCode == Keys.I) { inventoryOpen = !inventoryOpen; return; }
         if (e.KeyCode == Keys.B) { skillMenuOpen = true; inventoryOpen = false; return; }
-        if (inventoryOpen) { if (e.KeyCode >= Keys.D1 && e.KeyCode <= Keys.D4) EquipWeapon((int)e.KeyCode - (int)Keys.D1); else if (e.KeyCode == Keys.D0) EquipWeapon(4); else if (e.KeyCode == Keys.D9) EquipWeapon(5); else if (e.KeyCode == Keys.D5 && armor) armorOn = !armorOn; else if (e.KeyCode == Keys.D6 && relic) relicOn = !relicOn; else if (e.KeyCode == Keys.D7) CycleCharm(1); else if (e.KeyCode == Keys.D8) CycleCharm(2); return; }
+        if (inventoryOpen) { if (e.KeyCode == Keys.Escape) inventoryOpen = false; else if (e.KeyCode >= Keys.D1 && e.KeyCode <= Keys.D4) EquipWeapon((int)e.KeyCode - (int)Keys.D1); else if (e.KeyCode == Keys.D0) EquipWeapon(4); else if (e.KeyCode == Keys.D9) EquipWeapon(5); else if (e.KeyCode == Keys.D5 && armor) armorOn = !armorOn; else if (e.KeyCode == Keys.D6 && relic) relicOn = !relicOn; else if (e.KeyCode == Keys.D7) CycleCharm(1); else if (e.KeyCode == Keys.D8) CycleCharm(2); return; }
         if (e.KeyCode == Keys.T) { ToggleSkillLoadout(); return; }
         if (e.KeyCode == Keys.Space || e.KeyCode == Keys.J) Attack();
         else if (e.KeyCode == Keys.ShiftKey || e.KeyCode == Keys.K) StartDash();
@@ -392,6 +406,7 @@ public sealed partial class Game : Form
         else if (e.KeyCode == Keys.X) SalvageNearbyWeapon();
         else if (e.KeyCode == Keys.F5) { if (vigilActive) { notice = "TERMINE A VIGÍLIA E SALVE NO REFÚGIO"; noticeTime = 2; } else if (room >= 43) { if (drops.Count > 0) { notice = "RECOLHA O SAQUE ANTES DE SALVAR"; noticeTime = 2; } else if (SaveGame()) { notice = room is 47 or 48 or 50 ? "PROGRESSO SALVO • FENDA RETOMADA NA MESMA SALA" : room == 49 ? "PROGRESSO SALVO • COSTA RETOMADA" : room == 46 ? "PROGRESSO SALVO • REGIÃO RETOMADA NA BACIA" : "PROGRESSO SALVO • AO CARREGAR, VOLTE DE VÉSPERA"; noticeTime = 4; } } else if (enemies.Count == 0 && drops.Count == 0) SaveGame(); else { notice = "LIMPE A SALA E RECOLHA O LOOT ANTES DE SALVAR"; noticeTime = 2; } }
         else if (e.KeyCode == Keys.Tab) CycleTarget();
+        else if (e.KeyCode == Keys.Escape) { settingsOpen = true; settingsSelection = 0; down.Clear(); dashTime = 0; Invalidate(); }
     }
 
     private void UsePotion() { if (potions > 0 && health < maxHealth) { int healing = 45 + (relicOn && relicTrait == 2 ? 15 : 0); potions--; health = Math.Min(maxHealth, health + healing); if (HasStepAmpouleResonance()) { AdvanceTechniqueCooldowns(1.25f); notice = $"+{healing} VIDA • PASSO −1,25 S RECARGA"; AddFloatingText(new PointF(player.X, player.Y - 38), "RESSONÂNCIA DO PASSO −1,25 S", Color.LightCyan); } else notice = $"+{healing} VIDA"; noticeTime = 1.8f; } else { notice = potions == 0 ? "SEM POÇÕES" : "VIDA JÁ ESTÁ CHEIA"; noticeTime = 1.3f; } }
