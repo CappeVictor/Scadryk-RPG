@@ -2017,6 +2017,15 @@ public sealed partial class Game
                 if (vaultResume.room != 49 || vaultResume.WorldSize() != new SizeF(4200, 2400) || vaultResume.enemies.Count != 0) throw new InvalidOperationException("A trilha das conchas não abriu a Costa das Badaladas como região explorável.");
                 SaveData frontierEntrySave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(vaultResume.CaptureSaveData()))!;
                 if (!frontierEntrySave.SaltFrontierLocation || !ValidSaveData(frontierEntrySave)) throw new InvalidOperationException("A entrada na costa não foi persistida nem validada.");
+                using (var coastCurrent = new Game())
+                {
+                    coastCurrent.timer.Stop(); coastCurrent.StartGame(); coastCurrent.room = 49; coastCurrent.player = SaltFrontierBuoys; coastCurrent.windupPulse = 2;
+                    if (coastCurrent.CurrentDrift() != new PointF(24, 0)) throw new InvalidOperationException("A corrente costeira não levou o jogador em direção à costa durante a primeira fase.");
+                    coastCurrent.windupPulse = 11;
+                    if (coastCurrent.CurrentDrift() != new PointF(-24, 0)) throw new InvalidOperationException("A corrente costeira não inverteu para levar o jogador ao juncal.");
+                    coastCurrent.player = new PointF(2700, 2140);
+                    if (coastCurrent.CurrentDrift() != PointF.Empty) throw new InvalidOperationException("A corrente da costa afetou o caminho seco fora do estreito.");
+                }
                 using (var frontierMap = new Bitmap(960, 640)) using (var frontierGraphics = Graphics.FromImage(frontierMap)) vaultResume.DrawSaltFrontierMap(frontierGraphics);
                 vaultResume.player = SaltFrontierCartographer; vaultResume.Interact(); vaultResume.memoryOverlay = false;
                 if ((vaultResume.saltFrontierProgress & 1) == 0 || vaultResume.enemies.Count != 9) throw new InvalidOperationException("Nemi não iniciou a missão nem ativou as três torres guardadas.");

@@ -256,6 +256,9 @@ public sealed partial class Game
         using var tidalFlat = new SolidBrush(Color.FromArgb(111, 120, 106));
         using var road = new Pen(Color.FromArgb(119, 113, 92), 94) { StartCap = LineCap.Round, EndCap = LineCap.Round, LineJoin = LineJoin.Round };
         using var trail = new Pen(Color.FromArgb(202, 179, 130), 2) { DashStyle = DashStyle.Dash };
+        using var current = new Pen(Color.FromArgb(170, 132, 202, 206), 5);
+        using var flowFont = new Font("Segoe UI", 10, FontStyle.Bold);
+        using var flowInk = new SolidBrush(Color.FromArgb(231, 224, 198));
         using var stone = new SolidBrush(Color.FromArgb(83, 101, 99));
         using var rim = new Pen(Color.FromArgb(143, 169, 156), 3);
         g.FillRectangle(ground, 0, 0, SaltFrontierSize.Width, SaltFrontierSize.Height);
@@ -279,6 +282,21 @@ public sealed partial class Game
             new[] { SaltFrontierCartographer, new PointF(2140, 760), SaltFrontierTideBells[1], new PointF(3000, 790), SaltFrontierTideBells[2] }
         };
         foreach (PointF[] path in paths) { g.DrawLines(road, path); g.DrawLines(trail, path); }
+        bool currentToCoast = MathF.Sin(windupPulse * 0.45f) >= 0;
+        PointF[] currentMarks = { new(2840, 2025), new(3020, 1980), new(3210, 1995), new(3400, 1935), new(3560, 1815) };
+        for (int i = 0; i < currentMarks.Length - 1; i++)
+        {
+            PointF a = currentMarks[i], b = currentMarks[i + 1];
+            if (!currentToCoast) (a, b) = (b, a);
+            g.DrawLine(current, a, b);
+            PointF mid = new((a.X + b.X) * 0.5f, (a.Y + b.Y) * 0.5f);
+            float angle = MathF.Atan2(b.Y - a.Y, b.X - a.X), side = 11;
+            PointF tip = Add(mid, Scale(new PointF(MathF.Cos(angle), MathF.Sin(angle)), side));
+            PointF back = Add(mid, Scale(new PointF(MathF.Cos(angle), MathF.Sin(angle)), -side));
+            PointF normal = new(-MathF.Sin(angle) * 7, MathF.Cos(angle) * 7);
+            g.FillPolygon(Brushes.LightCyan, new[] { tip, Add(back, normal), Sub(back, normal) });
+        }
+        g.DrawString(currentToCoast ? "CORRENTE RUMO À COSTA" : "CORRENTE RUMO AO JUNCAL", flowFont, flowInk, 3040, 1865);
         if (saltFrontierBossDefeated)
         {
             PointF[] wreckPath = { new(3000, 790), new(3400, 760), SaltFrontierTeren, new(3770, 520), SaltFrontierWreck };
@@ -368,6 +386,7 @@ public sealed partial class Game
         using var shade = new SolidBrush(Color.FromArgb(240, 12, 16, 17));
         using var panel = new SolidBrush(Color.FromArgb(247, 21, 24, 24));
         using var line = new Pen(Color.FromArgb(202, 153, 139, 111), 6) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+        using var tideLine = new Pen(Color.FromArgb(194, 125, 207, 212), 3) { DashStyle = DashStyle.Dash, StartCap = LineCap.Round, EndCap = LineCap.Round };
         using var font = new Font("Segoe UI", 9, FontStyle.Bold);
         using var title = new Font("Georgia", 17, FontStyle.Bold);
         g.FillRectangle(shade, 0, 0, 960, 640); g.FillRectangle(panel, 45, 105, 870, 485); g.DrawRectangle(Pens.DarkGoldenrod, 45, 105, 870, 485);
@@ -375,6 +394,9 @@ public sealed partial class Game
         PointF Map(PointF p) => new(100 + p.X * 0.18f, 170 + p.Y * 0.15f);
         PointF[][] paths = { new[] { SaltFrontierEntrance, new PointF(500, 980), SaltFrontierTideBells[0], new PointF(1380, 800), SaltFrontierCartographer }, new[] { SaltFrontierCartographer, new PointF(2140, 760), SaltFrontierTideBells[1], new PointF(3000, 790), SaltFrontierTideBells[2] } };
         foreach (PointF[] path in paths) g.DrawLines(line, path.Select(Map).ToArray());
+        PointF[] tidePath = { new(2840, 2025), new(3020, 1980), new(3210, 1995), new(3400, 1935), new(3560, 1815) };
+        if (MathF.Sin(windupPulse * 0.45f) < 0) Array.Reverse(tidePath);
+        g.DrawLines(tideLine, tidePath.Select(Map).ToArray());
         if (saltFrontierBossDefeated) g.DrawLines(line, new[] { new PointF(3000, 790), new PointF(3400, 760), SaltFrontierTeren, new PointF(3770, 520), SaltFrontierWreck }.Select(Map).ToArray());
         if (saltFrontierSideProgress >= 4) g.DrawLines(line, new[] { SaltFrontierTideBells[2], new PointF(3430, 1920), SaltFrontierBuoys }.Select(Map).ToArray());
         if ((saltFrontierProgress & 31) == 31) g.DrawLines(line, new[] { SaltFrontierTideBells[2], new PointF(3750, 1770), SaltFrontierBellheart }.Select(Map).ToArray());
@@ -391,6 +413,6 @@ public sealed partial class Game
             g.DrawString(names[i], font, Brushes.AntiqueWhite, p.X - 32, p.Y - 22);
         }
         PointF here = Map(player); g.FillEllipse(Brushes.LightGreen, here.X - 7, here.Y - 7, 14, 14);
-        g.DrawString("VERDE: VOCÊ/ROTA RECUPERADA  •  OURO: A DESCOBRIR  •  CIANO: NEMI/TEREN  •  ROXO: CORAÇÃO  •  M/ESC: FECHAR", font, Brushes.AntiqueWhite, 125, 547);
+        g.DrawString("VERDE: VOCÊ/ROTA RECUPERADA  •  OURO: A DESCOBRIR  •  CIANO: NEMI/TEREN E CORRENTE  •  ROXO: CORAÇÃO  •  M/ESC: FECHAR", font, Brushes.AntiqueWhite, 95, 547);
     }
 }
