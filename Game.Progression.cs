@@ -66,9 +66,10 @@ public sealed partial class Game
         pendingTalents--; talentChoice = pendingTalents > 0;
     }
 
-    private void TriggerNameRiftBurst(Enemy defeated)
+    private void TriggerNameRiftBurst(Enemy defeated, int? weaponIndex = null)
     {
-        if (!HasNameRiftPower(weapon) || !IsMarkedForRift(defeated)) return;
+        int index = weaponIndex ?? weapon;
+        if (!HasNameRiftPower(index) || !IsMarkedForRift(defeated)) return;
         const float radius = 108f;
         AddFloatingText(new PointF(defeated.Pos.X, defeated.Pos.Y - defeated.Radius - 18), "NOME RISCADO", Color.FromArgb(255, 218, 154, 242));
         TriggerScreenShake(2.6f, 0.16f);
@@ -76,17 +77,17 @@ public sealed partial class Game
         nameRiftBursts.Add(new NameRiftBurst { Pos = defeated.Pos });
         foreach (Enemy target in enemies.Where(candidate => Distance(candidate.Pos, defeated.Pos) <= radius).ToArray())
         {
-            float power = WeaponPower(weapon) * (target.Boss ? 0.28f : 0.72f) * OutgoingDamageMultiplier(target) * (IsArmored(target) ? 0.75f : 1f);
+            float power = WeaponPower(index) * (target.Boss ? 0.28f : 0.72f) * OutgoingDamageMultiplier(target, index) * (IsArmored(target) ? 0.75f : 1f);
             DamageEnemy(target, power);
-            if (target.Hp <= 0) Defeat(target);
+            if (target.Hp <= 0) Defeat(target, index);
         }
     }
 
-    private void Defeat(Enemy enemy)
+    private void Defeat(Enemy enemy, int? weaponIndex = null)
     {
         if (!enemies.Remove(enemy)) return;
         if (ReferenceEquals(lockedTarget, enemy)) lockedTarget = enemies.Where(TargetVisible).OrderBy(candidate => Distance(player, candidate.Pos)).FirstOrDefault();
-        TriggerNameRiftBurst(enemy);
+        TriggerNameRiftBurst(enemy, weaponIndex);
         if (enemy.EliteMinion) return;
         enemiesDefeated++; int goldDrop = enemy.VigilMinion ? 8 + Math.Min(20, vigilFloor * 2) : vigilActive ? 35 + Math.Min(500, vigilFloor * 15) : enemy.Boss ? 35 : enemy.Kind == EnemyKind.Elite ? 20 : 8;
         int xpReward = enemy.VigilMinion ? 12 : enemy.Boss ? 75 : enemy.Kind == EnemyKind.Elite ? 40 : 22;

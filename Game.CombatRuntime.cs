@@ -253,23 +253,24 @@ public sealed partial class Game
         AddFloatingText(new PointF(enemy.Pos.X, enemy.Pos.Y - enemy.Radius - 10), critical ? $"CRÍTICO {value}" : value, critical ? Color.FromArgb(255, 211, 123) : Color.AntiqueWhite);
     }
 
-    private void ApplyHitKnockback(Enemy enemy, bool critical)
+    private void ApplyHitKnockback(Enemy enemy, bool critical, int? weaponIndex = null)
     {
-        float speed = weapon switch { 1 => 220f, 2 => 105f, 3 => 175f, _ => 150f };
+        float speed = (weaponIndex ?? weapon) switch { 1 => 220f, 2 => 105f, 3 => 175f, _ => 150f };
         if (critical) speed *= 1.22f;
         if (enemy.Boss) speed *= 0.32f;
         enemy.KnockbackVelocity = Scale(Normalize(Sub(enemy.Pos, player), facing), speed);
         enemy.KnockbackTime = Math.Max(enemy.KnockbackTime, 0.16f);
     }
 
-    private void ApplyWeaponWound(Enemy enemy, bool critical)
+    private void ApplyWeaponWound(Enemy enemy, bool critical, int? weaponIndex = null, float? baseDamage = null)
     {
-        if (!critical || enemy.Hp <= 0 || !HasWeaponAffix(weapon, 8)) return;
-        float perSecond = WeaponAffixValue(weapon, 8) / 100f;
-        float resonance = HasWoundResonance(weapon) ? 1.4f : 1f;
+        int index = weaponIndex ?? weapon;
+        if (!critical || enemy.Hp <= 0 || !HasWeaponAffix(index, 8)) return;
+        float perSecond = WeaponAffixValue(index, 8) / 100f;
+        float resonance = HasWoundResonance(index) ? 1.4f : 1f;
         if (enemy.WoundTime <= 0) enemy.WoundTickCooldown = 1f;
         enemy.WoundTime = 3f;
-        enemy.WoundDamage = damage * perSecond * resonance * OutgoingDamageMultiplier(enemy) * (IsArmored(enemy) ? 0.75f : 1f);
+        enemy.WoundDamage = (baseDamage ?? damage) * perSecond * resonance * OutgoingDamageMultiplier(enemy, index) * (IsArmored(enemy) ? 0.75f : 1f);
         AddFloatingText(new PointF(enemy.Pos.X, enemy.Pos.Y - enemy.Radius - 26), "RUPTURA", Color.Salmon);
     }
 

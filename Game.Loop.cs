@@ -31,6 +31,7 @@ public sealed partial class Game
         TickBeacon(dt); int roomBeingUpdated = room; foreach (Enemy enemy in enemies.ToArray()) { if (room == 43 && Distance(enemy.Pos, player) > 500) { enemy.Moving = false; continue; } PointF previousPos = enemy.Pos; UpdateEnemy(enemy, dt); enemy.Moving = Distance(previousPos, enemy.Pos) > 0.01f; if (enemy.Moving) enemy.AnimationTime += dt; if (dead || room != roomBeingUpdated) break; }
         TickVigilMinions(dt); TickGroundHazards(dt); TickEnemyWounds(dt); nameRiftBursts.RemoveAll(burst => (burst.TimeLeft -= dt) <= 0);
         AdvanceVoiceShards(dt);
+        AdvanceBowArrows(dt);
         if (enemies.Count == 0 && drops.Count == 0 && room == 2 && !memoryOverlay) chestChoice = true;
         MarkRoomCleared();
         Invalidate();

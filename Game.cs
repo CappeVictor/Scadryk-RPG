@@ -40,6 +40,7 @@ public sealed partial class Game : Form
     private sealed class GroundHazard { public PointF Pos; public float Radius = 48, TimeLeft = 3.2f, TickCooldown = 0.8f; public int Damage = 9; }
     private sealed class NameRiftBurst { public PointF Pos; public float TimeLeft = 0.3f; }
     private sealed class EchoShard { public PointF Pos, Direction; public float Life, Damage; public HashSet<Enemy> Hit = new(); }
+    private sealed class BowArrow { public PointF Pos, Direction; public float Remaining, Damage, WoundBaseDamage; public int WeaponIndex; public bool Critical, RangedCriticalResonance; }
     private sealed class FloatingText { public PointF Pos; public string Text = ""; public Color Color; public float TimeLeft, Duration; }
     private readonly record struct ReadingOverlayLayout(float PanelY, float PanelHeight, float HeadingY, float BodyY, float BodyHeight, float HintY);
     private sealed record CampaignChapter(int Number, string Title, int FirstRoom, int LastRoom);
@@ -182,6 +183,7 @@ public sealed partial class Game : Form
     private readonly System.Windows.Forms.Timer timer = new() { Interval = 16 };
     private readonly Random random = new();
     private readonly List<EchoShard> echoShards = new();
+    private readonly List<BowArrow> bowArrows = new();
     private readonly List<FloatingText> floatingTexts = new();
     private PointF beaconPos;
     private readonly string[] roomNames = { "VESTÍBULO EM RUÍNAS", "SALÃO DOS OSSOS", "CÂMARA DO GUARDIÃO", "VÉSPERA • PRAÇA DO FAROL", "ARQUIVO NORTE • GALERIA", "ARQUIVO NORTE • COFRE", "RIO CEGO • LEITO SECO", "RIO CEGO • CAPELA AFOGADA", "FAROL • ESCADA DE CINZAS", "FAROL • CÂMARA DO LUME", "ALÉM DO LUME • MARGEM SEM REFLEXO", "RESERVATÓRIO • VOZES RETIDAS", "COSTA DAS VOZES TARDIAS", "CLAUSTRO DO CORO PARTIDO", "BACIA DO PRIMEIRO NOME", "SALA DA PRIMEIRA VIGÍLIA", "VAU DOS NOMES ESCOLHIDOS", "PÁTIO DAS TESTEMUNHAS", "REFÚGIO DO VEIO CALMO", "TRILHA DOS LUMINÁRIOS", "CISTERNA DO REGISTRO VAZIO", "VÁRZEA DAS VOZES SOPRADAS", "PONTE DA MARÉ INVERTIDA", "COTOVELO DOS JUNCAIS", "PÁTIO DAS AMARRAS LIVRES", "MOINHOS DA VAZANTE", "CÂMARA DO VEIO PRESO", "ESCARPA DO CONTRAFLUXO", "CORAÇÃO DAS DUAS MARGENS", "CANTARIA DAS VOZES LIVRES", "CÂMARA DA CONTRAVOZ", "GARGANTA DO VIDRO MUDO", "FONTE SOB A PEDRA", "PASSAGEM DAS LANTERNAS BAIXAS", "OBSERVATÓRIO DA MARÉ INTERIOR", "TRILHA DAS LINHAS ABERTAS", "GALERIA DA ROTA NÃO ESCRITA", "SOLEIRA DO SILÊNCIO", "CÂMARA DO ÚLTIMO ECO", "CAIS DOS ECOS EMPRESTADOS", "ARQUIVO DA MARÉ SEM NOME", "CÂMARA DAS BADALADAS NÃO ENVIADAS", "POÇO DO CONTRATEMPO", "MARGENS DO PRIMEIRO ECO", "GRUTA DAS RAÍZES", "CASA DAS COMPORTAS" };
@@ -395,11 +397,12 @@ public sealed partial class Game : Form
     private float WeaponCooldownMultiplier() => (HasWeaponAffix(weapon, 4) ? 1f - WeaponAffixValue(weapon, 4) / 100f : 1f) * (HasCharm(9) ? 0.86f : 1f) * (HasCharm(12) ? 1.15f : 1f);
     private float WeaponDamageTakenMultiplier() => HasWeaponAffix(weapon, 5) ? 1f - WeaponAffixValue(weapon, 5) / 100f : 1f;
     private float WeaponReachMultiplier() => HasWeaponAffix(weapon, 6) ? 1f + WeaponAffixValue(weapon, 6) / 100f : 1f;
-    private float OutgoingDamageMultiplier(Enemy enemy)
+    private float OutgoingDamageMultiplier(Enemy enemy, int? weaponIndex = null)
     {
+        int index = weaponIndex ?? weapon;
         float bossHunter = !HasCharm(4) ? 1f : enemy.Boss ? 1.25f : 0.8f;
         float combatFocusMultiplier = combatFocus == 1 ? enemy.Boss ? 1.15f : 1f : combatFocus == 2 && !enemy.Boss && enemies.Count >= 3 ? 1.1f : 1f;
-        float woundResonance = enemy.WoundTime > 0 && HasEchoWoundResonance(weapon) ? 1.15f : 1f;
+        float woundResonance = enemy.WoundTime > 0 && HasEchoWoundResonance(index) ? 1.15f : 1f;
         return bossHunter * combatFocusMultiplier * (vigilActive && HasCharm(7) ? 1.4f : 1f) * (HasCharm(10) ? 0.9f : 1f) * VeinResonanceMultiplier() * woundResonance;
     }
     private float CharmDamageTakenMultiplier() => (HasCharm(9) ? 1.1f : 1f) * (HasCharm(10) ? 0.86f : 1f);

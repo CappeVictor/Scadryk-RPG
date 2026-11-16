@@ -79,6 +79,7 @@ public sealed partial class Game
         if (refrainWaveTime > 0) DrawRefrainWave(g); if (beaconTime > 0) DrawBeacon(g);
         foreach (EchoShard shard in echoShards) DrawEchoShard(g, shard);
         foreach (Enemy enemy in enemies) DrawEnemy(g, enemy);
+        foreach (BowArrow arrow in bowArrows) DrawBowArrow(g, arrow);
         foreach (Drop item in drops) DrawDrop(g, item);
         DrawPlayer(g);
         if (attackFlash > 0) DrawAttackSwing(g);
@@ -1150,13 +1151,10 @@ public sealed partial class Game
         WeaponDefinition weaponStyle = EquipmentCatalog.Weapon(weapon);
         if (weaponStyle.IsRanged)
         {
-            PointF tail = Add(player, Scale(facing, 20)), tip = rangedAttackTarget == PointF.Empty ? Add(player, Scale(facing, weaponStyle.NormalReach)) : rangedAttackTarget;
-            PointF perpendicular = new(-facing.Y, facing.X), headBase = Add(tip, Scale(facing, -12));
-            Color bowColor = weaponStyle.AttackColor; int bowAlpha = (int)(progress * 230);
-            using var bowGlow = new Pen(Color.FromArgb(bowAlpha / 3, bowColor), 9) { StartCap = LineCap.Round, EndCap = LineCap.Round };
-            using var arrowEdge = new Pen(Color.FromArgb(bowAlpha, bowColor), 2.5f) { StartCap = LineCap.Round, EndCap = LineCap.Round };
-            g.DrawLine(bowGlow, tail, tip); g.DrawLine(arrowEdge, tail, tip);
-            g.DrawLine(arrowEdge, Add(headBase, Scale(perpendicular, 5)), tip); g.DrawLine(arrowEdge, Add(headBase, Scale(perpendicular, -5)), tip);
+            PointF bowCenter = Add(player, Scale(facing, 17)), bowPerpendicular = new(-facing.Y, facing.X);
+            int bowAlpha = (int)(progress * 230); using var bowFlash = new Pen(Color.FromArgb(bowAlpha, weaponStyle.AttackColor), 2.5f) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+            g.DrawLine(bowFlash, Add(bowCenter, Scale(bowPerpendicular, -9)), Add(bowCenter, Scale(bowPerpendicular, 9)));
+            g.DrawLine(bowFlash, Add(player, Scale(facing, 11)), Add(player, Scale(facing, 23)));
             return;
         }
         if (weaponStyle.IsThrust)
@@ -1257,6 +1255,15 @@ public sealed partial class Game
         g.DrawLine(trail, tail, shard.Pos); g.FillEllipse(glow, shard.Pos.X - 12, shard.Pos.Y - 12, 24, 24);
         PointF[] points = { Add(shard.Pos, Scale(shard.Direction, 10)), Add(shard.Pos, new PointF(-shard.Direction.Y * 5, shard.Direction.X * 5)), Add(shard.Pos, Scale(shard.Direction, -8)), Add(shard.Pos, new PointF(shard.Direction.Y * 5, -shard.Direction.X * 5)) };
         g.FillPolygon(crystal, points); g.DrawPolygon(core, points);
+    }
+    private static void DrawBowArrow(Graphics g, BowArrow arrow)
+    {
+        PointF tail = Sub(arrow.Pos, Scale(arrow.Direction, 16)), perpendicular = new(-arrow.Direction.Y, arrow.Direction.X), basePoint = Sub(arrow.Pos, Scale(arrow.Direction, 5));
+        Color color = arrow.Critical ? Color.FromArgb(255, 227, 143) : Color.FromArgb(126, 220, 235);
+        using var glow = new Pen(Color.FromArgb(90, color), 7) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+        using var shaft = new Pen(Color.FromArgb(240, color), 2) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+        g.DrawLine(glow, tail, arrow.Pos); g.DrawLine(shaft, tail, arrow.Pos);
+        g.DrawLine(shaft, Add(basePoint, Scale(perpendicular, 4)), arrow.Pos); g.DrawLine(shaft, Add(basePoint, Scale(perpendicular, -4)), arrow.Pos);
     }
     private string ShortSkillName(int slot) => ShortSkillName(equippedSkills, slot);
     private string ShortSkillName(int[] loadout, int slot) => loadout[slot] == 0 ? "VAZIO" : loadout[slot] == 7 ? "DEVOLUÇÃO" : loadout[slot] == 8 ? "CENTELHA" : skillNames[loadout[slot]].ToUpperInvariant();

@@ -21,9 +21,16 @@ public sealed partial class Game
                 && BasicAttackCoversDirection(Dot(facing, Normalize(Sub(enemy.Pos, player), facing)), weapon)
                 && !BlockedLine(player, enemy.Pos)).OrderBy(enemy => Distance(player, enemy.Pos)).FirstOrDefault();
             rangedAttackTarget = target?.Pos ?? Add(player, Scale(facing, weaponStyle.NormalReach * WeaponReachMultiplier()));
-            attackTargets = target is null ? Array.Empty<Enemy>() : new[] { target };
+            if (target is not null)
+            {
+                bool resonantCritical = UsesRangedCriticalResonance(target);
+                bool critical = random.NextDouble() < BasicAttackCriticalChance(target);
+                float shotDamage = damage * HeroBasicAttackMultiplier() * BasicAttackSpecializationMultiplier() * BasicAttackDamageMultiplier(target) * (critical ? CriticalMultiplier() : 1);
+                bowArrows.Add(new BowArrow { Pos = Add(player, Scale(facing, 8)), Direction = facing, Remaining = Math.Max(0, Distance(player, target.Pos) - 8), Damage = shotDamage, WoundBaseDamage = damage, WeaponIndex = weapon, Critical = critical, RangedCriticalResonance = resonantCritical });
+            }
+            return;
         }
-        else rangedAttackTarget = PointF.Empty;
+        rangedAttackTarget = PointF.Empty;
         foreach (Enemy enemy in attackTargets)
         {
             PointF offset = Sub(enemy.Pos, player); float distance = Length(offset);
@@ -421,5 +428,42 @@ public sealed partial class Game
             }
             if (blocked || shard.Life <= 0 || shard.Pos.X < 75 || shard.Pos.X > 885 || shard.Pos.Y < 110 || shard.Pos.Y > 550) echoShards.RemoveAt(i);
         }
+    }
+
+    private void AdvanceBowArrows(float dt)
+    {
+        const float speed = 760f;
+        for (int i = bowArrows.Count - 1; i >= 0; i--)
+        {
+            BowArrow arrow = bowArrows[i]; float distance = Math.Min(arrow.Remaining, speed * dt); int steps = Math.Max(1, (int)MathF.Ceiling(distance / 4)); float step = distance / steps; bool removed = false;
+            for (int n = 0; n < steps && !removed; n++)
+            {
+                PointF previous = arrow.Pos, next = Add(previous, Scale(arrow.Direction, step));
+                if (Blocked(next, 3)) { removed = true; break; }
+                arrow.Pos = next; arrow.Remaining = Math.Max(0, arrow.Remaining - step);
+                Enemy? hit = enemies.Where(enemy => DistanceToSegment(enemy.Pos, previous, next) < enemy.Radius + 4).OrderBy(enemy => Distance(previous, enemy.Pos)).FirstOrDefault();
+                if (hit is not null)
+                {
+                    ResolveBowArrowHit(arrow, hit); removed = true;
+                }
+                else if (arrow.Remaining <= 0) removed = true;
+            }
+            if (removed) bowArrows.RemoveAt(i);
+        }
+    }
+
+    private void ResolveBowArrowHit(BowArrow arrow, Enemy enemy)
+    {
+        int weaponIndex = arrow.WeaponIndex;
+        DamageEnemy(enemy, (int)(arrow.Damage * OutgoingDamageMultiplier(enemy, weaponIndex)), arrow.Critical); enemy.Flash = 0.2f;
+        if (enemy.Hp > 0) ApplyHitKnockback(enemy, arrow.Critical, weaponIndex);
+        ApplyWeaponWound(enemy, arrow.Critical, weaponIndex, arrow.WoundBaseDamage);
+        if (arrow.Critical && arrow.RangedCriticalResonance) AddFloatingText(new PointF(enemy.Pos.X, enemy.Pos.Y - enemy.Radius - 28), "RESSONÂNCIA DO CONTRACANTO", Color.LightCyan);
+        if (arrow.Critical && HasWeaponAffix(weaponIndex, 7)) { float reduction = WeaponCriticalCooldownAdvance(weaponIndex); AdvanceTechniqueCooldowns(reduction); AddFloatingText(new PointF(player.X, player.Y - 38), $"CADÊNCIA −{reduction:0.00} S", Color.LightCyan); }
+        if (EquipmentCatalog.Weapon(weaponIndex).InterruptsCommon && !enemy.Boss) { enemy.Stagger = Math.Max(enemy.Stagger, 0.2f); enemy.Windup = 0; }
+        if (enemy.Hp <= 0) Defeat(enemy, weaponIndex);
+        TriggerHitStop(arrow.Critical ? 0.075f : 0.045f);
+        if (heroClass == HeroClass.StoneGuardian && stoneFury >= 100) ReleaseStoneFury();
+        else if (heroClass == HeroClass.NameWeaver) { nameThread = Math.Min(100, nameThread + 18); AddFloatingText(new PointF(player.X, player.Y - 34), "FIO +18", Color.FromArgb(235, 211, 139, 234)); }
     }
 }
