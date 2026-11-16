@@ -13,6 +13,7 @@ public sealed partial class Game
         attackFlash = 0.16f;
         GameAudio.Play(GameAudio.Cue.Strike);
         bool cadenceTriggered = false, landed = false, landedCritical = false;
+        PointF routeBurstCenter = PointF.Empty; int routeBurstDamageSource = 0;
         WeaponDefinition weaponStyle = EquipmentCatalog.Weapon(weapon);
         Enemy[] attackTargets = enemies.ToArray();
         if (weaponStyle.IsRanged)
@@ -26,7 +27,7 @@ public sealed partial class Game
                 bool resonantCritical = UsesRangedCriticalResonance(target);
                 bool critical = random.NextDouble() < BasicAttackCriticalChance(target);
                 float shotDamage = damage * HeroBasicAttackMultiplier() * BasicAttackSpecializationMultiplier() * BasicAttackDamageMultiplier(target) * (critical ? CriticalMultiplier() : 1);
-                bowArrows.Add(new BowArrow { Pos = Add(player, Scale(facing, 8)), Direction = facing, Remaining = Math.Max(0, Distance(player, target.Pos) - 8), Damage = shotDamage, WoundBaseDamage = damage, WeaponIndex = weapon, Critical = critical, RangedCriticalResonance = resonantCritical });
+                bowArrows.Add(new BowArrow { Pos = Add(player, Scale(facing, 8)), Direction = facing, Remaining = Math.Max(0, Distance(player, target.Pos) - 8), Damage = shotDamage, WoundBaseDamage = damage, WeaponIndex = weapon, Critical = critical, RangedCriticalResonance = resonantCritical, FordRouteBurst = heroClass == HeroClass.FordCartographer && fordRoute >= 100 });
             }
             return;
         }
@@ -37,6 +38,7 @@ public sealed partial class Game
             if (distance > BasicAttackReach(enemy) || (distance >= 20 && !BasicAttackCoversDirection(Dot(facing, Normalize(offset, facing)), weapon)) || BlockedLine(player, enemy.Pos)) continue;
             landed = true;
             bool rangedCriticalResonance = UsesRangedCriticalResonance(enemy); bool critical = random.NextDouble() < BasicAttackCriticalChance(enemy); int dealt = (int)(damage * HeroBasicAttackMultiplier() * BasicAttackSpecializationMultiplier() * BasicAttackDamageMultiplier(enemy) * OutgoingDamageMultiplier(enemy) * (critical ? CriticalMultiplier() : 1));
+            if (routeBurstCenter == PointF.Empty) { routeBurstCenter = enemy.Pos; routeBurstDamageSource = dealt; }
             landedCritical |= critical;
             DamageEnemy(enemy, dealt, critical); enemy.Flash = 0.2f;
             if (enemy.Hp > 0) ApplyHitKnockback(enemy, critical);
@@ -46,15 +48,35 @@ public sealed partial class Game
             if (weaponStyle.InterruptsCommon && !enemy.Boss) { enemy.Stagger = Math.Max(enemy.Stagger, 0.2f); enemy.Windup = 0; }
             if (enemy.Hp <= 0) Defeat(enemy);
         }
+        if (landed && heroClass == HeroClass.FordCartographer && fordRoute >= 100) ReleaseFordRouteBurst(routeBurstCenter, routeBurstDamageSource);
         if (landed) TriggerHitStop(landedCritical ? 0.075f : 0.045f);
         if (landed && heroClass == HeroClass.StoneGuardian && stoneFury >= 100) ReleaseStoneFury();
         else if (landed && heroClass == HeroClass.NameWeaver) { nameThread = Math.Min(100, nameThread + 18); AddFloatingText(new PointF(player.X, player.Y - 34), "FIO +18", Color.FromArgb(235, 211, 139, 234)); }
     }
 
     private float HeroBasicAttackMultiplier() => heroClass == HeroClass.StoneGuardian ? 1.2f : heroClass == HeroClass.NameWeaver ? 0.9f : 1f;
-    private float HeroDamageTakenMultiplier() => heroClass == HeroClass.StoneGuardian ? 0.8f : heroClass == HeroClass.NameWeaver ? 1.15f : 1f;
-    private float ClassMovementSpeed() => heroClass == HeroClass.StoneGuardian ? 180f : PlayerMoveSpeed;
-    private string HeroClassTitle() => heroClass switch { HeroClass.StoneGuardian => "GUARDIÃO DA PEDRA", HeroClass.NameWeaver => "TECELÃ DE NOMES", _ => "ESCUTADOR" };
+    private float HeroDamageTakenMultiplier() => heroClass == HeroClass.StoneGuardian ? 0.8f : heroClass == HeroClass.NameWeaver ? 1.15f : heroClass == HeroClass.FordCartographer ? 1.1f : 1f;
+    private float ClassMovementSpeed() => heroClass == HeroClass.StoneGuardian ? 180f : heroClass == HeroClass.FordCartographer ? 202f : PlayerMoveSpeed;
+    private string HeroClassTitle() => heroClass switch { HeroClass.StoneGuardian => "GUARDIÃO DA PEDRA", HeroClass.NameWeaver => "TECELÃ DE NOMES", HeroClass.FordCartographer => "CARTÓGRAFA DO VÃO", _ => "ESCUTADOR" };
+    private void UpdateFordRoute(float distance, float dt, bool dashing)
+    {
+        if (heroClass != HeroClass.FordCartographer) { fordRoute = 0; return; }
+        fordRoute = Math.Clamp(fordRoute + (distance > 0.1f ? (dashing ? 30f : 20f) : -12f) * dt, 0, 100);
+    }
+    private void ReleaseFordRouteBurst(PointF center, float damageSource)
+    {
+        if (fordRoute < 100) return;
+        fordRoute = 0; fordBurstPosition = center; fordBurstTime = 0.38f;
+        foreach (Enemy target in enemies.ToArray())
+        {
+            if (Distance(center, target.Pos) > 96 || BlockedLine(center, target.Pos)) continue;
+            int dealt = Math.Max(1, (int)(damageSource * 0.42f * OutgoingDamageMultiplier(target)));
+            DamageEnemy(target, dealt, false); target.Flash = 0.16f;
+            if (target.Hp > 0 && !target.Boss && target.Kind != EnemyKind.Elite) { target.Stagger = Math.Max(target.Stagger, 0.28f); target.Windup = 0; }
+            if (target.Hp <= 0) Defeat(target);
+        }
+        AddFloatingText(new PointF(center.X, center.Y - 38), "ROTA ABERTA", Color.FromArgb(255, 125, 213, 199));
+    }
 
     private void ReleaseStoneFury()
     {
@@ -456,6 +478,7 @@ public sealed partial class Game
     {
         int weaponIndex = arrow.WeaponIndex;
         DamageEnemy(enemy, (int)(arrow.Damage * OutgoingDamageMultiplier(enemy, weaponIndex)), arrow.Critical); enemy.Flash = 0.2f;
+        if (arrow.FordRouteBurst) ReleaseFordRouteBurst(enemy.Pos, arrow.Damage);
         if (enemy.Hp > 0) ApplyHitKnockback(enemy, arrow.Critical, weaponIndex);
         ApplyWeaponWound(enemy, arrow.Critical, weaponIndex, arrow.WoundBaseDamage);
         if (arrow.Critical && arrow.RangedCriticalResonance) AddFloatingText(new PointF(enemy.Pos.X, enemy.Pos.Y - enemy.Radius - 28), "RESSONÂNCIA DO CONTRACANTO", Color.LightCyan);

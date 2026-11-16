@@ -19,10 +19,13 @@ public sealed partial class Game
         screenShakeTime = Math.Max(0, screenShakeTime - dt); screenShakeStrength = screenShakeTime > 0 ? screenShakeStrength * Math.Max(0, 1 - dt * 5.5f) : 0; screenShakePhase += dt * 55;
         attackCd = Math.Max(0, attackCd - dt); attackFlash = Math.Max(0, attackFlash - dt); skillCd = Math.Max(0, skillCd - dt); shardCd = Math.Max(0, shardCd - dt); bellCd = Math.Max(0, bellCd - dt); bellWaveTime = Math.Max(0, bellWaveTime - dt); pullCd = Math.Max(0, pullCd - dt); pullWaveTime = Math.Max(0, pullWaveTime - dt); wardCd = Math.Max(0, wardCd - dt); wardTime = Math.Max(0, wardTime - dt); refrainCd = Math.Max(0, refrainCd - dt); refrainWaveTime = Math.Max(0, refrainWaveTime - dt); beaconCd = Math.Max(0, beaconCd - dt); returnVoiceCd = Math.Max(0, returnVoiceCd - dt); returnVoiceWaveTime = Math.Max(0, returnVoiceWaveTime - dt); finalStrikeCd = Math.Max(0, finalStrikeCd - dt); finalStrikeFlash = Math.Max(0, finalStrikeFlash - dt); stoneBastionCd = Math.Max(0, stoneBastionCd - dt); stoneBastionTime = Math.Max(0, stoneBastionTime - dt); nameWeaverCd = Math.Max(0, nameWeaverCd - dt); dashCd = Math.Max(0, dashCd - dt); dashTime = Math.Max(0, dashTime - dt); invulnerable = Math.Max(0, invulnerable - dt); veinResonanceTime = Math.Max(0, veinResonanceTime - dt); windupPulse += dt; TickFloatingTexts(dt);
         PointF dir = Normalize(MovementInput(), PointF.Empty); if (dashTime > 0) dir = dashDirection;
+        PointF playerBeforeMove = player;
         MovePlayer(Scale(dir, (dashTime > 0 ? 530 : ClassMovementSpeed() * FirstEchoTerrainSpeed()) * dt));
         if (lockedTarget is not null && !TargetVisible(lockedTarget)) lockedTarget = null;
         PointF drift = CurrentDrift();
         if (dashTime <= 0) MovePlayer(Scale(drift, dt));
+        UpdateFordRoute(Distance(playerBeforeMove, player), dt, dashTime > 0);
+        fordBurstTime = Math.Max(0, fordBurstTime - dt);
         ApplyVigilTide(dt);
         PointF animationDirection = Length(dir) > 0.001f ? dir : drift;
         if (Length(animationDirection) > 0.001f) playerAnimationTime += dt;

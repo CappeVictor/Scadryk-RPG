@@ -25,11 +25,14 @@ public sealed partial class Game
         if (classSelectionOpen)
         {
             if (key is Keys.Escape or Keys.Back) classSelectionOpen = false;
-            else if (key is Keys.Up or Keys.W or Keys.Left or Keys.A) classSelection = (classSelection + 2) % 3;
-            else if (key is Keys.Down or Keys.S or Keys.Right or Keys.D) classSelection = (classSelection + 1) % 3;
+            else if (key is Keys.Left or Keys.A) classSelection = classSelection % 2 == 0 ? classSelection + 1 : classSelection - 1;
+            else if (key is Keys.Right or Keys.D) classSelection = classSelection % 2 == 0 ? classSelection + 1 : classSelection - 1;
+            else if (key is Keys.Up or Keys.W) classSelection = classSelection < 2 ? classSelection + 2 : classSelection - 2;
+            else if (key is Keys.Down or Keys.S) classSelection = classSelection < 2 ? classSelection + 2 : classSelection - 2;
             else if (key == Keys.D1) classSelection = 0;
             else if (key == Keys.D2) classSelection = 1;
             else if (key == Keys.D3) classSelection = 2;
+            else if (key == Keys.D4) classSelection = 3;
             else if (key is Keys.Enter or Keys.Space) ChooseHeroClass(classSelection);
             Invalidate(); return;
         }
@@ -103,7 +106,7 @@ public sealed partial class Game
 
     private void ChooseHeroClass(int selection)
     {
-        heroClass = selection switch { 1 => HeroClass.StoneGuardian, 2 => HeroClass.NameWeaver, _ => HeroClass.Listener };
+        heroClass = selection switch { 1 => HeroClass.StoneGuardian, 2 => HeroClass.NameWeaver, 3 => HeroClass.FordCartographer, _ => HeroClass.Listener };
         classSelectionOpen = false; StartGame();
     }
 
@@ -111,6 +114,7 @@ public sealed partial class Game
     {
         HeroClass.StoneGuardian => "Você é um Guardião da Pedra: protege os caminhos de Véspera e converte os golpes que recebe em Fúria de Pedra. Entre essas lembranças reconheceu Nara, sua irmã, desaparecida quando os sinos pararam.",
         HeroClass.NameWeaver => "Você é uma Tecelã de Nomes: lê os fios que prendem cada lembrança e pode torná-los frágeis. Ao ouvir os ecos da pedra, reconheceu Nara, sua irmã, desaparecida quando os sinos pararam.",
+        HeroClass.FordCartographer => "Você é uma Cartógrafa do Vão: aprendeu a ler a corrente nas pedras e transforma movimento em rotas de impacto. Entre os ecos reconheceu Nara, sua irmã, desaparecida quando os sinos pararam.",
         _ => prologue[page]
     };
 
@@ -125,9 +129,10 @@ public sealed partial class Game
     {
         if (classSelectionOpen)
         {
-            if (new RectangleF(25, 125, 290, 365).Contains(point)) classSelection = 0;
-            else if (new RectangleF(335, 125, 290, 365).Contains(point)) classSelection = 1;
-            else if (new RectangleF(645, 125, 290, 365).Contains(point)) classSelection = 2;
+            if (new RectangleF(45, 125, 420, 185).Contains(point)) classSelection = 0;
+            else if (new RectangleF(495, 125, 420, 185).Contains(point)) classSelection = 1;
+            else if (new RectangleF(45, 340, 420, 185).Contains(point)) classSelection = 2;
+            else if (new RectangleF(495, 340, 420, 185).Contains(point)) classSelection = 3;
             else if (new RectangleF(490, 565, 200, 42).Contains(point)) ChooseHeroClass(classSelection);
             else if (new RectangleF(270, 565, 200, 42).Contains(point)) classSelectionOpen = false;
             Invalidate(); return;
@@ -303,35 +308,26 @@ public sealed partial class Game
         {
             using var veil = new SolidBrush(Color.FromArgb(224, 0, 0, 0));
             using var cardFill = new SolidBrush(Color.FromArgb(252, 22, 25, 25));
-            using var listenerEdge = new Pen(classSelection == 0 ? Color.Goldenrod : Color.FromArgb(87, 92, 82), classSelection == 0 ? 3 : 1);
-            using var guardianEdge = new Pen(classSelection == 1 ? Color.Goldenrod : Color.FromArgb(87, 92, 82), classSelection == 1 ? 3 : 1);
-            using var weaverEdge = new Pen(classSelection == 2 ? Color.MediumOrchid : Color.FromArgb(87, 92, 82), classSelection == 2 ? 3 : 1);
             g.FillRectangle(veil, 0, 0, 960, 640);
             DrawCentered(g, "ESCOLHA COMO ENFRENTAR O SILÊNCIO", 72, new Font("Georgia", 22, FontStyle.Bold), Color.FromArgb(230, 193, 129));
-            g.FillRectangle(cardFill, 25, 125, 290, 365); g.DrawRectangle(listenerEdge, 25, 125, 290, 365);
-            g.FillRectangle(cardFill, 335, 125, 290, 365); g.DrawRectangle(guardianEdge, 335, 125, 290, 365);
-            g.FillRectangle(cardFill, 645, 125, 290, 365); g.DrawRectangle(weaverEdge, 645, 125, 290, 365);
-            DrawCentered(g, "1 • ESCUTADOR", 155, new Font("Georgia", 17, FontStyle.Bold), Color.FromArgb(230, 193, 129), 170);
-            DrawCentered(g, "HÍBRIDO • TÉCNICAS", 196, new Font("Segoe UI", 10, FontStyle.Bold), Color.AntiqueWhite, 170);
-            DrawCentered(g, "Converte lembranças em", 252, new Font("Segoe UI", 10), Color.FromArgb(204, 207, 192), 170);
-            DrawCentered(g, "alcance, controle e ressonância.", 274, new Font("Segoe UI", 10), Color.FromArgb(204, 207, 192), 170);
-            DrawCentered(g, "Equilíbrio • mobilidade", 360, new Font("Segoe UI", 10, FontStyle.Bold), Color.LightSkyBlue, 170);
-            DrawCentered(g, "Dano e defesa equilibrados", 397, new Font("Segoe UI", 9), Color.FromArgb(190, 198, 190), 170);
-            DrawCentered(g, "2 • GUARDIÃO", 155, new Font("Georgia", 17, FontStyle.Bold), Color.FromArgb(230, 193, 129), 480);
-            DrawCentered(g, "TANQUE • IMPACTO • FÚRIA", 196, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, 480);
-            DrawCentered(g, "Resiste mais e golpeia forte,", 252, new Font("Segoe UI", 10), Color.FromArgb(204, 207, 192), 480);
-            DrawCentered(g, "mas ataca e se move devagar.", 274, new Font("Segoe UI", 10), Color.FromArgb(204, 207, 192), 480);
-            DrawCentered(g, "Dano recebido gera Fúria.", 360, new Font("Segoe UI", 10, FontStyle.Bold), Color.FromArgb(255, 203, 116), 480);
-            DrawCentered(g, "+20% dano básico • −20% dano recebido", 397, new Font("Segoe UI", 9), Color.FromArgb(190, 198, 190), 480);
-            DrawCentered(g, "Recarga de ataque +18%", 419, new Font("Segoe UI", 9), Color.FromArgb(190, 198, 190), 480);
-            DrawCentered(g, "3 • TECELÃ DE NOMES", 155, new Font("Georgia", 16, FontStyle.Bold), Color.FromArgb(230, 193, 129), 790);
-            DrawCentered(g, "CONJURADORA • ÁREA • FIO", 196, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, 790);
-            DrawCentered(g, "Golpes rápidos geram Fio;", 252, new Font("Segoe UI", 10), Color.FromArgb(204, 207, 192), 790);
-            DrawCentered(g, "suas técnicas causam mais dano.", 274, new Font("Segoe UI", 10), Color.FromArgb(204, 207, 192), 790);
-            DrawCentered(g, "Mais frágil • marca grupos", 360, new Font("Segoe UI", 10, FontStyle.Bold), Color.Plum, 790);
-            DrawCentered(g, "+18% técnicas • −10% dano básico", 397, new Font("Segoe UI", 9), Color.FromArgb(190, 198, 190), 790);
-            DrawCentered(g, "+15% dano recebido", 419, new Font("Segoe UI", 9), Color.FromArgb(190, 198, 190), 790);
-            DrawCentered(g, "← / → ESCOLHER • 1 / 2 / 3 • ENTER CONFIRMA • ESC VOLTA", 535, new Font("Segoe UI", 10, FontStyle.Bold), Color.AntiqueWhite);
+            Rectangle[] cards = { new(45, 125, 420, 185), new(495, 125, 420, 185), new(45, 340, 420, 185), new(495, 340, 420, 185) };
+            string[] names = { "1 • ESCUTADOR", "2 • GUARDIÃO DA PEDRA", "3 • TECELÃ DE NOMES", "4 • CARTÓGRAFA DO VÃO" };
+            string[] roles = { "HÍBRIDO • TÉCNICAS", "TANQUE • IMPACTO • FÚRIA", "CONJURADORA • ÁREA • FIO", "MOBILIDADE • CONTROLE • ROTAS" };
+            string[] descriptions = { "Técnicas e mobilidade equilibradas.", "Resiste e golpeia forte; ferido gera Fúria.", "Golpes rápidos geram Fio para suas técnicas.", "Movimento gera Rota; ataque libera uma onda." };
+            string[] tradeoffs = { "Dano e defesa equilibrados", "+20% ataque • −20% dano recebido • mais lento", "+18% técnicas • −10% ataque • +15% dano recebido", "+6% velocidade • +10% dano recebido" };
+            string[] signatures = { "Combina alcance, controle e ressonância.", "A Fúria cheia libera uma onda ao atacar.", "A Sutura marca inimigos próximos.", "Rota cheia: onda de 42% do dano contra ecos próximos." };
+            Color[] accents = { Color.Goldenrod, Color.FromArgb(255, 203, 116), Color.Plum, Color.FromArgb(125, 213, 199) };
+            for (int i = 0; i < cards.Length; i++)
+            {
+                Rectangle card = cards[i]; using var edge = new Pen(classSelection == i ? accents[i] : Color.FromArgb(87, 92, 82), classSelection == i ? 3 : 1);
+                g.FillRectangle(cardFill, card); g.DrawRectangle(edge, card);
+                DrawCentered(g, names[i], card.Top + 21, new Font("Georgia", 15, FontStyle.Bold), accents[i], card.Left + card.Width / 2);
+                DrawCentered(g, roles[i], card.Top + 54, new Font("Segoe UI", 9, FontStyle.Bold), Color.AntiqueWhite, card.Left + card.Width / 2);
+                DrawCentered(g, descriptions[i], card.Top + 95, new Font("Segoe UI", 9), Color.FromArgb(204, 207, 192), card.Left + card.Width / 2);
+                DrawCentered(g, tradeoffs[i], card.Top + 127, new Font("Segoe UI", 8.5f), Color.FromArgb(190, 198, 190), card.Left + card.Width / 2);
+                DrawCentered(g, signatures[i], card.Top + 153, new Font("Segoe UI", 8.5f, FontStyle.Bold), accents[i], card.Left + card.Width / 2);
+            }
+            DrawCentered(g, "↑ / ↓ OU ← / → • 1–4 • ENTER CONFIRMA • ESC VOLTA", 548, new Font("Segoe UI", 10, FontStyle.Bold), Color.AntiqueWhite);
             g.DrawRectangle(panelEdge, 270, 565, 200, 42); g.DrawRectangle(panelEdge, 490, 565, 200, 42);
             DrawCentered(g, "VOLTAR", 575, new Font("Segoe UI", 10, FontStyle.Bold), Color.AntiqueWhite, 370);
             DrawCentered(g, "INICIAR", 575, new Font("Segoe UI", 10, FontStyle.Bold), Color.Goldenrod, 590);

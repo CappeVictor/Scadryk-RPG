@@ -152,7 +152,7 @@ public sealed partial class Game
             || s.ArmorTrait > 0 && !s.Armor
             || s.RelicTrait > 0 && !s.Relic
             || s.Damage < 1
-            || s.HeroClass is < 0 or > 2
+            || s.HeroClass is < 0 or > 3
             || s.TechniqueTalent is < 0 or > 10000
             || s.CombatDiscipline is < 0 or > 2
             || s.CombatMastery is < 0 or > 2
