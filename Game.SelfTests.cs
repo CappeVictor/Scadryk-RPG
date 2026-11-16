@@ -1220,6 +1220,13 @@ public sealed partial class Game
             if (affixForge.health != 62) throw new InvalidOperationException("A Ressonância da Trégua não recuperou vida ao abater sob metade da vida.");
             affixForge.health = 51; var healthyDummy = new Enemy { Pos = affixForge.player, Kind = EnemyKind.Grunt, Hp = 1, MaxHp = 1 }; affixForge.enemies.Add(healthyDummy); affixForge.Defeat(healthyDummy);
             if (affixForge.health != 57) throw new InvalidOperationException("A cura adicional da Ressonância da Trégua foi aplicada acima do limiar de risco.");
+            affixForge.weaponAffixes[0] = 1; affixForge.weaponAffixes2[0] = 4; affixForge.skillCd = 1f; affixForge.shardCd = 0.4f;
+            var mercyDummy = new Enemy { Pos = affixForge.player, Kind = EnemyKind.Grunt, Hp = 1, MaxHp = 1 }; affixForge.enemies.Add(mercyDummy); affixForge.Defeat(mercyDummy);
+            if (!affixForge.HasMercyTempoResonance(0) || Math.Abs(affixForge.skillCd - 0.75f) > 0.001f || Math.Abs(affixForge.shardCd - 0.15f) > 0.001f
+                || !affixForge.WeaponAffixDescription(0).Contains("Ressonância da Misericórdia: abates adiantam recargas em 0,25 s"))
+                throw new InvalidOperationException("Trégua + Passo Célere não adiantou recargas ao abater nem exibiu a nova ressonância.");
+            affixForge.weaponRarities[0] = 1;
+            if (affixForge.HasMercyTempoResonance(0) || affixForge.WeaponKillCooldownAdvance(0) != 0) throw new InvalidOperationException("A Ressonância da Misericórdia foi aplicada a uma arma Rara.");
             affixForge.player = AvenPosition; affixForge.weaponAffixes[0] = 4; affixForge.weaponAffixes2[0] = 3; affixForge.gold = 300; affixForge.tideGlass = 4; affixForge.forgeMenuOpen = true;
             affixForge.OnKeyDown(affixForge, new KeyEventArgs(Keys.A));
             if (!affixForge.secondaryForgeOpen || !affixForge.notice.Contains("AFIXO SECUNDÁRIO")) throw new InvalidOperationException("A forja não alternou para a escolha do afixo secundário.");

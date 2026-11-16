@@ -103,6 +103,12 @@ public sealed partial class Game
             else eliteWeaponMisses = NextEliteWeaponMisses(eliteWeaponMisses, false);
         }
         health = Math.Min(maxHealth, health + WeaponKillHealing());
+        float killCooldownAdvance = WeaponKillCooldownAdvance(weapon);
+        if (killCooldownAdvance > 0)
+        {
+            AdvanceTechniqueCooldowns(killCooldownAdvance);
+            AddFloatingText(new PointF(player.X, player.Y - 38), $"RESSONÂNCIA −{killCooldownAdvance:0.00} S", Color.LightCyan);
+        }
         if (enemy.Boss && vigilActive) drops.Add(new Drop { Pos = Offset(enemy.Pos, 0, -28), Kind = "glass", Amount = 1 + Math.Min(5, (vigilFloor - 1) / 3) });
         if (enemy.Boss) drops.Add(CreateWeaponDrop(Offset(enemy.Pos, 0, 28), random.Next(1, 3), true));
         if (enemy.Boss && vigilActive && vigilFloor % 5 == 0 && (ownedCharms & 64) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 0, -48), Kind = "charm", Amount = 7 });
