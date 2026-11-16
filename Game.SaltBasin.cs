@@ -27,6 +27,7 @@ public sealed partial class Game
     }
     private bool saltVaultAntechamberCleared { get => (firstEchoDiscovered & 8388608) != 0; set => firstEchoDiscovered = value ? firstEchoDiscovered | 8388608 : firstEchoDiscovered & ~8388608; }
     private bool saltVaultBossDefeated { get => (firstEchoDiscovered & 16777216) != 0; set => firstEchoDiscovered = value ? firstEchoDiscovered | 16777216 : firstEchoDiscovered & ~16777216; }
+    private bool saltVaultReliquaryCleared;
     private static readonly SizeF SaltBasinSize = new(3600, 2100);
     private static readonly PointF SaltBasinEntrance = new(165, 1050);
     private static readonly PointF SaltBasinAsha = new(1690, 910);

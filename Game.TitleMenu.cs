@@ -194,6 +194,7 @@ public sealed partial class Game
         if ((save.FirstEchoDiscovered & 64) != 0) known |= 1L << 46;
         if ((save.FirstEchoDiscovered & 1048576) != 0) known |= 1L << 47;
         if ((save.FirstEchoDiscovered & 29360128) != 0) known |= 1L << 48;
+        if ((save.FirstEchoDiscovered & 6291456) == 6291456 || save.SaltVaultReliquaryCleared) known |= 1L << 50;
         if ((save.FirstEchoDiscovered & 2048) != 0 || (save.FirstEchoDiscovered & 1040187392) != 0 || save.SaltFrontierLocation) known |= 1L << 49;
         return known;
     }

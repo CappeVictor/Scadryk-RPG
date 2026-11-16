@@ -26,7 +26,7 @@ public sealed partial class Game
     {
         3 => TownBuildings, 4 => ArchiveWalls, 5 => VaultWalls, 6 => RiverWalls, 7 => BellChamberWalls, 8 => AshGalleryWalls, 9 => LumeChamberWalls, 10 => NameShoreWalls, 11 => VoiceWellWalls, 12 => FarReachWalls, 13 => NameCloisterWalls, 14 => FirstBasinWalls, 15 => FirstVigilWalls, 16 => WestFordWalls, 17 => WitnessYardWalls,
         18 => RefugeWalls, 19 => RidgeWalls, 20 => LedgerWalls, 21 => SaltMarshWalls, 22 => TideBridgeWalls, 23 => ReedRunWalls, 24 => ReedYardWalls, 25 => FloodMillWalls, 26 => SiltChamberWalls, 27 => CounterSlopeWalls, 28 => CounterHeartWalls, 29 => CantoriaWalls, 30 => RiftChamberWalls, 31 => GlassGorgeWalls, 32 => MirrorSourceWalls, 33 => LanternSpanWalls, 34 => LowTideObservatoryWalls, 35 => OpenRouteWalls, 36 => UnwrittenHallWalls, 37 => SilenceThresholdWalls, 38 => SilenceChamberWalls, 39 => BorrowedDockWalls, 40 => BorrowedArchiveWalls, 41 => UnsentChamberWalls, 42 => OffbeatWellWalls,
-        43 => FirstEchoWalls, 44 => FirstEchoCaveWalls, 45 => FirstEchoSluiceWalls, 46 => SaltBasinWalls, 47 => SaltVaultAntechamberWalls, 48 => SaltVaultBossRoomWalls, 49 => SaltFrontierWalls, _ => Walls
+        43 => FirstEchoWalls, 44 => FirstEchoCaveWalls, 45 => FirstEchoSluiceWalls, 46 => SaltBasinWalls, 47 => SaltVaultAntechamberWalls, 48 => SaltVaultBossRoomWalls, 49 => SaltFrontierWalls, 50 => SaltVaultReliquaryWalls, _ => Walls
     };
     private bool Blocked(PointF p, float radius = 12) { RectangleF body = new(p.X - radius, p.Y - radius, radius * 2, radius * 2); return CurrentRoomWalls().Any(w => w.IntersectsWith(body)); }
     private PointF InteriorDetour(Enemy enemy)

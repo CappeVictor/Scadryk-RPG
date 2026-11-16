@@ -1861,6 +1861,8 @@ public sealed partial class Game
             if (escarpment.room != 47 || escarpment.enemies.Count != 4 || !ValidSaveData(vaultEntrySave)) throw new InvalidOperationException("A fenda não abriu a galeria de duas salas ou não persistiu sua entrada.");
             escarpment.enemies.Clear(); escarpment.drops.Clear(); escarpment.player = new PointF(850, 330); escarpment.Interact();
             if (escarpment.room != 48 || escarpment.enemies.Count != 1 || escarpment.enemies[0].Kind != EnemyKind.SaltJailer || EnemyName(escarpment.enemies[0]) != "CARCEREIRO DO SAL") throw new InvalidOperationException("A galeria limpa não abriu a arena do Carcereiro do Sal.");
+            escarpment.player = new PointF(850, 330); escarpment.Interact();
+            if (escarpment.room != 48 || escarpment.saltVaultLocation != 2) throw new InvalidOperationException("O cofre fundo abriu antes de o Carcereiro ser derrotado.");
             SaveData vaultBossSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(escarpment.CaptureSaveData()))!;
             if (!ValidSaveData(vaultBossSave)) throw new InvalidOperationException("O save da arena não aceitou a localização e o portão da masmorra.");
             using (var vaultMap = new Bitmap(960, 640)) using (var vaultGraphics = Graphics.FromImage(vaultMap)) escarpment.DrawSaltVaultMap(vaultGraphics);
@@ -1872,13 +1874,33 @@ public sealed partial class Game
                 SaveData defeatedVaultSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(vaultResume.CaptureSaveData()))!;
                 if (!vaultResume.saltVaultBossDefeated || vaultResume.gold != vaultGold + 180 || !ValidSaveData(defeatedVaultSave)) throw new InvalidOperationException("A derrota do Carcereiro não concedeu sua recompensa ou não persistiu.");
                 vaultResume.drops.Clear(); vaultResume.player = new PointF(850, 330); vaultResume.Interact();
-                if (vaultResume.room != 46 || !vaultResume.saltVaultBossDefeated || vaultResume.saltVaultLocation != 0) throw new InvalidOperationException("A saída da arena não retornou à Bacia com a conclusão preservada.");
+                if (vaultResume.room != 50 || vaultResume.enemies.Count != 3 || vaultResume.saltVaultLocation != 3) throw new InvalidOperationException("A derrota do Carcereiro não abriu o Arquivo dos Menires com três guardiões.");
+                SaveData reliquaryEntry = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(vaultResume.CaptureSaveData()))!;
+                if (reliquaryEntry.RoomCleared || !ValidSaveData(reliquaryEntry)) throw new InvalidOperationException("O cofre fundo foi marcado como limpo antes de derrotar os guardiões.");
+                using (var reliquaryResume = new Game())
+                {
+                    reliquaryResume.timer.Stop(); reliquaryResume.StartGame(); reliquaryResume.firstEchoDiscovered = reliquaryEntry.FirstEchoDiscovered; reliquaryResume.saltVaultReliquaryCleared = reliquaryEntry.SaltVaultReliquaryCleared; reliquaryResume.room = reliquaryEntry.Room; reliquaryResume.SetupRoom();
+                    if (reliquaryResume.room != 50 || reliquaryResume.enemies.Count != 3) throw new InvalidOperationException("O save não retomou o encontro do Arquivo dos Menires.");
+                }
+                int reliquaryGold = vaultResume.gold, reliquaryGlass = vaultResume.tideGlass, reliquaryXp = vaultResume.xp, reliquaryLevel = vaultResume.level, reliquaryPotions = vaultResume.potions;
+                vaultResume.player = new PointF(850, 330); vaultResume.Interact();
+                if (vaultResume.room != 50 || vaultResume.saltVaultReliquaryCleared || vaultResume.gold != reliquaryGold) throw new InvalidOperationException("A saída do Arquivo permitiu receber a recompensa antes de limpar os guardiões.");
+                vaultResume.enemies.Clear(); vaultResume.drops.Clear(); vaultResume.player = new PointF(850, 330); vaultResume.Interact();
+                SaveData reliquaryComplete = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(vaultResume.CaptureSaveData()))!;
+                if (vaultResume.room != 46 || !vaultResume.saltVaultReliquaryCleared || vaultResume.saltVaultLocation != 0 || vaultResume.gold != reliquaryGold + 260 || vaultResume.tideGlass != reliquaryGlass + 3 || vaultResume.level <= reliquaryLevel && vaultResume.xp <= reliquaryXp || vaultResume.potions != reliquaryPotions + 1 || !ValidSaveData(reliquaryComplete)) throw new InvalidOperationException("O Arquivo dos Menires não concluiu com recompensa única, save válido e retorno à Bacia.");
+                using (var reliquaryCompleteResume = new Game())
+                {
+                    reliquaryCompleteResume.timer.Stop(); reliquaryCompleteResume.StartGame(); reliquaryCompleteResume.firstEchoDiscovered = reliquaryComplete.FirstEchoDiscovered; reliquaryCompleteResume.saltVaultReliquaryCleared = reliquaryComplete.SaltVaultReliquaryCleared;
+                    if (!reliquaryCompleteResume.saltVaultReliquaryCleared || !ValidSaveData(reliquaryCompleteResume.CaptureSaveData())) throw new InvalidOperationException("A conclusão do Arquivo dos Menires não persistiu no save.");
+                }
                 vaultResume.player = SaltVaultEntrance; vaultResume.Interact(); vaultResume.memoryOverlay = false;
                 if (vaultResume.room != 47 || vaultResume.enemies.Count != 0) throw new InvalidOperationException("A galeria reapareceu após ser limpa e salva.");
                 vaultResume.player = new PointF(850, 330); vaultResume.Interact();
                 if (vaultResume.room != 48 || vaultResume.enemies.Count != 0 || !vaultResume.saltVaultBossDefeated) throw new InvalidOperationException("O Carcereiro reapareceu depois de concluída a masmorra.");
                 vaultResume.player = new PointF(850, 330); vaultResume.Interact();
-                if (vaultResume.room != 46) throw new InvalidOperationException("A saída da fenda não voltou à Bacia antes de abrir a nova costa.");
+                if (vaultResume.room != 50 || vaultResume.enemies.Count != 0) throw new InvalidOperationException("O Arquivo dos Menires reapareceu depois de concluído.");
+                vaultResume.player = new PointF(850, 330); vaultResume.Interact();
+                if (vaultResume.room != 46 || vaultResume.gold != reliquaryGold + 260) throw new InvalidOperationException("A saída da fenda não retornou à Bacia ou repetiu a recompensa do arquivo.");
                 vaultResume.player = SaltBasinFrontierEntrance; vaultResume.Interact(); vaultResume.memoryOverlay = false;
                 if (vaultResume.room != 49 || vaultResume.WorldSize() != new SizeF(4200, 2400) || vaultResume.enemies.Count != 0) throw new InvalidOperationException("A trilha das conchas não abriu a Costa das Badaladas como região explorável.");
                 SaveData frontierEntrySave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(vaultResume.CaptureSaveData()))!;
