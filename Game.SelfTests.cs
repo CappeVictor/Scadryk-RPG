@@ -613,6 +613,20 @@ public sealed partial class Game
             bellRefrainSynergy.equippedSkills = new[] { 5, 0, 0, 0 }; refrainedEcho.BellMarkTime = 0; bellRefrainSynergy.bellCd = 0; bellRefrainSynergy.CastBellPulse();
             if (refrainedEcho.BellMarkTime != 0 || bellRefrainSynergy.notice.Contains("PREPARADOS PARA O CORO")) throw new InvalidOperationException("Sino + Coro funcionaram sem as duas técnicas equipadas.");
         }
+        using (var refrainBeaconSynergy = new Game())
+        {
+            refrainBeaconSynergy.timer.Stop(); refrainBeaconSynergy.StartGame(); refrainBeaconSynergy.storyOverlay = false; refrainBeaconSynergy.room = 6; refrainBeaconSynergy.refrainSong = refrainBeaconSynergy.beaconLight = true;
+            refrainBeaconSynergy.equippedSkills = new[] { 5, 6, 0, 0 }; refrainBeaconSynergy.player = new PointF(250, 320); refrainBeaconSynergy.beaconPos = refrainBeaconSynergy.player; refrainBeaconSynergy.beaconTime = 4; refrainBeaconSynergy.beaconPulseCd = 0.8f; refrainBeaconSynergy.damage = 100;
+            var beaconEcho = new Enemy { Pos = new PointF(330, 320), Kind = EnemyKind.Grunt, Hp = 10000, MaxHp = 10000 }; refrainBeaconSynergy.enemies.Add(beaconEcho);
+            if (!refrainBeaconSynergy.RefrainBeaconSynergyActive()) throw new InvalidOperationException("Coro + Farol não ativou com as duas técnicas equipadas.");
+            refrainBeaconSynergy.CastRefrain();
+            if (Math.Abs(refrainBeaconSynergy.beaconPulseCd - 0.4f) > 0.001f || !refrainBeaconSynergy.floatingTexts.Any(text => text.Text == "CORO + FAROL") || !refrainBeaconSynergy.notice.Contains("PRÓXIMO PULSO ADIANTADO"))
+                throw new InvalidOperationException("Coro não adiantou o pulso do Farol uma vez ao atingir um eco na área ativa.");
+            refrainBeaconSynergy.refrainCd = 0; refrainBeaconSynergy.beaconPulseCd = 0.8f; refrainBeaconSynergy.beaconPos = new PointF(100, 320); refrainBeaconSynergy.CastRefrain();
+            if (Math.Abs(refrainBeaconSynergy.beaconPulseCd - 0.8f) > 0.001f) throw new InvalidOperationException("Coro acelerou o Farol sem atingir um eco em seu alcance.");
+            refrainBeaconSynergy.refrainCd = 0; refrainBeaconSynergy.beaconPos = refrainBeaconSynergy.player; refrainBeaconSynergy.equippedSkills = new[] { 5, 0, 0, 0 }; refrainBeaconSynergy.CastRefrain();
+            if (Math.Abs(refrainBeaconSynergy.beaconPulseCd - 0.8f) > 0.001f) throw new InvalidOperationException("Coro + Farol funcionou sem as duas técnicas equipadas.");
+        }
         using (var lockedBellGame = new Game())
         {
             lockedBellGame.timer.Stop(); lockedBellGame.StartGame(); lockedBellGame.storyOverlay = false; lockedBellGame.room = 6; lockedBellGame.enemies.Add(new Enemy { Pos = new PointF(260, 330), Kind = EnemyKind.Grunt, Hp = 100, MaxHp = 100 }); lockedBellGame.CastBellPulse();

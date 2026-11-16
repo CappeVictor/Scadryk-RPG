@@ -177,6 +177,8 @@ Cada uma das oito técnicas aprendidas agora tem duas memórias opcionais além 
 A Relíquia com **Maré + Ruptura** abre a **Ressonância do Eco Ferido**: todos os golpes causam 15% mais dano a um inimigo enquanto a ferida da Ruptura estiver ativa. O efeito termina junto com a ferida e aparece na descrição da Relíquia. O autoteste verifica o bônus, a expiração lógica pelo estado do alvo, a restrição à raridade Relíquia e o texto exibido.
 
 A Relíquia com **Trégua + Passo Célere** ativa a **Ressonância da Misericórdia**: cada abate adianta em 0,25 segundo as recargas de técnica. A combinação cria uma build de sustentação e rotação, recompensando sequências de eliminações; a descrição da arma revela o efeito. O autoteste confere a redução, a combinação e a restrição a Relíquias.
+
+A combinação **Coro de Retorno + Farol de Vigília** acrescenta ritmo à rotação de técnicas: enquanto o Farol está ativo, acertar com o Coro um eco dentro de seu raio adianta o próximo pulso em 0,4 segundo, uma vez por lançamento. O menu **B** explica quando as duas técnicas estão equipadas; o autoteste cobre acerto dentro e fora do raio e ausência de uma técnica.
 ## Organização do código
 
 A renderização e a interface estão em `Game.Rendering.cs`; os avisos de ataque, IA inimiga e regras de combate estão em `Game.CombatRuntime.cs`; criação de salas, transições e interações estão em `Game.World.cs`; e experiência, talentos e recompensas ficam em `Game.Progression.cs`. O loop de atualização agora está em `Game.Loop.cs`, enquanto esquiva, movimento, perseguição e colisões estão em `Game.Movement.cs`.

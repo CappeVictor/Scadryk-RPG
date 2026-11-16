@@ -111,6 +111,7 @@ public sealed partial class Game
     private bool EbbBeaconSynergyActive() => equippedSkills.Contains(3) && equippedSkills.Contains(6);
     private bool BellShardSynergyActive() => equippedSkills.Contains(1) && equippedSkills.Contains(2);
     private bool BellRefrainSynergyActive() => equippedSkills.Contains(2) && equippedSkills.Contains(5);
+    private bool RefrainBeaconSynergyActive() => equippedSkills.Contains(5) && equippedSkills.Contains(6);
     private bool WardReturnSynergyEquipped() => equippedSkills.Contains(4) && equippedSkills.Contains(7);
     private bool WardReturnSynergyActive() => WardReturnSynergyEquipped() && wardTime > 0;
     private void CycleSkillVariant(int slot, int direction)
@@ -285,17 +286,23 @@ public sealed partial class Game
         if (room is 3 or 18 || enemies.Count == 0 || refrainCd > 0) return;
         refrainCd = RefrainCooldown(); refrainWaveTime = 0.48f; refrainWaveRadius = 170 * (skillVariants[5] == 1 ? 1.25f : skillVariants[5] == 2 ? 0.85f : 1f);
         float boost = TechniqueDamageMultiplier() * WeaponSkillMultiplier();
+        bool beaconPulseAdvanced = false;
         foreach (Enemy enemy in enemies.ToArray())
         {
             if (Distance(player, enemy.Pos) > refrainWaveRadius) continue;
             bool bellResonantTarget = BellRefrainSynergyActive() && enemy.BellMarkTime > 0;
             DamageEnemy(enemy, damage * (enemy.Boss ? 0.28f : 0.68f) * boost * SkillDamageVariant(5) * (bellResonantTarget ? 1.35f : 1f) * OutgoingDamageMultiplier(enemy) * (IsArmored(enemy) ? 0.75f : 1f));
             if (bellResonantTarget) { enemy.BellMarkTime = 0; AddFloatingText(new PointF(enemy.Pos.X, enemy.Pos.Y - enemy.Radius - 26), "SINO + CORO", Color.LightGoldenrodYellow); }
+            if (!beaconPulseAdvanced && RefrainBeaconSynergyActive() && beaconTime > 0 && Distance(beaconPos, enemy.Pos) <= 128)
+            {
+                beaconPulseCd = Math.Max(0, beaconPulseCd - 0.4f); beaconPulseAdvanced = true;
+                AddFloatingText(new PointF(enemy.Pos.X, enemy.Pos.Y - enemy.Radius - 26), "CORO + FAROL", Color.LightCyan);
+            }
             enemy.Flash = 0.24f;
             if (!enemy.Boss) { enemy.Stagger = Math.Max(enemy.Stagger, 0.38f); enemy.Windup = 0; enemy.Cooldown = Math.Max(enemy.Cooldown, 0.8f); }
             if (enemy.Hp <= 0) Defeat(enemy);
         }
-        notice = BellRefrainSynergyActive() ? "CORO DE RETORNO • MARCAS DO SINO CONSUMIDAS" : "CORO DE RETORNO • ECO REBATIDO"; noticeTime = 1.2f;
+        notice = beaconPulseAdvanced ? "CORO + FAROL • PRÓXIMO PULSO ADIANTADO" : BellRefrainSynergyActive() ? "CORO DE RETORNO • MARCAS DO SINO CONSUMIDAS" : "CORO DE RETORNO • ECO REBATIDO"; noticeTime = 1.2f;
     }
 
     private float BeaconCooldown() => Math.Max(13f, 22f - skillTalent * 0.9f) * WeaponCooldownMultiplier();

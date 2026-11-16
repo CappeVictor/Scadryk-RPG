@@ -1252,7 +1252,7 @@ public sealed partial class Game
     {
         using var shade = new SolidBrush(Color.FromArgb(185, 5, 7, 9)); using var panelBrush = new SolidBrush(Color.FromArgb(248, 17, 19, 20)); using var edge = new Pen(Color.FromArgb(175, 143, 112, 73), 2);
         using var heading = new Font("Georgia", 17, FontStyle.Bold); using var body = new Font("Segoe UI", 11); using var small = new Font("Segoe UI", 9);
-        g.FillRectangle(shade, 0, 83, 960, 557); g.FillRectangle(panelBrush, 105, 132, 750, 435); g.DrawRectangle(edge, 105, 132, 750, 435);
+        g.FillRectangle(shade, 0, 83, 960, 557); g.FillRectangle(panelBrush, 105, 132, 750, 455); g.DrawRectangle(edge, 105, 132, 750, 455);
         DrawCentered(g, skillMenuAlternate ? "MONTAGEM ALTERNATIVA" : "MONTAGEM PRINCIPAL", 153, heading, Color.FromArgb(230, 193, 129));
         g.DrawString("TAB alterna qual montagem editar; T ativa a alternativa durante o combate. F/V/G/C escolhem espaços; 1–0 equipam.", small, Brushes.DarkGray, 140, 188);
         g.DrawString("ESPAÇOS DA MONTAGEM", body, Brushes.Goldenrod, 150, 224);
@@ -1282,7 +1282,8 @@ public sealed partial class Game
         g.DrawString("2+5 • Sino prepara alvos; Coro causa +35% e consome a marca", small, HasSkillPair(menuSkills, 2, 5) ? Brushes.LightGoldenrodYellow : Brushes.DarkGray, new RectangleF(150, 520, 310, 16));
         Brush wardSynergyBrush = HasSkillPair(menuSkills, 4, 7) ? skillMenuAlternate == alternateSkillsActive && wardTime > 0 ? Brushes.LightGreen : Brushes.Goldenrod : Brushes.DarkGray;
         g.DrawString("4+7 • Manto ativo amplia em 35% a cura da Devolução", small, wardSynergyBrush, new RectangleF(150, 536, 310, 16));
-        g.DrawString("↑/↓ altera a memória da técnica equipada • BACKSPACE esvazia • B/ESC fecha • R: Redemoinho", small, Brushes.DarkGray, new RectangleF(150, 555, 660, 12));
+        g.DrawString("5+6 • Coro acerta ecos no Farol ativo; próximo pulso adianta 0,4 s", small, HasSkillPair(menuSkills, 5, 6) ? Brushes.LightCyan : Brushes.DarkGray, new RectangleF(150, 552, 385, 16));
+        g.DrawString("↑/↓ altera a memória da técnica equipada • BACKSPACE esvazia • B/ESC fecha • R: Redemoinho", small, Brushes.DarkGray, new RectangleF(150, 571, 660, 12));
     }
 
     private void DrawChoice(Graphics g, string titleText, string a, string b, string c)
