@@ -65,6 +65,8 @@ public sealed partial class Game : Form
     private static readonly Lazy<Bitmap?> NameWeaverSpriteSheet = new(() => LoadPlayerSpriteSheet("NameWeaver.png"));
     private static readonly Lazy<Bitmap?> StoneGuardianAttackSpriteSheet = new(() => LoadPlayerSpriteSheet("StoneGuardianAttack.png"));
     private static readonly Lazy<Bitmap?> NameWeaverAttackSpriteSheet = new(() => LoadPlayerSpriteSheet("NameWeaverAttack.png"));
+    private static readonly Lazy<Bitmap?> FordCartographerSpriteSheet = new(() => CreateFordCartographerSpriteSheet(false));
+    private static readonly Lazy<Bitmap?> FordCartographerAttackSpriteSheet = new(() => CreateFordCartographerSpriteSheet(true));
     private static Bitmap? LoadPlayerSpriteSheet(string fileName)
     {
         string path = Path.Combine(AppContext.BaseDirectory, "Assets", fileName);

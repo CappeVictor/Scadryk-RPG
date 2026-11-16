@@ -1076,22 +1076,18 @@ public sealed partial class Game
         PointF animationDirection = attackFlash > 0 ? facing : dashTime > 0 ? dashDirection : MovementInput();
         if (Length(animationDirection) <= 0.001f) animationDirection = CurrentDrift();
         if (Length(animationDirection) <= 0.001f) animationDirection = facing;
-        if (heroClass == HeroClass.FordCartographer)
-        {
-            DrawFordCartographer(g, animationDirection);
-        }
-        else
-        {
         Bitmap? attackSprites = attackFlash > 0 ? heroClass switch
         {
             HeroClass.StoneGuardian => StoneGuardianAttackSpriteSheet.Value ?? PlayerAttackSpriteSheet.Value,
             HeroClass.NameWeaver => NameWeaverAttackSpriteSheet.Value ?? PlayerAttackSpriteSheet.Value,
+            HeroClass.FordCartographer => FordCartographerAttackSpriteSheet.Value ?? PlayerAttackSpriteSheet.Value,
             _ => PlayerAttackSpriteSheet.Value
         } : null;
         Bitmap? sprites = attackSprites ?? heroClass switch
         {
             HeroClass.StoneGuardian => StoneGuardianSpriteSheet.Value ?? PlayerSpriteSheet.Value,
             HeroClass.NameWeaver => NameWeaverSpriteSheet.Value ?? PlayerSpriteSheet.Value,
+            HeroClass.FordCartographer => FordCartographerSpriteSheet.Value ?? PlayerSpriteSheet.Value,
             _ => PlayerSpriteSheet.Value
         };
         if (sprites is not null)
@@ -1122,7 +1118,6 @@ public sealed partial class Game
             g.FillEllipse(fallbackFace, player.X - 8, player.Y - 11, 16, 16);
             using var facingLine = new Pen(Color.AntiqueWhite, 4);
             g.DrawLine(facingLine, player, Add(player, Scale(facing, 24)));
-        }
         }
         if (wardTime > 0)
         {
@@ -1228,29 +1223,61 @@ public sealed partial class Game
     private void DrawEbbWave(Graphics g) { float progress = 1f - pullWaveTime / 0.45f; float radius = EbbPullRadius() * progress; using var wave = new Pen(Color.FromArgb((int)(210 * pullWaveTime / 0.45f), 98, 190, 220), 4); using var glow = new Pen(Color.FromArgb((int)(65 * pullWaveTime / 0.45f), 98, 190, 220), 12); g.DrawEllipse(glow, player.X - radius, player.Y - radius, radius * 2, radius * 2); g.DrawEllipse(wave, player.X - radius, player.Y - radius, radius * 2, radius * 2); }
     private void DrawBellWave(Graphics g) { float progress = 1f - bellWaveTime / 0.42f; float radius = bellWaveRadius * progress; using var wave = new Pen(Color.FromArgb((int)(210 * bellWaveTime / 0.42f), 115, 208, 197), 4); using var glow = new Pen(Color.FromArgb((int)(65 * bellWaveTime / 0.42f), 115, 208, 197), 12); g.DrawEllipse(glow, player.X - radius, player.Y - radius, radius * 2, radius * 2); g.DrawEllipse(wave, player.X - radius, player.Y - radius, radius * 2, radius * 2); }
     private void DrawFordBurst(Graphics g) { float duration = fordBurstRadius > 68 ? 0.38f : 0.28f; float progress = 1f - fordBurstTime / duration; float radius = fordBurstRadius * progress; int alpha = (int)(220 * fordBurstTime / duration); using var wave = new Pen(Color.FromArgb(alpha, 125, 213, 199), 4); using var glow = new Pen(Color.FromArgb(alpha / 3, 125, 213, 199), 14); g.DrawEllipse(glow, fordBurstPosition.X - radius, fordBurstPosition.Y - radius, radius * 2, radius * 2); g.DrawEllipse(wave, fordBurstPosition.X - radius, fordBurstPosition.Y - radius, radius * 2, radius * 2); }
-    private void DrawFordCartographer(Graphics g, PointF direction)
+    private static Bitmap CreateFordCartographerSpriteSheet(bool attack)
     {
-        bool moving = dashTime > 0 || Length(MovementInput()) > 0.001f || Length(CurrentDrift()) > 0.001f;
-        float phase = playerAnimationTime * (dashTime > 0 ? 24f : 17f);
-        float stride = moving ? MathF.Sin(phase) * 4f : 0;
-        float bob = moving ? MathF.Abs(MathF.Sin(phase)) * 1.7f : MathF.Sin(windupPulse * 2.2f) * 0.7f;
-        float capeFlick = moving ? MathF.Sin(phase + 0.9f) * 3f : MathF.Sin(windupPulse * 1.4f) * 1.2f;
-        float angle = MathF.Atan2(direction.Y, direction.X) * 180 / MathF.PI;
-        var state = g.Save(); g.TranslateTransform(player.X, player.Y - 8 - bob); g.RotateTransform(angle);
-        using var shadow = new SolidBrush(Color.FromArgb(105, 5, 7, 9)); using var cloak = new SolidBrush(invulnerable > 0 ? Color.Salmon : Color.FromArgb(45, 126, 121)); using var cloakEdge = new Pen(Color.FromArgb(235, 180, 218, 193), 2); using var hood = new SolidBrush(Color.FromArgb(29, 51, 54)); using var face = new SolidBrush(Color.FromArgb(226, 205, 167)); using var brass = new SolidBrush(Color.FromArgb(226, 192, 119)); using var line = new Pen(Color.FromArgb(230, 221, 208), 3);
-        g.FillEllipse(shadow, -20, 24, 40, 10);
+        const int cell = 80;
+        var sheet = new Bitmap(cell * 4, cell * 4);
+        using Graphics g = Graphics.FromImage(sheet);
+        g.Clear(Color.Transparent);
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        g.CompositingQuality = CompositingQuality.HighQuality;
+        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+        for (int row = 0; row < 4; row++)
+        for (int frame = 0; frame < 4; frame++)
+        {
+            GraphicsState state = g.Save();
+            g.SetClip(new Rectangle(frame * cell, row * cell, cell, cell));
+            g.TranslateTransform(frame * cell + 40, row * cell + 49);
+            g.ScaleTransform(0.88f, 0.88f);
+            g.RotateTransform(row switch { 0 => 90, 1 => 180, 2 => 0, _ => 270 });
+            DrawFordCartographerFrame(g, frame, attack);
+            g.Restore(state);
+        }
+        return sheet;
+    }
+
+    private static void DrawFordCartographerFrame(Graphics g, int frame, bool attack)
+    {
+        float stride = attack ? 0 : MathF.Sin(frame * MathF.PI / 2) * 4;
+        float bob = attack ? frame switch { 0 => 0, 1 => -2, 2 => 1, _ => 0 } : MathF.Abs(MathF.Sin(frame * MathF.PI / 2)) * 1.7f;
+        float capeFlick = attack ? frame switch { 0 => -1, 1 => 4, 2 => 2, _ => 0 } : MathF.Sin(frame * MathF.PI / 2 + 0.9f) * 3;
+        float attackReach = attack ? frame switch { 0 => 12, 1 => 32, 2 => 26, _ => 16 } : 23;
+        var state = g.Save(); g.TranslateTransform(0, -bob);
+        using var cloak = new SolidBrush(Color.FromArgb(45, 126, 121));
+        using var cloakEdge = new Pen(Color.FromArgb(235, 180, 218, 193), 2);
+        using var hood = new SolidBrush(Color.FromArgb(29, 51, 54));
+        using var face = new SolidBrush(Color.FromArgb(226, 205, 167));
+        using var brass = new SolidBrush(Color.FromArgb(226, 192, 119));
         using var boots = new SolidBrush(Color.FromArgb(230, 42, 37, 32));
-        g.DrawLine(line, -5, 13, -7 - stride, 26 + Math.Max(0, stride)); g.DrawLine(line, 5, 13, 7 + stride, 26 + Math.Max(0, -stride));
-        g.FillEllipse(boots, -12 - stride, 23 + Math.Max(0, stride), 10, 5); g.FillEllipse(boots, 3 + stride, 23 + Math.Max(0, -stride), 10, 5);
-        float flare = dashTime > 0 ? 8 : 0;
-        PointF[] mantle = { new(-12, -5), new(10, -8), new(20 + flare, 22 + capeFlick), new(7 + flare * 0.6f, 29 + capeFlick), new(-19, 21) };
+        using var line = new Pen(Color.FromArgb(230, 221, 208), 3) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+        g.DrawLine(line, -5, 13, -7 - stride, 26 + Math.Max(0, stride));
+        g.DrawLine(line, 5, 13, 7 + stride, 26 + Math.Max(0, -stride));
+        g.FillEllipse(boots, -12 - stride, 23 + Math.Max(0, stride), 10, 5);
+        g.FillEllipse(boots, 3 + stride, 23 + Math.Max(0, -stride), 10, 5);
+        PointF[] mantle = { new(-12, -5), new(10, -8), new(20, 22 + capeFlick), new(7, 29 + capeFlick), new(-19, 21) };
         g.FillPolygon(cloak, mantle); g.DrawPolygon(cloakEdge, mantle);
         g.FillEllipse(hood, -12, -27, 24, 23); g.FillEllipse(face, -6, -22, 12, 12);
-        g.DrawLine(line, 5, 1, 23, 14); g.FillEllipse(brass, 13, -3, 12, 12); g.FillEllipse(hood, 16, 0, 6, 6);
-        if (dashTime > 0) { using var wake = new Pen(Color.FromArgb(150, 125, 213, 199), 2) { DashStyle = DashStyle.Dash }; g.DrawLine(wake, -23, 3, -38, 3); g.DrawLine(wake, -19, 10, -31, 10); }
-        if (attackFlash > 0) { float progress = 1 - attackFlash / 0.16f; int alpha = (int)(220 * Math.Clamp(1 - progress, 0, 1)); using var slashGlow = new Pen(Color.FromArgb(alpha / 3, 125, 213, 199), 10); using var slash = new Pen(Color.FromArgb(alpha, 179, 241, 219), 3.5f) { StartCap = LineCap.Round, EndCap = LineCap.Round }; g.DrawArc(slashGlow, 8, -25, 48, 48, -135 + 50 * progress, 120); g.DrawArc(slash, 8, -25, 48, 48, -135 + 50 * progress, 120); }
+        g.DrawLine(line, 5, 1, attackReach, 14);
+        g.FillEllipse(brass, 13, -3, 12, 12); g.FillEllipse(hood, 16, 0, 6, 6);
+        if (attack)
+        {
+            int alpha = frame is 1 or 2 ? 225 : 130;
+            using var slashGlow = new Pen(Color.FromArgb(alpha / 3, 125, 213, 199), 10);
+            using var slash = new Pen(Color.FromArgb(alpha, 179, 241, 219), 3.5f) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+            float start = frame switch { 0 => -160, 1 => -125, 2 => -90, _ => -55 };
+            g.DrawArc(slashGlow, 6, -27, 48, 48, start, 90); g.DrawArc(slash, 6, -27, 48, 48, start, 90);
+        }
         g.Restore(state);
-        if (invulnerable > 0) { int alpha = PlayerDamageFlashAlpha(invulnerable, windupPulse); using var edge = new Pen(Color.FromArgb(alpha, 255, 126, 105), 3); g.DrawEllipse(edge, player.X - 22, player.Y - 39, 44, 60); }
     }
     private void DrawRefrainWave(Graphics g) { float progress = 1f - refrainWaveTime / 0.48f; float radius = refrainWaveRadius * progress; int alpha = (int)(220 * refrainWaveTime / 0.48f); using var wave = new Pen(Color.FromArgb(alpha, 207, 147, 227), 4); using var glow = new Pen(Color.FromArgb(alpha / 3, 207, 147, 227), 14); g.DrawEllipse(glow, player.X - radius, player.Y - radius, radius * 2, radius * 2); g.DrawEllipse(wave, player.X - radius, player.Y - radius, radius * 2, radius * 2); }
     private void DrawReturnedVoicesWave(Graphics g) { float progress = 1f - returnVoiceWaveTime / 0.46f; float radius = returnVoiceWaveRadius * progress; int alpha = (int)(225 * returnVoiceWaveTime / 0.46f); using var wave = new Pen(Color.FromArgb(alpha, 205, 221, 165), 4); using var glow = new Pen(Color.FromArgb(alpha / 3, 205, 221, 165), 15); g.DrawEllipse(glow, player.X - radius, player.Y - radius, radius * 2, radius * 2); g.DrawEllipse(wave, player.X - radius, player.Y - radius, radius * 2, radius * 2); }
