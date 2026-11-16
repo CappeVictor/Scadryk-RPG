@@ -1151,6 +1151,7 @@ public sealed partial class Game
         if (finalEnding == 2 && finalStrikeCd > 0) { using var finalSparkCooldownPen = new Pen(Color.FromArgb(225, 255, 191, 115), 3); g.DrawArc(finalSparkCooldownPen, player.X - 89, player.Y - 89, 178, 178, 0, 360 * finalStrikeCd / (Math.Max(12f, 19f - skillTalent * 0.65f) * (skillVariants[8] == 1 ? 1.25f : skillVariants[8] == 2 ? 0.75f : 1f) * WeaponCooldownMultiplier())); }
         if (heroClass == HeroClass.StoneGuardian && stoneBastionCd > 0) { using var bastionCooldownPen = new Pen(Color.FromArgb(225, 226, 137, 76), 3); g.DrawArc(bastionCooldownPen, player.X - 97, player.Y - 97, 194, 194, 90, 360 * stoneBastionCd / (18f * WeaponCooldownMultiplier())); }
         if (heroClass == HeroClass.NameWeaver && nameWeaverCd > 0) { using var threadCooldownPen = new Pen(Color.FromArgb(225, 193, 151, 224), 3); g.DrawArc(threadCooldownPen, player.X - 97, player.Y - 97, 194, 194, 90, 360 * nameWeaverCd / (14f * WeaponCooldownMultiplier())); }
+        if (heroClass == HeroClass.FordCartographer && fordShortcutCd > 0) { using var shortcutCooldownPen = new Pen(Color.FromArgb(230, 125, 213, 199), 3); g.DrawArc(shortcutCooldownPen, player.X - 105, player.Y - 105, 210, 210, 90, 360 * fordShortcutCd / (13f * WeaponCooldownMultiplier())); }
     }
     private static int PlayerSpriteRow(PointF direction)
     {
@@ -1226,7 +1227,7 @@ public sealed partial class Game
 
     private void DrawEbbWave(Graphics g) { float progress = 1f - pullWaveTime / 0.45f; float radius = EbbPullRadius() * progress; using var wave = new Pen(Color.FromArgb((int)(210 * pullWaveTime / 0.45f), 98, 190, 220), 4); using var glow = new Pen(Color.FromArgb((int)(65 * pullWaveTime / 0.45f), 98, 190, 220), 12); g.DrawEllipse(glow, player.X - radius, player.Y - radius, radius * 2, radius * 2); g.DrawEllipse(wave, player.X - radius, player.Y - radius, radius * 2, radius * 2); }
     private void DrawBellWave(Graphics g) { float progress = 1f - bellWaveTime / 0.42f; float radius = bellWaveRadius * progress; using var wave = new Pen(Color.FromArgb((int)(210 * bellWaveTime / 0.42f), 115, 208, 197), 4); using var glow = new Pen(Color.FromArgb((int)(65 * bellWaveTime / 0.42f), 115, 208, 197), 12); g.DrawEllipse(glow, player.X - radius, player.Y - radius, radius * 2, radius * 2); g.DrawEllipse(wave, player.X - radius, player.Y - radius, radius * 2, radius * 2); }
-    private void DrawFordBurst(Graphics g) { float progress = 1f - fordBurstTime / 0.38f; float radius = 96 * progress; int alpha = (int)(220 * fordBurstTime / 0.38f); using var wave = new Pen(Color.FromArgb(alpha, 125, 213, 199), 4); using var glow = new Pen(Color.FromArgb(alpha / 3, 125, 213, 199), 14); g.DrawEllipse(glow, fordBurstPosition.X - radius, fordBurstPosition.Y - radius, radius * 2, radius * 2); g.DrawEllipse(wave, fordBurstPosition.X - radius, fordBurstPosition.Y - radius, radius * 2, radius * 2); }
+    private void DrawFordBurst(Graphics g) { float duration = fordBurstRadius > 68 ? 0.38f : 0.28f; float progress = 1f - fordBurstTime / duration; float radius = fordBurstRadius * progress; int alpha = (int)(220 * fordBurstTime / duration); using var wave = new Pen(Color.FromArgb(alpha, 125, 213, 199), 4); using var glow = new Pen(Color.FromArgb(alpha / 3, 125, 213, 199), 14); g.DrawEllipse(glow, fordBurstPosition.X - radius, fordBurstPosition.Y - radius, radius * 2, radius * 2); g.DrawEllipse(wave, fordBurstPosition.X - radius, fordBurstPosition.Y - radius, radius * 2, radius * 2); }
     private void DrawFordCartographer(Graphics g, PointF direction)
     {
         float angle = MathF.Atan2(direction.Y, direction.X) * 180 / MathF.PI;
@@ -1302,7 +1303,7 @@ public sealed partial class Game
         using var heading = new Font("Georgia", 17, FontStyle.Bold); using var body = new Font("Segoe UI", 11); using var small = new Font("Segoe UI", 9);
         g.FillRectangle(shade, 0, 83, 960, 557); g.FillRectangle(panelBrush, 105, 132, 750, 475); g.DrawRectangle(edge, 105, 132, 750, 475);
         DrawCentered(g, skillMenuAlternate ? "MONTAGEM ALTERNATIVA" : "MONTAGEM PRINCIPAL", 153, heading, Color.FromArgb(230, 193, 129));
-        g.DrawString("TAB alterna qual montagem editar; T ativa a alternativa durante o combate. F/V/G/C escolhem espaços; 1–0 equipam.", small, Brushes.DarkGray, 140, 188);
+        g.DrawString("TAB alterna a montagem; T ativa a alternativa. F/V/G/C escolhem espaços; 1–0 e F11 equipam técnicas.", small, Brushes.DarkGray, 140, 188);
         g.DrawString("ESPAÇOS DA MONTAGEM", body, Brushes.Goldenrod, 150, 224);
         string[] slotKeys = { "F", "V", "G", "C" };
         int[] menuSkills = SkillMenuLoadout();
@@ -1314,9 +1315,9 @@ public sealed partial class Game
         int selectedSkill = menuSkills[skillMenuSlot];
         int selectedVariant = selectedSkill is >= 1 and <= 8 ? skillVariants[selectedSkill] : 0;
         g.DrawString(selectedSkill == 0 ? "MEMÓRIA DA TÉCNICA: ESPAÇO VAZIO" : selectedSkill >= 9 ? $"TÉCNICA DE CLASSE: {skillNames[selectedSkill].ToUpperInvariant()}" : $"MEMÓRIA: {SkillVariantName(selectedSkill, selectedVariant)}", body, Brushes.Goldenrod, new RectangleF(150, 402, 310, 24));
-        g.DrawString(selectedSkill == 0 ? "Equipe uma técnica e use ↑/↓ para mudar sua forma." : selectedSkill == 9 ? "Consome 50 de Fúria para reduzir dano em 55% por 3,5 s." : selectedSkill == 10 ? "Consome 40 de Fio; ecos marcados recebem 25% mais dano por 5 s." : SkillVariantDescription(selectedSkill, selectedVariant), small, Brushes.DarkGray, new RectangleF(150, 430, 310, 36));
+        g.DrawString(selectedSkill == 0 ? "Equipe uma técnica e use ↑/↓ para mudar sua forma." : selectedSkill == 9 ? "Consome 50 de Fúria para reduzir dano em 55% por 3,5 s." : selectedSkill == 10 ? "Consome 40 de Fio; ecos marcados recebem 25% mais dano por 5 s." : selectedSkill == 11 ? "Consome 50 de Rota; avança e golpeia ecos num raio de 68 px." : SkillVariantDescription(selectedSkill, selectedVariant), small, Brushes.DarkGray, new RectangleF(150, 430, 310, 36));
         g.DrawString("TÉCNICAS APRENDIDAS", body, Brushes.Goldenrod, 480, 224);
-        for (int skill = 1; skill <= 10; skill++)
+        for (int skill = 1; skill <= 11; skill++)
         {
             bool unlocked = SkillUnlocked(skill); bool equippedElsewhere = menuSkills.Where((_, index) => index != skillMenuSlot).Contains(skill);
             string state = !unlocked ? "  •  NÃO APRENDIDA" : equippedElsewhere ? "  •  EM OUTRO ESPAÇO" : menuSkills[skillMenuSlot] == skill ? "  •  EQUIPADA" : "";
