@@ -1223,6 +1223,15 @@ public sealed partial class Game
             ruptureForge.weaponAffixes[0] = 2; ruptureForge.weaponAffixes2[0] = 8;
             var scarTarget = new Enemy { Pos = new PointF(440, 330), Kind = EnemyKind.Grunt, Hp = 1000, MaxHp = 1000 }; ruptureForge.enemies.Add(scarTarget); ruptureForge.ApplyWeaponWound(scarTarget, true);
             if (Math.Abs(scarTarget.WoundDamage - 11.2f) > 0.01f || !ruptureForge.WeaponAffixDescription(0).Contains("Ressonância da Cicatriz: Ruptura causa +40% de dano") || !ValidWeaponData(ruptureForge.CaptureSaveData())) throw new InvalidOperationException("Contracanto + Ruptura não ativou sua ressonância ou não preservou a Relíquia no save.");
+            ruptureForge.weaponAffixes[0] = 3; ruptureForge.weaponAffixes2[0] = 8;
+            var tideWoundTarget = new Enemy { Pos = new PointF(460, 330), Kind = EnemyKind.Grunt, Hp = 1000, MaxHp = 1000, WoundTime = 2 };
+            tideWoundTarget.WoundTime = 0; float unwoundedDamageMultiplier = ruptureForge.OutgoingDamageMultiplier(tideWoundTarget); tideWoundTarget.WoundTime = 2;
+            if (!ruptureForge.HasEchoWoundResonance(0) || Math.Abs(ruptureForge.OutgoingDamageMultiplier(tideWoundTarget) - unwoundedDamageMultiplier * 1.15f) > 0.001f
+                || !ruptureForge.WeaponAffixDescription(0).Contains("Ressonância do Eco Ferido: +15% de dano contra alvos sob Ruptura"))
+                throw new InvalidOperationException("Maré + Ruptura não fortaleceu os golpes contra um alvo ferido ou não explicou a sinergia.");
+            ruptureForge.weaponRarities[0] = 1;
+            if (ruptureForge.HasEchoWoundResonance(0) || Math.Abs(ruptureForge.OutgoingDamageMultiplier(tideWoundTarget) - unwoundedDamageMultiplier) > 0.001f)
+                throw new InvalidOperationException("A Ressonância do Eco Ferido também foi aplicada a uma arma Rara.");
         }
         using var lumeUpstream = new Game(); lumeUpstream.timer.Stop(); lumeUpstream.StartGame(); lumeUpstream.room = 22; lumeUpstream.questStage = 25; lumeUpstream.townEnding = 2; lumeUpstream.SetupRoom();
         if (lumeUpstream.enemies.Single(e => e.Kind == EnemyKind.TideWitness).MaxHp != 920) throw new InvalidOperationException("Manter o Lume não alterou a força da Testemunha da Maré.");

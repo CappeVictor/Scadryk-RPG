@@ -188,6 +188,8 @@ Depois de aprender o Farol, fale novamente com Aven para abrir o Capítulo XV. S
 
 Depois de registrar a passagem coletiva com Aven e aprender a Vazante, siga pela saída leste do refúgio. Cruze a Escarpa do Contrafluxo e entre no Coração das Duas Margens. No círculo central, observe as setas e a indicação de PUXO ou REPULSO: a corrente alterna de sentido. Esquive-se dos três ataques anunciados pelo Afinador das Margens, recolha o compasso e retorne a Aven para receber a recompensa. A lembrança não revela o nome escolhido nem o paradeiro de Nara.
 
+Uma Relíquia com **Maré + Ruptura** ativa a **Ressonância do Eco Ferido**: ataques e técnicas causam 15% mais dano a inimigos enquanto a ferida da Ruptura estiver ativa. O bônus exige os dois afixos na mesma Relíquia e termina quando a ferida expira.
+
 ## Salvamento
 
 Ao salvar, o jogo grava primeiro um arquivo temporário na mesma pasta e substitui o save anterior após concluir a escrita. Se houver erro de acesso ou gravação, aparece um aviso para tentar novamente.

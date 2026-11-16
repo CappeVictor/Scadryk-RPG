@@ -399,7 +399,8 @@ public sealed partial class Game : Form
     {
         float bossHunter = !HasCharm(4) ? 1f : enemy.Boss ? 1.25f : 0.8f;
         float combatFocusMultiplier = combatFocus == 1 ? enemy.Boss ? 1.15f : 1f : combatFocus == 2 && !enemy.Boss && enemies.Count >= 3 ? 1.1f : 1f;
-        return bossHunter * combatFocusMultiplier * (vigilActive && HasCharm(7) ? 1.4f : 1f) * (HasCharm(10) ? 0.9f : 1f) * VeinResonanceMultiplier();
+        float woundResonance = enemy.WoundTime > 0 && HasEchoWoundResonance(weapon) ? 1.15f : 1f;
+        return bossHunter * combatFocusMultiplier * (vigilActive && HasCharm(7) ? 1.4f : 1f) * (HasCharm(10) ? 0.9f : 1f) * VeinResonanceMultiplier() * woundResonance;
     }
     private float CharmDamageTakenMultiplier() => (HasCharm(9) ? 1.1f : 1f) * (HasCharm(10) ? 0.86f : 1f);
     private float CombatMasteryDamageTakenMultiplier() => combatMastery == 1 ? 0.9f : combatMastery == 2 ? 1.08f : 1f;
