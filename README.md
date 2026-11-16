@@ -105,7 +105,7 @@ Os inimigos à distância têm faixas de combate próprias. O Conjurador recua s
 | 7 no inventário | Alternar o talismã do espaço I |
 | 8 no inventário | Alternar o talismã do espaço II |
 | 1–4 ao subir de nível | Escolher talento ou responder quando Sileth apresentar uma decisão |
-| 5 ou 6 ao subir de nível | No nível 5, escolher Forma do Gume ou Forma do Eco; no nível 10, Guarda Serena ou Passo Impetuoso; no nível 15, Caçador de Ecos ou Quebra-Formação; no nível 20, Coro Suspenso ou Âncora de Eco; no nível 25, Abertura da Vigília ou Resposta do Veio; no nível 30, Primeira Ressonância ou Último Eco |
+| 5 ou 6 ao subir de nível | No nível 5, escolher Forma do Gume ou Forma do Eco; no nível 10, Guarda Serena ou Passo Impetuoso; no nível 15, Caçador de Ecos ou Quebra-Formação; no nível 20, Coro Suspenso ou Âncora de Eco; no nível 25, Abertura da Vigília ou Resposta do Veio; no nível 30, Primeira Ressonância ou Último Eco; no nível 40, Maré de Retorno ou Último Abrigo |
 | Tab | Trocar alvo; no menu B, alternar a montagem que está sendo editada |
 | H | Ativar ou desativar o alto contraste dos avisos de ataque |
 | N | Ativar ou silenciar a ambiência e os efeitos de áudio |
