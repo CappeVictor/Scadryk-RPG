@@ -1208,6 +1208,15 @@ public sealed partial class Game
         foreach (GroundHazard hazard in groundHazards)
         {
             float fade = Math.Clamp(hazard.TimeLeft / 0.45f, 0.2f, 1f), pulse = 0.5f + 0.5f * MathF.Sin(windupPulse * 5f);
+            if (hazard.WarningTime > 0)
+            {
+                int warningAlpha = (int)(120 + pulse * 100);
+                using var warningFill = new SolidBrush(Color.FromArgb(30 + (int)(pulse * 22), 255, 206, 94));
+                using var warningRim = new Pen(Color.FromArgb(warningAlpha, 255, 224, 140), 3) { DashStyle = DashStyle.Dash };
+                g.FillEllipse(warningFill, hazard.Pos.X - hazard.Radius, hazard.Pos.Y - hazard.Radius, hazard.Radius * 2, hazard.Radius * 2);
+                g.DrawEllipse(warningRim, hazard.Pos.X - hazard.Radius, hazard.Pos.Y - hazard.Radius, hazard.Radius * 2, hazard.Radius * 2);
+                continue;
+            }
             int fillAlpha = (int)(34 * fade + pulse * 12), edgeAlpha = (int)(190 * fade);
             using var fill = new SolidBrush(Color.FromArgb(fillAlpha, 181, 89, 42));
             using var rim = new Pen(Color.FromArgb(edgeAlpha, 244, 155, 87), 2.5f) { DashStyle = DashStyle.Dash };

@@ -19,19 +19,20 @@ public sealed partial class Game
     private VigilAspect RunVigilAspect(int floor) => vigilAspectOrder[(Math.Max(1, floor) - 1) % vigilAspectOrder.Length];
     private void ShuffleVigilOrder()
     {
-        vigilAspectOrder = new[] { VigilAspect.Hardened, VigilAspect.Hungry, VigilAspect.Swift, VigilAspect.Chorus, VigilAspect.Counterflow };
+        vigilAspectOrder = new[] { VigilAspect.Hardened, VigilAspect.Hungry, VigilAspect.Swift, VigilAspect.Chorus, VigilAspect.Counterflow, VigilAspect.SlagRain };
         vigilBossOrder = new[] { EnemyKind.DeepSilence, EnemyKind.RouteScribe, EnemyKind.LanternRegent, EnemyKind.GlassHerald, EnemyKind.RiftCantor };
         for (int i = vigilAspectOrder.Length - 1; i > 0; i--) { int j = random.Next(i + 1); (vigilAspectOrder[i], vigilAspectOrder[j]) = (vigilAspectOrder[j], vigilAspectOrder[i]); }
         for (int i = vigilBossOrder.Length - 1; i > 0; i--) { int j = random.Next(i + 1); (vigilBossOrder[i], vigilBossOrder[j]) = (vigilBossOrder[j], vigilBossOrder[i]); }
     }
 
-    private static VigilAspect VigilAspectForFloor(int floor) => ((Math.Max(1, floor) - 1) % 5) switch
+    private static VigilAspect VigilAspectForFloor(int floor) => ((Math.Max(1, floor) - 1) % 6) switch
     {
         0 => VigilAspect.Hardened,
         1 => VigilAspect.Hungry,
         2 => VigilAspect.Swift,
         3 => VigilAspect.Chorus,
-        _ => VigilAspect.Counterflow
+        4 => VigilAspect.Counterflow,
+        _ => VigilAspect.SlagRain
     };
 
     private static string VigilAspectTitle(int floor) => VigilAspectForFloor(floor) switch
@@ -40,7 +41,8 @@ public sealed partial class Game
         VigilAspect.Hungry => "FOME DO RIO",
         VigilAspect.Swift => "SUSSURRO VELOZ",
         VigilAspect.Chorus => "CORO ERRANTE",
-        _ => "MARÉ INVERTIDA"
+        VigilAspect.Counterflow => "MARÉ INVERTIDA",
+        _ => "CHUVA DE ESCÓRIA"
     };
 
     private static string VigilAspectRule(int floor) => VigilAspectForFloor(floor) switch
@@ -49,7 +51,8 @@ public sealed partial class Game
         VigilAspect.Hungry => "Os ataques do chefe causam 30% mais dano",
         VigilAspect.Swift => "Os ataques começam 20% mais rápido",
         VigilAspect.Chorus => "Um Eco Salino surge a cada 20 segundos",
-        _ => "A corrente puxa e repele a cada 6 segundos"
+        VigilAspect.Counterflow => "A corrente puxa e repele a cada 6 segundos",
+        _ => "Uma área marcada explode sob você a cada 12 segundos"
     };
 
     private static Color VigilAspectColor(int floor) => VigilAspectForFloor(floor) switch
@@ -58,11 +61,12 @@ public sealed partial class Game
         VigilAspect.Hungry => Color.OrangeRed,
         VigilAspect.Swift => Color.Goldenrod,
         VigilAspect.Chorus => Color.MediumPurple,
-        _ => Color.LightSeaGreen
+        VigilAspect.Counterflow => Color.LightSeaGreen,
+        _ => Color.DarkOrange
     };
-    private static string VigilAspectTitle(VigilAspect aspect) => aspect switch { VigilAspect.Hardened => "CASCA VIVA", VigilAspect.Hungry => "FOME DO RIO", VigilAspect.Swift => "SUSSURRO VELOZ", VigilAspect.Chorus => "CORO ERRANTE", _ => "MARÉ INVERTIDA" };
-    private static string VigilAspectRule(VigilAspect aspect) => aspect switch { VigilAspect.Hardened => "O chefe recebe 25% menos dano", VigilAspect.Hungry => "Os ataques do chefe causam 30% mais dano", VigilAspect.Swift => "Os ataques começam 20% mais rápido", VigilAspect.Chorus => "Um Eco Salino surge a cada 20 segundos", _ => "A corrente puxa e repele a cada 6 segundos" };
-    private static Color VigilAspectColor(VigilAspect aspect) => aspect switch { VigilAspect.Hardened => Color.SteelBlue, VigilAspect.Hungry => Color.OrangeRed, VigilAspect.Swift => Color.Goldenrod, VigilAspect.Chorus => Color.MediumPurple, _ => Color.LightSeaGreen };
+    private static string VigilAspectTitle(VigilAspect aspect) => aspect switch { VigilAspect.Hardened => "CASCA VIVA", VigilAspect.Hungry => "FOME DO RIO", VigilAspect.Swift => "SUSSURRO VELOZ", VigilAspect.Chorus => "CORO ERRANTE", VigilAspect.Counterflow => "MARÉ INVERTIDA", _ => "CHUVA DE ESCÓRIA" };
+    private static string VigilAspectRule(VigilAspect aspect) => aspect switch { VigilAspect.Hardened => "O chefe recebe 25% menos dano", VigilAspect.Hungry => "Os ataques do chefe causam 30% mais dano", VigilAspect.Swift => "Os ataques começam 20% mais rápido", VigilAspect.Chorus => "Um Eco Salino surge a cada 20 segundos", VigilAspect.Counterflow => "A corrente puxa e repele a cada 6 segundos", _ => "Uma área marcada explode sob você a cada 12 segundos" };
+    private static Color VigilAspectColor(VigilAspect aspect) => aspect switch { VigilAspect.Hardened => Color.SteelBlue, VigilAspect.Hungry => Color.OrangeRed, VigilAspect.Swift => Color.Goldenrod, VigilAspect.Chorus => Color.MediumPurple, VigilAspect.Counterflow => Color.LightSeaGreen, _ => Color.DarkOrange };
 
     private static bool VigilTidePulling(float elapsed) => elapsed % 12f < 6f;
 
@@ -88,6 +92,18 @@ public sealed partial class Game
         enemies.Add(new Enemy { Pos = spawn, Kind = EnemyKind.SaltEcho, Hp = hp, MaxHp = hp, Cooldown = 0.8f, VigilMinion = true });
         vigilMinionCooldown = 20;
         notice = "CORO ERRANTE • UM ECO SALINO ENTROU NA LUTA"; noticeTime = 2.4f;
+        GameAudio.Play(GameAudio.Cue.BossWarning);
+    }
+
+    private void TickVigilHazards(float dt)
+    {
+        if (!vigilActive || room != 38 || RunVigilAspect(vigilFloor) != VigilAspect.SlagRain || drops.Count > 0) return;
+        if (!enemies.Any(enemy => enemy.Boss)) return;
+        vigilHazardCooldown -= dt;
+        if (vigilHazardCooldown > 0) return;
+        groundHazards.Add(new GroundHazard { Pos = player, Radius = 58, TimeLeft = 4.8f, TickCooldown = 1.2f, WarningTime = 1.2f, Damage = 10 });
+        vigilHazardCooldown = 12;
+        notice = "CHUVA DE ESCÓRIA • SAIA DA ÁREA MARCADA"; noticeTime = 2.2f;
         GameAudio.Play(GameAudio.Cue.BossWarning);
     }
 
@@ -123,7 +139,7 @@ public sealed partial class Game
         player = new PointF(150, 330); enemies.Clear(); drops.Clear(); groundHazards.Clear(); echoShards.Clear(); bowArrows.Clear(); lockedTarget = null;
         if (room == 43) { player = new PointF(180, 700); SpawnFirstEchoEncounters(); return; }
         if (room is 44 or 45) { SetupFirstEchoInterior(); return; }
-        if (vigilActive && room == 38) { vigilMinionCooldown = 20; vigilTideTime = 0; }
+        if (vigilActive && room == 38) { vigilMinionCooldown = 20; vigilTideTime = 0; vigilHazardCooldown = 12; }
         if (room != 3 && !vigilActive && (clearedRooms & (1L << room)) != 0) return;
         int count = room is 3 or 18 ? 0 : room == 0 ? 3 : room == 1 ? 5 : room == 4 ? 5 : room == 5 ? 4 : room == 6 ? 6 : room is 21 or 29 or 31 or 33 or 35 or 37 or 41 ? 6 : room == 22 ? 5 : room == 23 ? 6 : room == 24 ? 5 : room == 25 ? 6 : room is 26 or 28 or 30 or 32 or 34 or 36 ? 5 : room is 38 or 40 or 42 ? 1 : room == 39 ? 5 : room == 27 ? 6 : (room is 7 or 9 or 11 or 15 or 17 or 20) ? 4 : room == 8 ? 5 : room is 10 or 12 or 14 or 16 or 19 ? 6 : room == 13 ? 4 : 4;
         for (int i = 0; i < count; i++)

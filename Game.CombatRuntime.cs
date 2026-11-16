@@ -14,8 +14,9 @@ public sealed partial class Game
     {
         for (int i = groundHazards.Count - 1; i >= 0; i--)
         {
-            GroundHazard hazard = groundHazards[i]; hazard.TimeLeft -= dt; hazard.TickCooldown -= dt;
+            GroundHazard hazard = groundHazards[i]; hazard.TimeLeft -= dt; hazard.WarningTime = Math.Max(0, hazard.WarningTime - dt); hazard.TickCooldown -= dt;
             if (hazard.TimeLeft <= 0) { groundHazards.RemoveAt(i); continue; }
+            if (hazard.WarningTime > 0) continue;
             if (hazard.TickCooldown > 0) continue;
             hazard.TickCooldown = 0.85f;
             if (Distance(player, hazard.Pos) <= hazard.Radius && invulnerable <= 0 && dashTime <= 0) HitPlayer(hazard.Damage);
