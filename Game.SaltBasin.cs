@@ -10,7 +10,7 @@ public sealed partial class Game
     private int saltBasinProgress
     {
         get => (firstEchoDiscovered >> 7) & 31;
-        set => firstEchoDiscovered = (firstEchoDiscovered & 127) | ((value & 31) << 7);
+        set => firstEchoDiscovered = (firstEchoDiscovered & ~3968) | ((value & 31) << 7);
     }
     private int saltBasinMarks => (saltBasinProgress >> 1) & 7;
     private bool saltBasinMissionAccepted => (saltBasinProgress & 1) != 0;
