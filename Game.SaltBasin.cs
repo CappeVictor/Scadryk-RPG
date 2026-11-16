@@ -42,9 +42,9 @@ public sealed partial class Game
     {
         var guardians = new (int Mark, PointF Position, EnemyKind Kind, float Hp)[][]
         {
-            new[] { (1, new PointF(510, 390), EnemyKind.Archer, 96f), (1, new PointF(770, 455), EnemyKind.Grunt, 110f), (1, new PointF(655, 570), EnemyKind.NameMoth, 120f) },
-            new[] { (2, new PointF(1850, 340), EnemyKind.Grunt, 118f), (2, new PointF(2130, 435), EnemyKind.Archer, 100f), (2, new PointF(1990, 170), EnemyKind.NameMoth, 128f) },
-            new[] { (4, new PointF(2730, 1400), EnemyKind.Archer, 108f), (4, new PointF(3020, 1320), EnemyKind.NameMoth, 132f), (4, new PointF(2995, 1610), EnemyKind.Elite, 235f) }
+            new[] { (2, new PointF(510, 390), EnemyKind.Archer, 96f), (2, new PointF(770, 455), EnemyKind.Grunt, 110f), (2, new PointF(655, 570), EnemyKind.NameMoth, 120f) },
+            new[] { (4, new PointF(1850, 340), EnemyKind.Grunt, 118f), (4, new PointF(2130, 435), EnemyKind.Archer, 100f), (4, new PointF(1990, 170), EnemyKind.NameMoth, 128f) },
+            new[] { (8, new PointF(2730, 1400), EnemyKind.Archer, 108f), (8, new PointF(3020, 1320), EnemyKind.NameMoth, 132f), (8, new PointF(2995, 1610), EnemyKind.Elite, 235f) }
         };
         foreach (var group in guardians)
         {
