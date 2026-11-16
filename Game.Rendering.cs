@@ -1494,7 +1494,13 @@ public sealed partial class Game
         }
         else if (combatTempo > 0) g.DrawString($"Ritmo: {(combatTempo == 1 ? "Abertura da Vigília" : "Resposta do Veio")} • redistribuível na forja.", optionFont, hintBrush, 220, 510);
         else if (combatApex > 0) g.DrawString("Ritmo de combate desbloqueia no nível 25.", optionFont, hintBrush, 220, 510);
-        if (level >= 30 && combatTempo > 0 && combatInstinct == 0)
+        if (level >= 40 && combatInstinct > 0 && combatCapstone == 0)
+        {
+            g.DrawString("5. MARÉ DE RETORNO  abates de elite/chefe reduzem recargas em 1 s", optionFont, Brushes.Goldenrod, 220, 578);
+            g.DrawString("6. ÚLTIMO ABRIGO  com 50% de vida ou menos, abates curam 8%", optionFont, Brushes.Plum, 220, 612);
+        }
+        else if (combatCapstone > 0) g.DrawString($"Legado: {(combatCapstone == 1 ? "Maré de Retorno" : "Último Abrigo")} • redistribuível na forja.", optionFont, hintBrush, 220, 578);
+        else if (level >= 30 && combatTempo > 0 && combatInstinct == 0)
         {
             g.DrawString("5. PRIMEIRA RESSONÂNCIA  +18% contra alvos com 80%+ de vida", optionFont, Brushes.Goldenrod, 220, 578);
             g.DrawString("6. ÚLTIMO ECO  +18% contra alvos com 30% ou menos de vida", optionFont, Brushes.Plum, 220, 612);

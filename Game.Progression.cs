@@ -7,7 +7,7 @@ public sealed partial class Game
 {
     private static int TalentRespecGoldCost(int level) => 250 + Math.Max(1, level) * 100;
     private static int TalentRespecGlassCost(int level) => 5 + Math.Max(1, level) / 5;
-    private static int CombatMilestonesAtLevel(int level) => (level >= 5 ? 1 : 0) + (level >= 10 ? 1 : 0) + (level >= 15 ? 1 : 0) + (level >= 20 ? 1 : 0) + (level >= 25 ? 1 : 0) + (level >= 30 ? 1 : 0);
+    private static int CombatMilestonesAtLevel(int level) => (level >= 5 ? 1 : 0) + (level >= 10 ? 1 : 0) + (level >= 15 ? 1 : 0) + (level >= 20 ? 1 : 0) + (level >= 25 ? 1 : 0) + (level >= 30 ? 1 : 0) + (level >= 40 ? 1 : 0);
 
     private void RespecTalents()
     {
@@ -17,7 +17,7 @@ public sealed partial class Game
         if (spent == 0) { notice = "NÃO HÁ TALENTOS PARA REDISTRIBUIR"; noticeTime = 2; return; }
         if (gold < goldCost || tideGlass < glassCost) { notice = $"REDISTRIBUIR CUSTA {goldCost} OURO E {glassCost} SAL VÍTREO"; noticeTime = 2.5f; return; }
         float healthRatio = maxHealth > 0 ? health / maxHealth : 1;
-        gold -= goldCost; tideGlass -= glassCost; maxHealth = Math.Max(1, maxHealth - healthTalent * 20); healthTalent = skillTalent = dodgeTalent = techniqueTalent = combatDiscipline = combatMastery = combatFocus = combatApex = combatTempo = combatInstinct = 0; health = Math.Clamp(maxHealth * healthRatio, 1, maxHealth);
+        gold -= goldCost; tideGlass -= glassCost; maxHealth = Math.Max(1, maxHealth - healthTalent * 20); healthTalent = skillTalent = dodgeTalent = techniqueTalent = combatDiscipline = combatMastery = combatFocus = combatApex = combatTempo = combatInstinct = combatCapstone = 0; health = Math.Clamp(maxHealth * healthRatio, 1, maxHealth);
         pendingTalents = spent; talentChoice = pendingTalents > 0; forgeMenuOpen = false; notice = $"TALENTOS REDISTRIBUÍDOS: {spent} PONTOS DEVOLVIDOS"; noticeTime = 3;
     }
 
@@ -62,6 +62,13 @@ public sealed partial class Game
         {
             if (key == Keys.D5) combatInstinct = 1;
             else if (key == Keys.D6) combatInstinct = 2;
+            else return;
+            pendingTalents--; talentChoice = pendingTalents > 0; return;
+        }
+        if (level >= 40 && combatCapstone == 0)
+        {
+            if (key == Keys.D5) combatCapstone = 1;
+            else if (key == Keys.D6) combatCapstone = 2;
             else return;
             pendingTalents--; talentChoice = pendingTalents > 0; return;
         }
@@ -122,6 +129,17 @@ public sealed partial class Game
             AddFloatingText(new PointF(player.X, player.Y - 56), $"CONTRAMARÉ −{cooldownRefund:0.0} S", Color.LightCyan);
         }
         if (enemy.EliteMinion) return;
+        if ((enemy.Boss || enemy.Kind == EnemyKind.Elite) && combatCapstone == 1)
+        {
+            AdvanceTechniqueCooldowns(1f);
+            AddFloatingText(new PointF(player.X, player.Y - 56), "MARÉ DE RETORNO −1,0 S", Color.LightCyan);
+        }
+        else if ((enemy.Boss || enemy.Kind == EnemyKind.Elite) && combatCapstone == 2 && health <= maxHealth * 0.5f)
+        {
+            float restored = Math.Min(maxHealth - health, maxHealth * 0.08f);
+            health += restored;
+            if (restored > 0) AddFloatingText(new PointF(player.X, player.Y - 56), $"ÚLTIMO ABRIGO +{restored:0} VIDA", Color.LightCyan);
+        }
         enemiesDefeated++; int goldDrop = enemy.VigilMinion ? 8 + Math.Min(20, vigilFloor * 2) : vigilActive ? 35 + Math.Min(500, vigilFloor * 15) : enemy.Boss ? 35 : enemy.Kind == EnemyKind.Elite ? 20 : 8;
         int xpReward = enemy.VigilMinion ? 12 : enemy.Boss ? 75 : enemy.Kind == EnemyKind.Elite ? 40 : 22;
         if (!vigilActive) { goldDrop = (int)Math.Round(goldDrop * DifficultyRewardMultiplier(difficultyTier)); xpReward = (int)Math.Round(xpReward * DifficultyRewardMultiplier(difficultyTier)); }
