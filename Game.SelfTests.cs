@@ -750,7 +750,7 @@ public sealed partial class Game
             if (lootRollCheck.weaponRarities[1] != rarity || lootRollCheck.weaponBonuses[1] != bonus || lootRollCheck.weaponAffixes[1] != affix || lootRollCheck.weaponAffixes2[1] != affix2 || !label.Contains(WeaponRarityName(rarity)) || !label.Contains(WeaponGroundAffix(drop)) || !label.Contains($"DANO: 25 → {expectedDropDamage}") || !label.Contains("longo") || !label.Contains("ATUAL: sem afixo"))
                 throw new InvalidOperationException("A arma mudou ao ser recolhida ou não foi identificada no chão.");
         }
-        if (EliteAffixForRoll(0) != EliteAffix.Armored || EliteAffixForRoll(1) != EliteAffix.Swift || EliteAffixForRoll(2) != EliteAffix.Bloodbound || EliteAffixForRoll(4) != EliteAffix.Summoner || EliteAffixForRoll(5) != EliteAffix.Conductor || EliteAffixName(EliteAffix.Bloodbound) != "SANGRADOR" || EliteAffixName(EliteAffix.Conductor) != "CONDUTOR" || EliteSecondaryAffixForRoll(0, EliteAffix.Armored) != EliteAffix.Swift || EliteSecondaryAffixForRoll(1, EliteAffix.Armored) != EliteAffix.Bloodbound || EliteSecondaryAffixForRoll(0, EliteAffix.Summoner) == EliteAffix.Summoner || EliteSecondaryAffixForRoll(0, EliteAffix.Spearbound) == EliteAffix.Swift)
+        if (EliteAffixForRoll(0) != EliteAffix.Armored || EliteAffixForRoll(1) != EliteAffix.Swift || EliteAffixForRoll(2) != EliteAffix.Bloodbound || EliteAffixForRoll(4) != EliteAffix.Summoner || EliteAffixForRoll(5) != EliteAffix.Conductor || EliteAffixName(EliteAffix.Bloodbound) != "SANGRADOR" || EliteAffixName(EliteAffix.Conductor) != "CONDUTOR" || EliteSecondaryAffixForRoll(0, EliteAffix.Armored) != EliteAffix.Swift || EliteSecondaryAffixForRoll(1, EliteAffix.Armored) != EliteAffix.Bloodbound || EliteSecondaryAffixForRoll(3, EliteAffix.Armored) != EliteAffix.Conductor || EliteSecondaryAffixCount(EliteAffix.Armored) != 4 || EliteSecondaryAffixCount(EliteAffix.Summoner) != 3 || EliteSecondaryAffixForRoll(0, EliteAffix.Summoner) == EliteAffix.Conductor || EliteSecondaryAffixForRoll(0, EliteAffix.Conductor) == EliteAffix.Summoner || EliteSecondaryAffixForRoll(0, EliteAffix.Spearbound) == EliteAffix.Swift)
             throw new InvalidOperationException("As variantes dos elites não foram identificadas corretamente.");
         using (var eliteAffixCheck = new Game())
         {
@@ -787,6 +787,16 @@ public sealed partial class Game
             if (supportedGrunt.Hp != 62 || distantGrunt.Hp != 50 || conductor.Hp != 105) throw new InvalidOperationException("O pulso do Condutor não curou somente os aliados dentro do alcance.");
             conductor.SupportWindup = 0.2f; conductor.Stagger = 0.1f; supportedGrunt.Hp = 40; eliteAffixCheck.UpdateEnemy(conductor, 0.01f);
             if (conductor.SupportWindup != 0 || supportedGrunt.Hp != 40 || conductor.SupportCooldown != 1.8f) throw new InvalidOperationException("O Condutor não teve o canal cancelado por interrupção.");
+            Enemy secondaryConductor = new() { Pos = new PointF(500, 330), Kind = EnemyKind.Elite, EliteAffix = EliteAffix.Swift, EliteAffix2 = EliteAffix.Conductor, Hp = 90, MaxHp = 120, SupportCooldown = 0 };
+            eliteAffixCheck.enemies.Clear(); eliteAffixCheck.enemies.Add(secondaryConductor);
+            eliteAffixCheck.UpdateEnemy(secondaryConductor, 0.01f);
+            if (secondaryConductor.SupportWindup <= 0 || Math.Abs(secondaryConductor.SupportWindup - 0.9f) > 0.001f || EnemyName(secondaryConductor) != "ELITE • VELOZ + CONDUTOR")
+                throw new InvalidOperationException("O Condutor como afixo secundário não canalizou o suporte nem exibiu os dois papéis.");
+            Enemy secondarySummoner = new() { Pos = new PointF(500, 330), Kind = EnemyKind.Elite, EliteAffix = EliteAffix.Armored, EliteAffix2 = EliteAffix.Summoner, Hp = 120, MaxHp = 120, SummonCooldown = 0 };
+            eliteAffixCheck.enemies.Clear(); eliteAffixCheck.enemies.Add(secondarySummoner);
+            eliteAffixCheck.UpdateEnemy(secondarySummoner, 0.01f); eliteAffixCheck.UpdateEnemy(secondarySummoner, 1f);
+            if (!eliteAffixCheck.enemies.Any(enemy => enemy.EliteMinion) || EnemyName(secondarySummoner) != "ELITE • BLINDADO + INVOCADOR")
+                throw new InvalidOperationException("O Invocador como afixo secundário não chamou um eco de apoio nem exibiu os dois papéis.");
         }
         if (EliteWeaponDropRoll(-1) || !EliteWeaponDropRoll(0) || !EliteWeaponDropRoll(34) || EliteWeaponDropRoll(35) || EliteWeaponDropRoll(99)
             || !EliteWeaponDropRoll(99, 2) || !EliteWeaponDropRoll(0, 1) || EliteWeaponDropRoll(99, 1)
@@ -1714,7 +1724,7 @@ public sealed partial class Game
             eliteCircuit.room = eliteRoom; eliteCircuit.SetupRoom(); Enemy[] roomElites = eliteCircuit.enemies.Where(enemy => enemy.Kind == EnemyKind.Elite).ToArray();
             EliteAffix? secondary = roomElites.Length == 1 ? roomElites[0].EliteAffix2 : null;
             bool validSecondary = !secondary.HasValue;
-            if (secondary.HasValue) validSecondary = Enum.IsDefined(secondary.Value) && secondary.Value != roomElites[0].EliteAffix && (secondary.Value is EliteAffix.Armored or EliteAffix.Swift or EliteAffix.Bloodbound) && !(roomElites[0].EliteAffix == EliteAffix.Spearbound && secondary.Value == EliteAffix.Swift);
+            if (secondary.HasValue) validSecondary = Enum.IsDefined(secondary.Value) && EliteSecondaryAffixOptions(roomElites[0].EliteAffix).Contains(secondary.Value);
             if (roomElites.Length != 1 || roomElites[0].MaxHp != 120 + (eliteRoom - 1) * 6 || !Enum.IsDefined(roomElites[0].EliteAffix) || secondary.HasValue != (eliteRoom >= 25) || !validSecondary || roomElites[0].Armored != HasEliteAffix(roomElites[0], EliteAffix.Armored)) throw new InvalidOperationException($"A rota avançada {eliteRoom} não recebeu as combinações de afixos e a vida escalada esperadas.");
         }
         using (var field = new Game())

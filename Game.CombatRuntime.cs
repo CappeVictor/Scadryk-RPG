@@ -370,10 +370,16 @@ public sealed partial class Game
         }
     }
     private static EliteAffix EliteAffixForRoll(int roll) => roll switch { 0 => EliteAffix.Armored, 1 => EliteAffix.Swift, 2 => EliteAffix.Bloodbound, 3 => EliteAffix.Spearbound, 5 => EliteAffix.Conductor, _ => EliteAffix.Summoner };
+    private static EliteAffix[] EliteSecondaryAffixOptions(EliteAffix primary) => new[] { EliteAffix.Armored, EliteAffix.Swift, EliteAffix.Bloodbound, EliteAffix.Summoner, EliteAffix.Conductor }
+        .Where(affix => affix != primary
+            && !(primary == EliteAffix.Spearbound && affix == EliteAffix.Swift)
+            && !(primary == EliteAffix.Summoner && affix == EliteAffix.Conductor)
+            && !(primary == EliteAffix.Conductor && affix == EliteAffix.Summoner))
+        .ToArray();
+    private static int EliteSecondaryAffixCount(EliteAffix primary) => EliteSecondaryAffixOptions(primary).Length;
     private static EliteAffix EliteSecondaryAffixForRoll(int roll, EliteAffix primary)
     {
-        EliteAffix[] options = { EliteAffix.Armored, EliteAffix.Swift, EliteAffix.Bloodbound };
-        EliteAffix[] eligible = options.Where(affix => affix != primary && !(primary == EliteAffix.Spearbound && affix == EliteAffix.Swift)).ToArray();
+        EliteAffix[] eligible = EliteSecondaryAffixOptions(primary);
         return eligible[Math.Abs(roll % eligible.Length)];
     }
     private static bool HasEliteAffix(Enemy enemy, EliteAffix affix) => enemy.Kind == EnemyKind.Elite && (enemy.EliteAffix == affix || enemy.EliteAffix2 == affix);
