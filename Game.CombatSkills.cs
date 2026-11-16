@@ -477,7 +477,7 @@ public sealed partial class Game
     private PointF CurrentDrift()
     {
         if (room == 49 && player.X is > 2780 and < 3680 && player.Y is > 1780 and < 2220)
-            return new PointF((MathF.Sin(windupPulse * 0.45f) >= 0 ? 24 : -24) * (tideBootsOn ? 0.55f : 1f), 0);
+            return new PointF((MathF.Sin(windupPulse * 0.45f) >= 0 ? 24 : -24) * (tideBootsOn && tideBootsAspect == 0 ? 0.55f : 1f), 0);
         if (room == 25 && player.X is > 300 and < 670 && player.Y is > 286 and < 384) return new PointF(58, 0);
         if (room == 26)
         {

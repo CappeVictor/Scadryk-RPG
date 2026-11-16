@@ -2096,6 +2096,16 @@ public sealed partial class Game
                     cacheResume.OnKeyDown(null, new KeyEventArgs(Keys.F8));
                     SaveData equippedBootsSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(cacheResume.CaptureSaveData()))!;
                     if (!cacheResume.tideBootsOn || Math.Abs(cacheResume.CurrentDrift().X - 13.2f) > 0.01f || cacheResume.CurrentDrift().Y != 0 || !equippedBootsSave.TideBootsOn) throw new InvalidOperationException("As Grevas de Ressaca não reduziram o empurrão em 45% nem voltaram ao save.");
+                    float coastWalkSpeed = cacheResume.PlayerMovementSpeed();
+                    cacheResume.OnKeyDown(null, new KeyEventArgs(Keys.F9));
+                    SaveData lightStepSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(cacheResume.CaptureSaveData()))!;
+                    if (cacheResume.tideBootsAspect != 1 || Math.Abs(cacheResume.PlayerMovementSpeed() - coastWalkSpeed * 1.08f) > 0.01f || lightStepSave.TideBootsAspect != 1 || Math.Abs(cacheResume.CurrentDrift().X - 24) > 0.01f) throw new InvalidOperationException("O aspecto Passo Leve das Grevas não acelerou o movimento, salvou a escolha ou manteve a corrente sem mitigação.");
+                    cacheResume.OnKeyDown(null, new KeyEventArgs(Keys.F9));
+                    if (cacheResume.tideBootsAspect != 2 || Math.Abs(cacheResume.DashCooldown() - 1.03f) > 0.01f) throw new InvalidOperationException("O aspecto Arranque das Grevas não reduziu a recarga da esquiva em 0,12 s.");
+                    cacheResume.OnKeyDown(null, new KeyEventArgs(Keys.F9));
+                    if (cacheResume.tideBootsAspect != 0 || Math.Abs(cacheResume.CurrentDrift().X - 13.2f) > 0.01f) throw new InvalidOperationException("A rotação dos aspectos das Grevas não voltou à Contramaré.");
+                    SaveData invalidBootAspect = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(cacheResume.CaptureSaveData()))!; invalidBootAspect.TideBootsAspect = 3;
+                    if (ValidSaveData(invalidBootAspect)) throw new InvalidOperationException("O save aceitou um aspecto de Grevas fora do catálogo.");
                     using var cacheMap = new Bitmap(960, 640); using var cacheGraphics = Graphics.FromImage(cacheMap); cacheResume.DrawSaltFrontierMap(cacheGraphics);
                 }
                 vaultResume.player = SaltFrontierBellheart; vaultResume.Interact(); vaultResume.memoryOverlay = false;

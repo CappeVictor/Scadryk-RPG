@@ -2,7 +2,7 @@
 
 **Expansão de builds:** concluir o 30º andar da Vigília Ascendente libera um terceiro espaço de talismã. A escolha usa F7 no inventário, persiste no save e ativa sintonias entre quaisquer dois dos três talismãs equipados; saves antigos começam com o espaço vazio.
 
-**Nova família de equipamento:** o estojo opcional revelado por Nemi na Costa das Badaladas concede as Grevas de Ressaca. F8 alterna o equipamento; enquanto vestidas, reduzem em 45% o empurrão das correntes costeiras. Descoberta, estado equipado e efeito entram no save e na CI.
+**Nova família de equipamento:** o estojo opcional revelado por Nemi na Costa das Badaladas concede as Grevas de Ressaca. F8 equipa ou retira as Grevas; F9 alterna três aspectos persistidos: Contramaré reduz em 45% o empurrão das correntes costeiras, Passo Leve aumenta a caminhada em 8%, e Arranque reduz em 0,12 s a recarga da esquiva. A CI cobre rotação, efeitos, limites e save.
 
 Construir, somente em C#/.NET e com o fluxo de trabalho do VS Code, um RPG de ação 2D de fantasia sombria com a riqueza de combate, exploração, loot e progressão que admiramos em Diablo. Essa é uma meta de longo prazo, não uma promessa de equivalência imediata: cada etapa deve resultar em uma versão jogável, validada e documentada. Scadryk terá cenário, história, personagens, criaturas, itens e identidade visual originais.
 
