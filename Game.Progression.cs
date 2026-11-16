@@ -91,12 +91,13 @@ public sealed partial class Game
     private void TriggerNameRiftBurst(Enemy defeated, int? weaponIndex = null)
     {
         int index = weaponIndex ?? weapon;
-        if (!HasNameRiftPower(index) || !IsMarkedForRift(defeated)) return;
-        const float radius = 108f;
+        bool inscriptionResonance = HasInscriptionRiftResonance(index);
+        if (!HasNameRiftPower(index) || !(IsMarkedForRift(defeated) || inscriptionResonance && IsMarkedForInscription(defeated))) return;
+        float radius = inscriptionResonance ? 132f : 108f;
         AddFloatingText(new PointF(defeated.Pos.X, defeated.Pos.Y - defeated.Radius - 18), "NOME RISCADO", Color.FromArgb(255, 218, 154, 242));
         TriggerScreenShake(2.6f, 0.16f);
         if (nameRiftBursts.Count >= 16) nameRiftBursts.RemoveAt(0);
-        nameRiftBursts.Add(new NameRiftBurst { Pos = defeated.Pos });
+        nameRiftBursts.Add(new NameRiftBurst { Pos = defeated.Pos, Radius = radius });
         foreach (Enemy target in enemies.Where(candidate => Distance(candidate.Pos, defeated.Pos) <= radius).ToArray())
         {
             float power = WeaponPower(index) * (target.Boss ? 0.28f : 0.72f) * OutgoingDamageMultiplier(target, index) * (IsArmored(target) ? 0.75f : 1f);

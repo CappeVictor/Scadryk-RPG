@@ -38,7 +38,7 @@ public sealed partial class Game : Form
     }
     private sealed class Drop { public PointF Pos; public string Kind = "gold"; public int Amount, Rarity, Bonus, Affix, Affix2; }
     private sealed class GroundHazard { public PointF Pos; public float Radius = 48, TimeLeft = 3.2f, TickCooldown = 0.8f, WarningTime; public int Damage = 9; }
-    private sealed class NameRiftBurst { public PointF Pos; public float TimeLeft = 0.3f; }
+    private sealed class NameRiftBurst { public PointF Pos; public float Radius = 108f; public float TimeLeft = 0.3f; }
     private sealed class EchoShard { public PointF Pos, Direction; public float Life, Damage; public HashSet<Enemy> Hit = new(); }
     private sealed class BowArrow { public PointF Pos, Direction; public float Remaining, Damage, WoundBaseDamage; public int WeaponIndex; public bool Critical, RangedCriticalResonance, FordRouteBurst; }
     private sealed class FloatingText { public PointF Pos; public string Text = ""; public Color Color; public float TimeLeft, Duration; }

@@ -1409,7 +1409,7 @@ public sealed partial class Game
     {
         foreach (NameRiftBurst burst in nameRiftBursts)
         {
-            float progress = 1f - burst.TimeLeft / 0.3f, radius = 108f * progress;
+            float progress = 1f - burst.TimeLeft / 0.3f, radius = burst.Radius * progress;
             int alpha = Math.Clamp((int)(225 * (1f - progress)), 0, 225);
             using var outer = new Pen(Color.FromArgb(alpha, 219, 151, 242), 3.5f);
             using var inner = new Pen(Color.FromArgb(alpha / 2, 239, 211, 248), 1.5f);

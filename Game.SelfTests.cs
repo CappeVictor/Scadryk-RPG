@@ -1450,6 +1450,26 @@ public sealed partial class Game
                 || !ValidWeaponData(fendaForge.CaptureSaveData()))
                 throw new InvalidOperationException("A Inscrição de Relíquia não reconheceu a marca da Centelha ou seu valor e persistência falharam.");
         }
+        using (var inscriptionRift = new Game())
+        {
+            inscriptionRift.timer.Stop(); inscriptionRift.StartGame(); inscriptionRift.storyOverlay = false;
+            inscriptionRift.weaponRarities[0] = 2; inscriptionRift.weaponBonuses[0] = 7; inscriptionRift.weaponAffixes[0] = 10; inscriptionRift.weaponAffixes2[0] = 9;
+            Enemy sparkMarkedWithoutResonance = new() { Pos = new PointF(300, 300), Kind = EnemyKind.Grunt, Hp = 100, MaxHp = 100, SparkMarkTime = 2 };
+            inscriptionRift.enemies.Add(sparkMarkedWithoutResonance); inscriptionRift.TriggerNameRiftBurst(sparkMarkedWithoutResonance);
+            if (inscriptionRift.nameRiftBursts.Count != 0) throw new InvalidOperationException("Nome Riscado passou a reconhecer a marca da Centelha sem a Ressonância da Inscrição.");
+            inscriptionRift.enemies.Clear(); sparkMarkedWithoutResonance.SparkMarkTime = 0; sparkMarkedWithoutResonance.BellMarkTime = 2;
+            inscriptionRift.enemies.Add(sparkMarkedWithoutResonance); inscriptionRift.TriggerNameRiftBurst(sparkMarkedWithoutResonance);
+            if (inscriptionRift.nameRiftBursts.Count != 1 || inscriptionRift.nameRiftBursts[0].Radius != 108)
+                throw new InvalidOperationException("Nome Riscado deixou de manter o raio padrão de 108 para a marca do Sino.");
+            inscriptionRift.enemies.Clear(); inscriptionRift.nameRiftBursts.Clear(); inscriptionRift.weaponAffixes[0] = 11;
+            Enemy sparkRiftSource = new() { Pos = new PointF(300, 300), Kind = EnemyKind.Grunt, Hp = 100, MaxHp = 100, SparkMarkTime = 2 };
+            Enemy bellChainTarget = new() { Pos = new PointF(420, 300), Kind = EnemyKind.Grunt, Hp = 1, MaxHp = 100, BellMarkTime = 2 };
+            inscriptionRift.enemies.AddRange(new[] { sparkRiftSource, bellChainTarget }); inscriptionRift.TriggerNameRiftBurst(sparkRiftSource);
+            if (!inscriptionRift.HasInscriptionRiftResonance(0) || inscriptionRift.nameRiftBursts.Count != 2
+                || inscriptionRift.nameRiftBursts.Any(burst => burst.Radius != 132)
+                || !inscriptionRift.WeaponAffixDescription(0).Contains("Ressonância da Inscrição: Nome Riscado reconhece marcas da Sutura e da Centelha e amplia o raio para 132"))
+                throw new InvalidOperationException("Inscrição + Nome Riscado não ativou o raio ampliado e a cadeia entre marcas da Centelha e do Sino.");
+        }
         using (var stoneConvergence = new Game())
         {
             stoneConvergence.timer.Stop(); stoneConvergence.StartGame();
