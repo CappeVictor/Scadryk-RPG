@@ -150,13 +150,6 @@ public sealed partial class Game
             }
             return;
         }
-        if (e.Kind == EnemyKind.CooldownLeech)
-        {
-            if (dist < 150) e.Pos = MoveEnemy(e, Scale(Normalize(Sub(e.Pos, player), PointF.Empty), 58 * dt));
-            else if (dist > 285) e.Pos = MoveEnemy(e, Scale(Normalize(offset, PointF.Empty), 36 * dt));
-            else if (e.Cooldown <= 0) { BeginWindup(e, player, 1.05f); e.Cooldown = 3.25f; }
-            SeparateFromPack(e, dt); return;
-        }
         if (room == 43 && (e.Pos.X < 1820 && player.X > 1820 || e.Pos.X > 1660 && player.X < 1660) && BlockedLine(e.Pos, player))
         {
             float bridgeY = Math.Abs(e.Pos.Y - 700) <= Math.Abs(e.Pos.Y - 1050) ? 700 : 1050;
@@ -175,16 +168,9 @@ public sealed partial class Game
             e.Pos = MoveEnemy(e, Scale(Normalize(Sub(e.PathWaypoint, e.Pos), PointF.Empty), 70 * dt));
             return;
         }
-        if (e.Kind == EnemyKind.SlagWeaver)
-        {
-            if (dist < 185) e.Pos = MoveEnemy(e, Scale(Normalize(Sub(e.Pos, player), PointF.Empty), 54 * dt));
-            else if (dist > 260) e.Pos = MoveEnemy(e, Scale(Normalize(offset, PointF.Empty), 36 * dt));
-            else if (e.Cooldown <= 0) { BeginWindup(e, player, 0.95f); e.Cooldown = 3.75f; }
-            SeparateFromPack(e, dt); return;
-        }
-        if (e.Kind is EnemyKind.Archer or EnemyKind.InkEcho or EnemyKind.SaltEcho) { float preferred = e.Kind == EnemyKind.InkEcho ? 135 : e.Kind == EnemyKind.SaltEcho ? 155 : 170; if (dist < preferred) e.Pos = MoveEnemy(e, Scale(Normalize(Sub(e.Pos, player), PointF.Empty), (e.Kind == EnemyKind.InkEcho ? 68 : e.Kind == EnemyKind.SaltEcho ? 62 : 55) * dt)); else if (e.Cooldown <= 0) { BeginWindup(e, player, e.Kind == EnemyKind.InkEcho ? 0.75f : e.Kind == EnemyKind.SaltEcho ? 0.68f : 0.6f); e.Cooldown = e.Kind == EnemyKind.InkEcho ? 2.0f : e.Kind == EnemyKind.SaltEcho ? 1.85f : 1.8f; } SeparateFromPack(e, dt); return; }
-        if (e.Kind is EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth or EnemyKind.MudCantor or EnemyKind.PaperWraith) { float preferred = e.Kind == EnemyKind.EmberWisp ? 145 : e.Kind == EnemyKind.NameMoth ? 175 : e.Kind == EnemyKind.MudCantor ? 215 : e.Kind == EnemyKind.PaperWraith ? 185 : 110; if (dist < preferred) e.Pos = MoveEnemy(e, Scale(Normalize(Sub(e.Pos, player), PointF.Empty), (e.Kind is EnemyKind.MudCantor or EnemyKind.PaperWraith ? 52 : 72) * dt)); else if (e.Cooldown <= 0) { BeginWindup(e, player, e.Kind == EnemyKind.EmberWisp ? 0.7f : e.Kind == EnemyKind.NameMoth ? 0.62f : e.Kind == EnemyKind.MudCantor ? 0.82f : e.Kind == EnemyKind.PaperWraith ? 0.68f : 0.9f); e.Cooldown = e.Kind == EnemyKind.EmberWisp ? 1.9f : e.Kind == EnemyKind.NameMoth ? 1.7f : e.Kind == EnemyKind.MudCantor ? 2.15f : e.Kind == EnemyKind.PaperWraith ? 1.95f : 2.25f; } SeparateFromPack(e, dt); return; }
-        if (e.Kind == EnemyKind.Mage && dist < 165) e.Pos = MoveEnemy(e, Scale(Normalize(Sub(e.Pos, player), PointF.Empty), 42 * dt));
+        if (UpdateDataDrivenEnemyBehavior(e, dt, dist, offset)) return;
+        EnemyDefinition behavior = EnemyData(e.Kind);
+        if (behavior.AiStyle == EnemyAiStyle.Mage && dist < behavior.PreferredDistance) e.Pos = MoveEnemy(e, Scale(Normalize(Sub(e.Pos, player), PointF.Empty), behavior.RetreatSpeed * dt));
         if (e.Kind == EnemyKind.Elite && e.EliteAffix == EliteAffix.Spearbound)
         {
             if (dist < 150) e.Pos = MoveEnemy(e, Scale(Normalize(Sub(e.Pos, player), PointF.Empty), 66 * dt));
@@ -192,7 +178,7 @@ public sealed partial class Game
             else if (dist > 210) e.Pos = MoveEnemy(e, Scale(Normalize(offset, PointF.Empty), 48 * dt));
             SeparateFromPack(e, dt); return;
         }
-        if (e.Kind == EnemyKind.Elite && e.Cooldown <= 0 && dist < 220) { bool swift = HasEliteAffix(e, EliteAffix.Swift), armored = HasEliteAffix(e, EliteAffix.Armored); BeginWindup(e, player, swift ? armored ? 0.48f : 0.38f : armored ? 0.72f : 0.58f); e.Cooldown = swift ? armored ? 2f : 1.55f : armored ? 2.5f : 2.1f; return; }
+        if (e.Kind == EnemyKind.Elite && e.Cooldown <= 0 && dist < behavior.AttackRange) { bool swift = HasEliteAffix(e, EliteAffix.Swift), armored = HasEliteAffix(e, EliteAffix.Armored); BeginWindup(e, player, swift ? armored ? 0.48f : 0.38f : armored ? 0.72f : behavior.AttackWindup); e.Cooldown = swift ? armored ? 2f : 1.55f : armored ? 2.5f : behavior.AttackCooldown; return; }
         if (e.Kind == EnemyKind.LastTuner && e.Cooldown <= 0)
         {
             e.BossPattern = (e.BossPattern + 1) % 3;
@@ -201,7 +187,7 @@ public sealed partial class Game
             BeginWindup(e, e.BossPattern is 1 or 2 ? player : e.Pos, windup); e.Cooldown = e.Hp < e.MaxHp * 0.5f ? 1.35f : 2.1f; return;
         }
         if (e.Boss && e.Cooldown <= 0 && (dist < 135 || (e.Kind is EnemyKind.BlindScribe or EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus))) { e.BossPattern = (e.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus) ? (e.BossPattern + 1) % 3 : 1 - e.BossPattern; bool aimed = (e.Kind == EnemyKind.BlindScribe && e.BossPattern == 1) || ((e.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden) && (e.BossPattern is 1 or 2)) || (e.Kind is EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus) && e.BossPattern is 1 or 2; float windup = e.Hp < e.MaxHp * 0.5f ? 0.52f : 0.78f; if (vigilActive && RunVigilAspect(vigilFloor) == VigilAspect.Swift) windup *= 0.8f; if (e.Kind == EnemyKind.FirstKeeper && e.BossPattern == 2) { PointF axis = Normalize(Sub(player, e.Pos), new PointF(1, 0)); PointF side = new(-axis.Y, axis.X); e.Target = Add(e.Pos, Scale(axis, 920)); e.Target2Start = Add(player, Scale(side, -460)); e.Target2 = Add(player, Scale(side, 460)); e.Windup = e.WindupMax = windup; GameAudio.Play(GameAudio.Cue.BossWarning); } else BeginWindup(e, aimed || e.NameOverride == "VIGIA DAS COMPORTAS" && e.BossPattern == 1 ? player : e.Pos, windup); e.Cooldown = e.Hp < e.MaxHp * 0.5f ? 1.25f : 2.0f; return; }
-        if (e.Kind == EnemyKind.Mage && e.Cooldown <= 0) { BeginWindup(e, player, 0.8f); e.Cooldown = 2.2f; SeparateFromPack(e, dt); return; }
+        if (behavior.AiStyle == EnemyAiStyle.Mage && e.Cooldown <= 0) { BeginWindup(e, player, behavior.AttackWindup); e.Cooldown = behavior.AttackCooldown; SeparateFromPack(e, dt); return; }
         if (dist > (e.Boss ? 40 : 30)) e.Pos = MoveEnemy(e, Scale(Normalize(offset, PointF.Empty), (e.Boss ? 55 : MeleeChaseSpeed(room >= 43 ? 4 : room, HasEliteAffix(e, EliteAffix.Swift))) * dt));
         else if (e.Cooldown <= 0) { BeginWindup(e, player, 0.45f); e.Cooldown = 1.35f; }
         if (!e.Boss) SeparateFromPack(e, dt);

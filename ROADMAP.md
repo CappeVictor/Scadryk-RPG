@@ -190,3 +190,6 @@ O mesmo catálogo agora descreve os oito afixos comuns às Raras e Relíquias e 
 
 
 Primeira etapa do catálogo de inimigos: os 33 tipos da campanha agora têm definições centrais de nome, vida base/progressiva, vida alternativa pela decisão da cidade, categoria de chefe, raio corporal, dano de contato e raio de impacto à distância. A criação das salas, o HUD, as colisões e os ataques consultam esses dados. O escalonamento próprio da Vigília e os afixos de elite continuam sendo modificadores sobre os perfis. O autoteste exige uma definição para cada tipo, confere os 20 chefes, progressão da vida, exceções da Vigília e todos os valores de dano de contato. Os padrões de IA e os telegráficos especiais ainda permanecem em regras de combate específicas.
+
+
+Perfis de IA agora guardam no catálogo a distância preferida, velocidade de recuo, velocidade de aproximação, tempo de aviso e intervalo de ataque de arqueiros, ecos à distância, Mordente de Compasso, Eco de Escória e Conjurador. O comportamento escolhe o perfil por tipo e lê os números das definições, mantendo as faixas particulares de cada criatura. O ataque comum de elite também consulta alcance e cadência base do catálogo; variações de afixo, investidas de lança e padrões de chefes seguem com regras próprias. O autoteste simula recuo e ataque para os oito tipos à distância.

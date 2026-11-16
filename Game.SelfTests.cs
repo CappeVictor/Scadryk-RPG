@@ -33,6 +33,26 @@ public sealed partial class Game
                 || enemyContactCatalogCheck.EnemyContactDamage(new Enemy { Kind = EnemyKind.SlagWeaver }) != 18)
                 throw new InvalidOperationException("O escalonamento de dano da Vigília alterou as exceções catalogadas.");
         }
+        using (var enemyBehaviorCatalogCheck = new Game())
+        {
+            enemyBehaviorCatalogCheck.timer.Stop(); enemyBehaviorCatalogCheck.StartGame(); enemyBehaviorCatalogCheck.enemies.Clear();
+            EnemyKind[] rangedKinds = Enum.GetValues<EnemyKind>().Where(kind => EnemyData(kind).AiStyle == EnemyAiStyle.RangedKiter).ToArray();
+            if (rangedKinds.Length != 8) throw new InvalidOperationException("O catálogo não contém os oito perfis de criaturas à distância.");
+            foreach (EnemyKind kind in rangedKinds)
+            {
+                EnemyDefinition profile = EnemyData(kind);
+                var kitingEnemy = new Enemy { Kind = kind, Pos = new PointF(350, 330), Cooldown = 1, Hp = 100, MaxHp = 100 };
+                enemyBehaviorCatalogCheck.player = new PointF(300, 330);
+                if (!enemyBehaviorCatalogCheck.UpdateDataDrivenEnemyBehavior(kitingEnemy, 0.1f, 50, new PointF(-50, 0))
+                    || Math.Abs(kitingEnemy.Pos.X - (350 + profile.RetreatSpeed * 0.1f)) > 0.05f)
+                    throw new InvalidOperationException($"O perfil à distância de {kind} não manteve sua faixa de combate.");
+                kitingEnemy.Pos = new PointF(600, 330); kitingEnemy.Cooldown = 0;
+                float midRange = profile.PreferredDistance + 10;
+                if (!enemyBehaviorCatalogCheck.UpdateDataDrivenEnemyBehavior(kitingEnemy, 0, midRange, new PointF(-midRange, 0))
+                    || Math.Abs(kitingEnemy.Windup - profile.AttackWindup) > 0.001f || Math.Abs(kitingEnemy.Cooldown - profile.AttackCooldown) > 0.001f)
+                    throw new InvalidOperationException($"O perfil à distância de {kind} não preservou seu aviso ou intervalo de ataque.");
+            }
+        }
         float[] expectedRareAffixes = { 3, 7, 12, 10, 8, 12, 0.15f, 6 };
         float[] expectedRelicAffixes = { 6, 11, 18, 16, 12, 20, 0.25f, 8 };
         for (int i = 0; i < expectedRareAffixes.Length; i++)
