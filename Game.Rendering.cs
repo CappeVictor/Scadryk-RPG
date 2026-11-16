@@ -1152,9 +1152,9 @@ public sealed partial class Game
         {
             PointF tail = Add(player, Scale(facing, 20)), tip = rangedAttackTarget == PointF.Empty ? Add(player, Scale(facing, weaponStyle.NormalReach)) : rangedAttackTarget;
             PointF perpendicular = new(-facing.Y, facing.X), headBase = Add(tip, Scale(facing, -12));
-            Color color = weaponStyle.AttackColor; int alpha = (int)(progress * 230);
-            using var bowGlow = new Pen(Color.FromArgb(alpha / 3, color), 9) { StartCap = LineCap.Round, EndCap = LineCap.Round };
-            using var arrowEdge = new Pen(Color.FromArgb(alpha, color), 2.5f) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+            Color bowColor = weaponStyle.AttackColor; int bowAlpha = (int)(progress * 230);
+            using var bowGlow = new Pen(Color.FromArgb(bowAlpha / 3, bowColor), 9) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+            using var arrowEdge = new Pen(Color.FromArgb(bowAlpha, bowColor), 2.5f) { StartCap = LineCap.Round, EndCap = LineCap.Round };
             g.DrawLine(bowGlow, tail, tip); g.DrawLine(arrowEdge, tail, tip);
             g.DrawLine(arrowEdge, Add(headBase, Scale(perpendicular, 5)), tip); g.DrawLine(arrowEdge, Add(headBase, Scale(perpendicular, -5)), tip);
             return;
