@@ -187,3 +187,6 @@ Primeiro passo de catálogo de conteúdo: os quatro perfis de arma agora vivem e
 
 
 O mesmo catálogo agora descreve os oito afixos comuns às Raras e Relíquias e o poder Nome Riscado, restrito ao segundo afixo de Relíquias. Valores de cura, crítico, dano técnico, recarga, mitigação, alcance, avanço de recargas e ferida são lidos das definições; descrições no chão e no inventário usam os mesmos valores. Rolagem, têmpera e validação de save consultam a lista estável de IDs. O autoteste mantém os valores atuais, compara as duas raridades e confirma a regra do poder exclusivo.
+
+
+Primeira etapa do catálogo de inimigos: os 33 tipos da campanha agora têm definições centrais de nome, vida base/progressiva, vida alternativa pela decisão da cidade, categoria de chefe, raio corporal, dano de contato e raio de impacto à distância. A criação das salas, o HUD, as colisões e os ataques consultam esses dados. O escalonamento próprio da Vigília e os afixos de elite continuam sendo modificadores sobre os perfis. O autoteste exige uma definição para cada tipo, confere os 20 chefes, progressão da vida, exceções da Vigília e todos os valores de dano de contato. Os padrões de IA e os telegráficos especiais ainda permanecem em regras de combate específicas.

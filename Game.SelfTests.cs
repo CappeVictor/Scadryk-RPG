@@ -13,6 +13,26 @@ public sealed partial class Game
     {
         GameAudio.SilenceForAutomatedRun();
         if (!EquipmentCatalog.IsValid()) throw new InvalidOperationException("O catálogo de armas contém perfis incompletos ou duplicados.");
+        if (!IsEnemyCatalogValid()) throw new InvalidOperationException("O catálogo de inimigos omite um tipo ou contém atributos inválidos.");
+        if (EnemyData(EnemyKind.Grunt).HealthAt(0, 0) != 58 || EnemyData(EnemyKind.Grunt).HealthAt(42, 0) != 394
+            || EnemyData(EnemyKind.Elite).HealthAt(42, 0) != 366
+            || EnemyData(EnemyKind.NameWeaver).HealthAt(13, 1) != 410 || EnemyData(EnemyKind.NameWeaver).HealthAt(13, 2) != 455)
+            throw new InvalidOperationException("A progressão de vida dos inimigos mudou ao migrar para o catálogo.");
+        using (var enemyContactCatalogCheck = new Game())
+        {
+            enemyContactCatalogCheck.timer.Stop();
+            foreach (EnemyKind kind in Enum.GetValues<EnemyKind>())
+            {
+                var dummy = new Enemy { Kind = kind };
+                float expected = kind == EnemyKind.SlagWeaver ? 18 : kind == EnemyKind.Elite ? 20 : EnemyData(kind).ContactDamage;
+                if (enemyContactCatalogCheck.EnemyContactDamage(dummy) != expected)
+                    throw new InvalidOperationException($"O dano de contato catalogado para {kind} não corresponde ao combate.");
+            }
+            enemyContactCatalogCheck.vigilActive = true;
+            if (enemyContactCatalogCheck.EnemyContactDamage(new Enemy { Kind = EnemyKind.DeepSilence }) != 112
+                || enemyContactCatalogCheck.EnemyContactDamage(new Enemy { Kind = EnemyKind.SlagWeaver }) != 18)
+                throw new InvalidOperationException("O escalonamento de dano da Vigília alterou as exceções catalogadas.");
+        }
         float[] expectedRareAffixes = { 3, 7, 12, 10, 8, 12, 0.15f, 6 };
         float[] expectedRelicAffixes = { 6, 11, 18, 16, 12, 20, 0.25f, 8 };
         for (int i = 0; i < expectedRareAffixes.Length; i++)

@@ -6,16 +6,7 @@ using System.Linq;
 
 public sealed partial class Game
 {
-    private static float RangedImpactRadius(EnemyKind kind) => kind switch
-    {
-        EnemyKind.Archer => 26,
-        EnemyKind.InkEcho => 30,
-        EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth => 28,
-        EnemyKind.MudCantor or EnemyKind.PaperWraith or EnemyKind.SaltEcho => 36,
-        EnemyKind.CooldownLeech => 42,
-        EnemyKind.SlagWeaver => 48,
-        _ => 0
-    };
+    private static float RangedImpactRadius(EnemyKind kind) => EnemyData(kind).RangedImpactRadius;
 
     private void CreateSlagHazard(PointF position) => groundHazards.Add(new GroundHazard { Pos = position });
 
@@ -148,7 +139,7 @@ public sealed partial class Game
             bool inAttack = e.Boss ? BossAttackContains(e, player) : NonBossAttackContains(e, player);
             if (e.Windup <= 0 && inAttack && invulnerable <= 0 && dashTime <= 0 && (room < 43 || !BlockedLine(e.Pos, player)))
             {
-                if (e.Kind == EnemyKind.SlagWeaver) HitPlayer(18); else HitPlayer(vigilActive ? 112 : e.Boss ? e.Kind == EnemyKind.BlindScribe ? 23 : e.Kind == EnemyKind.RiverFerryman ? 28 : e.Kind == EnemyKind.AshWarden ? 31 : e.Kind == EnemyKind.HollowName ? 36 : e.Kind == EnemyKind.NameWeaver ? 39 : e.Kind == EnemyKind.FirstKeeper ? 44 : e.Kind == EnemyKind.OathCartographer ? 42 : e.Kind == EnemyKind.NameBroker ? 48 : e.Kind == EnemyKind.CounterCurrent ? 68 : e.Kind == EnemyKind.RiftCantor ? 74 : e.Kind == EnemyKind.GlassHerald ? 82 : e.Kind == EnemyKind.LanternRegent ? 88 : e.Kind == EnemyKind.RouteScribe ? 96 : e.Kind == EnemyKind.DeepSilence ? 112 : e.Kind == EnemyKind.LastTuner ? 126 : e.Kind == EnemyKind.BorrowedChorus ? 118 : e.Kind == EnemyKind.FlowKeeper ? 62 : e.Kind == EnemyKind.ReedKeeper ? 56 : e.Kind == EnemyKind.TideWitness ? 52 : 26 : e.Kind == EnemyKind.Elite ? HasEliteAffix(e, EliteAffix.Bloodbound) ? 24 : e.EliteAffix == EliteAffix.Spearbound ? 18 : 20 : e.Kind == EnemyKind.CooldownLeech ? 14 : e.Kind == EnemyKind.Mage ? 16 : e.Kind is EnemyKind.InkEcho or EnemyKind.DrownedMemory or EnemyKind.EmberWisp or EnemyKind.NameMoth or EnemyKind.MudCantor or EnemyKind.PaperWraith or EnemyKind.SaltEcho ? 18 : 10);
+                HitPlayer(EnemyContactDamage(e));
                 if (e.Kind == EnemyKind.CooldownLeech) { DelayTechniqueCooldowns(1.1f); AddFloatingText(new PointF(player.X, player.Y - 46), "RECARGAS +1,1 S", Color.MediumOrchid); }
                 if (HasEliteAffix(e, EliteAffix.Bloodbound)) e.Hp = Math.Min(e.MaxHp, e.Hp + 8);
             }
