@@ -102,7 +102,7 @@ public sealed partial class Game
 
     private void UpdateEnemy(Enemy e, float dt)
     {
-        e.AttackPoseTime = Math.Max(0, e.AttackPoseTime - dt); e.BeaconMarkTime = Math.Max(0, e.BeaconMarkTime - dt); e.BellMarkTime = Math.Max(0, e.BellMarkTime - dt); e.NameWeaverMarkTime = Math.Max(0, e.NameWeaverMarkTime - dt);
+        e.AttackPoseTime = Math.Max(0, e.AttackPoseTime - dt); e.BeaconMarkTime = Math.Max(0, e.BeaconMarkTime - dt); e.BellMarkTime = Math.Max(0, e.BellMarkTime - dt); e.NameWeaverMarkTime = Math.Max(0, e.NameWeaverMarkTime - dt); e.SparkMarkTime = Math.Max(0, e.SparkMarkTime - dt);
         if (e.KnockbackTime > 0)
         {
             float step = Math.Min(dt, e.KnockbackTime);

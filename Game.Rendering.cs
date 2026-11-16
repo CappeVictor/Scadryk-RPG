@@ -861,6 +861,7 @@ public sealed partial class Game
         if (enemy.BeaconMarkTime > 0) { using var beaconMark = new Pen(Color.FromArgb(235, 165, 229, 238), 3) { DashStyle = DashStyle.Dot }; g.DrawEllipse(beaconMark, enemy.Pos.X - r - 8, enemy.Pos.Y - 15, (r + 8) * 2, 30); }
         if (enemy.BellMarkTime > 0) { using var bellMark = new Pen(Color.FromArgb(240, 246, 207, 119), 2) { DashStyle = DashStyle.Dot }; g.DrawEllipse(bellMark, enemy.Pos.X - r - 14, enemy.Pos.Y - 20, (r + 14) * 2, 40); }
         if (enemy.NameWeaverMarkTime > 0) { using var nameWeaverMark = new Pen(Color.FromArgb(235, 211, 139, 234), 3) { DashStyle = DashStyle.Dash }; g.DrawEllipse(nameWeaverMark, enemy.Pos.X - r - 20, enemy.Pos.Y - 25, (r + 20) * 2, 50); }
+        if (enemy.SparkMarkTime > 0) { using var sparkMark = new Pen(Color.FromArgb(240, 115, 221, 242), 2.5f) { DashStyle = DashStyle.DashDot }; g.DrawEllipse(sparkMark, enemy.Pos.X - r - 26, enemy.Pos.Y - 30, (r + 26) * 2, 60); }
         if (enemy.Kind == EnemyKind.ReedKeeper) { using var stalk = new Pen(Color.FromArgb(220, 205, 193, 133), 3); for (int i = -1; i <= 1; i++) g.DrawLine(stalk, enemy.Pos.X + i * 9, enemy.Pos.Y + 13, enemy.Pos.X + i * 5, enemy.Pos.Y - 23); }
         if (enemy.Kind == EnemyKind.FlowKeeper) { using var ring = new Pen(Color.FromArgb(210, 157, 215, 216), 2); float spin = windupPulse * 40; g.DrawArc(ring, enemy.Pos.X - 18, enemy.Pos.Y - 18, 36, 36, spin, 235); g.DrawArc(ring, enemy.Pos.X - 13, enemy.Pos.Y - 13, 26, 26, spin + 170, 115); }
         if (enemy.Kind == EnemyKind.GlassHerald) { using var shard = new Pen(Color.FromArgb(225, 186, 224, 231), 3); float spin = windupPulse * 24; for (int i = 0; i < 3; i++) { float angle = spin + i * 120; float radians = angle * MathF.PI / 180; PointF tip = new(enemy.Pos.X + MathF.Cos(radians) * 27, enemy.Pos.Y + MathF.Sin(radians) * 27); PointF tail = new(enemy.Pos.X - MathF.Cos(radians) * 18, enemy.Pos.Y - MathF.Sin(radians) * 18); g.DrawLine(shard, tail, tip); } }
@@ -1252,7 +1253,7 @@ public sealed partial class Game
     {
         using var shade = new SolidBrush(Color.FromArgb(185, 5, 7, 9)); using var panelBrush = new SolidBrush(Color.FromArgb(248, 17, 19, 20)); using var edge = new Pen(Color.FromArgb(175, 143, 112, 73), 2);
         using var heading = new Font("Georgia", 17, FontStyle.Bold); using var body = new Font("Segoe UI", 11); using var small = new Font("Segoe UI", 9);
-        g.FillRectangle(shade, 0, 83, 960, 557); g.FillRectangle(panelBrush, 105, 132, 750, 455); g.DrawRectangle(edge, 105, 132, 750, 455);
+        g.FillRectangle(shade, 0, 83, 960, 557); g.FillRectangle(panelBrush, 105, 132, 750, 475); g.DrawRectangle(edge, 105, 132, 750, 475);
         DrawCentered(g, skillMenuAlternate ? "MONTAGEM ALTERNATIVA" : "MONTAGEM PRINCIPAL", 153, heading, Color.FromArgb(230, 193, 129));
         g.DrawString("TAB alterna qual montagem editar; T ativa a alternativa durante o combate. F/V/G/C escolhem espaços; 1–0 equipam.", small, Brushes.DarkGray, 140, 188);
         g.DrawString("ESPAÇOS DA MONTAGEM", body, Brushes.Goldenrod, 150, 224);
@@ -1283,7 +1284,8 @@ public sealed partial class Game
         Brush wardSynergyBrush = HasSkillPair(menuSkills, 4, 7) ? skillMenuAlternate == alternateSkillsActive && wardTime > 0 ? Brushes.LightGreen : Brushes.Goldenrod : Brushes.DarkGray;
         g.DrawString("4+7 • Manto ativo amplia em 35% a cura da Devolução", small, wardSynergyBrush, new RectangleF(150, 536, 310, 16));
         g.DrawString("5+6 • Coro acerta ecos no Farol ativo; próximo pulso adianta 0,4 s", small, HasSkillPair(menuSkills, 5, 6) ? Brushes.LightCyan : Brushes.DarkGray, new RectangleF(150, 552, 385, 16));
-        g.DrawString("↑/↓ altera a memória da técnica equipada • BACKSPACE esvazia • B/ESC fecha • R: Redemoinho", small, Brushes.DarkGray, new RectangleF(150, 571, 660, 12));
+        g.DrawString("1+8 • Estilhaço marca; Centelha causa +35% e consome", small, HasSkillPair(menuSkills, 1, 8) ? Brushes.LightCyan : Brushes.DarkGray, new RectangleF(150, 568, 345, 16));
+        g.DrawString("↑/↓ altera a memória da técnica equipada • BACKSPACE esvazia • B/ESC fecha • R: Redemoinho", small, Brushes.DarkGray, new RectangleF(150, 587, 660, 12));
     }
 
     private void DrawChoice(Graphics g, string titleText, string a, string b, string c)

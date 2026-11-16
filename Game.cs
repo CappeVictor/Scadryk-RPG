@@ -25,7 +25,7 @@ public sealed partial class Game : Form
         public float PathRefreshTime;
         public string? NameOverride;
         public EnemyKind Kind;
-        public float Hp, MaxHp, Cooldown, Windup, WindupMax, Flash, AnimationTime, AttackPoseTime, SummonCooldown, SummonWindup, SupportCooldown, SupportWindup, BeaconMarkTime, BellMarkTime, NameWeaverMarkTime, WoundTime, WoundTickCooldown, WoundDamage;
+        public float Hp, MaxHp, Cooldown, Windup, WindupMax, Flash, AnimationTime, AttackPoseTime, SummonCooldown, SummonWindup, SupportCooldown, SupportWindup, BeaconMarkTime, BellMarkTime, NameWeaverMarkTime, SparkMarkTime, WoundTime, WoundTickCooldown, WoundDamage;
         public int BossPattern;
         public bool Armored, Moving;
         public bool VigilMinion;

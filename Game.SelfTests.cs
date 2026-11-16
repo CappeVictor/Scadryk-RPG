@@ -627,6 +627,32 @@ public sealed partial class Game
             refrainBeaconSynergy.refrainCd = 0; refrainBeaconSynergy.beaconPos = refrainBeaconSynergy.player; refrainBeaconSynergy.equippedSkills = new[] { 5, 0, 0, 0 }; refrainBeaconSynergy.CastRefrain();
             if (Math.Abs(refrainBeaconSynergy.beaconPulseCd - 0.8f) > 0.001f) throw new InvalidOperationException("Coro + Farol funcionou sem as duas técnicas equipadas.");
         }
+        using (var sparkShardSynergy = new Game())
+        {
+            sparkShardSynergy.timer.Stop(); sparkShardSynergy.StartGame(); sparkShardSynergy.storyOverlay = false; sparkShardSynergy.room = 0; sparkShardSynergy.SetupRoom(); sparkShardSynergy.enemies.Clear(); sparkShardSynergy.finalEnding = 2;
+            sparkShardSynergy.equippedSkills = new[] { 1, 8, 0, 0 }; sparkShardSynergy.player = new PointF(250, 320); sparkShardSynergy.mouseAim = new PointF(1, 0); sparkShardSynergy.damage = 100;
+            var sparkEcho = new Enemy { Pos = new PointF(340, 320), Kind = EnemyKind.Grunt, Hp = 10000, MaxHp = 10000 }; sparkShardSynergy.enemies.Add(sparkEcho); sparkShardSynergy.lockedTarget = sparkEcho;
+            sparkShardSynergy.CastVoiceShard(); sparkShardSynergy.AdvanceVoiceShards(0.2f);
+            if (sparkEcho.SparkMarkTime != 5f || !sparkShardSynergy.floatingTexts.Any(text => text.Text == "CENTELHA PREPARADA")) throw new InvalidOperationException("Estilhaço não preparou o alvo para Última Centelha.");
+            float beforeSpark = sparkEcho.Hp;
+            float expectedSparkDamage = 100 * 2.45f * sparkShardSynergy.SkillDamageVariant(8) * sparkShardSynergy.TechniqueDamageMultiplier() * sparkShardSynergy.WeaponSkillMultiplier() * 1.35f * sparkShardSynergy.OutgoingDamageMultiplier(sparkEcho);
+            sparkShardSynergy.CastFinalSpark();
+            if (Math.Abs((beforeSpark - sparkEcho.Hp) - expectedSparkDamage) > 0.02f || sparkEcho.SparkMarkTime != 0 || !sparkShardSynergy.floatingTexts.Any(text => text.Text == "ESTILHAÇO + CENTELHA")
+                || !sparkShardSynergy.notice.Contains("ESTILHAÇO AMPLIFICADO")) throw new InvalidOperationException("Última Centelha não consumiu a preparação com +35% de dano e aviso visual.");
+        }
+        using (var unlinkedSpark = new Game())
+        {
+            unlinkedSpark.timer.Stop(); unlinkedSpark.StartGame(); unlinkedSpark.storyOverlay = false; unlinkedSpark.room = 0; unlinkedSpark.SetupRoom(); unlinkedSpark.enemies.Clear(); unlinkedSpark.finalEnding = 2;
+            unlinkedSpark.equippedSkills = new[] { 1, 0, 0, 0 }; unlinkedSpark.player = new PointF(250, 320); unlinkedSpark.mouseAim = new PointF(1, 0); unlinkedSpark.damage = 100;
+            var unlinkedSparkEcho = new Enemy { Pos = new PointF(340, 320), Kind = EnemyKind.Grunt, Hp = 10000, MaxHp = 10000 }; unlinkedSpark.enemies.Add(unlinkedSparkEcho); unlinkedSpark.lockedTarget = unlinkedSparkEcho;
+            unlinkedSpark.CastVoiceShard(); unlinkedSpark.AdvanceVoiceShards(0.2f);
+            if (unlinkedSparkEcho.SparkMarkTime != 0 || unlinkedSpark.floatingTexts.Any(text => text.Text == "CENTELHA PREPARADA")) throw new InvalidOperationException("Estilhaço preparou Centelha sem as duas técnicas equipadas.");
+            float beforeUnlinkedSpark = unlinkedSparkEcho.Hp;
+            float expectedUnlinkedDamage = 100 * 2.45f * unlinkedSpark.SkillDamageVariant(8) * unlinkedSpark.TechniqueDamageMultiplier() * unlinkedSpark.WeaponSkillMultiplier() * unlinkedSpark.OutgoingDamageMultiplier(unlinkedSparkEcho);
+            unlinkedSpark.CastFinalSpark();
+            if (Math.Abs((beforeUnlinkedSpark - unlinkedSparkEcho.Hp) - expectedUnlinkedDamage) > 0.02f || unlinkedSpark.floatingTexts.Any(text => text.Text == "ESTILHAÇO + CENTELHA"))
+                throw new InvalidOperationException("Última Centelha recebeu o bônus sem a combinação equipada.");
+        }
         using (var lockedBellGame = new Game())
         {
             lockedBellGame.timer.Stop(); lockedBellGame.StartGame(); lockedBellGame.storyOverlay = false; lockedBellGame.room = 6; lockedBellGame.enemies.Add(new Enemy { Pos = new PointF(260, 330), Kind = EnemyKind.Grunt, Hp = 100, MaxHp = 100 }); lockedBellGame.CastBellPulse();

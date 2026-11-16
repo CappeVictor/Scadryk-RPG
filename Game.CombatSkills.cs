@@ -111,6 +111,7 @@ public sealed partial class Game
     private bool EbbBeaconSynergyActive() => equippedSkills.Contains(3) && equippedSkills.Contains(6);
     private bool BellShardSynergyActive() => equippedSkills.Contains(1) && equippedSkills.Contains(2);
     private bool BellRefrainSynergyActive() => equippedSkills.Contains(2) && equippedSkills.Contains(5);
+    private bool FinalSparkShardSynergyActive() => equippedSkills.Contains(1) && equippedSkills.Contains(8);
     private bool RefrainBeaconSynergyActive() => equippedSkills.Contains(5) && equippedSkills.Contains(6);
     private bool WardReturnSynergyEquipped() => equippedSkills.Contains(4) && equippedSkills.Contains(7);
     private bool WardReturnSynergyActive() => WardReturnSynergyEquipped() && wardTime > 0;
@@ -338,10 +339,12 @@ public sealed partial class Game
         Enemy? target = lockedTarget is not null && enemies.Contains(lockedTarget) && TargetVisible(lockedTarget) ? lockedTarget : enemies.Where(TargetVisible).OrderBy(enemy => Distance(player, enemy.Pos)).FirstOrDefault();
         if (target is null) { notice = "NENHUM ALVO VISÍVEL"; noticeTime = 1.4f; return; }
         facing = Normalize(Sub(target.Pos, player), facing); finalStrikeTarget = target.Pos; finalStrikeFlash = 0.24f;
-        DamageEnemy(target, damage * (target.Boss ? 2.15f : 2.45f) * SkillDamageVariant(8) * TechniqueDamageMultiplier() * WeaponSkillMultiplier() * OutgoingDamageMultiplier(target) * (IsArmored(target) ? 0.75f : 1f));
+        bool shardResonance = FinalSparkShardSynergyActive() && target.SparkMarkTime > 0;
+        DamageEnemy(target, damage * (target.Boss ? 2.15f : 2.45f) * SkillDamageVariant(8) * TechniqueDamageMultiplier() * WeaponSkillMultiplier() * (shardResonance ? 1.35f : 1f) * OutgoingDamageMultiplier(target) * (IsArmored(target) ? 0.75f : 1f));
+        if (shardResonance) { target.SparkMarkTime = 0; AddFloatingText(new PointF(target.Pos.X, target.Pos.Y - target.Radius - 26), "ESTILHAÇO + CENTELHA", Color.LightCyan); }
         target.Flash = 0.3f; if (!target.Boss) { target.Windup = 0; target.Stagger = Math.Max(target.Stagger, 0.72f); target.Cooldown = Math.Max(target.Cooldown, 1.25f); }
         if (target.Hp <= 0) Defeat(target);
-        finalStrikeCd = Math.Max(12f, 19f - skillTalent * 0.65f) * (skillVariants[8] == 1 ? 1.25f : skillVariants[8] == 2 ? 0.75f : 1f) * WeaponCooldownMultiplier(); notice = "ÚLTIMA CENTELHA • IMPACTO CONCENTRADO"; noticeTime = 1.4f;
+        finalStrikeCd = Math.Max(12f, 19f - skillTalent * 0.65f) * (skillVariants[8] == 1 ? 1.25f : skillVariants[8] == 2 ? 0.75f : 1f) * WeaponCooldownMultiplier(); notice = shardResonance ? "ÚLTIMA CENTELHA • ESTILHAÇO AMPLIFICADO" : "ÚLTIMA CENTELHA • IMPACTO CONCENTRADO"; noticeTime = 1.4f;
     }
     private void TickBeacon(float dt)
     {
@@ -401,6 +404,7 @@ public sealed partial class Game
                     bool bellResonantTarget = BellShardSynergyActive() && enemy.BellMarkTime > 0;
                     DamageEnemy(enemy, shard.Damage * (bellResonantTarget ? 1.35f : 1f) * OutgoingDamageMultiplier(enemy) * (IsArmored(enemy) ? 0.75f : 1)); enemy.Flash = 0.16f;
                     if (bellResonantTarget) { enemy.BellMarkTime = 0; AddFloatingText(new PointF(enemy.Pos.X, enemy.Pos.Y - enemy.Radius - 26), "SINO + ESTILHAÇO", Color.LightGoldenrodYellow); }
+                    if (FinalSparkShardSynergyActive() && enemy.Hp > 0) { enemy.SparkMarkTime = 5f; AddFloatingText(new PointF(enemy.Pos.X, enemy.Pos.Y - enemy.Radius - 40), "CENTELHA PREPARADA", Color.LightCyan); }
                     if (enemy.Hp <= 0) Defeat(enemy);
                 }
             }
