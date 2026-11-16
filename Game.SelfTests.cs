@@ -1227,6 +1227,7 @@ public sealed partial class Game
                 throw new InvalidOperationException("Trégua + Passo Célere não adiantou recargas ao abater nem exibiu a nova ressonância.");
             affixForge.weaponRarities[0] = 1;
             if (affixForge.HasMercyTempoResonance(0) || affixForge.WeaponKillCooldownAdvance(0) != 0) throw new InvalidOperationException("A Ressonância da Misericórdia foi aplicada a uma arma Rara.");
+            affixForge.weaponRarities[0] = 2;
             affixForge.player = AvenPosition; affixForge.weaponAffixes[0] = 4; affixForge.weaponAffixes2[0] = 3; affixForge.gold = 300; affixForge.tideGlass = 4; affixForge.forgeMenuOpen = true;
             affixForge.OnKeyDown(affixForge, new KeyEventArgs(Keys.A));
             if (!affixForge.secondaryForgeOpen || !affixForge.notice.Contains("AFIXO SECUNDÁRIO")) throw new InvalidOperationException("A forja não alternou para a escolha do afixo secundário.");
