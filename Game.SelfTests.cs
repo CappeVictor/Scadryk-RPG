@@ -1714,8 +1714,8 @@ public sealed partial class Game
             escarpment.player = FirstEchoBeacon; int rewardBefore = escarpment.gold; escarpment.Interact(); escarpment.memoryOverlay = false;
             if (escarpment.firstEchoBeaconRestored || !escarpment.enemies.Any(enemy => Distance(enemy.Pos, FirstEchoBeacon) < 250)) throw new InvalidOperationException("O marco permitiu interação antes de limpar a escarpa.");
             escarpment.enemies.Clear(); escarpment.Interact(); escarpment.memoryOverlay = false; escarpment.Interact(); escarpment.memoryOverlay = false;
-            SaveData beaconSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(escarpment.CaptureSaveData()))!;
-            if (!escarpment.firstEchoBeaconRestored || escarpment.gold != rewardBefore + 90 || (beaconSave.FirstEchoDiscovered & 24) != 24 || !ValidSaveData(beaconSave)) throw new InvalidOperationException("A escarpa não concedeu uma recompensa única ou não persistiu o marco restaurado.");
+            SaveData escarpmentSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(escarpment.CaptureSaveData()))!;
+            if (!escarpment.firstEchoBeaconRestored || escarpment.gold != rewardBefore + 90 || (escarpmentSave.FirstEchoDiscovered & 24) != 24 || !ValidSaveData(escarpmentSave)) throw new InvalidOperationException("A escarpa não concedeu uma recompensa única ou não persistiu o marco restaurado.");
         }
         Console.WriteLine("TESTES OK: campanha e expedições, incluindo as Margens do Primeiro Eco, combate, loot, progressão e compatibilidade de saves antigos."); return 0;
     }
