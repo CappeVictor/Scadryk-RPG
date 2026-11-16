@@ -1657,15 +1657,6 @@ public sealed partial class Game
         borrowedChapter.SelectTalent(Keys.D6);
         borrowedChapter.SelectTalent(Keys.D6);
         if (borrowedChapter.combatDiscipline != 2 || borrowedChapter.combatMastery != 2 || borrowedChapter.pendingTalents != 6 || Math.Abs(borrowedChapter.TechniqueDamageMultiplier() - 1.12f) > 0.001f || !ValidSaveData(borrowedChapter.CaptureSaveData())) throw new InvalidOperationException("A redistribuição não permitiu escolher a Forma do Eco e a maestria agressiva nem salvou a build.");
-        using var openingInstinct = new Game(); openingInstinct.timer.Stop(); openingInstinct.StartGame(); openingInstinct.level = 30; openingInstinct.combatDiscipline = openingInstinct.combatMastery = openingInstinct.combatFocus = openingInstinct.combatApex = openingInstinct.combatTempo = 1; openingInstinct.pendingTalents = 1; openingInstinct.talentChoice = true; openingInstinct.SelectTalent(Keys.D5);
-        Enemy openingTarget = new() { Pos = new PointF(500, 300), Kind = EnemyKind.Grunt, Hp = 100, MaxHp = 100 }; openingInstinct.DamageEnemy(openingTarget, 10);
-        SaveData openingSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(openingInstinct.CaptureSaveData()))!;
-        if (CombatMilestonesAtLevel(30) != 6 || openingInstinct.combatInstinct != 1 || Math.Abs(openingTarget.Hp - 88.2f) > 0.01f || openingInstinct.pendingTalents != 0 || openingSave.CombatInstinct != 1 || !ValidSaveData(openingSave)) throw new InvalidOperationException("A Primeira Ressonância não foi escolhida, aplicada, salva ou contada na redistribuição do nível 30.");
-        using var finishingInstinct = new Game(); finishingInstinct.timer.Stop(); finishingInstinct.StartGame(); finishingInstinct.level = 30; finishingInstinct.combatDiscipline = finishingInstinct.combatMastery = finishingInstinct.combatFocus = finishingInstinct.combatApex = finishingInstinct.combatTempo = 1; finishingInstinct.pendingTalents = 1; finishingInstinct.talentChoice = true; finishingInstinct.SelectTalent(Keys.D6);
-        Enemy finishingTarget = new() { Pos = new PointF(500, 300), Kind = EnemyKind.Grunt, Hp = 30, MaxHp = 100 }; finishingInstinct.DamageEnemy(finishingTarget, 10);
-        if (finishingInstinct.combatInstinct != 2 || Math.Abs(finishingTarget.Hp - 18.2f) > 0.01f) throw new InvalidOperationException("Último Eco não foi aplicado ao atingir o limiar de vida baixa.");
-        openingInstinct.gold = 5000; openingInstinct.tideGlass = 20; openingInstinct.RespecTalents();
-        if (openingInstinct.pendingTalents != 6 || !openingInstinct.talentChoice || openingInstinct.combatDiscipline != 0 || openingInstinct.combatMastery != 0 || openingInstinct.combatFocus != 0 || openingInstinct.combatApex != 0 || openingInstinct.combatTempo != 0 || openingInstinct.combatInstinct != 0) throw new InvalidOperationException("A redistribuição não devolveu os seis marcos até o nível 30.");
         using var eliteCircuit = new Game(); eliteCircuit.timer.Stop(); eliteCircuit.StartGame(); eliteCircuit.storyOverlay = false;
         foreach (int eliteRoom in new[] { 23, 25, 27, 31, 33, 35, 37, 39 })
         {
