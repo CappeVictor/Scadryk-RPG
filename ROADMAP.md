@@ -219,3 +219,7 @@ Nova sintonia de build: com **Chamado do Veio** e **Última Centelha** equipados
 
 
 A Gravura do Veio recebeu um quarto traço para o relicário: **Selo da Convergência** aumenta em 10% o dano das técnicas e em 6% o dano recebido enquanto equipado. A escolha orienta o build para dano de habilidades com custo defensivo, aparece na ficha e no inventário e mantém o save validado.
+
+### Margens do Primeiro Eco: trilha da escarpa
+
+Após relatar a missão principal a Edda, Ivara pode enviar o viajante à escarpa nordeste para restaurar um sino de pedra. A trilha conecta a Casa das Comportas ao novo marco; três inimigos próprios guardam o local, e limpá-los permite a interação e a recompensa única de 90 de ouro e 45 de experiência. O mapa marca o objetivo, o diário conta a descoberta e o estado usa bits novos do campo de exploração existente, preservando saves anteriores. A cobertura automatizada confere o desbloqueio, o combate, o bloqueio da interação antes de limpar a área, a recompensa única e a persistência no save. A próxima frente continua sendo ampliar a campanha com regiões externas mais extensas, rotas alternativas e NPCs com missões encadeadas.

@@ -8,6 +8,8 @@ public sealed partial class Game
     // 0: undiscovered, 1: investigate, 2: voices released, 3: reported to Edda.
     private int firstEchoQuest;
     private bool firstEchoCaveFound, firstEchoReedCache;
+    private bool firstEchoBeaconAccepted { get => (firstEchoDiscovered & 8) != 0; set => firstEchoDiscovered = value ? firstEchoDiscovered | 8 : firstEchoDiscovered & ~8; }
+    private bool firstEchoBeaconRestored { get => (firstEchoDiscovered & 16) != 0; set => firstEchoDiscovered = value ? firstEchoDiscovered | 16 : firstEchoDiscovered & ~16; }
     private int firstEchoDiscovered;
     private readonly List<Enemy> firstEchoWaitingEnemies = new();
     private readonly List<Drop> firstEchoWaitingDrops = new();
@@ -22,6 +24,7 @@ public sealed partial class Game
     private static readonly PointF FirstEchoIvara = new(860, 590);
     private static readonly PointF FirstEchoReedCache = new(1950, 1170);
     private static readonly PointF FirstEchoRoadSign = new(540, 800);
+    private static readonly PointF FirstEchoBeacon = new(2110, 330);
     private static readonly RectangleF[] FirstEchoCaveWalls = { new(285, 145, 70, 95), new(440, 395, 85, 105), new(610, 145, 70, 80) };
     private static readonly RectangleF[] FirstEchoSluiceWalls = { new(300, 145, 45, 120), new(300, 395, 45, 110), new(555, 145, 45, 95), new(555, 405, 45, 95) };
     private static readonly (PointF Position, EnemyKind Kind)[] FirstEchoEncounters =
@@ -41,6 +44,14 @@ public sealed partial class Game
                 * DifficultyEnemyHealthMultiplier(difficultyTier);
             enemies.Add(new Enemy { Pos = encounter.Position, Kind = encounter.Kind, Hp = hp, MaxHp = hp,
                 Cooldown = 0.7f + (float)random.NextDouble(), SummonCooldown = 6, SupportCooldown = 3 });
+        }
+        if (firstEchoBeaconAccepted && !firstEchoBeaconRestored)
+        {
+            foreach (var (position, kind) in new[] { (new PointF(1900, 360), EnemyKind.Archer), (new PointF(2040, 470), EnemyKind.Grunt), (new PointF(2220, 390), EnemyKind.Elite) })
+            {
+                float hp = (kind == EnemyKind.Elite ? 175 : kind == EnemyKind.Archer ? 82 : 92) * DifficultyEnemyHealthMultiplier(difficultyTier);
+                enemies.Add(new Enemy { Pos = position, Kind = kind, Hp = hp, MaxHp = hp, Cooldown = 0.8f + (float)random.NextDouble(), SummonCooldown = 6, SupportCooldown = 3 });
+            }
         }
     }
 
@@ -63,7 +74,14 @@ public sealed partial class Game
                 return;
             }
             if (firstEchoQuest >= 2) health = maxHealth;
-            ShowMemory("IVARA, CARTÓGRAFA", firstEchoQuest == 3 ? "Edda contou que o sino respondeu aos marcos. Os viajantes podem escolher seu caminho e encontrar abrigo outra vez. Ivara oferece um momento de descanso: vida restaurada." : firstEchoQuest == 2 ? "Os marcos voltaram a responder. Edda precisa saber que a estrada está aberta. Ivara oferece um momento de descanso: vida restaurada." : "Os marcos perderam a voz. A estrada segue até a Casa das Comportas; a trilha ao norte leva à Gruta das Raízes. A margem alagada oferece outra travessia, mas a água atrasa os passos.");
+            string ivaraText = firstEchoQuest == 3
+                ? firstEchoBeaconRestored ? "O marco alto voltou a cantar. Quem atravessa a margem já consegue seguir as vozes sem perder o caminho. Ivara oferece descanso: vida restaurada."
+                : firstEchoBeaconAccepted ? "Os ecos cercam o marco da escarpa ao nordeste. Afaste-os e toque o sino de pedra; depois, volte para contar a Ivara. Ela oferece descanso: vida restaurada."
+                : "Edda contou que os marcos responderam. Falta o marco alto da escarpa, a nordeste: ecos tomaram a trilha e o sino de pedra está mudo. Se puder, liberte-o e volte. Ivara oferece descanso: vida restaurada."
+                : firstEchoQuest == 2 ? "Os marcos voltaram a responder. Edda precisa saber que a estrada está aberta. Ivara oferece um momento de descanso: vida restaurada."
+                : "Os marcos perderam a voz. A estrada segue até a Casa das Comportas; a trilha ao norte leva à Gruta das Raízes. A margem alagada oferece outra travessia, mas a água atrasa os passos.";
+            if (firstEchoQuest == 3 && !firstEchoBeaconAccepted && !firstEchoBeaconRestored) { firstEchoBeaconAccepted = true; SpawnFirstEchoEncounters(); }
+            ShowMemory("IVARA, CARTÓGRAFA", ivaraText);
         }
         else if (Distance(player, FirstEchoCave) < 90)
         {
@@ -80,6 +98,18 @@ public sealed partial class Game
         }
         else if (Distance(player, FirstEchoRoadSign) < 75)
             ShowMemory("MARCO DA ESTRADA", firstEchoQuest >= 2 ? "A pedra responde ao toque com uma voz suave: ‘Abrigo adiante. Nenhum nome será pedido.’ A marca de Ivara aponta para a encruzilhada." : "As letras dizem: ‘Abrigo adiante. Nenhum nome será pedido.’ O marco deveria responder aos viajantes, mas permanece silencioso. Uma seta aponta para a encruzilhada.");
+        else if (Distance(player, FirstEchoBeacon) < 85)
+        {
+            if (firstEchoQuest < 3) ShowMemory("MARCO DA ESCARPA", "O sino de pedra não responde. Ivara talvez saiba por que os ecos se reuniram nesta trilha.");
+            else if (!firstEchoBeaconAccepted) ShowMemory("MARCO DA ESCARPA", "Uma inscrição aponta de volta para Ivara: ‘A última voz não se ergue sozinha.’");
+            else if (firstEchoBeaconRestored) ShowMemory("MARCO DA ESCARPA", "O sino de pedra vibra com as vozes libertadas. A trilha da escarpa agora conduz viajantes até a margem sem se perderem.");
+            else if (enemies.Any(enemy => Distance(enemy.Pos, FirstEchoBeacon) < 250)) ShowMemory("MARCO DA ESCARPA", "Os ecos interrompem cada tentativa de tocar o sino. Limpe a escarpa primeiro.");
+            else
+            {
+                firstEchoBeaconRestored = true; gold += 90; AddXp(45);
+                ShowMemory("O SINO DA ESCARPA", "A pedra responde às vozes das comportas. Um som atravessa a margem e desenha uma rota segura até a escarpa. Você encontrou 90 de ouro e 45 de experiência. Volte a Ivara.");
+            }
+        }
         else if (Distance(player, FirstEchoSluice) < 90)
         {
             if (firstEchoQuest == 0) ShowMemory("CASA DAS COMPORTAS", "As marcas no mecanismo são desconhecidas. Ivara, na encruzilhada, pode ajudar a decifrá-las.");
@@ -224,15 +254,16 @@ public sealed partial class Game
         foreach (var landmark in new[] {
             (FirstEchoTownGate, "VÉSPERA"), (FirstEchoCrossroads, firstEchoQuest >= 2 ? "IVARA • DESCANSO" : "IVARA"),
             (FirstEchoCave, firstEchoQuest > 0 || (firstEchoDiscovered & 2) != 0 || firstEchoCaveFound ? "GRUTA" : "???"),
-            (FirstEchoSluice, firstEchoQuest > 0 || (firstEchoDiscovered & 4) != 0 ? "COMPORTAS" : "???") })
+            (FirstEchoSluice, firstEchoQuest > 0 || (firstEchoDiscovered & 4) != 0 ? "COMPORTAS" : "???"),
+            (FirstEchoBeacon, firstEchoBeaconAccepted || firstEchoBeaconRestored ? "MARCO DA ESCARPA" : "???") })
         {
             PointF p = Map(landmark.Item1);
             g.FillEllipse(Brushes.Goldenrod, p.X - 5, p.Y - 5, 10, 10);
             g.DrawString(landmark.Item2, font, Brushes.AntiqueWhite, p.X - 28, p.Y - 27);
         }
-        if (firstEchoQuest < 3)
+        if (firstEchoQuest < 3 || firstEchoBeaconAccepted && !firstEchoBeaconRestored)
         {
-            PointF objective = Map(firstEchoQuest == 0 ? FirstEchoCrossroads : firstEchoQuest == 1 ? FirstEchoSluice : FirstEchoTownGate);
+            PointF objective = Map(firstEchoQuest == 0 ? FirstEchoCrossroads : firstEchoQuest == 1 ? FirstEchoSluice : firstEchoQuest == 2 ? FirstEchoTownGate : FirstEchoBeacon);
             using var objectiveRing = new Pen(Color.FromArgb(255, 215, 105), 3);
             g.DrawEllipse(objectiveRing, objective.X - 13, objective.Y - 13, 26, 26);
         }
@@ -249,7 +280,7 @@ public sealed partial class Game
         }
         PointF here = Map(player);
         g.FillEllipse(Brushes.LightGreen, here.X - 7, here.Y - 7, 14, 14);
-        string status = firstEchoQuest == 0 ? "PROCURE IVARA" : firstEchoQuest == 1 ? "SIGA ÀS COMPORTAS" : firstEchoQuest == 2 ? "RETORNE A EDDA" : "MARCOS RESTABELECIDOS";
+        string status = firstEchoQuest == 0 ? "PROCURE IVARA" : firstEchoQuest == 1 ? "SIGA ÀS COMPORTAS" : firstEchoQuest == 2 ? "RETORNE A EDDA" : firstEchoBeaconAccepted && !firstEchoBeaconRestored ? "MARCO DA ESCARPA" : "MARCOS RESTABELECIDOS";
         g.DrawString(status, font, Brushes.Goldenrod, 350, 520);
         g.DrawString("VERDE: VOCÊ  •  CÍRCULO: OBJETIVO  •  AZUL: SAQUE  •  M/ESC: FECHAR", font, Brushes.AntiqueWhite, 125, 555);
     }
@@ -271,11 +302,14 @@ public sealed partial class Game
         using var meadow = new SolidBrush(Color.FromArgb(56, 67, 54));
         using var grove = new SolidBrush(Color.FromArgb(40, 59, 49));
         using var flooded = new SolidBrush(Color.FromArgb(52, 79, 78));
+        using var ridge = new SolidBrush(Color.FromArgb(70, 74, 67));
         using var road = new Pen(Color.FromArgb(112, 99, 75), 112) { StartCap = LineCap.Round, EndCap = LineCap.Round, LineJoin = LineJoin.Round };
         using var track = new Pen(Color.FromArgb(149, 130, 94), 2) { DashStyle = DashStyle.Dash };
         g.FillRectangle(meadow, 0, 0, FirstEchoSize.Width, FirstEchoSize.Height);
         g.FillRectangle(grove, 650, 0, 850, 490);
         g.FillRectangle(flooded, 1250, 900, 1150, 500);
+        PointF[] ridgeLine = { new(1790, 80), new(2370, 90), new(2370, 520), new(2190, 560), new(2070, 495), new(1880, 520), new(1780, 430) };
+        g.FillPolygon(ridge, ridgeLine);
         using var grass = new Pen(Color.FromArgb(83, 100, 71), 2);
         using var reed = new Pen(Color.FromArgb(126, 139, 91), 2);
         for (int i = 0; i < 210; i++)
@@ -299,7 +333,10 @@ public sealed partial class Game
         PointF[] main = { FirstEchoTownGate, new(450, 700), FirstEchoCrossroads, new(1500, 700), new(1870, 700), FirstEchoSluice };
         PointF[] branch = { FirstEchoCrossroads, new(900, 450), FirstEchoCave };
         PointF[] returnPath = { new(1200, 700), new(1400, 1050), new(1900, 1050), new(2100, 700) };
-        foreach (PointF[] path in new[] { main, branch, returnPath }) { g.DrawLines(road, path); g.DrawLines(track, path); }
+        PointF[] escarpment = { FirstEchoSluice, new(2300, 570), new(2220, 470), FirstEchoBeacon };
+        foreach (PointF[] path in new[] { main, branch, returnPath, escarpment }) { g.DrawLines(road, path); g.DrawLines(track, path); }
+        using var ridgeEdge = new Pen(Color.FromArgb(110, 129, 120, 99), 3);
+        g.DrawLines(ridgeEdge, ridgeLine);
         using var water = new SolidBrush(Color.FromArgb(48, 91, 95));
         g.FillRectangle(water, 1660, 0, 160, 1400);
         using var bridge = new SolidBrush(Color.FromArgb(127, 111, 81));
@@ -310,6 +347,11 @@ public sealed partial class Game
         using var building = new SolidBrush(Color.FromArgb(86, 79, 66));
         g.FillRectangle(building, 2180, 495, 150, 100);
         g.DrawRectangle(edge, 2180, 495, 150, 100);
+        using var beaconStone = new SolidBrush(Color.FromArgb(105, 111, 103));
+        g.FillEllipse(beaconStone, FirstEchoBeacon.X - 26, FirstEchoBeacon.Y - 30, 52, 60);
+        g.DrawEllipse(edge, FirstEchoBeacon.X - 26, FirstEchoBeacon.Y - 30, 52, 60);
+        using var beaconLight = new SolidBrush(firstEchoBeaconRestored ? Color.FromArgb(210, 142, 220, 199) : Color.FromArgb(170, 176, 151, 104));
+        g.FillEllipse(beaconLight, FirstEchoBeacon.X - 7, FirstEchoBeacon.Y - 17, 14, 14);
         g.FillEllipse(Brushes.Black, 1005, 185, 90, 50);
         g.DrawArc(edge, 1005, 165, 90, 70, 180, 180);
         foreach (PointF marker in new[] { FirstEchoTownGate, FirstEchoCrossroads, FirstEchoCave, FirstEchoSluice })
@@ -329,6 +371,7 @@ public sealed partial class Game
         g.DrawString("GRUTA DAS RAÍZES", font, label, 975, 170);
         g.DrawString("CASA DAS COMPORTAS", font, label, 2100, 620);
         g.DrawString("MARGEM ALAGADA", font, label, 1360, 915);
+        if (firstEchoQuest >= 3) g.DrawString("ESCARPA DO SINO", font, label, 1980, 245);
         using var sign = new SolidBrush(Color.FromArgb(109, 101, 78));
         g.FillRectangle(sign, FirstEchoRoadSign.X - 10, FirstEchoRoadSign.Y - 22, 20, 40);
         g.DrawRectangle(edge, FirstEchoRoadSign.X - 10, FirstEchoRoadSign.Y - 22, 20, 40);
@@ -342,5 +385,6 @@ public sealed partial class Game
             DrawCentered(g, "DESCANSO", FirstEchoIvara.Y - 55, new Font("Segoe UI", 9, FontStyle.Bold), Color.LightGreen, FirstEchoIvara.X);
         foreach (PointF point in new[] { FirstEchoTownGate, FirstEchoCave, FirstEchoSluice })
             if (Distance(player, point) < 90) g.DrawString("E  INTERAGIR", font, label, point.X - 65, point.Y + 40);
+        if (Distance(player, FirstEchoBeacon) < 85) g.DrawString("E  TOCAR", font, label, FirstEchoBeacon.X - 40, FirstEchoBeacon.Y + 43);
     }
 }
