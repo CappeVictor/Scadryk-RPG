@@ -850,7 +850,7 @@ public sealed partial class Game
         using (var tempoGame = new Game())
         {
             tempoGame.timer.Stop(); tempoGame.StartGame(); tempoGame.level = 25; tempoGame.combatDiscipline = 1; tempoGame.combatMastery = 1; tempoGame.combatFocus = 1; tempoGame.combatApex = 1;
-            tempoGame.equippedSkills = new[] { 1, 2, 3, 0 }; tempoGame.riverBell = tempoGame.ebbSeal = true; tempoGame.pendingTalents = 1; tempoGame.talentChoice = true;
+            tempoGame.equippedSkills = new[] { 1, 2, 3, 0 }; tempoGame.pendingTalents = 1; tempoGame.talentChoice = true;
             float readyTechniqueDamage = tempoGame.TechniqueDamageMultiplier(); tempoGame.SelectTalent(Keys.D5);
             if (tempoGame.combatTempo != 1 || tempoGame.pendingTalents != 0 || Math.Abs(tempoGame.TechniqueDamageMultiplier() - readyTechniqueDamage * 1.15f) > 0.001f)
                 throw new InvalidOperationException("Abertura da Vigília não fortaleceu técnicas quando todas estavam prontas.");
