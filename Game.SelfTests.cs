@@ -1820,7 +1820,7 @@ public sealed partial class Game
                         if (lastTowerSave.RoomCleared || !ValidSaveData(lastTowerSave)) throw new InvalidOperationException("A costa foi marcada como limpa antes de registrar a última badalada.");
                         using var lastTowerResume = new Game();
                         lastTowerResume.timer.Stop(); lastTowerResume.StartGame(); lastTowerResume.firstEchoDiscovered = lastTowerSave.FirstEchoDiscovered; lastTowerResume.saltFrontierReturnLocation = true; lastTowerResume.room = lastTowerSave.Room; lastTowerResume.SetupRoom();
-                        if (lastTowerResume.enemies.Count != 9) throw new InvalidOperationException("O save apagou os guardiões após derrotá-los, mas antes de registrar a última badalada.");
+                        if (lastTowerResume.enemies.Count != 3) throw new InvalidOperationException("O save apagou os guardiões da última torre após derrotá-los, mas antes de registrar sua badalada.");
                         vaultResume.saltFrontierProgress |= 1 << (i + 1);
                     }
                 }
