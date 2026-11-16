@@ -906,15 +906,16 @@ public sealed partial class Game
     }
     private void DrawSaltFrontierBossHud(Graphics g)
     {
-        Enemy? boss = enemies.FirstOrDefault(enemy => IsBellFalseChorus(enemy) && Distance(player, enemy.Pos) <= 720);
+        Enemy? boss = enemies.FirstOrDefault(enemy => (IsBellFalseChorus(enemy) || IsBuoyWarden(enemy)) && Distance(player, enemy.Pos) <= 720);
         if (boss is null) return;
-        Color accent = boss.Hp <= boss.MaxHp * 0.5f ? Color.OrangeRed : Color.MediumOrchid;
+        Color accent = boss.Hp <= boss.MaxHp * 0.5f ? Color.OrangeRed : IsBuoyWarden(boss) ? Color.DeepSkyBlue : Color.MediumOrchid;
         using var background = new SolidBrush(Color.FromArgb(220, 20, 20, 24));
         using var health = new SolidBrush(accent);
         using var nameFont = new Font("Georgia", 11, FontStyle.Bold);
         g.FillRectangle(background, 360, 109, 240, 14);
         g.FillRectangle(health, 360, 112, 240 * Math.Clamp(boss.Hp / boss.MaxHp, 0, 1), 8);
-        DrawCentered(g, boss.Hp <= boss.MaxHp * 0.5f ? "CORO DA MARÉ FALSA • SEGUNDA FASE" : "CORO DA MARÉ FALSA", 91, nameFont, accent);
+        string bossName = IsBuoyWarden(boss) ? "VIGIA DAS BÓIAS" : "CORO DA MARÉ FALSA";
+        DrawCentered(g, boss.Hp <= boss.MaxHp * 0.5f ? $"{bossName} • SEGUNDA FASE" : bossName, 91, nameFont, accent);
     }
 
     private static bool DrawProceduralEnemy(Graphics g, Enemy enemy, Color color)

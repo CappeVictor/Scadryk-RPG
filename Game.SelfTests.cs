@@ -2025,6 +2025,22 @@ public sealed partial class Game
                     if (wreckResume.room != 49 || wreckResume.saltFrontierSideProgress != 2 || wreckResume.enemies.Count != 0) throw new InvalidOperationException("O save não retomou o registro recuperado sem recriar o encontro.");
                     int rewardGold = wreckResume.gold, rewardGlass = wreckResume.tideGlass; wreckResume.player = SaltFrontierCartographer; wreckResume.Interact();
                     if (wreckResume.saltFrontierSideProgress != 3 || wreckResume.gold != rewardGold + 240 || wreckResume.tideGlass != rewardGlass + 2 || !wreckResume.memoryOverlay || !ValidSaveData(wreckResume.CaptureSaveData())) throw new InvalidOperationException("Nemi não registrou a rota opcional ou concedeu a recompensa completa.");
+                    using var buoyQuest = new Game(); buoyQuest.timer.Stop(); buoyQuest.StartGame(); buoyQuest.firstEchoDiscovered = wreckResume.firstEchoDiscovered; buoyQuest.saltFrontierReturnLocation = true; buoyQuest.saltFrontierBossAwakened = true; buoyQuest.saltFrontierBossDefeated = true; buoyQuest.saltFrontierSideProgress = 3; buoyQuest.room = 49; buoyQuest.SetupRoom(); buoyQuest.enemies.Clear(); buoyQuest.memoryOverlay = false; buoyQuest.player = SaltFrontierTeren; buoyQuest.Interact();
+                    Enemy buoyWarden = buoyQuest.enemies.Single(enemy => IsBuoyWarden(enemy));
+                    if (buoyQuest.saltFrontierSideProgress != 4 || buoyQuest.enemies.Count != 4 || !ValidSaveData(buoyQuest.CaptureSaveData())) throw new InvalidOperationException("Teren não abriu a fileira opcional das bóias com seus guardiões e chefe.");
+                    buoyQuest.player = new PointF(SaltFrontierBuoys.X + 300, SaltFrontierBuoys.Y); buoyWarden.BossPattern = 2; buoyWarden.Cooldown = 0; buoyQuest.UpdateEnemy(buoyWarden, 0.01f);
+                    if (buoyWarden.BossPattern != 0 || buoyWarden.Windup <= 0 || BossAttackContains(buoyWarden, buoyWarden.Pos) || !BossAttackContains(buoyWarden, new PointF(buoyWarden.Pos.X + 170, buoyWarden.Pos.Y))) throw new InvalidOperationException("A ressaca do Vigia não preservou a ilhota segura no centro.");
+                    buoyWarden.Windup = 0; buoyWarden.Cooldown = 0; buoyQuest.UpdateEnemy(buoyWarden, 0.01f);
+                    if (buoyWarden.BossPattern != 1 || buoyWarden.Windup <= 0 || !BossAttackContains(buoyWarden, buoyQuest.player)) throw new InvalidOperationException("O Vigia das Bóias não anunciou a marca de corrente sob o jogador.");
+                    buoyWarden.Windup = 0; buoyWarden.Cooldown = 0; buoyQuest.UpdateEnemy(buoyWarden, 0.01f);
+                    PointF crossCutCenter = new((buoyWarden.Target2Start.X + buoyWarden.Target2.X) / 2, (buoyWarden.Target2Start.Y + buoyWarden.Target2.Y) / 2);
+                    if (buoyWarden.BossPattern != 2 || !BossHasSecondLine(buoyWarden) || !BossAttackContains(buoyWarden, crossCutCenter)) throw new InvalidOperationException("O Vigia das Bóias não anunciou o corte cruzado de sua segunda fase.");
+                    SaveData activeBuoys = buoyQuest.CaptureSaveData(); using var buoyResume = new Game(); buoyResume.timer.Stop(); buoyResume.StartGame(); buoyResume.firstEchoDiscovered = activeBuoys.FirstEchoDiscovered; buoyResume.saltFrontierReturnLocation = activeBuoys.SaltFrontierLocation; buoyResume.saltFrontierBossAwakened = activeBuoys.SaltFrontierBossAwakened; buoyResume.saltFrontierBossDefeated = activeBuoys.SaltFrontierBossDefeated; buoyResume.saltFrontierSideProgress = activeBuoys.SaltFrontierSideProgress; buoyResume.room = activeBuoys.Room; buoyResume.SetupRoom();
+                    if (buoyResume.saltFrontierSideProgress != 4 || buoyResume.enemies.Count != 4 || !ValidSaveData(activeBuoys)) throw new InvalidOperationException("O save não retomou a fileira das bóias com o encontro pendente.");
+                    buoyResume.enemies.Clear(); buoyResume.drops.Clear(); buoyResume.player = SaltFrontierBuoys; buoyResume.Interact();
+                    if (buoyResume.saltFrontierSideProgress != 5 || !ValidSaveData(buoyResume.CaptureSaveData())) throw new InvalidOperationException("O marcador das bóias foi examinado antes de concluir o combate ou não persistiu.");
+                    int buoyGold = buoyResume.gold, buoyGlass = buoyResume.tideGlass; buoyResume.memoryOverlay = false; buoyResume.player = SaltFrontierCartographer; buoyResume.Interact();
+                    if (buoyResume.saltFrontierSideProgress != 6 || buoyResume.gold != buoyGold + 320 || buoyResume.tideGlass != buoyGlass + 3 || !ValidSaveData(buoyResume.CaptureSaveData())) throw new InvalidOperationException("Nemi não registrou a memória das bóias nem concedeu sua recompensa única.");
                 }
                 using (var frontierResume = new Game())
                 {
@@ -2044,6 +2060,6 @@ public sealed partial class Game
                 if (resume.room != 46 || !resume.saltBasinRewardClaimed) throw new InvalidOperationException("A travessia de retorno não reabriu a bacia com seu progresso preservado.");
             }
         }
-        Console.WriteLine("TESTES OK: campanha e expedições, incluindo as Margens do Primeiro Eco, combate, loot, progressão e compatibilidade de saves antigos."); return 0;
+        Console.WriteLine("TESTES OK: campanha e expedições, incluindo Costa das Badaladas e Fileira das Bóias, combate, loot, progressão e compatibilidade de saves antigos."); return 0;
     }
 }
