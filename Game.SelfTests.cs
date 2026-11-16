@@ -1432,7 +1432,7 @@ public sealed partial class Game
             fendaForge.ApplyWeaponWound(armoredTarget, true);
             if (fendaForge.HasSunderedWoundResonance(0) || Math.Abs(armoredTarget.WoundDamage - 4.5f) > 0.01f)
                 throw new InvalidOperationException("A Ressonância da Fenda foi aplicada fora de uma Relíquia.");
-            fendaForge.room = 18; fendaForge.questStage = 27; fendaForge.player = AvenPosition; fendaForge.gold = 75; fendaForge.tideGlass = 1; fendaForge.forgeMenuOpen = true;
+            fendaForge.weaponAffixes2[0] = 0; fendaForge.room = 18; fendaForge.questStage = 27; fendaForge.player = AvenPosition; fendaForge.gold = 75; fendaForge.tideGlass = 1; fendaForge.forgeMenuOpen = true;
             fendaForge.OnKeyDown(fendaForge, new KeyEventArgs(Keys.I));
             Enemy inscriptionTarget = new() { Kind = EnemyKind.Grunt, ListenerMarkTime = 2, Hp = 100, MaxHp = 100 };
             Enemy unmarkedInscriptionTarget = new() { Kind = EnemyKind.Grunt, Hp = 100, MaxHp = 100 };
@@ -1440,7 +1440,7 @@ public sealed partial class Game
             if (fendaForge.weaponAffixes[0] != 11 || Math.Abs(fendaForge.OutgoingDamageMultiplier(inscriptionTarget) - unmarkedInscriptionMultiplier * 1.12f) > 0.001f
                 || !fendaForge.WeaponAffixDescription(0).Contains("da Inscrição: dano contra alvos marcados +12%")
                 || !ValidWeaponData(fendaForge.CaptureSaveData()))
-                throw new InvalidOperationException($"A Inscrição não passou: afixo={fendaForge.weaponAffixes[0]}, arma={fendaForge.weapon}, dano marcado={fendaForge.OutgoingDamageMultiplier(inscriptionTarget):0.000}, sem marca={unmarkedInscriptionMultiplier:0.000}, descrição='{fendaForge.WeaponAffixDescription(0)}', save={ValidWeaponData(fendaForge.CaptureSaveData())}.");
+                throw new InvalidOperationException("A Inscrição não apareceu na têmpera, não fortaleceu apenas alvos marcados ou falhou no save.");
             fendaForge.weaponRarities[0] = 2; fendaForge.weaponAffixes[0] = 10; fendaForge.weaponAffixes2[0] = 11;
             inscriptionTarget.ListenerMarkTime = 0; inscriptionTarget.SparkMarkTime = 1;
             if (Math.Abs(fendaForge.OutgoingDamageMultiplier(inscriptionTarget) - fendaForge.OutgoingDamageMultiplier(unmarkedInscriptionTarget) * 1.2f) > 0.001f
