@@ -88,6 +88,13 @@ public sealed partial class Game
         if (!enemies.Remove(enemy)) return;
         if (ReferenceEquals(lockedTarget, enemy)) lockedTarget = enemies.Where(TargetVisible).OrderBy(candidate => Distance(player, candidate.Pos)).FirstOrDefault();
         TriggerNameRiftBurst(enemy, weaponIndex);
+        if (heroClass == HeroClass.Listener && enemy.ListenerMarkTime > 0)
+        {
+            float healing = maxHealth * (skillVariants[12] == 1 ? 0.025f : skillVariants[12] == 2 ? 0.06f : 0.04f);
+            float restored = Math.Min(maxHealth - health, healing);
+            health += restored;
+            if (restored > 0) AddFloatingText(new PointF(enemy.Pos.X, enemy.Pos.Y - enemy.Radius - 16), $"+{restored:0} VIDA", Color.LightCyan);
+        }
         if (enemy.EliteMinion) return;
         enemiesDefeated++; int goldDrop = enemy.VigilMinion ? 8 + Math.Min(20, vigilFloor * 2) : vigilActive ? 35 + Math.Min(500, vigilFloor * 15) : enemy.Boss ? 35 : enemy.Kind == EnemyKind.Elite ? 20 : 8;
         int xpReward = enemy.VigilMinion ? 12 : enemy.Boss ? 75 : enemy.Kind == EnemyKind.Elite ? 40 : 22;

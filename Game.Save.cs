@@ -26,7 +26,7 @@ public sealed partial class Game
         public int[] EquippedSkills { get; set; } = new[] { 1, 0, 0, 0 };
         public int[] AlternateSkills { get; set; } = new int[4];
         public bool AlternateSkillsActive { get; set; }
-        public int[] SkillVariants { get; set; } = new int[12];
+        public int[] SkillVariants { get; set; } = new int[13];
         public bool Armor { get; set; }
         public bool Relic { get; set; }
         public int ArmorTrait { get; set; }

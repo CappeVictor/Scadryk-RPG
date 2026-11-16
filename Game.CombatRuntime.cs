@@ -103,7 +103,7 @@ public sealed partial class Game
 
     private void UpdateEnemy(Enemy e, float dt)
     {
-        e.AttackPoseTime = Math.Max(0, e.AttackPoseTime - dt); e.BeaconMarkTime = Math.Max(0, e.BeaconMarkTime - dt); e.BellMarkTime = Math.Max(0, e.BellMarkTime - dt); e.NameWeaverMarkTime = Math.Max(0, e.NameWeaverMarkTime - dt); e.SparkMarkTime = Math.Max(0, e.SparkMarkTime - dt);
+        e.AttackPoseTime = Math.Max(0, e.AttackPoseTime - dt); e.BeaconMarkTime = Math.Max(0, e.BeaconMarkTime - dt); e.BellMarkTime = Math.Max(0, e.BellMarkTime - dt); e.NameWeaverMarkTime = Math.Max(0, e.NameWeaverMarkTime - dt); e.ListenerMarkTime = Math.Max(0, e.ListenerMarkTime - dt); e.SparkMarkTime = Math.Max(0, e.SparkMarkTime - dt);
         if (e.KnockbackTime > 0)
         {
             float step = Math.Min(dt, e.KnockbackTime);
@@ -247,6 +247,7 @@ public sealed partial class Game
     {
         if (vigilActive && enemy.Boss && RunVigilAspect(vigilFloor) == VigilAspect.Hardened) amount *= 0.75f;
         if (enemy.NameWeaverMarkTime > 0) amount *= enemy.NameWeaverMarkMultiplier;
+        if (enemy.ListenerMarkTime > 0) amount *= enemy.ListenerMarkMultiplier;
         enemy.Hp -= amount;
         if (amount <= 0) return;
         TriggerScreenShake(critical ? 3.2f : amount >= damage * 1.5f ? 2.2f : 0.8f, critical ? 0.14f : 0.1f);

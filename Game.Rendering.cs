@@ -869,6 +869,7 @@ public sealed partial class Game
         if (enemy.BeaconMarkTime > 0) { using var beaconMark = new Pen(Color.FromArgb(235, 165, 229, 238), 3) { DashStyle = DashStyle.Dot }; g.DrawEllipse(beaconMark, enemy.Pos.X - r - 8, enemy.Pos.Y - 15, (r + 8) * 2, 30); }
         if (enemy.BellMarkTime > 0) { using var bellMark = new Pen(Color.FromArgb(240, 246, 207, 119), 2) { DashStyle = DashStyle.Dot }; g.DrawEllipse(bellMark, enemy.Pos.X - r - 14, enemy.Pos.Y - 20, (r + 14) * 2, 40); }
         if (enemy.NameWeaverMarkTime > 0) { using var nameWeaverMark = new Pen(Color.FromArgb(235, 211, 139, 234), 3) { DashStyle = DashStyle.Dash }; g.DrawEllipse(nameWeaverMark, enemy.Pos.X - r - 20, enemy.Pos.Y - 25, (r + 20) * 2, 50); }
+        if (enemy.ListenerMarkTime > 0) { using var listenerMark = new Pen(Color.FromArgb(235, 133, 221, 232), 3) { DashStyle = DashStyle.Dot }; g.DrawEllipse(listenerMark, enemy.Pos.X - r - 20, enemy.Pos.Y - 25, (r + 20) * 2, 50); }
         if (enemy.SparkMarkTime > 0) { using var sparkMark = new Pen(Color.FromArgb(240, 115, 221, 242), 2.5f) { DashStyle = DashStyle.DashDot }; g.DrawEllipse(sparkMark, enemy.Pos.X - r - 26, enemy.Pos.Y - 30, (r + 26) * 2, 60); }
         if (enemy.Kind == EnemyKind.ReedKeeper) { using var stalk = new Pen(Color.FromArgb(220, 205, 193, 133), 3); for (int i = -1; i <= 1; i++) g.DrawLine(stalk, enemy.Pos.X + i * 9, enemy.Pos.Y + 13, enemy.Pos.X + i * 5, enemy.Pos.Y - 23); }
         if (enemy.Kind == EnemyKind.FlowKeeper) { using var ring = new Pen(Color.FromArgb(210, 157, 215, 216), 2); float spin = windupPulse * 40; g.DrawArc(ring, enemy.Pos.X - 18, enemy.Pos.Y - 18, 36, 36, spin, 235); g.DrawArc(ring, enemy.Pos.X - 13, enemy.Pos.Y - 13, 26, 26, spin + 170, 115); }
@@ -1146,6 +1147,8 @@ public sealed partial class Game
         if (finalEnding == 2 && finalStrikeCd > 0) { using var finalSparkCooldownPen = new Pen(Color.FromArgb(225, 255, 191, 115), 3); g.DrawArc(finalSparkCooldownPen, player.X - 89, player.Y - 89, 178, 178, 0, 360 * finalStrikeCd / (Math.Max(12f, 19f - skillTalent * 0.65f) * (skillVariants[8] == 1 ? 1.25f : skillVariants[8] == 2 ? 0.75f : 1f) * WeaponCooldownMultiplier())); }
         if (heroClass == HeroClass.StoneGuardian && stoneBastionCd > 0) { using var bastionCooldownPen = new Pen(Color.FromArgb(225, 226, 137, 76), 3); g.DrawArc(bastionCooldownPen, player.X - 97, player.Y - 97, 194, 194, 90, 360 * stoneBastionCd / (18f * WeaponCooldownMultiplier())); }
         if (heroClass == HeroClass.NameWeaver && nameWeaverCd > 0) { using var threadCooldownPen = new Pen(Color.FromArgb(225, 193, 151, 224), 3); g.DrawArc(threadCooldownPen, player.X - 97, player.Y - 97, 194, 194, 90, 360 * nameWeaverCd / (14f * WeaponCooldownMultiplier())); }
+        if (heroClass == HeroClass.Listener && listenerMarkCd > 0) { using var listenerCooldownPen = new Pen(Color.FromArgb(230, 133, 221, 232), 3); g.DrawArc(listenerCooldownPen, player.X - 97, player.Y - 97, 194, 194, 90, 360 * listenerMarkCd / (16f * (skillVariants[12] == 1 ? 1.2f : 1f) * WeaponCooldownMultiplier())); }
+        if (heroClass == HeroClass.Listener && listenerMarkCd > 0) { using var listenerCooldownPen = new Pen(Color.FromArgb(230, 133, 221, 232), 3); g.DrawArc(listenerCooldownPen, player.X - 97, player.Y - 97, 194, 194, 90, 360 * listenerMarkCd / (16f * (skillVariants[12] == 1 ? 1.2f : 1f) * WeaponCooldownMultiplier())); }
         if (heroClass == HeroClass.FordCartographer && fordShortcutCd > 0) { using var shortcutCooldownPen = new Pen(Color.FromArgb(230, 125, 213, 199), 3); g.DrawArc(shortcutCooldownPen, player.X - 105, player.Y - 105, 210, 210, 90, 360 * fordShortcutCd / (13f * WeaponCooldownMultiplier())); }
     }
     private static int PlayerSpriteRow(PointF direction)
@@ -1349,7 +1352,7 @@ public sealed partial class Game
         using var heading = new Font("Georgia", 17, FontStyle.Bold); using var body = new Font("Segoe UI", 11); using var small = new Font("Segoe UI", 9);
         g.FillRectangle(shade, 0, 83, 960, 557); g.FillRectangle(panelBrush, 105, 132, 750, 475); g.DrawRectangle(edge, 105, 132, 750, 475);
         DrawCentered(g, skillMenuAlternate ? "MONTAGEM ALTERNATIVA" : "MONTAGEM PRINCIPAL", 153, heading, Color.FromArgb(230, 193, 129));
-        g.DrawString("TAB alterna a montagem; T ativa a alternativa. F/V/G/C escolhem espaços; 1–0 e F11 equipam técnicas.", small, Brushes.DarkGray, 140, 188);
+        g.DrawString("TAB alterna a montagem; T ativa a alternativa. F/V/G/C escolhem espaços; 1–0, F11 e F12 equipam técnicas.", small, Brushes.DarkGray, 140, 188);
         g.DrawString("ESPAÇOS DA MONTAGEM", body, Brushes.Goldenrod, 150, 224);
         string[] slotKeys = { "F", "V", "G", "C" };
         int[] menuSkills = SkillMenuLoadout();
@@ -1359,11 +1362,11 @@ public sealed partial class Game
             g.DrawString($"{slotKeys[slot]}  •  {ShortSkillName(menuSkills, slot)}{(selected ? "  ◀" : "")}", body, slotBrush, 160, 258 + slot * 32);
         }
         int selectedSkill = menuSkills[skillMenuSlot];
-        int selectedVariant = selectedSkill is >= 1 and <= 11 ? skillVariants[selectedSkill] : 0;
+        int selectedVariant = selectedSkill is >= 1 and <= 12 ? skillVariants[selectedSkill] : 0;
         g.DrawString(selectedSkill == 0 ? "MEMÓRIA DA TÉCNICA: ESPAÇO VAZIO" : selectedSkill >= 9 ? $"FORMA: {SkillVariantName(selectedSkill, selectedVariant).ToUpperInvariant()}" : $"MEMÓRIA: {SkillVariantName(selectedSkill, selectedVariant)}", body, Brushes.Goldenrod, new RectangleF(150, 402, 310, 24));
         g.DrawString(selectedSkill == 0 ? "Equipe uma técnica e use ↑/↓ para mudar sua forma." : SkillVariantDescription(selectedSkill, selectedVariant), small, Brushes.DarkGray, new RectangleF(150, 430, 310, 36));
         g.DrawString("TÉCNICAS APRENDIDAS", body, Brushes.Goldenrod, 480, 224);
-        for (int skill = 1; skill <= 11; skill++)
+        for (int skill = 1; skill <= 12; skill++)
         {
             bool unlocked = SkillUnlocked(skill); bool equippedElsewhere = menuSkills.Where((_, index) => index != skillMenuSlot).Contains(skill);
             string state = !unlocked ? "  •  NÃO APRENDIDA" : equippedElsewhere ? "  •  EM OUTRO ESPAÇO" : menuSkills[skillMenuSlot] == skill ? "  •  EQUIPADA" : "";
@@ -1379,7 +1382,7 @@ public sealed partial class Game
         g.DrawString("4+7 • Manto ativo amplia em 35% a cura da Devolução", small, wardSynergyBrush, new RectangleF(150, 536, 310, 16));
         g.DrawString("5+6 • Coro acerta ecos no Farol ativo; próximo pulso adianta 0,4 s", small, HasSkillPair(menuSkills, 5, 6) ? Brushes.LightCyan : Brushes.DarkGray, new RectangleF(150, 552, 385, 16));
         g.DrawString("1+8 • Estilhaço marca; Centelha causa +35% e consome", small, HasSkillPair(menuSkills, 1, 8) ? Brushes.LightCyan : Brushes.DarkGray, new RectangleF(150, 568, 345, 16));
-        g.DrawString("↑/↓ altera a memória da técnica equipada • BACKSPACE esvazia • B/ESC fecha • R: Redemoinho", small, Brushes.DarkGray, new RectangleF(150, 587, 660, 12));
+        g.DrawString("↑/↓ altera a memória da técnica equipada • 1–0/F11/F12 equipa • BACKSPACE esvazia • B/ESC fecha", small, Brushes.DarkGray, new RectangleF(150, 587, 660, 12));
     }
 
     private void DrawChoice(Graphics g, string titleText, string a, string b, string c)
