@@ -100,7 +100,7 @@ public sealed partial class Game
     {
         if (item.Kind == "charm")
         {
-            if (item.Amount is < 1 or > 13) { drops.Remove(item); return; }
+            if (item.Amount is < 1 or > 14) { drops.Remove(item); return; }
             bool newCharm = (ownedCharms & (1 << (item.Amount - 1))) == 0; ownedCharms |= 1 << (item.Amount - 1);
             if (equippedCharm == 0 && equippedCharm2 != item.Amount) equippedCharm = item.Amount;
             else if (equippedCharm2 == 0 && equippedCharm != item.Amount) equippedCharm2 = item.Amount;
@@ -287,6 +287,7 @@ public sealed partial class Game
         if (HasCharm(11)) effects.Add("Pulso Bifurcado: técnicas +12% com 2 prontas; ataques básicos +12% com 2 em recarga");
         if (HasCharm(12)) effects.Add("Nó do Contratempo: técnicas +20% de dano; recarga +15%");
         if (HasCharm(13)) effects.Add("Sino da Contramaré: abates de ecos marcados adiantam recargas de técnica em 1,5 s");
+        if (HasCharm(14)) effects.Add("Ritmo das Bóias: esquivar de golpe anunciado de chefe adianta recargas em 0,8 s (recarga interna: 1,5 s)");
         string effect = effects.Count > 0 ? string.Join(" • ", effects) : "Equipe até dois talismãs para ativar efeitos e sintonias.";
         g.DrawString(effect, effectFont, Brushes.AntiqueWhite, new RectangleF(150, 570, 650, 59));
     }

@@ -13,6 +13,7 @@ public sealed partial class Game
     private bool saltFrontierReturnLocation;
     private bool saltFrontierBossAwakened;
     private bool saltFrontierBossDefeated;
+    private bool saltFrontierWardenDefeated;
     private int saltFrontierSideProgress;
     private static readonly SizeF SaltFrontierSize = new(4200, 2400);
     private static readonly PointF SaltFrontierEntrance = new(155, 1200);
@@ -95,7 +96,7 @@ public sealed partial class Game
 
     private void SpawnSaltFrontierBuoyGuardians()
     {
-        if (!saltFrontierBossDefeated || saltFrontierSideProgress != 4 || enemies.Count > 0) return;
+        if (!saltFrontierBossDefeated || saltFrontierSideProgress != 4 || saltFrontierWardenDefeated || enemies.Count > 0) return;
         (PointF Pos, EnemyKind Kind)[] guards =
         {
             (new PointF(3030, 2090), EnemyKind.SaltEcho),
@@ -150,7 +151,7 @@ public sealed partial class Game
                 saltFrontierProgress |= 16; gold += 175; AddXp(125); health = maxHealth;
                 ShowMemory("O COMPASSO DA COSTA", "Nemi compara os três registros e reconhece uma pausa que não pertence à torre: alguém interrompeu a badalada para deixar os viajantes escolherem o próprio caminho. Ela copia a pausa no mapa, sem tentar preencher o silêncio. Sob o juncal, outra voz ainda pulsa no coração da torre submersa. Você recebe 175 de ouro, 125 de experiência e descansa por completo."); return;
             }
-            ShowMemory("NEMI, A ESCUTADORA", (saltFrontierProgress & 16) != 0 ? saltFrontierBossDefeated ? saltFrontierSideProgress switch { 0 => "O Coro se desfez sem levar nenhum nome. Teren está examinando um destroço ao norte da costa; talvez aquele mapa de corrente ajude os barqueiros a escolher uma travessia segura.", 1 => "Teren espera no caminho ao norte. Os guardiões do destroço ainda protegem o registro da maré.", 2 => "Você recuperou o desenho do destroço. Nemi pode comparar a marca com os intervalos das três badaladas.", 3 => "O destroço foi registrado. Teren encontrou uma fileira de bóias ao sul; fale com ele se quiser investigar a corrente que as move.", 4 => "As bóias ainda estão cercadas. O Vigia usa o ritmo da maré para cortar a passagem.", 5 => "O Vigia caiu. Examine o marcador de pedra junto às bóias e traga o intervalo de volta.", _ => "O Coro e o Vigia foram silenciados; as marcas mostram quando esperar, atravessar ou retornar, sem decidir por ninguém." } : "As três notas já não chamam viajantes. Resta uma voz presa no coração da torre submersa, ao sul do juncal; ela precisa ser enfrentada para que a costa descanse." : $"Badaladas silenciadas: {System.Numerics.BitOperations.PopCount((uint)(saltFrontierProgress & 14))}/3. Aproxime-se de cada torre depois de limpar seus guardiões."); return;
+            ShowMemory("NEMI, A ESCUTADORA", (saltFrontierProgress & 16) != 0 ? saltFrontierBossDefeated ? saltFrontierSideProgress switch { 0 => "O Coro se desfez sem levar nenhum nome. Teren está examinando um destroço ao norte da costa; talvez aquele mapa de corrente ajude os barqueiros a escolher uma travessia segura.", 1 => "Teren espera no caminho ao norte. Os guardiões do destroço ainda protegem o registro da maré.", 2 => "Você recuperou o desenho do destroço. Nemi pode comparar a marca com os intervalos das três badaladas.", 3 => "O destroço foi registrado. Teren encontrou uma fileira de bóias ao sul; fale com ele se quiser investigar a corrente que as move.", 4 => saltFrontierWardenDefeated ? "O Vigia caiu. Recolha o talismã e examine o marcador junto às bóias." : "As bóias ainda estão cercadas. O Vigia usa o ritmo da maré para cortar a passagem.", 5 => "O ritmo está registrado; volte ao observatório para concluir o relato.", _ => "O Coro e o Vigia foram silenciados; as marcas mostram quando esperar, atravessar ou retornar, sem decidir por ninguém." } : "As três notas já não chamam viajantes. Resta uma voz presa no coração da torre submersa, ao sul do juncal; ela precisa ser enfrentada para que a costa descanse." : $"Badaladas silenciadas: {System.Numerics.BitOperations.PopCount((uint)(saltFrontierProgress & 14))}/3. Aproxime-se de cada torre depois de limpar seus guardiões."); return;
         }
         if (saltFrontierBossDefeated && Distance(player, SaltFrontierTeren) < 95)
         {
@@ -164,7 +165,7 @@ public sealed partial class Game
                 saltFrontierSideProgress = 4; SpawnSaltFrontierBuoyGuardians();
                 ShowMemory("TEREN, PILOTO DE MARÉ", "Ao sul do juncal há três bóias de ferro que pararam de oscilar. A corrente mudou desde a última estação; uma coisa enorme mantém as amarras tensas. Se quiser conferir o ritmo, siga a trilha até o banco baixo e limpe a área."); return;
             }
-            if (saltFrontierSideProgress == 4) { ShowMemory("TEREN, PILOTO DE MARÉ", "As bóias continuam sob guarda. A fileira fica ao sul, onde a costa submersa encontra o banco de basalto."); return; }
+            if (saltFrontierSideProgress == 4) { ShowMemory("TEREN, PILOTO DE MARÉ", saltFrontierWardenDefeated ? "O Vigia caiu. Recolha o talismã que deixou e examine o marcador de pedra junto às bóias." : "As bóias continuam sob guarda. A fileira fica ao sul, onde a costa submersa encontra o banco de basalto."); return; }
             if (saltFrontierSideProgress == 5) { ShowMemory("TEREN, PILOTO DE MARÉ", "Nemi pode comparar o ritmo das bóias com as badaladas da torre. Leve o registro ao observatório."); return; }
             if (saltFrontierSideProgress == 6) { ShowMemory("TEREN, PILOTO DE MARÉ", "Agora os barqueiros sabem quando a corrente cede, mas cada barco escolhe seu próprio momento de partir."); return; }
             ShowMemory("TEREN, PILOTO DE MARÉ", saltFrontierSideProgress == 1 ? "Os guardiões ainda rondam o destroço. Aproxime-se pelo caminho de basalto e recolha qualquer saque antes de examinar o desenho." : saltFrontierSideProgress == 2 ? "O desenho está com você. Leve-o a Nemi para comparar os intervalos; ele não aponta quem passou nem para onde." : "O mapa agora mostra apenas onde a água recua. Nenhuma rota é atribuída a quem escolheu atravessar."); return;
@@ -181,6 +182,7 @@ public sealed partial class Game
         if (saltFrontierSideProgress >= 4 && Distance(player, SaltFrontierBuoys) < 115)
         {
             if (saltFrontierSideProgress >= 5) { ShowMemory("AS BÓIAS DE FERRO", "O registro das bóias já foi recolhido. Ele marca a mudança da corrente, não uma direção a seguir."); return; }
+            if (!saltFrontierWardenDefeated) { ShowMemory("FILEIRA DAS BÓIAS", "Derrote o Vigia das Bóias e recolha o talismã que guarda o ritmo antes de examinar o marcador."); return; }
             if (enemies.Any(enemy => Distance(enemy.Pos, SaltFrontierBuoys) < 300)) { ShowMemory("FILEIRA DAS BÓIAS", "O Vigia mantém as amarras sob tensão. Derrote-o e limpe o banco antes de examinar o marcador."); return; }
             if (drops.Any(drop => Distance(drop.Pos, SaltFrontierBuoys) < 300)) { ShowMemory("FILEIRA DAS BÓIAS", "O saque ainda está entre as amarras. Recolha-o antes de examinar o marcador de pedra."); return; }
             saltFrontierSideProgress = 5;
@@ -230,7 +232,7 @@ public sealed partial class Game
         if (saltFrontierSideProgress == 1) return "OPCIONAL: LIMPE O DESTROÇO E RECUPERE O REGISTRO";
         if (saltFrontierSideProgress == 2) return "OPCIONAL: LEVE O REGISTRO DA MARÉ A NEMI";
         if (saltFrontierSideProgress == 3) return "OPCIONAL: FALE COM TEREN SOBRE A FILEIRA DAS BÓIAS";
-        if (saltFrontierSideProgress == 4) return "OPCIONAL: DERROTE O VIGIA DAS BÓIAS E RECUPERE O RITMO";
+        if (saltFrontierSideProgress == 4) return saltFrontierWardenDefeated ? "OPCIONAL: RECOLHA O TALISMÃ E EXAMINE O MARCADOR DAS BÓIAS" : "OPCIONAL: DERROTE O VIGIA DAS BÓIAS E RECUPERE O RITMO";
         if (saltFrontierSideProgress == 5) return "OPCIONAL: LEVE O RITMO DAS BÓIAS A NEMI";
         return "COSTA DAS BADALADAS • ROTA REGISTRADA • EXPLORAÇÃO LIVRE";
     }
@@ -241,7 +243,7 @@ public sealed partial class Game
         1 => "Destroço das Conchas: guardiões ativos",
         2 => "Registro recuperado; relate a Nemi",
         3 => "Rota do destroço registrada; fale com Teren sobre as bóias",
-        4 => "Fileira das Bóias: guardada pelo Vigia",
+        4 => saltFrontierWardenDefeated ? "Vigia derrotado; recupere o talismã e examine o marcador" : "Fileira das Bóias: guardada pelo Vigia",
         5 => "Ritmo das bóias recuperado; relate a Nemi",
         _ => "Rotas da costa registradas por Nemi"
     };

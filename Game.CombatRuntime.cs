@@ -149,6 +149,11 @@ public sealed partial class Game
                 if (e.Kind == EnemyKind.CooldownLeech) { DelayTechniqueCooldowns(1.1f); AddFloatingText(new PointF(player.X, player.Y - 46), "RECARGAS +1,1 S", Color.MediumOrchid); }
                 if (HasEliteAffix(e, EliteAffix.Bloodbound)) e.Hp = Math.Min(e.MaxHp, e.Hp + 8);
             }
+            else if (e.Boss && e.Windup <= 0 && inAttack && dashTime > 0 && HasCharm(14) && buoyRhythmCooldown <= 0 && (room < 43 || !BlockedLine(e.Pos, player)))
+            {
+                buoyRhythmCooldown = 1.5f; AdvanceTechniqueCooldowns(0.8f);
+                AddFloatingText(new PointF(player.X, player.Y - 54), "RITMO DAS BÓIAS −0,8 S", Color.LightCyan);
+            }
             if (e.Windup <= 0 && e.Kind == EnemyKind.SlagWeaver)
             {
                 CreateSlagHazard(e.Target);

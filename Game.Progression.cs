@@ -106,6 +106,11 @@ public sealed partial class Game
             saltFrontierBossDefeated = true; gold += 260; AddXp(220); health = maxHealth;
             notice = "CORO SILENCIADO • +260 OURO • +220 EXP • VIDA RESTAURADA"; noticeTime = 5;
         }
+        if (room == 49 && enemy.NameOverride == "VIGIA DAS BÓIAS")
+        {
+            saltFrontierWardenDefeated = true;
+            if ((ownedCharms & (1 << 13)) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 0, -48), Kind = "charm", Amount = 14 });
+        }
         if (room == 48 && enemy.Kind == EnemyKind.SaltJailer)
         {
             if (!saltVaultBossDefeated)
@@ -180,7 +185,7 @@ public sealed partial class Game
         if (enemy.Kind == EnemyKind.FirstKeeper && !firstMemory) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "first" });
         if (enemy.Kind == EnemyKind.OathCartographer && !westTrace) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "west" });
         if (enemy.Kind == EnemyKind.NameBroker && questStage == 22) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "register" });
-        if (enemy.Kind == EnemyKind.TideWitness && !upstreamTrace)
+        if (enemy.Kind == EnemyKind.TideWitness && !upstreamTrace && enemy.NameOverride != "VIGIA DAS BÓIAS")
         {
             drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "witness" });
             drops.Add(new Drop { Pos = Offset(enemy.Pos, 24, 0), Kind = "glass", Amount = 3 });
