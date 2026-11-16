@@ -2070,7 +2070,7 @@ public sealed partial class Game
                 using (var cacheResume = new Game())
                 {
                     cacheResume.timer.Stop(); cacheResume.StartGame(); cacheResume.firstEchoDiscovered = cacheSave.FirstEchoDiscovered; cacheResume.saltFrontierReturnLocation = cacheSave.SaltFrontierLocation;
-                    cacheResume.saltFrontierBossAwakened = cacheSave.SaltFrontierBossAwakened; cacheResume.saltFrontierBossDefeated = cacheSave.SaltFrontierBossDefeated; cacheResume.room = 49; cacheResume.gold = cacheSave.Gold; cacheResume.tideGlass = cacheSave.TideGlass; cacheResume.SetupRoom();
+                    cacheResume.saltFrontierBossAwakened = cacheSave.SaltFrontierBossAwakened; cacheResume.saltFrontierBossDefeated = cacheSave.SaltFrontierBossDefeated; cacheResume.saltFrontierCacheFound = cacheSave.SaltFrontierCacheFound; cacheResume.room = 49; cacheResume.gold = cacheSave.Gold; cacheResume.tideGlass = cacheSave.TideGlass; cacheResume.SetupRoom();
                     int savedCacheGold = cacheResume.gold, savedCacheGlass = cacheResume.tideGlass;
                     cacheResume.player = SaltFrontierCache; cacheResume.Interact();
                     if (!cacheResume.saltFrontierCacheFound || cacheResume.gold != savedCacheGold || cacheResume.tideGlass != savedCacheGlass) throw new InvalidOperationException("O estojo foi repetido após carregar o progresso salvo.");

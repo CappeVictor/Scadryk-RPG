@@ -15,11 +15,7 @@ public sealed partial class Game
     private bool saltFrontierBossDefeated;
     private bool saltFrontierWardenDefeated;
     private int saltFrontierSideProgress;
-    private bool saltFrontierCacheFound
-    {
-        get => (firstEchoDiscovered & (1 << 30)) != 0;
-        set => firstEchoDiscovered = value ? firstEchoDiscovered | (1 << 30) : firstEchoDiscovered & ~(1 << 30);
-    }
+    private bool saltFrontierCacheFound;
     private static readonly SizeF SaltFrontierSize = new(4200, 2400);
     private static readonly PointF SaltFrontierEntrance = new(155, 1200);
     private static readonly PointF SaltFrontierCartographer = new(2110, 1175);
