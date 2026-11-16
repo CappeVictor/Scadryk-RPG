@@ -307,7 +307,7 @@ public sealed partial class Game : Form
         armor = armorOn = relic = relicOn = archiveSeal = riverBell = lumeLens = naraTrace = chorusMemory = firstMemory = westTrace = upstreamTrace = beyondTrace = ebbSeal = counterTrace = anchorWard = refrainSong = riftVerse = deepTrace = lanternSignal = beaconLight = routeMemory = silenceMemory = inventoryOpen = skillMenuOpen = characterSheetOpen = mapOpen = journalOpen = dead = victory = chestChoice = talentChoice = memoryOverlay = endingChoiceOpen = forgeMenuOpen = defenseForgeOpen = secondaryForgeOpen = vigilActive = vigilChoiceOpen = classSelectionOpen = false;
         armorTrait = relicTrait = 0;
         borrowedTrace = unstruckTrace = false;
-        firstEchoQuest = firstEchoDiscovered = 0; firstEchoCaveFound = firstEchoReedCache = false; firstEchoOutsideStored = false; firstEchoWaitingEnemies.Clear(); firstEchoWaitingDrops.Clear(); saltFrontierReturnLocation = saltFrontierOutsideStored = false; saltFrontierWaitingEnemies.Clear(); saltFrontierWaitingDrops.Clear();
+        firstEchoQuest = firstEchoDiscovered = 0; firstEchoCaveFound = firstEchoReedCache = false; firstEchoOutsideStored = false; firstEchoWaitingEnemies.Clear(); firstEchoWaitingDrops.Clear(); saltFrontierReturnLocation = saltFrontierBossAwakened = saltFrontierBossDefeated = saltFrontierOutsideStored = false; saltFrontierWaitingEnemies.Clear(); saltFrontierWaitingDrops.Clear();
         finalEnding = 0;
         vigilBestFloor = vigilFloor = 0;
         townEnding = 0;

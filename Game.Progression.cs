@@ -93,6 +93,11 @@ public sealed partial class Game
     private void Defeat(Enemy enemy, int? weaponIndex = null)
     {
         if (!enemies.Remove(enemy)) return;
+        if (room == 49 && enemy.NameOverride == "CORO DA MARÉ FALSA" && !saltFrontierBossDefeated)
+        {
+            saltFrontierBossDefeated = true; gold += 260; AddXp(220); health = maxHealth;
+            notice = "CORO SILENCIADO • +260 OURO • +220 EXP • VIDA RESTAURADA"; noticeTime = 5;
+        }
         if (room == 48 && enemy.Kind == EnemyKind.SaltJailer)
         {
             if (!saltVaultBossDefeated)

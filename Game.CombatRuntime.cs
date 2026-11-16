@@ -34,15 +34,17 @@ public sealed partial class Game
     private static bool NonBossAttackContains(Enemy e, PointF point) => Distance(point, NonBossAttackCenter(e)) < NonBossAttackRadius(e);
 
     private static bool BossUsesCone(Enemy e) => e.Kind == EnemyKind.GlassHerald && e.BossPattern == 2;
-    private static bool BossUsesRing(Enemy e) => e.BossPattern == 0 && e.Kind is EnemyKind.RouteScribe or EnemyKind.LastTuner or EnemyKind.SaltJailer;
-    private static float BossRingInnerRadius(Enemy e) => e.Kind == EnemyKind.LastTuner ? 96 : e.Kind == EnemyKind.RouteScribe ? 68 : e.Kind == EnemyKind.SaltJailer ? 92 : 0;
-    private static bool BossUsesLine(Enemy e) => e.BossPattern == 2 && e.Kind is EnemyKind.FirstKeeper or EnemyKind.NameWeaver or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus or EnemyKind.LastTuner or EnemyKind.SaltJailer;
+    private static bool IsBellFalseChorus(Enemy e) => e.NameOverride == "CORO DA MARÉ FALSA";
+    private static bool BossUsesRing(Enemy e) => e.BossPattern == 0 && (IsBellFalseChorus(e) || e.Kind is EnemyKind.RouteScribe or EnemyKind.LastTuner or EnemyKind.SaltJailer);
+    private static float BossRingInnerRadius(Enemy e) => IsBellFalseChorus(e) ? 118 : e.Kind == EnemyKind.LastTuner ? 96 : e.Kind == EnemyKind.RouteScribe ? 68 : e.Kind == EnemyKind.SaltJailer ? 92 : 0;
+    private static bool BossUsesLine(Enemy e) => e.BossPattern == 2 && (IsBellFalseChorus(e) || e.Kind is EnemyKind.FirstKeeper or EnemyKind.NameWeaver or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus or EnemyKind.LastTuner or EnemyKind.SaltJailer);
+    private static bool BossHasSecondLine(Enemy e) => IsBellFalseChorus(e) || e.Kind is EnemyKind.FirstKeeper or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus or EnemyKind.LastTuner;
     private static bool BossConeContains(Enemy e, PointF point)
     {
         PointF axis = Normalize(Sub(e.Target, e.Pos), new PointF(1, 0)), direction = Sub(point, e.Pos); float distance = Length(direction);
         return distance < 245 && distance > 0.01f && Dot(axis, Scale(direction, 1 / distance)) >= MathF.Cos(34 * MathF.PI / 180);
     }
-    private static float BossCircleRadius(Enemy e) => e.NameOverride == "VIGIA DAS COMPORTAS" ? (e.BossPattern == 0 ? 105 : 55) : e.Kind == EnemyKind.SaltJailer ? e.BossPattern switch { 0 => 214, 1 => 82, _ => 40 } : e.BossPattern == 0 ? e.Kind switch { EnemyKind.GlassHerald => 135, EnemyKind.LanternRegent => 150, EnemyKind.RouteScribe => 160, EnemyKind.LastTuner => 178, _ => 90 } : e.BossPattern == 2 ? e.Kind switch { EnemyKind.RiverFerryman => 85, EnemyKind.AshWarden => 68, EnemyKind.HollowName => 85, _ => 42 } : 42;
+    private static float BossCircleRadius(Enemy e) => e.NameOverride == "VIGIA DAS COMPORTAS" ? (e.BossPattern == 0 ? 105 : 55) : IsBellFalseChorus(e) ? e.BossPattern switch { 0 => 252, 1 => 112, _ => 42 } : e.Kind == EnemyKind.SaltJailer ? e.BossPattern switch { 0 => 214, 1 => 82, _ => 40 } : e.BossPattern == 0 ? e.Kind switch { EnemyKind.GlassHerald => 135, EnemyKind.LanternRegent => 150, EnemyKind.RouteScribe => 160, EnemyKind.LastTuner => 178, _ => 90 } : e.BossPattern == 2 ? e.Kind switch { EnemyKind.RiverFerryman => 85, EnemyKind.AshWarden => 68, EnemyKind.HollowName => 85, _ => 42 } : 42;
     private static bool BossAttackContains(Enemy e, PointF point)
     {
         if (BossUsesCone(e)) return BossConeContains(e, point);
@@ -50,7 +52,7 @@ public sealed partial class Game
         if (!BossUsesLine(e)) return Distance(point, e.BossPattern == 0 ? e.Pos : e.Target) < BossCircleRadius(e);
         float width = e.Kind == EnemyKind.FirstKeeper ? 25 : 24;
         if (DistanceToSegment(point, e.Pos, e.Target) < width) return true;
-        return e.Kind is EnemyKind.FirstKeeper or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus or EnemyKind.LastTuner && DistanceToSegment(point, e.Target2Start, e.Target2) < width;
+        return (IsBellFalseChorus(e) || (e.Kind is EnemyKind.FirstKeeper or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus or EnemyKind.LastTuner)) && DistanceToSegment(point, e.Target2Start, e.Target2) < width;
     }
 
     private static (Color Fill, Color Edge) AttackWarningPalette(bool highContrast) => highContrast
@@ -82,6 +84,7 @@ public sealed partial class Game
             using var ring = new GraphicsPath(FillMode.Alternate); ring.AddEllipse(outer); ring.AddEllipse(inner);
             if (highContrastTelegraphs) { using var shadow = new Pen(Color.FromArgb(245, 12, 13, 15), 9); g.DrawEllipse(shadow, outer); g.DrawEllipse(shadow, inner); }
             g.FillPath(fill, ring); g.DrawEllipse(outline, outer); g.DrawEllipse(outline, inner);
+            if (IsBellFalseChorus(e)) DrawCentered(g, "RESSACA • CENTRO SEGURO", e.Pos.Y - radius - 18, new Font("Segoe UI", 9, FontStyle.Bold), highContrastTelegraphs ? Color.White : Color.FromArgb(255, 211, 163), e.Pos.X);
             return;
         }
         if (!BossUsesLine(e))
@@ -96,9 +99,9 @@ public sealed partial class Game
         }
         float width = e.Kind == EnemyKind.FirstKeeper ? 25 : 24;
         using var area = new Pen(fillColor, width * 2) { StartCap = LineCap.Round, EndCap = LineCap.Round };
-        if (highContrastTelegraphs) { using var shadow = new Pen(Color.FromArgb(240, 12, 13, 15), width * 2 + 8) { StartCap = LineCap.Round, EndCap = LineCap.Round }; g.DrawLine(shadow, e.Pos, e.Target); if (e.Kind is EnemyKind.FirstKeeper or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus or EnemyKind.LastTuner) g.DrawLine(shadow, e.Target2Start, e.Target2); }
+        if (highContrastTelegraphs) { using var shadow = new Pen(Color.FromArgb(240, 12, 13, 15), width * 2 + 8) { StartCap = LineCap.Round, EndCap = LineCap.Round }; g.DrawLine(shadow, e.Pos, e.Target); if (BossHasSecondLine(e)) g.DrawLine(shadow, e.Target2Start, e.Target2); }
         g.DrawLine(area, e.Pos, e.Target); g.DrawLine(outline, e.Pos, e.Target);
-        if (e.Kind is EnemyKind.FirstKeeper or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus or EnemyKind.LastTuner) { g.DrawLine(area, e.Target2Start, e.Target2); g.DrawLine(outline, e.Target2Start, e.Target2); }
+        if (BossHasSecondLine(e)) { g.DrawLine(area, e.Target2Start, e.Target2); g.DrawLine(outline, e.Target2Start, e.Target2); }
     }
 
     private void UpdateEnemy(Enemy e, float dt)
@@ -178,6 +181,19 @@ public sealed partial class Game
             float windup = e.Hp < e.MaxHp * 0.5f ? 0.54f : 0.82f;
             if (vigilActive && RunVigilAspect(vigilFloor) == VigilAspect.Swift) windup *= 0.8f;
             BeginWindup(e, e.BossPattern is 1 or 2 ? player : e.Pos, windup); e.Cooldown = e.Hp < e.MaxHp * 0.5f ? 1.35f : 2.1f; return;
+        }
+        if (IsBellFalseChorus(e) && e.Cooldown <= 0)
+        {
+            e.BossPattern = (e.BossPattern + 1) % 3;
+            float windup = e.Hp < e.MaxHp * 0.5f ? 0.56f : 0.9f;
+            if (e.BossPattern == 2)
+            {
+                PointF axis = Normalize(Sub(player, e.Pos), new PointF(1, 0)), side = new(-axis.Y, axis.X);
+                e.Target = Add(e.Pos, Scale(axis, 1050)); e.Target2Start = Add(player, Scale(side, -520)); e.Target2 = Add(player, Scale(side, 520));
+                e.Windup = e.WindupMax = windup; GameAudio.Play(GameAudio.Cue.BossWarning);
+            }
+            else BeginWindup(e, e.BossPattern == 1 ? player : e.Pos, windup);
+            e.Cooldown = e.Hp < e.MaxHp * 0.5f ? 1.35f : 2.2f; return;
         }
         if (e.Boss && e.Cooldown <= 0 && (dist < 135 || (e.Kind is EnemyKind.BlindScribe or EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus or EnemyKind.SaltJailer))) { e.BossPattern = (e.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden or EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus or EnemyKind.SaltJailer) ? (e.BossPattern + 1) % 3 : 1 - e.BossPattern; bool aimed = (e.Kind == EnemyKind.BlindScribe && e.BossPattern == 1) || ((e.Kind is EnemyKind.RiverFerryman or EnemyKind.AshWarden) && (e.BossPattern is 1 or 2)) || (e.Kind is EnemyKind.HollowName or EnemyKind.NameWeaver or EnemyKind.FirstKeeper or EnemyKind.OathCartographer or EnemyKind.NameBroker or EnemyKind.TideWitness or EnemyKind.ReedKeeper or EnemyKind.FlowKeeper or EnemyKind.CounterCurrent or EnemyKind.RiftCantor or EnemyKind.GlassHerald or EnemyKind.LanternRegent or EnemyKind.RouteScribe or EnemyKind.DeepSilence or EnemyKind.BorrowedChorus or EnemyKind.SaltJailer) && e.BossPattern is 1 or 2; float windup = e.Hp < e.MaxHp * 0.5f ? 0.52f : 0.78f; if (vigilActive && RunVigilAspect(vigilFloor) == VigilAspect.Swift) windup *= 0.8f; if (e.Kind == EnemyKind.FirstKeeper && e.BossPattern == 2) { PointF axis = Normalize(Sub(player, e.Pos), new PointF(1, 0)); PointF side = new(-axis.Y, axis.X); e.Target = Add(e.Pos, Scale(axis, 920)); e.Target2Start = Add(player, Scale(side, -460)); e.Target2 = Add(player, Scale(side, 460)); e.Windup = e.WindupMax = windup; GameAudio.Play(GameAudio.Cue.BossWarning); } else BeginWindup(e, aimed || e.NameOverride == "VIGIA DAS COMPORTAS" && e.BossPattern == 1 ? player : e.Pos, windup); e.Cooldown = e.Hp < e.MaxHp * 0.5f ? 1.25f : 2.0f; return; }
         if (dist > (e.Boss ? 40 : 30)) e.Pos = MoveEnemy(e, Scale(Normalize(offset, PointF.Empty), (e.Boss ? 55 : MeleeChaseSpeed(room >= 43 ? 4 : room, HasEliteAffix(e, EliteAffix.Swift))) * dt));

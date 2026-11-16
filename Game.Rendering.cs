@@ -97,6 +97,7 @@ public sealed partial class Game
         if (finalStrikeFlash > 0) DrawFinalSparkFlash(g);
         DrawFloatingTexts(g);
         g.Restore(worldTransform);
+        if (room == 49) DrawSaltFrontierBossHud(g);
         string roomTitle = vigilActive ? $"VIGÍLIA ASCENDENTE • ANDAR {vigilFloor}" : room == 3 || room == 18 || room >= 43 ? roomNames[room] : room < 3 ? $"{room + 1} / 3   {roomNames[room]}" : room < 6 ? $"{room - 3} / 2   {roomNames[room]}" : room < 8 ? $"{room - 5} / 2   {roomNames[room]}" : room < 10 ? $"{room - 7} / 2   {roomNames[room]}" : room < 12 ? $"{room - 9} / 2   {roomNames[room]}" : room < 14 ? $"{room - 11} / 2   {roomNames[room]}" : room < 16 ? $"{room - 13} / 2   {roomNames[room]}" : room < 18 ? $"{room - 15} / 2   {roomNames[room]}" : room < 21 ? $"{room - 18} / 2   {roomNames[room]}" : room < 23 ? $"{room - 20} / 2   {roomNames[room]}" : room < 25 ? $"{room - 22} / 2   {roomNames[room]}" : room < 27 ? $"{room - 24} / 2   {roomNames[room]}" : room < 29 ? $"{room - 26} / 2   {roomNames[room]}" : room < 31 ? $"{room - 28} / 2   {roomNames[room]}" : room < 33 ? $"{room - 30} / 2   {roomNames[room]}" : room < 35 ? $"{room - 32} / 2   {roomNames[room]}" : room < 37 ? $"{room - 34} / 2   {roomNames[room]}" : room < 39 ? $"{room - 36} / 2   {roomNames[room]}" : room < 41 ? $"{room - 38} / 2   {roomNames[room]}" : $"{room - 40} / 2   {roomNames[room]}";
         g.DrawString(roomTitle, roomFont, goldBrush, 67, 572);
         int memoriesRead = (memoriesFound & 1) + ((memoriesFound >> 1) & 1);
@@ -743,6 +744,7 @@ public sealed partial class Game
         if (enemy.Kind == EnemyKind.CooldownLeech) color = Color.MediumOrchid;
         if (enemy.Kind == EnemyKind.SlagWeaver) color = Color.FromArgb(189, 123, 75);
         if (enemy.Kind == EnemyKind.SaltJailer) color = Color.FromArgb(86, 151, 152);
+        if (IsBellFalseChorus(enemy)) color = Color.FromArgb(154, 94, 155);
         if (enemy.Stagger > 0) { using var staggerPen = new Pen(Color.FromArgb(200, 125, 211, 203), 2); float pulse = 1 + (0.95f - enemy.Stagger) * 7; g.DrawEllipse(staggerPen, enemy.Pos.X - r - pulse, enemy.Pos.Y - r - pulse, (r + pulse) * 2, (r + pulse) * 2); }
         if (enemy.Windup > 0 && enemy.Boss) DrawBossWarning(g, enemy);
         else if (enemy.Windup > 0)
@@ -775,6 +777,16 @@ public sealed partial class Game
         {
             using var waterRing = new Pen(Color.FromArgb(190, 97, 190, 186), 3);
             g.DrawEllipse(waterRing, enemy.Pos.X - 34, enemy.Pos.Y - 15, 68, 30);
+        }
+        else if (IsBellFalseChorus(enemy))
+        {
+            using var chorusRings = new Pen(Color.FromArgb(190, 206, 150, 224), 2.5f);
+            float phase = windupPulse * 14;
+            g.DrawArc(chorusRings, enemy.Pos.X - 44, enemy.Pos.Y - 44, 88, 88, phase, 120);
+            g.DrawArc(chorusRings, enemy.Pos.X - 51, enemy.Pos.Y - 51, 102, 102, phase + 180, 120);
+            g.FillEllipse(Brushes.Thistle, enemy.Pos.X - 4, enemy.Pos.Y - 17, 8, 8);
+            g.FillEllipse(Brushes.Thistle, enemy.Pos.X - 21, enemy.Pos.Y + 6, 8, 8);
+            g.FillEllipse(Brushes.Thistle, enemy.Pos.X + 13, enemy.Pos.Y + 6, 8, 8);
         }
         using var body = new SolidBrush(enemy.Flash > 0 ? Color.White : color); using var edge = new Pen(enemy == lockedTarget ? Color.Gold : IsArmored(enemy) ? Color.LightSteelBlue : Color.FromArgb(35, 25, 22), enemy == lockedTarget ? 4 : 2);
         int bossSpriteIndex = CampaignBossSpriteIndex(enemy.Kind), enemySpriteRow = EnemySpriteRow(enemy.Kind);
@@ -886,8 +898,21 @@ public sealed partial class Game
         float hpY = spriteRow >= 0 && enemySprites is not null ? enemy.Pos.Y - (bossSprite ? 141 : individualSpriteLoaded ? spriteHeight + 8 : enemy.Kind == EnemyKind.Elite ? 88 : 77) : enemy.Pos.Y - r - 10;
         using var hpBack = new SolidBrush(Color.FromArgb(40, 20, 20)); using var hpBar = new SolidBrush(Color.FromArgb(188, 76, 70)); g.FillRectangle(hpBack, enemy.Pos.X - 22, hpY, 44, 5); g.FillRectangle(hpBar, enemy.Pos.X - 22, hpY, 44 * Math.Max(0, enemy.Hp / enemy.MaxHp), 5);
         string name = enemy.EliteMinion ? "ECO INVOCADO" : EnemyName(enemy); if (name.Length > 0) DrawCentered(g, name, spriteRow >= 0 && enemySprites is not null ? hpY - 17 : enemy.Pos.Y - r - 28, new Font("Segoe UI", 8, FontStyle.Bold), Color.FromArgb(233, 198, 151), enemy.Pos.X);
-        if (enemy.Boss) { using var bossBack = new SolidBrush(Color.FromArgb(40, 20, 20)); using var bossHp = new SolidBrush(enemy.Hp <= enemy.MaxHp * 0.5f ? Color.OrangeRed : enemy.Kind == EnemyKind.BlindScribe ? Color.Teal : enemy.Kind == EnemyKind.RiverFerryman ? Color.SteelBlue : enemy.Kind == EnemyKind.AshWarden ? Color.DarkOrange : enemy.Kind == EnemyKind.HollowName ? Color.LightSeaGreen : enemy.Kind == EnemyKind.NameWeaver ? Color.MediumPurple : enemy.Kind == EnemyKind.FirstKeeper ? Color.Goldenrod : enemy.Kind == EnemyKind.OathCartographer ? Color.DarkCyan : enemy.Kind == EnemyKind.ReedKeeper ? Color.DarkOliveGreen : enemy.Kind == EnemyKind.CounterCurrent ? Color.CadetBlue : enemy.Kind == EnemyKind.RiftCantor ? Color.MediumOrchid : enemy.Kind == EnemyKind.FlowKeeper ? Color.DeepSkyBlue : enemy.Kind == EnemyKind.GlassHerald ? Color.LightCyan : enemy.Kind is EnemyKind.NameBroker or EnemyKind.TideWitness ? Color.MediumPurple : enemy.Kind == EnemyKind.RouteScribe ? Color.LightSteelBlue : enemy.Kind == EnemyKind.LastTuner ? Color.PaleGoldenrod : enemy.Kind == EnemyKind.SaltJailer ? Color.LightSeaGreen : Color.Firebrick); g.FillRectangle(bossBack, 360, 112, 240, 8); g.FillRectangle(bossHp, 360, 112, 240 * Math.Clamp(enemy.Hp / enemy.MaxHp, 0, 1), 8); string bossName = enemy.Kind == EnemyKind.SaltJailer ? "CARCEREIRO DO SAL" : enemy.Kind == EnemyKind.BlindScribe ? "ESCRIBA CEGO" : enemy.Kind == EnemyKind.RiverFerryman ? "BARQUEIRO OCO" : enemy.Kind == EnemyKind.AshWarden ? "GUARDIÃO DAS CINZAS" : enemy.Kind == EnemyKind.HollowName ? "O NOME VAZIO" : enemy.Kind == EnemyKind.NameWeaver ? "A TECELÃ DE NOMES" : enemy.Kind == EnemyKind.FirstKeeper ? "A PRIMEIRA VIGÍLIA" : enemy.Kind == EnemyKind.OathCartographer ? "CARTÓGRAFA DO VÃO" : enemy.Kind == EnemyKind.NameBroker ? "ESCRIVÃO DE CONTRATO" : enemy.Kind == EnemyKind.TideWitness ? "TESTEMUNHA DA MARÉ" : enemy.Kind == EnemyKind.ReedKeeper ? "GUARDIÃ DO LEITO" : enemy.Kind == EnemyKind.CounterCurrent ? "AFINADOR DAS MARGENS" : enemy.Kind == EnemyKind.RiftCantor ? "A CONTRAVOZ" : enemy.Kind == EnemyKind.FlowKeeper ? "VIGIA DO VEIO PRESO" : enemy.Kind == EnemyKind.GlassHerald ? "ARAUTO DE VIDRO" : enemy.Kind == EnemyKind.LanternRegent ? "REGENTE DAS LANTERNAS" : enemy.Kind == EnemyKind.RouteScribe ? "ESCRIBA DO TRAÇADO" : enemy.Kind == EnemyKind.DeepSilence ? "SILÊNCIO DE BAIXO" : enemy.Kind == EnemyKind.BorrowedChorus ? "ARQUIVISTA DAS MARÉS" : enemy.Kind == EnemyKind.LastTuner ? "AFINADOR DO CONTRATEMPO" : "GUARDIÃO DA CRIPTA"; DrawCentered(g, enemy.Hp <= enemy.MaxHp * 0.5f ? $"{bossName} • SEGUNDA FASE" : bossName, 91, new Font("Georgia", 11, FontStyle.Bold), enemy.Hp <= enemy.MaxHp * 0.5f ? Color.OrangeRed : Color.Goldenrod); }
+        if (enemy.Boss && room != 49) { using var bossBack = new SolidBrush(Color.FromArgb(40, 20, 20)); using var bossHp = new SolidBrush(enemy.Hp <= enemy.MaxHp * 0.5f ? Color.OrangeRed : IsBellFalseChorus(enemy) ? Color.MediumOrchid : enemy.Kind == EnemyKind.BlindScribe ? Color.Teal : enemy.Kind == EnemyKind.RiverFerryman ? Color.SteelBlue : enemy.Kind == EnemyKind.AshWarden ? Color.DarkOrange : enemy.Kind == EnemyKind.HollowName ? Color.LightSeaGreen : enemy.Kind == EnemyKind.NameWeaver ? Color.MediumPurple : enemy.Kind == EnemyKind.FirstKeeper ? Color.Goldenrod : enemy.Kind == EnemyKind.OathCartographer ? Color.DarkCyan : enemy.Kind == EnemyKind.ReedKeeper ? Color.DarkOliveGreen : enemy.Kind == EnemyKind.CounterCurrent ? Color.CadetBlue : enemy.Kind == EnemyKind.RiftCantor ? Color.MediumOrchid : enemy.Kind == EnemyKind.FlowKeeper ? Color.DeepSkyBlue : enemy.Kind == EnemyKind.GlassHerald ? Color.LightCyan : enemy.Kind is EnemyKind.NameBroker or EnemyKind.TideWitness ? Color.MediumPurple : enemy.Kind == EnemyKind.RouteScribe ? Color.LightSteelBlue : enemy.Kind == EnemyKind.LastTuner ? Color.PaleGoldenrod : enemy.Kind == EnemyKind.SaltJailer ? Color.LightSeaGreen : Color.Firebrick); g.FillRectangle(bossBack, 360, 112, 240, 8); g.FillRectangle(bossHp, 360, 112, 240 * Math.Clamp(enemy.Hp / enemy.MaxHp, 0, 1), 8); string bossName = IsBellFalseChorus(enemy) ? "CORO DA MARÉ FALSA" : enemy.Kind == EnemyKind.SaltJailer ? "CARCEREIRO DO SAL" : enemy.Kind == EnemyKind.BlindScribe ? "ESCRIBA CEGO" : enemy.Kind == EnemyKind.RiverFerryman ? "BARQUEIRO OCO" : enemy.Kind == EnemyKind.AshWarden ? "GUARDIÃO DAS CINZAS" : enemy.Kind == EnemyKind.HollowName ? "O NOME VAZIO" : enemy.Kind == EnemyKind.NameWeaver ? "A TECELÃ DE NOMES" : enemy.Kind == EnemyKind.FirstKeeper ? "A PRIMEIRA VIGÍLIA" : enemy.Kind == EnemyKind.OathCartographer ? "CARTÓGRAFA DO VÃO" : enemy.Kind == EnemyKind.NameBroker ? "ESCRIVÃO DE CONTRATO" : enemy.Kind == EnemyKind.TideWitness ? "TESTEMUNHA DA MARÉ" : enemy.Kind == EnemyKind.ReedKeeper ? "GUARDIÃ DO LEITO" : enemy.Kind == EnemyKind.CounterCurrent ? "AFINADOR DAS MARGENS" : enemy.Kind == EnemyKind.RiftCantor ? "A CONTRAVOZ" : enemy.Kind == EnemyKind.FlowKeeper ? "VIGIA DO VEIO PRESO" : enemy.Kind == EnemyKind.GlassHerald ? "ARAUTO DE VIDRO" : enemy.Kind == EnemyKind.LanternRegent ? "REGENTE DAS LANTERNAS" : enemy.Kind == EnemyKind.RouteScribe ? "ESCRIBA DO TRAÇADO" : enemy.Kind == EnemyKind.DeepSilence ? "SILÊNCIO DE BAIXO" : enemy.Kind == EnemyKind.BorrowedChorus ? "ARQUIVISTA DAS MARÉS" : enemy.Kind == EnemyKind.LastTuner ? "AFINADOR DO CONTRATEMPO" : "GUARDIÃO DA CRIPTA"; DrawCentered(g, enemy.Hp <= enemy.MaxHp * 0.5f ? $"{bossName} • SEGUNDA FASE" : bossName, 91, new Font("Georgia", 11, FontStyle.Bold), enemy.Hp <= enemy.MaxHp * 0.5f ? Color.OrangeRed : Color.Goldenrod); }
     }
+    private void DrawSaltFrontierBossHud(Graphics g)
+    {
+        Enemy? boss = enemies.FirstOrDefault(enemy => IsBellFalseChorus(enemy) && Distance(player, enemy.Pos) <= 720);
+        if (boss is null) return;
+        Color accent = boss.Hp <= boss.MaxHp * 0.5f ? Color.OrangeRed : Color.MediumOrchid;
+        using var background = new SolidBrush(Color.FromArgb(220, 20, 20, 24));
+        using var health = new SolidBrush(accent);
+        using var nameFont = new Font("Georgia", 11, FontStyle.Bold);
+        g.FillRectangle(background, 360, 109, 240, 14);
+        g.FillRectangle(health, 360, 112, 240 * Math.Clamp(boss.Hp / boss.MaxHp, 0, 1), 8);
+        DrawCentered(g, boss.Hp <= boss.MaxHp * 0.5f ? "CORO DA MARÉ FALSA • SEGUNDA FASE" : "CORO DA MARÉ FALSA", 91, nameFont, accent);
+    }
+
     private static bool DrawProceduralEnemy(Graphics g, Enemy enemy, Color color)
     {
         float x = enemy.Pos.X, y = enemy.Pos.Y, r = Math.Max(13, enemy.Radius);

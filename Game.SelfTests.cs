@@ -1827,9 +1827,38 @@ public sealed partial class Game
                 vaultResume.player = SaltFrontierCartographer; vaultResume.Interact(); vaultResume.memoryOverlay = false;
                 SaveData frontierCompletedSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(vaultResume.CaptureSaveData()))!;
                 if ((vaultResume.saltFrontierProgress & 31) != 31 || vaultResume.gold != coastGold + 280 || !ValidSaveData(frontierCompletedSave)) throw new InvalidOperationException("A missão de Nemi não concedeu a recompensa única nem salvou seu compasso.");
+                vaultResume.player = SaltFrontierBellheart; vaultResume.Interact(); vaultResume.memoryOverlay = false;
+                Enemy bellheartBoss = vaultResume.enemies.SingleOrDefault(enemy => EnemyName(enemy) == "CORO DA MARÉ FALSA") ?? throw new InvalidOperationException("O coração da torre não despertou seu chefe original após a missão de Nemi.");
+                SaveData awakenedBossSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(vaultResume.CaptureSaveData()))!;
+                if (!awakenedBossSave.SaltFrontierBossAwakened || awakenedBossSave.RoomCleared || !ValidSaveData(awakenedBossSave)) throw new InvalidOperationException("O encontro do Coro não persistiu seu estado como combate pendente.");
+                using (var bossResume = new Game())
+                {
+                    bossResume.timer.Stop(); bossResume.StartGame(); bossResume.firstEchoDiscovered = awakenedBossSave.FirstEchoDiscovered; bossResume.saltFrontierReturnLocation = awakenedBossSave.SaltFrontierLocation; bossResume.saltFrontierBossAwakened = awakenedBossSave.SaltFrontierBossAwakened; bossResume.saltFrontierBossDefeated = awakenedBossSave.SaltFrontierBossDefeated; bossResume.room = awakenedBossSave.Room; bossResume.SetupRoom();
+                    Enemy resumedChorus = bossResume.enemies.SingleOrDefault(enemy => EnemyName(enemy) == "CORO DA MARÉ FALSA") ?? throw new InvalidOperationException("O save não retomou o Coro no coração da torre.");
+                    foreach (int pattern in new[] { 1, 2, 0 })
+                    {
+                        bossResume.player = new PointF(SaltFrontierBellheart.X + 180, SaltFrontierBellheart.Y); resumedChorus.Windup = 0; resumedChorus.Cooldown = 0; bossResume.UpdateEnemy(resumedChorus, 0.01f);
+                        if (resumedChorus.BossPattern != pattern || resumedChorus.Windup <= 0) throw new InvalidOperationException("O Coro não anunciou seus três padrões de ataque.");
+                        if (pattern == 0 && (!BossUsesRing(resumedChorus) || BossAttackContains(resumedChorus, resumedChorus.Pos) || !BossAttackContains(resumedChorus, new PointF(resumedChorus.Pos.X + 180, resumedChorus.Pos.Y)))) throw new InvalidOperationException("A ressaca do Coro não preservou o centro seguro.");
+                        if (pattern == 1 && (!BossAttackContains(resumedChorus, bossResume.player) || BossAttackContains(resumedChorus, new PointF(bossResume.player.X + BossCircleRadius(resumedChorus) + 2, bossResume.player.Y)))) throw new InvalidOperationException("A marca do Coro excedeu seu raio anunciado.");
+                        if (pattern == 2)
+                        {
+                            PointF crossingCenter = new((resumedChorus.Target2Start.X + resumedChorus.Target2.X) / 2, (resumedChorus.Target2Start.Y + resumedChorus.Target2.Y) / 2);
+                            PointF crossingSide = Normalize(Sub(resumedChorus.Target2, resumedChorus.Target2Start), PointF.Empty);
+                            PointF secondLaneOnly = Add(crossingCenter, Scale(crossingSide, 400));
+                            if (!BossUsesLine(resumedChorus) || !BossAttackContains(resumedChorus, secondLaneOnly)) throw new InvalidOperationException("O corte cruzado do Coro não atingiu sua segunda linha telegráfica.");
+                        }
+                    }
+                }
+                int chorusGold = vaultResume.gold; int chorusXp = vaultResume.xp;
+                vaultResume.Defeat(bellheartBoss);
+                if (!vaultResume.saltFrontierBossDefeated || vaultResume.gold != chorusGold + 260 || vaultResume.xp <= chorusXp || !vaultResume.drops.Any(drop => drop.Kind == "weapon")) throw new InvalidOperationException("A derrota do Coro não concedeu a recompensa e a arma garantida.");
+                vaultResume.drops.Clear();
+                frontierCompletedSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(vaultResume.CaptureSaveData()))!;
+                if (!frontierCompletedSave.SaltFrontierBossDefeated || !ValidSaveData(frontierCompletedSave)) throw new InvalidOperationException("A conclusão do chefe da costa não ficou válida no save.");
                 using (var frontierResume = new Game())
                 {
-                    frontierResume.timer.Stop(); frontierResume.StartGame(); frontierResume.firstEchoDiscovered = frontierCompletedSave.FirstEchoDiscovered; frontierResume.saltFrontierReturnLocation = frontierCompletedSave.SaltFrontierLocation; frontierResume.room = frontierCompletedSave.Room; frontierResume.SetupRoom();
+                    frontierResume.timer.Stop(); frontierResume.StartGame(); frontierResume.firstEchoDiscovered = frontierCompletedSave.FirstEchoDiscovered; frontierResume.saltFrontierReturnLocation = frontierCompletedSave.SaltFrontierLocation; frontierResume.saltFrontierBossAwakened = frontierCompletedSave.SaltFrontierBossAwakened; frontierResume.saltFrontierBossDefeated = frontierCompletedSave.SaltFrontierBossDefeated; frontierResume.room = frontierCompletedSave.Room; frontierResume.SetupRoom();
                     if (frontierResume.room != 49 || frontierResume.saltFrontierProgress != 31 || frontierResume.enemies.Count != 0 || !ValidSaveData(frontierResume.CaptureSaveData())) throw new InvalidOperationException("O save não retomou a Costa das Badaladas depois de concluir a missão.");
                     frontierResume.player = SaltFrontierEntrance; frontierResume.Interact(); frontierResume.memoryOverlay = false;
                     if (frontierResume.room != 46 || frontierResume.saltFrontierReturnLocation) throw new InvalidOperationException("A saída da costa não retornou à Bacia com o estado concluído.");
