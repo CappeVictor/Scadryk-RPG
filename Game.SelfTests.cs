@@ -856,12 +856,15 @@ public sealed partial class Game
                 throw new InvalidOperationException("Abertura da Vigília não fortaleceu técnicas quando todas estavam prontas.");
             tempoGame.bellCd = 1;
             if (Math.Abs(tempoGame.TechniqueDamageMultiplier() - readyTechniqueDamage) > 0.001f) throw new InvalidOperationException("Abertura da Vigília manteve o bônus durante uma recarga.");
+            tempoGame.equippedSkills = new[] { 1, 0, 0, 0 };
             SaveData tempoSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(tempoGame.CaptureSaveData()))!;
-            if (tempoSave.CombatTempo != 1 || !ValidSaveData(tempoSave) || JsonSerializer.Deserialize<SaveData>("{}")?.CombatTempo != 0) throw new InvalidOperationException("A escolha de ritmo não persistiu ou invalidou saves antigos.");
+            if (tempoSave.CombatTempo != 1) throw new InvalidOperationException("A escolha de ritmo não persistiu no save.");
+            if (!ValidSaveData(tempoSave)) throw new InvalidOperationException("O save da escolha de ritmo foi rejeitado pela validação.");
+            if (JsonSerializer.Deserialize<SaveData>("{}")?.CombatTempo != 0) throw new InvalidOperationException("Save antigo não recebeu o valor padrão de ritmo.");
 
             tempoGame.gold = 10000; tempoGame.tideGlass = 99; tempoGame.RespecTalents();
             if (tempoGame.pendingTalents != 5 || tempoGame.combatTempo != 0) throw new InvalidOperationException("Redistribuir no nível 25 não devolveu os cinco marcos da build.");
-            tempoGame.shardCd = 1; tempoGame.bellCd = 1; tempoGame.pullCd = 0;
+            tempoGame.equippedSkills = new[] { 1, 2, 3, 0 }; tempoGame.shardCd = 1; tempoGame.bellCd = 1; tempoGame.pullCd = 0;
             tempoGame.SelectTalent(Keys.D5); tempoGame.SelectTalent(Keys.D6); tempoGame.SelectTalent(Keys.D5); tempoGame.SelectTalent(Keys.D5); tempoGame.SelectTalent(Keys.D6);
             if (tempoGame.pendingTalents != 0 || tempoGame.combatTempo != 2 || tempoGame.TechniquesOnCooldown() != 2
                 || Math.Abs(tempoGame.BasicAttackSpecializationMultiplier() - 1.2544f) > 0.001f)
