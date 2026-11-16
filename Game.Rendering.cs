@@ -1456,6 +1456,16 @@ public sealed partial class Game
         using var background = new SolidBrush(Color.FromArgb(248, 15, 17, 18));
         using var optionFont = new Font("Segoe UI", 12);
         using var hintBrush = new SolidBrush(Color.FromArgb(165, 174, 168));
+        if (level >= 50 && combatParagon == 0)
+        {
+            using var border = new Pen(Color.FromArgb(175, 143, 112, 73), 2);
+            g.FillRectangle(background, 155, 195, 650, 250); g.DrawRectangle(border, 155, 195, 650, 250);
+            DrawCentered(g, "MARCO DE PARAGON — ESCOLHA", 225, new Font("Georgia", 16, FontStyle.Bold), Color.Goldenrod);
+            g.DrawString("5. PACTO DA AURORA  +12% dano enquanto sua vida estiver acima de 80%", optionFont, Brushes.Goldenrod, 205, 285);
+            g.DrawString("6. PACTO DO ABISMO  +20% dano com 30% de vida ou menos", optionFont, Brushes.Plum, 205, 328);
+            g.DrawString("A escolha pode ser redistribuída na forja. Pressione 5 ou 6.", optionFont, hintBrush, 205, 386);
+            return;
+        }
         g.FillRectangle(background, 170, level >= 30 ? 140 : 155, 620, level >= 30 ? 490 : level >= 25 ? 465 : 420);
         DrawCentered(g, $"SUBIU DE NÍVEL — ESCOLHA ({pending} PENDENTES)", 183, new Font("Georgia", 15, FontStyle.Bold), Color.Goldenrod);
         g.DrawString("1. VIGOR  +20 VIDA MÁXIMA", optionFont, Brushes.AntiqueWhite, 220, 225);

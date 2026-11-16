@@ -1731,6 +1731,17 @@ public sealed partial class Game
         if (lastShelter.combatCapstone != 2 || lastShelter.health != 48) throw new InvalidOperationException("Último Abrigo não restaurou vida após abater elite com pouca vida.");
         returningTide.gold = 10000; returningTide.tideGlass = 30; returningTide.RespecTalents();
         if (returningTide.pendingTalents != 7 || returningTide.combatCapstone != 0) throw new InvalidOperationException("A redistribuição não devolveu o marco de legado do nível 40.");
+        using var paragonChoice = new Game(); paragonChoice.timer.Stop(); paragonChoice.StartGame(); paragonChoice.level = 50; paragonChoice.maxHealth = paragonChoice.health = 100; paragonChoice.combatDiscipline = paragonChoice.combatMastery = paragonChoice.combatFocus = paragonChoice.combatApex = paragonChoice.combatTempo = paragonChoice.combatInstinct = paragonChoice.combatCapstone = 1; paragonChoice.pendingTalents = 1; paragonChoice.talentChoice = true;
+        using (var paragonImage = new Bitmap(960, 640)) using (var paragonGraphics = Graphics.FromImage(paragonImage)) paragonChoice.DrawTalentChoice(paragonGraphics, 1);
+        paragonChoice.SelectTalent(Keys.D5); Enemy paragonTarget = new() { Kind = EnemyKind.Grunt, Hp = 100, MaxHp = 100 };
+        if (CombatMilestonesAtLevel(50) != 8 || paragonChoice.combatParagon != 1 || Math.Abs(paragonChoice.OutgoingDamageMultiplier(paragonTarget) - 1.12f) > 0.001f || paragonChoice.pendingTalents != 0) throw new InvalidOperationException("O Pacto da Aurora não abriu no nível 50 nem fortaleceu a build com vida alta.");
+        paragonChoice.health = 79; if (paragonChoice.OutgoingDamageMultiplier(paragonTarget) != 1f) throw new InvalidOperationException("O Pacto da Aurora permaneceu ativo abaixo do limiar de 80% de vida.");
+        SaveData paragonSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(paragonChoice.CaptureSaveData()))!;
+        if (paragonSave.CombatParagon != 1 || !ValidSaveData(paragonSave) || JsonSerializer.Deserialize<SaveData>("{}")?.CombatParagon != 0 || ValidSaveData(new SaveData { Level = 49, CombatParagon = 1 })) throw new InvalidOperationException("O Pacto da Aurora não persistiu ou aceitou um save anterior ao marco de nível 50.");
+        using var abyssalPact = new Game(); abyssalPact.timer.Stop(); abyssalPact.StartGame(); abyssalPact.level = 50; abyssalPact.maxHealth = 100; abyssalPact.health = 30; abyssalPact.combatDiscipline = abyssalPact.combatMastery = abyssalPact.combatFocus = abyssalPact.combatApex = abyssalPact.combatTempo = abyssalPact.combatInstinct = abyssalPact.combatCapstone = 1; abyssalPact.pendingTalents = 1; abyssalPact.talentChoice = true; abyssalPact.SelectTalent(Keys.D6);
+        if (abyssalPact.combatParagon != 2 || Math.Abs(abyssalPact.OutgoingDamageMultiplier(paragonTarget) - 1.2f) > 0.001f) throw new InvalidOperationException("O Pacto do Abismo não recompensou a build de alto risco abaixo de 30% de vida.");
+        paragonChoice.gold = 10000; paragonChoice.tideGlass = 30; paragonChoice.RespecTalents();
+        if (paragonChoice.pendingTalents != 8 || paragonChoice.combatParagon != 0) throw new InvalidOperationException("A redistribuição não devolveu os oito marcos, incluindo o Paragon de nível 50.");
         game.room = 11; game.SetupRoom();
         if (game.enemies.Count != 0 || game.drops.Count != 0) throw new InvalidOperationException("O Reservatório foi recriado após ter sido limpo.");
         game.room = 3; game.SetupRoom();

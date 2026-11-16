@@ -327,8 +327,9 @@ public sealed partial class Game
         g.DrawString($"Ritmo: {tempoDescription}", body, combatTempo == 2 ? Brushes.Plum : Brushes.Goldenrod, new RectangleF(145, 550, 670, 20));
         string instinctDescription = combatInstinct == 1 ? "Primeira Ressonância • +18% contra alvos com 80%+ de vida" : combatInstinct == 2 ? "Último Eco • +18% contra alvos com 30% ou menos de vida" : level >= 30 ? "a escolher" : "desbloqueia no nível 30";
         g.DrawString($"Instinto: {instinctDescription}", body, combatInstinct == 2 ? Brushes.Plum : Brushes.Goldenrod, new RectangleF(145, 570, 670, 20));
-        string capstoneDescription = combatCapstone == 1 ? "Maré de Retorno • elites/chefes reduzem recargas em 1 s" : combatCapstone == 2 ? "Último Abrigo • abates curam 8% com vida baixa" : level >= 40 ? "a escolher" : "desbloqueia no nível 40";
-        g.DrawString($"Legado: {capstoneDescription}", body, combatCapstone == 2 ? Brushes.Plum : Brushes.Goldenrod, new RectangleF(145, 590, 670, 20));
+        string capstoneDescription = combatCapstone == 1 ? "Maré de Retorno" : combatCapstone == 2 ? "Último Abrigo" : level >= 40 ? "a escolher" : "nível 40";
+        string paragonDescription = combatParagon == 1 ? "Pacto da Aurora (+12% dano com vida ≥80%)" : combatParagon == 2 ? "Pacto do Abismo (+20% dano com vida ≤30%)" : level >= 50 ? "a escolher" : "nível 50";
+        g.DrawString($"Legado: {capstoneDescription}  •  Paragon: {paragonDescription}", hint, combatParagon == 2 ? Brushes.Plum : Brushes.Goldenrod, new RectangleF(145, 590, 670, 20));
         g.DrawString("P ou ESC fecha", hint, Brushes.DarkGray, 145, 612);
     }
 
