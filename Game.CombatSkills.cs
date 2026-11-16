@@ -66,7 +66,7 @@ public sealed partial class Game
     private void ReleaseFordRouteBurst(PointF center, float damageSource)
     {
         if (fordRoute < 100) return;
-        fordRoute = 0; fordBurstPosition = center; fordBurstTime = 0.38f; fordBurstRadius = 96;
+        fordRoute = 0; fordBurstPosition = center; fordBurstTime = fordBurstDuration = 0.38f; fordBurstRadius = 96;
         foreach (Enemy target in enemies.ToArray())
         {
             if (Distance(center, target.Pos) > 96 || BlockedLine(center, target.Pos)) continue;
@@ -159,7 +159,7 @@ public sealed partial class Game
     {
         int skill = SkillMenuLoadout()[slot];
         if (skill == 0 || !SkillUnlocked(skill)) { notice = "EQUIPE UMA TÉCNICA APRENDIDA PARA ESCOLHER SUA MEMÓRIA"; noticeTime = 2; return; }
-        if (skill >= 9) { notice = "TÉCNICAS DE CLASSE NÃO POSSUEM VARIAÇÕES"; noticeTime = 1.5f; return; }
+        if (skill is 9 or 10) { notice = "ESTA TÉCNICA DE CLASSE NÃO POSSUI VARIAÇÕES"; noticeTime = 1.5f; return; }
         skillVariants[skill] = (skillVariants[skill] + direction + 3) % 3;
         notice = $"{skillNames[skill]} • {SkillVariantName(skill, skillVariants[skill])}"; noticeTime = 2;
     }
@@ -173,6 +173,7 @@ public sealed partial class Game
         (6, 1) => "Farol Duradouro", (6, 2) => "Pulsos Próximos",
         (7, 1) => "Partilha", (7, 2) => "Voz Afiada",
         (8, 1) => "Centelha Fatal", (8, 2) => "Centelha Breve",
+        (11, 1) => "Passo Comprido", (11, 2) => "Ponta de Lança",
         _ => "Forma Original"
     };
     private static string SkillVariantDescription(int skill, int variant) => (skill, variant) switch
@@ -185,12 +186,17 @@ public sealed partial class Game
         (6, 1) => "+2 s de duração • pulso causa -15% dano", (6, 2) => "pulsos 25% mais rápidos • duração -20%",
         (7, 1) => "+35% cura • dano -20%", (7, 2) => "+25% dano • cura -30%",
         (8, 1) => "+30% dano • recarga +25%", (8, 2) => "-15% dano • recarga -25%",
+        (11, 0) => "avanço 96 px • área 68 px • dano equilibrado",
+        (11, 1) => "avanço +38% • área -20% • dano -25% • recarga +20%",
+        (11, 2) => "avanço -25% • área +15% • dano +35%",
         _ => "sem modificadores; a forma mais equilibrada"
     };
     private static bool ValidSkillVariants(SaveData s)
     {
-        if (s.SkillVariants is null || s.SkillVariants.Length != 9 || s.SkillVariants[0] != 0 || s.SkillVariants.Any(variant => variant is < 0 or > 2)) return false;
-        return Enumerable.Range(1, 8).All(skill => s.SkillVariants[skill] == 0 || skill switch { 1 => true, 2 => s.RiverBell, 3 => s.EbbSeal, 4 => s.AnchorWard || s.QuestStage >= 36, 5 => s.RefrainSong, 6 => s.BeaconLight, 7 => s.FinalEnding == 1, 8 => s.FinalEnding == 2, _ => false });
+        if (s.SkillVariants is null || s.SkillVariants.Length is not (9 or 12) || s.SkillVariants[0] != 0 || s.SkillVariants.Any(variant => variant is < 0 or > 2)) return false;
+        if (!Enumerable.Range(1, 8).All(skill => s.SkillVariants[skill] == 0 || skill switch { 1 => true, 2 => s.RiverBell, 3 => s.EbbSeal, 4 => s.AnchorWard || s.QuestStage >= 36, 5 => s.RefrainSong, 6 => s.BeaconLight, 7 => s.FinalEnding == 1, 8 => s.FinalEnding == 2, _ => false })) return false;
+        if (s.SkillVariants.Length == 9) return true;
+        return s.SkillVariants[9] == 0 && s.SkillVariants[10] == 0 && (s.SkillVariants[11] == 0 || s.HeroClass == (int)HeroClass.FordCartographer);
     }
     private void EquipSkill(int slot, int skill)
     {
@@ -211,13 +217,15 @@ public sealed partial class Game
     {
         if (fordShortcutCd > 0 || fordRoute < 50) { notice = fordShortcutCd > 0 ? "ATALHO DO VÃO EM RECARGA" : "ATALHO DO VÃO • PRECISA DE 50 DE ROTA"; noticeTime = 1.4f; return; }
         facing = lockedTarget is not null && enemies.Contains(lockedTarget) ? Normalize(Sub(lockedTarget.Pos, player), facing) : Normalize(mouseAim, facing);
-        fordRoute -= 50; fordShortcutCd = 13f * WeaponCooldownMultiplier();
-        for (int step = 0; step < 8; step++) MovePlayer(Scale(facing, 12));
-        fordBurstPosition = player; fordBurstTime = 0.28f; fordBurstRadius = 68;
+        int variant = skillVariants[11]; float travel = variant == 1 ? 132f : variant == 2 ? 72f : 96f;
+        float radius = variant == 1 ? 54f : variant == 2 ? 78f : 68f;
+        fordRoute -= 50; fordShortcutCd = 13f * (variant == 1 ? 1.2f : 1f) * WeaponCooldownMultiplier();
+        for (int step = 0; step < 8; step++) MovePlayer(Scale(facing, travel / 8));
+        fordBurstPosition = player; fordBurstTime = fordBurstDuration = 0.28f; fordBurstRadius = radius;
         foreach (Enemy target in enemies.ToArray())
         {
-            if (Distance(player, target.Pos) > 68 || BlockedLine(player, target.Pos)) continue;
-            int dealt = Math.Max(1, (int)(damage * 0.62f * WeaponSkillMultiplier() * TechniqueDamageMultiplier() * OutgoingDamageMultiplier(target)));
+            if (Distance(player, target.Pos) > radius || BlockedLine(player, target.Pos)) continue;
+            int dealt = Math.Max(1, (int)(damage * 0.62f * SkillDamageVariant(11) * WeaponSkillMultiplier() * TechniqueDamageMultiplier() * OutgoingDamageMultiplier(target)));
             DamageEnemy(target, dealt); target.Flash = 0.18f;
             if (target.Hp > 0 && !target.Boss && target.Kind != EnemyKind.Elite) { target.Stagger = Math.Max(target.Stagger, 0.42f); target.Windup = 0; }
             if (target.Hp <= 0) Defeat(target);
@@ -245,7 +253,7 @@ public sealed partial class Game
         if (alternateSkillsActive) (equippedSkills, alternateSkills) = (alternateSkills, equippedSkills);
     }
 
-    private float SkillDamageVariant(int skill) => (skill, skillVariants[skill]) switch { (1, 1) => 1.25f, (1, 2) => 0.85f, (2, 1) => 0.85f, (2, 2) => 1.25f, (3, 1) => 0.85f, (3, 2) => 1.15f, (5, 1) => 0.85f, (5, 2) => 1.25f, (6, 1) => 0.85f, (7, 1) => 0.8f, (7, 2) => 1.25f, (8, 1) => 1.3f, (8, 2) => 0.85f, _ => 1f };
+    private float SkillDamageVariant(int skill) => (skill, skillVariants[skill]) switch { (1, 1) => 1.25f, (1, 2) => 0.85f, (2, 1) => 0.85f, (2, 2) => 1.25f, (3, 1) => 0.85f, (3, 2) => 1.15f, (5, 1) => 0.85f, (5, 2) => 1.25f, (6, 1) => 0.85f, (7, 1) => 0.8f, (7, 2) => 1.25f, (8, 1) => 1.3f, (8, 2) => 0.85f, (11, 1) => 0.75f, (11, 2) => 1.35f, _ => 1f };
     private float BellPulseRadius() => (HasCharm(2) ? 190f : 155f) * (skillVariants[2] == 1 ? 1.25f : skillVariants[2] == 2 ? 0.85f : 1f);
     private float BellPulseCooldown() => (Math.Max(7f, 14f - skillTalent * 0.7f) + (HasCharm(2) ? 1.5f : 0f)) * (skillVariants[2] == 2 ? 1.15f : 1f) * WeaponCooldownMultiplier();
     private float EbbPullRadius() => 160f * (skillVariants[3] == 1 ? 1.25f : 1f);
