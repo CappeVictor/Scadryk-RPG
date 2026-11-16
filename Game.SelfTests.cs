@@ -1959,9 +1959,9 @@ public sealed partial class Game
                         }
                     }
                 }
-                int chorusGold = vaultResume.gold; int chorusXp = vaultResume.xp;
+                int chorusGold = vaultResume.gold; int chorusXp = vaultResume.xp; int chorusLevel = vaultResume.level;
                 vaultResume.Defeat(bellheartBoss);
-                if (!vaultResume.saltFrontierBossDefeated || vaultResume.gold != chorusGold + 260 || vaultResume.xp <= chorusXp || !vaultResume.drops.Any(drop => drop.Kind == "weapon")) throw new InvalidOperationException("A derrota do Coro não concedeu a recompensa e a arma garantida.");
+                if (!vaultResume.saltFrontierBossDefeated || vaultResume.gold != chorusGold + 260 || vaultResume.level < chorusLevel || vaultResume.level == chorusLevel && vaultResume.xp <= chorusXp || !vaultResume.drops.Any(drop => drop.Kind == "weapon")) throw new InvalidOperationException("A derrota do Coro não concedeu a recompensa e a arma garantida.");
                 vaultResume.drops.Clear();
                 frontierCompletedSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(vaultResume.CaptureSaveData()))!;
                 if (!frontierCompletedSave.SaltFrontierBossDefeated || !ValidSaveData(frontierCompletedSave)) throw new InvalidOperationException("A conclusão do chefe da costa não ficou válida no save.");
