@@ -1355,7 +1355,7 @@ public sealed partial class Game
         using (var fendaForge = new Game())
         {
             fendaForge.timer.Stop(); fendaForge.StartGame(); fendaForge.storyOverlay = false;
-            fendaForge.weaponRarities[0] = 1; fendaForge.weaponAffixes[0] = 10;
+            fendaForge.weaponRarities[0] = 1; fendaForge.weaponBonuses[0] = 3; fendaForge.weaponAffixes[0] = 10;
             Enemy armoredTarget = new() { Kind = EnemyKind.Grunt, Armored = true, Hp = 100, MaxHp = 100 };
             Enemy unarmoredTarget = new() { Kind = EnemyKind.Grunt, Hp = 100, MaxHp = 100 };
             float expectedFenda = EquipmentCatalog.Weapon(0).ArmoredDamageMultiplier * 1.12f;
