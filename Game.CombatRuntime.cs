@@ -296,7 +296,7 @@ public sealed partial class Game
         float resonance = HasWoundResonance(index) ? 1.4f : 1f;
         if (enemy.WoundTime <= 0) enemy.WoundTickCooldown = 1f;
         enemy.WoundTime = 3f;
-        enemy.WoundDamage = (baseDamage ?? damage) * perSecond * resonance * OutgoingDamageMultiplier(enemy, index) * (IsArmored(enemy) ? 0.75f : 1f);
+        enemy.WoundDamage = (baseDamage ?? damage) * perSecond * resonance * OutgoingDamageMultiplier(enemy, index) * (IsArmored(enemy) && !HasSunderedWoundResonance(index) ? 0.75f : 1f);
         AddFloatingText(new PointF(enemy.Pos.X, enemy.Pos.Y - enemy.Radius - 26), "RUPTURA", Color.Salmon);
     }
 

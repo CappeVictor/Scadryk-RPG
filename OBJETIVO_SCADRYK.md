@@ -28,4 +28,6 @@ A campanha principal chega ao epílogo original e oferece dezoito capítulos, qu
 
 Marco de expansão da Costa: depois do Coro da Maré Falsa, Teren conduz a uma missão opcional no Destroço das Conchas. O encontro com três guardiões, o registro ambiental, a recompensa de relatório e o caminho marcado no atlas persistem entre saves; a CI cobre aceitação, bloqueios do objetivo, conclusão e retomada.
 
+Marco de build: Relíquias com Fenda + Ruptura ativam uma combinação de perfuração. Acertos críticos removem a redução da ferida contra inimigos blindados; a CI verifica dano, descrição e restrição à raridade Relíquia.
+
 O jogo não será considerado concluído apenas por ter muitos capítulos ou por compilar: todas as partes acima precisam funcionar juntas, ser verificadas no alcance correspondente e oferecer uma jornada completa e coesa.

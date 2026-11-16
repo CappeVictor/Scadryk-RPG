@@ -1384,6 +1384,15 @@ public sealed partial class Game
             if (Math.Abs(fendaForge.BasicAttackDamageMultiplier(armoredTarget) - EquipmentCatalog.Weapon(0).ArmoredDamageMultiplier * 1.18f) > 0.001f
                 || !ValidWeaponData(fendaForge.CaptureSaveData()))
                 throw new InvalidOperationException("A Fenda secundária de Relíquia não aplicou seu valor elevado ou falhou na validação do save.");
+            fendaForge.damage = 100; armoredTarget.Hp = armoredTarget.MaxHp = 100;
+            fendaForge.ApplyWeaponWound(armoredTarget, true);
+            if (!fendaForge.HasSunderedWoundResonance(0) || Math.Abs(armoredTarget.WoundDamage - 8f) > 0.01f
+                || !fendaForge.WeaponAffixDescription(0).Contains("Ressonância da Fenda: Ruptura ignora a redução de ferida contra blindados"))
+                throw new InvalidOperationException("Fenda + Ruptura não permitiram à ferida atravessar a redução de alvos blindados ou não explicaram a sinergia.");
+            fendaForge.weaponRarities[0] = 1;
+            fendaForge.ApplyWeaponWound(armoredTarget, true);
+            if (fendaForge.HasSunderedWoundResonance(0) || Math.Abs(armoredTarget.WoundDamage - 4.5f) > 0.01f)
+                throw new InvalidOperationException("A Ressonância da Fenda foi aplicada fora de uma Relíquia.");
         }
         using (var stoneConvergence = new Game())
         {
