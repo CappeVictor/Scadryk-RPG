@@ -1440,7 +1440,7 @@ public sealed partial class Game
             if (fendaForge.weaponAffixes[0] != 11 || Math.Abs(fendaForge.OutgoingDamageMultiplier(inscriptionTarget) - unmarkedInscriptionMultiplier * 1.12f) > 0.001f
                 || !fendaForge.WeaponAffixDescription(0).Contains("da Inscrição: dano contra alvos marcados +12%")
                 || !ValidWeaponData(fendaForge.CaptureSaveData()))
-                throw new InvalidOperationException("A Inscrição não apareceu na têmpera, não fortaleceu apenas alvos marcados ou falhou no save.");
+                throw new InvalidOperationException($"A Inscrição não passou: afixo={fendaForge.weaponAffixes[0]}, arma={fendaForge.weapon}, dano marcado={fendaForge.OutgoingDamageMultiplier(inscriptionTarget):0.000}, sem marca={unmarkedInscriptionMultiplier:0.000}, descrição='{fendaForge.WeaponAffixDescription(0)}', save={ValidWeaponData(fendaForge.CaptureSaveData())}.");
             fendaForge.weaponRarities[0] = 2; fendaForge.weaponAffixes[0] = 10; fendaForge.weaponAffixes2[0] = 11;
             inscriptionTarget.ListenerMarkTime = 0; inscriptionTarget.SparkMarkTime = 1;
             if (Math.Abs(fendaForge.OutgoingDamageMultiplier(inscriptionTarget) - fendaForge.OutgoingDamageMultiplier(unmarkedInscriptionTarget) * 1.2f) > 0.001f
