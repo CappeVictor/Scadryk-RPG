@@ -151,8 +151,10 @@ public sealed partial class Game
             }
             else if (e.Boss && e.Windup <= 0 && inAttack && dashTime > 0 && HasCharm(14) && buoyRhythmCooldown <= 0 && (room < 43 || !BlockedLine(e.Pos, player)))
             {
-                buoyRhythmCooldown = 1.5f; AdvanceTechniqueCooldowns(0.8f);
-                AddFloatingText(new PointF(player.X, player.Y - 54), "RITMO DAS BÓIAS −0,8 S", Color.LightCyan);
+                float cooldownAdvance = BuoyRhythmCooldownAdvance();
+                buoyRhythmCooldown = BuoyRhythmInternalCooldown(); AdvanceTechniqueCooldowns(cooldownAdvance);
+                string cooldownLabel = cooldownAdvance >= 1 ? "1" : "0,8";
+                AddFloatingText(new PointF(player.X, player.Y - 54), $"RITMO DAS BÓIAS −{cooldownLabel} S", Color.LightCyan);
             }
             if (e.Windup <= 0 && e.Kind == EnemyKind.SlagWeaver)
             {

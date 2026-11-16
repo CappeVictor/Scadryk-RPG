@@ -287,7 +287,7 @@ public sealed partial class Game
         if (HasCharm(11)) effects.Add("Pulso Bifurcado: técnicas +12% com 2 prontas; ataques básicos +12% com 2 em recarga");
         if (HasCharm(12)) effects.Add("Nó do Contratempo: técnicas +20% de dano; recarga +15%");
         if (HasCharm(13)) effects.Add("Sino da Contramaré: abates de ecos marcados adiantam recargas de técnica em 1,5 s");
-        if (HasCharm(14)) effects.Add("Ritmo das Bóias: esquivar de golpe anunciado de chefe adianta recargas em 0,8 s (recarga interna: 1,5 s)");
+        if (HasCharm(14)) effects.Add(HasCharmPair(2, 14) ? "Ritmo das Bóias + Fio de Travessia: esquiva de golpe anunciado adianta recargas em 1 s (intervalo: 1,1 s)" : "Ritmo das Bóias: esquivar de golpe anunciado de chefe adianta recargas em 0,8 s (recarga interna: 1,5 s)");
         string effect = effects.Count > 0 ? string.Join(" • ", effects) : "Equipe até dois talismãs para ativar efeitos e sintonias.";
         g.DrawString(effect, effectFont, Brushes.AntiqueWhite, new RectangleF(150, 570, 650, 59));
     }
@@ -410,6 +410,8 @@ public sealed partial class Game
     }
     private bool HasCharm(int charm) => equippedCharm == charm || equippedCharm2 == charm;
     private bool HasCharmPair(int first, int second) => equippedCharm == first && equippedCharm2 == second || equippedCharm == second && equippedCharm2 == first;
+    private float BuoyRhythmCooldownAdvance() => HasCharmPair(2, 14) ? 1f : 0.8f;
+    private float BuoyRhythmInternalCooldown() => HasCharmPair(2, 14) ? 1.1f : 1.5f;
     private float ArmorDamageTakenMultiplier() => !armorOn ? 1f : (relicOn ? 0.65f : 0.7f) * (armorTrait == 1 ? 0.94f : armorTrait == 3 && health <= maxHealth * 0.35f ? 0.85f : 1f);
     private bool HasStoneConvergenceResonance() => armorOn && armorTrait == 1 && relicOn && relicTrait == 4;
     private bool HasStepAmpouleResonance() => armorOn && armorTrait == 2 && relicOn && relicTrait == 2;
