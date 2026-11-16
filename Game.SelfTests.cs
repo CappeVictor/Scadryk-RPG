@@ -1934,6 +1934,28 @@ public sealed partial class Game
                 vaultResume.drops.Clear();
                 frontierCompletedSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(vaultResume.CaptureSaveData()))!;
                 if (!frontierCompletedSave.SaltFrontierBossDefeated || !ValidSaveData(frontierCompletedSave)) throw new InvalidOperationException("A conclusão do chefe da costa não ficou válida no save.");
+                using (var wreckQuest = new Game())
+                {
+                    wreckQuest.timer.Stop(); wreckQuest.StartGame(); wreckQuest.firstEchoDiscovered = frontierCompletedSave.FirstEchoDiscovered; wreckQuest.saltFrontierReturnLocation = true; wreckQuest.saltFrontierBossAwakened = true; wreckQuest.saltFrontierBossDefeated = true; wreckQuest.room = 3; wreckQuest.SetupRoom(); wreckQuest.player = SaltFrontierTeren; wreckQuest.Interact();
+                    SaveData guardedWreckSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(wreckQuest.CaptureSaveData()))!;
+                    if (wreckQuest.saltFrontierSideProgress != 1 || wreckQuest.enemies.Count != 3 || !wreckQuest.memoryOverlay || guardedWreckSave.RoomCleared || !ValidSaveData(guardedWreckSave)) throw new InvalidOperationException("Teren não iniciou a expedição opcional ao Destroço das Conchas com três guardiões e save pendente válido.");
+                    using (var guardedWreckResume = new Game())
+                    {
+                        guardedWreckResume.timer.Stop(); guardedWreckResume.StartGame(); guardedWreckResume.firstEchoDiscovered = guardedWreckSave.FirstEchoDiscovered; guardedWreckResume.saltFrontierReturnLocation = guardedWreckSave.SaltFrontierLocation; guardedWreckResume.saltFrontierBossAwakened = guardedWreckSave.SaltFrontierBossAwakened; guardedWreckResume.saltFrontierBossDefeated = guardedWreckSave.SaltFrontierBossDefeated; guardedWreckResume.saltFrontierSideProgress = guardedWreckSave.SaltFrontierSideProgress; guardedWreckResume.room = guardedWreckSave.Room; guardedWreckResume.SetupRoom();
+                        if (guardedWreckResume.room != 49 || guardedWreckResume.saltFrontierSideProgress != 1 || guardedWreckResume.enemies.Count != 3) throw new InvalidOperationException("O save não retomou os guardiões do Destroço das Conchas.");
+                    }
+                    wreckQuest.memoryOverlay = false; wreckQuest.player = SaltFrontierWreck; wreckQuest.Interact();
+                    if (wreckQuest.saltFrontierSideProgress != 1) throw new InvalidOperationException("O registro do destroço foi liberado antes de derrotar os guardiões.");
+                    wreckQuest.memoryOverlay = false; wreckQuest.enemies.Clear(); wreckQuest.drops.Add(new Drop { Pos = SaltFrontierWreck, Kind = "gold", Amount = 1 }); wreckQuest.Interact();
+                    if (wreckQuest.saltFrontierSideProgress != 1) throw new InvalidOperationException("O registro do destroço foi liberado antes de recolher o saque.");
+                    wreckQuest.memoryOverlay = false; wreckQuest.drops.Clear(); wreckQuest.Interact();
+                    SaveData wreckRecord = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(wreckQuest.CaptureSaveData()))!;
+                    if (wreckQuest.saltFrontierSideProgress != 2 || wreckRecord.SaltFrontierSideProgress != 2 || !ValidSaveData(wreckRecord)) throw new InvalidOperationException("O registro recuperado não avançou ou persistiu o estágio da expedição.");
+                    using var wreckResume = new Game(); wreckResume.timer.Stop(); wreckResume.StartGame(); wreckResume.firstEchoDiscovered = wreckRecord.FirstEchoDiscovered; wreckResume.saltFrontierReturnLocation = wreckRecord.SaltFrontierLocation; wreckResume.saltFrontierBossAwakened = wreckRecord.SaltFrontierBossAwakened; wreckResume.saltFrontierBossDefeated = wreckRecord.SaltFrontierBossDefeated; wreckResume.saltFrontierSideProgress = wreckRecord.SaltFrontierSideProgress; wreckResume.room = wreckRecord.Room; wreckResume.SetupRoom();
+                    if (wreckResume.room != 49 || wreckResume.saltFrontierSideProgress != 2 || wreckResume.enemies.Count != 0) throw new InvalidOperationException("O save não retomou o registro recuperado sem recriar o encontro.");
+                    int rewardGold = wreckResume.gold, rewardGlass = wreckResume.tideGlass; wreckResume.player = SaltFrontierCartographer; wreckResume.Interact();
+                    if (wreckResume.saltFrontierSideProgress != 3 || wreckResume.gold != rewardGold + 240 || wreckResume.tideGlass != rewardGlass + 2 || !wreckResume.memoryOverlay || !ValidSaveData(wreckResume.CaptureSaveData())) throw new InvalidOperationException("Nemi não registrou a rota opcional ou concedeu a recompensa completa.");
+                }
                 using (var frontierResume = new Game())
                 {
                     frontierResume.timer.Stop(); frontierResume.StartGame(); frontierResume.firstEchoDiscovered = frontierCompletedSave.FirstEchoDiscovered; frontierResume.saltFrontierReturnLocation = frontierCompletedSave.SaltFrontierLocation; frontierResume.saltFrontierBossAwakened = frontierCompletedSave.SaltFrontierBossAwakened; frontierResume.saltFrontierBossDefeated = frontierCompletedSave.SaltFrontierBossDefeated; frontierResume.room = frontierCompletedSave.Room; frontierResume.SetupRoom();
