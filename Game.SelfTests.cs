@@ -2015,6 +2015,12 @@ public sealed partial class Game
                 if (vaultResume.room != 46 || vaultResume.gold != reliquaryGold + 260) throw new InvalidOperationException("A saída da fenda não retornou à Bacia ou repetiu a recompensa do arquivo.");
                 vaultResume.player = SaltBasinFrontierEntrance; vaultResume.Interact(); vaultResume.memoryOverlay = false;
                 if (vaultResume.room != 49 || vaultResume.WorldSize() != new SizeF(4200, 2400) || vaultResume.enemies.Count != 0) throw new InvalidOperationException("A trilha das conchas não abriu a Costa das Badaladas como região explorável.");
+                vaultResume.drops.Add(new Drop { Pos = new PointF(1200, 900), Kind = "gold", Amount = 45 }); vaultResume.player = SaltFrontierEntrance; vaultResume.Interact();
+                if (vaultResume.room != 49 || !vaultResume.notice.Contains("SAQUE")) throw new InvalidOperationException("A saída da costa deixou saque desprotegido no estado temporário da região.");
+                vaultResume.drops.Clear(); vaultResume.Interact(); vaultResume.memoryOverlay = false;
+                if (vaultResume.room != 46) throw new InvalidOperationException("A costa não permitiu o retorno depois que o saque foi recolhido.");
+                vaultResume.player = SaltBasinFrontierEntrance; vaultResume.Interact(); vaultResume.memoryOverlay = false;
+                if (vaultResume.room != 49) throw new InvalidOperationException("O retorno à costa falhou depois de recolher o saque pendente.");
                 SaveData frontierEntrySave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(vaultResume.CaptureSaveData()))!;
                 if (!frontierEntrySave.SaltFrontierLocation || !ValidSaveData(frontierEntrySave)) throw new InvalidOperationException("A entrada na costa não foi persistida nem validada.");
                 using (var coastCurrent = new Game())

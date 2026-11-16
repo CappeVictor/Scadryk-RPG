@@ -125,6 +125,7 @@ public sealed partial class Game
         if (weaponDrop is not null) { GameAudio.Play(GameAudio.Cue.Loot); Collect(weaponDrop); return; }
         if (Distance(player, SaltFrontierEntrance) < 105)
         {
+            if (drops.Count > 0) { notice = "RECOLHA TODO O SAQUE ANTES DE VOLTAR À BACIA"; noticeTime = 2.2f; return; }
             StoreSaltFrontierOutside(); saltFrontierReturnLocation = false; room = 46; SetupRoom(); RestoreSaltBasinOutside(); player = SaltBasinFrontierEntrance;
             ShowMemory("RETORNO À COSTA DAS BADALADAS", "A passagem entre o sal e a maré permanece aberta. As notas que você reuniu continuam marcadas no mapa de Nemi."); return;
         }
@@ -377,7 +378,7 @@ public sealed partial class Game
             if (Distance(player, heart) < 120) g.DrawString("E  INVESTIGAR O SINAL", smallFont, ink, heart.X - 94, heart.Y + 102);
         }
         DrawTownPerson(g, SaltFrontierCartographer, "NEMI", Color.FromArgb(77, 133, 139), Distance(player, SaltFrontierCartographer) < InteractionRadius);
-        if (Distance(player, SaltFrontierEntrance) < 105) g.DrawString("E  VOLTAR À BACIA", smallFont, ink, 80, 1255);
+        if (Distance(player, SaltFrontierEntrance) < 105) g.DrawString(drops.Count > 0 ? "RECOLHA O SAQUE PARA RETORNAR" : "E  VOLTAR À BACIA", smallFont, ink, 80, 1255);
         if (Distance(player, SaltFrontierCartographer) < InteractionRadius) g.DrawString("E  FALAR", smallFont, ink, SaltFrontierCartographer.X - 40, SaltFrontierCartographer.Y + 45);
     }
 
