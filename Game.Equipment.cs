@@ -294,7 +294,7 @@ public sealed partial class Game
         float expectedDps = damage * HeroBasicAttackMultiplier() * BasicAttackSpecializationMultiplier() * (1 + critical * (multiplier - 1)) / cooldown;
         float mitigation = 1 - HeroDamageTakenMultiplier() * ArmorDamageTakenMultiplier() * WeaponDamageTakenMultiplier() * CharmDamageTakenMultiplier() * CombatMasteryDamageTakenMultiplier() * CombatApexDamageTakenMultiplier();
         if (wardTime > 0) mitigation = 1 - (1 - mitigation) * AnchorWardDamageTakenMultiplier();
-        if (stoneBastionTime > 0) mitigation = 1 - (1 - mitigation) * 0.45f;
+        if (stoneBastionTime > 0) mitigation = 1 - (1 - mitigation) * StoneBastionDamageTakenMultiplier();
         g.DrawString("ATAQUE", section, Brushes.Goldenrod, 145, 205);
         g.DrawString($"Arma: {WeaponDisplayName(weapon)}", body, Brushes.AntiqueWhite, 145, 232);
         g.DrawString($"Golpe: {damage:0} dano • intervalo {cooldown:0.00} s • alcance {BasicAttackReach(new Enemy { Kind = EnemyKind.Grunt }):0}", body, Brushes.AntiqueWhite, 145, 258);

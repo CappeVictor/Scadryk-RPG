@@ -124,12 +124,13 @@ public sealed partial class Game
             notice = "BASTIÃO DE BASALTO • PRECISA DE 50 DE FÚRIA"; noticeTime = 1.6f; return;
         }
         stoneFury -= 50;
-        stoneBastionTime = 3.5f;
+        stoneBastionTime = 3.5f * (skillVariants[9] == 1 ? 1.4f : skillVariants[9] == 2 ? 0.7f : 1f);
         stoneBastionCd = 18f * WeaponCooldownMultiplier();
         notice = "BASTIÃO DE BASALTO • PEDRA LEMBRA"; noticeTime = 1.4f;
         AddFloatingText(new PointF(player.X, player.Y - 44), "BASTIÃO DE BASALTO", Color.FromArgb(255, 255, 218, 139));
         GameAudio.Play(GameAudio.Cue.Impact);
     }
+    private float StoneBastionDamageTakenMultiplier() => skillVariants[9] == 1 ? 0.55f : skillVariants[9] == 2 ? 0.32f : 0.45f;
 
     private void CastVoiceShard()
     {
@@ -159,7 +160,6 @@ public sealed partial class Game
     {
         int skill = SkillMenuLoadout()[slot];
         if (skill == 0 || !SkillUnlocked(skill)) { notice = "EQUIPE UMA TÉCNICA APRENDIDA PARA ESCOLHER SUA MEMÓRIA"; noticeTime = 2; return; }
-        if (skill is 9 or 10) { notice = "ESTA TÉCNICA DE CLASSE NÃO POSSUI VARIAÇÕES"; noticeTime = 1.5f; return; }
         skillVariants[skill] = (skillVariants[skill] + direction + 3) % 3;
         notice = $"{skillNames[skill]} • {SkillVariantName(skill, skillVariants[skill])}"; noticeTime = 2;
     }
@@ -173,6 +173,8 @@ public sealed partial class Game
         (6, 1) => "Farol Duradouro", (6, 2) => "Pulsos Próximos",
         (7, 1) => "Partilha", (7, 2) => "Voz Afiada",
         (8, 1) => "Centelha Fatal", (8, 2) => "Centelha Breve",
+        (9, 1) => "Manto de Cinza", (9, 2) => "Basalto Denso",
+        (10, 1) => "Trama Ampla", (10, 2) => "Fio Tenso",
         (11, 1) => "Passo Comprido", (11, 2) => "Ponta de Lança",
         _ => "Forma Original"
     };
@@ -186,6 +188,12 @@ public sealed partial class Game
         (6, 1) => "+2 s de duração • pulso causa -15% dano", (6, 2) => "pulsos 25% mais rápidos • duração -20%",
         (7, 1) => "+35% cura • dano -20%", (7, 2) => "+25% dano • cura -30%",
         (8, 1) => "+30% dano • recarga +25%", (8, 2) => "-15% dano • recarga -25%",
+        (9, 0) => "mitiga 55% do dano por 3,5 s",
+        (9, 1) => "duração +40% • mitigação cai para 45%",
+        (9, 2) => "duração -30% • mitigação sobe para 68%",
+        (10, 0) => "alcance 210 px • marca por 5 s • +25% dano recebido",
+        (10, 1) => "alcance +30% • duração +20% • marca concede +15% dano",
+        (10, 2) => "alcance -20% • duração -20% • marca concede +45% dano",
         (11, 0) => "avanço 96 px • área 68 px • dano equilibrado",
         (11, 1) => "avanço +38% • área -20% • dano -25% • recarga +20%",
         (11, 2) => "avanço -25% • área +15% • dano +35%",
@@ -196,7 +204,9 @@ public sealed partial class Game
         if (s.SkillVariants is null || s.SkillVariants.Length is not (9 or 12) || s.SkillVariants[0] != 0 || s.SkillVariants.Any(variant => variant is < 0 or > 2)) return false;
         if (!Enumerable.Range(1, 8).All(skill => s.SkillVariants[skill] == 0 || skill switch { 1 => true, 2 => s.RiverBell, 3 => s.EbbSeal, 4 => s.AnchorWard || s.QuestStage >= 36, 5 => s.RefrainSong, 6 => s.BeaconLight, 7 => s.FinalEnding == 1, 8 => s.FinalEnding == 2, _ => false })) return false;
         if (s.SkillVariants.Length == 9) return true;
-        return s.SkillVariants[9] == 0 && s.SkillVariants[10] == 0 && (s.SkillVariants[11] == 0 || s.HeroClass == (int)HeroClass.FordCartographer);
+        return (s.SkillVariants[9] == 0 || s.HeroClass == (int)HeroClass.StoneGuardian)
+            && (s.SkillVariants[10] == 0 || s.HeroClass == (int)HeroClass.NameWeaver)
+            && (s.SkillVariants[11] == 0 || s.HeroClass == (int)HeroClass.FordCartographer);
     }
     private void EquipSkill(int slot, int skill)
     {
@@ -235,10 +245,13 @@ public sealed partial class Game
     private void CastNameSuture()
     {
         if (nameWeaverCd > 0 || nameThread < 40) { notice = nameWeaverCd > 0 ? "SUTURA DO NOME EM RECARGA" : "FIO INSUFICIENTE • ACERTE INIMIGOS"; noticeTime = 1.4f; return; }
-        Enemy[] targets = enemies.Where(e => Distance(e.Pos, player) <= 210).ToArray();
+        float markRadius = 210f * (skillVariants[10] == 1 ? 1.3f : skillVariants[10] == 2 ? 0.8f : 1f);
+        Enemy[] targets = enemies.Where(e => Distance(e.Pos, player) <= markRadius).ToArray();
         if (targets.Length == 0) { notice = "NENHUM ECO AO ALCANCE DA SUTURA"; noticeTime = 1.4f; return; }
         nameThread -= 40; nameWeaverCd = 14f;
-        foreach (Enemy target in targets) target.NameWeaverMarkTime = 5f;
+        float markDuration = 5f * (skillVariants[10] == 1 ? 1.2f : skillVariants[10] == 2 ? 0.8f : 1f);
+        float markMultiplier = skillVariants[10] == 1 ? 1.15f : skillVariants[10] == 2 ? 1.45f : 1.25f;
+        foreach (Enemy target in targets) { target.NameWeaverMarkTime = markDuration; target.NameWeaverMarkMultiplier = markMultiplier; }
         notice = $"SUTURA DO NOME • {targets.Length} ECO(S) VULNERÁVEL(IS)"; noticeTime = 1.8f;
     }
     private static bool ValidSkillLoadout(SaveData s)

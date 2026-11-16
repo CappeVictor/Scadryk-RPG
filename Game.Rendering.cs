@@ -1350,9 +1350,9 @@ public sealed partial class Game
             g.DrawString($"{slotKeys[slot]}  •  {ShortSkillName(menuSkills, slot)}{(selected ? "  ◀" : "")}", body, slotBrush, 160, 258 + slot * 32);
         }
         int selectedSkill = menuSkills[skillMenuSlot];
-        int selectedVariant = (selectedSkill >= 1 && selectedSkill <= 8 || selectedSkill == 11) ? skillVariants[selectedSkill] : 0;
-        g.DrawString(selectedSkill == 0 ? "MEMÓRIA DA TÉCNICA: ESPAÇO VAZIO" : selectedSkill == 11 ? $"FORMA: {SkillVariantName(11, selectedVariant).ToUpperInvariant()}" : selectedSkill >= 9 ? $"TÉCNICA DE CLASSE: {skillNames[selectedSkill].ToUpperInvariant()}" : $"MEMÓRIA: {SkillVariantName(selectedSkill, selectedVariant)}", body, Brushes.Goldenrod, new RectangleF(150, 402, 310, 24));
-        g.DrawString(selectedSkill == 0 ? "Equipe uma técnica e use ↑/↓ para mudar sua forma." : selectedSkill == 9 ? "Consome 50 de Fúria para reduzir dano em 55% por 3,5 s." : selectedSkill == 10 ? "Consome 40 de Fio; ecos marcados recebem 25% mais dano por 5 s." : SkillVariantDescription(selectedSkill, selectedVariant), small, Brushes.DarkGray, new RectangleF(150, 430, 310, 36));
+        int selectedVariant = selectedSkill is >= 1 and <= 11 ? skillVariants[selectedSkill] : 0;
+        g.DrawString(selectedSkill == 0 ? "MEMÓRIA DA TÉCNICA: ESPAÇO VAZIO" : selectedSkill >= 9 ? $"FORMA: {SkillVariantName(selectedSkill, selectedVariant).ToUpperInvariant()}" : $"MEMÓRIA: {SkillVariantName(selectedSkill, selectedVariant)}", body, Brushes.Goldenrod, new RectangleF(150, 402, 310, 24));
+        g.DrawString(selectedSkill == 0 ? "Equipe uma técnica e use ↑/↓ para mudar sua forma." : SkillVariantDescription(selectedSkill, selectedVariant), small, Brushes.DarkGray, new RectangleF(150, 430, 310, 36));
         g.DrawString("TÉCNICAS APRENDIDAS", body, Brushes.Goldenrod, 480, 224);
         for (int skill = 1; skill <= 11; skill++)
         {
