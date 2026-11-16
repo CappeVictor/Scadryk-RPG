@@ -191,6 +191,9 @@ public sealed partial class Game
         if (save.FirstEchoDiscovered != 0 || save.FirstEchoQuest > 0 || save.FirstEchoCaveFound) known |= 1L << 43;
         if ((save.FirstEchoDiscovered & 2) != 0 || save.FirstEchoCaveFound) known |= 1L << 44;
         if ((save.FirstEchoDiscovered & 4) != 0 || save.FirstEchoQuest >= 2) known |= 1L << 45;
+        if ((save.FirstEchoDiscovered & 64) != 0) known |= 1L << 46;
+        if ((save.FirstEchoDiscovered & 1048576) != 0) known |= 1L << 47;
+        if ((save.FirstEchoDiscovered & 29360128) != 0) known |= 1L << 48;
         return known;
     }
 

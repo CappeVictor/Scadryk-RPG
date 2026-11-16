@@ -129,8 +129,11 @@ public sealed partial class Game
             || !ValidSkillVariants(s)
             || s.Room is < 0 or > 42
             || s.FirstEchoQuest is < 0 or > 3
-            || s.FirstEchoDiscovered is < 0 or > 2097151
+            || s.FirstEchoDiscovered is < 0 or > 33554431
             || (s.FirstEchoDiscovered & 4096) != 0 && (s.FirstEchoDiscovered & 64) == 0
+            || (s.FirstEchoDiscovered & 6291456) == 6291456
+            || (s.FirstEchoDiscovered & 6291456) != 0 && ((s.FirstEchoDiscovered & 1048576) == 0 || (s.FirstEchoDiscovered & 64) == 0)
+            || (s.FirstEchoDiscovered & 16777216) != 0 && (s.FirstEchoDiscovered & 8388608) == 0
             || s.Level is < 1 or > 10000
             || s.Xp < 0
             || s.Xp >= s.Level * 60

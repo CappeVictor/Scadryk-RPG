@@ -40,8 +40,9 @@ public sealed partial class Game
         g.FillRectangle(column, 440, 141, 440, 384); g.DrawRectangle(divider, 440, 141, 440, 384);
         bool firstEchoArea = room is >= 43 and <= 45;
         bool saltBasinArea = room == 46;
-        DrawCentered(g, firstEchoArea ? "EXPEDIÇÃO OPCIONAL" : saltBasinArea ? "REGIÃO EXTERNA" : $"CAPÍTULO {ToRoman(currentChapter.Number)}", 159, new Font("Georgia", 16, FontStyle.Bold), Color.FromArgb(230, 193, 129), 660);
-        DrawCentered(g, firstEchoArea ? "MARGENS DO PRIMEIRO ECO" : saltBasinArea ? "BACIA DO SAL IMÓVEL" : currentChapter.Title, 190, new Font("Segoe UI", 10, FontStyle.Bold), Color.FromArgb(224, 220, 203), 660);
+        bool saltVaultArea = room is 47 or 48;
+        DrawCentered(g, firstEchoArea ? "EXPEDIÇÃO OPCIONAL" : saltBasinArea ? "REGIÃO EXTERNA" : saltVaultArea ? "MASMORRA OPCIONAL" : $"CAPÍTULO {ToRoman(currentChapter.Number)}", 159, new Font("Georgia", 16, FontStyle.Bold), Color.FromArgb(230, 193, 129), 660);
+        DrawCentered(g, firstEchoArea ? "MARGENS DO PRIMEIRO ECO" : saltBasinArea ? "BACIA DO SAL IMÓVEL" : saltVaultArea ? "FENDA DOS MENIRES" : currentChapter.Title, 190, new Font("Segoe UI", 10, FontStyle.Bold), Color.FromArgb(224, 220, 203), 660);
         DrawCentered(g, vigilActive ? $"VIGÍLIA ASCENDENTE • ANDAR {vigilFloor}" : roomNames[room], 221, new Font("Segoe UI", 9, FontStyle.Bold), Color.FromArgb(174, 183, 169), 660);
         g.DrawLine(divider, 464, 247, 856, 247);
         g.DrawString("OBJETIVO ATUAL", sectionFont, Brushes.Goldenrod, 466, 263);
@@ -55,11 +56,11 @@ public sealed partial class Game
         int clearedCombatRooms = Enumerable.Range(0, 43).Count(index => index is not 3 and not 18 && (clearedRooms & (1L << index)) != 0);
         int inscriptionCount = (memoriesFound & 1) + ((memoriesFound >> 1) & 1);
         g.DrawLine(divider, 464, 367, 856, 367);
-        g.DrawString(firstEchoArea ? "CAMINHOS DAS MARGENS" : saltBasinArea ? "ROTAS DA BACIA" : "PROGRESSO DA CAMPANHA", sectionFont, Brushes.Goldenrod, 466, 381);
-        g.DrawString(firstEchoArea ? (firstEchoQuest == 3 ? "Expedição concluída com Edda" : firstEchoQuest == 2 ? "Vozes livres: relate a Edda" : "Comportas: vozes retidas") : saltBasinArea ? saltBasinRewardClaimed ? "Três lanternas acesas; abrigo reaberto" : $"Lanternas acesas: {System.Numerics.BitOperations.PopCount((uint)saltBasinMarks)}/3" : $"Câmaras limpas: {clearedCombatRooms}/{totalCombatRooms}", detailFont, Brushes.AntiqueWhite, 466, 409);
+        g.DrawString(firstEchoArea ? "CAMINHOS DAS MARGENS" : saltBasinArea ? "ROTAS DA BACIA" : saltVaultArea ? "PROGRESSO DA FENDA" : "PROGRESSO DA CAMPANHA", sectionFont, Brushes.Goldenrod, 466, 381);
+        g.DrawString(firstEchoArea ? (firstEchoQuest == 3 ? "Expedição concluída com Edda" : firstEchoQuest == 2 ? "Vozes livres: relate a Edda" : "Comportas: vozes retidas") : saltBasinArea ? saltBasinRewardClaimed ? "Três lanternas acesas; abrigo reaberto" : $"Lanternas acesas: {System.Numerics.BitOperations.PopCount((uint)saltBasinMarks)}/3" : saltVaultArea ? room == 47 ? saltVaultAntechamberCleared ? "Galeria limpa; câmara acessível" : "Galeria dos Menires" : saltVaultBossDefeated ? "Carcereiro derrotado; fenda silenciada" : "Carcereiro do Sal em Suspenso" : $"Câmaras limpas: {clearedCombatRooms}/{totalCombatRooms}", detailFont, Brushes.AntiqueWhite, 466, 409);
         int fieldDiscoveries = (firstEchoCaveFound ? 1 : 0) + (firstEchoReedCache ? 1 : 0) + (firstEchoBeaconRestored ? 1 : 0) + (firstEchoFerryRestored ? 1 : 0);
         string basinSurvey = !saltBasinRewardClaimed ? "Conclua as três lanternas de Asha" : (saltBasinSurveyProgress & 1) == 0 ? "Opcional: fale com Tavi sobre o mapa" : $"Menires registrados: {System.Numerics.BitOperations.PopCount((uint)(saltBasinSurveyProgress & 14))}/3";
-        g.DrawString(firstEchoArea ? $"Descobertas opcionais: {fieldDiscoveries}/4" : saltBasinArea ? basinSurvey : $"Inscrições opcionais: {inscriptionCount}/2", detailFont, Brushes.AntiqueWhite, 466, 435);
+        g.DrawString(firstEchoArea ? $"Descobertas opcionais: {fieldDiscoveries}/4" : saltBasinArea ? basinSurvey : saltVaultArea ? "A saída volta à Bacia do Sal Imóvel" : $"Inscrições opcionais: {inscriptionCount}/2", detailFont, Brushes.AntiqueWhite, 466, 435);
         g.DrawString($"Ecos nesta área: {enemies.Count}   •   Saques no chão: {drops.Count}", metaFont, Brushes.LightGray, 466, 461);
         if (room == 3 && firstEchoQuest > 0)
             g.DrawString(firstEchoQuest == 1 ? "Margens: siga às comportas" : firstEchoQuest == 2 ? "Margens: relate a Edda" : firstEchoFerryAccepted && !firstEchoFerryRestored ? "Vau: reacenda o sinalizador" : firstEchoBeaconAccepted && !firstEchoBeaconRestored ? "Margens: restaure o marco da escarpa" : firstEchoBeaconRestored && !firstEchoFerryAccepted ? "Vau de Cinza: procure Nilo" : "Expedição das Margens concluída", resonanceFont, Brushes.Goldenrod, 466, 489);

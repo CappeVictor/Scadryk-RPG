@@ -93,6 +93,14 @@ public sealed partial class Game
     private void Defeat(Enemy enemy, int? weaponIndex = null)
     {
         if (!enemies.Remove(enemy)) return;
+        if (room == 48 && enemy.Kind == EnemyKind.SaltJailer)
+        {
+            if (!saltVaultBossDefeated)
+            {
+                saltVaultBossDefeated = true; gold += 180; AddXp(120);
+                notice = "CARCEREIRO DERROTADO • +180 OURO • +120 EXP"; noticeTime = 4;
+            }
+        }
         if (ReferenceEquals(lockedTarget, enemy)) lockedTarget = enemies.Where(TargetVisible).OrderBy(candidate => Distance(player, candidate.Pos)).FirstOrDefault();
         TriggerNameRiftBurst(enemy, weaponIndex);
         if (heroClass == HeroClass.Listener && enemy.ListenerMarkTime > 0)

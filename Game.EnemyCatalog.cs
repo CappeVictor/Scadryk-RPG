@@ -71,7 +71,8 @@ public sealed partial class Game
         [EnemyKind.BorrowedChorus] = new("ARQUIVISTA DAS MARÉS", 4050, AlternateEndingHealth: 4450, IsBoss: true, BodyRadius: 23, ContactDamage: 118),
         [EnemyKind.LastTuner] = new("AFINADOR DO CONTRATEMPO", 4700, AlternateEndingHealth: 5150, IsBoss: true, BodyRadius: 23, ContactDamage: 126),
         [EnemyKind.CooldownLeech] = new("MORDENTE DE COMPASSO", 72, ContactDamage: 14, RangedImpactRadius: 42, AiStyle: EnemyAiStyle.CooldownLeech, PreferredDistance: 150, MaximumPreferredDistance: 285, RetreatSpeed: 58, ApproachSpeed: 36, AttackWindup: 1.05f, AttackCooldown: 3.25f),
-        [EnemyKind.SlagWeaver] = new("ECO DE ESCÓRIA", 88, ContactDamage: 18, RangedImpactRadius: 48, AiStyle: EnemyAiStyle.AreaSower, PreferredDistance: 185, MaximumPreferredDistance: 260, RetreatSpeed: 54, ApproachSpeed: 36, AttackWindup: 0.95f, AttackCooldown: 3.75f)
+        [EnemyKind.SlagWeaver] = new("ECO DE ESCÓRIA", 88, ContactDamage: 18, RangedImpactRadius: 48, AiStyle: EnemyAiStyle.AreaSower, PreferredDistance: 185, MaximumPreferredDistance: 260, RetreatSpeed: 54, ApproachSpeed: 36, AttackWindup: 0.95f, AttackCooldown: 3.75f),
+        [EnemyKind.SaltJailer] = new("CARCEREIRO DO SAL", 3100, AlternateEndingHealth: 3400, IsBoss: true, BodyRadius: 24, ContactDamage: 108)
     };
 
     private bool UpdateDataDrivenEnemyBehavior(Enemy enemy, float dt, float distance, PointF offset)
@@ -121,7 +122,7 @@ public sealed partial class Game
             && (definition.AiStyle != EnemyAiStyle.Mage || definition.AttackRange == definition.MaximumPreferredDistance && definition.RangedImpactRadius > 0)
             && (definition.AiStyle != EnemyAiStyle.Elite || definition.AttackRange > 0 && definition.AttackWindup > 0 && definition.AttackCooldown > 0 && definition.SpearboundPreferredDistance > 0 && definition.SpearboundMaximumPreferredDistance > definition.SpearboundPreferredDistance && definition.SpearboundRetreatSpeed > 0 && definition.SpearboundApproachSpeed > 0 && definition.SpearboundAttackRange > definition.SpearboundMaximumPreferredDistance && definition.SpearboundAttackWindup > 0 && definition.SpearboundAttackCooldown > 0)
             && Enum.IsDefined(definition.AiStyle))
-        && Enum.GetValues<EnemyKind>().Count(kind => EnemyData(kind).IsBoss) == 20;
+        && Enum.GetValues<EnemyKind>().Count(kind => EnemyData(kind).IsBoss) == 21;
 
     private float EnemyContactDamage(Enemy enemy)
     {

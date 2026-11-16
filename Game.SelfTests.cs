@@ -264,7 +264,7 @@ public sealed partial class Game
             focusCheck.ResumeAfterFocus(); focusCheck.TickGame();
             if (focusCheck.player != new PointF(500, 330) || focusCheck.skillCd >= 1) throw new InvalidOperationException("A retomada de foco não preservou a posição ou não retomou o combate.");
         }
-        foreach (EnemyKind kind in new[] { EnemyKind.Guardian, EnemyKind.BlindScribe, EnemyKind.RiverFerryman, EnemyKind.AshWarden, EnemyKind.HollowName, EnemyKind.NameWeaver, EnemyKind.FirstKeeper, EnemyKind.OathCartographer, EnemyKind.NameBroker, EnemyKind.TideWitness, EnemyKind.ReedKeeper, EnemyKind.FlowKeeper, EnemyKind.CounterCurrent, EnemyKind.RiftCantor, EnemyKind.GlassHerald, EnemyKind.LanternRegent, EnemyKind.RouteScribe, EnemyKind.DeepSilence, EnemyKind.LastTuner })
+        foreach (EnemyKind kind in new[] { EnemyKind.Guardian, EnemyKind.BlindScribe, EnemyKind.RiverFerryman, EnemyKind.AshWarden, EnemyKind.HollowName, EnemyKind.NameWeaver, EnemyKind.FirstKeeper, EnemyKind.OathCartographer, EnemyKind.NameBroker, EnemyKind.TideWitness, EnemyKind.ReedKeeper, EnemyKind.FlowKeeper, EnemyKind.CounterCurrent, EnemyKind.RiftCantor, EnemyKind.GlassHerald, EnemyKind.LanternRegent, EnemyKind.RouteScribe, EnemyKind.DeepSilence, EnemyKind.LastTuner, EnemyKind.SaltJailer })
         {
             for (int pattern = 0; pattern < 3; pattern++)
             {
@@ -290,6 +290,23 @@ public sealed partial class Game
                     if (!BossAttackContains(boss, new PointF(center.X + radius - 1, center.Y)) || BossAttackContains(boss, new PointF(center.X + radius + 1, center.Y))) throw new InvalidOperationException($"O círculo de {kind} não corresponde ao impacto.");
                 }
             }
+        }
+        using (var saltJailerPatterns = new Game())
+        {
+            saltJailerPatterns.timer.Stop(); saltJailerPatterns.StartGame(); saltJailerPatterns.storyOverlay = false; saltJailerPatterns.room = 48;
+            Enemy jailer = new() { Pos = new PointF(640, 330), Kind = EnemyKind.SaltJailer, Hp = 3000, MaxHp = 3000, Cooldown = 0 };
+            saltJailerPatterns.enemies.Add(jailer); saltJailerPatterns.player = new PointF(150, 330);
+            for (int pattern = 1; pattern <= 3; pattern++)
+            {
+                saltJailerPatterns.UpdateEnemy(jailer, 0.01f);
+                PointF warnedPoint = jailer.BossPattern == 0 ? new PointF(jailer.Pos.X + 150, jailer.Pos.Y) : saltJailerPatterns.player;
+                if (jailer.BossPattern != pattern % 3 || jailer.Windup <= 0 || !BossAttackContains(jailer, warnedPoint)) throw new InvalidOperationException("O Carcereiro do Sal não anunciou seu ciclo de anel, marca e corte em linha.");
+                jailer.Windup = 0; jailer.Cooldown = 0;
+            }
+            jailer.BossPattern = 0;
+            if (!BossUsesRing(jailer) || BossAttackContains(jailer, jailer.Pos) || !BossAttackContains(jailer, new PointF(jailer.Pos.X + 150, jailer.Pos.Y))) throw new InvalidOperationException("O anel do Carcereiro não preservou a zona segura no centro.");
+            jailer.BossPattern = 2; jailer.Target = new PointF(850, 330);
+            if (!BossUsesLine(jailer) || !BossAttackContains(jailer, new PointF(720, 330)) || BossAttackContains(jailer, new PointF(720, 380))) throw new InvalidOperationException("O corte em linha do Carcereiro não correspondeu ao telegráfico.");
         }
         using (var tunerCheck = new Game())
         {
@@ -417,7 +434,7 @@ public sealed partial class Game
             var idlePose = EnemyAttackPose(creature, 0); var attackPose = EnemyAttackPose(creature, 1);
             if (idlePose != (1, 1, 0, 0) || attackPose == idlePose || !attackPoseShapes.Add(attackPose)) throw new InvalidOperationException($"A silhueta de {kind} não recebeu uma pose de ataque própria.");
         }
-        foreach (var (kind, pattern) in new[] { (EnemyKind.GlassHerald, 2), (EnemyKind.RouteScribe, 0), (EnemyKind.LastTuner, 0), (EnemyKind.DeepSilence, 2) })
+        foreach (var (kind, pattern) in new[] { (EnemyKind.GlassHerald, 2), (EnemyKind.RouteScribe, 0), (EnemyKind.LastTuner, 0), (EnemyKind.DeepSilence, 2), (EnemyKind.SaltJailer, 0) })
         {
             var boss = new Enemy { Kind = kind, BossPattern = pattern };
             var idlePose = EnemyAttackPose(boss, 0); var attackPose = EnemyAttackPose(boss, 1);
@@ -427,7 +444,7 @@ public sealed partial class Game
         using (var proceduralGraphics = Graphics.FromImage(proceduralArt))
         {
             proceduralGraphics.SmoothingMode = SmoothingMode.AntiAlias;
-            foreach (EnemyKind kind in new[] { EnemyKind.InkEcho, EnemyKind.DrownedMemory, EnemyKind.EmberWisp, EnemyKind.NameMoth, EnemyKind.MudCantor, EnemyKind.PaperWraith, EnemyKind.SaltEcho, EnemyKind.BorrowedChorus, EnemyKind.SlagWeaver })
+            foreach (EnemyKind kind in new[] { EnemyKind.InkEcho, EnemyKind.DrownedMemory, EnemyKind.EmberWisp, EnemyKind.NameMoth, EnemyKind.MudCantor, EnemyKind.PaperWraith, EnemyKind.SaltEcho, EnemyKind.BorrowedChorus, EnemyKind.SlagWeaver, EnemyKind.SaltJailer })
             {
                 proceduralGraphics.Clear(Color.Transparent);
                 if (!DrawProceduralEnemy(proceduralGraphics, new Enemy { Kind = kind, Pos = new PointF(48, 48) }, Color.SlateGray)) throw new InvalidOperationException($"A silhueta procedural de {kind} não foi desenhada.");
@@ -1750,6 +1767,28 @@ public sealed partial class Game
             int surveyGold = escarpment.gold; escarpment.player = SaltBasinTavi; escarpment.Interact(); escarpment.memoryOverlay = false;
             SaveData surveySave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(escarpment.CaptureSaveData()))!;
             if ((escarpment.saltBasinSurveyProgress & 31) != 31 || escarpment.gold != surveyGold + 110 || !ValidSaveData(surveySave)) throw new InvalidOperationException("Tavi não concluiu o mapa com recompensa única e progresso válido no save.");
+            escarpment.player = SaltVaultEntrance; escarpment.Interact(); escarpment.memoryOverlay = false;
+            SaveData vaultEntrySave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(escarpment.CaptureSaveData()))!;
+            if (escarpment.room != 47 || escarpment.enemies.Count != 4 || !ValidSaveData(vaultEntrySave)) throw new InvalidOperationException("A fenda não abriu a galeria de duas salas ou não persistiu sua entrada.");
+            escarpment.enemies.Clear(); escarpment.drops.Clear(); escarpment.player = new PointF(850, 330); escarpment.Interact();
+            if (escarpment.room != 48 || escarpment.enemies.Count != 1 || escarpment.enemies[0].Kind != EnemyKind.SaltJailer || EnemyName(escarpment.enemies[0]) != "CARCEREIRO DO SAL") throw new InvalidOperationException("A galeria limpa não abriu a arena do Carcereiro do Sal.");
+            SaveData vaultBossSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(escarpment.CaptureSaveData()))!;
+            if (!ValidSaveData(vaultBossSave)) throw new InvalidOperationException("O save da arena não aceitou a localização e o portão da masmorra.");
+            using (var vaultMap = new Bitmap(960, 640)) using (var vaultGraphics = Graphics.FromImage(vaultMap)) escarpment.DrawSaltVaultMap(vaultGraphics);
+            using (var vaultResume = new Game())
+            {
+                vaultResume.timer.Stop(); vaultResume.StartGame(); vaultResume.firstEchoDiscovered = vaultBossSave.FirstEchoDiscovered; vaultResume.room = vaultBossSave.Room; vaultResume.SetupRoom();
+                if (vaultResume.room != 48 || vaultResume.enemies.Count != 1 || vaultResume.enemies[0].Kind != EnemyKind.SaltJailer || EnemyName(vaultResume.enemies[0]) != "CARCEREIRO DO SAL") throw new InvalidOperationException("O save não retomou o encontro do chefe na sala correta.");
+                int vaultGold = vaultResume.gold; vaultResume.Defeat(vaultResume.enemies[0]);
+                SaveData defeatedVaultSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(vaultResume.CaptureSaveData()))!;
+                if (!vaultResume.saltVaultBossDefeated || vaultResume.gold != vaultGold + 180 || !ValidSaveData(defeatedVaultSave)) throw new InvalidOperationException("A derrota do Carcereiro não concedeu sua recompensa ou não persistiu.");
+                vaultResume.drops.Clear(); vaultResume.player = new PointF(850, 330); vaultResume.Interact();
+                if (vaultResume.room != 46 || !vaultResume.saltVaultBossDefeated || vaultResume.saltVaultLocation != 0) throw new InvalidOperationException("A saída da arena não retornou à Bacia com a conclusão preservada.");
+                vaultResume.player = SaltVaultEntrance; vaultResume.Interact(); vaultResume.memoryOverlay = false;
+                if (vaultResume.room != 47 || vaultResume.enemies.Count != 0) throw new InvalidOperationException("A galeria reapareceu após ser limpa e salva.");
+                vaultResume.player = new PointF(850, 330); vaultResume.Interact();
+                if (vaultResume.room != 48 || vaultResume.enemies.Count != 0 || !vaultResume.saltVaultBossDefeated) throw new InvalidOperationException("O Carcereiro reapareceu depois de concluída a masmorra.");
+            }
             using (var resume = new Game())
             {
                 resume.timer.Stop(); resume.StartGame(); resume.firstEchoDiscovered = surveySave.FirstEchoDiscovered; resume.room = 3; resume.SetupRoom();
