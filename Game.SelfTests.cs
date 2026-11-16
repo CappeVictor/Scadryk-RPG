@@ -1710,7 +1710,7 @@ public sealed partial class Game
         {
             escarpment.timer.Stop(); escarpment.StartGame(); escarpment.storyOverlay = false; escarpment.room = 43; escarpment.firstEchoQuest = 3; escarpment.SetupRoom();
             escarpment.enemies.Clear(); escarpment.player = FirstEchoIvara; escarpment.Interact(); escarpment.memoryOverlay = false;
-            if (!escarpment.firstEchoBeaconAccepted || escarpment.enemies.Count != 3) throw new InvalidOperationException("Ivara não desbloqueou o desvio da escarpa com seu encontro próprio.");
+            if (!escarpment.firstEchoBeaconAccepted || escarpment.enemies.Count(enemy => Distance(enemy.Pos, FirstEchoBeacon) < 250) != 3) throw new InvalidOperationException("Ivara não desbloqueou o desvio da escarpa com seu encontro próprio.");
             escarpment.player = FirstEchoBeacon; int rewardBefore = escarpment.gold; escarpment.Interact(); escarpment.memoryOverlay = false;
             if (escarpment.firstEchoBeaconRestored || !escarpment.enemies.Any(enemy => Distance(enemy.Pos, FirstEchoBeacon) < 250)) throw new InvalidOperationException("O marco permitiu interação antes de limpar a escarpa.");
             escarpment.enemies.Clear(); escarpment.Interact(); escarpment.memoryOverlay = false; escarpment.Interact(); escarpment.memoryOverlay = false;
