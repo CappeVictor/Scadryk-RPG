@@ -484,6 +484,9 @@ public sealed partial class Game
             if (platedEcho.Hp is not (930 or 860) || weaponCombat.BasicAttackDamageMultiplier(platedEcho) != 0.7f || weaponCombat.rangedAttackTarget != platedEcho.Pos) throw new InvalidOperationException("O Arco do Limiar não aplicou seu dano reduzido contra armadura e seu alcance longo.");
             weaponCombat.attackCd = 0; platedEcho.Hp = 1000; platedEcho.Pos = new PointF(420, 390); weaponCombat.Attack();
             if (platedEcho.Hp != 1000) throw new InvalidOperationException("O Arco do Limiar atingiu fora do cone estreito anunciado.");
+            weaponCombat.player = new PointF(150, 280); weaponCombat.facing = weaponCombat.mouseAim = new PointF(1, 0); platedEcho.Hp = 1000; platedEcho.Pos = new PointF(400, 280); weaponCombat.attackCd = 0; weaponCombat.Attack();
+            if (!weaponCombat.BlockedLine(weaponCombat.player, platedEcho.Pos) || platedEcho.Hp != 1000) throw new InvalidOperationException("O Arco do Limiar atravessou uma parede ao escolher o alvo.");
+            if (weaponCombat.BasicAttackReach(new Enemy { Kind = EnemyKind.Guardian }) != 260f) throw new InvalidOperationException("O Arco do Limiar não respeitou seu alcance especial contra chefes.");
             if (!weaponCombat.WeaponTraitDescription(1).Contains("PERFURA ARMADURA") || !weaponCombat.WeaponTraitDescription(0).Contains("EQUILIBRADA")) throw new InvalidOperationException("A descrição das especializações de arma não corresponde ao combate.");
         }
         using (var floatingTextCheck = new Game())
