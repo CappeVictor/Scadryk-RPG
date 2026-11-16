@@ -377,7 +377,7 @@ public sealed partial class Game
             g.DrawString("7. REDISTRIBUIR TALENTOS • devolve todos os pontos", optionFont, Brushes.AntiqueWhite, 165, 455);
             int affixGoldCost = secondaryForgeOpen ? 150 : 75, affixGlassCost = secondaryForgeOpen ? 2 : 1;
             g.DrawString(secondaryForgeOpen && weaponRarities[weapon] != 2 ? "AFIXO SECUNDÁRIO EXIGE UMA RELÍQUIA." : $"CUSTO: {affixGoldCost} OURO E {affixGlassCost} SAL VÍTREO   •   DISPONÍVEL: {gold} OURO / {tideGlass} SAL", hintFont, secondaryForgeOpen && weaponRarities[weapon] != 2 ? Brushes.IndianRed : gold < affixGoldCost || tideGlass < affixGlassCost ? Brushes.IndianRed : Brushes.Goldenrod, 165, 485);
-            g.DrawString("A alterna principal/secundário • 1–6/8–9 afixo • Ctrl+9 Nome Riscado ou dificuldade • 0 Cadência • 7 redistribui • T traços • ESC fecha", hintFont, Brushes.DarkGray, 165, 508);
+            g.DrawString("A alterna principal/secundário • 1–6/8–9 afixo • I Inscrição • Ctrl+9 Nome Riscado ou dificuldade • 0 Cadência • 7 redistribui • T traços • ESC fecha", hintFont, Brushes.DarkGray, 165, 508);
             g.DrawString($"RESSONÂNCIA {difficultyTier} • {DifficultyTierName(difficultyTier)} • HP +{(DifficultyEnemyHealthMultiplier(difficultyTier) - 1) * 100:0}% • dano +{(DifficultyIncomingDamageMultiplier(difficultyTier) - 1) * 100:0}% • recompensas +{(DifficultyRewardMultiplier(difficultyTier) - 1) * 100:0}%", hintFont, Brushes.Orange, 165, 531);
         }
         else
@@ -386,7 +386,7 @@ public sealed partial class Game
             g.DrawString("Valores: RARA / RELÍQUIA.", hintFont, Brushes.DarkGray, 165, 455);
             int affixGoldCost = secondaryForgeOpen ? 150 : 75, affixGlassCost = secondaryForgeOpen ? 2 : 1;
             g.DrawString(secondaryForgeOpen && weaponRarities[weapon] != 2 ? "AFIXO SECUNDÁRIO EXIGE UMA RELÍQUIA." : $"CUSTO: {affixGoldCost} OURO E {affixGlassCost} SAL VÍTREO   •   DISPONÍVEL: {gold} OURO / {tideGlass} SAL", hintFont, secondaryForgeOpen && weaponRarities[weapon] != 2 ? Brushes.IndianRed : gold < affixGoldCost || tideGlass < affixGlassCost ? Brushes.IndianRed : Brushes.Goldenrod, 165, 485);
-            g.DrawString("A alterna principal/secundário • 1–6/8–9 afixo • Ctrl+9 Nome Riscado ou dificuldade • 0 Cadência • T traços • ESC fecha", hintFont, Brushes.DarkGray, 165, 508);
+            g.DrawString("A alterna principal/secundário • 1–6/8–9 afixo • I Inscrição • Ctrl+9 Nome Riscado ou dificuldade • 0 Cadência • T traços • ESC fecha", hintFont, Brushes.DarkGray, 165, 508);
             g.DrawString("RESSONÂNCIAS de desafio desbloqueiam após o epílogo e a expedição XVII.", hintFont, Brushes.DarkGray, 165, 531);
         }
     }

@@ -98,11 +98,11 @@ public sealed partial class Game
                 || Math.Abs(EquipmentCatalog.WeaponAffix(i + 1).ValueForRarity(2) - expectedRelicAffixes[i]) > 0.001f)
                 throw new InvalidOperationException($"O afixo {i + 1} perdeu seu valor balanceado entre Rara e Relíquia.");
         if (Math.Abs(EquipmentCatalog.WeaponAffix(10).ValueForRarity(1) - 12) > 0.001f || Math.Abs(EquipmentCatalog.WeaponAffix(10).ValueForRarity(2) - 18) > 0.001f
-            || EquipmentCatalog.RandomlyRolledAffixCount != 9 || EquipmentCatalog.RolledWeaponAffix(7) != 8 || EquipmentCatalog.RolledWeaponAffix(8) != 10
+            || EquipmentCatalog.RandomlyRolledAffixCount != 10 || EquipmentCatalog.RolledWeaponAffix(7) != 8 || EquipmentCatalog.RolledWeaponAffix(8) != 10 || EquipmentCatalog.RolledWeaponAffix(9) != 11
             || EquipmentCatalog.RolledSecondaryWeaponAffix(7, 8) != 10
             || EquipmentCatalog.IsValidPrimaryAffix(9) || EquipmentCatalog.IsValidSecondaryAffix(9, 1) || !EquipmentCatalog.IsValidSecondaryAffix(9, 2)
             || EquipmentCatalog.WeaponAffix(9).Description(1) != "" || EquipmentCatalog.WeaponAffix(9).Description(2) != "do Nome Riscado: ecos marcados explodem ao morrer")
-            throw new InvalidOperationException("O Nome Riscado deixou de ser exclusivo do espaço secundário de Relíquias.");
+            throw new InvalidOperationException("O Nome Riscado deixou de ser exclusivo do espaço secundário de Relíquias ou a lista de afixos perdeu sua rolagem estável.");
         foreach ((string Name, Bitmap? Sheet) sheet in new[]
         {
             ("Guardião: movimento", StoneGuardianSpriteSheet.Value),
@@ -1432,6 +1432,22 @@ public sealed partial class Game
             fendaForge.ApplyWeaponWound(armoredTarget, true);
             if (fendaForge.HasSunderedWoundResonance(0) || Math.Abs(armoredTarget.WoundDamage - 4.5f) > 0.01f)
                 throw new InvalidOperationException("A Ressonância da Fenda foi aplicada fora de uma Relíquia.");
+            fendaForge.room = 18; fendaForge.questStage = 27; fendaForge.player = AvenPosition; fendaForge.gold = 75; fendaForge.tideGlass = 1; fendaForge.forgeMenuOpen = true;
+            fendaForge.OnKeyDown(fendaForge, new KeyEventArgs(Keys.I));
+            Enemy inscriptionTarget = new() { Kind = EnemyKind.Grunt, ListenerMarkTime = 2, Hp = 100, MaxHp = 100 };
+            Enemy unmarkedInscriptionTarget = new() { Kind = EnemyKind.Grunt, Hp = 100, MaxHp = 100 };
+            if (fendaForge.weaponAffixes[0] != 11 || Math.Abs(fendaForge.OutgoingDamageMultiplier(inscriptionTarget) - 1.12f) > 0.001f
+                || fendaForge.OutgoingDamageMultiplier(unmarkedInscriptionTarget) != 1f
+                || !fendaForge.WeaponAffixDescription(0).Contains("da Inscrição: dano contra alvos marcados +12%")
+                || !ValidWeaponData(fendaForge.CaptureSaveData()))
+                throw new InvalidOperationException("A Inscrição não apareceu na têmpera, não fortaleceu apenas alvos marcados ou falhou no save.");
+            fendaForge.weaponRarities[0] = 2; fendaForge.weaponAffixes[0] = 10; fendaForge.weaponAffixes2[0] = 11;
+            inscriptionTarget.ListenerMarkTime = 0; inscriptionTarget.SparkMarkTime = 1;
+            if (Math.Abs(fendaForge.OutgoingDamageMultiplier(inscriptionTarget) - 1.2f) > 0.001f
+                || !fendaForge.WeaponAffixDescription(0).Contains("da Inscrição: dano contra alvos marcados +20%")
+                || !EquipmentCatalog.IsValidSecondaryAffix(11, 2) || !EquipmentCatalog.IsValidSecondaryAffix(11, 1)
+                || !ValidWeaponData(fendaForge.CaptureSaveData()))
+                throw new InvalidOperationException("A Inscrição de Relíquia não reconheceu a marca da Centelha ou seu valor e persistência falharam.");
         }
         using (var stoneConvergence = new Game())
         {

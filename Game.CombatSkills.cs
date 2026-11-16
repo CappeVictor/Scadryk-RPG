@@ -324,6 +324,7 @@ public sealed partial class Game
     private bool HasSunderedWoundResonance(int index) => weaponRarities[index] == 2 && HasWeaponAffix(index, 8) && HasWeaponAffix(index, 10);
     private bool HasNameRiftPower(int index) => weaponRarities[index] == 2 && weaponAffixes2[index] == 9;
     private static bool IsMarkedForRift(Enemy enemy) => enemy.BeaconMarkTime > 0 || enemy.BellMarkTime > 0 || enemy.NameWeaverMarkTime > 0;
+    private static bool IsMarkedForInscription(Enemy enemy) => enemy.BeaconMarkTime > 0 || enemy.BellMarkTime > 0 || enemy.NameWeaverMarkTime > 0 || enemy.ListenerMarkTime > 0 || enemy.SparkMarkTime > 0;
     private bool UsesRangedCriticalResonance(Enemy enemy) => HasRangedCriticalResonance(weapon) && Distance(player, enemy.Pos) >= BasicAttackReach(enemy) * 0.7f;
     private float BasicAttackCriticalChance(Enemy enemy) => CriticalChance() + (UsesRangedCriticalResonance(enemy) ? 0.1f : 0f);
     private float AnchorWardDuration() => Math.Max(1f, (2.5f + (HasAnchorWardResonance(weapon) ? 0.75f : 0f)) * (skillVariants[4] == 1 ? 1.4f : skillVariants[4] == 2 ? 0.7f : 1f));
