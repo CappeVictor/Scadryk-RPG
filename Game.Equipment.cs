@@ -60,9 +60,9 @@ public sealed partial class Game
     }
 
     private static string ArmorTraitName(int trait) => trait switch { 1 => "Laje Funda", 2 => "Passo Ancorado", 3 => "Último Lastro", _ => "Veio Bruto" };
-    private static string ArmorTraitDescription(int trait) => trait switch { 1 => "Peitoral equipado: recebe 6% menos dano adicional.", 2 => "Peitoral equipado: esquiva recarrega 0,12 s mais rápido; com Ampola Viva, poções adiantam recargas.", 3 => "Com 35% da vida ou menos: recebe 15% menos dano.", _ => "Sem efeito adicional." };
+    private static string ArmorTraitDescription(int trait) => trait switch { 1 => "Peitoral equipado: recebe 6% menos dano adicional.", 2 => "Peitoral equipado: esquiva recarrega 0,12 s mais rápido; com Ampola Viva, poções adiantam recargas.", 3 => "Com 35% da vida ou menos: recebe 15% menos dano; com Fio Nutrido, abates curam +7.", _ => "Sem efeito adicional." };
     private static string RelicTraitName(int trait) => trait switch { 1 => "Fio Nutrido", 2 => "Ampola Viva", 3 => "Coro Restaurador", 4 => "Selo da Convergência", _ => "Eco Silente" };
-    private static string RelicTraitDescription(int trait) => trait switch { 1 => "Relicário equipado: cura +3 por abate.", 2 => "Relicário equipado: poções curam +15 vida; com Passo Ancorado, também adiantam recargas.", 3 => "Com o conjunto: Pulso do Veio dura +1 s.", 4 => "Técnicas +10%; recebe +6% dano (Laje Funda pode anular com ambas as peças equipadas).", _ => "Sem efeito adicional." };
+    private static string RelicTraitDescription(int trait) => trait switch { 1 => "Relicário equipado: cura +3 por abate; com Último Lastro, abates curam +7 em vida crítica.", 2 => "Relicário equipado: poções curam +15 vida; com Passo Ancorado, também adiantam recargas.", 3 => "Com o conjunto: Pulso do Veio dura +1 s.", 4 => "Técnicas +10%; recebe +6% dano (Laje Funda pode anular com ambas as peças equipadas).", _ => "Sem efeito adicional." };
 
     private static float DifficultyEnemyHealthMultiplier(int tier) => tier switch { 1 => 1.2f, 2 => 1.45f, 3 => 1.8f, _ => 1f };
     private static float DifficultyIncomingDamageMultiplier(int tier) => tier switch { 1 => 1.1f, 2 => 1.22f, 3 => 1.4f, _ => 1f };
@@ -258,9 +258,9 @@ public sealed partial class Game
         g.DrawString($"   Traço: {ArmorTraitName(armorTrait)} — {ArmorTraitDescription(armorTrait)}", effectFont, Brushes.DarkGray, new RectangleF(150, 341, 650, 17));
         g.DrawString($"6. RELICÁRIO VITAL {(relicOn ? armorOn ? $"EQUIPADO • CURA {RelicKillHealing()}/ABATE • PULSO +15%" : $"EQUIPADO • CURA {RelicKillHealing()} POR ABATE" : relic ? "DISPONÍVEL" : "NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 150, 360);
         g.DrawString($"   Traço: {RelicTraitName(relicTrait)} — {RelicTraitDescription(relicTrait)}", effectFont, Brushes.DarkGray, new RectangleF(150, 377, 650, 17));
-        if (HasStoneConvergenceResonance() || HasStepAmpouleResonance())
+        if (HasStoneConvergenceResonance() || HasStepAmpouleResonance() || HasLastStandNourishResonance())
         {
-            string resonance = string.Join(" • ", new[] { HasStoneConvergenceResonance() ? "RESSONÂNCIA DA LAJE: Laje Funda anula a penalidade do Selo" : null, HasStepAmpouleResonance() ? "RESSONÂNCIA DO PASSO: poções adiantam recargas em 1,25 s" : null }.Where(value => value is not null));
+            string resonance = string.Join(" • ", new[] { HasStoneConvergenceResonance() ? "LAJE: anula a penalidade do Selo" : null, HasStepAmpouleResonance() ? "PASSO: poções adiantam recargas em 1,25 s" : null, HasLastStandNourishResonance() ? "LASTRO: abates curam +7 com vida crítica" : null }.Where(value => value is not null));
             g.DrawString(resonance, effectFont, Brushes.LightSteelBlue, new RectangleF(150, 394, 650, 17));
         }
         g.DrawString($"SELO DA VIGÍLIA {(archiveSeal ? "ENCONTRADO • +8 DANO" : "AINDA NÃO ENCONTRADO")}", itemFont, Brushes.AntiqueWhite, 150, 407);
@@ -410,8 +410,9 @@ public sealed partial class Game
     private float ArmorDamageTakenMultiplier() => !armorOn ? 1f : (relicOn ? 0.65f : 0.7f) * (armorTrait == 1 ? 0.94f : armorTrait == 3 && health <= maxHealth * 0.35f ? 0.85f : 1f);
     private bool HasStoneConvergenceResonance() => armorOn && armorTrait == 1 && relicOn && relicTrait == 4;
     private bool HasStepAmpouleResonance() => armorOn && armorTrait == 2 && relicOn && relicTrait == 2;
+    private bool HasLastStandNourishResonance() => armorOn && armorTrait == 3 && relicOn && relicTrait == 1 && health <= maxHealth * 0.35f;
     private float RelicDamageTakenMultiplier() => relicOn && relicTrait == 4 && !HasStoneConvergenceResonance() ? 1.06f : 1f;
-    private int RelicKillHealing() => !relicOn ? 0 : (armorOn ? 8 : 5) + (relicTrait == 1 ? 3 : 0);
+    private int RelicKillHealing() => !relicOn ? 0 : (armorOn ? 8 : 5) + (relicTrait == 1 ? 3 : 0) + (HasLastStandNourishResonance() ? 7 : 0);
     private float VeinResonanceMultiplier() => armorOn && relicOn && veinResonanceTime > 0 ? 1.15f : 1f;
 
     private static bool ValidWeaponData(SaveData s)

@@ -1404,6 +1404,15 @@ public sealed partial class Game
             if (stepAmpoule.HasStepAmpouleResonance() || stepAmpoule.skillCd != 3f || stepAmpoule.health != 65)
                 throw new InvalidOperationException("A Ressonância do Passo permaneceu ativa sem as duas peças equipadas.");
         }
+        using (var lastStandNourish = new Game())
+        {
+            lastStandNourish.timer.Stop(); lastStandNourish.StartGame(); lastStandNourish.armorOn = lastStandNourish.relicOn = true; lastStandNourish.armorTrait = 3; lastStandNourish.relicTrait = 1; lastStandNourish.maxHealth = 100; lastStandNourish.health = 30;
+            if (!lastStandNourish.HasLastStandNourishResonance() || lastStandNourish.RelicKillHealing() != 18)
+                throw new InvalidOperationException("Último Lastro + Fio Nutrido não ampliaram a cura de abates em situação crítica.");
+            lastStandNourish.health = 50;
+            if (lastStandNourish.HasLastStandNourishResonance() || lastStandNourish.RelicKillHealing() != 11)
+                throw new InvalidOperationException("A Ressonância do Lastro permaneceu ativa acima do limiar de vida crítica.");
+        }
         using var lumeUpstream = new Game(); lumeUpstream.timer.Stop(); lumeUpstream.StartGame(); lumeUpstream.room = 22; lumeUpstream.questStage = 25; lumeUpstream.townEnding = 2; lumeUpstream.SetupRoom();
         if (lumeUpstream.enemies.Single(e => e.Kind == EnemyKind.TideWitness).MaxHp != 920) throw new InvalidOperationException("Manter o Lume não alterou a força da Testemunha da Maré.");
         using var reedExpedition = new Game(); reedExpedition.timer.Stop(); reedExpedition.StartGame(); reedExpedition.storyOverlay = false; reedExpedition.room = 22; reedExpedition.questStage = 27; reedExpedition.upstreamTrace = true; reedExpedition.townEnding = 1; reedExpedition.enemies.Clear(); reedExpedition.drops.Clear(); reedExpedition.player = new PointF(850, 330); reedExpedition.Interact();
