@@ -26,6 +26,38 @@ public sealed partial class Game
         if (StoneGuardianSpriteSheet.Value == PlayerSpriteSheet.Value || NameWeaverSpriteSheet.Value == PlayerSpriteSheet.Value
             || StoneGuardianAttackSpriteSheet.Value == PlayerAttackSpriteSheet.Value || NameWeaverAttackSpriteSheet.Value == PlayerAttackSpriteSheet.Value)
             throw new InvalidOperationException("Uma classe voltou a usar a folha visual do Escutador em vez de seu sprite próprio.");
+        using (var classSpriteRenderCheck = new Game())
+        {
+            classSpriteRenderCheck.timer.Stop();
+            Bitmap DrawClassSprite(HeroClass archetype, float attackTime)
+            {
+                var frame = new Bitmap(200, 200);
+                using Graphics graphics = Graphics.FromImage(frame);
+                graphics.Clear(Color.Transparent);
+                classSpriteRenderCheck.heroClass = archetype;
+                classSpriteRenderCheck.player = new PointF(100, 100);
+                classSpriteRenderCheck.attackFlash = attackTime;
+                classSpriteRenderCheck.DrawPlayer(graphics);
+                return frame;
+            }
+            static int DifferentPixels(Bitmap left, Bitmap right)
+            {
+                int different = 0;
+                for (int y = 0; y < left.Height; y++)
+                    for (int x = 0; x < left.Width; x++)
+                        if (left.GetPixel(x, y).ToArgb() != right.GetPixel(x, y).ToArgb()) different++;
+                return different;
+            }
+            using Bitmap listenerIdle = DrawClassSprite(HeroClass.Listener, 0);
+            using Bitmap guardianIdle = DrawClassSprite(HeroClass.StoneGuardian, 0);
+            using Bitmap weaverIdle = DrawClassSprite(HeroClass.NameWeaver, 0);
+            using Bitmap listenerAttack = DrawClassSprite(HeroClass.Listener, 0.08f);
+            using Bitmap guardianAttack = DrawClassSprite(HeroClass.StoneGuardian, 0.08f);
+            using Bitmap weaverAttack = DrawClassSprite(HeroClass.NameWeaver, 0.08f);
+            if (DifferentPixels(listenerIdle, guardianIdle) < 500 || DifferentPixels(listenerIdle, weaverIdle) < 500
+                || DifferentPixels(listenerAttack, guardianAttack) < 500 || DifferentPixels(listenerAttack, weaverAttack) < 500)
+                throw new InvalidOperationException("O renderizador não desenhou silhuetas próprias para as três classes em movimento e ataque.");
+        }
         using (var menuHitTest = new Game())
         {
             menuHitTest.timer.Stop(); menuHitTest.titleSelection = 2;
