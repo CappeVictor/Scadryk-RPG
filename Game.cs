@@ -211,7 +211,7 @@ public sealed partial class Game : Form
     private HeroClass heroClass;
     private float stoneFury, nameThread, screenShakeTime, screenShakeStrength, screenShakePhase, hitStopTime;
     private int armorTrait, relicTrait;
-    private int healthTalent, skillTalent, dodgeTalent, techniqueTalent, combatDiscipline, combatMastery, combatFocus, combatApex, pendingTalents, enemiesDefeated;
+    private int healthTalent, skillTalent, dodgeTalent, techniqueTalent, combatDiscipline, combatMastery, combatFocus, combatApex, combatTempo, pendingTalents, enemiesDefeated;
     private int memoriesFound, questStage, tideGlass, finalEnding, eliteWeaponMisses;
     private int vigilBestFloor, vigilFloor;
     private VigilAspect[] vigilAspectOrder = { VigilAspect.Hardened, VigilAspect.Hungry, VigilAspect.Swift, VigilAspect.Chorus, VigilAspect.Counterflow };
@@ -305,7 +305,7 @@ public sealed partial class Game : Form
         finalEnding = 0;
         vigilBestFloor = vigilFloor = 0;
         townEnding = 0;
-        healthTalent = skillTalent = dodgeTalent = techniqueTalent = combatDiscipline = combatMastery = combatFocus = combatApex = pendingTalents = enemiesDefeated = memoriesFound = questStage = tideGlass = eliteWeaponMisses = 0;
+        healthTalent = skillTalent = dodgeTalent = techniqueTalent = combatDiscipline = combatMastery = combatFocus = combatApex = combatTempo = pendingTalents = enemiesDefeated = memoriesFound = questStage = tideGlass = eliteWeaponMisses = 0;
         clearedRooms = 0;
         ownedCharms = equippedCharm = equippedCharm2 = 0;
         equippedSkills = new[] { 1, 0, 0, 0 }; alternateSkills = new int[4]; alternateSkillsActive = skillMenuAlternate = false; Array.Clear(skillVariants); skillMenuOpen = false; skillMenuSlot = 0;

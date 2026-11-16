@@ -7,16 +7,17 @@ public sealed partial class Game
 {
     private static int TalentRespecGoldCost(int level) => 250 + Math.Max(1, level) * 100;
     private static int TalentRespecGlassCost(int level) => 5 + Math.Max(1, level) / 5;
+    private static int CombatMilestonesAtLevel(int level) => (level >= 5 ? 1 : 0) + (level >= 10 ? 1 : 0) + (level >= 15 ? 1 : 0) + (level >= 20 ? 1 : 0) + (level >= 25 ? 1 : 0);
 
     private void RespecTalents()
     {
-        int spent = healthTalent + skillTalent + dodgeTalent + techniqueTalent + (combatDiscipline > 0 ? 1 : 0) + (combatMastery > 0 ? 1 : 0) + (combatFocus > 0 ? 1 : 0) + (combatApex > 0 ? 1 : 0);
+        int spent = healthTalent + skillTalent + dodgeTalent + techniqueTalent + CombatMilestonesAtLevel(level);
         int goldCost = TalentRespecGoldCost(level), glassCost = TalentRespecGlassCost(level);
         if (pendingTalents > 0 || talentChoice) { notice = "GASTE OS PONTOS DE TALENTO PENDENTES PRIMEIRO"; noticeTime = 2; return; }
         if (spent == 0) { notice = "NÃO HÁ TALENTOS PARA REDISTRIBUIR"; noticeTime = 2; return; }
         if (gold < goldCost || tideGlass < glassCost) { notice = $"REDISTRIBUIR CUSTA {goldCost} OURO E {glassCost} SAL VÍTREO"; noticeTime = 2.5f; return; }
         float healthRatio = maxHealth > 0 ? health / maxHealth : 1;
-        gold -= goldCost; tideGlass -= glassCost; maxHealth = Math.Max(1, maxHealth - healthTalent * 20); healthTalent = skillTalent = dodgeTalent = techniqueTalent = combatDiscipline = combatMastery = combatFocus = combatApex = 0; health = Math.Clamp(maxHealth * healthRatio, 1, maxHealth);
+        gold -= goldCost; tideGlass -= glassCost; maxHealth = Math.Max(1, maxHealth - healthTalent * 20); healthTalent = skillTalent = dodgeTalent = techniqueTalent = combatDiscipline = combatMastery = combatFocus = combatApex = combatTempo = 0; health = Math.Clamp(maxHealth * healthRatio, 1, maxHealth);
         pendingTalents = spent; talentChoice = pendingTalents > 0; forgeMenuOpen = false; notice = $"TALENTOS REDISTRIBUÍDOS: {spent} PONTOS DEVOLVIDOS"; noticeTime = 3;
     }
 
@@ -47,6 +48,13 @@ public sealed partial class Game
         {
             if (key == Keys.D5) combatApex = 1;
             else if (key == Keys.D6) combatApex = 2;
+            else return;
+            pendingTalents--; talentChoice = pendingTalents > 0; return;
+        }
+        if (level >= 25 && combatTempo == 0)
+        {
+            if (key == Keys.D5) combatTempo = 1;
+            else if (key == Keys.D6) combatTempo = 2;
             else return;
             pendingTalents--; talentChoice = pendingTalents > 0; return;
         }

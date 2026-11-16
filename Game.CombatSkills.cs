@@ -194,9 +194,9 @@ public sealed partial class Game
     private float EquippedSkillCooldown(int skill) => skill switch { 1 => shardCd, 2 => bellCd, 3 => pullCd, 4 => wardCd, 5 => refrainCd, 6 => beaconCd, 7 => returnVoiceCd, 8 => finalStrikeCd, 9 => stoneBastionCd, 10 => nameWeaverCd, _ => 0 };
     private int TechniquesOnCooldown() => equippedSkills.Count(skill => skill > 0 && EquippedSkillCooldown(skill) > 0);
     private int TechniquesReady() => equippedSkills.Count(skill => skill > 0 && EquippedSkillCooldown(skill) <= 0);
-    private float TechniqueDamageMultiplier() => (heroClass == HeroClass.NameWeaver ? 1.18f : 1f) * (1f + techniqueTalent * 0.08f) * (combatDiscipline == 2 ? 1.12f : combatDiscipline == 1 ? 0.9f : 1f) * (combatApex == 1 && TechniquesOnCooldown() >= 2 ? 1.18f : 1f) * (vigilActive && HasCharm(8) ? 1.18f : 1f) * (HasCharm(11) && TechniquesReady() >= 2 ? 1.12f : 1f) * (HasCharm(12) ? 1.2f : 1f);
+    private float TechniqueDamageMultiplier() => (heroClass == HeroClass.NameWeaver ? 1.18f : 1f) * (1f + techniqueTalent * 0.08f) * (combatDiscipline == 2 ? 1.12f : combatDiscipline == 1 ? 0.9f : 1f) * (combatApex == 1 && TechniquesOnCooldown() >= 2 ? 1.18f : 1f) * (combatTempo == 1 && TechniquesReady() > 0 && TechniquesOnCooldown() == 0 ? 1.15f : 1f) * (vigilActive && HasCharm(8) ? 1.18f : 1f) * (HasCharm(11) && TechniquesReady() >= 2 ? 1.12f : 1f) * (HasCharm(12) ? 1.2f : 1f);
     private float BasicAttackCycleMultiplier() => HasCharm(11) && TechniquesOnCooldown() >= 2 ? 1.12f : 1f;
-    private float BasicAttackSpecializationMultiplier() => combatDiscipline == 1 ? 1.12f : combatDiscipline == 2 ? 0.9f : 1f;
+    private float BasicAttackSpecializationMultiplier() => (combatDiscipline == 1 ? 1.12f : combatDiscipline == 2 ? 0.9f : 1f) * (combatTempo == 2 && TechniquesOnCooldown() >= 2 ? 1.12f : 1f);
     private int WeaponPower(int index) => EquipmentCatalog.Weapon(index).BaseDamage + weaponBonuses[index];
     private int WeaponKillHealing()
     {

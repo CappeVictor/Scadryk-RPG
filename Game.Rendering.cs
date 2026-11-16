@@ -1297,7 +1297,7 @@ public sealed partial class Game
         using var background = new SolidBrush(Color.FromArgb(248, 15, 17, 18));
         using var optionFont = new Font("Segoe UI", 12);
         using var hintBrush = new SolidBrush(Color.FromArgb(165, 174, 168));
-        g.FillRectangle(background, 170, 155, 620, 420);
+        g.FillRectangle(background, 170, 155, 620, level >= 25 ? 465 : 420);
         DrawCentered(g, $"SUBIU DE NÍVEL — ESCOLHA ({pending} PENDENTES)", 183, new Font("Georgia", 15, FontStyle.Bold), Color.Goldenrod);
         g.DrawString("1. VIGOR  +20 VIDA MÁXIMA", optionFont, Brushes.AntiqueWhite, 220, 225);
         g.DrawString("2. DOMÍNIO  técnicas recarregam mais rápido", optionFont, Brushes.AntiqueWhite, 220, 260);
@@ -1329,11 +1329,19 @@ public sealed partial class Game
 
         if (level >= 20 && combatDiscipline > 0 && combatMastery > 0 && combatFocus > 0 && combatApex == 0)
         {
-            g.DrawString("5. CORO SUSPENSO  +18% técnicas com 2+ recargas ativas", optionFont, Brushes.Goldenrod, 220, 493);
-            g.DrawString("6. ÂNCORA DE ECO  -12% dano recebido com 2+ recargas", optionFont, Brushes.Plum, 220, 527);
+            g.DrawString("5. CORO SUSPENSO  +18% técnicas com 2+ recargas ativas", optionFont, Brushes.Goldenrod, 220, 476);
+            g.DrawString("6. ÂNCORA DE ECO  -12% dano recebido com 2+ recargas", optionFont, Brushes.Plum, 220, 510);
         }
-        else if (combatApex > 0) g.DrawString($"Auge: {(combatApex == 1 ? "Coro Suspenso" : "Âncora de Eco")} • redistribuível na forja.", optionFont, hintBrush, 220, 493);
-        g.DrawString("Talentos comuns podem se repetir; cada marco escolhe um caminho.", optionFont, hintBrush, 220, level >= 20 ? 560 : 520);
+        else if (combatApex > 0) g.DrawString($"Auge: {(combatApex == 1 ? "Coro Suspenso" : "Âncora de Eco")} • redistribuível na forja.", optionFont, hintBrush, 220, 476);
+
+        if (level >= 25 && combatApex > 0 && combatTempo == 0)
+        {
+            g.DrawString("5. ABERTURA DA VIGÍLIA  técnicas +15% se todas prontas", optionFont, Brushes.Goldenrod, 220, 510);
+            g.DrawString("6. RESPOSTA DO VEIO  básicos +12% com 2+ recargas", optionFont, Brushes.Plum, 220, 544);
+        }
+        else if (combatTempo > 0) g.DrawString($"Ritmo: {(combatTempo == 1 ? "Abertura da Vigília" : "Resposta do Veio")} • redistribuível na forja.", optionFont, hintBrush, 220, 510);
+        else if (combatApex > 0) g.DrawString("Ritmo de combate desbloqueia no nível 25.", optionFont, hintBrush, 220, 510);
+        g.DrawString("Talentos comuns podem se repetir; cada marco escolhe um caminho.", optionFont, hintBrush, 220, level >= 25 ? 580 : level >= 20 ? 560 : 520);
     }
     private void DrawStoryOverlay(Graphics g)
     {

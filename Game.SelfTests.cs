@@ -847,6 +847,28 @@ public sealed partial class Game
             apexGame.equippedSkills = new[] { 1, 0, 0, 0 }; apexGame.riverBell = apexGame.ebbSeal = false;
             if (Math.Abs(apexGame.health - 20.8f) > 0.01f || !ValidSaveData(apexGame.CaptureSaveData())) throw new InvalidOperationException("Âncora de Eco não combinou sua redução condicional com a Guarda Serena ou não salvou a build.");
         }
+        using (var tempoGame = new Game())
+        {
+            tempoGame.timer.Stop(); tempoGame.StartGame(); tempoGame.level = 25; tempoGame.combatDiscipline = 1; tempoGame.combatMastery = 1; tempoGame.combatFocus = 1; tempoGame.combatApex = 1;
+            tempoGame.equippedSkills = new[] { 1, 2, 3, 0 }; tempoGame.riverBell = tempoGame.ebbSeal = true; tempoGame.pendingTalents = 1; tempoGame.talentChoice = true;
+            float readyTechniqueDamage = tempoGame.TechniqueDamageMultiplier(); tempoGame.SelectTalent(Keys.D5);
+            if (tempoGame.combatTempo != 1 || tempoGame.pendingTalents != 0 || Math.Abs(tempoGame.TechniqueDamageMultiplier() - readyTechniqueDamage * 1.15f) > 0.001f)
+                throw new InvalidOperationException("Abertura da Vigília não fortaleceu técnicas quando todas estavam prontas.");
+            tempoGame.bellCd = 1;
+            if (Math.Abs(tempoGame.TechniqueDamageMultiplier() - readyTechniqueDamage) > 0.001f) throw new InvalidOperationException("Abertura da Vigília manteve o bônus durante uma recarga.");
+            SaveData tempoSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(tempoGame.CaptureSaveData()))!;
+            if (tempoSave.CombatTempo != 1 || !ValidSaveData(tempoSave) || JsonSerializer.Deserialize<SaveData>("{}")?.CombatTempo != 0) throw new InvalidOperationException("A escolha de ritmo não persistiu ou invalidou saves antigos.");
+
+            tempoGame.gold = 10000; tempoGame.tideGlass = 99; tempoGame.RespecTalents();
+            if (tempoGame.pendingTalents != 5 || tempoGame.combatTempo != 0) throw new InvalidOperationException("Redistribuir no nível 25 não devolveu os cinco marcos da build.");
+            tempoGame.shardCd = 1; tempoGame.bellCd = 1; tempoGame.pullCd = 0;
+            tempoGame.SelectTalent(Keys.D5); tempoGame.SelectTalent(Keys.D6); tempoGame.SelectTalent(Keys.D5); tempoGame.SelectTalent(Keys.D5); tempoGame.SelectTalent(Keys.D6);
+            if (tempoGame.pendingTalents != 0 || tempoGame.combatTempo != 2 || tempoGame.TechniquesOnCooldown() != 2
+                || Math.Abs(tempoGame.BasicAttackSpecializationMultiplier() - 1.2544f) > 0.001f)
+                throw new InvalidOperationException("Resposta do Veio não fortaleceu ataques básicos com duas técnicas recarregando após redistribuir os cinco marcos.");
+            tempoGame.bellCd = 0;
+            if (Math.Abs(tempoGame.BasicAttackSpecializationMultiplier() - 1.12f) > 0.001f) throw new InvalidOperationException("Resposta do Veio manteve o bônus com uma técnica em recarga.");
+        }
         using var game = new Game(); game.timer.Stop(); game.StartGame();
         if (!game.storyOverlay || game.storyPage != 0) throw new InvalidOperationException("O novo jogo não iniciou no prólogo da história.");
         for (int i = 0; i < game.prologue.Length; i++) game.AdvanceStory();

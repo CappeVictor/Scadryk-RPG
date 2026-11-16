@@ -288,7 +288,7 @@ public sealed partial class Game
     {
         using var shade = new SolidBrush(Color.FromArgb(190, 5, 7, 9)); using var background = new SolidBrush(Color.FromArgb(248, 15, 17, 18)); using var border = new Pen(Color.FromArgb(175, 143, 112, 73), 2);
         using var heading = new Font("Georgia", 17, FontStyle.Bold); using var section = new Font("Segoe UI", 11, FontStyle.Bold); using var body = new Font("Segoe UI", 10); using var hint = new Font("Segoe UI", 9);
-        g.FillRectangle(shade, 0, 83, 960, 557); g.FillRectangle(background, 105, 125, 750, 455); g.DrawRectangle(border, 105, 125, 750, 455);
+        g.FillRectangle(shade, 0, 83, 960, 557); g.FillRectangle(background, 105, 125, 750, 490); g.DrawRectangle(border, 105, 125, 750, 490);
         DrawCentered(g, $"FICHA DO {HeroClassTitle()}", 151, heading, Color.FromArgb(230, 193, 129));
         float critical = CriticalChance(), multiplier = CriticalMultiplier(), cooldown = BasicAttackCooldown();
         float expectedDps = damage * HeroBasicAttackMultiplier() * BasicAttackSpecializationMultiplier() * (1 + critical * (multiplier - 1)) / cooldown;
@@ -316,7 +316,9 @@ public sealed partial class Game
         g.DrawString($"Maestria: {(combatMastery == 1 ? "Guarda Serena • dano recebido -10%, esquiva +0,20 s" : combatMastery == 2 ? "Passo Impetuoso • esquiva -0,18 s, dano recebido +8%" : level >= 10 ? "a escolher" : "desbloqueia no nível 10")}", body, combatMastery == 2 ? Brushes.Plum : Brushes.Goldenrod, 145, 482);
         g.DrawString($"Foco: {(combatFocus == 1 ? "Caçador de Ecos • chefes +15%" : combatFocus == 2 ? "Quebra-Formação • comuns +10% com 3+ inimigos" : level >= 15 ? "a escolher" : "desbloqueia no nível 15")}", body, combatFocus == 2 ? Brushes.Plum : Brushes.Goldenrod, 145, 506);
         g.DrawString($"Auge: {(combatApex == 1 ? "Coro Suspenso • técnicas +18% com 2+ recargas" : combatApex == 2 ? "Âncora de Eco • dano recebido -12% com 2+ recargas" : level >= 20 ? "a escolher" : "desbloqueia no nível 20")}", body, combatApex == 2 ? Brushes.Plum : Brushes.Goldenrod, new RectangleF(145, 530, 670, 20));
-        g.DrawString("P ou ESC fecha", hint, Brushes.DarkGray, 145, 550);
+        string tempoDescription = combatTempo == 1 ? "Abertura da Vigília • técnicas +15% se todas prontas" : combatTempo == 2 ? "Resposta do Veio • básicos +12% com 2+ recargas" : level >= 25 ? "a escolher" : "desbloqueia no nível 25";
+        g.DrawString($"Ritmo: {tempoDescription}", body, combatTempo == 2 ? Brushes.Plum : Brushes.Goldenrod, new RectangleF(145, 550, 670, 20));
+        g.DrawString("P ou ESC fecha", hint, Brushes.DarkGray, 145, 581);
     }
 
     private void DrawForgeMenu(Graphics g)
