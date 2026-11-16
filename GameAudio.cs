@@ -1,40 +1,97 @@
 using System.Media;
+using System.Text.Json;
 
 internal static class GameAudio
 {
     internal enum Cue { Strike, Dash, Impact, Skill, Loot, BossWarning, EliteWarning }
 
     private const int SampleRate = 22050;
-    private static readonly MemoryStream[] streams;
-    private static readonly SoundPlayer[] players;
-    private static readonly MemoryStream[] soundscapeStreams;
-    private static readonly SoundPlayer[] soundscapePlayers;
+    private static MemoryStream[] streams = Array.Empty<MemoryStream>();
+    private static SoundPlayer[] players = Array.Empty<SoundPlayer>();
+    private static MemoryStream[] soundscapeStreams = Array.Empty<MemoryStream>();
+    private static SoundPlayer[] soundscapePlayers = Array.Empty<SoundPlayer>();
     private static readonly (float Time, float Frequency)[] UnsentChimeNotes = { (1.25f, 587.33f), (4.5f, 440f), (9.75f, 523.25f), (12.1f, 783.99f) };
     private static bool muted;
+    private static int effectsVolume = 75;
+    private static int ambienceVolume = 35;
     private static bool ambientRequested;
     private static int ambientRoom;
     private static int playingSoundscape = -1;
 
     static GameAudio()
     {
-        streams = new MemoryStream[Enum.GetValues<Cue>().Length];
-        players = new SoundPlayer[streams.Length];
-        for (int i = 0; i < streams.Length; i++)
+        LoadSettings();
+        BuildPlayers();
+    }
+
+    private static string SettingsPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Scadryk", "settings.json");
+    private sealed class AudioSettings { public int EffectsVolume { get; set; } = 75; public int AmbienceVolume { get; set; } = 35; public bool Muted { get; set; } }
+
+    private static void LoadSettings()
+    {
+        try
         {
-            streams[i] = new MemoryStream(CreateWave((Cue)i), writable: false);
-            players[i] = new SoundPlayer(streams[i]);
+            if (!File.Exists(SettingsPath)) return;
+            AudioSettings? settings = JsonSerializer.Deserialize<AudioSettings>(File.ReadAllText(SettingsPath));
+            if (settings is null) return;
+            effectsVolume = Math.Clamp(settings.EffectsVolume, 0, 100);
+            ambienceVolume = Math.Clamp(settings.AmbienceVolume, 0, 100);
+            muted = settings.Muted;
         }
-        soundscapeStreams = new MemoryStream[8]; soundscapePlayers = new SoundPlayer[soundscapeStreams.Length];
-        byte[] music = CreateAmbientWave();
-        for (int i = 0; i < soundscapeStreams.Length; i++)
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
+        catch (JsonException) { }
+    }
+
+    private static void SaveSettings()
+    {
+        try
         {
-            soundscapeStreams[i] = new MemoryStream(MixAmbientLayers(music, CreateSoundscapeWave(i)), writable: false);
-            soundscapePlayers[i] = new SoundPlayer(soundscapeStreams[i]);
+            string path = SettingsPath, directory = Path.GetDirectoryName(path)!;
+            Directory.CreateDirectory(directory);
+            File.WriteAllText(path, JsonSerializer.Serialize(new AudioSettings { EffectsVolume = effectsVolume, AmbienceVolume = ambienceVolume, Muted = muted }));
+        }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
+    }
+
+    private static void BuildPlayers(bool rebuildEffects = true, bool rebuildAmbience = true)
+    {
+        if (rebuildEffects)
+        {
+            foreach (SoundPlayer player in players) player.Dispose();
+            foreach (MemoryStream stream in streams) stream.Dispose();
+            streams = new MemoryStream[Enum.GetValues<Cue>().Length];
+            players = new SoundPlayer[streams.Length];
+            for (int i = 0; i < streams.Length; i++)
+            {
+                streams[i] = new MemoryStream(ScaleWave(CreateWave((Cue)i), effectsVolume / 100f), writable: false);
+                players[i] = new SoundPlayer(streams[i]);
+            }
+        }
+        if (rebuildAmbience)
+        {
+            StopSoundscape();
+            foreach (SoundPlayer player in soundscapePlayers) player.Dispose();
+            foreach (MemoryStream stream in soundscapeStreams) stream.Dispose();
+            soundscapeStreams = new MemoryStream[8]; soundscapePlayers = new SoundPlayer[soundscapeStreams.Length];
+            byte[] music = CreateAmbientWave();
+            for (int i = 0; i < soundscapeStreams.Length; i++)
+            {
+                soundscapeStreams[i] = new MemoryStream(ScaleWave(MixAmbientLayers(music, CreateSoundscapeWave(i)), ambienceVolume / 100f), writable: false);
+                soundscapePlayers[i] = new SoundPlayer(soundscapeStreams[i]);
+            }
+            playingSoundscape = -1;
+            SyncAmbient();
         }
     }
 
     internal static bool Muted => muted;
-    internal static bool ToggleMute() { muted = !muted; SyncAmbient(); return muted; }
+    internal static int EffectsVolume => effectsVolume;
+    internal static int AmbienceVolume => ambienceVolume;
+    internal static bool ToggleMute() { muted = !muted; SaveSettings(); SyncAmbient(); return muted; }
+    internal static void SetEffectsVolume(int value) { value = Math.Clamp(value, 0, 100); if (effectsVolume == value) return; effectsVolume = value; SaveSettings(); BuildPlayers(rebuildAmbience: false); }
+    internal static void SetAmbienceVolume(int value) { value = Math.Clamp(value, 0, 100); if (ambienceVolume == value) return; ambienceVolume = value; SaveSettings(); BuildPlayers(rebuildEffects: false); }
     internal static void SilenceForAutomatedRun() { muted = true; ambientRequested = false; SyncAmbient(); }
     internal static void SetAmbientActive(bool active, int room = 0) { ambientRequested = active; ambientRoom = room; SyncAmbient(); }
 
@@ -84,6 +141,18 @@ internal static class GameAudio
         try { players[(int)cue].Play(); }
         catch (InvalidOperationException) { }
         catch (IOException) { }
+    }
+
+    internal static byte[] ScaleWave(byte[] wave, float gain)
+    {
+        byte[] scaled = (byte[])wave.Clone();
+        for (int i = 44; i + 1 < scaled.Length; i += 2)
+        {
+            short sample = BitConverter.ToInt16(scaled, i);
+            short adjusted = (short)Math.Clamp((int)Math.Round(sample * gain), short.MinValue, short.MaxValue);
+            BitConverter.TryWriteBytes(scaled.AsSpan(i, 2), adjusted);
+        }
+        return scaled;
     }
 
     private static byte[] CreateWave(Cue cue)

@@ -31,6 +31,7 @@ O documento de história com cenário, personagens e resumo dos capítulos está
 - A Relíquia Fenda + Ruptura ativa a Ressonância da Fenda: acertos críticos removem a redução da ferida contra inimigos blindados. A descrição do inventário e CI cobrem o efeito e sua restrição a Relíquias.
 - A Costa das Badaladas agora abre uma trilha opcional depois do Coro: Teren conduz ao Destroço das Conchas, com três guardiões, saque, um registro ambiental, recompensa de relatório com Nemi e estágios retomáveis por save; o atlas local marca a rota e o destino.
 - A Fenda dos Menires ganhou uma terceira sala pós-chefe: o Arquivo dos Menires tem uma sentinela e dois guardiões, recompensa única e retomada por save; a entrada só aparece no mapa após derrotar o Carcereiro.
+- As configurações de áudio agora separam efeitos e ambiente em controles de 0–100%, ajustáveis por teclado ou mouse. Os valores e o estado de mudo são salvos fora do save da campanha, e a CI verifica a escala PCM.
 - A Gravura do Veio amplia as builds defensivas: três traços para o Peitoral de Pedra e quatro para o Relicário Vital, com custos em ouro e sal vítreo na forja de Aven. As escolhas persistem no save; equipamento antigo e saves existentes migram para o traço neutro.
 - Salvamento local em JSON com migração do save ConfigFile da versão Godot.
 - Movimento com colisão por eixo, permitindo deslizar pelas quinas.

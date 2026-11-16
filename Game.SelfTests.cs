@@ -12,6 +12,9 @@ public sealed partial class Game
     public static int SelfTest()
     {
         GameAudio.SilenceForAutomatedRun();
+        byte[] audioSampleWave = new byte[46]; audioSampleWave[44] = 0; audioSampleWave[45] = 64;
+        if (BitConverter.ToInt16(GameAudio.ScaleWave(audioSampleWave, 0.5f), 44) != 8192 || BitConverter.ToInt16(GameAudio.ScaleWave(audioSampleWave, 0), 44) != 0)
+            throw new InvalidOperationException("O controle de volume não escalou nem silenciou os samples PCM corretamente.");
         if (!EquipmentCatalog.IsValid()) throw new InvalidOperationException("O catálogo de armas contém perfis incompletos ou duplicados.");
         if (!IsEnemyCatalogValid()) throw new InvalidOperationException("O catálogo de inimigos omite um tipo ou contém atributos inválidos.");
         if (EnemyData(EnemyKind.Grunt).HealthAt(0, 0) != 58 || EnemyData(EnemyKind.Grunt).HealthAt(42, 0) != 394
@@ -153,7 +156,7 @@ public sealed partial class Game
             menuHitTest.HandleTitleClick(new PointF(50, 540));
             if (!menuHitTest.classSelectionOpen) throw new InvalidOperationException("Um clique fora dos controles fechou a seleção de classe.");
             menuHitTest.classSelectionOpen = false; menuHitTest.titlePage = TitlePage.Settings;
-            menuHitTest.HandleTitleClick(new PointF(480, 525));
+            menuHitTest.HandleTitleClick(new PointF(480, 470));
             if (!menuHitTest.reducedScreenShake || menuHitTest.titlePage != TitlePage.Settings) throw new InvalidOperationException("O fim do botão de tremor não alterou a opção corretamente.");
             menuHitTest.HandleTitleClick(new PointF(100, 470));
             if (!menuHitTest.reducedScreenShake) throw new InvalidOperationException("Um clique fora das configurações alterou o tremor.");

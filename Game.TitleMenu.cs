@@ -74,11 +74,13 @@ public sealed partial class Game
         }
         if (titlePage == TitlePage.Settings)
         {
-            if (key is Keys.Up or Keys.W) titleSelection = (titleSelection + 2) % 3;
-            else if (key is Keys.Down or Keys.S) titleSelection = (titleSelection + 1) % 3;
+            if (key is Keys.Up or Keys.W) titleSelection = (titleSelection + 4) % 5;
+            else if (key is Keys.Down or Keys.S) titleSelection = (titleSelection + 1) % 5;
             else if (titleSelection == 0 && (key is Keys.Enter or Keys.Space or Keys.N)) ToggleTitleAudio();
-            else if (titleSelection == 1 && (key is Keys.Enter or Keys.Space or Keys.H)) highContrastTelegraphs = !highContrastTelegraphs;
-            else if (titleSelection == 2 && (key is Keys.Enter or Keys.Space or Keys.M)) reducedScreenShake = !reducedScreenShake;
+            else if (titleSelection == 1 && (key is Keys.Left or Keys.A or Keys.Right or Keys.D or Keys.Enter or Keys.Space)) AdjustTitleVolume(true, (key is Keys.Left or Keys.A) ? -10 : 10);
+            else if (titleSelection == 2 && (key is Keys.Left or Keys.A or Keys.Right or Keys.D or Keys.Enter or Keys.Space)) AdjustTitleVolume(false, (key is Keys.Left or Keys.A) ? -10 : 10);
+            else if (titleSelection == 3 && (key is Keys.Enter or Keys.Space or Keys.H)) highContrastTelegraphs = !highContrastTelegraphs;
+            else if (titleSelection == 4 && (key is Keys.Enter or Keys.Space or Keys.M)) reducedScreenShake = !reducedScreenShake;
             Invalidate();
         }
     }
@@ -125,6 +127,12 @@ public sealed partial class Game
         noticeTime = 1.5f;
     }
 
+    private void AdjustTitleVolume(bool effects, int delta)
+    {
+        if (effects) GameAudio.SetEffectsVolume(GameAudio.EffectsVolume + delta);
+        else GameAudio.SetAmbienceVolume(GameAudio.AmbienceVolume + delta);
+    }
+
     private void HandleTitleClick(PointF point)
     {
         if (classSelectionOpen)
@@ -153,9 +161,15 @@ public sealed partial class Game
         }
         else if (titlePage == TitlePage.Settings)
         {
-            if (new RectangleF(190, 255, 580, 76).Contains(point)) { titleSelection = 0; ToggleTitleAudio(); }
-            else if (new RectangleF(190, 355, 580, 76).Contains(point)) { titleSelection = 1; highContrastTelegraphs = !highContrastTelegraphs; }
-            else if (new RectangleF(190, 455, 580, 76).Contains(point)) { titleSelection = 2; reducedScreenShake = !reducedScreenShake; }
+            int row = (int)((point.Y - 222) / 56);
+            if (point.X >= 190 && point.X <= 770 && row is >= 0 and < 5 && new RectangleF(190, 222 + row * 56, 580, 48).Contains(point))
+            {
+                titleSelection = row;
+                if (row == 0) ToggleTitleAudio();
+                else if (row is 1 or 2) AdjustTitleVolume(row == 1, point.X < 480 ? -10 : 10);
+                else if (row == 3) highContrastTelegraphs = !highContrastTelegraphs;
+                else reducedScreenShake = !reducedScreenShake;
+            }
         }
         else if (titlePage == TitlePage.History)
         {
@@ -293,9 +307,11 @@ public sealed partial class Game
             DrawCentered(g, "CONFIGURAÇÕES", 176, new Font("Georgia", 22, FontStyle.Bold), Color.FromArgb(230, 193, 129));
             bool mutedAudio = GameAudio.Muted;
             DrawTitleSetting(g, 0, "ÁUDIO", mutedAudio ? "DESATIVADO" : "ATIVADO", titleSelection == 0);
-            DrawTitleSetting(g, 1, "AVISOS DE ATAQUE", highContrastTelegraphs ? "ALTO CONTRASTE" : "PADRÃO", titleSelection == 1);
-            DrawTitleSetting(g, 2, "TREMOR DE CÂMERA", reducedScreenShake ? "REDUZIDO" : "NORMAL", titleSelection == 2);
-            DrawCentered(g, "N / ENTER ÁUDIO     H / ENTER CONTRASTE     M / ENTER TREMOR", 548, new Font("Segoe UI", 10), Color.FromArgb(171, 177, 164));
+            DrawTitleSetting(g, 1, "EFEITOS", $"{GameAudio.EffectsVolume}%  ← / →", titleSelection == 1);
+            DrawTitleSetting(g, 2, "AMBIENTE", $"{GameAudio.AmbienceVolume}%  ← / →", titleSelection == 2);
+            DrawTitleSetting(g, 3, "AVISOS DE ATAQUE", highContrastTelegraphs ? "ALTO CONTRASTE" : "PADRÃO", titleSelection == 3);
+            DrawTitleSetting(g, 4, "TREMOR DE CÂMERA", reducedScreenShake ? "REDUZIDO" : "NORMAL", titleSelection == 4);
+            DrawCentered(g, "← / → AJUSTA O VOLUME • H CONTRASTE • M TREMOR", 525, new Font("Segoe UI", 9, FontStyle.Bold), Color.FromArgb(171, 177, 164));
             DrawCentered(g, "↑ / ↓ NAVEGAR     ESC VOLTAR", 584, new Font("Segoe UI", 9), Color.FromArgb(158, 164, 154));
         }
         if (confirmNewJourney)
@@ -435,14 +451,24 @@ public sealed partial class Game
 
     private void DrawTitleSetting(Graphics g, int row, string name, string value, bool selected)
     {
-        float y = 255 + row * 100;
-        using var nameFont = new Font("Segoe UI", 12, FontStyle.Bold);
-        using var valueFont = new Font("Segoe UI", 11, FontStyle.Bold);
+        float y = 222 + row * 56;
+        using var nameFont = new Font("Segoe UI", 10.5f, FontStyle.Bold);
+        using var valueFont = new Font("Segoe UI", 10, FontStyle.Bold);
         using var fill = new SolidBrush(selected ? Color.FromArgb(77, 63, 40) : Color.FromArgb(33, 37, 37));
         using var outline = new Pen(selected ? Color.FromArgb(230, 193, 129) : Color.FromArgb(71, 74, 68), selected ? 2 : 1);
-        g.FillRectangle(fill, 190, y, 580, 76); g.DrawRectangle(outline, 190, y, 580, 76);
-        g.DrawString(name, nameFont, Brushes.AntiqueWhite, 220, y + 14);
+        g.FillRectangle(fill, 190, y, 580, 48); g.DrawRectangle(outline, 190, y, 580, 48);
+        g.DrawString(name, nameFont, Brushes.AntiqueWhite, 220, y + 13);
+        if (name is "EFEITOS" or "AMBIENTE")
+        {
+            int volume = name == "EFEITOS" ? GameAudio.EffectsVolume : GameAudio.AmbienceVolume;
+            RectangleF track = new(465, y + 18, 140, 12);
+            using var trackFill = new SolidBrush(Color.FromArgb(17, 20, 20));
+            using var volumeFill = new SolidBrush(Color.FromArgb(212, 164, 76));
+            using var trackEdge = new Pen(Color.FromArgb(95, 101, 93));
+            g.FillRectangle(trackFill, track); g.FillRectangle(volumeFill, track.X, track.Y, track.Width * volume / 100f, track.Height); g.DrawRectangle(trackEdge, track.X, track.Y, track.Width, track.Height);
+        }
         using var valueBrush = new SolidBrush(Color.FromArgb(230, 193, 129));
-        g.DrawString(value, valueFont, valueBrush, 560, y + 15);
+        SizeF valueSize = g.MeasureString(value, valueFont);
+        g.DrawString(value, valueFont, valueBrush, 748 - valueSize.Width, y + 13);
     }
 }
