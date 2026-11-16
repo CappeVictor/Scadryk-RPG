@@ -85,7 +85,9 @@ public sealed partial class Game
             if (Math.Abs(EquipmentCatalog.WeaponAffix(i + 1).ValueForRarity(1) - expectedRareAffixes[i]) > 0.001f
                 || Math.Abs(EquipmentCatalog.WeaponAffix(i + 1).ValueForRarity(2) - expectedRelicAffixes[i]) > 0.001f)
                 throw new InvalidOperationException($"O afixo {i + 1} perdeu seu valor balanceado entre Rara e Relíquia.");
-        if (EquipmentCatalog.RandomlyRolledAffixCount != 8 || EquipmentCatalog.RolledWeaponAffix(7) != 8
+        if (Math.Abs(EquipmentCatalog.WeaponAffix(10).ValueForRarity(1) - 12) > 0.001f || Math.Abs(EquipmentCatalog.WeaponAffix(10).ValueForRarity(2) - 18) > 0.001f
+            || EquipmentCatalog.RandomlyRolledAffixCount != 9 || EquipmentCatalog.RolledWeaponAffix(7) != 8 || EquipmentCatalog.RolledWeaponAffix(8) != 10
+            || EquipmentCatalog.RolledSecondaryWeaponAffix(8, 8) != 10
             || EquipmentCatalog.IsValidPrimaryAffix(9) || EquipmentCatalog.IsValidSecondaryAffix(9, 1) || !EquipmentCatalog.IsValidSecondaryAffix(9, 2)
             || EquipmentCatalog.WeaponAffix(9).Description(1) != "" || EquipmentCatalog.WeaponAffix(9).Description(2) != "do Nome Riscado: ecos marcados explodem ao morrer")
             throw new InvalidOperationException("O Nome Riscado deixou de ser exclusivo do espaço secundário de Relíquias.");
@@ -734,7 +736,7 @@ public sealed partial class Game
         {
             lootRollCheck.timer.Stop(); lootRollCheck.StartGame(); lootRollCheck.storyOverlay = false;
             var common = RollWeaponStats(0, 4, 2); var rare = RollWeaponStats(62, 4, 2); var relic = RollWeaponStats(95, 4, 2); var swiftRelic = RollWeaponStats(95, 4, 3); var anchoredRelic = RollWeaponStats(95, 4, 4); var reachRare = RollWeaponStats(62, 4, 5); var reachRelic = RollWeaponStats(95, 4, 5, 4); var ruptureRelic = RollWeaponStats(95, 4, 7, 5);
-            if (common.Rarity != 0 || common.Bonus != 1 || common.Affix != 0 || common.Affix2 != 0 || rare.Rarity != 1 || rare.Bonus != 3 || rare.Affix != 3 || rare.Affix2 != 0 || relic.Rarity != 2 || relic.Bonus != 11 || relic.Affix != 3 || relic.Affix2 is < 1 or > 8 || relic.Affix2 == relic.Affix || swiftRelic.Affix != 4 || anchoredRelic.Affix != 5 || reachRare.Affix != 6 || reachRelic.Affix != 6 || reachRelic.Affix2 != 5 || ruptureRelic.Affix != 8 || ruptureRelic.Affix2 != 6)
+            if (common.Rarity != 0 || common.Bonus != 1 || common.Affix != 0 || common.Affix2 != 0 || rare.Rarity != 1 || rare.Bonus != 3 || rare.Affix != 3 || rare.Affix2 != 0 || relic.Rarity != 2 || relic.Bonus != 11 || relic.Affix != 3 || relic.Affix2 is < 1 or > 10 || relic.Affix2 == relic.Affix || swiftRelic.Affix != 4 || anchoredRelic.Affix != 5 || reachRare.Affix != 6 || reachRelic.Affix != 6 || reachRelic.Affix2 != 5 || ruptureRelic.Affix != 8 || ruptureRelic.Affix2 != 6)
                 throw new InvalidOperationException("As faixas de rolagem de raridade e afixo da arma mudaram.");
             lootRollCheck.weaponRarities[0] = 1; lootRollCheck.weaponBonuses[0] = 3; lootRollCheck.weaponAffixes[0] = 6;
             if (Math.Abs(lootRollCheck.BasicAttackReach(new Enemy { Kind = EnemyKind.Grunt }) - 87.36f) > 0.01f || !ValidWeaponData(lootRollCheck.CaptureSaveData()) || WeaponGroundAffix(6, 1) != "Fio Esticado • alcance +12%")
@@ -1349,6 +1351,23 @@ public sealed partial class Game
             ruptureForge.weaponRarities[0] = 1;
             if (ruptureForge.HasEchoWoundResonance(0) || Math.Abs(ruptureForge.OutgoingDamageMultiplier(tideWoundTarget) - unwoundedDamageMultiplier) > 0.001f)
                 throw new InvalidOperationException("A Ressonância do Eco Ferido também foi aplicada a uma arma Rara.");
+        }
+        using (var fendaForge = new Game())
+        {
+            fendaForge.timer.Stop(); fendaForge.StartGame(); fendaForge.storyOverlay = false;
+            fendaForge.weaponRarities[0] = 1; fendaForge.weaponAffixes[0] = 10;
+            Enemy armoredTarget = new() { Kind = EnemyKind.Grunt, Armored = true, Hp = 100, MaxHp = 100 };
+            Enemy unarmoredTarget = new() { Kind = EnemyKind.Grunt, Hp = 100, MaxHp = 100 };
+            float expectedFenda = EquipmentCatalog.Weapon(0).ArmoredDamageMultiplier * 1.12f;
+            if (Math.Abs(fendaForge.BasicAttackDamageMultiplier(armoredTarget) - expectedFenda) > 0.001f
+                || fendaForge.BasicAttackDamageMultiplier(unarmoredTarget) != 1f
+                || !fendaForge.WeaponAffixDescription(0).Contains("da Fenda: dano básico contra alvos blindados +12%")
+                || !ValidWeaponData(fendaForge.CaptureSaveData()))
+                throw new InvalidOperationException("A Fenda não especializou ataques básicos contra inimigos blindados nem persistiu no save.");
+            fendaForge.weaponRarities[0] = 2; fendaForge.weaponBonuses[0] = 7; fendaForge.weaponAffixes[0] = 8; fendaForge.weaponAffixes2[0] = 10;
+            if (Math.Abs(fendaForge.BasicAttackDamageMultiplier(armoredTarget) - EquipmentCatalog.Weapon(0).ArmoredDamageMultiplier * 1.18f) > 0.001f
+                || !ValidWeaponData(fendaForge.CaptureSaveData()))
+                throw new InvalidOperationException("A Fenda secundária de Relíquia não aplicou seu valor elevado ou falhou na validação do save.");
         }
         using var lumeUpstream = new Game(); lumeUpstream.timer.Stop(); lumeUpstream.StartGame(); lumeUpstream.room = 22; lumeUpstream.questStage = 25; lumeUpstream.townEnding = 2; lumeUpstream.SetupRoom();
         if (lumeUpstream.enemies.Single(e => e.Kind == EnemyKind.TideWitness).MaxHp != 920) throw new InvalidOperationException("Manter o Lume não alterou a força da Testemunha da Maré.");

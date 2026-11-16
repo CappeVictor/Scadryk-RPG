@@ -69,13 +69,19 @@ internal static class EquipmentCatalog
         new WeaponAffixDefinition(6, "Fio Esticado", 12, 20, "Fio Esticado • alcance +{value}%", "do Fio Esticado: alcance básico +{value}%"),
         new WeaponAffixDefinition(7, "Cadência", 0.15f, 0.25f, "Cadência • crítico adianta recargas em {value} s", "da Cadência: crítico adianta recargas em {value} s por golpe"),
         new WeaponAffixDefinition(8, "Ruptura", 6, 8, "Ruptura • crítico aplica ferida por 3 s", "da Ruptura: críticos ferem por 3 s ({value}% do dano da arma/s)"),
-        new WeaponAffixDefinition(9, "Nome Riscado", 0, 0, "Nome Riscado • ecos marcados explodem ao morrer", "do Nome Riscado: ecos marcados explodem ao morrer", true)
+        new WeaponAffixDefinition(9, "Nome Riscado", 0, 0, "Nome Riscado • ecos marcados explodem ao morrer", "do Nome Riscado: ecos marcados explodem ao morrer", true),
+        new WeaponAffixDefinition(10, "Fenda", 12, 18, "Fenda • dano básico contra alvos blindados +{value}%", "da Fenda: dano básico contra alvos blindados +{value}%")
     });
 
     public static WeaponDefinition Weapon(int index) => Weapons[index];
-    public static WeaponAffixDefinition WeaponAffix(int id) => id is >= 1 and <= 9 ? WeaponAffixes[id - 1] : new WeaponAffixDefinition(0, "", 0, 0, "", "");
+    public static WeaponAffixDefinition WeaponAffix(int id) => id is >= 1 and <= 10 ? WeaponAffixes[id - 1] : new WeaponAffixDefinition(0, "", 0, 0, "", "");
     public static int RandomlyRolledAffixCount => WeaponAffixes.Count(affix => !affix.RelicOnly);
     public static int RolledWeaponAffix(int roll) => WeaponAffixes.Where(affix => !affix.RelicOnly).ElementAt(roll % RandomlyRolledAffixCount).Id;
+    public static int RolledSecondaryWeaponAffix(int roll, int primaryAffix)
+    {
+        int[] candidates = WeaponAffixes.Where(affix => !affix.RelicOnly && affix.Id != primaryAffix).Select(affix => affix.Id).ToArray();
+        return candidates[roll % candidates.Length];
+    }
     public static bool IsValidPrimaryAffix(int id) => id >= 1 && id <= WeaponAffixes.Count && !WeaponAffix(id).RelicOnly;
     public static bool IsValidSecondaryAffix(int id, int rarity) => id == 0 || id >= 1 && id <= WeaponAffixes.Count && WeaponAffix(id).IsAvailableAtRarity(rarity);
 
@@ -93,7 +99,7 @@ internal static class EquipmentCatalog
             && !string.IsNullOrWhiteSpace(weapon.TraitDescription))
         && Weapons.Select(weapon => weapon.Name).Distinct(StringComparer.Ordinal).Count() == Weapons.Count
         && Weapons.Count(weapon => weapon.IsThrust) == 1
-        && WeaponAffixes.Count == 9
+        && WeaponAffixes.Count == 10
         && WeaponAffixes.Select((affix, index) => affix.Id == index + 1 && !string.IsNullOrWhiteSpace(affix.Name)
             && affix.RareValue >= 0 && affix.RelicValue >= affix.RareValue
             && !string.IsNullOrWhiteSpace(affix.GroundFormat) && !string.IsNullOrWhiteSpace(affix.DescriptionFormat)
