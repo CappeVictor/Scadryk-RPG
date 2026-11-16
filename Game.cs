@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -60,6 +61,10 @@ public sealed partial class Game : Form
         string path = Path.Combine(AppContext.BaseDirectory, "Assets", "PlayerAttack.png");
         return File.Exists(path) ? new Bitmap(path) : null;
     });
+    private static readonly Lazy<Bitmap?> StoneGuardianSpriteSheet = new(() => TintPlayerSpriteSheet(PlayerSpriteSheet.Value, 1.18f, 1.04f, 0.78f));
+    private static readonly Lazy<Bitmap?> NameWeaverSpriteSheet = new(() => TintPlayerSpriteSheet(PlayerSpriteSheet.Value, 1.08f, 0.84f, 1.16f));
+    private static readonly Lazy<Bitmap?> StoneGuardianAttackSpriteSheet = new(() => TintPlayerSpriteSheet(PlayerAttackSpriteSheet.Value, 1.18f, 1.04f, 0.78f));
+    private static readonly Lazy<Bitmap?> NameWeaverAttackSpriteSheet = new(() => TintPlayerSpriteSheet(PlayerAttackSpriteSheet.Value, 1.08f, 0.84f, 1.16f));
     private static readonly Lazy<Bitmap?> EnemySpriteSheet = new(() =>
     {
         string path = Path.Combine(AppContext.BaseDirectory, "Assets", "Enemies.png");
