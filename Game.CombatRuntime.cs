@@ -158,7 +158,7 @@ public sealed partial class Game
             e.Pos = MoveEnemy(e, Scale(Normalize(Sub(waypoint, e.Pos), PointF.Empty), 70 * dt));
             return;
         }
-        if (room is 44 or 45 && BlockedLine(e.Pos, player))
+        if ((room is 44 or 45 or 46) && BlockedLine(e.Pos, player))
         {
             e.PathRefreshTime -= dt;
             if (e.PathRefreshTime <= 0)

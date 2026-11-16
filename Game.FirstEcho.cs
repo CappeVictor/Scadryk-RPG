@@ -12,6 +12,7 @@ public sealed partial class Game
     private bool firstEchoBeaconRestored { get => (firstEchoDiscovered & 16) != 0; set => firstEchoDiscovered = value ? firstEchoDiscovered | 16 : firstEchoDiscovered & ~16; }
     private bool firstEchoFerryAccepted { get => (firstEchoDiscovered & 32) != 0; set => firstEchoDiscovered = value ? firstEchoDiscovered | 32 : firstEchoDiscovered & ~32; }
     private bool firstEchoFerryRestored { get => (firstEchoDiscovered & 64) != 0; set => firstEchoDiscovered = value ? firstEchoDiscovered | 64 : firstEchoDiscovered & ~64; }
+    private bool saltBasinReturnLocation { get => (firstEchoDiscovered & 4096) != 0; set => firstEchoDiscovered = value ? firstEchoDiscovered | 4096 : firstEchoDiscovered & ~4096; }
     private int firstEchoDiscovered;
     private readonly List<Enemy> firstEchoWaitingEnemies = new();
     private readonly List<Drop> firstEchoWaitingDrops = new();
@@ -143,7 +144,11 @@ public sealed partial class Game
         else if (Distance(player, FirstEchoAshSignal) < 90)
         {
             if (!firstEchoFerryAccepted) ShowMemory("SINAL DO VAU", "A pedra está fria. Nilo, perto da trilha de cinzas, pode explicar como reacendê-la.");
-            else if (firstEchoFerryRestored) ShowMemory("SINAL DO VAU", "A chama ciana guia a barca entre as margens. O caminho está aberto para quem vier depois.");
+            else if (firstEchoFerryRestored)
+            {
+                StoreFirstEchoOutside(); saltBasinReturnLocation = true; room = 46; SetupRoom(); RestoreSaltBasinOutside();
+                ShowMemory("BACIA DO SAL IMÓVEL", "A barca cruza a névoa e alcança uma bacia onde três caminhos partem de um abrigo. As lanternas apagadas indicam que alguém ainda precisa de ajuda.");
+            }
             else if (enemies.Any(enemy => Distance(enemy.Pos, FirstEchoAshSignal) < 260)) ShowMemory("SINAL DO VAU", "As mariposas de cinza apagam qualquer chama. Derrote os ecos no desembarcadouro primeiro.");
             else
             {
@@ -455,7 +460,7 @@ public sealed partial class Game
             if (Distance(player, point) < 90) g.DrawString("E  INTERAGIR", font, label, point.X - 65, point.Y + 40);
         if (Distance(player, FirstEchoBeacon) < 85) g.DrawString("E  TOCAR", font, label, FirstEchoBeacon.X - 40, FirstEchoBeacon.Y + 43);
         if (Distance(player, FirstEchoFerryman) < InteractionRadius && firstEchoBeaconRestored) g.DrawString("E  FALAR", font, label, FirstEchoFerryman.X - 44, FirstEchoFerryman.Y + 40);
-        if (Distance(player, FirstEchoAshSignal) < 90) g.DrawString("E  REACENDER", font, label, FirstEchoAshSignal.X - 68, FirstEchoAshSignal.Y + 45);
+        if (Distance(player, FirstEchoAshSignal) < 90) g.DrawString(firstEchoFerryRestored ? "E  ATRAVESSAR" : firstEchoFerryAccepted ? "E  REACENDER" : "E  EXAMINAR", font, label, FirstEchoAshSignal.X - 68, FirstEchoAshSignal.Y + 45);
         using var signalStone = new SolidBrush(firstEchoFerryRestored ? Color.FromArgb(134, 217, 208) : Color.FromArgb(111, 103, 88));
         g.FillEllipse(signalStone, FirstEchoAshSignal.X - 23, FirstEchoAshSignal.Y - 25, 46, 50);
         g.DrawEllipse(edge, FirstEchoAshSignal.X - 23, FirstEchoAshSignal.Y - 25, 46, 50);

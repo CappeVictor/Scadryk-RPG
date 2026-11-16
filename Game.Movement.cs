@@ -26,12 +26,13 @@ public sealed partial class Game
     {
         3 => TownBuildings, 4 => ArchiveWalls, 5 => VaultWalls, 6 => RiverWalls, 7 => BellChamberWalls, 8 => AshGalleryWalls, 9 => LumeChamberWalls, 10 => NameShoreWalls, 11 => VoiceWellWalls, 12 => FarReachWalls, 13 => NameCloisterWalls, 14 => FirstBasinWalls, 15 => FirstVigilWalls, 16 => WestFordWalls, 17 => WitnessYardWalls,
         18 => RefugeWalls, 19 => RidgeWalls, 20 => LedgerWalls, 21 => SaltMarshWalls, 22 => TideBridgeWalls, 23 => ReedRunWalls, 24 => ReedYardWalls, 25 => FloodMillWalls, 26 => SiltChamberWalls, 27 => CounterSlopeWalls, 28 => CounterHeartWalls, 29 => CantoriaWalls, 30 => RiftChamberWalls, 31 => GlassGorgeWalls, 32 => MirrorSourceWalls, 33 => LanternSpanWalls, 34 => LowTideObservatoryWalls, 35 => OpenRouteWalls, 36 => UnwrittenHallWalls, 37 => SilenceThresholdWalls, 38 => SilenceChamberWalls, 39 => BorrowedDockWalls, 40 => BorrowedArchiveWalls, 41 => UnsentChamberWalls, 42 => OffbeatWellWalls,
-        43 => FirstEchoWalls, 44 => FirstEchoCaveWalls, 45 => FirstEchoSluiceWalls, _ => Walls
+        43 => FirstEchoWalls, 44 => FirstEchoCaveWalls, 45 => FirstEchoSluiceWalls, 46 => SaltBasinWalls, _ => Walls
     };
     private bool Blocked(PointF p, float radius = 12) { RectangleF body = new(p.X - radius, p.Y - radius, radius * 2, radius * 2); return CurrentRoomWalls().Any(w => w.IntersectsWith(body)); }
     private PointF InteriorDetour(Enemy enemy)
     {
         float margin = enemy.Radius + 12;
+        SizeF size = WorldSize(); float maxX = size.Width - 85; float maxY = size.Height - 107;
         PointF destination = player;
         if (Blocked(destination, enemy.Radius))
         {
@@ -40,7 +41,7 @@ public sealed partial class Game
             {
                 float angle = i * MathF.PI / 4;
                 PointF candidate = new(player.X + MathF.Cos(angle) * margin * 2, player.Y + MathF.Sin(angle) * margin * 2);
-                if (candidate.X < 85 || candidate.X > 875 || candidate.Y < 128 || candidate.Y > 533 || Blocked(candidate, enemy.Radius)) continue;
+                if (candidate.X < 85 || candidate.X > maxX || candidate.Y < 128 || candidate.Y > maxY || Blocked(candidate, enemy.Radius)) continue;
                 float distanceToEnemy = Distance(enemy.Pos, candidate);
                 if (distanceToEnemy < bestDistance) { bestDistance = distanceToEnemy; destination = candidate; }
             }
@@ -50,7 +51,7 @@ public sealed partial class Game
         {
             PointF[] corners = { new(wall.Left - margin, wall.Top - margin), new(wall.Right + margin, wall.Top - margin), new(wall.Left - margin, wall.Bottom + margin), new(wall.Right + margin, wall.Bottom + margin) };
             foreach (PointF corner in corners)
-                if (corner.X >= 85 && corner.X <= 875 && corner.Y >= 128 && corner.Y <= 533 && !Blocked(corner, enemy.Radius)) nodes.Add(corner);
+                if (corner.X >= 85 && corner.X <= maxX && corner.Y >= 128 && corner.Y <= maxY && !Blocked(corner, enemy.Radius)) nodes.Add(corner);
         }
         float[] distance = Enumerable.Repeat(float.PositiveInfinity, nodes.Count).ToArray();
         int[] previous = Enumerable.Repeat(-1, nodes.Count).ToArray();

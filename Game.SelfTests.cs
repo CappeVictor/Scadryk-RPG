@@ -1724,7 +1724,31 @@ public sealed partial class Game
             if (escarpment.firstEchoFerryRestored) throw new InvalidOperationException("O sinal do Vau foi reacendido antes de afastar os ecos.");
             escarpment.enemies.Clear(); escarpment.Interact(); escarpment.memoryOverlay = false; escarpment.Interact(); escarpment.memoryOverlay = false;
             SaveData ferrySave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(escarpment.CaptureSaveData()))!;
-            if (!escarpment.firstEchoFerryRestored || escarpment.gold != ferryGold + 120 || (ferrySave.FirstEchoDiscovered & 96) != 96 || !ValidSaveData(ferrySave)) throw new InvalidOperationException("O Vau não entregou a recompensa única nem persistiu a travessia restaurada.");
+            if (!escarpment.firstEchoFerryRestored || escarpment.room != 46 || escarpment.gold != ferryGold + 120 || (ferrySave.FirstEchoDiscovered & 96) != 96 || (ferrySave.FirstEchoDiscovered & 4096) == 0 || !ValidSaveData(ferrySave)) throw new InvalidOperationException("O Vau não entregou a recompensa ou a travessia não abriu a nova região persistente.");
+            if (escarpment.WorldSize() != new SizeF(3600, 2100) || escarpment.saltBasinProgress != 0) throw new InvalidOperationException("A Bacia do Sal Imóvel não foi inicializada como uma nova região aberta.");
+            using (var mapImage = new Bitmap(960, 640)) using (var mapGraphics = Graphics.FromImage(mapImage)) escarpment.DrawSaltBasinMap(mapGraphics);
+            escarpment.player = SaltBasinAsha; escarpment.Interact(); escarpment.memoryOverlay = false;
+            if (!escarpment.saltBasinMissionAccepted || escarpment.enemies.Count(enemy => Distance(enemy.Pos, SaltBasinLanterns[0]) < 205) != 3 || escarpment.enemies.Count(enemy => Distance(enemy.Pos, SaltBasinLanterns[1]) < 205) != 3 || escarpment.enemies.Count(enemy => Distance(enemy.Pos, SaltBasinLanterns[2]) < 205) != 3) throw new InvalidOperationException("Asha não iniciou a cadeia das três lanternas com encontros próprios.");
+            int basinGold = escarpment.gold;
+            for (int i = 0; i < SaltBasinLanterns.Length; i++)
+            {
+                PointF lantern = SaltBasinLanterns[i]; escarpment.player = lantern; escarpment.Interact(); escarpment.memoryOverlay = false;
+                if ((escarpment.saltBasinProgress & (1 << (i + 1))) != 0) throw new InvalidOperationException("Uma lanterna foi acesa antes de limpar seus ecos guardiões.");
+                escarpment.enemies.RemoveAll(enemy => Distance(enemy.Pos, lantern) < 205); escarpment.Interact(); escarpment.memoryOverlay = false;
+                if ((escarpment.saltBasinProgress & (1 << (i + 1))) == 0) throw new InvalidOperationException("Uma lanterna não registrou a luz restaurada.");
+            }
+            escarpment.player = SaltBasinAsha; escarpment.Interact(); escarpment.memoryOverlay = false; escarpment.Interact(); escarpment.memoryOverlay = false;
+            SaveData basinSave = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(escarpment.CaptureSaveData()))!;
+            if (!escarpment.saltBasinRewardClaimed || escarpment.gold != basinGold + 235 || escarpment.saltBasinMarks != 7 || !ValidSaveData(basinSave)) throw new InvalidOperationException("A cadeia das lanternas não concluiu com a recompensa única e o estado salvo.");
+            using (var resume = new Game())
+            {
+                resume.timer.Stop(); resume.StartGame(); resume.firstEchoDiscovered = basinSave.FirstEchoDiscovered; resume.room = 3; resume.SetupRoom();
+                if (resume.room != 46 || !resume.saltBasinRewardClaimed || resume.saltBasinMarks != 7 || resume.WorldSize() != new SizeF(3600, 2100)) throw new InvalidOperationException("O save não retomou a nova região e o progresso das lanternas.");
+                resume.player = SaltBasinEntrance; resume.Interact(); resume.memoryOverlay = false;
+                if (resume.room != 43 || resume.saltBasinReturnLocation || resume.player != FirstEchoAshSignal) throw new InvalidOperationException("A saída da bacia não voltou ao sinal do Vau com transição limpa.");
+                resume.Interact(); resume.memoryOverlay = false;
+                if (resume.room != 46 || !resume.saltBasinRewardClaimed) throw new InvalidOperationException("A travessia de retorno não reabriu a bacia com seu progresso preservado.");
+            }
         }
         Console.WriteLine("TESTES OK: campanha e expedições, incluindo as Margens do Primeiro Eco, combate, loot, progressão e compatibilidade de saves antigos."); return 0;
     }

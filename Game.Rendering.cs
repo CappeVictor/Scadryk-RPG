@@ -45,12 +45,13 @@ public sealed partial class Game
             g.FillRectangle(routeBack, 25, 80, 190, 3); g.FillRectangle(routeBar, 25, 80, 190 * Math.Clamp(fordRoute / 100f, 0, 1), 3);
         }
         GraphicsState worldTransform = g.Save();
-        if (room == 43) g.SetClip(new RectangleF(0, 108, 960, 445));
+        if (room is 43 or 46) g.SetClip(new RectangleF(0, 108, 960, 445));
         if (screenShakeStrength > 0.05f)
             g.TranslateTransform(MathF.Sin(screenShakePhase) * screenShakeStrength, MathF.Cos(screenShakePhase * 1.37f) * screenShakeStrength * 0.72f);
         PointF camera = CameraOffset();
         g.TranslateTransform(-camera.X, -camera.Y);
         if (room == 43) DrawFirstEchoEnvironment(g);
+        else if (room == 46) DrawSaltBasinEnvironment(g);
         else if (room is 44 or 45) DrawFirstEchoInterior(g);
         else if (room == 3) DrawTownEnvironment(g, floor, tile);
         else if (room == 18) DrawRefugeEnvironment(g, floor, tile);
@@ -123,6 +124,7 @@ public sealed partial class Game
     private string CurrentObjective()
     {
         if (room == 43) return firstEchoQuest == 0 ? "OBJETIVO: ENCONTRE IVARA NA ENCRUZILHADA" : firstEchoQuest == 1 ? "OBJETIVO: SIGA À CASA DAS COMPORTAS" : firstEchoQuest == 2 ? "OBJETIVO: RETORNE A VÉSPERA E FALE COM EDDA" : !firstEchoBeaconAccepted && !firstEchoBeaconRestored ? "OPCIONAL: VOLTE A IVARA E EXPLORE A ESCARPA" : firstEchoBeaconAccepted && !firstEchoBeaconRestored ? "MISSÃO OPCIONAL: LIMPE A ESCARPA E RESTAURE O MARCO" : !firstEchoFerryAccepted && !firstEchoFerryRestored ? "EXPLORE O VAU DE CINZA E FALE COM NILO" : firstEchoFerryAccepted && !firstEchoFerryRestored ? "MISSÃO OPCIONAL: REACENDA O SINAL DO VAU" : "EXPLORE AS MARGENS DO PRIMEIRO ECO";
+        if (room == 46) return SaltBasinObjective();
         if (room is 44 or 45) return room == 44 ? "OBJETIVO: EXPLORE O ABRIGO NAS RAÍZES" : firstEchoQuest < 2 ? "OBJETIVO: LIBERTE AS VOZES DAS COMPORTAS" : "OBJETIVO: RETORNE ÀS MARGENS";
         if (room == 3) return firstEchoQuest == 2 ? "MISSÃO OPCIONAL: CONTE A EDDA SOBRE AS COMPORTAS" : firstEchoQuest == 3 && !firstEchoBeaconAccepted && !firstEchoBeaconRestored ? "OPCIONAL: RETORNE ÀS MARGENS E FALE COM IVARA" : firstEchoBeaconAccepted && !firstEchoBeaconRestored ? "OPCIONAL: LIMPE OS ECOS DA ESCARPA" : firstEchoBeaconRestored && !firstEchoFerryAccepted && !firstEchoFerryRestored ? "OPCIONAL: SIGA AO VAU DE CINZA E FALE COM NILO" : firstEchoFerryAccepted && !firstEchoFerryRestored ? "OPCIONAL: REACENDA O SINAL DO VAU" : TownObjective();
         if (room == 18) return "OBJETIVO: " + (questStage == 46 ? "FALE COM AVEN SOBRE AS LINHAS" : questStage == 47 ? "SIGA AS LINHAS ATÉ A GALERIA" : questStage == 48 ? "LEVE O TRAÇADO DE VOLTA A AVEN" : questStage == 49 ? "FALE COM AVEN PARA ABRIR O ÚLTIMO CAPÍTULO" : questStage == 50 ? "DESÇA À SOLEIRA DO SILÊNCIO" : questStage == 51 ? "FALE COM AVEN SOBRE O DESTINO DO LUME" : questStage >= 59 ? "EXPEDIÇÃO XVIII CONCLUÍDA • EXPLORAÇÃO ABERTA" : questStage == 58 ? "LEVE A BADALADA RECUPERADA A AVEN" : questStage == 57 ? "SIGA À CÂMARA DAS BADALADAS" : questStage == 56 ? "EXPEDIÇÃO XVII CONCLUÍDA • NOVA EXPEDIÇÃO DISPONÍVEL A LESTE" : questStage >= 56 ? "EXPEDIÇÃO XVII CONCLUÍDA • EXPLORAÇÃO ABERTA" : questStage == 55 ? "LEVE A MEMÓRIA DO ARQUIVO A AVEN" : questStage == 54 ? "SIGA AO CAIS DOS ECOS EMPRESTADOS" : questStage >= 52 ? "EPÍLOGO CONCLUÍDO • EXPLORAÇÃO ABERTA" : questStage < 22 ? "CONHEÇA A COMUNIDADE E FALE COM AVEN" : questStage == 22 ? "SIGA A TRILHA E RECUPERE O REGISTRO COMPARTILHADO" : questStage == 23 ? "LEVE O REGISTRO DE VOLTA A AVEN" : questStage == 32 ? "LEVE A MEMÓRIA DA VAZANTE A AVEN" : questStage == 30 ? "SIGA O SOM DOS MOINHOS PARA OESTE" : questStage == 35 ? "LEVE A MEMÓRIA DO COMPASSO A AVEN" : questStage == 39 ? "LEVE A NOTA DA CONTRAVOZ A AVEN" : questStage == 40 ? "FALE COM AVEN SOBRE A PRÓXIMA FISSURA" : questStage == 42 ? "LEVE O ECO SEM DONO A AVEN" : questStage >= 41 ? "SIGA OS PASSOS ATÉ A FONTE SOB A PEDRA" : questStage >= 36 ? "MANTO DE LASTRO APRENDIDO • SIGA AS ÁGUAS" : questStage >= 33 ? "SIGA A CORRENTE AO CORAÇÃO DAS DUAS MARGENS" : questStage >= 27 ? "FALE COM AVEN PARA REFORJAR UMA ARMA" : "SIGA A PRÓXIMA CURVA A OESTE");
@@ -1025,6 +1027,7 @@ public sealed partial class Game
         if (room >= 43 || firstEchoDiscovered != 0 || firstEchoQuest > 0 || firstEchoCaveFound) known |= 1L << 43;
         if ((firstEchoDiscovered & 2) != 0 || firstEchoCaveFound) known |= 1L << 44;
         if ((firstEchoDiscovered & 4) != 0 || firstEchoQuest >= 2) known |= 1L << 45;
+        if (saltBasinProgress != 0 || saltBasinReturnLocation) known |= 1L << 46;
         return known;
     }
 
@@ -1038,6 +1041,7 @@ public sealed partial class Game
     private void DrawMapOverlay(Graphics g)
     {
         if (room == 43) { DrawFirstEchoMap(g); return; }
+        if (room == 46) { DrawSaltBasinMap(g); return; }
         using var shade = new SolidBrush(Color.FromArgb(225, 5, 7, 9));
         using var panel = new SolidBrush(Color.FromArgb(248, 15, 17, 18));
         using var border = new Pen(Color.FromArgb(190, 143, 112, 73), 2);
