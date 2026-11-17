@@ -364,6 +364,9 @@ public sealed partial class Game
             new[] { SaltFrontierCartographer, new PointF(2140, 760), SaltFrontierTideBells[1], new PointF(3000, 790), SaltFrontierTideBells[2] }
         };
         foreach (PointF[] path in paths) { g.DrawLines(road, path); g.DrawLines(trail, path); }
+        using var labelFont = new Font("Segoe UI", 14, FontStyle.Bold);
+        using var smallFont = new Font("Segoe UI", 10, FontStyle.Bold);
+        using var ink = new SolidBrush(Color.FromArgb(231, 224, 198));
         bool currentToCoast = MathF.Sin(windupPulse * 0.45f) >= 0;
         PointF[] currentMarks = { new(2840, 2025), new(3020, 1980), new(3210, 1995), new(3400, 1935), new(3560, 1815) };
         for (int i = 0; i < currentMarks.Length - 1; i++)
@@ -414,9 +417,6 @@ public sealed partial class Game
             PointF[] heartPath = { SaltFrontierTideBells[2], new(3750, 1770), SaltFrontierBellheart };
             g.DrawLines(road, heartPath); g.DrawLines(trail, heartPath);
         }
-        using var labelFont = new Font("Segoe UI", 14, FontStyle.Bold);
-        using var smallFont = new Font("Segoe UI", 10, FontStyle.Bold);
-        using var ink = new SolidBrush(Color.FromArgb(231, 224, 198));
         using var observatory = new SolidBrush(Color.FromArgb(56, 68, 68));
         using var wood = new SolidBrush(Color.FromArgb(105, 81, 58));
         using var canvas = new SolidBrush(Color.FromArgb(70, 93, 91));
