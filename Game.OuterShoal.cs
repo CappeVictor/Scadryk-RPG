@@ -12,6 +12,7 @@ public sealed partial class Game
     private static readonly PointF OuterShoalGuide = new(790, 1300);
     private static readonly PointF[] OuterShoalMirrors = { new(1120, 630), new(2380, 470), new(3160, 1740) };
     private static readonly PointF OuterShoalHeart = new(3710, 2100);
+    private static readonly RectangleF[] OuterShoalChannels = { new(1430, 480, 610, 220), new(2470, 1020, 590, 220) };
     private static readonly RectangleF[] OuterShoalWalls =
     {
         new(460, 300, 220, 115), new(1280, 980, 180, 135), new(1880, 300, 180, 110),
@@ -23,6 +24,15 @@ public sealed partial class Game
     {
         player = OuterShoalEntrance;
         SpawnOuterShoalGuards();
+    }
+
+    private static PointF OuterShoalCurrentAt(PointF position, float phase, bool bootsReduceCurrent)
+    {
+        float strength = bootsReduceCurrent ? 0.55f : 1f;
+        float direction = MathF.Sin(phase * 0.45f) >= 0 ? 1 : -1;
+        if (OuterShoalChannels[0].Contains(position)) return new PointF(direction * 34 * strength, 0);
+        if (OuterShoalChannels[1].Contains(position)) return new PointF(0, -direction * 30 * strength);
+        return PointF.Empty;
     }
 
     private void SpawnOuterShoalGuards()
@@ -125,6 +135,7 @@ public sealed partial class Game
         using var stone = new SolidBrush(Color.FromArgb(70, 87, 84));
         using var rim = new Pen(Color.FromArgb(158, 166, 145, 105), 4);
         using var waterline = new Pen(Color.FromArgb(110, 129, 205, 199), 3) { DashStyle = DashStyle.Dash };
+        using var currentLine = new Pen(Color.FromArgb(180, 151, 224, 220), 4);
         using var title = new Font("Georgia", 15, FontStyle.Bold);
         using var small = new Font("Segoe UI", 10, FontStyle.Bold);
         using var ink = new SolidBrush(Color.FromArgb(235, 229, 207));
@@ -134,12 +145,29 @@ public sealed partial class Game
             {
                 g.FillEllipse(wet, x, y, 270, 135); g.DrawEllipse(waterline, x + 18, y + 15, 230, 105);
             }
+        bool currentEast = MathF.Sin(windupPulse * 0.45f) >= 0;
+        for (int lane = 0; lane < OuterShoalChannels.Length; lane++)
+        {
+            RectangleF channel = OuterShoalChannels[lane];
+            for (int i = 0; i < 5; i++)
+            {
+                PointF start = lane == 0 ? new(channel.Left + 45 + i * 125, channel.Top + 78) : new(channel.Left + 155, channel.Top + 18 + i * 42);
+                PointF end = lane == 0 ? new(start.X + (currentEast ? 52 : -52), start.Y) : new(start.X, start.Y + (currentEast ? 42 : -42));
+                g.DrawLine(currentLine, start, end);
+                float angle = MathF.Atan2(end.Y - start.Y, end.X - start.X);
+                PointF tip = new(end.X + MathF.Cos(angle) * 10, end.Y + MathF.Sin(angle) * 10);
+                PointF back = new(end.X - MathF.Cos(angle) * 10, end.Y - MathF.Sin(angle) * 10);
+                PointF normal = new(-MathF.Sin(angle) * 6, MathF.Cos(angle) * 6);
+                g.FillPolygon(Brushes.LightCyan, new[] { tip, Add(back, normal), Sub(back, normal) });
+            }
+        }
         foreach (RectangleF wall in OuterShoalWalls)
         {
             g.FillEllipse(stone, wall.X - 16, wall.Y - 10, wall.Width + 32, wall.Height + 20);
             g.DrawEllipse(rim, wall.X - 16, wall.Y - 10, wall.Width + 32, wall.Height + 20);
         }
         g.DrawString("ILHAS DO ENTREFLUXO", title, ink, 1650, 135);
+        g.DrawString(currentEast ? "MARÉ • CORRENTE PARA LESTE / NORTE" : "MARÉ • CORRENTE PARA OESTE / SUL", small, ink, 1640, 170);
         for (int i = 0; i < OuterShoalMirrors.Length; i++)
         {
             PointF p = OuterShoalMirrors[i];
