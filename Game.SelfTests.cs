@@ -2287,7 +2287,7 @@ public sealed partial class Game
                         SaveData shoalSave = anchorResume.CaptureSaveData();
                         using (var shoalResume = new Game())
                         {
-                            shoalResume.timer.Stop(); shoalResume.StartGame(); shoalResume.saltFrontierSideProgress = shoalSave.SaltFrontierSideProgress; shoalResume.outerShoalLocation = shoalSave.OuterShoalLocation; shoalResume.outerShoalProgress = shoalSave.OuterShoalProgress; shoalResume.room = shoalSave.Room; shoalResume.SetupRoom();
+                            shoalResume.timer.Stop(); shoalResume.StartGame(); shoalResume.firstEchoDiscovered = shoalSave.FirstEchoDiscovered; shoalResume.saltFrontierReturnLocation = shoalSave.SaltFrontierLocation; shoalResume.saltFrontierBossAwakened = shoalSave.SaltFrontierBossAwakened; shoalResume.saltFrontierBossDefeated = shoalSave.SaltFrontierBossDefeated; shoalResume.saltFrontierWardenDefeated = shoalSave.SaltFrontierWardenDefeated; shoalResume.saltFrontierSideProgress = shoalSave.SaltFrontierSideProgress; shoalResume.outerShoalLocation = shoalSave.OuterShoalLocation; shoalResume.outerShoalProgress = shoalSave.OuterShoalProgress; shoalResume.room = shoalSave.Room; shoalResume.SetupRoom();
                             if (shoalResume.room != 52 || shoalResume.enemies.Count != 9 || !ValidSaveData(shoalSave)) throw new InvalidOperationException("O save não retomou a missão ativa nas Ilhas do Entrefluxo.");
                             shoalResume.player = OuterShoalMirrors[0];
                             Enemy[] firstShoalGroup = shoalResume.enemies.Where(enemy => Distance(enemy.Pos, OuterShoalMirrors[0]) < 205).ToArray();
