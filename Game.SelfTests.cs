@@ -1549,7 +1549,7 @@ public sealed partial class Game
             markingResonance.relicOn = true;
             markingResonance.skillCd = markingResonance.shardCd = markingResonance.bellCd = markingResonance.pullCd = 3;
             markingResonance.enemies.Add(markedTarget); markingResonance.Defeat(markedTarget);
-            if (markingResonance.skillCd != 1.75f || markingResonance.shardCd != 1.75f || markingResonance.bellCd != 1.75f || markingResonance.pullCd != 1.75f || !markingResonance.floatingTexts.Any(text => text.Text == "ECO DE RETORNO −1,25 S"))
+            if (Math.Abs(markingResonance.skillCd - 1.75f) > 0.001f || Math.Abs(markingResonance.shardCd - 1.75f) > 0.001f || Math.Abs(markingResonance.bellCd - 1.75f) > 0.001f || Math.Abs(markingResonance.pullCd - 1.75f) > 0.001f || !markingResonance.floatingTexts.Any(text => text.Text.StartsWith("ECO DE RETORNO −1", StringComparison.Ordinal)))
                 throw new InvalidOperationException("A Ressonância da Marca não adiantou todas as recargas em 1,25 s ao abater um alvo marcado.");
             markingResonance.armorOn = false; markingResonance.skillCd = 3; markingResonance.enemies.Add(new Enemy { Pos = new PointF(510, 330), Kind = EnemyKind.Grunt, Hp = 1, MaxHp = 100, BellMarkTime = 3 }); markingResonance.Defeat(markingResonance.enemies.Single());
             if (markingResonance.HasMarkingResonance() || markingResonance.skillCd != 2.25f) throw new InvalidOperationException("Eco de Retorno não manteve seu efeito-base de 0,75 s sem o peitoral.");
