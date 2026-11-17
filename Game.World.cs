@@ -139,12 +139,12 @@ public sealed partial class Game
     {
         player = new PointF(150, 330); enemies.Clear(); drops.Clear(); groundHazards.Clear(); echoShards.Clear(); bowArrows.Clear(); lockedTarget = null;
         if (room == 3 && saltFrontierReturnLocation) room = 49;
-        else if (room == 3 && saltVaultLocation != 0) room = saltVaultLocation switch { 1 => 47, 2 => 48, _ => 50 };
+        else if (room == 3 && saltVaultLocation != 0) room = saltVaultDeepNaveLocation ? 51 : saltVaultLocation switch { 1 => 47, 2 => 48, _ => 50 };
         else if (room == 3 && saltBasinReturnLocation) room = 46;
         if (room == 43) { player = new PointF(180, 700); SpawnFirstEchoEncounters(); return; }
         if (room == 46) { SetupSaltBasin(); return; }
         if (room == 49) { SetupSaltFrontier(); return; }
-        if (room is 47 or 48 or 50) { SetupSaltVaultRoom(); return; }
+        if (room is 47 or 48 or 50 or 51) { SetupSaltVaultRoom(); return; }
         if (room is 44 or 45) { SetupFirstEchoInterior(); return; }
         if (vigilActive && room == 38) { vigilMinionCooldown = 20; vigilTideTime = 0; vigilHazardCooldown = 12; }
         if (room != 3 && !vigilActive && (clearedRooms & (1L << room)) != 0) return;
@@ -224,7 +224,7 @@ public sealed partial class Game
         if (room == 43) { InteractFirstEcho(); return; }
         if (room == 46) { InteractSaltBasin(); return; }
         if (room == 49) { InteractSaltFrontier(); return; }
-        if (room is 47 or 48 or 50) { InteractSaltVault(); return; }
+        if (room is 47 or 48 or 50 or 51) { InteractSaltVault(); return; }
         if (room is 44 or 45) { InteractFirstEchoInterior(); return; }
         if (room == 3) { InteractTown(); return; }
         if (room == 18) { InteractRefuge(); return; }

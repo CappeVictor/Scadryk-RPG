@@ -17,6 +17,11 @@ public sealed partial class Game
         new(205, 152, 78, 122), new(690, 152, 78, 122), new(205, 390, 78, 122), new(690, 390, 78, 122),
         new(425, 196, 108, 40), new(425, 428, 108, 40)
     };
+    private static readonly RectangleF[] SaltVaultDeepNaveWalls =
+    {
+        new(230, 155, 95, 128), new(378, 430, 125, 56), new(612, 160, 108, 110),
+        new(748, 415, 95, 62), new(425, 255, 110, 78)
+    };
 
     private void SetupSaltVaultRoom()
     {
@@ -53,6 +58,21 @@ public sealed partial class Game
                 enemies.Add(new Enemy { Pos = position, Kind = kind, NameOverride = kind == EnemyKind.Elite ? "SENTINELA DO COFRE FUNDO" : null, Hp = hp, MaxHp = hp, Cooldown = 0.85f + (float)random.NextDouble(), SummonCooldown = 6, SupportCooldown = 3, EliteAffix = affix, Armored = kind == EnemyKind.Elite && affix == EliteAffix.Armored });
             }
         }
+        else if (room == 51 && !saltVaultDeepNaveCleared)
+        {
+            (PointF Position, EnemyKind Kind)[] guardians =
+            {
+                (new PointF(350, 215), EnemyKind.SaltEcho), (new PointF(560, 470), EnemyKind.NameMoth),
+                (new PointF(760, 325), EnemyKind.Archer), (new PointF(650, 440), EnemyKind.MudCantor)
+            };
+            foreach (var (position, kind) in guardians)
+            {
+                float hp = EnemyData(kind).HealthAt(51, townEnding) * DifficultyEnemyHealthMultiplier(difficultyTier) * 1.18f;
+                enemies.Add(new Enemy { Pos = position, Kind = kind, Hp = hp, MaxHp = hp, Cooldown = 0.85f + (float)random.NextDouble(), SummonCooldown = 6, SupportCooldown = 3, EliteAffix = EliteAffix.Armored });
+            }
+            float eliteHp = EnemyData(EnemyKind.Elite).HealthAt(51, townEnding) * DifficultyEnemyHealthMultiplier(difficultyTier) * 1.28f;
+            enemies.Add(new Enemy { Pos = new PointF(565, 360), Kind = EnemyKind.Elite, Hp = eliteHp, MaxHp = eliteHp, Cooldown = 1, SummonCooldown = 6, SupportCooldown = 2.2f, EliteAffix = EliteAffix.Fissurer });
+        }
     }
 
     private void InteractSaltVault()
@@ -88,20 +108,43 @@ public sealed partial class Game
         if (room == 50 && player.X > 795)
         {
             if (enemies.Count > 0 || drops.Count > 0) { notice = "LIMPE O COFRE E RECOLHA O SAQUE ANTES DE SAIR"; noticeTime = 2; return; }
-            if (!saltVaultReliquaryCleared)
+            bool firstArchiveClear = !saltVaultReliquaryCleared;
+            if (firstArchiveClear)
             {
                 saltVaultReliquaryCleared = true; gold += 260; AddXp(190); tideGlass = Math.Min(999, tideGlass + 3); potions++;
-                ShowMemory("ARQUIVO DOS MENIRES", "A sentinela cede e o sal deixa aparecer registros de barqueiros que usavam o leito apenas quando a corrente baixava. Nenhum nome foi gravado. Você recebe 260 de ouro, 190 de experiência, 3 sais vítreos e uma poção.");
             }
-            saltVaultLocation = 0; room = 46; SetupRoom(); RestoreSaltBasinOutside(); player = SaltVaultEntrance; return;
+            saltVaultLocation = 3; saltVaultDeepNaveLocation = true; room = 51; SetupRoom();
+            ShowMemory(firstArchiveClear ? "ARQUIVO E NAVE DOS CASCOS" : "NAVE DOS CASCOS ABERTA", firstArchiveClear ? "A sentinela cede e o sal deixa aparecer registros de barqueiros que esperavam a corrente baixar. Nenhum nome foi gravado; você recebe 260 de ouro, 190 de experiência, 3 sais vítreos e uma poção. O registro descreve também um casco preso sob o leito, além do arquivo." : "O registro dos menires descreve um casco preso sob o leito, além do arquivo. Uma passagem estreita leva a uma nave onde os barqueiros deixavam instrumentos para quem atravessasse durante a vazante."); return;
         }
+        if (room == 51 && player.X < 165)
+        {
+            if (enemies.Count > 0 || drops.Count > 0) { notice = "LIMPE A NAVE E RECOLHA O SAQUE ANTES DE VOLTAR"; noticeTime = 2; return; }
+            bool firstClear = !saltVaultDeepNaveCleared; CompleteSaltVaultDeepNave(); saltVaultDeepNaveLocation = false; saltVaultLocation = 3; room = 50; SetupRoom();
+            if (firstClear) ShowMemory("REGISTRO DA NAVE", "Os instrumentos foram deixados para qualquer tripulação que precisasse esperar a vazante. O arquivo permanece aberto acima, sem indicar quem deve partir ou ficar. Você recebe 340 de ouro, 260 de experiência, 4 sais vítreos e uma poção.");
+            else { notice = "NAVE REGISTRADA • O ARQUIVO CONTINUA ACESSÍVEL"; noticeTime = 3; }
+            return;
+        }
+        if (room == 51 && player.X > 795)
+        {
+            if (enemies.Count > 0 || drops.Count > 0) { notice = "LIMPE A NAVE E RECOLHA O SAQUE ANTES DE SUBIR"; noticeTime = 2; return; }
+            bool firstClear = !saltVaultDeepNaveCleared; CompleteSaltVaultDeepNave();
+            saltVaultLocation = 0; saltVaultDeepNaveLocation = false; room = 46; SetupRoom(); RestoreSaltBasinOutside(); player = SaltVaultEntrance;
+            if (firstClear) ShowMemory("A NAVE DEVOLVE O COMPASSO", "As peças do casco escondiam quatro marcas que acompanham a vazante. Você as registra no atlas sem traçar uma rota obrigatória. A comunidade recebe 340 de ouro, 260 de experiência, 4 sais vítreos e uma poção.");
+            return;
+        }
+    }
+
+    private void CompleteSaltVaultDeepNave()
+    {
+        if (saltVaultDeepNaveCleared) return;
+        saltVaultDeepNaveCleared = true; gold += 340; AddXp(260); tideGlass = Math.Min(999, tideGlass + 4); potions++;
     }
 
     private void DrawSaltVaultEnvironment(Graphics g)
     {
-        bool bossRoom = room == 48, reliquaryRoom = room == 50;
-        using var floor = new SolidBrush(bossRoom ? Color.FromArgb(39, 43, 48) : reliquaryRoom ? Color.FromArgb(37, 48, 47) : Color.FromArgb(43, 47, 43));
-        using var seam = new Pen(bossRoom ? Color.FromArgb(67, 91, 100) : reliquaryRoom ? Color.FromArgb(61, 107, 101) : Color.FromArgb(77, 79, 65), 2);
+        bool bossRoom = room == 48, reliquaryRoom = room == 50, deepNave = room == 51;
+        using var floor = new SolidBrush(bossRoom ? Color.FromArgb(39, 43, 48) : reliquaryRoom ? Color.FromArgb(37, 48, 47) : deepNave ? Color.FromArgb(28, 49, 50) : Color.FromArgb(43, 47, 43));
+        using var seam = new Pen(bossRoom ? Color.FromArgb(67, 91, 100) : reliquaryRoom ? Color.FromArgb(61, 107, 101) : deepNave ? Color.FromArgb(56, 112, 117) : Color.FromArgb(77, 79, 65), 2);
         using var wall = new SolidBrush(Color.FromArgb(76, 80, 72));
         using var edge = new Pen(Color.FromArgb(158, 143, 108), 3);
         g.FillRectangle(floor, 65, 108, 830, 445);
@@ -110,7 +153,7 @@ public sealed partial class Game
             g.DrawLine(seam, 70, y, 890, y);
             for (int x = 110 + ((y / 54) % 2) * 36; x < 880; x += 78) g.DrawLine(seam, x, y, x + 18, y + 46);
         }
-        RectangleF[] obstacles = bossRoom ? SaltVaultBossRoomWalls : reliquaryRoom ? SaltVaultReliquaryWalls : SaltVaultAntechamberWalls;
+        RectangleF[] obstacles = bossRoom ? SaltVaultBossRoomWalls : reliquaryRoom ? SaltVaultReliquaryWalls : deepNave ? SaltVaultDeepNaveWalls : SaltVaultAntechamberWalls;
         foreach (RectangleF obstacle in obstacles)
         {
             g.FillEllipse(wall, obstacle.X - 10, obstacle.Y - 8, obstacle.Width + 20, obstacle.Height + 16);
@@ -129,11 +172,19 @@ public sealed partial class Game
             g.DrawEllipse(seal, 345, 184, 270, 280); g.DrawEllipse(vein, 382, 220, 196, 205);
             g.DrawLine(vein, 480, 190, 480, 460); g.DrawLine(vein, 350, 324, 610, 324);
         }
+        if (deepNave)
+        {
+            using var hull = new Pen(Color.FromArgb(160, 136, 177, 171), 4);
+            using var current = new Pen(Color.FromArgb(92, 128, 207, 203), 2) { DashStyle = DashStyle.Dash };
+            g.DrawArc(hull, 323, 172, 314, 310, 195, 150); g.DrawArc(hull, 360, 203, 240, 244, 195, 150);
+            g.DrawLine(current, 130, 324, 337, 324); g.DrawLine(current, 623, 324, 830, 324);
+            g.DrawEllipse(current, 452, 270, 56, 108);
+        }
         using var label = new Font("Segoe UI", 11, FontStyle.Bold);
-        string name = bossRoom ? "CÂMARA DO SAL EM SUSPENSO" : reliquaryRoom ? "ARQUIVO DOS MENIRES" : "GALERIA DOS MENIRES";
-        g.DrawString(name, label, Brushes.AntiqueWhite, bossRoom ? 340 : reliquaryRoom ? 370 : 370, 125);
-        if (player.X < 165) g.DrawString(room == 47 ? "E  SUBIR À BACIA" : bossRoom ? "E  VOLTAR À GALERIA" : "E  VOLTAR À CÂMARA", label, Brushes.AntiqueWhite, 72, 385);
-        if (player.X > 795) g.DrawString(room == 47 ? "E  DESCER À CÂMARA" : bossRoom ? "E  AVANÇAR AO COFRE" : "E  RETORNAR À BACIA", label, Brushes.AntiqueWhite, 720, 385);
+        string name = bossRoom ? "CÂMARA DO SAL EM SUSPENSO" : reliquaryRoom ? "ARQUIVO DOS MENIRES" : deepNave ? "NAVE DOS CASCOS" : "GALERIA DOS MENIRES";
+        g.DrawString(name, label, Brushes.AntiqueWhite, bossRoom ? 340 : deepNave ? 390 : 370, 125);
+        if (player.X < 165) g.DrawString(room == 47 ? "E  SUBIR À BACIA" : bossRoom ? "E  VOLTAR À GALERIA" : reliquaryRoom ? "E  VOLTAR À CÂMARA" : "E  VOLTAR AO ARQUIVO", label, Brushes.AntiqueWhite, 72, 385);
+        if (player.X > 795) g.DrawString(room == 47 ? "E  DESCER À CÂMARA" : bossRoom ? "E  AVANÇAR AO COFRE" : reliquaryRoom ? "E  DESCER À NAVE" : "E  RETORNAR À BACIA", label, Brushes.AntiqueWhite, 720, 385);
     }
 
     private void DrawSaltVaultMap(Graphics g)
@@ -147,17 +198,21 @@ public sealed partial class Game
         g.FillRectangle(shade, 0, 0, 960, 640); g.FillRectangle(panel, 45, 105, 870, 485);
         g.DrawRectangle(Pens.DarkGoldenrod, 45, 105, 870, 485);
         g.DrawString("FENDA DOS MENIRES", title, Brushes.Goldenrod, 342, 121);
-        PointF upper = new(190, 335), middle = new(480, 335), lower = new(770, 335);
+        PointF upper = new(145, 335), middle = new(365, 335), lower = new(590, 335), deep = new(815, 335);
         g.DrawLine(line, upper, middle);
         if (saltVaultBossDefeated) g.DrawLine(line, middle, lower);
+        if (saltVaultReliquaryCleared) g.DrawLine(line, lower, deep);
         g.DrawLine(thin, 280, 298, 680, 298); g.DrawLine(thin, 280, 370, 680, 370);
         g.FillEllipse(room == 47 ? Brushes.LightGreen : saltVaultAntechamberCleared ? Brushes.SlateGray : Brushes.DimGray, upper.X - 9, upper.Y - 9, 18, 18);
         g.FillEllipse(room == 48 ? Brushes.LightGreen : saltVaultBossDefeated ? Brushes.SlateGray : Brushes.MediumPurple, middle.X - 9, middle.Y - 9, 18, 18);
         g.FillEllipse(room == 50 ? Brushes.LightGreen : saltVaultReliquaryCleared ? Brushes.SlateGray : saltVaultBossDefeated ? Brushes.Goldenrod : Brushes.DimGray, lower.X - 9, lower.Y - 9, 18, 18);
-        g.DrawString("47 • GALERIA DOS MENIRES", font, Brushes.AntiqueWhite, 120, 250);
-        g.DrawString("48 • CÂMARA DO SAL", font, Brushes.AntiqueWhite, 360, 250);
-        if (saltVaultBossDefeated || room == 50 || saltVaultReliquaryCleared) g.DrawString("50 • ARQUIVO DOS MENIRES", font, Brushes.AntiqueWhite, 630, 250);
+        g.FillEllipse(room == 51 ? Brushes.LightGreen : saltVaultDeepNaveCleared ? Brushes.SlateGray : saltVaultReliquaryCleared ? Brushes.CadetBlue : Brushes.DimGray, deep.X - 9, deep.Y - 9, 18, 18);
+        g.DrawString("47 • GALERIA", font, Brushes.AntiqueWhite, 95, 250);
+        g.DrawString("48 • CÂMARA DO SAL", font, Brushes.AntiqueWhite, 300, 250);
+        if (saltVaultBossDefeated || room is 50 or 51 || saltVaultReliquaryCleared) g.DrawString("50 • ARQUIVO", font, Brushes.AntiqueWhite, 545, 250);
         else g.DrawString("???", font, Brushes.DimGray, lower.X - 10, 250);
+        if (saltVaultReliquaryCleared || room == 51 || saltVaultDeepNaveCleared) g.DrawString("51 • NAVE DOS CASCOS", font, Brushes.AntiqueWhite, 735, 250);
+        else g.DrawString("???", font, Brushes.DimGray, deep.X - 10, 250);
         g.DrawString("VERDE: VOCÊ   •   CINZA: LIMPA   •   M/ESC: FECHAR", font, Brushes.AntiqueWhite, 285, 540);
     }
 }

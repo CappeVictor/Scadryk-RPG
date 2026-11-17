@@ -28,7 +28,7 @@ A campanha principal chega ao epílogo original e oferece dezoito capítulos, qu
 
 Marco de expansão da Costa: depois do Coro da Maré Falsa, Teren conduz a uma missão opcional no Destroço das Conchas. O encontro com três guardiões, o registro ambiental, a recompensa de relatório e o caminho marcado no atlas persistem entre saves; a CI cobre aceitação, bloqueios do objetivo, conclusão e retomada.
 
-Marco de exploração: a Fenda dos Menires agora contém uma galeria, a câmara do Carcereiro e o Arquivo dos Menires, uma sala opcional pós-chefe com encontro, loot e conclusão persistente. Marco de build: Relíquias com Fenda + Ruptura ativam uma combinação de perfuração. Acertos críticos removem a redução da ferida contra inimigos blindados; a CI verifica dano, descrição e restrição à raridade Relíquia.
+Marco de exploração: a Fenda dos Menires agora contém a Galeria, a Câmara do Carcereiro, o Arquivo e a Nave dos Cascos, uma quarta câmara conectada com cinco guardiões, rotas de retorno e recompensa persistente. Marco de build: Relíquias com Fenda + Ruptura ativam uma combinação de perfuração. Acertos críticos removem a redução da ferida contra inimigos blindados; a CI verifica dano, descrição e restrição à raridade Relíquia.
 
 Marco de acessibilidade: o painel de configurações abre também durante a jornada, pausa a simulação e aceita teclado e mouse. Ele separa o volume dos efeitos e do ambiente e reúne contraste e tremor reduzido; os níveis de áudio persistem independentemente do save da campanha. A CI cobre abertura, pausa, fechamento, clique fora do painel e escala PCM.
 

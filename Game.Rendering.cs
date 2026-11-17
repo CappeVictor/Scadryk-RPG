@@ -56,7 +56,7 @@ public sealed partial class Game
         else if (room == 46) DrawSaltBasinEnvironment(g);
         else if (room == 49) DrawSaltFrontierEnvironment(g);
         else if (room is 44 or 45) DrawFirstEchoInterior(g);
-        else if (room is 47 or 48 or 50) DrawSaltVaultEnvironment(g);
+        else if (room is 47 or 48 or 50 or 51) DrawSaltVaultEnvironment(g);
         else if (room == 3) DrawTownEnvironment(g, floor, tile);
         else if (room == 18) DrawRefugeEnvironment(g, floor, tile);
         else if (room is 19 or 20) DrawLedgerTrailEnvironment(g, floor, tile);
@@ -186,7 +186,8 @@ public sealed partial class Game
         if (room == 49) return SaltFrontierObjective();
         if (room == 47) return enemies.Count > 0 || drops.Count > 0 ? "OBJETIVO: LIMPE A GALERIA E RECOLHA O SAQUE" : "OBJETIVO: ESCOLHA SUBIR À BACIA OU DESCER À CÂMARA";
         if (room == 48) return saltVaultBossDefeated ? drops.Count > 0 ? "OBJETIVO: RECOLHA O SAQUE DO CARCEREIRO" : "OBJETIVO: AVANCE AO COFRE FUNDO OU RETORNE À GALERIA" : "OBJETIVO: DERROTE O CARCEREIRO DO SAL SUSPENSO";
-        if (room == 50) return enemies.Count > 0 || drops.Count > 0 ? "OBJETIVO: DERROTE A SENTINELA E RECOLHA O SAQUE" : "OBJETIVO: RETORNE À BACIA COM O REGISTRO";
+        if (room == 50) return enemies.Count > 0 || drops.Count > 0 ? "OBJETIVO: DERROTE A SENTINELA E RECOLHA O SAQUE" : "OBJETIVO: SIGA À NAVE DOS CASCOS OU VOLTE À CÂMARA";
+        if (room == 51) return enemies.Count > 0 || drops.Count > 0 ? "OBJETIVO: LIMPE A NAVE DOS CASCOS E RECOLHA O SAQUE" : "OBJETIVO: ESCOLHA VOLTAR AO ARQUIVO OU À BACIA";
         if (room is 44 or 45) return room == 44 ? "OBJETIVO: EXPLORE O ABRIGO NAS RAÍZES" : firstEchoQuest < 2 ? "OBJETIVO: LIBERTE AS VOZES DAS COMPORTAS" : "OBJETIVO: RETORNE ÀS MARGENS";
         if (room == 3) return firstEchoQuest == 2 ? "MISSÃO OPCIONAL: CONTE A EDDA SOBRE AS COMPORTAS" : firstEchoQuest == 3 && !firstEchoBeaconAccepted && !firstEchoBeaconRestored ? "OPCIONAL: RETORNE ÀS MARGENS E FALE COM IVARA" : firstEchoBeaconAccepted && !firstEchoBeaconRestored ? "OPCIONAL: LIMPE OS ECOS DA ESCARPA" : firstEchoBeaconRestored && !firstEchoFerryAccepted && !firstEchoFerryRestored ? "OPCIONAL: SIGA AO VAU DE CINZA E FALE COM NILO" : firstEchoFerryAccepted && !firstEchoFerryRestored ? "OPCIONAL: REACENDA O SINAL DO VAU" : TownObjective();
         if (room == 18) return "OBJETIVO: " + (questStage == 46 ? "FALE COM AVEN SOBRE AS LINHAS" : questStage == 47 ? "SIGA AS LINHAS ATÉ A GALERIA" : questStage == 48 ? "LEVE O TRAÇADO DE VOLTA A AVEN" : questStage == 49 ? "FALE COM AVEN PARA ABRIR O ÚLTIMO CAPÍTULO" : questStage == 50 ? "DESÇA À SOLEIRA DO SILÊNCIO" : questStage == 51 ? "FALE COM AVEN SOBRE O DESTINO DO LUME" : questStage >= 59 ? "EXPEDIÇÃO XVIII CONCLUÍDA • EXPLORAÇÃO ABERTA" : questStage == 58 ? "LEVE A BADALADA RECUPERADA A AVEN" : questStage == 57 ? "SIGA À CÂMARA DAS BADALADAS" : questStage == 56 ? "EXPEDIÇÃO XVII CONCLUÍDA • NOVA EXPEDIÇÃO DISPONÍVEL A LESTE" : questStage >= 56 ? "EXPEDIÇÃO XVII CONCLUÍDA • EXPLORAÇÃO ABERTA" : questStage == 55 ? "LEVE A MEMÓRIA DO ARQUIVO A AVEN" : questStage == 54 ? "SIGA AO CAIS DOS ECOS EMPRESTADOS" : questStage >= 52 ? "EPÍLOGO CONCLUÍDO • EXPLORAÇÃO ABERTA" : questStage < 22 ? "CONHEÇA A COMUNIDADE E FALE COM AVEN" : questStage == 22 ? "SIGA A TRILHA E RECUPERE O REGISTRO COMPARTILHADO" : questStage == 23 ? "LEVE O REGISTRO DE VOLTA A AVEN" : questStage == 32 ? "LEVE A MEMÓRIA DA VAZANTE A AVEN" : questStage == 30 ? "SIGA O SOM DOS MOINHOS PARA OESTE" : questStage == 35 ? "LEVE A MEMÓRIA DO COMPASSO A AVEN" : questStage == 39 ? "LEVE A NOTA DA CONTRAVOZ A AVEN" : questStage == 40 ? "FALE COM AVEN SOBRE A PRÓXIMA FISSURA" : questStage == 42 ? "LEVE O ECO SEM DONO A AVEN" : questStage >= 41 ? "SIGA OS PASSOS ATÉ A FONTE SOB A PEDRA" : questStage >= 36 ? "MANTO DE LASTRO APRENDIDO • SIGA AS ÁGUAS" : questStage >= 33 ? "SIGA A CORRENTE AO CORAÇÃO DAS DUAS MARGENS" : questStage >= 27 ? "FALE COM AVEN PARA REFORJAR UMA ARMA" : "SIGA A PRÓXIMA CURVA A OESTE");
@@ -1157,7 +1158,7 @@ public sealed partial class Game
         if (room == 43) { DrawFirstEchoMap(g); return; }
         if (room == 46) { DrawSaltBasinMap(g); return; }
         if (room == 49) { DrawSaltFrontierMap(g); return; }
-        if (room is 47 or 48 or 50) { DrawSaltVaultMap(g); return; }
+        if (room is 47 or 48 or 50 or 51) { DrawSaltVaultMap(g); return; }
         using var shade = new SolidBrush(Color.FromArgb(225, 5, 7, 9));
         using var panel = new SolidBrush(Color.FromArgb(248, 15, 17, 18));
         using var border = new Pen(Color.FromArgb(190, 143, 112, 73), 2);

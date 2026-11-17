@@ -317,7 +317,7 @@ public sealed partial class Game : Form
         armorTrait = relicTrait = tideBootsAspect = 0;
         dashAttackTime = 0;
         borrowedTrace = unstruckTrace = false;
-        firstEchoQuest = firstEchoDiscovered = 0; firstEchoCaveFound = firstEchoReedCache = false; firstEchoOutsideStored = false; firstEchoWaitingEnemies.Clear(); firstEchoWaitingDrops.Clear(); saltVaultReliquaryCleared = false; saltFrontierReturnLocation = saltFrontierBossAwakened = saltFrontierBossDefeated = saltFrontierWardenDefeated = saltFrontierOutsideStored = false; saltFrontierSideProgress = 0; saltFrontierWaitingEnemies.Clear(); saltFrontierWaitingDrops.Clear();
+        firstEchoQuest = firstEchoDiscovered = 0; firstEchoCaveFound = firstEchoReedCache = false; firstEchoOutsideStored = false; firstEchoWaitingEnemies.Clear(); firstEchoWaitingDrops.Clear(); saltVaultReliquaryCleared = saltVaultDeepNaveLocation = saltVaultDeepNaveCleared = false; saltFrontierReturnLocation = saltFrontierBossAwakened = saltFrontierBossDefeated = saltFrontierWardenDefeated = saltFrontierOutsideStored = false; saltFrontierSideProgress = 0; saltFrontierWaitingEnemies.Clear(); saltFrontierWaitingDrops.Clear();
         finalEnding = 0;
         vigilBestFloor = vigilFloor = 0;
         townEnding = 0;
@@ -407,7 +407,7 @@ public sealed partial class Game : Form
         else if (e.KeyCode == Keys.Q) UsePotion();
         else if (e.KeyCode == Keys.E) Interact();
         else if (e.KeyCode == Keys.X) SalvageNearbyWeapon();
-        else if (e.KeyCode == Keys.F5) { if (vigilActive) { notice = "TERMINE A VIGÍLIA E SALVE NO REFÚGIO"; noticeTime = 2; } else if (room >= 43) { if (drops.Count > 0) { notice = "RECOLHA O SAQUE ANTES DE SALVAR"; noticeTime = 2; } else if (SaveGame()) { notice = room is 47 or 48 or 50 ? "PROGRESSO SALVO • FENDA RETOMADA NA MESMA SALA" : room == 49 ? "PROGRESSO SALVO • COSTA RETOMADA" : room == 46 ? "PROGRESSO SALVO • REGIÃO RETOMADA NA BACIA" : "PROGRESSO SALVO • AO CARREGAR, VOLTE DE VÉSPERA"; noticeTime = 4; } } else if (enemies.Count == 0 && drops.Count == 0) SaveGame(); else { notice = "LIMPE A SALA E RECOLHA O LOOT ANTES DE SALVAR"; noticeTime = 2; } }
+        else if (e.KeyCode == Keys.F5) { if (vigilActive) { notice = "TERMINE A VIGÍLIA E SALVE NO REFÚGIO"; noticeTime = 2; } else if (room >= 43) { if (drops.Count > 0) { notice = "RECOLHA O SAQUE ANTES DE SALVAR"; noticeTime = 2; } else if (SaveGame()) { notice = room is 47 or 48 or 50 or 51 ? "PROGRESSO SALVO • FENDA RETOMADA NA MESMA SALA" : room == 49 ? "PROGRESSO SALVO • COSTA RETOMADA" : room == 46 ? "PROGRESSO SALVO • REGIÃO RETOMADA NA BACIA" : "PROGRESSO SALVO • AO CARREGAR, VOLTE DE VÉSPERA"; noticeTime = 4; } } else if (enemies.Count == 0 && drops.Count == 0) SaveGame(); else { notice = "LIMPE A SALA E RECOLHA O LOOT ANTES DE SALVAR"; noticeTime = 2; } }
         else if (e.KeyCode == Keys.Tab) CycleTarget();
         else if (e.KeyCode == Keys.Escape) { settingsOpen = true; settingsSelection = 0; down.Clear(); dashTime = 0; Invalidate(); }
     }

@@ -2040,12 +2040,28 @@ public sealed partial class Game
                 if (vaultResume.room != 50 || vaultResume.saltVaultReliquaryCleared || vaultResume.gold != reliquaryGold) throw new InvalidOperationException("A saída do Arquivo permitiu receber a recompensa antes de limpar os guardiões.");
                 vaultResume.enemies.Clear(); vaultResume.drops.Clear(); vaultResume.player = new PointF(850, 330); vaultResume.Interact();
                 SaveData reliquaryComplete = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(vaultResume.CaptureSaveData()))!;
-                if (vaultResume.room != 46 || !vaultResume.saltVaultReliquaryCleared || vaultResume.saltVaultLocation != 0 || vaultResume.gold != reliquaryGold + 260 || vaultResume.tideGlass != reliquaryGlass + 3 || vaultResume.level <= reliquaryLevel && vaultResume.xp <= reliquaryXp || vaultResume.potions != reliquaryPotions + 1 || !ValidSaveData(reliquaryComplete)) throw new InvalidOperationException("O Arquivo dos Menires não concluiu com recompensa única, save válido e retorno à Bacia.");
+                if (vaultResume.room != 51 || !vaultResume.saltVaultReliquaryCleared || !vaultResume.saltVaultDeepNaveLocation || vaultResume.saltVaultLocation != 3 || vaultResume.enemies.Count != 5 || vaultResume.gold != reliquaryGold + 260 || vaultResume.tideGlass != reliquaryGlass + 3 || vaultResume.level <= reliquaryLevel && vaultResume.xp <= reliquaryXp || vaultResume.potions != reliquaryPotions + 1 || reliquaryComplete.SaltVaultDeepNaveCleared || !ValidSaveData(reliquaryComplete)) throw new InvalidOperationException("O Arquivo dos Menires não abriu a Nave dos Cascos com recompensa única e save válido.");
+                using (var deepNaveResume = new Game())
+                {
+                    deepNaveResume.timer.Stop(); deepNaveResume.StartGame(); deepNaveResume.firstEchoDiscovered = reliquaryComplete.FirstEchoDiscovered; deepNaveResume.saltVaultReliquaryCleared = reliquaryComplete.SaltVaultReliquaryCleared; deepNaveResume.saltVaultDeepNaveLocation = reliquaryComplete.SaltVaultDeepNaveLocation; deepNaveResume.saltVaultDeepNaveCleared = reliquaryComplete.SaltVaultDeepNaveCleared; deepNaveResume.room = reliquaryComplete.Room; deepNaveResume.SetupRoom();
+                    if (deepNaveResume.room != 51 || deepNaveResume.enemies.Count != 5 || !deepNaveResume.enemies.Any(enemy => enemy.Kind == EnemyKind.Elite && enemy.EliteAffix == EliteAffix.Fissurer)) throw new InvalidOperationException("O save não retomou a Nave dos Cascos nem seu guardião de fendas.");
+                    using var deepMap = new Bitmap(960, 640); using var deepGraphics = Graphics.FromImage(deepMap); deepNaveResume.DrawSaltVaultMap(deepGraphics); deepNaveResume.DrawSaltVaultEnvironment(deepGraphics);
+                }
+                int naveGold = vaultResume.gold, naveGlass = vaultResume.tideGlass, naveXp = vaultResume.xp + vaultResume.level * 60, navePotions = vaultResume.potions;
+                vaultResume.player = new PointF(850, 330); vaultResume.Interact();
+                if (vaultResume.room != 51 || vaultResume.saltVaultDeepNaveCleared || vaultResume.gold != naveGold) throw new InvalidOperationException("A Nave dos Cascos permitiu receber a recompensa antes de limpar os guardiões.");
+                vaultResume.enemies.Clear(); vaultResume.drops.Clear(); vaultResume.player = new PointF(150, 330); vaultResume.Interact();
+                SaveData deepNaveComplete = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(vaultResume.CaptureSaveData()))!;
+                if (vaultResume.room != 50 || !vaultResume.saltVaultDeepNaveCleared || vaultResume.saltVaultDeepNaveLocation || vaultResume.gold != naveGold + 340 || vaultResume.tideGlass != naveGlass + 4 || vaultResume.level * 60 + vaultResume.xp <= naveXp || vaultResume.potions != navePotions + 1 || !ValidSaveData(deepNaveComplete)) throw new InvalidOperationException("A Nave dos Cascos não concluiu pela rota de retorno ao Arquivo com recompensa única e estado persistido.");
                 using (var reliquaryCompleteResume = new Game())
                 {
-                    reliquaryCompleteResume.timer.Stop(); reliquaryCompleteResume.StartGame(); reliquaryCompleteResume.firstEchoDiscovered = reliquaryComplete.FirstEchoDiscovered; reliquaryCompleteResume.saltVaultReliquaryCleared = reliquaryComplete.SaltVaultReliquaryCleared;
-                    if (!reliquaryCompleteResume.saltVaultReliquaryCleared || !ValidSaveData(reliquaryCompleteResume.CaptureSaveData())) throw new InvalidOperationException("A conclusão do Arquivo dos Menires não persistiu no save.");
+                    reliquaryCompleteResume.timer.Stop(); reliquaryCompleteResume.StartGame(); reliquaryCompleteResume.firstEchoDiscovered = deepNaveComplete.FirstEchoDiscovered; reliquaryCompleteResume.saltVaultReliquaryCleared = deepNaveComplete.SaltVaultReliquaryCleared; reliquaryCompleteResume.saltVaultDeepNaveCleared = deepNaveComplete.SaltVaultDeepNaveCleared; reliquaryCompleteResume.room = deepNaveComplete.Room; reliquaryCompleteResume.SetupRoom();
+                    if (reliquaryCompleteResume.room != 50 || reliquaryCompleteResume.enemies.Count != 0 || !reliquaryCompleteResume.saltVaultReliquaryCleared || !reliquaryCompleteResume.saltVaultDeepNaveCleared || !ValidSaveData(reliquaryCompleteResume.CaptureSaveData())) throw new InvalidOperationException("O save não preservou o retorno ao Arquivo nem a conclusão da Nave dos Cascos.");
                 }
+                vaultResume.player = new PointF(850, 330); vaultResume.Interact();
+                if (vaultResume.room != 51 || vaultResume.enemies.Count != 0) throw new InvalidOperationException("A passagem de retorno não reabriu a Nave dos Cascos concluída.");
+                vaultResume.player = new PointF(850, 330); vaultResume.Interact();
+                if (vaultResume.room != 46 || vaultResume.gold != naveGold + 340) throw new InvalidOperationException("A saída da Nave à Bacia repetiu a recompensa da rota opcional.");
                 vaultResume.player = SaltVaultEntrance; vaultResume.Interact(); vaultResume.memoryOverlay = false;
                 if (vaultResume.room != 47 || vaultResume.enemies.Count != 0) throw new InvalidOperationException("A galeria reapareceu após ser limpa e salva.");
                 vaultResume.player = new PointF(850, 330); vaultResume.Interact();
@@ -2053,7 +2069,9 @@ public sealed partial class Game
                 vaultResume.player = new PointF(850, 330); vaultResume.Interact();
                 if (vaultResume.room != 50 || vaultResume.enemies.Count != 0) throw new InvalidOperationException("O Arquivo dos Menires reapareceu depois de concluído.");
                 vaultResume.player = new PointF(850, 330); vaultResume.Interact();
-                if (vaultResume.room != 46 || vaultResume.gold != reliquaryGold + 260) throw new InvalidOperationException("A saída da fenda não retornou à Bacia ou repetiu a recompensa do arquivo.");
+                if (vaultResume.room != 51 || vaultResume.enemies.Count != 0 || !vaultResume.saltVaultDeepNaveCleared) throw new InvalidOperationException("A Nave dos Cascos reapareceu depois de concluída.");
+                vaultResume.player = new PointF(850, 330); vaultResume.Interact();
+                if (vaultResume.room != 46 || vaultResume.gold != reliquaryGold + 260 + 340) throw new InvalidOperationException("A saída da fenda não retornou à Bacia ou repetiu suas recompensas únicas.");
                 vaultResume.player = SaltBasinFrontierEntrance; vaultResume.Interact(); vaultResume.memoryOverlay = false;
                 if (vaultResume.room != 49 || vaultResume.WorldSize() != new SizeF(4200, 3000) || vaultResume.enemies.Count != 0) throw new InvalidOperationException("A trilha das conchas não abriu a Costa das Badaladas como região explorável.");
                 vaultResume.drops.Add(new Drop { Pos = new PointF(1200, 900), Kind = "gold", Amount = 45 }); vaultResume.player = SaltFrontierEntrance; vaultResume.Interact();
