@@ -171,7 +171,7 @@ public sealed partial class Game
             float hp = EnemyData(kind).HealthAt(room, townEnding);
             if (vigilActive) hp = 3450 * (1 + Math.Max(0, vigilFloor - 1) * 0.28f);
             else hp *= DifficultyEnemyHealthMultiplier(difficultyTier);
-            EliteAffix eliteAffix = kind == EnemyKind.Elite ? EliteAffixForRoll(random.Next(6)) : EliteAffix.Armored;
+            EliteAffix eliteAffix = kind == EnemyKind.Elite ? EliteAffixForRoll(random.Next(7)) : EliteAffix.Armored;
             EliteAffix? eliteAffix2 = kind == EnemyKind.Elite && !vigilActive && (room >= 25 || difficultyTier >= 2) ? EliteSecondaryAffixForRoll(random.Next(EliteSecondaryAffixCount(eliteAffix)), eliteAffix) : null;
             bool armoredElite = kind == EnemyKind.Elite && (eliteAffix == EliteAffix.Armored || eliteAffix2 == EliteAffix.Armored);
             var enemy = new Enemy { Pos = new PointF(485 + i % 3 * 120, 215 + i / 3 * 165), Kind = kind, Hp = hp, MaxHp = hp, Cooldown = 0.7f + (float)random.NextDouble(), SummonCooldown = 5.5f + (float)random.NextDouble() * 2, SupportCooldown = 2.5f + (float)random.NextDouble() * 2, EliteAffix = eliteAffix, EliteAffix2 = eliteAffix2, Armored = armoredElite };

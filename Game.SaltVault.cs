@@ -31,7 +31,7 @@ public sealed partial class Game
             foreach (var (position, kind) in foes)
             {
                 float hp = EnemyData(kind).HealthAt(47, townEnding) * DifficultyEnemyHealthMultiplier(difficultyTier);
-                enemies.Add(new Enemy { Pos = position, Kind = kind, Hp = hp, MaxHp = hp, Cooldown = 0.85f + (float)random.NextDouble(), SummonCooldown = 6, SupportCooldown = 3, EliteAffix = kind == EnemyKind.Elite ? EliteAffixForRoll(random.Next(6)) : EliteAffix.Armored });
+                enemies.Add(new Enemy { Pos = position, Kind = kind, Hp = hp, MaxHp = hp, Cooldown = 0.85f + (float)random.NextDouble(), SummonCooldown = 6, SupportCooldown = 3, EliteAffix = kind == EnemyKind.Elite ? EliteAffixForRoll(random.Next(7)) : EliteAffix.Armored });
             }
         }
         else if (room == 48 && !saltVaultBossDefeated)
@@ -49,7 +49,7 @@ public sealed partial class Game
             foreach (var (position, kind) in guardians)
             {
                 float hp = EnemyData(kind).HealthAt(50, townEnding) * DifficultyEnemyHealthMultiplier(difficultyTier) * 1.12f;
-                EliteAffix affix = kind == EnemyKind.Elite ? EliteAffixForRoll(random.Next(6)) : EliteAffix.Armored;
+                EliteAffix affix = kind == EnemyKind.Elite ? EliteAffixForRoll(random.Next(7)) : EliteAffix.Armored;
                 enemies.Add(new Enemy { Pos = position, Kind = kind, NameOverride = kind == EnemyKind.Elite ? "SENTINELA DO COFRE FUNDO" : null, Hp = hp, MaxHp = hp, Cooldown = 0.85f + (float)random.NextDouble(), SummonCooldown = 6, SupportCooldown = 3, EliteAffix = affix, Armored = kind == EnemyKind.Elite && affix == EliteAffix.Armored });
             }
         }

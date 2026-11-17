@@ -140,6 +140,7 @@ public sealed partial class Game
                 return;
             }
         }
+        if (HasEliteAffix(e, EliteAffix.Fissurer) && UpdateFissurer(e, dt)) return;
         if (HasEliteAffix(e, EliteAffix.Conductor) && UpdateConductor(e, dt)) return;
         float attackTempo = vigilActive && e.Boss && RunVigilAspect(vigilFloor) == VigilAspect.Swift ? 1.25f : 1;
         e.Cooldown -= dt * attackTempo; e.Flash = Math.Max(0, e.Flash - dt); PointF offset = Sub(player, e.Pos); float dist = Length(offset);
@@ -265,6 +266,29 @@ public sealed partial class Game
         if (conductor.SupportCooldown <= 0 && conductor.Windup <= 0)
         {
             conductor.SupportWindup = 0.9f; conductor.SupportCooldown = 5.8f;
+            GameAudio.Play(GameAudio.Cue.EliteWarning); return true;
+        }
+        return false;
+    }
+
+    private bool UpdateFissurer(Enemy fissurer, float dt)
+    {
+        if (fissurer.SupportWindup > 0)
+        {
+            if (fissurer.Stagger > 0) { fissurer.SupportWindup = 0; fissurer.SupportCooldown = 1.8f; return true; }
+            fissurer.SupportWindup -= dt;
+            if (fissurer.SupportWindup <= 0)
+            {
+                groundHazards.Add(new GroundHazard { Pos = fissurer.Target, WarningTime = 0.8f, Damage = 9 });
+                AddFloatingText(new PointF(fissurer.Target.X, fissurer.Target.Y - 36), "FENDA ABERTA", Color.FromArgb(244, 165, 111));
+            }
+            return true;
+        }
+        if (fissurer.Stagger > 0) return false;
+        fissurer.SupportCooldown = Math.Max(0, fissurer.SupportCooldown - dt);
+        if (fissurer.SupportCooldown <= 0 && fissurer.Windup <= 0 && Distance(player, fissurer.Pos) <= 390)
+        {
+            fissurer.Target = player; fissurer.SupportWindup = 0.85f; fissurer.SupportCooldown = 7.2f;
             GameAudio.Play(GameAudio.Cue.EliteWarning); return true;
         }
         return false;
@@ -410,8 +434,8 @@ public sealed partial class Game
             if (text.TimeLeft <= 0) floatingTexts.RemoveAt(i);
         }
     }
-    private static EliteAffix EliteAffixForRoll(int roll) => roll switch { 0 => EliteAffix.Armored, 1 => EliteAffix.Swift, 2 => EliteAffix.Bloodbound, 3 => EliteAffix.Spearbound, 5 => EliteAffix.Conductor, _ => EliteAffix.Summoner };
-    private static EliteAffix[] EliteSecondaryAffixOptions(EliteAffix primary) => new[] { EliteAffix.Armored, EliteAffix.Swift, EliteAffix.Bloodbound, EliteAffix.Summoner, EliteAffix.Conductor }
+    private static EliteAffix EliteAffixForRoll(int roll) => roll switch { 0 => EliteAffix.Armored, 1 => EliteAffix.Swift, 2 => EliteAffix.Bloodbound, 3 => EliteAffix.Spearbound, 5 => EliteAffix.Conductor, 6 => EliteAffix.Fissurer, _ => EliteAffix.Summoner };
+    private static EliteAffix[] EliteSecondaryAffixOptions(EliteAffix primary) => new[] { EliteAffix.Armored, EliteAffix.Swift, EliteAffix.Bloodbound, EliteAffix.Summoner, EliteAffix.Conductor, EliteAffix.Fissurer }
         .Where(affix => affix != primary
             && !(primary == EliteAffix.Spearbound && affix == EliteAffix.Swift)
             && !(primary == EliteAffix.Summoner && affix == EliteAffix.Conductor)
@@ -424,7 +448,7 @@ public sealed partial class Game
         return eligible[Math.Abs(roll % eligible.Length)];
     }
     private static bool HasEliteAffix(Enemy enemy, EliteAffix affix) => enemy.Kind == EnemyKind.Elite && (enemy.EliteAffix == affix || enemy.EliteAffix2 == affix);
-    private static string EliteAffixName(EliteAffix affix) => affix switch { EliteAffix.Armored => "BLINDADO", EliteAffix.Swift => "VELOZ", EliteAffix.Bloodbound => "SANGRADOR", EliteAffix.Spearbound => "LANÇADOR", EliteAffix.Summoner => "INVOCADOR", EliteAffix.Conductor => "CONDUTOR", _ => "ELITE" };
+    private static string EliteAffixName(EliteAffix affix) => affix switch { EliteAffix.Armored => "BLINDADO", EliteAffix.Swift => "VELOZ", EliteAffix.Bloodbound => "SANGRADOR", EliteAffix.Spearbound => "LANÇADOR", EliteAffix.Summoner => "INVOCADOR", EliteAffix.Conductor => "CONDUTOR", EliteAffix.Fissurer => "FISSURADOR", _ => "ELITE" };
     private static string EliteAffixName(Enemy enemy) => enemy.EliteAffix2 is EliteAffix second ? $"{EliteAffixName(enemy.EliteAffix)} + {EliteAffixName(second)}" : EliteAffixName(enemy.EliteAffix);
-    private static Color EliteAffixColor(EliteAffix affix) => affix switch { EliteAffix.Armored => Color.LightSteelBlue, EliteAffix.Swift => Color.Gold, EliteAffix.Bloodbound => Color.HotPink, EliteAffix.Spearbound => Color.DeepSkyBlue, EliteAffix.Summoner => Color.MediumOrchid, EliteAffix.Conductor => Color.MediumAquamarine, _ => Color.IndianRed };
+    private static Color EliteAffixColor(EliteAffix affix) => affix switch { EliteAffix.Armored => Color.LightSteelBlue, EliteAffix.Swift => Color.Gold, EliteAffix.Bloodbound => Color.HotPink, EliteAffix.Spearbound => Color.DeepSkyBlue, EliteAffix.Summoner => Color.MediumOrchid, EliteAffix.Conductor => Color.MediumAquamarine, EliteAffix.Fissurer => Color.Coral, _ => Color.IndianRed };
 }

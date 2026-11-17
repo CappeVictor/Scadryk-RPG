@@ -70,7 +70,7 @@ public sealed partial class Game
             foreach (var (offset, kind) in guardSet)
             {
                 float hp = EnemyData(kind).HealthAt(42, townEnding) * DifficultyEnemyHealthMultiplier(difficultyTier);
-                enemies.Add(new Enemy { Pos = Add(bell, offset), Kind = kind, Hp = hp, MaxHp = hp, Cooldown = 0.9f + (float)random.NextDouble(), SummonCooldown = 6, SupportCooldown = 3, EliteAffix = kind == EnemyKind.Elite ? EliteAffixForRoll(random.Next(6)) : EliteAffix.Armored });
+                enemies.Add(new Enemy { Pos = Add(bell, offset), Kind = kind, Hp = hp, MaxHp = hp, Cooldown = 0.9f + (float)random.NextDouble(), SummonCooldown = 6, SupportCooldown = 3, EliteAffix = kind == EnemyKind.Elite ? EliteAffixForRoll(random.Next(7)) : EliteAffix.Armored });
             }
         }
     }
@@ -94,7 +94,7 @@ public sealed partial class Game
         foreach (var (position, kind) in group)
         {
             float hp = EnemyData(kind).HealthAt(42, townEnding) * DifficultyEnemyHealthMultiplier(difficultyTier);
-            EliteAffix affix = kind == EnemyKind.Elite ? EliteAffixForRoll(random.Next(6)) : EliteAffix.Armored;
+            EliteAffix affix = kind == EnemyKind.Elite ? EliteAffixForRoll(random.Next(7)) : EliteAffix.Armored;
             enemies.Add(new Enemy { Pos = position, Kind = kind, Hp = hp, MaxHp = hp, Cooldown = 0.9f + (float)random.NextDouble(), SummonCooldown = 6, SupportCooldown = 3, EliteAffix = affix, Armored = kind == EnemyKind.Elite && affix == EliteAffix.Armored });
         }
     }
@@ -130,7 +130,7 @@ public sealed partial class Game
             foreach (var (position, kind) in guards)
             {
                 float hp = EnemyData(kind).HealthAt(42, townEnding) * DifficultyEnemyHealthMultiplier(difficultyTier);
-                EliteAffix affix = kind == EnemyKind.Elite ? EliteAffixForRoll(random.Next(6)) : EliteAffix.Armored;
+                EliteAffix affix = kind == EnemyKind.Elite ? EliteAffixForRoll(random.Next(7)) : EliteAffix.Armored;
                 enemies.Add(new Enemy { Pos = position, Kind = kind, Hp = hp, MaxHp = hp, Cooldown = 0.9f + (float)random.NextDouble(), SummonCooldown = 6, SupportCooldown = 3, EliteAffix = affix, Armored = kind == EnemyKind.Elite && affix == EliteAffix.Armored });
             }
         }

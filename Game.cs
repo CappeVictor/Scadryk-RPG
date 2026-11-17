@@ -17,7 +17,7 @@ public sealed partial class Game : Form
     private const float MemoryStoneInteractionRadius = 58;
     private enum EnemyKind { Grunt, Archer, Mage, Elite, Guardian, InkEcho, BlindScribe, DrownedMemory, RiverFerryman, EmberWisp, AshWarden, NameMoth, HollowName, NameWeaver, FirstKeeper, MudCantor, OathCartographer, PaperWraith, NameBroker, SaltEcho, TideWitness, ReedKeeper, FlowKeeper, CounterCurrent, RiftCantor, GlassHerald, LanternRegent, RouteScribe, DeepSilence, BorrowedChorus, LastTuner, CooldownLeech, SlagWeaver, SaltJailer }
     private enum VigilAspect { Hardened, Hungry, Swift, Chorus, Counterflow, SlagRain }
-    private enum EliteAffix { Armored, Swift, Bloodbound, Spearbound, Summoner, Conductor }
+    private enum EliteAffix { Armored, Swift, Bloodbound, Spearbound, Summoner, Conductor, Fissurer }
     private sealed class Enemy
     {
         public PointF Pos, Target, Target2, Target2Start, KnockbackVelocity;
