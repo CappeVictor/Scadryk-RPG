@@ -102,7 +102,7 @@ public sealed partial class Game
     {
         if (item.Kind == "charm")
         {
-            if (item.Amount is < 1 or > 14) { drops.Remove(item); return; }
+            if (item.Amount is < 1 or > 15) { drops.Remove(item); return; }
             bool newCharm = (ownedCharms & (1 << (item.Amount - 1))) == 0; ownedCharms |= 1 << (item.Amount - 1);
             if (equippedCharm == 0 && equippedCharm2 != item.Amount && equippedCharm3 != item.Amount) equippedCharm = item.Amount;
             else if (equippedCharm2 == 0 && equippedCharm != item.Amount && equippedCharm3 != item.Amount) equippedCharm2 = item.Amount;
