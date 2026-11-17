@@ -1539,7 +1539,7 @@ public sealed partial class Game
         }
         using (var markingResonance = new Game())
         {
-            markingResonance.timer.Stop(); markingResonance.StartGame(); markingResonance.armor = markingResonance.relic = markingResonance.armorOn = markingResonance.relicOn = true; markingResonance.armorTrait = markingResonance.relicTrait = 5;
+            markingResonance.timer.Stop(); markingResonance.StartGame(); markingResonance.enemies.Clear(); markingResonance.drops.Clear(); markingResonance.armor = markingResonance.relic = markingResonance.armorOn = markingResonance.relicOn = true; markingResonance.armorTrait = markingResonance.relicTrait = 5;
             Enemy markedTarget = new() { Pos = new PointF(510, 330), Kind = EnemyKind.Grunt, Hp = 1, MaxHp = 100, BellMarkTime = 3 };
             if (!markingResonance.HasMarkingResonance() || Math.Abs(markingResonance.OutgoingDamageMultiplier(markedTarget) - 1.2f) > 0.001f)
                 throw new InvalidOperationException("Gume de Vigília + Eco de Retorno não ativaram o bônus de 20% contra inimigos marcados.");
@@ -1551,9 +1551,9 @@ public sealed partial class Game
             markingResonance.enemies.Add(markedTarget); markingResonance.Defeat(markedTarget);
             if (Math.Abs(markingResonance.skillCd - 1.75f) > 0.001f || Math.Abs(markingResonance.shardCd - 1.75f) > 0.001f || Math.Abs(markingResonance.bellCd - 1.75f) > 0.001f || Math.Abs(markingResonance.pullCd - 1.75f) > 0.001f || !markingResonance.floatingTexts.Any(text => text.Text.StartsWith("ECO DE RETORNO −1", StringComparison.Ordinal)))
                 throw new InvalidOperationException("A Ressonância da Marca não adiantou todas as recargas em 1,25 s ao abater um alvo marcado.");
-            markingResonance.armorOn = false; markingResonance.skillCd = 3; markingResonance.enemies.Add(new Enemy { Pos = new PointF(510, 330), Kind = EnemyKind.Grunt, Hp = 1, MaxHp = 100, BellMarkTime = 3 }); markingResonance.Defeat(markingResonance.enemies.Single());
+            markingResonance.armorOn = false; markingResonance.skillCd = 3; Enemy markedTargetWithoutArmor = new() { Pos = new PointF(510, 330), Kind = EnemyKind.Grunt, Hp = 1, MaxHp = 100, BellMarkTime = 3 }; markingResonance.enemies.Add(markedTargetWithoutArmor); markingResonance.Defeat(markedTargetWithoutArmor);
             if (markingResonance.HasMarkingResonance() || markingResonance.skillCd != 2.25f) throw new InvalidOperationException("Eco de Retorno não manteve seu efeito-base de 0,75 s sem o peitoral.");
-            markingResonance.skillCd = 3; markingResonance.enemies.Add(new Enemy { Pos = new PointF(510, 330), Kind = EnemyKind.Grunt, Hp = 1, MaxHp = 100 }); markingResonance.Defeat(markingResonance.enemies.Single());
+            markingResonance.skillCd = 3; Enemy unmarkedTarget = new() { Pos = new PointF(510, 330), Kind = EnemyKind.Grunt, Hp = 1, MaxHp = 100 }; markingResonance.enemies.Add(unmarkedTarget); markingResonance.Defeat(unmarkedTarget);
             if (markingResonance.skillCd != 3) throw new InvalidOperationException("Eco de Retorno adiantou recargas sem abater um inimigo marcado.");
             SaveData markingSave = markingResonance.CaptureSaveData();
             if (!ValidSaveData(markingSave) || markingSave.ArmorTrait != 5 || markingSave.RelicTrait != 5) throw new InvalidOperationException("Os novos traços da Ressonância da Marca não foram aceitos pelo save.");
