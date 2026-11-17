@@ -295,6 +295,7 @@ public sealed partial class Game
         if (HasCharm(12)) effects.Add("Nó do Contratempo: técnicas +20% de dano; recarga +15%");
         if (HasCharm(13)) effects.Add("Sino da Contramaré: abates de ecos marcados adiantam recargas de técnica em 1,5 s");
         if (HasCharm(14)) effects.Add(HasCharmPair(2, 14) ? "Ritmo das Bóias + Fio de Travessia: esquiva de golpe anunciado adianta recargas em 1 s (intervalo: 1,1 s)" : "Ritmo das Bóias: esquivar de golpe anunciado de chefe adianta recargas em 0,8 s (recarga interna: 1,5 s)");
+        if (HasCharm(15)) effects.Add("Eco do Casco: zonas de perigo no chão causam 35% menos dano");
         string effect = effects.Count > 0 ? string.Join(" • ", effects) : "Equipe talismãs para ativar efeitos e sintonias.";
         g.DrawString(effect, effectFont, Brushes.AntiqueWhite, new RectangleF(150, 570, 650, 59));
     }

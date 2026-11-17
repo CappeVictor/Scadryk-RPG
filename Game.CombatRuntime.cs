@@ -19,7 +19,7 @@ public sealed partial class Game
             if (hazard.WarningTime > 0) continue;
             if (hazard.TickCooldown > 0) continue;
             hazard.TickCooldown = 0.85f;
-            if (Distance(player, hazard.Pos) <= hazard.Radius && invulnerable <= 0 && dashTime <= 0) HitPlayer(hazard.Damage);
+            if (Distance(player, hazard.Pos) <= hazard.Radius && invulnerable <= 0 && dashTime <= 0) HitPlayer(hazard.Damage * (HasCharm(15) ? 0.65f : 1f));
         }
     }
 

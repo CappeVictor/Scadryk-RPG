@@ -845,6 +845,22 @@ public sealed partial class Game
             Enemy secondaryFissurer = new() { Pos = new PointF(380, 330), Kind = EnemyKind.Elite, EliteAffix = EliteAffix.Armored, EliteAffix2 = EliteAffix.Fissurer, Hp = 120, MaxHp = 120 };
             if (!HasEliteAffix(secondaryFissurer, EliteAffix.Fissurer) || EnemyName(secondaryFissurer) != "ELITE • BLINDADO + FISSURADOR") throw new InvalidOperationException("O Fissurador não pode surgir como segundo afixo do elite.");
         }
+        using (var hullCharmCheck = new Game())
+        {
+            hullCharmCheck.timer.Stop(); hullCharmCheck.StartGame(); hullCharmCheck.room = 51; hullCharmCheck.ownedCharms = 1;
+            Enemy fissurerReward = new() { Pos = new PointF(480, 330), Kind = EnemyKind.Elite, EliteAffix = EliteAffix.Fissurer, Hp = 1, MaxHp = 120 };
+            hullCharmCheck.enemies.Clear(); hullCharmCheck.enemies.Add(fissurerReward); hullCharmCheck.Defeat(fissurerReward);
+            Drop? hullCharm = hullCharmCheck.drops.FirstOrDefault(drop => drop.Kind == "charm" && drop.Amount == 15);
+            if (hullCharm is null || hullCharmCheck.charmNames[15] != "ECO DO CASCO") throw new InvalidOperationException("O Fissurador da Nave não concedeu o Eco do Casco exclusivo.");
+            hullCharmCheck.Collect(hullCharm);
+            if ((hullCharmCheck.ownedCharms & (1 << 14)) == 0) throw new InvalidOperationException("O Eco do Casco não entrou na coleção ao ser recolhido.");
+            hullCharmCheck.equippedCharm = 15; hullCharmCheck.player = new PointF(400, 330); hullCharmCheck.health = 100;
+            hullCharmCheck.groundHazards.Clear(); hullCharmCheck.groundHazards.Add(new GroundHazard { Pos = hullCharmCheck.player, Radius = 58, TimeLeft = 2, TickCooldown = 0, Damage = 20 });
+            hullCharmCheck.TickGroundHazards(0.01f);
+            SaveData hullCharmSave = hullCharmCheck.CaptureSaveData();
+            if (Math.Abs(hullCharmCheck.health - 87) > 0.01f || !ValidSaveData(hullCharmSave) || hullCharmSave.EquippedCharm != 15 || (hullCharmSave.OwnedCharms & (1 << 14)) == 0)
+                throw new InvalidOperationException("O Eco do Casco não reduziu dano de zona persistente em 35% ou não persistiu no save.");
+        }
         if (EliteWeaponDropRoll(-1) || !EliteWeaponDropRoll(0) || !EliteWeaponDropRoll(34) || EliteWeaponDropRoll(35) || EliteWeaponDropRoll(99)
             || !EliteWeaponDropRoll(99, 2) || !EliteWeaponDropRoll(0, 1) || EliteWeaponDropRoll(99, 1)
             || NextEliteWeaponMisses(0, false) != 1 || NextEliteWeaponMisses(1, false) != 2

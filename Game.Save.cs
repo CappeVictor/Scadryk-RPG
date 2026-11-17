@@ -215,10 +215,10 @@ public sealed partial class Game
             || s.ClearedRooms < 0
             || s.ClearedRooms > 8796093022207L
             || s.Completed && s.Room != 2
-            || s.OwnedCharms is < 0 or > 16383
-            || s.EquippedCharm is < 0 or > 14
-            || s.EquippedCharm2 is < 0 or > 14
-            || s.EquippedCharm3 is < 0 or > 14
+            || s.OwnedCharms is < 0 or > 32767
+            || s.EquippedCharm is < 0 or > 15
+            || s.EquippedCharm2 is < 0 or > 15
+            || s.EquippedCharm3 is < 0 or > 15
             || s.EquippedCharm > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm - 1))) == 0
             || s.EquippedCharm2 > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm2 - 1))) == 0
             || s.EquippedCharm3 > 0 && (s.OwnedCharms & (1 << (s.EquippedCharm3 - 1))) == 0

@@ -172,6 +172,8 @@ public sealed partial class Game
         drops.Add(new Drop { Pos = enemy.Pos, Kind = "gold", Amount = goldDrop }); AddXp(xpReward);
         if (enemy.Kind == EnemyKind.Elite)
         {
+            if (room == 51 && HasEliteAffix(enemy, EliteAffix.Fissurer) && (ownedCharms & (1 << 14)) == 0)
+                drops.Add(new Drop { Pos = Offset(enemy.Pos, -22, -42), Kind = "charm", Amount = 15 });
             drops.Add(new Drop { Pos = Offset(enemy.Pos, 24, -20), Kind = "glass", Amount = Math.Clamp(1 + (room >= 43 ? 4 : room) / 12, 1, 4) });
             if (EliteWeaponDropRoll(random.Next(100), eliteWeaponMisses, vigilActive ? 0 : DifficultyEliteWeaponBonus(difficultyTier)))
             {
