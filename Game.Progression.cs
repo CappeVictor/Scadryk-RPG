@@ -109,6 +109,12 @@ public sealed partial class Game
     private void Defeat(Enemy enemy, int? weaponIndex = null)
     {
         if (!enemies.Remove(enemy)) return;
+        if (room == 52)
+        {
+            for (int i = 0; i < OuterShoalMirrors.Length; i++)
+                if ((outerShoalProgress & (1 << (i + 1))) == 0 && !enemies.Any(other => Distance(other.Pos, OuterShoalMirrors[i]) < 205))
+                    outerShoalProgress |= 1 << (i + 7);
+        }
         if (room == 49 && enemy.NameOverride == "CORO DA MARÉ FALSA" && !saltFrontierBossDefeated)
         {
             saltFrontierBossDefeated = true; gold += 260; AddXp(220); health = maxHealth;
@@ -132,6 +138,11 @@ public sealed partial class Game
                 saltVaultBossDefeated = true; gold += 180; AddXp(120);
                 notice = "CARCEREIRO DERROTADO • +180 OURO • +120 EXP"; noticeTime = 4;
             }
+        }
+        if (room == 52 && enemy.NameOverride == "VIGIA DO LEITO QUIETO" && (outerShoalProgress & 32) == 0)
+        {
+            outerShoalProgress |= 32; gold += 180; AddXp(140); health = Math.Min(maxHealth, health + 40);
+            notice = "VIGIA DO LEITO QUIETO DERROTADO • +180 OURO • +140 EXP"; noticeTime = 4;
         }
         if (ReferenceEquals(lockedTarget, enemy)) lockedTarget = enemies.Where(TargetVisible).OrderBy(candidate => Distance(player, candidate.Pos)).FirstOrDefault();
         TriggerNameRiftBurst(enemy, weaponIndex);
@@ -231,7 +242,7 @@ public sealed partial class Game
         if (enemy.Kind == EnemyKind.LanternRegent && !lanternSignal) { drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "signal" }); drops.Add(new Drop { Pos = Offset(enemy.Pos, 24, 0), Kind = "glass", Amount = 6 }); }
         if (enemy.Kind == EnemyKind.LanternRegent && (ownedCharms & 32) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 0, -26), Kind = "charm", Amount = 6 });
         if (enemy.Kind == EnemyKind.RouteScribe && !routeMemory) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "route" });
-        if (enemy.Kind == EnemyKind.DeepSilence && !silenceMemory) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "silence" });
+        if (enemy.Kind == EnemyKind.DeepSilence && enemy.NameOverride != "VIGIA DO LEITO QUIETO" && !silenceMemory) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "silence" });
         if (enemy.Kind == EnemyKind.BorrowedChorus && !borrowedTrace) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "borrowed" });
         if (enemy.Kind == EnemyKind.BorrowedChorus && (ownedWeapons & 32) == 0) drops.Add(CreateRelicWeaponDrop(Offset(enemy.Pos, 26, 0), 5));
         if (enemy.Kind == EnemyKind.LastTuner && !unstruckTrace) drops.Add(new Drop { Pos = Offset(enemy.Pos, -24, 0), Kind = "unstruck" });

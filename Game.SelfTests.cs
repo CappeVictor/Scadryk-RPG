@@ -2276,8 +2276,42 @@ public sealed partial class Game
                         if (anchorResume.saltFrontierSideProgress != 9 || anchorResume.gold != anchorGold + 220 || anchorTotalXpAfter <= anchorTotalXp || !anchorResume.drops.Any(drop => drop.Kind == "weapon") || !ValidSaveData(anchorResume.CaptureSaveData())) throw new InvalidOperationException("A vitória do Guardião do Lastro não marcou o estágio, concedeu recompensa e saque ou preservou o save.");
                         anchorResume.drops.Clear(); anchorResume.player = SaltFrontierAnchorMarker; anchorResume.Interact();
                         if (anchorResume.saltFrontierSideProgress != 10 || !anchorResume.memoryOverlay || !ValidSaveData(anchorResume.CaptureSaveData())) throw new InvalidOperationException("O marco do baixio não registrou o entalhe após a vitória.");
+                        anchorResume.memoryOverlay = false; anchorResume.player = OuterShoalEntranceFromCoast; anchorResume.Interact();
+                        if (anchorResume.room != 49 || anchorResume.outerShoalLocation || !anchorResume.memoryOverlay) throw new InvalidOperationException("A rota das Ilhas abriu antes do relato do Campo das Âncoras.");
                         int reportGold = anchorResume.gold, reportGlass = anchorResume.tideGlass; anchorResume.memoryOverlay = false; anchorResume.player = SaltFrontierCartographer; anchorResume.Interact();
                         if (anchorResume.saltFrontierSideProgress != 11 || anchorResume.gold != reportGold + 420 || anchorResume.tideGlass != reportGlass + 3 || !ValidSaveData(anchorResume.CaptureSaveData())) throw new InvalidOperationException("Nemi não registrou o Campo das Âncoras ou concedeu a recompensa única da expedição.");
+                        anchorResume.memoryOverlay = false; anchorResume.player = OuterShoalEntranceFromCoast; anchorResume.Interact();
+                        if (anchorResume.room != 52 || !anchorResume.outerShoalLocation || anchorResume.WorldSize() != OuterShoalSize || anchorResume.enemies.Count != 0 || !ValidSaveData(anchorResume.CaptureSaveData())) throw new InvalidOperationException("A rota costeira não abriu as Ilhas do Entrefluxo após o relato de Nemi.");
+                        anchorResume.player = OuterShoalGuide; anchorResume.Interact();
+                        if (anchorResume.outerShoalProgress != 1 || anchorResume.enemies.Count != 9) throw new InvalidOperationException("Maira não iniciou a missão dos três espelhos guardados.");
+                        SaveData shoalSave = anchorResume.CaptureSaveData();
+                        using (var shoalResume = new Game())
+                        {
+                            shoalResume.timer.Stop(); shoalResume.StartGame(); shoalResume.saltFrontierSideProgress = shoalSave.SaltFrontierSideProgress; shoalResume.outerShoalLocation = shoalSave.OuterShoalLocation; shoalResume.outerShoalProgress = shoalSave.OuterShoalProgress; shoalResume.room = shoalSave.Room; shoalResume.SetupRoom();
+                            if (shoalResume.room != 52 || shoalResume.enemies.Count != 9 || !ValidSaveData(shoalSave)) throw new InvalidOperationException("O save não retomou a missão ativa nas Ilhas do Entrefluxo.");
+                            shoalResume.player = OuterShoalMirrors[0];
+                            Enemy[] firstShoalGroup = shoalResume.enemies.Where(enemy => Distance(enemy.Pos, OuterShoalMirrors[0]) < 205).ToArray();
+                            foreach (Enemy guard in firstShoalGroup) shoalResume.Defeat(guard);
+                            if (firstShoalGroup.Length != 3 || (shoalResume.outerShoalProgress & (1 << 7)) == 0 || shoalResume.enemies.Count != 6) throw new InvalidOperationException("A limpeza do primeiro espelho não persistiu seu encontro nem isolou os demais guardiões.");
+                            shoalResume.drops.Clear(); shoalResume.memoryOverlay = false; shoalResume.Interact();
+                            if ((shoalResume.outerShoalProgress & 2) == 0 || !ValidSaveData(shoalResume.CaptureSaveData())) throw new InvalidOperationException("O primeiro espelho não registrou a nota após a limpeza dos guardiões.");
+                            for (int i = 1; i < OuterShoalMirrors.Length; i++)
+                            {
+                                shoalResume.player = OuterShoalMirrors[i];
+                                foreach (Enemy guard in shoalResume.enemies.Where(enemy => Distance(enemy.Pos, OuterShoalMirrors[i]) < 205).ToArray()) shoalResume.Defeat(guard);
+                                shoalResume.drops.Clear(); shoalResume.memoryOverlay = false; shoalResume.Interact();
+                            }
+                            if ((shoalResume.outerShoalProgress & 14) != 14 || shoalResume.enemies.Count != 0 || !ValidSaveData(shoalResume.CaptureSaveData())) throw new InvalidOperationException("Os três espelhos não registraram suas notas ou os encontros limpos não foram persistidos.");
+                            shoalResume.player = OuterShoalHeart; shoalResume.memoryOverlay = false; shoalResume.Interact();
+                            Enemy shoalBoss = shoalResume.enemies.SingleOrDefault(enemy => enemy.NameOverride == "VIGIA DO LEITO QUIETO") ?? throw new InvalidOperationException("O marco não despertou o Vigia do Leito Quieto após os três espelhos.");
+                            shoalBoss.Hp = 1; shoalResume.Defeat(shoalBoss);
+                            if ((shoalResume.outerShoalProgress & 32) == 0 || shoalResume.drops.Any(drop => drop.Kind == "silence")) throw new InvalidOperationException("O chefe opcional não concluiu a missão corretamente ou deixou cair uma memória da campanha.");
+                            shoalResume.drops.Clear(); shoalResume.player = OuterShoalGuide; shoalResume.memoryOverlay = false; int shoalGold = shoalResume.gold; shoalResume.Interact();
+                            if ((shoalResume.outerShoalProgress & 64) == 0 || shoalResume.gold != shoalGold + 360 || !ValidSaveData(shoalResume.CaptureSaveData())) throw new InvalidOperationException("Maira não concluiu a missão com a recompensa única e progresso válido.");
+                            shoalResume.player = OuterShoalEntrance; shoalResume.memoryOverlay = false; shoalResume.Interact();
+                            SaveData shoalReturn = shoalResume.CaptureSaveData();
+                            if (shoalResume.room != 49 || shoalResume.outerShoalLocation || !shoalResume.saltFrontierReturnLocation || !shoalReturn.SaltFrontierLocation || !ValidSaveData(shoalReturn)) throw new InvalidOperationException("A saída das ilhas não retornou à costa com localização de save e missão concluída.");
+                        }
                     }
                 }
                 using (var frontierResume = new Game())

@@ -152,6 +152,13 @@ public sealed partial class Game
     {
         Drop? weaponDrop = drops.Where(drop => drop.Kind == "weapon" && Distance(player, drop.Pos) <= 75).OrderBy(drop => Distance(player, drop.Pos)).FirstOrDefault();
         if (weaponDrop is not null) { GameAudio.Play(GameAudio.Cue.Loot); Collect(weaponDrop); return; }
+        if (Distance(player, OuterShoalEntranceFromCoast) < 115)
+        {
+            if (saltFrontierSideProgress < 11) { ShowMemory("ILHAS DO ENTREFLUXO", "Nemi ainda não registrou a passagem pelo Campo das Âncoras. Conclua o relato no observatório para abrir esta travessia."); return; }
+            if (drops.Count > 0) { notice = "RECOLHA O SAQUE ANTES DE ATRAVESSAR"; noticeTime = 2; return; }
+            StoreSaltFrontierOutside(); saltFrontierReturnLocation = false; outerShoalLocation = true; room = 52; SetupRoom();
+            ShowMemory("ILHAS DO ENTREFLUXO", "A corrente baixa revela três ilhas de basalto entre a costa e o mar aberto. Um cais raso permanece habitado, e espelhos de pedra devolvem notas sob a água."); return;
+        }
         if (Distance(player, SaltFrontierEntrance) < 105)
         {
             if (drops.Count > 0) { notice = "RECOLHA TODO O SAQUE ANTES DE VOLTAR À BACIA"; noticeTime = 2.2f; return; }
@@ -307,6 +314,8 @@ public sealed partial class Game
         if (saltFrontierSideProgress == 8) return "OPCIONAL: DERROTE O GUARDIÃO DO LASTRO";
         if (saltFrontierSideProgress == 9) return "OPCIONAL: EXAMINE O MARCO DO BAIXIO";
         if (saltFrontierSideProgress == 10) return "OPCIONAL: LEVE O ENTALHE A NEMI";
+        if (saltFrontierSideProgress == 11 && outerShoalProgress == 0) return "OPCIONAL: SIGA AO EXTREMO SUDESTE PARA AS ILHAS DO ENTREFLUXO";
+        if (saltFrontierSideProgress == 11 && (outerShoalProgress & 64) == 0) return "OPCIONAL: RETORNE ÀS ILHAS E LEVE O COMPASSO A MAIRA";
         return "COSTA DAS BADALADAS • ROTAS REGISTRADAS • EXPLORAÇÃO LIVRE";
     }
 
@@ -364,6 +373,14 @@ public sealed partial class Game
             new[] { SaltFrontierCartographer, new PointF(2140, 760), SaltFrontierTideBells[1], new PointF(3000, 790), SaltFrontierTideBells[2] }
         };
         foreach (PointF[] path in paths) { g.DrawLines(road, path); g.DrawLines(trail, path); }
+        if (saltFrontierSideProgress >= 11)
+        {
+            PointF[] outerPath = { SaltFrontierAnchorMarker, new(3740, 2780), OuterShoalEntranceFromCoast };
+            g.DrawLines(road, outerPath); g.DrawLines(trail, outerPath);
+            g.DrawEllipse(rim, OuterShoalEntranceFromCoast.X - 42, OuterShoalEntranceFromCoast.Y - 30, 84, 60);
+            g.DrawString("ILHAS DO ENTREFLUXO", flowFont, flowInk, OuterShoalEntranceFromCoast.X - 112, OuterShoalEntranceFromCoast.Y + 32);
+            if (Distance(player, OuterShoalEntranceFromCoast) < 135) g.DrawString("E  ATRAVESSAR", flowFont, flowInk, OuterShoalEntranceFromCoast.X - 58, OuterShoalEntranceFromCoast.Y + 52);
+        }
         using var labelFont = new Font("Segoe UI", 14, FontStyle.Bold);
         using var smallFont = new Font("Segoe UI", 10, FontStyle.Bold);
         using var ink = new SolidBrush(Color.FromArgb(231, 224, 198));
@@ -514,6 +531,13 @@ public sealed partial class Game
         if (saltFrontierBossDefeated) g.DrawLines(line, new[] { new PointF(3000, 790), new PointF(3400, 760), SaltFrontierTeren, new PointF(3770, 520), SaltFrontierWreck }.Select(Map).ToArray());
         if (saltFrontierSideProgress >= 4) g.DrawLines(line, new[] { SaltFrontierTideBells[2], new PointF(3430, 1920), SaltFrontierBuoys }.Select(Map).ToArray());
         if (saltFrontierSideProgress >= 6) g.DrawLines(line, new[] { SaltFrontierTideBells[1], new PointF(2210, 1780), new PointF(2370, 2230), SaltFrontierOrva, new PointF(3130, 2660), SaltFrontierAnchorMarker }.Select(Map).ToArray());
+        if (saltFrontierSideProgress >= 11)
+        {
+            PointF outer = Map(OuterShoalEntranceFromCoast);
+            g.DrawLines(line, new[] { SaltFrontierAnchorMarker, new PointF(3740, 2780), OuterShoalEntranceFromCoast }.Select(Map).ToArray());
+            g.FillEllipse(outerShoalProgress == 0 ? Brushes.Goldenrod : Brushes.LightGreen, outer.X - 6, outer.Y - 6, 12, 12);
+            g.DrawString("ILHAS", font, Brushes.AntiqueWhite, outer.X - 22, outer.Y - 20);
+        }
         if ((saltFrontierProgress & 31) == 31) g.DrawLines(line, new[] { SaltFrontierTideBells[2], new PointF(3750, 1770), SaltFrontierBellheart }.Select(Map).ToArray());
         PointF[] positions = { SaltFrontierEntrance, SaltFrontierCartographer, SaltFrontierTideBells[0], SaltFrontierTideBells[1], SaltFrontierTideBells[2], SaltFrontierBellheart, SaltFrontierTeren, SaltFrontierWreck, SaltFrontierBuoys, SaltFrontierCache, SaltFrontierOrva, SaltFrontierAnchorMarker };
         string[] names = { "BACIA", "NEMI", "BASALTO", "JUNCAL", "COSTA", "CORAÇÃO", "TEREN", "DESTROÇO", "BÓIAS", "ESTOJO", "ORVA", "LASTRO" };
