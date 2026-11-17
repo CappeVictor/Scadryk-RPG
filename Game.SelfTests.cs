@@ -860,6 +860,12 @@ public sealed partial class Game
             SaveData hullCharmSave = hullCharmCheck.CaptureSaveData();
             if (Math.Abs(hullCharmCheck.health - 87) > 0.01f || !ValidSaveData(hullCharmSave) || hullCharmSave.EquippedCharm != 15 || (hullCharmSave.OwnedCharms & (1 << 14)) == 0)
                 throw new InvalidOperationException("O Eco do Casco não reduziu dano de zona persistente em 35% ou não persistiu no save.");
+            hullCharmCheck.equippedCharm2 = 2; hullCharmCheck.health = 100; hullCharmCheck.invulnerable = 0; hullCharmCheck.dashTime = 0.1f;
+            hullCharmCheck.skillCd = hullCharmCheck.shardCd = hullCharmCheck.bellCd = hullCharmCheck.pullCd = 4;
+            hullCharmCheck.groundHazards.Clear(); hullCharmCheck.groundHazards.Add(new GroundHazard { Pos = hullCharmCheck.player, Radius = 58, TimeLeft = 2, TickCooldown = 0, Damage = 20 });
+            hullCharmCheck.TickGroundHazards(0.01f);
+            if (Math.Abs(hullCharmCheck.skillCd - 3.4f) > 0.01f || Math.Abs(hullCharmCheck.shardCd - 3.4f) > 0.01f || hullCharmCheck.hullResonanceCooldown < 2.4f)
+                throw new InvalidOperationException("A sintonia Eco do Casco + Fio de Travessia não recompensou a esquiva dentro de uma fenda.");
         }
         if (EliteWeaponDropRoll(-1) || !EliteWeaponDropRoll(0) || !EliteWeaponDropRoll(34) || EliteWeaponDropRoll(35) || EliteWeaponDropRoll(99)
             || !EliteWeaponDropRoll(99, 2) || !EliteWeaponDropRoll(0, 1) || EliteWeaponDropRoll(99, 1)

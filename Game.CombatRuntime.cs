@@ -12,11 +12,17 @@ public sealed partial class Game
 
     private void TickGroundHazards(float dt)
     {
+        hullResonanceCooldown = Math.Max(0, hullResonanceCooldown - dt);
         for (int i = groundHazards.Count - 1; i >= 0; i--)
         {
             GroundHazard hazard = groundHazards[i]; hazard.TimeLeft -= dt; hazard.WarningTime = Math.Max(0, hazard.WarningTime - dt); hazard.TickCooldown -= dt;
             if (hazard.TimeLeft <= 0) { groundHazards.RemoveAt(i); continue; }
             if (hazard.WarningTime > 0) continue;
+            if (HasCharmPair(2, 15) && dashTime > 0 && hullResonanceCooldown <= 0 && Distance(player, hazard.Pos) <= hazard.Radius)
+            {
+                hullResonanceCooldown = 2.5f; AdvanceTechniqueCooldowns(0.6f);
+                AddFloatingText(new PointF(player.X, player.Y - 56), "RESSONÂNCIA DO CASCO −0,6 S", Color.LightCyan);
+            }
             if (hazard.TickCooldown > 0) continue;
             hazard.TickCooldown = 0.85f;
             if (Distance(player, hazard.Pos) <= hazard.Radius && invulnerable <= 0 && dashTime <= 0) HitPlayer(hazard.Damage * (HasCharm(15) ? 0.65f : 1f));

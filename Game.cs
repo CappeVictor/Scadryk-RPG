@@ -216,7 +216,7 @@ public sealed partial class Game : Form
     private float playerAnimationTime;
     private int room, level = 1, xp, gold, potions = 2, damage = 25, weapon, ownedWeapons = 1, difficultyTier;
     private HeroClass heroClass;
-    private float stoneFury, nameThread, fordRoute, fordBurstTime, fordBurstDuration, fordBurstRadius, fordShortcutCd, screenShakeTime, screenShakeStrength, screenShakePhase, hitStopTime, buoyRhythmCooldown;
+    private float stoneFury, nameThread, fordRoute, fordBurstTime, fordBurstDuration, fordBurstRadius, fordShortcutCd, screenShakeTime, screenShakeStrength, screenShakePhase, hitStopTime, buoyRhythmCooldown, hullResonanceCooldown;
     private PointF fordBurstPosition;
     private int armorTrait, relicTrait;
     private bool tideBoots, tideBootsOn;
@@ -325,7 +325,7 @@ public sealed partial class Game : Form
         clearedRooms = 0;
         ownedCharms = equippedCharm = equippedCharm2 = equippedCharm3 = 0;
         equippedSkills = new[] { 1, 0, 0, 0 }; alternateSkills = new int[4]; alternateSkillsActive = skillMenuAlternate = false; Array.Clear(skillVariants); skillMenuOpen = false; skillMenuSlot = 0;
-        health = maxHealth = 100; attackCd = attackFlash = skillCd = shardCd = bellCd = bellWaveTime = bellWaveRadius = pullCd = pullWaveTime = wardCd = wardTime = refrainCd = refrainWaveTime = refrainWaveRadius = beaconCd = beaconTime = beaconPulseCd = beaconWaveTime = returnVoiceCd = returnVoiceWaveTime = returnVoiceWaveRadius = finalStrikeCd = finalStrikeFlash = stoneBastionCd = stoneBastionTime = nameWeaverCd = listenerMarkCd = fordShortcutCd = dashCd = dashTime = invulnerable = veinResonanceTime = stoneFury = nameThread = fordRoute = fordBurstTime = fordBurstDuration = fordBurstRadius = screenShakeTime = screenShakeStrength = screenShakePhase = hitStopTime = buoyRhythmCooldown = 0; vigilMinionCooldown = vigilTideTime = vigilHazardCooldown = 0; beaconPos = finalStrikeTarget = rangedAttackTarget = fordBurstPosition = PointF.Empty; facing = mouseAim = dashDirection = new PointF(1, 0); playerAnimationTime = 0; echoShards.Clear(); floatingTexts.Clear(); title = false; storyPage = 0; storyOverlay = true; SetupRoom();
+        health = maxHealth = 100; attackCd = attackFlash = skillCd = shardCd = bellCd = bellWaveTime = bellWaveRadius = pullCd = pullWaveTime = wardCd = wardTime = refrainCd = refrainWaveTime = refrainWaveRadius = beaconCd = beaconTime = beaconPulseCd = beaconWaveTime = returnVoiceCd = returnVoiceWaveTime = returnVoiceWaveRadius = finalStrikeCd = finalStrikeFlash = stoneBastionCd = stoneBastionTime = nameWeaverCd = listenerMarkCd = fordShortcutCd = dashCd = dashTime = invulnerable = veinResonanceTime = stoneFury = nameThread = fordRoute = fordBurstTime = fordBurstDuration = fordBurstRadius = screenShakeTime = screenShakeStrength = screenShakePhase = hitStopTime = buoyRhythmCooldown = hullResonanceCooldown = 0; vigilMinionCooldown = vigilTideTime = vigilHazardCooldown = 0; beaconPos = finalStrikeTarget = rangedAttackTarget = fordBurstPosition = PointF.Empty; facing = mouseAim = dashDirection = new PointF(1, 0); playerAnimationTime = 0; echoShards.Clear(); floatingTexts.Clear(); title = false; storyPage = 0; storyOverlay = true; SetupRoom();
     }
 
     private void AdvanceStory()
