@@ -317,7 +317,7 @@ public sealed partial class Game : Form
         armorTrait = relicTrait = tideBootsAspect = 0;
         dashAttackTime = 0;
         borrowedTrace = unstruckTrace = false;
-        firstEchoQuest = firstEchoDiscovered = 0; firstEchoCaveFound = firstEchoReedCache = false; firstEchoOutsideStored = false; firstEchoWaitingEnemies.Clear(); firstEchoWaitingDrops.Clear(); saltVaultReliquaryCleared = saltVaultDeepNaveLocation = saltVaultDeepNaveCleared = false; saltFrontierReturnLocation = saltFrontierBossAwakened = saltFrontierBossDefeated = saltFrontierWardenDefeated = saltFrontierOutsideStored = false; saltFrontierSideProgress = 0; saltFrontierWaitingEnemies.Clear(); saltFrontierWaitingDrops.Clear(); outerShoalLocation = false; outerShoalProgress = 0;
+        firstEchoQuest = firstEchoDiscovered = 0; firstEchoCaveFound = firstEchoReedCache = false; firstEchoOutsideStored = false; firstEchoWaitingEnemies.Clear(); firstEchoWaitingDrops.Clear(); saltVaultReliquaryCleared = saltVaultDeepNaveLocation = saltVaultDeepNaveCleared = false; saltFrontierReturnLocation = saltFrontierBossAwakened = saltFrontierBossDefeated = saltFrontierWardenDefeated = saltFrontierOutsideStored = false; saltFrontierSideProgress = 0; saltFrontierWaitingEnemies.Clear(); saltFrontierWaitingDrops.Clear(); outerShoalLocation = false; outerShoalProgress = outerShoalCaveProgress = 0;
         finalEnding = 0;
         vigilBestFloor = vigilFloor = 0;
         townEnding = 0;

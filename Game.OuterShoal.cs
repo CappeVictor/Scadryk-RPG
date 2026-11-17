@@ -6,12 +6,17 @@ public sealed partial class Game
 {
     private bool outerShoalLocation;
     private int outerShoalProgress;
-    private static readonly SizeF OuterShoalSize = new(4200, 2800);
+    private int outerShoalCaveProgress;
+    private static readonly SizeF OuterShoalSize = new(5000, 3000);
     private static readonly PointF OuterShoalEntrance = new(165, 1320);
     private static readonly PointF OuterShoalEntranceFromCoast = new(4050, 2840);
     private static readonly PointF OuterShoalGuide = new(790, 1300);
     private static readonly PointF[] OuterShoalMirrors = { new(1120, 630), new(2380, 470), new(3160, 1740) };
     private static readonly PointF OuterShoalHeart = new(3710, 2100);
+    private static readonly PointF OuterShoalCaveGuide = new(4160, 1510);
+    private static readonly PointF OuterShoalCaveInterior = new(4335, 1510);
+    private static readonly PointF OuterShoalCaveGuardCenter = new(4500, 1510);
+    private static readonly PointF OuterShoalCaveAltar = new(4740, 1510);
     private static readonly RectangleF[] OuterShoalChannels = { new(1430, 480, 610, 220), new(2470, 1020, 590, 220) };
     private static readonly RectangleF[] OuterShoalWalls =
     {
@@ -19,11 +24,42 @@ public sealed partial class Game
         new(2720, 980, 235, 140), new(3520, 1470, 190, 160), new(760, 2080, 240, 125),
         new(2100, 2060, 270, 145)
     };
+    private static readonly RectangleF[] OuterShoalCaveWalls =
+    {
+        new(4200, 900, 800, 90), new(4200, 1960, 800, 90), new(4900, 900, 100, 1160),
+        new(4200, 990, 90, 390), new(4200, 1650, 90, 310), new(4370, 1160, 100, 75),
+        new(4610, 1755, 155, 80), new(4800, 1170, 70, 130)
+    };
+    private static readonly RectangleF[] OuterShoalOpenWalls = OuterShoalWalls.Concat(OuterShoalCaveWalls).ToArray();
+    private static readonly RectangleF[] OuterShoalSealedWalls = OuterShoalOpenWalls.Append(new RectangleF(4200, 1370, 100, 280)).ToArray();
+    private RectangleF[] OuterShoalCurrentWalls() => outerShoalCaveProgress >= 2 ? OuterShoalOpenWalls : OuterShoalSealedWalls;
 
     private void SetupOuterShoal()
     {
         player = OuterShoalEntrance;
         SpawnOuterShoalGuards();
+        SpawnOuterShoalCaveEncounters();
+    }
+
+    private void SpawnOuterShoalCaveEncounters()
+    {
+        if (outerShoalCaveProgress is 1 or 3)
+        {
+            (PointF Pos, EnemyKind Kind)[] guards = outerShoalCaveProgress == 1
+                ? new[] { (new PointF(3955, 1415), EnemyKind.SaltEcho), (new PointF(4050, 1435), EnemyKind.Mage), (new PointF(3995, 1570), EnemyKind.Elite) }
+                : new[] { (new PointF(4420, 1320), EnemyKind.NameMoth), (new PointF(4605, 1450), EnemyKind.Archer), (new PointF(4455, 1740), EnemyKind.SaltEcho) };
+            foreach (var (pos, kind) in guards)
+            {
+                float hp = EnemyData(kind).HealthAt(53, townEnding) * DifficultyEnemyHealthMultiplier(difficultyTier) * 1.2f;
+                EliteAffix affix = kind == EnemyKind.Elite ? EliteAffixForRoll(random.Next(7)) : EliteAffix.Armored;
+                enemies.Add(new Enemy { Pos = pos, Kind = kind, Hp = hp, MaxHp = hp, Cooldown = 0.8f + (float)random.NextDouble(), SummonCooldown = 5.5f, SupportCooldown = 3, EliteAffix = affix });
+            }
+        }
+        if (outerShoalCaveProgress == 5)
+        {
+            float hp = EnemyData(EnemyKind.SaltJailer).HealthAt(53, townEnding) * DifficultyEnemyHealthMultiplier(difficultyTier) * 1.35f;
+            enemies.Add(new Enemy { Pos = OuterShoalCaveAltar, Kind = EnemyKind.SaltJailer, NameOverride = "CANTOR DAS POÇAS SURDAS", Hp = hp, MaxHp = hp, Cooldown = 1.25f, SummonCooldown = 5.5f, SupportCooldown = 2.8f });
+        }
     }
 
     private static PointF OuterShoalCurrentAt(PointF position, float phase, bool bootsReduceCurrent)
@@ -87,8 +123,36 @@ public sealed partial class Game
                 outerShoalProgress |= 64; gold += 360; AddXp(280); tideGlass = Math.Min(999, tideGlass + 3); potions++;
                 ShowMemory("O LEITO DEVOLVE A PASSAGEM", "Maira registra as três notas como aviso de profundidade, não como ordem de viagem. A passagem fica aberta para qualquer barco que precise esperar a maré. Você recebe 360 de ouro, 280 de experiência, 3 sais vítreos e uma poção.");
             }
+            else if ((outerShoalProgress & 64) != 0 && outerShoalCaveProgress == 0)
+            {
+                outerShoalCaveProgress = 1; SpawnOuterShoalCaveEncounters();
+                ShowMemory("A GRUTA DA CORRENTE MORTA", "Quando o Vigia caiu, Maira ouviu um pulso sob o basalto. Uma gruta a leste guarda uma câmara que não acompanha a maré. Os ecos já se reuniram no caminho; limpe a entrada e descubra o que mantém o veio parado.");
+            }
+            else if (outerShoalCaveProgress is 1 or 3) ShowMemory("A GRUTA DA CORRENTE MORTA", "Os guardiões ainda ocupam a passagem. Limpe a entrada e, depois, o interior da gruta antes de tocar o altar.");
+            else if (outerShoalCaveProgress == 2) ShowMemory("A GRUTA DA CORRENTE MORTA", "A sentinela externa caiu. O vão entre as pedras está livre; atravesse a abertura e siga até o altar no fundo.");
+            else if (outerShoalCaveProgress == 4) ShowMemory("ALTAR DO VEIO PARADO", "A câmara está limpa. Pressione E junto ao altar para despertar o Cantor das Poças Surdas.");
+            else if (outerShoalCaveProgress == 5) ShowMemory("CANTOR DAS POÇAS SURDAS", "A luta ainda ecoa no fundo da gruta. Aguarde a pausa entre as ondas e ataque quando o anel de basalto se abrir.");
+            else if (outerShoalCaveProgress == 6)
+            {
+                outerShoalCaveProgress = 7; gold += 420; AddXp(300); tideGlass = Math.Min(999, tideGlass + 5); potions++; health = maxHealth;
+                ShowMemory("A CÂMARA RESPIRA", "O altar solta o veio que mantinha a gruta imóvel. Maira registra a câmara como um abrigo de maré, e a comunidade oferece 420 de ouro, 300 de experiência, 5 sais vítreos e uma poção. A passagem permanece aberta para exploração.");
+            }
+            else if (outerShoalCaveProgress == 7) ShowMemory("GRUTA DA CORRENTE MORTA", "A corrente interior voltou a correr. Maira deixa a passagem aberta como abrigo; o altar não desperta o Cantor outra vez.");
             else if ((outerShoalProgress & 64) != 0) ShowMemory("CAIS RASO DAS ILHAS", "Os espelhos seguem audíveis quando a água recua. Maira deixa a travessia aberta para quem escolher voltar às ilhas.");
             else ShowMemory("MAIRA, GUARDIÃ DO CAIS RASO", $"Espelhos registrados: {System.Numerics.BitOperations.PopCount((uint)(outerShoalProgress & 14))}/3. Limpe os ecos em cada margem antes de tocar a pedra.");
+            return;
+        }
+        if (Distance(player, OuterShoalCaveGuide) < 115)
+        {
+            if (outerShoalCaveProgress == 0) ShowMemory("FENDA SOB O BASALTO", "A abertura está selada por pressão. Maira talvez reconheça o pulso que vem de dentro.");
+            else if (outerShoalCaveProgress == 1) ShowMemory("VÃO DA GRUTA", "Os ecos ainda guardam a entrada. Derrote-os para liberar a passagem.");
+            else if (outerShoalCaveProgress == 2)
+            {
+                outerShoalCaveProgress = 3; player = OuterShoalCaveInterior; SpawnOuterShoalCaveEncounters();
+                ShowMemory("CÂMARA DAS POÇAS SURDAS", "O som da maré desaparece atrás das pedras. Três ecos protegem o altar de basalto ao fundo.");
+            }
+            else if (outerShoalCaveProgress == 4) { player = OuterShoalCaveInterior; ShowMemory("CÂMARA DAS POÇAS SURDAS", "O caminho está livre. O altar profundo aguarda uma interação para despertar o Cantor."); }
+            else ShowMemory("VÃO DA GRUTA", "A abertura leva à câmara que Maira mantém marcada no mapa das ilhas.");
             return;
         }
         for (int i = 0; i < OuterShoalMirrors.Length; i++)
@@ -117,20 +181,38 @@ public sealed partial class Game
                 ShowMemory("O VIGIA DO LEITO QUIETO", "As três notas abrem uma fenda entre os bancos de basalto. O Vigia ergue a corrente contra você. Saia da marca, atravesse as ondas e ataque durante a pausa."); return;
             }
         }
+        if (Distance(player, OuterShoalCaveAltar) < 115)
+        {
+            if (outerShoalCaveProgress == 4)
+            {
+                if (enemies.Count > 0 || drops.Count > 0) { ShowMemory("ALTAR DO VEIO PARADO", "Recolha o saque e afaste os ecos da câmara antes de tocar o altar."); return; }
+                outerShoalCaveProgress = 5; SpawnOuterShoalCaveEncounters();
+                ShowMemory("O CANTOR DAS POÇAS SURDAS", "O altar conserva o ritmo sem corrente. O Cantor ergue ondas circulares e cortes que atravessam a câmara; saia dos anéis, avance durante a pausa e ataque de lado."); return;
+            }
+            if (outerShoalCaveProgress == 5) ShowMemory("ALTAR DO VEIO PARADO", "O Cantor ainda protege a câmara.");
+            else if (outerShoalCaveProgress >= 6) ShowMemory("ALTAR DO VEIO PARADO", "As poças voltaram a acompanhar a maré. Nenhum outro eco responde ao altar.");
+            else ShowMemory("ALTAR DO VEIO PARADO", "Maira precisa abrir a trilha e os ecos da câmara precisam ser derrotados primeiro.");
+            return;
+        }
     }
 
     private string OuterShoalObjective()
     {
+        if ((outerShoalProgress & 64) != 0 && outerShoalCaveProgress is > 0 and < 7) return outerShoalCaveProgress switch { 1 => "OPCIONAL: LIMPE OS GUARDIÕES DIANTE DA GRUTA", 2 => "OPCIONAL: ATRAVESSE O VÃO NO EXTREMO LESTE", 3 => "OPCIONAL: LIMPE A CÂMARA DAS POÇAS SURDAS", 4 => "OPCIONAL: DESPERTE O CANTOR NO ALTAR", 5 => "OPCIONAL: DERROTE O CANTOR DAS POÇAS SURDAS", _ => "OPCIONAL: RELATE A CÂMARA A MAIRA" };
         if (outerShoalProgress == 0) return "OBJETIVO: FALE COM MAIRA NO CAIS RASO";
         if ((outerShoalProgress & 14) != 14) return $"OBJETIVO: LIMPE AS MARGENS E REGISTRE OS ESPELHOS • {System.Numerics.BitOperations.PopCount((uint)(outerShoalProgress & 14))}/3";
         if ((outerShoalProgress & 32) == 0) return "OBJETIVO: DESPERTE O VIGIA NO LEITO QUIETO";
         if ((outerShoalProgress & 64) == 0) return "OBJETIVO: LEVE O COMPASSO DE VOLTA A MAIRA";
+        if ((outerShoalProgress & 64) != 0 && outerShoalCaveProgress == 0) return "OPCIONAL: FALE COM MAIRA SOBRE O PULSO SOB O BASALTO";
         return "ILHAS DO ENTREFLUXO • PASSAGEM ABERTA • EXPLORAÇÃO LIVRE";
     }
 
     private string OuterShoalJournalStatus()
     {
-        if ((outerShoalProgress & 64) != 0) return "Maira registrou o compasso; retorno à Costa aberto";
+        if (outerShoalCaveProgress == 7) return "Gruta registrada; altar silenciado e passagem aberta";
+        if (outerShoalCaveProgress == 6) return "Cantor derrotado; leve o relato a Maira";
+        if (outerShoalCaveProgress is > 0 and < 6) return $"Gruta da Corrente Morta • etapa {outerShoalCaveProgress}/5";
+        if ((outerShoalProgress & 64) != 0) return "Maira ouviu outro pulso; fale com ela sobre a fenda";
         if ((outerShoalProgress & 32) != 0) return "Vigia derrotado; volte a Maira no cais raso";
         if ((outerShoalProgress & 14) == 14) return "Três notas registradas; desperte o Vigia";
         if (outerShoalProgress == 0) return "Nova rota; fale com Maira para começar";
@@ -145,6 +227,9 @@ public sealed partial class Game
         using var rim = new Pen(Color.FromArgb(158, 166, 145, 105), 4);
         using var waterline = new Pen(Color.FromArgb(110, 129, 205, 199), 3) { DashStyle = DashStyle.Dash };
         using var currentLine = new Pen(Color.FromArgb(180, 151, 224, 220), 4);
+        using var caveGround = new SolidBrush(Color.FromArgb(29, 39, 42));
+        using var caveShade = new SolidBrush(Color.FromArgb(48, 12, 18, 21));
+        using var caveRim = new Pen(Color.FromArgb(173, 126, 150, 137), 7);
         using var title = new Font("Georgia", 15, FontStyle.Bold);
         using var small = new Font("Segoe UI", 10, FontStyle.Bold);
         using var ink = new SolidBrush(Color.FromArgb(235, 229, 207));
@@ -175,6 +260,11 @@ public sealed partial class Game
             g.FillEllipse(stone, wall.X - 16, wall.Y - 10, wall.Width + 32, wall.Height + 20);
             g.DrawEllipse(rim, wall.X - 16, wall.Y - 10, wall.Width + 32, wall.Height + 20);
         }
+        PointF[] caveShape = { new(4200, 990), new(4930, 1020), new(4880, 1240), new(4970, 1470), new(4860, 1800), new(4920, 1950), new(4200, 1960) };
+        g.FillPolygon(caveGround, caveShape); g.DrawPolygon(caveRim, caveShape);
+        g.FillEllipse(caveShade, 4260, 1100, 250, 180); g.FillEllipse(caveShade, 4520, 1680, 265, 170); g.FillEllipse(caveShade, 4760, 1240, 130, 230);
+        for (int i = 0; i < 9; i++) { float x = 4320 + i * 67; g.DrawLine(caveRim, x, 1050 + (i % 3) * 14, x + 22, 1110 + (i % 3) * 14); }
+        g.DrawString("GRUTA DA CORRENTE MORTA", small, ink, 4300, 1080);
         g.DrawString("ILHAS DO ENTREFLUXO", title, ink, 1650, 135);
         g.DrawString(currentEast ? "MARÉ • CORRENTE PARA LESTE / NORTE" : "MARÉ • CORRENTE PARA OESTE / SUL", small, ink, 1640, 170);
         for (int i = 0; i < OuterShoalMirrors.Length; i++)
@@ -192,6 +282,8 @@ public sealed partial class Game
         if (Distance(player, OuterShoalEntrance) < 120) g.DrawString("E  VOLTAR À COSTA", small, ink, 80, 1375);
         if (Distance(player, OuterShoalGuide) < InteractionRadius) g.DrawString("E  FALAR", small, ink, OuterShoalGuide.X - 35, OuterShoalGuide.Y + 43);
         if (Distance(player, OuterShoalHeart) < 115 && (outerShoalProgress & 14) == 14 && (outerShoalProgress & 32) == 0) g.DrawString("E  DESPERTAR O VIGIA", small, ink, OuterShoalHeart.X - 80, OuterShoalHeart.Y + 104);
+        if (outerShoalCaveProgress > 0 && Distance(player, OuterShoalCaveGuide) < InteractionRadius) g.DrawString("E  ATRAVESSAR A GRUTA", small, ink, OuterShoalCaveGuide.X - 95, OuterShoalCaveGuide.Y + 65);
+        if (outerShoalCaveProgress is 4 or 5 && Distance(player, OuterShoalCaveAltar) < InteractionRadius) g.DrawString("E  TOCAR O ALTAR", small, ink, OuterShoalCaveAltar.X - 66, OuterShoalCaveAltar.Y + 58);
     }
 
     private void DrawOuterShoalMap(Graphics g)
@@ -204,7 +296,7 @@ public sealed partial class Game
         using var title = new Font("Georgia", 17, FontStyle.Bold);
         g.FillRectangle(shade, 0, 0, 960, 640); g.FillRectangle(panel, 46, 105, 868, 485); g.DrawRectangle(Pens.DarkGoldenrod, 46, 105, 868, 485);
         DrawCentered(g, "ILHAS DO ENTREFLUXO", 125, title, Color.Goldenrod);
-        PointF Map(PointF p) => new(100 + p.X * 0.18f, 174 + p.Y * 0.15f);
+        PointF Map(PointF p) => new(100 + p.X * 0.15f, 174 + p.Y * 0.15f);
         PointF[] path = { OuterShoalEntrance, new(520, 1240), OuterShoalGuide, new(1450, 920), OuterShoalMirrors[0], new(1750, 520), OuterShoalMirrors[1], new(2860, 960), OuterShoalMirrors[2], new(3500, 1900), OuterShoalHeart };
         g.DrawLines(line, path.Select(Map).ToArray());
         g.DrawLine(thin, Map(new PointF(400, 1000)), Map(new PointF(780, 1540)));
@@ -217,6 +309,13 @@ public sealed partial class Game
             PointF p = Map(marks[i]); bool done = i is 2 or 3 or 4 ? (outerShoalProgress & (1 << (i - 1))) != 0 : i == 5 && (outerShoalProgress & 32) != 0;
             g.FillEllipse(i == 0 ? Brushes.LightCyan : done ? Brushes.SlateGray : i == 5 && (outerShoalProgress & 14) == 14 ? Brushes.IndianRed : Brushes.Goldenrod, p.X - 7, p.Y - 7, 14, 14);
             g.DrawString(labels[i], font, Brushes.AntiqueWhite, p.X - 36, p.Y + 10);
+        }
+        if ((outerShoalProgress & 64) != 0)
+        {
+            PointF cave = Map(OuterShoalCaveGuide);
+            g.DrawLines(line, new[] { OuterShoalHeart, new PointF(3980, 1820), OuterShoalCaveGuide }.Select(Map).ToArray());
+            g.FillEllipse(outerShoalCaveProgress == 7 ? Brushes.LightGreen : Brushes.MediumPurple, cave.X - 7, cave.Y - 7, 14, 14);
+            g.DrawString("GRUTA", font, Brushes.AntiqueWhite, cave.X - 28, cave.Y + 10);
         }
         using var flow = new Pen(Color.FromArgb(235, 119, 221, 215), 3);
         foreach (RectangleF channel in OuterShoalChannels)

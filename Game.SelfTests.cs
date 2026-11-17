@@ -2281,7 +2281,7 @@ public sealed partial class Game
                         int reportGold = anchorResume.gold, reportGlass = anchorResume.tideGlass; anchorResume.memoryOverlay = false; anchorResume.player = SaltFrontierCartographer; anchorResume.Interact();
                         if (anchorResume.saltFrontierSideProgress != 11 || anchorResume.gold != reportGold + 420 || anchorResume.tideGlass != reportGlass + 3 || !ValidSaveData(anchorResume.CaptureSaveData())) throw new InvalidOperationException("Nemi não registrou o Campo das Âncoras ou concedeu a recompensa única da expedição.");
                         anchorResume.memoryOverlay = false; anchorResume.player = OuterShoalEntranceFromCoast; anchorResume.Interact();
-                        if (anchorResume.room != 52 || !anchorResume.outerShoalLocation || anchorResume.WorldSize() != OuterShoalSize || anchorResume.enemies.Count != 0 || !ValidSaveData(anchorResume.CaptureSaveData())) throw new InvalidOperationException("A rota costeira não abriu as Ilhas do Entrefluxo após o relato de Nemi.");
+                        if (anchorResume.room != 52 || !anchorResume.outerShoalLocation || anchorResume.WorldSize() != new SizeF(5000, 3000) || anchorResume.enemies.Count != 0 || !ValidSaveData(anchorResume.CaptureSaveData())) throw new InvalidOperationException("A rota costeira não abriu as Ilhas do Entrefluxo no tamanho amplo planejado após o relato de Nemi.");
                         anchorResume.player = OuterShoalGuide; anchorResume.Interact();
                         if (anchorResume.outerShoalProgress != 1 || anchorResume.enemies.Count != 9) throw new InvalidOperationException("Maira não iniciou a missão dos três espelhos guardados.");
                         SaveData shoalSave = anchorResume.CaptureSaveData();
@@ -2311,6 +2311,30 @@ public sealed partial class Game
                             if ((shoalResume.outerShoalProgress & 32) == 0 || shoalResume.drops.Any(drop => drop.Kind == "silence")) throw new InvalidOperationException("O chefe opcional não concluiu a missão corretamente ou deixou cair uma memória da campanha.");
                             shoalResume.drops.Clear(); shoalResume.player = OuterShoalGuide; shoalResume.memoryOverlay = false; int shoalGold = shoalResume.gold; shoalResume.Interact();
                             if ((shoalResume.outerShoalProgress & 64) == 0 || shoalResume.gold != shoalGold + 360 || !ValidSaveData(shoalResume.CaptureSaveData())) throw new InvalidOperationException("Maira não concluiu a missão com a recompensa única e progresso válido.");
+                            shoalResume.memoryOverlay = false; shoalResume.player = OuterShoalGuide; shoalResume.Interact();
+                            if (shoalResume.outerShoalCaveProgress != 1 || shoalResume.enemies.Count != 3) throw new InvalidOperationException("Maira não abriu a expedição opcional à Gruta da Corrente Morta.");
+                            foreach (Enemy guard in shoalResume.enemies.Where(enemy => Distance(enemy.Pos, OuterShoalCaveGuide) < 230).ToArray()) shoalResume.Defeat(guard);
+                            if (shoalResume.outerShoalCaveProgress != 2 || shoalResume.enemies.Count != 0) throw new InvalidOperationException("A sentinela externa não liberou a passagem da gruta.");
+                            shoalResume.drops.Clear(); SaveData caveEntrySave = shoalResume.CaptureSaveData();
+                            if (!ValidSaveData(caveEntrySave)) throw new InvalidOperationException("O progresso limpo da entrada da gruta não pôde ser salvo.");
+                            using (var caveResume = new Game())
+                            {
+                                caveResume.timer.Stop(); caveResume.StartGame(); caveResume.firstEchoDiscovered = caveEntrySave.FirstEchoDiscovered; caveResume.saltFrontierReturnLocation = caveEntrySave.SaltFrontierLocation; caveResume.saltFrontierBossAwakened = caveEntrySave.SaltFrontierBossAwakened; caveResume.saltFrontierBossDefeated = caveEntrySave.SaltFrontierBossDefeated; caveResume.saltFrontierWardenDefeated = caveEntrySave.SaltFrontierWardenDefeated; caveResume.saltFrontierSideProgress = caveEntrySave.SaltFrontierSideProgress; caveResume.outerShoalLocation = caveEntrySave.OuterShoalLocation; caveResume.outerShoalProgress = caveEntrySave.OuterShoalProgress; caveResume.outerShoalCaveProgress = caveEntrySave.OuterShoalCaveProgress; caveResume.room = caveEntrySave.Room; caveResume.SetupRoom();
+                                if (caveResume.room != 52 || caveResume.outerShoalCaveProgress != 2 || caveResume.enemies.Count != 0 || !ValidSaveData(caveEntrySave)) throw new InvalidOperationException("O save não preservou a entrada liberada sem recriar seus guardiões.");
+                                caveResume.player = OuterShoalCaveGuide; caveResume.Interact();
+                                if (caveResume.outerShoalCaveProgress != 3 || caveResume.enemies.Count != 3 || Distance(caveResume.player, OuterShoalCaveInterior) > 1) throw new InvalidOperationException("A travessia da fenda não levou à câmara interna com os três ecos guardiões.");
+                                foreach (Enemy guard in caveResume.enemies.Where(enemy => Distance(enemy.Pos, OuterShoalCaveGuardCenter) < 420).ToArray()) caveResume.Defeat(guard);
+                                if (caveResume.outerShoalCaveProgress != 4 || caveResume.enemies.Count != 0) throw new InvalidOperationException("A limpeza da Câmara das Poças Surdas não abriu o altar final.");
+                                caveResume.drops.Clear(); caveResume.player = OuterShoalCaveAltar; caveResume.memoryOverlay = false; caveResume.Interact();
+                                Enemy caveBoss = caveResume.enemies.SingleOrDefault(enemy => enemy.NameOverride == "CANTOR DAS POÇAS SURDAS") ?? throw new InvalidOperationException("O altar não despertou o Cantor das Poças Surdas.");
+                                caveBoss.Hp = 1; caveResume.Defeat(caveBoss);
+                                if (caveResume.outerShoalCaveProgress != 6 || !caveResume.drops.Any(drop => drop.Kind == "weapon") || !ValidSaveData(caveResume.CaptureSaveData())) throw new InvalidOperationException("A derrota do Cantor não concedeu saque ou progresso válido.");
+                                caveResume.drops.Clear(); caveResume.memoryOverlay = false; caveResume.player = OuterShoalGuide; int caveGold = caveResume.gold; caveResume.Interact();
+                                if (caveResume.outerShoalCaveProgress != 7 || caveResume.gold != caveGold + 420 || !ValidSaveData(caveResume.CaptureSaveData())) throw new InvalidOperationException("Maira não registrou a Câmara das Poças Surdas com sua recompensa única.");
+                                caveResume.memoryOverlay = false; caveResume.Interact();
+                                if (caveResume.gold != caveGold + 420 || caveResume.outerShoalCaveProgress != 7) throw new InvalidOperationException("A recompensa da gruta foi concedida mais de uma vez.");
+                                shoalResume.gold = caveResume.gold; shoalResume.outerShoalCaveProgress = caveResume.outerShoalCaveProgress;
+                            }
                             shoalResume.player = OuterShoalEntrance; shoalResume.memoryOverlay = false; shoalResume.Interact();
                             SaveData shoalReturn = shoalResume.CaptureSaveData();
                             if (shoalResume.room != 49 || shoalResume.outerShoalLocation || !shoalResume.saltFrontierReturnLocation || !shoalReturn.SaltFrontierLocation || !ValidSaveData(shoalReturn)) throw new InvalidOperationException("A saída das ilhas não retornou à costa com localização de save e missão concluída.");

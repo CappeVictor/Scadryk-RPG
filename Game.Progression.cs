@@ -114,6 +114,13 @@ public sealed partial class Game
             for (int i = 0; i < OuterShoalMirrors.Length; i++)
                 if ((outerShoalProgress & (1 << (i + 1))) == 0 && !enemies.Any(other => Distance(other.Pos, OuterShoalMirrors[i]) < 205))
                     outerShoalProgress |= 1 << (i + 7);
+            if (outerShoalCaveProgress == 1 && !enemies.Any(other => Distance(other.Pos, OuterShoalCaveGuide) < 230)) outerShoalCaveProgress = 2;
+            if (outerShoalCaveProgress == 3 && !enemies.Any(other => Distance(other.Pos, OuterShoalCaveGuardCenter) < 420)) outerShoalCaveProgress = 4;
+            if (enemy.NameOverride == "CANTOR DAS POÇAS SURDAS" && outerShoalCaveProgress == 5)
+            {
+                outerShoalCaveProgress = 6; gold += 220; AddXp(180); tideGlass = Math.Min(999, tideGlass + 2); health = Math.Min(maxHealth, health + 80);
+                notice = "CANTOR SILENCIADO • +220 OURO • +180 EXP • +2 SAL VÍTREO"; noticeTime = 5;
+            }
         }
         if (room == 49 && enemy.NameOverride == "CORO DA MARÉ FALSA" && !saltFrontierBossDefeated)
         {
