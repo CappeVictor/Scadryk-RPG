@@ -128,6 +128,15 @@ public sealed partial class Game
         return "ILHAS DO ENTREFLUXO • PASSAGEM ABERTA • EXPLORAÇÃO LIVRE";
     }
 
+    private string OuterShoalJournalStatus()
+    {
+        if ((outerShoalProgress & 64) != 0) return "Maira registrou o compasso; retorno à Costa aberto";
+        if ((outerShoalProgress & 32) != 0) return "Vigia derrotado; volte a Maira no cais raso";
+        if ((outerShoalProgress & 14) == 14) return "Três notas registradas; desperte o Vigia";
+        if (outerShoalProgress == 0) return "Nova rota; fale com Maira para começar";
+        return $"Espelhos: {System.Numerics.BitOperations.PopCount((uint)(outerShoalProgress & 14))}/3 • correntes reversíveis";
+    }
+
     private void DrawOuterShoalEnvironment(Graphics g)
     {
         using var sand = new SolidBrush(Color.FromArgb(44, 65, 63));
@@ -209,6 +218,23 @@ public sealed partial class Game
             g.FillEllipse(i == 0 ? Brushes.LightCyan : done ? Brushes.SlateGray : i == 5 && (outerShoalProgress & 14) == 14 ? Brushes.IndianRed : Brushes.Goldenrod, p.X - 7, p.Y - 7, 14, 14);
             g.DrawString(labels[i], font, Brushes.AntiqueWhite, p.X - 36, p.Y + 10);
         }
+        using var flow = new Pen(Color.FromArgb(235, 119, 221, 215), 3);
+        foreach (RectangleF channel in OuterShoalChannels)
+        {
+            PointF center = new(channel.Left + channel.Width / 2, channel.Top + channel.Height / 2);
+            PointF drift = OuterShoalCurrentAt(center, windupPulse, false);
+            PointF start = Map(Sub(center, Scale(Normalize(drift, new PointF(1, 0)), 115)));
+            PointF end = Map(Add(center, Scale(Normalize(drift, new PointF(1, 0)), 115)));
+            g.DrawLine(flow, start, end);
+            float angle = MathF.Atan2(end.Y - start.Y, end.X - start.X);
+            PointF tip = Add(end, Scale(new PointF(MathF.Cos(angle), MathF.Sin(angle)), 9));
+            PointF back = Sub(end, Scale(new PointF(MathF.Cos(angle), MathF.Sin(angle)), 9));
+            PointF normal = new(-MathF.Sin(angle) * 5, MathF.Cos(angle) * 5);
+            g.FillPolygon(Brushes.LightCyan, new[] { tip, Add(back, normal), Sub(back, normal) });
+        }
+        PointF here = Map(player); g.FillEllipse(Brushes.LightGreen, here.X - 7, here.Y - 7, 14, 14); g.DrawEllipse(Pens.Black, here.X - 7, here.Y - 7, 14, 14);
+        g.DrawString("JOGADOR", font, Brushes.LightGreen, here.X + 8, here.Y - 8);
+        g.DrawString("SETAS: SENTIDO ATUAL DAS CORRENTES • GREVAS CONTRAMARÉ REDUZEM O EMPURRÃO", font, Brushes.LightCyan, 115, 530);
         g.DrawString("E  FECHAR MAPA", font, Brushes.DarkGray, 390, 555);
     }
 }
