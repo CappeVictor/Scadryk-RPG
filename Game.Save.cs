@@ -166,8 +166,9 @@ public sealed partial class Game
             || s.SaltFrontierLocation && ((s.FirstEchoDiscovered & 64) == 0 || (s.FirstEchoDiscovered & 2048) == 0 || (s.FirstEchoDiscovered & 6291456) != 0)
             || s.SaltFrontierBossAwakened && ((s.FirstEchoDiscovered & (31 << 25)) != (31 << 25) || (s.FirstEchoDiscovered & 2048) == 0)
             || s.SaltFrontierBossDefeated && !s.SaltFrontierBossAwakened
-            || s.SaltFrontierSideProgress is < 0 or > 6
+            || s.SaltFrontierSideProgress is < 0 or > 11
             || s.SaltFrontierSideProgress > 0 && !s.SaltFrontierBossDefeated
+            || s.SaltFrontierSideProgress >= 7 && !s.SaltFrontierWardenDefeated
             || s.SaltFrontierWardenDefeated && (!s.SaltFrontierBossDefeated || s.SaltFrontierSideProgress < 4)
             || s.SaltVaultReliquaryCleared && (s.FirstEchoDiscovered & 16777216) == 0
             || s.Level is < 1 or > 10000

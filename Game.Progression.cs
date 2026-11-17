@@ -119,6 +119,12 @@ public sealed partial class Game
             saltFrontierWardenDefeated = true;
             if ((ownedCharms & (1 << 13)) == 0) drops.Add(new Drop { Pos = Offset(enemy.Pos, 0, -48), Kind = "charm", Amount = 14 });
         }
+        if (room == 49 && enemy.NameOverride == "GUARDIÃO DO LASTRO" && saltFrontierSideProgress == 8)
+        {
+            saltFrontierSideProgress = 9;
+            gold += 220; AddXp(180); health = Math.Min(maxHealth, health + 65);
+            notice = "GUARDIÃO DO LASTRO DERROTADO • +220 OURO • +180 EXP"; noticeTime = 4;
+        }
         if (room == 48 && enemy.Kind == EnemyKind.SaltJailer)
         {
             if (!saltVaultBossDefeated)

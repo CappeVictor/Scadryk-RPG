@@ -16,7 +16,7 @@ public sealed partial class Game
     private bool saltFrontierWardenDefeated;
     private int saltFrontierSideProgress;
     private bool saltFrontierCacheFound;
-    private static readonly SizeF SaltFrontierSize = new(4200, 2400);
+    private static readonly SizeF SaltFrontierSize = new(4200, 3000);
     private static readonly PointF SaltFrontierEntrance = new(155, 1200);
     private static readonly PointF SaltFrontierCartographer = new(2110, 1175);
     private static readonly PointF[] SaltFrontierTideBells = { new(850, 475), new(2330, 405), new(3570, 1700) };
@@ -25,6 +25,8 @@ public sealed partial class Game
     private static readonly PointF SaltFrontierWreck = new(3930, 675);
     private static readonly PointF SaltFrontierBuoys = new(3150, 2140);
     private static readonly PointF SaltFrontierCache = new(1380, 2035);
+    private static readonly PointF SaltFrontierOrva = new(2700, 2580);
+    private static readonly PointF SaltFrontierAnchorMarker = new(3540, 2740);
     private static readonly PointF SaltBasinFrontierEntrance = new(3440, 1200);
     private static readonly RectangleF[] SaltFrontierWalls =
     {
@@ -49,6 +51,7 @@ public sealed partial class Game
         SpawnSaltFrontierBellheart();
         SpawnSaltFrontierWreckGuardians();
         SpawnSaltFrontierBuoyGuardians();
+        SpawnSaltFrontierAnchorEncounter();
     }
 
     private void SpawnSaltFrontierBellGuards()
@@ -114,6 +117,30 @@ public sealed partial class Game
         enemies.Add(new Enemy { Pos = SaltFrontierBuoys, Kind = EnemyKind.TideWitness, NameOverride = "VIGIA DAS BÓIAS", Hp = bossHp, MaxHp = bossHp, Cooldown = 1.35f, SummonCooldown = 6, SupportCooldown = 3 });
     }
 
+    private void SpawnSaltFrontierAnchorEncounter()
+    {
+        if (saltFrontierSideProgress == 7 && enemies.Count == 0)
+        {
+            (PointF Pos, EnemyKind Kind)[] guards =
+            {
+                (new PointF(3370, 2640), EnemyKind.SaltEcho),
+                (new PointF(3710, 2630), EnemyKind.Archer),
+                (new PointF(3550, 2870), EnemyKind.Elite)
+            };
+            foreach (var (position, kind) in guards)
+            {
+                float hp = EnemyData(kind).HealthAt(42, townEnding) * DifficultyEnemyHealthMultiplier(difficultyTier);
+                EliteAffix affix = kind == EnemyKind.Elite ? EliteAffixForRoll(random.Next(6)) : EliteAffix.Armored;
+                enemies.Add(new Enemy { Pos = position, Kind = kind, Hp = hp, MaxHp = hp, Cooldown = 0.9f + (float)random.NextDouble(), SummonCooldown = 6, SupportCooldown = 3, EliteAffix = affix, Armored = kind == EnemyKind.Elite && affix == EliteAffix.Armored });
+            }
+        }
+        if (saltFrontierSideProgress == 8 && enemies.Count == 0)
+        {
+            float hp = EnemyData(EnemyKind.TideWitness).HealthAt(42, townEnding) * DifficultyEnemyHealthMultiplier(difficultyTier) * 1.25f;
+            enemies.Add(new Enemy { Pos = SaltFrontierAnchorMarker, Kind = EnemyKind.TideWitness, NameOverride = "GUARDIÃO DO LASTRO", Hp = hp, MaxHp = hp, Cooldown = 1.3f, SummonCooldown = 6, SupportCooldown = 3 });
+        }
+    }
+
     private void StoreSaltFrontierOutside()
     {
         saltFrontierWaitingEnemies.Clear(); saltFrontierWaitingEnemies.AddRange(enemies);
@@ -133,6 +160,12 @@ public sealed partial class Game
         }
         if (Distance(player, SaltFrontierCartographer) < 100)
         {
+            if (saltFrontierSideProgress == 10)
+            {
+                saltFrontierSideProgress = 11; gold += 420; AddXp(320); tideGlass += 3; potions++; health = Math.Min(maxHealth, health + 60);
+                ShowMemory("O CAMPO QUE CEDE", "Nemi compara o entalhe do baixio com as três badaladas. As âncoras não prendiam barcos: indicavam onde a corrente perde força e devolve a escolha a quem atravessa. Orva vai manter o marco visível para quem precisar esperar. O registro costeiro recebe uma nova rota; você recebe 420 de ouro, 320 de experiência, 3 sais vítreos e uma poção."); return;
+            }
+            if (saltFrontierSideProgress == 9) { ShowMemory("NEMI, A ESCUTADORA", "O marco do baixio está pronto para ser registrado. Traga o entalhe até o observatório para que outras pessoas encontrem a enseada sem seguir uma ordem de travessia."); return; }
             if (saltFrontierSideProgress == 5)
             {
                 saltFrontierSideProgress = 6; gold += 320; AddXp(240); tideGlass += 3; potions++; health = Math.Min(maxHealth, health + 45);
@@ -154,7 +187,7 @@ public sealed partial class Game
                 saltFrontierProgress |= 16; gold += 175; AddXp(125); health = maxHealth;
                 ShowMemory("O COMPASSO DA COSTA", "Nemi compara os três registros e reconhece uma pausa que não pertence à torre: alguém interrompeu a badalada para deixar os viajantes escolherem o próprio caminho. Ela copia a pausa no mapa, sem tentar preencher o silêncio. Também marca um estojo de provisões sob uma laje na borda sudoeste; ele foi deixado para qualquer pessoa que precisasse esperar a maré. Sob o juncal, outra voz ainda pulsa no coração da torre submersa. Você recebe 175 de ouro, 125 de experiência e descansa por completo."); return;
             }
-            ShowMemory("NEMI, A ESCUTADORA", (saltFrontierProgress & 16) != 0 ? saltFrontierBossDefeated ? saltFrontierSideProgress switch { 0 => "O Coro se desfez sem levar nenhum nome. Teren está examinando um destroço ao norte da costa; talvez aquele mapa de corrente ajude os barqueiros a escolher uma travessia segura.", 1 => "Teren espera no caminho ao norte. Os guardiões do destroço ainda protegem o registro da maré.", 2 => "Você recuperou o desenho do destroço. Nemi pode comparar a marca com os intervalos das três badaladas.", 3 => "O destroço foi registrado. Teren encontrou uma fileira de bóias ao sul; fale com ele se quiser investigar a corrente que as move.", 4 => saltFrontierWardenDefeated ? "O Vigia caiu. Recolha o talismã e examine o marcador junto às bóias." : "As bóias ainda estão cercadas. O Vigia usa o ritmo da maré para cortar a passagem.", 5 => "O ritmo está registrado; volte ao observatório para concluir o relato.", _ => "O Coro e o Vigia foram silenciados; as marcas mostram quando esperar, atravessar ou retornar, sem decidir por ninguém." } : "As três notas já não chamam viajantes. Resta uma voz presa no coração da torre submersa, ao sul do juncal; ela precisa ser enfrentada para que a costa descanse." : $"Badaladas silenciadas: {System.Numerics.BitOperations.PopCount((uint)(saltFrontierProgress & 14))}/3. Aproxime-se de cada torre depois de limpar seus guardiões."); return;
+            ShowMemory("NEMI, A ESCUTADORA", (saltFrontierProgress & 16) != 0 ? saltFrontierBossDefeated ? saltFrontierSideProgress switch { 0 => "O Coro se desfez sem levar nenhum nome. Teren está examinando um destroço ao norte da costa; talvez aquele mapa de corrente ajude os barqueiros a escolher uma travessia segura.", 1 => "Teren espera no caminho ao norte. Os guardiões do destroço ainda protegem o registro da maré.", 2 => "Você recuperou o desenho do destroço. Nemi pode comparar a marca com os intervalos das três badaladas.", 3 => "O destroço foi registrado. Teren encontrou uma fileira de bóias ao sul; fale com ele se quiser investigar a corrente que as move.", 4 => saltFrontierWardenDefeated ? "O Vigia caiu. Recolha o talismã e examine o marcador junto às bóias." : "As bóias ainda estão cercadas. O Vigia usa o ritmo da maré para cortar a passagem.", 5 => "O ritmo está registrado; volte ao observatório para concluir o relato.", 6 => "As bóias foram registradas. Orva está no baixio ao sul, onde um campo de âncoras antigas aparece na vazante.", 7 => "Orva espera no Campo das Âncoras. Os guardiões cercam o marco no extremo sul.", 8 => "Os guardiões cederam. Examine o marco no extremo sul; algo ainda o mantém preso ao leito.", 9 => "O marco do baixio está pronto para ser registrado aqui.", 10 => "O Campo das Âncoras está no atlas. A enseada fica aberta para quem quiser explorar a costa no próprio ritmo.", _ => "O Coro e o Vigia foram silenciados; as marcas mostram quando esperar, atravessar ou retornar, sem decidir por ninguém." } : "As três notas já não chamam viajantes. Resta uma voz presa no coração da torre submersa, ao sul do juncal; ela precisa ser enfrentada para que a costa descanse." : $"Badaladas silenciadas: {System.Numerics.BitOperations.PopCount((uint)(saltFrontierProgress & 14))}/3. Aproxime-se de cada torre depois de limpar seus guardiões."); return;
         }
         if (Distance(player, SaltFrontierCache) < 90)
         {
@@ -179,6 +212,31 @@ public sealed partial class Game
             if (saltFrontierSideProgress == 5) { ShowMemory("TEREN, PILOTO DE MARÉ", "Nemi pode comparar o ritmo das bóias com as badaladas da torre. Leve o registro ao observatório."); return; }
             if (saltFrontierSideProgress == 6) { ShowMemory("TEREN, PILOTO DE MARÉ", "Agora os barqueiros sabem quando a corrente cede, mas cada barco escolhe seu próprio momento de partir."); return; }
             ShowMemory("TEREN, PILOTO DE MARÉ", saltFrontierSideProgress == 1 ? "Os guardiões ainda rondam o destroço. Aproxime-se pelo caminho de basalto e recolha qualquer saque antes de examinar o desenho." : saltFrontierSideProgress == 2 ? "O desenho está com você. Leve-o a Nemi para comparar os intervalos; ele não aponta quem passou nem para onde." : "O mapa agora mostra apenas onde a água recua. Nenhuma rota é atribuída a quem escolheu atravessar."); return;
+        }
+        if (saltFrontierSideProgress >= 6 && Distance(player, SaltFrontierOrva) < 105)
+        {
+            if (saltFrontierSideProgress == 6)
+            {
+                saltFrontierSideProgress = 7; SpawnSaltFrontierAnchorEncounter();
+                ShowMemory("ORVA, GUARDIÃ DO BAIXIO", "As âncoras aparecem só quando a água baixa. Não são de barcos: alguém as fincou para marcar onde a corrente larga o fundo. Os ecos prenderam um guardião ao marco. Se quiser, abra caminho até lá; depois decidiremos se essa enseada merece entrar no atlas."); return;
+            }
+            ShowMemory("ORVA, GUARDIÃ DO BAIXIO", saltFrontierSideProgress switch { 7 => "Os guardiões ainda cercam o campo ao sul. O caminho de pedra clara acompanha as piscinas rasas até o marco.", 8 => "O Guardião do Lastro ainda protege o marco. A enseada fica além das três âncoras menores.", 9 => "O campo está livre. Examine o entalhe central e leve o registro a Nemi.", 10 => "Nemi está esperando o registro no observatório.", _ => "O baixio está no atlas. Os barcos podem chegar, esperar ou voltar quando quiserem." }); return;
+        }
+        if (saltFrontierSideProgress is >= 7 and <= 10 && Distance(player, SaltFrontierAnchorMarker) < 120)
+        {
+            if (saltFrontierSideProgress == 7)
+            {
+                if (enemies.Count > 0 || drops.Count > 0) { ShowMemory("CAMPO DAS ÂNCORAS", "As três âncoras menores ainda estão guardadas. Limpe o baixio e recolha o saque antes de tocar o marco central."); return; }
+                saltFrontierSideProgress = 8; SpawnSaltFrontierAnchorEncounter();
+                ShowMemory("O MARCO SOB A ÁGUA", "Quando a última sentinela cai, a corrente recua por um instante. Uma figura de ferro se ergue do leito, ainda presa à âncora maior."); return;
+            }
+            if (saltFrontierSideProgress == 8) { ShowMemory("CAMPO DAS ÂNCORAS", "O Guardião do Lastro ainda está de pé. Leia o ritmo das ondas, saia da área marcada e atravesse o corte anunciado."); return; }
+            if (saltFrontierSideProgress == 9)
+            {
+                saltFrontierSideProgress = 10;
+                ShowMemory("O ENTALHE DO BAIXIO", "Sob a ferrugem, três linhas mostram a corrente soltando o leito, recuando e descansando. O marco não aponta uma direção. Ele deixa qualquer barco escolher quando atravessar. Leve o entalhe a Nemi para registrá-lo no atlas."); return;
+            }
+            ShowMemory("O ENTALHE DO BAIXIO", "O registro já está com Nemi. O marco permanece visível quando a água baixa."); return;
         }
         if (saltFrontierBossDefeated && Distance(player, SaltFrontierWreck) < 105)
         {
@@ -244,7 +302,12 @@ public sealed partial class Game
         if (saltFrontierSideProgress == 3) return "OPCIONAL: FALE COM TEREN SOBRE A FILEIRA DAS BÓIAS";
         if (saltFrontierSideProgress == 4) return saltFrontierWardenDefeated ? "OPCIONAL: RECOLHA O TALISMÃ E EXAMINE O MARCADOR DAS BÓIAS" : "OPCIONAL: DERROTE O VIGIA DAS BÓIAS E RECUPERE O RITMO";
         if (saltFrontierSideProgress == 5) return "OPCIONAL: LEVE O RITMO DAS BÓIAS A NEMI";
-        return "COSTA DAS BADALADAS • ROTA REGISTRADA • EXPLORAÇÃO LIVRE";
+        if (saltFrontierSideProgress == 6) return "OPCIONAL: FALE COM ORVA NO BAIXIO AO SUL";
+        if (saltFrontierSideProgress == 7) return enemies.Count > 0 ? "OPCIONAL: LIMPE O CAMPO DAS ÂNCORAS AO SUL" : "OPCIONAL: EXAMINE O MARCO NO EXTREMO SUL";
+        if (saltFrontierSideProgress == 8) return "OPCIONAL: DERROTE O GUARDIÃO DO LASTRO";
+        if (saltFrontierSideProgress == 9) return "OPCIONAL: EXAMINE O MARCO DO BAIXIO";
+        if (saltFrontierSideProgress == 10) return "OPCIONAL: LEVE O ENTALHE A NEMI";
+        return "COSTA DAS BADALADAS • ROTAS REGISTRADAS • EXPLORAÇÃO LIVRE";
     }
 
     private string SaltFrontierJournalStatus() => saltFrontierSideProgress switch
@@ -255,7 +318,12 @@ public sealed partial class Game
         3 => "Rota do destroço registrada; fale com Teren sobre as bóias",
         4 => saltFrontierWardenDefeated ? "Vigia derrotado; recupere o talismã e examine o marcador" : "Fileira das Bóias: guardada pelo Vigia",
         5 => "Ritmo das bóias recuperado; relate a Nemi",
-        _ => "Rotas da costa registradas por Nemi"
+        6 => "Bóias registradas; Orva aguarda no baixio ao sul",
+        7 => "Campo das Âncoras: três sentinelas no baixio",
+        8 => "Sentinelas vencidas; Guardião do Lastro desperto",
+        9 => "Guardião vencido; examine o marco do baixio",
+        10 => "Entalhe recuperado; relate a Nemi",
+        _ => "Campo das Âncoras registrado por Nemi"
     };
 
     private void DrawSaltFrontierEnvironment(Graphics g)
@@ -264,6 +332,8 @@ public sealed partial class Game
         using var basalt = new SolidBrush(Color.FromArgb(55, 67, 70));
         using var marsh = new SolidBrush(Color.FromArgb(41, 78, 77));
         using var tidalFlat = new SolidBrush(Color.FromArgb(111, 120, 106));
+        using var shoal = new SolidBrush(Color.FromArgb(74, 106, 101));
+        using var saltPool = new SolidBrush(Color.FromArgb(133, 158, 148));
         using var road = new Pen(Color.FromArgb(119, 113, 92), 94) { StartCap = LineCap.Round, EndCap = LineCap.Round, LineJoin = LineJoin.Round };
         using var trail = new Pen(Color.FromArgb(202, 179, 130), 2) { DashStyle = DashStyle.Dash };
         using var current = new Pen(Color.FromArgb(170, 132, 202, 206), 5);
@@ -275,6 +345,8 @@ public sealed partial class Game
         g.FillPolygon(basalt, new[] { new PointF(0, 0), new(1350, 0), new(1110, 680), new(0, 920) });
         g.FillPolygon(marsh, new[] { new PointF(1250, 0), new(2890, 0), new(2670, 870), new(1330, 1210), new(1080, 730) });
         g.FillPolygon(tidalFlat, new[] { new PointF(2530, 860), new(4200, 650), new(4200, 2400), new(2720, 2400), new(2450, 1720) });
+        g.FillPolygon(shoal, new[] { new PointF(840, 2370), new(4200, 2370), new(4200, 3000), new(930, 3000), new(1140, 2730) });
+        g.FillEllipse(saltPool, 1290, 2470, 320, 180); g.FillEllipse(saltPool, 1820, 2735, 245, 125); g.FillEllipse(saltPool, 3020, 2440, 370, 195);
         for (int i = 0; i < 340; i++)
         {
             int x = 29 + i * 127 % 4140, y = 70 + i * 191 % 2260;
@@ -316,6 +388,26 @@ public sealed partial class Game
         {
             PointF[] buoyPath = { SaltFrontierTideBells[2], new(3430, 1920), SaltFrontierBuoys };
             g.DrawLines(road, buoyPath); g.DrawLines(trail, buoyPath);
+        }
+        if (saltFrontierSideProgress >= 6)
+        {
+            PointF[] anchorPath = { SaltFrontierTideBells[1], new(2210, 1780), new(2370, 2230), SaltFrontierOrva, new(3130, 2660), SaltFrontierAnchorMarker };
+            g.DrawLines(road, anchorPath); g.DrawLines(trail, anchorPath);
+            g.DrawString("BAIXIO DAS ÂNCORAS", labelFont, ink, 1260, 2410);
+            DrawTownPerson(g, SaltFrontierOrva, "ORVA", Color.FromArgb(139, 159, 128), Distance(player, SaltFrontierOrva) < InteractionRadius);
+            if (Distance(player, SaltFrontierOrva) < InteractionRadius) g.DrawString("E  FALAR", smallFont, ink, SaltFrontierOrva.X - 40, SaltFrontierOrva.Y + 45);
+            using var anchorPen = new Pen(Color.FromArgb(102, 131, 132), 9);
+            using var anchorGlow = new SolidBrush(saltFrontierSideProgress >= 10 ? Color.LightCyan : saltFrontierSideProgress >= 7 ? Color.Goldenrod : Color.FromArgb(90, 124, 119));
+            foreach (PointF anchor in new[] { new PointF(3370, 2640), new PointF(3710, 2630), new PointF(3550, 2870) })
+            {
+                g.DrawLine(anchorPen, anchor.X, anchor.Y + 27, anchor.X, anchor.Y - 23); g.DrawArc(anchorPen, anchor.X - 15, anchor.Y - 28, 30, 35, 175, 190);
+                g.FillEllipse(anchorGlow, anchor.X - 4, anchor.Y - 22, 8, 8);
+            }
+            g.DrawEllipse(rim, SaltFrontierAnchorMarker.X - 38, SaltFrontierAnchorMarker.Y - 27, 76, 54);
+            g.DrawLine(rim, SaltFrontierAnchorMarker.X - 25, SaltFrontierAnchorMarker.Y, SaltFrontierAnchorMarker.X + 25, SaltFrontierAnchorMarker.Y);
+            g.DrawLine(rim, SaltFrontierAnchorMarker.X, SaltFrontierAnchorMarker.Y - 17, SaltFrontierAnchorMarker.X, SaltFrontierAnchorMarker.Y + 17);
+            g.DrawString("MARCO DO LASTRO", smallFont, ink, SaltFrontierAnchorMarker.X - 70, SaltFrontierAnchorMarker.Y + 35);
+            if (Distance(player, SaltFrontierAnchorMarker) < 125 && saltFrontierSideProgress is 7 or 9) g.DrawString("E  EXAMINAR MARCO", smallFont, ink, SaltFrontierAnchorMarker.X - 78, SaltFrontierAnchorMarker.Y + 54);
         }
         if ((saltFrontierProgress & 31) == 31)
         {
@@ -413,7 +505,7 @@ public sealed partial class Game
         using var title = new Font("Georgia", 17, FontStyle.Bold);
         g.FillRectangle(shade, 0, 0, 960, 640); g.FillRectangle(panel, 45, 105, 870, 485); g.DrawRectangle(Pens.DarkGoldenrod, 45, 105, 870, 485);
         g.DrawString("COSTA DAS BADALADAS", title, Brushes.Goldenrod, 327, 121);
-        PointF Map(PointF p) => new(100 + p.X * 0.18f, 170 + p.Y * 0.15f);
+        PointF Map(PointF p) => new(100 + p.X * 0.18f, 170 + p.Y * 0.12f);
         PointF[][] paths = { new[] { SaltFrontierEntrance, new PointF(500, 980), SaltFrontierTideBells[0], new PointF(1380, 800), SaltFrontierCartographer }, new[] { SaltFrontierCartographer, new PointF(2140, 760), SaltFrontierTideBells[1], new PointF(3000, 790), SaltFrontierTideBells[2] } };
         foreach (PointF[] path in paths) g.DrawLines(line, path.Select(Map).ToArray());
         PointF[] tidePath = { new(2840, 2025), new(3020, 1980), new(3210, 1995), new(3400, 1935), new(3560, 1815) };
@@ -421,16 +513,17 @@ public sealed partial class Game
         g.DrawLines(tideLine, tidePath.Select(Map).ToArray());
         if (saltFrontierBossDefeated) g.DrawLines(line, new[] { new PointF(3000, 790), new PointF(3400, 760), SaltFrontierTeren, new PointF(3770, 520), SaltFrontierWreck }.Select(Map).ToArray());
         if (saltFrontierSideProgress >= 4) g.DrawLines(line, new[] { SaltFrontierTideBells[2], new PointF(3430, 1920), SaltFrontierBuoys }.Select(Map).ToArray());
+        if (saltFrontierSideProgress >= 6) g.DrawLines(line, new[] { SaltFrontierTideBells[1], new PointF(2210, 1780), new PointF(2370, 2230), SaltFrontierOrva, new PointF(3130, 2660), SaltFrontierAnchorMarker }.Select(Map).ToArray());
         if ((saltFrontierProgress & 31) == 31) g.DrawLines(line, new[] { SaltFrontierTideBells[2], new PointF(3750, 1770), SaltFrontierBellheart }.Select(Map).ToArray());
-        PointF[] positions = { SaltFrontierEntrance, SaltFrontierCartographer, SaltFrontierTideBells[0], SaltFrontierTideBells[1], SaltFrontierTideBells[2], SaltFrontierBellheart, SaltFrontierTeren, SaltFrontierWreck, SaltFrontierBuoys, SaltFrontierCache };
-        string[] names = { "BACIA", "NEMI", "BASALTO", "JUNCAL", "COSTA", "CORAÇÃO", "TEREN", "DESTROÇO", "BÓIAS", "ESTOJO" };
+        PointF[] positions = { SaltFrontierEntrance, SaltFrontierCartographer, SaltFrontierTideBells[0], SaltFrontierTideBells[1], SaltFrontierTideBells[2], SaltFrontierBellheart, SaltFrontierTeren, SaltFrontierWreck, SaltFrontierBuoys, SaltFrontierCache, SaltFrontierOrva, SaltFrontierAnchorMarker };
+        string[] names = { "BACIA", "NEMI", "BASALTO", "JUNCAL", "COSTA", "CORAÇÃO", "TEREN", "DESTROÇO", "BÓIAS", "ESTOJO", "ORVA", "LASTRO" };
         for (int i = 0; i < positions.Length; i++)
         {
             PointF p = Map(positions[i]);
-            bool visible = i switch { 0 or 1 => true, 5 => (saltFrontierProgress & 31) == 31, 6 or 7 => saltFrontierBossDefeated, 8 => saltFrontierSideProgress >= 4, 9 => (saltFrontierProgress & 16) != 0 || saltFrontierCacheFound, _ => (saltFrontierProgress & (1 << (i - 1))) != 0 };
+            bool visible = i switch { 0 or 1 => true, 5 => (saltFrontierProgress & 31) == 31, 6 or 7 => saltFrontierBossDefeated, 8 => saltFrontierSideProgress >= 4, 9 => (saltFrontierProgress & 16) != 0 || saltFrontierCacheFound, 10 or 11 => saltFrontierSideProgress >= 6, _ => (saltFrontierProgress & (1 << (i - 1))) != 0 };
             if (!visible) { g.FillEllipse(Brushes.DimGray, p.X - 5, p.Y - 5, 10, 10); continue; }
             bool marked = i >= 2 && i <= 4 && (saltFrontierProgress & (1 << (i - 1))) != 0;
-            Brush marker = i == 1 || i == 6 ? Brushes.LightSkyBlue : i == 5 ? saltFrontierBossDefeated ? Brushes.LightCyan : Brushes.MediumPurple : i == 7 ? saltFrontierSideProgress == 2 ? Brushes.LightGreen : Brushes.Goldenrod : i == 8 ? saltFrontierSideProgress >= 5 ? Brushes.LightGreen : Brushes.Goldenrod : i == 9 ? saltFrontierCacheFound ? Brushes.LightGreen : Brushes.Goldenrod : marked ? Brushes.LightGreen : Brushes.Goldenrod;
+            Brush marker = i == 1 || i == 6 || i == 10 ? Brushes.LightSkyBlue : i == 5 ? saltFrontierBossDefeated ? Brushes.LightCyan : Brushes.MediumPurple : i == 7 ? saltFrontierSideProgress == 2 ? Brushes.LightGreen : Brushes.Goldenrod : i == 8 ? saltFrontierSideProgress >= 5 ? Brushes.LightGreen : Brushes.Goldenrod : i == 9 ? saltFrontierCacheFound ? Brushes.LightGreen : Brushes.Goldenrod : i == 11 ? saltFrontierSideProgress >= 10 ? Brushes.LightGreen : Brushes.Goldenrod : marked ? Brushes.LightGreen : Brushes.Goldenrod;
             g.FillEllipse(marker, p.X - 6, p.Y - 6, 12, 12);
             g.DrawString(names[i], font, Brushes.AntiqueWhite, p.X - 32, p.Y - 22);
         }

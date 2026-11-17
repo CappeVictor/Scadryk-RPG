@@ -2022,7 +2022,7 @@ public sealed partial class Game
                 vaultResume.player = new PointF(850, 330); vaultResume.Interact();
                 if (vaultResume.room != 46 || vaultResume.gold != reliquaryGold + 260) throw new InvalidOperationException("A saída da fenda não retornou à Bacia ou repetiu a recompensa do arquivo.");
                 vaultResume.player = SaltBasinFrontierEntrance; vaultResume.Interact(); vaultResume.memoryOverlay = false;
-                if (vaultResume.room != 49 || vaultResume.WorldSize() != new SizeF(4200, 2400) || vaultResume.enemies.Count != 0) throw new InvalidOperationException("A trilha das conchas não abriu a Costa das Badaladas como região explorável.");
+                if (vaultResume.room != 49 || vaultResume.WorldSize() != new SizeF(4200, 3000) || vaultResume.enemies.Count != 0) throw new InvalidOperationException("A trilha das conchas não abriu a Costa das Badaladas como região explorável.");
                 vaultResume.drops.Add(new Drop { Pos = new PointF(1200, 900), Kind = "gold", Amount = 45 }); vaultResume.player = SaltFrontierEntrance; vaultResume.Interact();
                 if (vaultResume.room != 49 || !vaultResume.notice.Contains("SAQUE")) throw new InvalidOperationException("A saída da costa deixou saque desprotegido no estado temporário da região.");
                 vaultResume.drops.Clear(); vaultResume.Interact(); vaultResume.memoryOverlay = false;
@@ -2185,6 +2185,27 @@ public sealed partial class Game
                     if (buoyResume.saltFrontierSideProgress != 5 || !ValidSaveData(buoyResume.CaptureSaveData())) throw new InvalidOperationException("O marcador das bóias não registrou o ritmo após a vitória.");
                     int buoyGold = buoyResume.gold, buoyGlass = buoyResume.tideGlass; buoyResume.memoryOverlay = false; buoyResume.player = SaltFrontierCartographer; buoyResume.Interact();
                     if (buoyResume.saltFrontierSideProgress != 6 || buoyResume.gold != buoyGold + 320 || buoyResume.tideGlass != buoyGlass + 3 || !ValidSaveData(buoyResume.CaptureSaveData())) throw new InvalidOperationException("Nemi não registrou a memória das bóias nem concedeu sua recompensa única.");
+                    buoyResume.memoryOverlay = false; buoyResume.player = SaltFrontierOrva; buoyResume.Interact();
+                    SaveData anchorQuestSave = buoyResume.CaptureSaveData();
+                    if (buoyResume.saltFrontierSideProgress != 7 || buoyResume.enemies.Count != 3 || !anchorQuestSave.SaltFrontierWardenDefeated || !ValidSaveData(anchorQuestSave)) throw new InvalidOperationException("Orva não abriu a expedição do Baixio das Âncoras com três guardiões e progresso válido.");
+                    using (var anchorResume = new Game())
+                    {
+                        anchorResume.timer.Stop(); anchorResume.StartGame(); anchorResume.firstEchoDiscovered = anchorQuestSave.FirstEchoDiscovered; anchorResume.saltFrontierReturnLocation = true; anchorResume.saltFrontierBossAwakened = true; anchorResume.saltFrontierBossDefeated = true; anchorResume.saltFrontierWardenDefeated = true; anchorResume.saltFrontierSideProgress = anchorQuestSave.SaltFrontierSideProgress; anchorResume.room = 3; anchorResume.SetupRoom();
+                        if (anchorResume.room != 49 || anchorResume.enemies.Count != 3 || anchorResume.WorldSize() != new SizeF(4200, 3000)) throw new InvalidOperationException("O save não retomou a rota sul e seus três guardiões no mapa ampliado.");
+                        anchorResume.memoryOverlay = false; anchorResume.player = SaltFrontierAnchorMarker; anchorResume.Interact();
+                        if (anchorResume.saltFrontierSideProgress != 7 || anchorResume.enemies.Count != 3) throw new InvalidOperationException("O marco iniciou o chefe antes de derrotar as três sentinelas.");
+                        anchorResume.enemies.Clear(); anchorResume.drops.Add(new Drop { Pos = SaltFrontierAnchorMarker, Kind = "gold", Amount = 1 }); anchorResume.memoryOverlay = false; anchorResume.Interact();
+                        if (anchorResume.saltFrontierSideProgress != 7 || anchorResume.enemies.Count != 0) throw new InvalidOperationException("O marco iniciou o chefe antes que o saque das sentinelas fosse recolhido.");
+                        anchorResume.drops.Clear(); anchorResume.memoryOverlay = false; anchorResume.Interact();
+                        if (anchorResume.saltFrontierSideProgress != 8 || anchorResume.enemies.Count != 1 || !anchorResume.enemies[0].Boss || anchorResume.enemies[0].NameOverride != "GUARDIÃO DO LASTRO" || !ValidSaveData(anchorResume.CaptureSaveData())) throw new InvalidOperationException("O marco não aguardou a limpeza dos guardiões antes de despertar o Guardião do Lastro.");
+                        Enemy anchorBoss = anchorResume.enemies.Single(); int anchorGold = anchorResume.gold; long anchorTotalXp = (long)anchorResume.level * (anchorResume.level - 1) / 2 * 60 + anchorResume.xp; anchorBoss.Hp = 1; anchorResume.Defeat(anchorBoss);
+                        long anchorTotalXpAfter = (long)anchorResume.level * (anchorResume.level - 1) / 2 * 60 + anchorResume.xp;
+                        if (anchorResume.saltFrontierSideProgress != 9 || anchorResume.gold != anchorGold + 220 || anchorTotalXpAfter <= anchorTotalXp || !anchorResume.drops.Any(drop => drop.Kind == "weapon") || !ValidSaveData(anchorResume.CaptureSaveData())) throw new InvalidOperationException("A vitória do Guardião do Lastro não marcou o estágio, concedeu recompensa e saque ou preservou o save.");
+                        anchorResume.drops.Clear(); anchorResume.player = SaltFrontierAnchorMarker; anchorResume.Interact();
+                        if (anchorResume.saltFrontierSideProgress != 10 || !anchorResume.memoryOverlay || !ValidSaveData(anchorResume.CaptureSaveData())) throw new InvalidOperationException("O marco do baixio não registrou o entalhe após a vitória.");
+                        int reportGold = anchorResume.gold, reportGlass = anchorResume.tideGlass; anchorResume.memoryOverlay = false; anchorResume.player = SaltFrontierCartographer; anchorResume.Interact();
+                        if (anchorResume.saltFrontierSideProgress != 11 || anchorResume.gold != reportGold + 420 || anchorResume.tideGlass != reportGlass + 3 || !ValidSaveData(anchorResume.CaptureSaveData())) throw new InvalidOperationException("Nemi não registrou o Campo das Âncoras ou concedeu a recompensa única da expedição.");
+                    }
                 }
                 using (var frontierResume = new Game())
                 {
@@ -2204,6 +2225,6 @@ public sealed partial class Game
                 if (resume.room != 46 || !resume.saltBasinRewardClaimed) throw new InvalidOperationException("A travessia de retorno não reabriu a bacia com seu progresso preservado.");
             }
         }
-        Console.WriteLine("TESTES OK: campanha e expedições, incluindo Costa das Badaladas, Fileira das Bóias, Ritmo das Bóias, combate, loot, progressão e compatibilidade de saves antigos."); return 0;
+        Console.WriteLine("TESTES OK: campanha e expedições, incluindo Costa das Badaladas, Fileira das Bóias, Baixio das Âncoras, combate, loot, progressão e compatibilidade de saves antigos."); return 0;
     }
 }
