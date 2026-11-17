@@ -429,7 +429,8 @@ public sealed partial class Game : Form
         float woundResonance = enemy.WoundTime > 0 && HasEchoWoundResonance(index) ? 1.15f : 1f;
         float paragonMultiplier = combatParagon == 1 && health >= maxHealth * 0.8f ? 1.12f : combatParagon == 2 && health <= maxHealth * 0.3f ? 1.2f : 1f;
         float markedTargetMultiplier = HasWeaponAffix(index, 11) && IsMarkedForInscription(enemy) ? 1f + WeaponAffixValue(index, 11) / 100f : 1f;
-        return bossHunter * combatFocusMultiplier * paragonMultiplier * (vigilActive && HasCharm(7) ? 1.4f : 1f) * (HasCharm(10) ? 0.9f : 1f) * VeinResonanceMultiplier() * woundResonance * markedTargetMultiplier;
+        float armorMarkMultiplier = armorOn && armorTrait == 5 && IsMarkedForInscription(enemy) ? 1f + (HasMarkingResonance() ? 0.2f : 0.12f) : 1f;
+        return bossHunter * combatFocusMultiplier * paragonMultiplier * (vigilActive && HasCharm(7) ? 1.4f : 1f) * (HasCharm(10) ? 0.9f : 1f) * VeinResonanceMultiplier() * woundResonance * markedTargetMultiplier * armorMarkMultiplier;
     }
     private float CharmDamageTakenMultiplier() => (HasCharm(9) ? 1.1f : 1f) * (HasCharm(10) ? 0.86f : 1f);
     private float CombatMasteryDamageTakenMultiplier() => combatMastery == 1 ? 0.9f : combatMastery == 2 ? 1.08f : 1f;

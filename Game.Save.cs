@@ -189,8 +189,8 @@ public sealed partial class Game
             || s.TideGlass is < 0 or > 999
             || s.EliteWeaponMisses is < 0 or > 2
             || s.DifficultyTier is < 0 or > 3
-            || s.ArmorTrait is < 0 or > 4
-            || s.RelicTrait is < 0 or > 4
+            || s.ArmorTrait is < 0 or > 5
+            || s.RelicTrait is < 0 or > 5
             || s.ArmorTrait > 0 && !s.Armor
             || s.RelicTrait > 0 && !s.Relic
             || s.Damage < 1

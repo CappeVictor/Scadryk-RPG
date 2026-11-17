@@ -148,6 +148,12 @@ public sealed partial class Game
             AdvanceTechniqueCooldowns(cooldownRefund);
             AddFloatingText(new PointF(player.X, player.Y - 56), $"CONTRAMARÉ −{cooldownRefund:0.0} S", Color.LightCyan);
         }
+        float markedKillAdvance = IsMarkedForInscription(enemy) ? MarkedKillCooldownAdvance() : 0f;
+        if (markedKillAdvance > 0)
+        {
+            AdvanceTechniqueCooldowns(markedKillAdvance);
+            AddFloatingText(new PointF(player.X, player.Y - 38), $"ECO DE RETORNO −{markedKillAdvance:0.00} S", Color.LightCyan);
+        }
         if (enemy.EliteMinion) return;
         if ((enemy.Boss || enemy.Kind == EnemyKind.Elite) && combatCapstone == 1)
         {

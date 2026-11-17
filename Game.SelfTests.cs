@@ -1537,6 +1537,31 @@ public sealed partial class Game
             if (lastStandNourish.HasLastStandNourishResonance() || lastStandNourish.RelicKillHealing() != 11)
                 throw new InvalidOperationException("A Ressonância do Lastro permaneceu ativa acima do limiar de vida crítica.");
         }
+        using (var markingResonance = new Game())
+        {
+            markingResonance.timer.Stop(); markingResonance.StartGame(); markingResonance.armor = markingResonance.relic = markingResonance.armorOn = markingResonance.relicOn = true; markingResonance.armorTrait = markingResonance.relicTrait = 5;
+            Enemy markedTarget = new() { Pos = new PointF(510, 330), Kind = EnemyKind.Grunt, Hp = 1, MaxHp = 100, BellMarkTime = 3 };
+            if (!markingResonance.HasMarkingResonance() || Math.Abs(markingResonance.OutgoingDamageMultiplier(markedTarget) - 1.2f) > 0.001f)
+                throw new InvalidOperationException("Gume de Vigília + Eco de Retorno não ativaram o bônus de 20% contra inimigos marcados.");
+            markingResonance.relicOn = false;
+            if (Math.Abs(markingResonance.OutgoingDamageMultiplier(markedTarget) - 1.12f) > 0.001f)
+                throw new InvalidOperationException("Gume de Vigília não concedeu seu bônus-base de 12% contra inimigos marcados.");
+            markingResonance.relicOn = true;
+            markingResonance.skillCd = markingResonance.shardCd = markingResonance.bellCd = markingResonance.pullCd = 3;
+            markingResonance.enemies.Add(markedTarget); markingResonance.Defeat(markedTarget);
+            if (markingResonance.skillCd != 1.75f || markingResonance.shardCd != 1.75f || markingResonance.bellCd != 1.75f || markingResonance.pullCd != 1.75f || !markingResonance.floatingTexts.Any(text => text.Text == "ECO DE RETORNO −1,25 S"))
+                throw new InvalidOperationException("A Ressonância da Marca não adiantou todas as recargas em 1,25 s ao abater um alvo marcado.");
+            markingResonance.armorOn = false; markingResonance.skillCd = 3; markingResonance.enemies.Add(new Enemy { Pos = new PointF(510, 330), Kind = EnemyKind.Grunt, Hp = 1, MaxHp = 100, BellMarkTime = 3 }); markingResonance.Defeat(markingResonance.enemies.Single());
+            if (markingResonance.HasMarkingResonance() || markingResonance.skillCd != 2.25f) throw new InvalidOperationException("Eco de Retorno não manteve seu efeito-base de 0,75 s sem o peitoral.");
+            markingResonance.skillCd = 3; markingResonance.enemies.Add(new Enemy { Pos = new PointF(510, 330), Kind = EnemyKind.Grunt, Hp = 1, MaxHp = 100 }); markingResonance.Defeat(markingResonance.enemies.Single());
+            if (markingResonance.skillCd != 3) throw new InvalidOperationException("Eco de Retorno adiantou recargas sem abater um inimigo marcado.");
+            SaveData markingSave = markingResonance.CaptureSaveData();
+            if (!ValidSaveData(markingSave) || markingSave.ArmorTrait != 5 || markingSave.RelicTrait != 5) throw new InvalidOperationException("Os novos traços da Ressonância da Marca não foram aceitos pelo save.");
+            SaveData markingRoundTrip = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(markingSave))!;
+            if (!ValidSaveData(markingRoundTrip) || markingRoundTrip.ArmorTrait != 5 || markingRoundTrip.RelicTrait != 5) throw new InvalidOperationException("O save serializado não preservou os novos traços da Ressonância da Marca.");
+            markingSave.ArmorTrait = 6; markingSave.RelicTrait = 6;
+            if (ValidSaveData(markingSave)) throw new InvalidOperationException("O save aceitou um traço de peitoral ou relicário fora do catálogo.");
+        }
         using var lumeUpstream = new Game(); lumeUpstream.timer.Stop(); lumeUpstream.StartGame(); lumeUpstream.room = 22; lumeUpstream.questStage = 25; lumeUpstream.townEnding = 2; lumeUpstream.SetupRoom();
         if (lumeUpstream.enemies.Single(e => e.Kind == EnemyKind.TideWitness).MaxHp != 920) throw new InvalidOperationException("Manter o Lume não alterou a força da Testemunha da Maré.");
         using var reedExpedition = new Game(); reedExpedition.timer.Stop(); reedExpedition.StartGame(); reedExpedition.storyOverlay = false; reedExpedition.room = 22; reedExpedition.questStage = 27; reedExpedition.upstreamTrace = true; reedExpedition.townEnding = 1; reedExpedition.enemies.Clear(); reedExpedition.drops.Clear(); reedExpedition.player = new PointF(850, 330); reedExpedition.Interact();
