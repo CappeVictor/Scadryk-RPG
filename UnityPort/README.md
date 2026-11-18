@@ -1,11 +1,11 @@
 # Scadryk para Unity
 
-`UnityPort` agora é um projeto Unity completo com demo top-down de três fases e nove salas conectadas, mapas procedurais com cenografia própria para cada fase e variações de obstáculos nas nove salas, inimigos e guardiões, HUD, minimapa, combate, esquiva, pulso e pausa. A cena inicial já está salva em `Assets/Scenes/ScadrykDemo.unity`. A compilação de Windows x64 foi gerada no Unity Editor 6.6. Campanha completa, diálogos, missões, equipamentos, animações finais e saves da versão Windows Forms ainda não foram portados.
+`UnityPort` agora é um projeto Unity completo com demo top-down de três fases e nove salas conectadas, mapas procedurais com árvores, pedras, cristais, ruínas, água e objetos costeiros em sprites ilustrados, além de variações de obstáculos nas nove salas; inclui inimigos, guardiões, HUD, minimapa, combate, esquiva, pulso e pausa. A cena inicial já está salva em `Assets/Scenes/ScadrykDemo.unity`. A compilação de Windows x64 foi gerada no Unity Editor 6.6. Campanha completa, diálogos, missões, equipamentos, animações finais e saves da versão Windows Forms ainda não foram portados.
 
 ## Requisitos
 
 - Unity 6.6 ou versão Unity 6 compatível.
-- O projeto usa Input Manager (Old), já configurado em Project Settings.
+- O projeto usa Input Manager (Old), já configurado em Project Settings. A folha de sprites ambientais está em `Assets/Resources/ScadrykArt/ScadrykEnvironment.png`.
 
 ## Abrir e jogar
 
@@ -39,7 +39,8 @@ As fases jogáveis incluídas são **Margens do Primeiro Eco**, **Bacia do Sal I
 - `ScadrykPlayerController.cs`: velocidade, resposta dos controles, ataque, esquiva e pulso.
 - `ScadrykEnemyHealth.cs`: vida, perseguição e janela de aviso do ataque inimigo.
 - `ScadrykCameraFollow.cs`: acompanhamento suave do jogador.
+- `ScadrykDepthSort.cs`: ordenação de desenho por profundidade, para Nara passar à frente ou atrás das árvores e pedras.
 - `Editor/ScadrykSceneBuilder.cs`: cria e registra a cena jogável pelo menu da Unity.
-- `Editor/ScadrykArtImporter.cs`: configura as texturas para leitura e corte dos quadros em tempo de execução.
+- `Editor/ScadrykArtImporter.cs`: prepara as texturas para corte dos quadros e dos sprites ambientais em tempo de execução.
 
 O jogo original permanece no repositório como versão Windows Forms/GDI+. Os scripts dentro de `UnityPort/Assets` são a nova implementação Unity e foram excluídos da compilação Windows pelo `.csproj`.

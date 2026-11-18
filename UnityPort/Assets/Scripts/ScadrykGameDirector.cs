@@ -11,6 +11,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private static readonly Color[] PhaseAccentColors = { new Color(0.36f, 0.62f, 0.48f), new Color(0.78f, 0.59f, 0.30f), new Color(0.30f, 0.68f, 0.76f) };
     private static Sprite SquareSprite;
     private static Sprite CircleSprite;
+    private Sprite[] environmentSprites;
 
     private int phaseIndex, roomIndex, enemiesRemaining;
     private bool isPaused, victory;
@@ -39,6 +40,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private void Start()
     {
         EnsureSprites();
+        environmentSprites = LoadSheetRow("ScadrykEnvironment", 0, true);
         SetupCamera();
         BuildPhase(0, 0, true);
     }
@@ -80,6 +82,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             var playerObject = new GameObject("Nara — player");
             playerObject.transform.position = roomCenter + Vector2.left * 6.2f;
             var renderer = playerObject.AddComponent<SpriteRenderer>(); renderer.sprite = CircleSprite; renderer.color = new Color(0.85f, 0.83f, 0.71f); renderer.sortingOrder = 5;
+            playerObject.AddComponent<ScadrykDepthSort>().SetBias(5);
             playerObject.transform.localScale = new Vector3(0.88f, 0.88f, 1f);
             playerObject.AddComponent<CircleCollider2D>().radius = 0.42f;
             playerObject.AddComponent<Rigidbody2D>();
@@ -199,6 +202,62 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             float fy = -3.5f + ((seed * 7) % 70) * 0.1f;
             MakeDecoration(parent, "Ground fleck", new Vector2(fx, fy), new Vector2(0.12f, 0.12f), new Color(accent.r, accent.g, accent.b, 0.16f), true, -9);
         }
+
+        DrawPhaseProps(parent, room, x);
+    }
+
+    private void DrawPhaseProps(Transform parent, int room, float x)
+    {
+        if (environmentSprites == null || environmentSprites.Length < 16) return;
+
+        if (phaseIndex == 0)
+        {
+            // Flooded first-echo shore: willow canopy, exposed roots, reeds, moss and old stones.
+            PlaceProp(parent, 0, "Echo willow", new Vector2(x - 7.15f, 3.2f), 2.15f, true, new Vector2(0.24f, 0.22f), new Vector2(0f, 0.16f));
+            PlaceProp(parent, 1, "Root-twisted willow", new Vector2(x + 7.1f, -6.05f), 1.9f, true, new Vector2(0.27f, 0.2f), new Vector2(0f, 0.18f));
+            PlaceProp(parent, 2, "Cattails", new Vector2(x - 5.8f, 3.55f), 1.45f, true, new Vector2(0.28f, 0.18f), new Vector2(0f, 0.15f));
+            PlaceProp(parent, 2, "Cattails", new Vector2(x + 5.65f, -6.0f), 1.35f, true, new Vector2(0.27f, 0.18f), new Vector2(0f, 0.15f));
+            PlaceProp(parent, 3, "Mossy stump", new Vector2(x - 4.2f, -5.65f), 1.15f, true, new Vector2(0.32f, 0.23f), new Vector2(0f, 0.18f));
+            PlaceProp(parent, 4, "Mossy shoreline rocks", new Vector2(x + 4.0f, 3.85f), 1.2f, true, new Vector2(0.55f, 0.28f), new Vector2(0f, 0.18f));
+            if (room == 2) PlaceProp(parent, 6, "Flooded arch ruin", new Vector2(x - 0.3f, 3.15f), 1.5f, false, Vector2.zero, Vector2.zero);
+        }
+        else if (phaseIndex == 1)
+        {
+            // Salt basin: amber crystal growths, blanched rock and shallow mineral water.
+            PlaceProp(parent, 8, "Salt crystal cluster", new Vector2(x - 6.0f, -5.95f), 1.55f, true, new Vector2(0.34f, 0.22f), new Vector2(0f, 0.18f));
+            PlaceProp(parent, 9, "Salt spire", new Vector2(x - 5.3f, 3.7f), 1.55f, true, new Vector2(0.26f, 0.2f), new Vector2(0f, 0.16f));
+            PlaceProp(parent, 10, "Salt-crusted boulder", new Vector2(x + 5.1f, -5.85f), 1.45f, true, new Vector2(0.46f, 0.28f), new Vector2(0f, 0.18f));
+            PlaceProp(parent, 11, "Brine pool", new Vector2(x + 1.0f, 3.65f), 1.8f, false, Vector2.zero, Vector2.zero);
+            PlaceProp(parent, 4, "Salt-buried boulders", new Vector2(x + 5.8f, 3.95f), 1.18f, true, new Vector2(0.52f, 0.28f), new Vector2(0f, 0.18f));
+            if (room == 2) PlaceProp(parent, 7, "Basin's standing stone", new Vector2(x - 1.25f, 3.25f), 1.35f, true, new Vector2(0.25f, 0.22f), new Vector2(0f, 0.18f));
+        }
+        else
+        {
+            // Bell coast: wind-shaped pines, wave-worn rocks, lantern buoys and a broken shrine.
+            PlaceProp(parent, 12, "Wind-shaped pine", new Vector2(x - 7.0f, 3.2f), 1.9f, true, new Vector2(0.25f, 0.22f), new Vector2(0f, 0.16f));
+            PlaceProp(parent, 12, "Coastal pine", new Vector2(x + 7.0f, -6.05f), 1.7f, true, new Vector2(0.25f, 0.2f), new Vector2(0f, 0.16f));
+            PlaceProp(parent, 13, "Wave-worn rocks", new Vector2(x - 4.0f, -5.9f), 1.35f, true, new Vector2(0.52f, 0.28f), new Vector2(0f, 0.16f));
+            PlaceProp(parent, 14, "Lantern buoy posts", new Vector2(x + 4.7f, 3.75f), 1.35f, true, new Vector2(0.23f, 0.22f), new Vector2(0f, 0.16f));
+            if (room == 2) PlaceProp(parent, 15, "Bell shrine", new Vector2(x - 0.5f, 3.1f), 1.6f, false, Vector2.zero, Vector2.zero);
+        }
+    }
+
+    private void PlaceProp(Transform parent, int spriteIndex, string name, Vector2 position, float scale, bool solid, Vector2 hitboxSize, Vector2 hitboxOffset)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent);
+        go.transform.position = position;
+        go.transform.localScale = Vector3.one * scale;
+        var renderer = go.AddComponent<SpriteRenderer>();
+        renderer.sprite = environmentSprites[spriteIndex];
+        renderer.sortingOrder = 1;
+        go.AddComponent<ScadrykDepthSort>().SetBias(2);
+        if (solid)
+        {
+            var collider = go.AddComponent<BoxCollider2D>();
+            collider.size = hitboxSize;
+            collider.offset = hitboxOffset;
+        }
     }
 
     private static void DrawRune(Transform parent, Vector2 center, float radius, Color color)
@@ -269,6 +328,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             string sheet = boss ? (phaseIndex == 0 ? "Bosses" : phaseIndex == 1 ? "BossesMidgame" : "BossesFinalWave") : "Enemies";
             Sprite[] frames = LoadSheetRow(sheet, boss ? phaseIndex : i % 4, false);
             var renderer = enemy.AddComponent<SpriteRenderer>(); renderer.sprite = frames != null && frames.Length > 0 ? frames[0] : CircleSprite; renderer.color = Color.white; renderer.sortingOrder = 4;
+            enemy.AddComponent<ScadrykDepthSort>().SetBias(4);
             var collider = enemy.AddComponent<CircleCollider2D>(); collider.radius = 0.48f;
             enemy.AddComponent<Rigidbody2D>();
             var health = enemy.AddComponent<ScadrykEnemyHealth>();
@@ -332,7 +392,11 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     {
         var go = new GameObject(name); go.transform.SetParent(parent); go.transform.position = position; go.transform.localScale = new Vector3(size.x, size.y, 1f);
         var renderer = go.AddComponent<SpriteRenderer>(); renderer.sprite = SquareSprite; renderer.color = color; renderer.sortingOrder = order;
-        if (solid) { var collider = go.AddComponent<BoxCollider2D>(); collider.size = Vector2.one; }
+        if (solid)
+        {
+            var collider = go.AddComponent<BoxCollider2D>(); collider.size = Vector2.one;
+            if (order >= 2) go.AddComponent<ScadrykDepthSort>().SetBias(2);
+        }
     }
 
     private static void EnsureSprites()
