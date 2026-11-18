@@ -12,6 +12,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private static Sprite SquareSprite;
     private static Sprite CircleSprite;
     private Sprite[] environmentSprites;
+    private Sprite[] phaseGroundSprites;
+    private Sprite[] phaseEnemySprites;
 
     private int phaseIndex, roomIndex, enemiesRemaining;
     private bool isPaused, victory;
@@ -41,6 +43,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     {
         EnsureSprites();
         environmentSprites = LoadSheetRow("ScadrykEnvironment", 0, true);
+        phaseGroundSprites = new[] { LoadSingleSprite("ForestClearing", 80f), LoadSingleSprite("SaltBasin", 80f), LoadSingleSprite("BellCoast", 80f) };
+        phaseEnemySprites = new[] { LoadSingleSprite("Rootbound", 1200f), LoadSingleSprite("SaltCrawler", 1200f), LoadSingleSprite("BellWraith", 1200f) };
         SetupCamera();
         BuildPhase(0, 0, true);
     }
@@ -105,6 +109,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             float x = i * RoomSpacing;
             Color roomFloor = floor * (i == 1 ? 1.08f : 0.96f);
             MakeBox(parent, "Room floor " + (i + 1), new Vector2(x, 0), new Vector2(19f, 13f), roomFloor, false, -10);
+            PlacePhaseGround(parent, x, i);
             DrawRoomScenery(parent, i, x, roomFloor);
             MakeBox(parent, "North wall", new Vector2(x, 6.6f), new Vector2(19.5f, 0.5f), wall, true, 0);
             MakeBox(parent, "South wall", new Vector2(x, -6.6f), new Vector2(19.5f, 0.5f), wall, true, 0);
@@ -129,6 +134,20 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             DrawRoomObstacles(parent, i, x);
             MakeLabelMarker(parent, new Vector2(x, 5.35f), (i + 1).ToString(), PhaseAccentColors[phaseIndex]);
         }
+    }
+
+    private void PlacePhaseGround(Transform parent, float x, int room)
+    {
+        if (phaseGroundSprites == null || phaseGroundSprites[phaseIndex] == null) return;
+        var ground = new GameObject("Painted top-down biome — " + PhaseNames[phaseIndex]);
+        ground.transform.SetParent(parent);
+        ground.transform.position = new Vector3(x, 0f, 0f);
+        var renderer = ground.AddComponent<SpriteRenderer>();
+        renderer.sprite = phaseGroundSprites[phaseIndex];
+        renderer.sortingOrder = -8;
+        renderer.flipX = room == 1;
+        Vector2 size = renderer.sprite.bounds.size;
+        ground.transform.localScale = new Vector3(19f / size.x, 13f / size.y, 1f);
     }
 
     private void DrawRoomScenery(Transform parent, int room, float x, Color floor)
@@ -324,12 +343,14 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             float angle = (Mathf.PI * 2f * i / Mathf.Max(1, count)) + 0.3f;
             float radius = boss ? 2.5f : 3.1f + (i % 2) * 0.7f;
             Vector2 position = roomCenter + new Vector2(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius);
-            var enemy = new GameObject(boss ? "Phase guardian" : "Echo");
+            var enemy = new GameObject(boss ? "Phase guardian" : "Echo of " + PhaseNames[phaseIndex]);
             enemy.transform.SetParent(levelRoot.transform);
             enemy.transform.position = position;
             enemy.transform.localScale = Vector3.one * (boss ? 1.65f : 0.9f);
             string sheet = boss ? (phaseIndex == 0 ? "Bosses" : phaseIndex == 1 ? "BossesMidgame" : "BossesFinalWave") : "Enemies";
             Sprite[] frames = LoadSheetRow(sheet, boss ? phaseIndex : i % 4, false);
+            if (phaseEnemySprites != null && phaseEnemySprites[phaseIndex] != null)
+                frames = new[] { phaseEnemySprites[phaseIndex], phaseEnemySprites[phaseIndex], phaseEnemySprites[phaseIndex], phaseEnemySprites[phaseIndex] };
             var renderer = enemy.AddComponent<SpriteRenderer>(); renderer.sprite = frames != null && frames.Length > 0 ? frames[0] : CircleSprite; renderer.color = Color.white; renderer.sortingOrder = 4;
             enemy.AddComponent<ScadrykDepthSort>().SetBias(4);
             var collider = enemy.AddComponent<CircleCollider2D>(); collider.radius = 0.48f;
@@ -435,6 +456,13 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             result[frame] = sprite;
         }
         return result;
+    }
+
+    private static Sprite LoadSingleSprite(string name, float pixelsPerUnit)
+    {
+        Texture2D texture = Resources.Load<Texture2D>("ScadrykArt/" + name);
+        if (texture == null) return null;
+        return Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), pixelsPerUnit);
     }
 
     private void OnGUI()

@@ -1,11 +1,11 @@
 # Scadryk para Unity
 
-`UnityPort` agora é um projeto Unity completo com demo top-down de três fases e nove salas conectadas, mapas procedurais com árvores, pedras, cristais, ruínas, água e objetos costeiros em sprites ilustrados; árvores e juncos balançam, cristais e água pulsam, e boias cintilam. Os mapas têm diferentes arranjos de obstáculos nas nove salas; o jogo inclui inimigos, guardiões, HUD, minimapa, combate, esquiva, pulso e pausa. A cena inicial já está salva em `Assets/Scenes/ScadrykDemo.unity`. A compilação de Windows x64 foi gerada no Unity Editor 6.6. Campanha completa, diálogos, missões, equipamentos, animações finais e saves da versão Windows Forms ainda não foram portados.
+`UnityPort` agora é um projeto Unity completo com demo top-down de três fases e nove salas conectadas. Cada fase tem cenário ilustrado próprio: bosque encantado, bacia de sal com poças e cristais, e costa rochosa com marés e ruínas de sinos. Cada ambiente também tem inimigos próprios, como o guardião de raízes, a criatura de sal e o espectro das badaladas. Árvores, juncos, cristais, água e lanternas têm movimento sutil. Os mapas mantêm obstáculos e rotas diferentes; o jogo inclui guardiões, HUD, minimapa, combate, esquiva, pulso e pausa. A câmera permanece top-down e acompanha Nara. A cena inicial está em `Assets/Scenes/ScadrykDemo.unity`. Campanha completa, diálogos, missões, equipamentos, animações finais e saves da versão Windows Forms ainda não foram portados.
 
 ## Requisitos
 
 - Unity 6.6 ou versão Unity 6 compatível.
-- O projeto usa Input Manager (Old), já configurado em Project Settings. A folha de sprites ambientais está em `Assets/Resources/ScadrykArt/ScadrykEnvironment.png`.
+- O projeto usa Input Manager (Old), já configurado em Project Settings. Artes de cenário e inimigos estão em `Assets/Resources/ScadrykArt/`.
 
 ## Abrir e jogar
 
