@@ -4,7 +4,7 @@ Scadryk é um RPG de ação 2D em fantasia sombria, feito em C# com .NET 8 e Win
 
 ## Usar o protótipo na Unity
 
-O jogo original foi feito para Windows Forms, mas [`UnityPort/`](UnityPort/README.md) contém agora uma demonstração jogável Unity com três fases e nove salas, mapas com minimapa, inimigos, guardiões, passagens e controles de movimento, mira, ataque, esquiva e pulso. O README da pasta UnityPort explica como abrir a cena de demonstração. Campanha completa, diálogos, missões, equipamentos, animações e salvamento ainda precisam ser migrados.
+O jogo original foi feito para Windows Forms. [`UnityPort/`](UnityPort/README.md) agora também é um projeto Unity completo, com a cena `ScadrykDemo`, três fases e nove salas, mapas, inimigos, guardiões, controles aprimorados e build Windows. Abra a pasta `UnityPort` pelo Unity Hub para testar. Campanha completa, diálogos, missões, equipamentos, animações e salvamento ainda precisam ser migrados.
 
 O [objetivo completo do projeto](OBJETIVO_SCADRYK.md) descreve a experiência desejada, os sistemas e os critérios para cada etapa.
 

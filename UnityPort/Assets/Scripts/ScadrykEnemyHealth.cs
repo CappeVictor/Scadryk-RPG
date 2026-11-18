@@ -10,6 +10,11 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private float health, nextAttackAt, windupEndsAt;
     private float attackRange = 1.2f;
     private Rigidbody2D body;
+#if UNITY_6000_0_OR_NEWER
+    private Vector2 BodyVelocity { set => body.linearVelocity = value; }
+#else
+    private Vector2 BodyVelocity { set => body.velocity = value; }
+#endif
     private SpriteRenderer sprite;
     private ScadrykPlayerController player;
     private ScadrykGameDirector director;
@@ -40,7 +45,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
 
     private void Update()
     {
-        if (dead || player == null || (director != null && director.IsPaused)) { if (body != null) body.velocity = Vector2.zero; return; }
+        if (dead || player == null || (director != null && director.IsPaused)) { if (body != null) BodyVelocity = Vector2.zero; return; }
         Vector2 delta = (Vector2)player.transform.position - body.position;
         float distance = delta.magnitude;
         if (sprite != null)
@@ -58,10 +63,10 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             nextAttackAt = Time.time + (IsBoss ? 1.25f : 1.55f);
         }
         if (distance > attackRange * 0.8f)
-            body.velocity = delta.normalized * moveSpeed;
+            BodyVelocity = delta.normalized * moveSpeed;
         else
         {
-            body.velocity = Vector2.zero;
+            BodyVelocity = Vector2.zero;
             if (windupEndsAt <= 0f && Time.time >= nextAttackAt) windupEndsAt = Time.time + (IsBoss ? 0.52f : 0.7f);
         }
     }

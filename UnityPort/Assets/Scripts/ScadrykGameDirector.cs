@@ -7,8 +7,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private const float RoomSpacing = 23f;
     private static readonly string[] PhaseNames = { "Margens do Primeiro Eco", "Bacia do Sal Imóvel", "Costa das Badaladas" };
     private static readonly Color[] PhaseColors = { new Color(0.09f, 0.16f, 0.17f), new Color(0.17f, 0.13f, 0.1f), new Color(0.09f, 0.13f, 0.2f) };
-    private static Sprite squareSprite;
-    private static Sprite circleSprite;
+    private static Sprite SquareSprite;
+    private static Sprite CircleSprite;
 
     private int phaseIndex, roomIndex, enemiesRemaining;
     private bool isPaused, victory;
@@ -236,13 +236,23 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private static Sprite[] LoadSheetRow(string name, int row, bool wholeSheet)
     {
-        Sprite[] all = Resources.LoadAll<Sprite>("ScadrykArt/" + name);
-        if (all == null || all.Length == 0) return null;
-        System.Array.Sort(all, (a, b) => string.CompareOrdinal(a.name, b.name));
-        if (wholeSheet) return all.Length >= 16 ? all : null;
-        if (all.Length < 16) return all;
-        var result = new Sprite[4];
-        for (int column = 0; column < 4; column++) result[column] = all[(row % 4) * 4 + column];
+        Texture2D texture = Resources.Load<Texture2D>("ScadrykArt/" + name);
+        if (texture == null) return null;
+        int frameCount = wholeSheet ? 16 : 4;
+        var result = new Sprite[frameCount];
+        for (int frame = 0; frame < frameCount; frame++)
+        {
+            int sheetRow = wholeSheet ? frame / 4 : row % 4;
+            int column = frame % 4;
+            int xMin = Mathf.RoundToInt(column * texture.width / 4f);
+            int xMax = Mathf.RoundToInt((column + 1) * texture.width / 4f);
+            int yMin = Mathf.RoundToInt(texture.height - (sheetRow + 1) * texture.height / 4f);
+            int yMax = Mathf.RoundToInt(texture.height - sheetRow * texture.height / 4f);
+            var rect = new Rect(xMin, yMin, xMax - xMin, yMax - yMin);
+            var sprite = Sprite.Create(texture, rect, new Vector2(0.5f, 0.06f), 220f);
+            sprite.name = name + "_" + (sheetRow * 4 + column).ToString("00");
+            result[frame] = sprite;
+        }
         return result;
     }
 

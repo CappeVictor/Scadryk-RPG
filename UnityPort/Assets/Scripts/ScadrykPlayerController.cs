@@ -19,6 +19,11 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     [SerializeField, Min(0.1f)] private float shockwaveCooldown = 4f;
 
     private Rigidbody2D body;
+#if UNITY_6000_0_OR_NEWER
+    private Vector2 BodyVelocity { get => body.linearVelocity; set => body.linearVelocity = value; }
+#else
+    private Vector2 BodyVelocity { get => body.velocity; set => body.velocity = value; }
+#endif
     private Vector2 moveInput;
     private Vector2 facing = Vector2.right;
     private Vector2 dashDirection;
@@ -63,13 +68,13 @@ public sealed class ScadrykPlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (director != null && director.IsPaused) { body.velocity = Vector2.zero; return; }
+        if (director != null && director.IsPaused) { BodyVelocity = Vector2.zero; return; }
         if (Time.time < dashEndsAt)
         {
-            body.velocity = dashDirection * dashSpeed;
+            BodyVelocity = dashDirection * dashSpeed;
             return;
         }
-        body.velocity = Vector2.MoveTowards(body.velocity, moveInput * moveSpeed, acceleration * Time.fixedDeltaTime);
+        BodyVelocity = Vector2.MoveTowards(BodyVelocity, moveInput * moveSpeed, acceleration * Time.fixedDeltaTime);
     }
 
     private void AimAtPointer()
@@ -138,5 +143,5 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     }
 
     public void RestoreHealth(float amount) => health = Mathf.Min(maxHealth, health + Mathf.Max(0f, amount));
-    public void ResetForRoom(Vector2 position) { health = maxHealth; transform.position = position; body.velocity = Vector2.zero; }
+    public void ResetForRoom(Vector2 position) { health = maxHealth; transform.position = position; BodyVelocity = Vector2.zero; }
 }
