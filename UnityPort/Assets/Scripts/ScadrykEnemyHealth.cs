@@ -26,12 +26,14 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private float moveSpeed;
     private bool isFinalBoss;
     private int finalAttackIndex;
+    private int queuedFinalPattern;
     private int combatRole;
     private Color roleTint = Color.white;
 
     public float Health01 => maxHealth <= 0 ? 0 : Mathf.Clamp01(health / maxHealth);
     public bool IsBoss { get; private set; }
     public bool IsFinalBoss => isFinalBoss;
+    public int FinalStage => !isFinalBoss ? 0 : Health01 > 0.7f ? 1 : Health01 > 0.35f ? 2 : 3;
     public int BiomeIndex => biomeIndex;
 
     public void Configure(float hp, float damage, float speed, bool boss, int biome, Sprite[] frames, int role = 0)
@@ -155,24 +157,29 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
 
     private void BeginFinalBossAttack()
     {
+        int stage = FinalStage;
+        queuedFinalPattern = finalAttackIndex % (stage == 1 ? 2 : 3);
+        float windup = stage == 3 ? 1.18f : 1.35f;
         isWindup = true;
-        windupEndsAt = Time.time + 1.12f;
+        windupEndsAt = Time.time + windup;
         Vector2 origin = transform.position;
-        if (finalAttackIndex % 3 == 0)
+        Color warning = stage == 1 ? new Color(0.62f, 0.9f, 0.42f, 0.82f) : stage == 2 ? new Color(1f, 0.72f, 0.32f, 0.82f) : new Color(0.98f, 0.26f, 0.62f, 0.85f);
+        if (queuedFinalPattern == 0)
         {
             Vector2 direction = (attackTarget - origin).normalized;
-            for (int i = -2; i <= 2; i++)
-                ScadrykEffects.TelegraphLine(origin, origin + Rotate(direction, i * 0.22f) * 7.2f, new Color(0.98f, 0.26f, 0.62f, 0.75f), 0.16f, 1.12f);
+            int halfCount = stage == 1 ? 1 : stage == 2 ? 2 : 3;
+            for (int i = -halfCount; i <= halfCount; i++)
+                ScadrykEffects.TelegraphLine(origin, origin + Rotate(direction, i * 0.19f) * 7.2f, warning, 0.16f, windup);
         }
-        else if (finalAttackIndex % 3 == 1)
+        else if (queuedFinalPattern == 1)
         {
-            ScadrykEffects.Voidburst(attackTarget, 3.2f, 1.12f);
-            ScadrykEffects.Ring(attackTarget, 5.4f, new Color(0.98f, 0.26f, 0.62f, 0.9f), 1.12f);
+            ScadrykEffects.Voidburst(attackTarget, 3.2f, windup);
+            ScadrykEffects.Ring(attackTarget, 3.5f, warning, windup + 0.46f);
         }
         else
         {
-            ScadrykEffects.Voidburst(origin, 5f, 1.12f);
-            ScadrykEffects.Ring(origin, 13f, new Color(0.98f, 0.26f, 0.62f, 0.95f), 1.12f);
+            ScadrykEffects.Ring(origin, 13.4f, warning, windup);
+            ScadrykEffects.Ring(origin, 4.4f, new Color(0.55f, 1f, 0.82f, 0.92f), windup);
         }
     }
 
@@ -205,14 +212,19 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
 
     private void ResolveFinalBossAttack()
     {
-        int pattern = finalAttackIndex++ % 3;
-        nextAttackAt = Time.time + 2.15f;
+        int pattern = queuedFinalPattern;
+        int stage = FinalStage;
+        finalAttackIndex++;
+        nextAttackAt = Time.time + (stage == 3 ? 1.9f : 2.25f);
         Vector2 origin = transform.position;
         if (pattern == 0)
         {
             Vector2 direction = (attackTarget - origin).normalized;
-            for (int i = -3; i <= 3; i++)
-                ScadrykEnemyProjectile.Launch(origin + direction * 0.75f, Rotate(direction, i * 0.19f), 7.1f, 15f, ScadrykEffects.VoidburstSprite, new Color(1f, 0.72f, 0.92f), 0.58f, "Void star");
+            int halfCount = stage == 1 ? 1 : stage == 2 ? 2 : 3;
+            Sprite shot = stage == 1 ? ScadrykEffects.RootThrustSprite : stage == 2 ? ScadrykEffects.SaltShardSprite : ScadrykEffects.VoidburstSprite;
+            Color color = stage == 1 ? new Color(0.66f, 1f, 0.52f) : stage == 2 ? new Color(1f, 0.84f, 0.5f) : new Color(1f, 0.72f, 0.92f);
+            for (int i = -halfCount; i <= halfCount; i++)
+                ScadrykEnemyProjectile.Launch(origin + direction * 0.75f, Rotate(direction, i * 0.19f), 7.1f, 14f + stage, shot, color, 0.58f, "Arauto — remembered volley");
             ScadrykEffects.Voidburst(origin + direction * 1.1f, 2.3f, 0.26f);
         }
         else if (pattern == 1)
@@ -220,15 +232,16 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             Vector2 target = attackTarget;
             StartCoroutine(ResolveStarfall(target));
             Vector2 direction = (target - origin).normalized;
-            for (int i = -1; i <= 1; i++)
-                ScadrykEnemyProjectile.Launch(origin, Rotate(direction, i * 0.48f), 5.4f, 14f, ScadrykEffects.VoidburstSprite, new Color(1f, 0.58f, 0.8f), 0.48f, "Falling void star");
+            if (stage > 1)
+                for (int i = stage == 2 ? 0 : -1; i <= (stage == 2 ? 0 : 1); i++)
+                    ScadrykEnemyProjectile.Launch(origin, Rotate(direction, i * 0.48f), 5.4f, 14f, stage == 2 ? ScadrykEffects.SaltShardSprite : ScadrykEffects.VoidburstSprite, new Color(1f, 0.7f, 0.8f), 0.48f, "Arauto — falling memory");
         }
         else
         {
             float distance = Vector2.Distance(player.transform.position, origin);
             ScadrykEffects.Voidburst(origin, 13f, 0.42f);
             ScadrykEffects.Ring(origin, 13f, new Color(0.98f, 0.24f, 0.57f, 0.96f), 0.42f);
-            if (distance > 2.2f && distance < 6.7f) player.TakeDamage(27f);
+            if (distance > 2.2f && distance < 6.7f) player.TakeDamage(stage == 3 ? 27f : 23f);
         }
     }
 
@@ -313,7 +326,9 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     public void TakeDamage(float amount)
     {
         if (dead) return;
+        int previousStage = FinalStage;
         health -= Mathf.Max(0f, amount);
+        if (isFinalBoss && health > 0f && FinalStage != previousStage && director != null) director.ShowBossStage(FinalStage);
         if (animator != null) animator.PlayHit(player != null ? ((Vector2)transform.position - (Vector2)player.transform.position).normalized : Vector2.up);
         if (health <= 0f)
         {

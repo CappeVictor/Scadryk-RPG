@@ -168,8 +168,8 @@ public static class ScadrykEffects
         Sprite waveSprite = LoadEffectSprite("AttackBellWave", 600f, ref bellWaveSprite);
         if (waveSprite != null)
         {
-            Color tint = Color.white;
-            tint.a = lifetime > 0.5f ? 0.46f : 0.98f;
+            Color tint = color;
+            tint.a *= lifetime > 0.5f ? 0.46f : 0.98f;
             CreateSpriteEffect(waveSprite, center, Vector2.one * diameter, tint, lifetime, "Bell echo wave");
             return;
         }

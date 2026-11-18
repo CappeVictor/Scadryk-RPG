@@ -813,6 +813,15 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         ShowStatus("Esse poder será aprendido ao derrotar " + bosses[safeIndex] + ".", 2.5f);
     }
 
+    public void ShowBossStage(int stage)
+    {
+        string message = stage == 2 ? "O Arauto convoca o sal. Observe as linhas âmbar e a queda marcada." :
+            "Os três silêncios se juntam. O anel interno indica abrigo da onda.";
+        ScadrykEffects.Burst(finalBoss != null ? (Vector2)finalBoss.transform.position : roomCenter, new Color(0.95f, 0.48f, 0.75f), 2.8f);
+        ShowStatus(message, 7f);
+        ScadrykAudio.Play(ScadrykCue.Warning);
+    }
+
     private void MakeLabelMarker(Transform parent, Vector2 position, string text, Color color)
     {
         // A small glowing waypoint keeps the room numbering visible in the world.
@@ -921,10 +930,13 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         GUI.color = new Color(0.78f, 0.19f, 0.62f, 0.95f); GUI.DrawTexture(new Rect(panel.x, panel.y, panel.width, 2f), Texture2D.whiteTexture);
         GUI.color = new Color(0.94f, 0.63f, 0.31f, 0.9f); GUI.DrawTexture(new Rect(panel.x, panel.yMax - 2f, panel.width, 2f), Texture2D.whiteTexture);
         GUI.color = Color.white;
-        GUI.Label(new Rect(panel.x + 10f, panel.y + 3f, panel.width - 20f, 20f), "CHEFE FINAL  ·  O ARAUTO DO VAZIO", finalBossLabelStyle);
+        GUI.Label(new Rect(panel.x + 10f, panel.y + 3f, panel.width - 20f, 20f), "O ARAUTO DO VAZIO  ·  FASE " + finalBoss.FinalStage + "/3", finalBossLabelStyle);
         Rect track = new Rect(panel.x + 12f, panel.y + 31f, panel.width - 24f, 15f);
         GUI.color = new Color(0.17f, 0.06f, 0.15f, 1f); GUI.DrawTexture(track, Texture2D.whiteTexture);
         GUI.color = new Color(0.91f, 0.22f, 0.58f, 1f); GUI.DrawTexture(new Rect(track.x, track.y, track.width * finalBoss.Health01, track.height), Texture2D.whiteTexture);
+        GUI.color = new Color(1f, 0.88f, 0.67f, 0.9f);
+        GUI.DrawTexture(new Rect(track.x + track.width * 0.35f - 1f, track.y, 2f, track.height), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(track.x + track.width * 0.7f - 1f, track.y, 2f, track.height), Texture2D.whiteTexture);
         GUI.color = Color.white;
     }
 
