@@ -184,7 +184,11 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         }
         if (Time.time < abilityReadyAt[index]) return;
 
-        if (director != null) director.RecordPowerUse(index);
+        if (director != null)
+        {
+            director.RecordPowerUse(index);
+            director.TryRevealSecret(index, transform.position);
+        }
 
         float radius;
         float damage;

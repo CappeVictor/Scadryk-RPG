@@ -27,6 +27,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private ScadrykCameraFollow follow;
     private GameObject levelRoot, gateObject;
     private ScadrykEnemyHealth finalBoss;
+    private GameObject worldSecret;
     private readonly bool[] clearedRooms = new bool[RoomsPerPhase];
     private readonly string[][] roomNames = {
         new[] { "Margem Alagada", "Vau de Cinza", "Casa das Comportas" },
@@ -99,6 +100,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         exitPosition = roomCenter + Vector2.right * 8.05f;
         levelRoot = new GameObject("Phase " + (phaseIndex + 1) + " map");
         DrawPhaseMap(levelRoot.transform);
+        BuildWorldSecret();
         if (player == null)
         {
             var playerObject = new GameObject("Nara — player");
@@ -138,7 +140,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         {
             float x = i * RoomSpacing;
             Color roomFloor = floor * (i == 1 ? 1.08f : 0.96f);
-            MakeBox(parent, "Room floor " + (i + 1), new Vector2(x, 0), new Vector2(19f, 13f), roomFloor, false, -10);
+            MakeBox(parent, "Room floor " + (i + 1), new Vector2(x, 0), new Vector2(RoomSpacing + 0.2f, 13f), roomFloor, false, -10);
             PlacePhaseGround(parent, x, i);
             DrawRoomScenery(parent, i, x, roomFloor);
             MakeBox(parent, "North wall", new Vector2(x, 6.6f), new Vector2(19.5f, 0.5f), wall, true, 0);
@@ -166,6 +168,38 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         }
     }
 
+    private void BuildWorldSecret()
+    {
+        worldSecret = null;
+        int requiredPower = phaseIndex == 1 && roomIndex == 0 ? 0 :
+            phaseIndex == 2 && roomIndex == 0 ? 1 :
+            phaseIndex == 2 && roomIndex == 2 ? 2 : -1;
+        if (requiredPower < 0) return;
+        Vector2 spot = roomCenter + new Vector2(0.8f, 4.75f);
+        worldSecret = new GameObject("Hidden echo seal — power " + (requiredPower + 1));
+        worldSecret.transform.SetParent(levelRoot.transform);
+        worldSecret.transform.position = spot;
+        var marker = worldSecret.AddComponent<SpriteRenderer>();
+        marker.sprite = CircleSprite;
+        marker.color = new Color(PhaseAccentColors[phaseIndex].r, PhaseAccentColors[phaseIndex].g, PhaseAccentColors[phaseIndex].b, 0.72f);
+        marker.sortingOrder = 2;
+        worldSecret.transform.localScale = Vector3.one * 0.75f;
+        MakeDecoration(worldSecret.transform, "Seal center", spot, new Vector2(0.2f, 0.2f), Color.white, true, 3);
+    }
+
+    public void TryRevealSecret(int power, Vector2 source)
+    {
+        if (worldSecret == null) return;
+        int requiredPower = phaseIndex == 1 && roomIndex == 0 ? 0 : phaseIndex == 2 && roomIndex == 0 ? 1 : 2;
+        if (power != requiredPower || Vector2.Distance(source, worldSecret.transform.position) > 6.5f) return;
+        Vector2 spot = worldSecret.transform.position;
+        ScadrykEffects.Burst(spot, PhaseAccentColors[phaseIndex], 1.5f);
+        Destroy(worldSecret);
+        worldSecret = null;
+        if (player != null) player.RestoreHealth(35f);
+        ShowStatus("Um Eco oculto respondeu ao poder. Nara recuperou vida.", 5f);
+    }
+
     private void PlacePhaseGround(Transform parent, float x, int room)
     {
         if (phaseGroundSprites == null || phaseGroundSprites[phaseIndex] == null) return;
@@ -177,7 +211,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         renderer.sortingOrder = -8;
         renderer.flipX = room == 1;
         Vector2 size = renderer.sprite.bounds.size;
-        ground.transform.localScale = new Vector3(19f / size.x, 13f / size.y, 1f);
+        // Extend the painted ground through the portal corridor so the camera never reveals void strips.
+        ground.transform.localScale = new Vector3((RoomSpacing + 0.2f) / size.x, 13f / size.y, 1f);
     }
 
     private void DrawRoomScenery(Transform parent, int room, float x, Color floor)

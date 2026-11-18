@@ -21,6 +21,8 @@ Para criar um executável Windows, escolha **Scadryk > Build Windows demo**. O b
 
 O avanço é salvo automaticamente ao atravessar cada portal. Ao reabrir o jogo, a última sala alcançada é carregada com os poderes das fases já vencidas. A conclusão da campanha apaga o marcador de progresso para permitir uma nova jornada. Métricas de duração por sala, mortes, uso dos três poderes e inimigos restantes são gravadas em `scadryk-sessions.csv` na pasta retornada por `Application.persistentDataPath` (no Windows, normalmente `%USERPROFILE%/AppData/LocalLow/<CompanyName>/<ProductName>`). Esse arquivo não envia dados pela rede.
 
+Selos circulares ocultos respondem a um poder específico: Crescente na entrada da bacia, Estouro na entrada da costa e Rompante na sala do Arauto. Use o poder perto do selo para libertar um Eco e recuperar vida. Estes encontros são opcionais.
+
 ## Controles
 
 | Tecla ou ação | Função |
