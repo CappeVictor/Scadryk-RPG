@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 /// <summary>Builds the playable three-phase, nine-room Scadryk Unity vertical slice.</summary>
@@ -15,9 +16,11 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private Sprite[] phaseGroundSprites;
     private Sprite[] phaseEnemySprites;
     private Sprite fallenWillowLogSprite;
+    private Sprite portalSprite;
 
     private int phaseIndex, roomIndex, enemiesRemaining;
-    private bool isPaused, victory;
+    private bool isPaused, victory, transitioning;
+    private float transitionFade;
     private Vector2 roomCenter, exitPosition;
     private ScadrykPlayerController player;
     private ScadrykCameraFollow follow;
@@ -33,7 +36,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private GUIStyle titleStyle, bodyStyle, smallStyle;
     private GUIStyle centeredTitleStyle, centeredBodyStyle;
 
-    public bool IsPaused => isPaused || victory;
+    public bool IsPaused => isPaused || victory || transitioning;
     public int PhaseIndex => phaseIndex;
     public int RoomIndex => roomIndex;
     public int EnemiesRemaining => enemiesRemaining;
@@ -47,12 +50,14 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         phaseGroundSprites = new[] { LoadSingleSprite("ForestClearing", 80f), LoadSingleSprite("SaltBasin", 80f), LoadSingleSprite("BellCoast", 80f) };
         phaseEnemySprites = new[] { LoadSingleSprite("Rootbound", 1200f), LoadSingleSprite("SaltCrawler", 1200f), LoadSingleSprite("BellWraith", 1200f) };
         fallenWillowLogSprite = LoadSingleSprite("FallenWillowLog", 300f);
+        portalSprite = LoadSingleSprite("AncientPortal", 600f);
         SetupCamera();
         BuildPhase(0, 0, true);
     }
 
     private void Update()
     {
+        if (transitioning) return;
         if (Input.GetKeyDown(KeyCode.Escape) && !victory) isPaused = !isPaused;
         if (!isPaused && !victory && gateObject == null && enemiesRemaining == 0)
             UnlockExit();
@@ -78,6 +83,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     {
         if (levelRoot != null) Destroy(levelRoot);
         if (gateObject != null) Destroy(gateObject);
+        gateObject = null;
         phaseIndex = newPhase; roomIndex = newRoom; victory = false;
         roomCenter = new Vector2(roomIndex * RoomSpacing, 0f);
         exitPosition = roomCenter + Vector2.right * 8.05f;
@@ -411,6 +417,13 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     {
         if (gateObject != null) return;
         exitPosition = roomCenter + Vector2.right * 8.05f;
+        if (roomIndex == RoomsPerPhase - 1)
+        {
+            gateObject = ScadrykPortalVisual.Spawn(levelRoot.transform, exitPosition, portalSprite, PhaseAccentColors[phaseIndex], 3.6f);
+            statusMessage = phaseIndex < PhaseNames.Length - 1 ? "O portal surgiu. Aproxime-se e pressione E para atravessar." : "O último portal aguarda. Aproxime-se e pressione E.";
+            statusUntil = Time.time + 5f;
+            return;
+        }
         gateObject = new GameObject("Open passage — E");
         gateObject.transform.SetParent(levelRoot.transform);
         gateObject.transform.position = exitPosition;
@@ -420,7 +433,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     public void TryUseExit(Vector2 playerPosition)
     {
-        if (isPaused || victory) return;
+        if (isPaused || victory || transitioning) return;
         if (enemiesRemaining > 0) { ShowStatus("Ainda restam ecos nesta sala.", 1.5f); return; }
         if (Vector2.Distance(playerPosition, exitPosition) > 1.9f) { ShowStatus("Aproxime-se da passagem para avançar.", 1.5f); return; }
         clearedRooms[roomIndex] = true;
@@ -428,9 +441,93 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         else if (phaseIndex < PhaseNames.Length - 1)
         {
             for (int i = 0; i < clearedRooms.Length; i++) clearedRooms[i] = false;
-            BuildPhase(phaseIndex + 1, 0, false);
+            StartCoroutine(TransitionThroughPortal(phaseIndex + 1));
         }
-        else { victory = true; statusMessage = "A maré se aquieta. Você concluiu a demonstração!"; }
+        else StartCoroutine(TransitionToVictory());
+    }
+
+    private IEnumerator TransitionThroughPortal(int nextPhase)
+    {
+        transitioning = true;
+        ScadrykPortalVisual exitPortal = gateObject != null ? gateObject.GetComponent<ScadrykPortalVisual>() : null;
+        Vector2 start = player.transform.position;
+        Vector2 target = exitPosition;
+        float elapsed = 0f;
+        const float enterDuration = 0.82f;
+        ShowStatus("Nara atravessa o portal...", enterDuration + 0.5f);
+        while (elapsed < enterDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / enterDuration);
+            float eased = t * t * (3f - 2f * t);
+            player.SetPortalTransitPose(Vector2.Lerp(start, target, eased), 1f - eased * 0.97f);
+            if (elapsed >= enterDuration * 0.4f && exitPortal != null) exitPortal.BeginClose();
+            yield return null;
+        }
+        player.SetPortalTransitPose(target, 0.025f);
+        yield return FadeScreen(1f, 0.45f);
+
+        BuildPhase(nextPhase, 0, false);
+        Vector2 arrivalPosition = player.transform.position;
+        var arrivalObject = ScadrykPortalVisual.Spawn(levelRoot.transform, arrivalPosition, portalSprite, PhaseAccentColors[phaseIndex], 3.3f);
+        ScadrykPortalVisual arrivalPortal = arrivalObject.GetComponent<ScadrykPortalVisual>();
+        player.SetPortalTransitPose(arrivalPosition, 0.025f);
+        yield return new WaitForSeconds(0.12f);
+
+        elapsed = 0f;
+        const float emergeDuration = 0.82f;
+        while (elapsed < emergeDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / emergeDuration);
+            float eased = t * t * (3f - 2f * t);
+            player.SetPortalTransitPose(arrivalPosition, Mathf.Lerp(0.025f, 1f, eased));
+            transitionFade = 1f - eased;
+            yield return null;
+        }
+        player.SetPortalTransitPose(arrivalPosition, 1f);
+        if (arrivalPortal != null) arrivalPortal.BeginClose();
+        yield return new WaitForSeconds(0.35f);
+        transitionFade = 0f;
+        transitioning = false;
+        ShowStatus("Você chegou a: " + PhaseNames[phaseIndex] + ".", 3f);
+    }
+
+    private IEnumerator TransitionToVictory()
+    {
+        transitioning = true;
+        ScadrykPortalVisual exitPortal = gateObject != null ? gateObject.GetComponent<ScadrykPortalVisual>() : null;
+        Vector2 start = player.transform.position;
+        Vector2 target = exitPosition;
+        float elapsed = 0f;
+        const float duration = 0.82f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            float eased = t * t * (3f - 2f * t);
+            player.SetPortalTransitPose(Vector2.Lerp(start, target, eased), 1f - eased * 0.97f);
+            if (elapsed >= duration * 0.4f && exitPortal != null) exitPortal.BeginClose();
+            yield return null;
+        }
+        yield return FadeScreen(1f, 0.45f);
+        transitioning = false;
+        transitionFade = 0f;
+        victory = true;
+        statusMessage = "A maré se aquieta. Você concluiu a demonstração!";
+    }
+
+    private IEnumerator FadeScreen(float targetAlpha, float duration)
+    {
+        float startAlpha = transitionFade;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            transitionFade = Mathf.Lerp(startAlpha, targetAlpha, Mathf.SmoothStep(0f, 1f, elapsed / duration));
+            yield return null;
+        }
+        transitionFade = targetAlpha;
     }
 
     public void RestartCurrentRoom()
@@ -507,6 +604,14 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (isPaused || victory) DrawOverlay();
         if (Time.time < statusUntil) GUI.Label(new Rect(15, Screen.height - 64, Screen.width - 30, 44), statusMessage, bodyStyle);
         GUI.Label(new Rect(14, Screen.height - 27, Screen.width - 28, 20), "WASD mover  ·  Mouse mirar  ·  Clique/Space atacar  ·  Shift esquivar  ·  Q pulso  ·  E passagem  ·  Esc pausa", smallStyle);
+        if (transitionFade > 0f)
+        {
+            GUI.color = new Color(0f, 0f, 0f, transitionFade);
+            GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            if (transitioning && transitionFade > 0.35f)
+                GUI.Label(new Rect(0, Screen.height / 2f - 20, Screen.width, 40), "ATRAVESSANDO O LIMIAR", centeredTitleStyle);
+        }
     }
 
     private void DrawHud()

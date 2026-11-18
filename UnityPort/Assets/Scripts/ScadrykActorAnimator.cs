@@ -11,6 +11,7 @@ public sealed class ScadrykActorAnimator : MonoBehaviour
     private float attackStartedAt = -10f;
     private float attackDuration = 0.28f;
     private float attackStrength = 1f;
+    private float portalScale = 1f;
 
     private void Awake() => body = GetComponent<Rigidbody2D>();
 
@@ -28,6 +29,8 @@ public sealed class ScadrykActorAnimator : MonoBehaviour
         attackStrength = heavy ? 1.35f : 1f;
     }
 
+    public void SetPortalScale(float scale) => portalScale = Mathf.Clamp01(scale);
+
     private void LateUpdate()
     {
         if (visual == null) return;
@@ -39,8 +42,8 @@ public sealed class ScadrykActorAnimator : MonoBehaviour
 
         visual.localPosition = basePosition + Vector3.up * (stride * 0.055f) + (Vector3)(attackDirection * (attack * 0.14f));
         visual.localScale = new Vector3(
-            baseScale.x * (1f + stride * 0.045f + attack * 0.13f),
-            baseScale.y * (1f - stride * 0.055f - attack * 0.06f),
+            baseScale.x * (1f + stride * 0.045f + attack * 0.13f) * portalScale,
+            baseScale.y * (1f - stride * 0.055f - attack * 0.06f) * portalScale,
             baseScale.z);
     }
 

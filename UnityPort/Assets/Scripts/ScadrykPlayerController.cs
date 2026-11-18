@@ -151,5 +151,11 @@ public sealed class ScadrykPlayerController : MonoBehaviour
 
     public void RestoreHealth(float amount) => health = Mathf.Min(maxHealth, health + Mathf.Max(0f, amount));
     public void ApplyRootSlow(float duration) => rootedUntil = Mathf.Max(rootedUntil, Time.time + duration);
-    public void ResetForRoom(Vector2 position) { health = maxHealth; rootedUntil = 0f; transform.position = position; BodyVelocity = Vector2.zero; }
+    public void SetPortalTransitPose(Vector2 position, float visibility)
+    {
+        BodyVelocity = Vector2.zero;
+        body.position = position;
+        if (animator != null) animator.SetPortalScale(visibility);
+    }
+    public void ResetForRoom(Vector2 position) { health = maxHealth; rootedUntil = 0f; transform.position = position; BodyVelocity = Vector2.zero; if (animator != null) animator.SetPortalScale(1f); }
 }
