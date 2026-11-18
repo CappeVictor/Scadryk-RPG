@@ -20,7 +20,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private Sprite portalSprite;
 
     private int phaseIndex, roomIndex, enemiesRemaining;
-    private bool isPaused, victory, transitioning;
+    private bool isPaused, victory, transitioning, showTitle = true, showOptions;
+    private int rebindingAction = -1;
     private float transitionFade;
     private Vector2 roomCenter, exitPosition;
     private ScadrykPlayerController player;
@@ -43,7 +44,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private GUIStyle centeredTitleStyle, centeredBodyStyle;
     private GUIStyle finalBossLabelStyle;
 
-    public bool IsPaused => isPaused || victory || transitioning;
+    public bool IsPaused => isPaused || showTitle || showOptions || victory || transitioning;
     public int PhaseIndex => phaseIndex;
     public int RoomIndex => roomIndex;
     public int EnemiesRemaining => enemiesRemaining;
@@ -59,6 +60,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         fallenWillowLogSprite = LoadSingleSprite("FallenWillowLog", 300f);
         portalSprite = LoadSingleSprite("AncientPortal", 600f);
         SetupCamera();
+        gameObject.AddComponent<ScadrykAudio>();
         int savedPhase = Mathf.Clamp(PlayerPrefs.GetInt("Scadryk.Phase", 0), 0, PhaseNames.Length - 1);
         int savedRoom = Mathf.Clamp(PlayerPrefs.GetInt("Scadryk.Room", 0), 0, RoomsPerPhase - 1);
         BuildPhase(savedPhase, savedRoom, true);
@@ -68,9 +70,26 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private void Update()
     {
         if (transitioning) return;
-        if (Input.GetKeyDown(KeyCode.Escape) && !victory) isPaused = !isPaused;
-        if (!isPaused && !victory && gateObject == null && enemiesRemaining == 0)
+        if (showTitle && !showOptions && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.JoystickButton0)))
+            showTitle = false;
+        if ((showTitle || isPaused) && !showOptions && Input.GetKeyDown(KeyCode.O)) showOptions = true;
+        if (!victory && (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.JoystickButton7)))
+        {
+            if (showOptions) { showOptions = false; rebindingAction = -1; }
+            else if (!showTitle) isPaused = !isPaused;
+        }
+        if (!IsPaused && gateObject == null && enemiesRemaining == 0)
             UnlockExit();
+    }
+
+    private void StartNewGame()
+    {
+        PlayerPrefs.DeleteKey("Scadryk.Phase");
+        PlayerPrefs.DeleteKey("Scadryk.Room");
+        PlayerPrefs.Save();
+        if (player != null) player.ResetAbilities();
+        BuildPhase(0, 0, true);
+        showTitle = isPaused = victory = false;
     }
 
     private void SetupCamera()
@@ -125,6 +144,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         else player.ResetForRoom(roomCenter + Vector2.left * 6.2f);
         follow.SetTarget(player.transform);
         SpawnRoomEnemies();
+        GetComponent<ScadrykAudio>().SetContext(phaseIndex, false);
         roomStartedAt = Time.time;
         roomDeaths = 0;
         System.Array.Clear(roomPowerUses, 0, roomPowerUses.Length);
@@ -540,6 +560,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private void SpawnFinalBoss()
     {
+        GetComponent<ScadrykAudio>().SetContext(phaseIndex, true);
         enemiesRemaining = 1;
         var bossObject = new GameObject("O Arauto do Vazio — superchefe final");
         bossObject.transform.SetParent(levelRoot.transform);
@@ -577,6 +598,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         Color portalColor = finalPortal ? new Color(0.8f, 0.26f, 1f) : PhaseAccentColors[phaseIndex];
         float portalSize = finalPortal ? 8.5f : phasePortal ? 3.8f : 3.15f;
         gateObject = ScadrykPortalVisual.Spawn(levelRoot.transform, exitPosition, portalSprite, portalColor, portalSize);
+        ScadrykAudio.Play(ScadrykCue.Portal);
         statusMessage = finalPortal
             ? "O portal colossal do Vazio surgiu. Aproxime-se e pressione E para concluir a jornada."
             : phasePortal
@@ -669,6 +691,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         transitioning = false;
         transitionFade = 0f;
         victory = true;
+        ScadrykAudio.Play(ScadrykCue.Victory);
         PlayerPrefs.DeleteKey("Scadryk.Phase");
         PlayerPrefs.DeleteKey("Scadryk.Room");
         PlayerPrefs.Save();
@@ -766,9 +789,10 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private void OnGUI()
     {
         EnsureStyles();
+        if (showOptions) { DrawOptions(); return; }
+        if (showTitle || isPaused || victory) { DrawOverlay(); return; }
         DrawHud(); DrawMiniMap();
         if (finalBoss != null) DrawFinalBossBar();
-        if (isPaused || victory) DrawOverlay();
         if (Time.time < statusUntil) GUI.Label(new Rect(15, Screen.height - 64, Screen.width - 30, 44), statusMessage, bodyStyle);
         GUI.Label(new Rect(14, Screen.height - 27, Screen.width - 28, 20), "WASD mover  ·  Mouse mirar  ·  Clique/Space atacar  ·  Shift esquivar  ·  Q pulso  ·  1/2/3 poderes  ·  E portal", smallStyle);
         if (transitionFade > 0f)
@@ -847,21 +871,65 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private void DrawOverlay()
     {
-        GUI.color = new Color(0.015f, 0.02f, 0.025f, 0.88f); GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture); GUI.color = Color.white;
-        string heading = victory ? "A MARÉ SE AQUIETA" : "PAUSADO";
-        GUI.Label(new Rect(0, Screen.height / 2f - 90, Screen.width, 42), heading, centeredTitleStyle);
-        GUI.Label(new Rect(0, Screen.height / 2f - 43, Screen.width, 36), victory ? "Você concluiu as três fases desta demonstração." : "Pressione Esc ou clique abaixo para continuar.", centeredBodyStyle);
-        if (!victory && GUI.Button(new Rect(Screen.width / 2f - 80, Screen.height / 2f + 10, 160, 42), "Continuar")) isPaused = false;
+        GUI.color = new Color(0.015f, 0.02f, 0.025f, 0.91f); GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture); GUI.color = Color.white;
+        string heading = victory ? "AS VOZES VOLTAM" : showTitle ? "SCADRYK" : "PAUSADO";
+        float center = Screen.width * 0.5f;
+        float top = Screen.height * 0.29f;
+        GUI.Label(new Rect(center - 300f, top, 600f, 52f), heading, centeredTitleStyle);
+        string message = victory ? "Nara devolveu as vozes aos três lugares. O limiar agora é uma passagem, não uma prisão." :
+            showTitle ? "Nara, a Ouvinte, segue os Ecos até a origem do silêncio." : "A jornada pode esperar por você.";
+        GUI.Label(new Rect(center - 340f, top + 48f, 680f, 62f), message, centeredBodyStyle);
+        float buttonY = top + 132f;
+        if (!victory && GUI.Button(new Rect(center - 115f, buttonY, 230f, 44f), showTitle ? (PlayerPrefs.HasKey("Scadryk.Phase") ? "Continuar jornada" : "Começar jornada") : "Continuar"))
+        { showTitle = false; isPaused = false; }
+        if (GUI.Button(new Rect(center - 115f, buttonY + 54f, 230f, 44f), victory ? "Nova jornada" : "Nova jornada")) StartNewGame();
+        if (!victory && GUI.Button(new Rect(center - 115f, buttonY + 108f, 230f, 44f), "Opções e controles")) showOptions = true;
+        GUI.Label(new Rect(center - 300f, Screen.height - 58f, 600f, 35f), "Três lugares · nove salas · memórias a libertar", centeredBodyStyle);
+    }
+
+    private void DrawOptions()
+    {
+        GUI.color = new Color(0.01f, 0.02f, 0.025f, 0.97f); GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture); GUI.color = Color.white;
+        float width = Mathf.Min(620f, Screen.width - 36f), x = (Screen.width - width) * 0.5f, y = Mathf.Max(18f, (Screen.height - 690f) * 0.5f);
+        GUI.Label(new Rect(x, y, width, 42f), "OPÇÕES", centeredTitleStyle);
+        GUI.Label(new Rect(x + 15f, y + 52f, 170f, 28f), "Música", bodyStyle);
+        ScadrykSettings.MusicVolume = GUI.HorizontalSlider(new Rect(x + 195f, y + 62f, width - 215f, 24f), ScadrykSettings.MusicVolume, 0f, 1f);
+        GUI.Label(new Rect(x + 15f, y + 92f, 170f, 28f), "Efeitos", bodyStyle);
+        ScadrykSettings.EffectsVolume = GUI.HorizontalSlider(new Rect(x + 195f, y + 102f, width - 215f, 24f), ScadrykSettings.EffectsVolume, 0f, 1f);
+        GUI.Label(new Rect(x + 15f, y + 132f, 170f, 28f), "Tamanho do texto", bodyStyle);
+        float scale = GUI.HorizontalSlider(new Rect(x + 195f, y + 142f, width - 215f, 24f), ScadrykSettings.TextScale, 1f, 1.5f);
+        if (Mathf.Abs(scale - ScadrykSettings.TextScale) > 0.01f) { ScadrykSettings.TextScale = scale; titleStyle = null; }
+        ScadrykSettings.ReduceFlash = GUI.Toggle(new Rect(x + 15f, y + 176f, width - 30f, 30f), ScadrykSettings.ReduceFlash, "Reduzir flashes de dano");
+        ScadrykSettings.ReduceShake = GUI.Toggle(new Rect(x + 15f, y + 208f, width - 30f, 30f), ScadrykSettings.ReduceShake, "Desligar tremor de câmera");
+        GUI.Label(new Rect(x + 15f, y + 247f, width - 30f, 30f), "TECLAS — clique e pressione uma tecla", bodyStyle);
+        for (int i = 0; i < ScadrykSettings.Actions.Length; i++)
+        {
+            float row = y + 282f + i * 42f;
+            GUI.Label(new Rect(x + 15f, row, 220f, 36f), ScadrykSettings.Actions[i], bodyStyle);
+            string label = rebindingAction == i ? "Pressione uma tecla…" : ScadrykSettings.Key(i).ToString();
+            if (GUI.Button(new Rect(x + 240f, row, width - 255f, 34f), label)) rebindingAction = i;
+        }
+        if (rebindingAction >= 0 && Event.current.type == EventType.KeyDown && Event.current.keyCode != KeyCode.None && Event.current.keyCode != KeyCode.Escape)
+        {
+            ScadrykSettings.Bind(rebindingAction, Event.current.keyCode);
+            rebindingAction = -1;
+            Event.current.Use();
+        }
+        if (GUI.Button(new Rect(x + (width - 180f) * 0.5f, y + 595f, 180f, 42f), "Voltar")) { showOptions = false; rebindingAction = -1; }
+        GUI.Label(new Rect(x, y + 646f, width, 24f), "Controle: analógico esquerdo move, direito mira, A ataca, B esquiva, X pulso, Y interage.", smallStyle);
     }
 
     private void EnsureStyles()
     {
         if (titleStyle != null) return;
-        titleStyle = new GUIStyle(GUI.skin.label) { fontSize = 17, fontStyle = FontStyle.Bold, normal = { textColor = new Color(0.91f, 0.81f, 0.57f) }, alignment = TextAnchor.MiddleLeft };
-        bodyStyle = new GUIStyle(GUI.skin.label) { fontSize = 14, normal = { textColor = new Color(0.88f, 0.89f, 0.83f) }, alignment = TextAnchor.MiddleLeft };
-        smallStyle = new GUIStyle(GUI.skin.label) { fontSize = 11, normal = { textColor = new Color(0.72f, 0.76f, 0.72f) }, alignment = TextAnchor.MiddleLeft };
-        centeredTitleStyle = new GUIStyle(titleStyle) { alignment = TextAnchor.MiddleCenter, fontSize = 25 };
-        centeredBodyStyle = new GUIStyle(bodyStyle) { alignment = TextAnchor.MiddleCenter, fontSize = 16 };
-        finalBossLabelStyle = new GUIStyle(titleStyle) { alignment = TextAnchor.MiddleCenter, fontSize = 14, normal = { textColor = new Color(1f, 0.73f, 0.86f) } };
+        float scale = ScadrykSettings.TextScale;
+        GUI.skin.button.fontSize = Mathf.RoundToInt(14f * scale);
+        GUI.skin.toggle.fontSize = Mathf.RoundToInt(14f * scale);
+        titleStyle = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(17f * scale), fontStyle = FontStyle.Bold, normal = { textColor = new Color(0.91f, 0.81f, 0.57f) }, alignment = TextAnchor.MiddleLeft };
+        bodyStyle = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(14f * scale), normal = { textColor = new Color(0.88f, 0.89f, 0.83f) }, alignment = TextAnchor.MiddleLeft };
+        smallStyle = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(11f * scale), normal = { textColor = new Color(0.72f, 0.76f, 0.72f) }, alignment = TextAnchor.MiddleLeft };
+        centeredTitleStyle = new GUIStyle(titleStyle) { alignment = TextAnchor.MiddleCenter, fontSize = Mathf.RoundToInt(25f * scale) };
+        centeredBodyStyle = new GUIStyle(bodyStyle) { alignment = TextAnchor.MiddleCenter, fontSize = Mathf.RoundToInt(16f * scale) };
+        finalBossLabelStyle = new GUIStyle(titleStyle) { alignment = TextAnchor.MiddleCenter, fontSize = Mathf.RoundToInt(14f * scale), normal = { textColor = new Color(1f, 0.73f, 0.86f) } };
     }
 }

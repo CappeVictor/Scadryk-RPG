@@ -123,6 +123,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private void BeginAttack()
     {
         attackTarget = player.transform.position;
+        ScadrykAudio.Play(ScadrykCue.Warning);
         if (animator != null) animator.PlayAttack((attackTarget - (Vector2)transform.position).normalized, IsBoss);
         if (isFinalBoss)
         {
@@ -178,6 +179,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private void ResolveAttack()
     {
         isWindup = false;
+        ScadrykAudio.Play(ScadrykCue.Impact);
         windupEndsAt = 0f;
         nextAttackAt = Time.time + (IsBoss ? 2.3f : 2.6f);
         if (animator != null && player != null) animator.PlayAttack(((Vector2)player.transform.position - (Vector2)transform.position).normalized, IsBoss);

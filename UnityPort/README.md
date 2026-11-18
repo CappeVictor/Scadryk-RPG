@@ -25,6 +25,14 @@ O avanço é salvo automaticamente ao atravessar cada portal. Ao reabrir o jogo,
 
 Selos circulares ocultos respondem a um poder específico: Crescente na entrada da bacia, Estouro na entrada da costa e Rompante na sala do Arauto. Use o poder perto do selo para libertar um Eco e recuperar vida. Estes encontros são opcionais.
 
+## Menu, opções e áudio
+
+A tela inicial oferece **Continuar jornada** (último portal salvo) e **Nova jornada** (reinicia sala e poderes). **Esc** ou **Start** pausam; **O** abre opções na tela inicial ou na pausa. O menu de opções ajusta música, efeitos, escala de texto (100–150%), redução de flashes e desligamento do tremor de câmera. Clique no nome de uma tecla e pressione a substituta para remapear ataque, esquiva, pulso, três poderes ou interação. As preferências são salvas localmente em `PlayerPrefs`.
+
+Há trilhas ambientes sintetizadas para os três biomas e para o confronto final, além de sinais sonoros originais para ações de Nara, avisos, impactos, dano e portais. Os avisos visuais continuam presentes quando o volume está em zero. O mixer aplica os ajustes de volume imediatamente.
+
+O controle usa analógico esquerdo para movimento e direito para mira; A ataca, B esquiva, X usa o pulso, Y interage, LB/RB/Back ativam os três poderes e Start pausa. A correspondência dos botões e eixos pode variar conforme o controle e o driver do Windows; essa etapa ainda precisa de teste com dispositivos físicos variados.
+
 ## Controles
 
 | Tecla ou ação | Função |

@@ -1,0 +1,90 @@
+using UnityEngine;
+
+public enum ScadrykCue { Sword, Dash, Pulse, Power, Warning, Impact, Hurt, Portal, Victory }
+
+/// <summary>Original, lightweight synthesized motifs and combat signals; no external audio assets.</summary>
+public sealed class ScadrykAudio : MonoBehaviour
+{
+    private const int SampleRate = 22050;
+    private static ScadrykAudio instance;
+    private AudioSource music, effects;
+    private AudioClip[] biomeLoops;
+    private AudioClip[] cueClips;
+    private readonly float[] nextCueAt = new float[9];
+
+    private void Awake()
+    {
+        instance = this;
+        music = gameObject.AddComponent<AudioSource>();
+        music.loop = true;
+        music.playOnAwake = false;
+        effects = gameObject.AddComponent<AudioSource>();
+        effects.playOnAwake = false;
+        biomeLoops = new[] { MakeLoop("Roots remember", 110f, 1.0f), MakeLoop("Salt remembers", 146.83f, 0.72f), MakeLoop("Bells remember", 123.47f, 1.35f), MakeLoop("The silence breaks", 82.41f, 1.8f) };
+        cueClips = new[] {
+            MakeCue("Nara sword", 410f, 0.16f, 0.46f), MakeCue("Nara dash", 250f, 0.13f, 0.24f),
+            MakeCue("Nara pulse", 330f, 0.32f, 0.33f), MakeCue("Nara power", 520f, 0.45f, 0.38f),
+            MakeCue("Echo warning", 160f, 0.27f, 0.24f), MakeCue("Echo impact", 95f, 0.22f, 0.38f),
+            MakeCue("Nara hurt", 135f, 0.25f, 0.4f), MakeCue("Portal passage", 290f, 0.65f, 0.25f),
+            MakeCue("Voices return", 440f, 0.9f, 0.32f)
+        };
+    }
+
+    private void Update()
+    {
+        if (music != null) music.volume = ScadrykSettings.MusicVolume * 0.34f;
+        if (effects != null) effects.volume = ScadrykSettings.EffectsVolume * 0.65f;
+    }
+
+    public void SetContext(int biome, bool finalBoss)
+    {
+        int index = finalBoss ? 3 : Mathf.Clamp(biome, 0, 2);
+        if (music.clip == biomeLoops[index]) return;
+        music.Stop();
+        music.clip = biomeLoops[index];
+        music.Play();
+    }
+
+    public static void Play(ScadrykCue cue)
+    {
+        if (instance == null || instance.effects == null) return;
+        int index = (int)cue;
+        if (index < 0 || index >= instance.cueClips.Length || Time.unscaledTime < instance.nextCueAt[index]) return;
+        instance.nextCueAt[index] = Time.unscaledTime + (cue == ScadrykCue.Warning || cue == ScadrykCue.Impact ? 0.13f : 0.04f);
+        instance.effects.PlayOneShot(instance.cueClips[index]);
+    }
+
+    private static AudioClip MakeLoop(string name, float root, float character)
+    {
+        int count = SampleRate * 8;
+        float[] data = new float[count];
+        for (int i = 0; i < count; i++)
+        {
+            float t = i / (float)SampleRate;
+            float edge = Mathf.Min(1f, Mathf.Min(t, 8f - t) * 6f);
+            float pad = Mathf.Sin(2f * Mathf.PI * root * t) * 0.11f + Mathf.Sin(2f * Mathf.PI * root * 1.5f * t) * 0.065f;
+            float beat = t % 2f;
+            float bell = Mathf.Sin(2f * Mathf.PI * root * (character + 1.5f) * t) * Mathf.Exp(-beat * 4f) * 0.08f;
+            data[i] = (pad * (0.8f + 0.2f * Mathf.Sin(t * 0.8f)) + bell) * edge;
+        }
+        AudioClip clip = AudioClip.Create(name, count, 1, SampleRate, false);
+        clip.SetData(data, 0);
+        return clip;
+    }
+
+    private static AudioClip MakeCue(string name, float frequency, float duration, float strength)
+    {
+        int count = Mathf.CeilToInt(SampleRate * duration);
+        float[] data = new float[count];
+        for (int i = 0; i < count; i++)
+        {
+            float t = i / (float)SampleRate;
+            float envelope = Mathf.Sin(Mathf.PI * i / count) * Mathf.Exp(-t * 3f);
+            float sweep = frequency * (1f + 0.28f * (1f - t / duration));
+            data[i] = (Mathf.Sin(2f * Mathf.PI * sweep * t) + 0.3f * Mathf.Sin(2f * Mathf.PI * sweep * 2.01f * t)) * envelope * strength;
+        }
+        AudioClip clip = AudioClip.Create(name, count, 1, SampleRate, false);
+        clip.SetData(data, 0);
+        return clip;
+    }
+}

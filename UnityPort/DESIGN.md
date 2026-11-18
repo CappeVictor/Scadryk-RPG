@@ -1,5 +1,13 @@
 # Scadryk — diagnóstico e direção
 
+## Revisão de estado (18/11/2026, após `ac1aad5`)
+
+**Já jogável:** três biomas top-down, nove salas em sequência, portais, três poderes obtidos de guardiões, quatro papéis de Eco comum, Arauto final, selos opcionais, salvamento de sala e métricas locais. Há sprites de cenário, Nara, inimigos, ataques e chefes em `Assets/Resources/ScadrykArt`; `ScadrykDemo.unity` contém câmera e diretor, que criam a fase em tempo de execução. A build Windows compila e abre.
+
+**Ausente ou insuficiente:** as nove salas ainda repetem a condição de eliminar todos os inimigos; exploração e história quase não alteram a progressão. Os papéis dos Ecos usam variações de escala e cor, mas a arte de cada bioma ainda é compartilhada. Faltam sons, música, menu, opções de acessibilidade, controle com mira direita, remapeamento e sessões de QA com jogadores externos. A vitória tem apenas texto de demonstração. A campanha completa não foi validada de ponta a ponta.
+
+**Riscos técnicos atuais:** `ScadrykGameDirector.cs` tem geração, progressão, HUD e persistência no mesmo arquivo; IMGUI usa medidas absolutas; `Input Manager (Old)` não oferece remapeamento automático; `PlayerPrefs` guarda apenas fase/sala; a barra de vida e os ataques não têm teste automatizado de regressão. A próxima etapa deve oferecer acesso confiável às opções e manter o build Windows compilável.
+
 ## Diagnóstico do projeto inspecionado (18/11/2026)
 
 **Funciona:** a cena `ScadrykDemo.unity` inicia um jogo top-down; três biomas têm fundos e objetos próprios; nove salas são percorridas por portais; Nara se move, mira, ataca, esquiva e aprende três poderes dos guardiões; há avisos visuais de ataques, barras de vida, minimapa e Arauto do Vazio com portal final.

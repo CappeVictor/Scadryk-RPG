@@ -41,6 +41,8 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     private ScadrykGameDirector director;
     private Sprite[] spriteFrames;
     private const float BasicAttackWindup = 0.12f;
+    private Vector3 lastMousePosition;
+    private bool usingGamepadAim;
 
     public Vector2 Facing => facing;
     public float Health => health;
@@ -76,13 +78,13 @@ public sealed class ScadrykPlayerController : MonoBehaviour
 
         moveInput = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical")).normalized;
         AimAtPointer();
-        if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.J)) Attack();
-        if (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift) || Input.GetKeyDown(KeyCode.K)) Dash();
-        if (Input.GetKeyDown(KeyCode.Q) || Input.GetMouseButtonDown(1)) Shockwave();
-        if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1)) UseAbility(0);
-        if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2)) UseAbility(1);
-        if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3)) UseAbility(2);
-        if (Input.GetKeyDown(KeyCode.E) && director != null) director.TryUseExit(transform.position);
+        if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space) || ScadrykSettings.Down(0) || Input.GetKeyDown(KeyCode.JoystickButton0)) Attack();
+        if (ScadrykSettings.Down(1) || Input.GetKeyDown(KeyCode.RightShift) || Input.GetKeyDown(KeyCode.K) || Input.GetKeyDown(KeyCode.JoystickButton1)) Dash();
+        if (ScadrykSettings.Down(2) || Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.JoystickButton2)) Shockwave();
+        if (ScadrykSettings.Down(3) || Input.GetKeyDown(KeyCode.Keypad1) || Input.GetKeyDown(KeyCode.JoystickButton4)) UseAbility(0);
+        if (ScadrykSettings.Down(4) || Input.GetKeyDown(KeyCode.Keypad2) || Input.GetKeyDown(KeyCode.JoystickButton5)) UseAbility(1);
+        if (ScadrykSettings.Down(5) || Input.GetKeyDown(KeyCode.Keypad3) || Input.GetKeyDown(KeyCode.JoystickButton6)) UseAbility(2);
+        if ((ScadrykSettings.Down(6) || Input.GetKeyDown(KeyCode.JoystickButton3)) && director != null) director.TryUseExit(transform.position);
 
         UpdateSprite();
     }
@@ -101,6 +103,19 @@ public sealed class ScadrykPlayerController : MonoBehaviour
 
     private void AimAtPointer()
     {
+        Vector2 stick = new Vector2(Input.GetAxisRaw("Scadryk Aim X"), -Input.GetAxisRaw("Scadryk Aim Y"));
+        if (stick.sqrMagnitude > 0.09f)
+        {
+            facing = stick.normalized;
+            usingGamepadAim = true;
+            return;
+        }
+        if (Input.mousePosition != lastMousePosition)
+        {
+            usingGamepadAim = false;
+            lastMousePosition = Input.mousePosition;
+        }
+        if (usingGamepadAim) return;
         Camera cam = Camera.main;
         if (cam == null) return;
         Vector3 pointer = cam.ScreenToWorldPoint(Input.mousePosition);
@@ -125,7 +140,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
             int column = moveInput.sqrMagnitude > 0.02f ? Mathf.FloorToInt(Time.time * 8f) % 4 : 0;
             sprite.sprite = spriteFrames[row * 4 + column];
         }
-        sprite.color = Time.time < invulnerableUntil && Mathf.FloorToInt(Time.time * 18f) % 2 != 0 ? new Color(0.45f, 0.85f, 1f) : Time.time < rootedUntil ? new Color(0.72f, 0.92f, 0.56f) : Color.white;
+        sprite.color = Time.time < invulnerableUntil && (ScadrykSettings.ReduceFlash || Mathf.FloorToInt(Time.time * 18f) % 2 != 0) ? new Color(0.45f, 0.85f, 1f) : Time.time < rootedUntil ? new Color(0.72f, 0.92f, 0.56f) : Color.white;
     }
 
     private void Attack()
@@ -133,6 +148,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         if (Time.time < nextAttackAt) return;
         nextAttackAt = Time.time + attackCooldown;
         Vector2 direction = facing;
+        ScadrykAudio.Play(ScadrykCue.Sword);
         if (animator != null) animator.PlayAttack(direction, false);
         StartCoroutine(ResolveBasicAttack(direction));
     }
@@ -159,6 +175,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         dashEndsAt = Time.time + dashDuration;
         nextDashAt = Time.time + dashCooldown;
         invulnerableUntil = dashEndsAt + 0.08f;
+        ScadrykAudio.Play(ScadrykCue.Dash);
         if (animator != null) animator.PlayDash(dashDirection);
         ScadrykEffects.Burst(transform.position, new Color(0.55f, 0.85f, 1f, 0.75f), 0.75f);
     }
@@ -167,6 +184,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     {
         if (Time.time < nextShockwaveAt) return;
         nextShockwaveAt = Time.time + shockwaveCooldown;
+        ScadrykAudio.Play(ScadrykCue.Pulse);
         if (animator != null) animator.PlayAttack(facing, true);
         ScadrykEffects.PlayerPulse(transform.position, shockwaveRadius * 2f);
         ShakeCamera(0.055f);
@@ -210,6 +228,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         }
 
         abilityReadyAt[index] = Time.time + cooldown;
+        ScadrykAudio.Play(ScadrykCue.Power);
         if (animator != null) animator.PlayAttack(facing, true);
         ShakeCamera(index == 2 ? 0.12f : 0.075f);
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, radius, ~0);
@@ -227,6 +246,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     {
         if (isDying || Time.time < invulnerableUntil || (director != null && director.IsPaused)) return;
         health -= Mathf.Max(0f, amount);
+        ScadrykAudio.Play(ScadrykCue.Hurt);
         invulnerableUntil = Time.time + 0.62f;
         if (animator != null) animator.PlayHit(-facing);
         ShakeCamera(0.095f);
@@ -249,6 +269,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
 
     private static void ShakeCamera(float strength)
     {
+        if (ScadrykSettings.ReduceShake) return;
         Camera camera = Camera.main;
         if (camera == null) return;
         ScadrykCameraFollow follow = camera.GetComponent<ScadrykCameraFollow>();
@@ -256,6 +277,11 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     }
 
     public void RestoreHealth(float amount) => health = Mathf.Min(maxHealth, health + Mathf.Max(0f, amount));
+    public void ResetAbilities()
+    {
+        System.Array.Clear(learnedAbilities, 0, learnedAbilities.Length);
+        System.Array.Clear(abilityReadyAt, 0, abilityReadyAt.Length);
+    }
     public void ApplyRootSlow(float duration) => rootedUntil = Mathf.Max(rootedUntil, Time.time + duration);
     public void SetPortalTransitPose(Vector2 position, float visibility)
     {
