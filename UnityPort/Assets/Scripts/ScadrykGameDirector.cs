@@ -50,12 +50,14 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     };
     private string statusMessage = "Derrote os ecos para abrir a passagem.";
     private float statusUntil;
+    private string memoryText;
+    private float memoryUntil;
     private float roomStartedAt;
     private int roomDeaths;
     private readonly int[] roomPowerUses = new int[3];
     private GUIStyle titleStyle, bodyStyle, smallStyle;
     private GUIStyle centeredTitleStyle, centeredBodyStyle;
-    private GUIStyle finalBossLabelStyle;
+    private GUIStyle finalBossLabelStyle, memoryStyle;
 
     public bool IsPaused => isPaused || showTitle || showOptions || victory || transitioning;
     public int PhaseIndex => phaseIndex;
@@ -84,7 +86,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     {
         if (transitioning) return;
         if (showTitle && !showOptions && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.JoystickButton0)))
-            showTitle = false;
+            BeginJourney();
         if ((showTitle || isPaused) && !showOptions && Input.GetKeyDown(KeyCode.O)) showOptions = true;
         if (!victory && (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.JoystickButton7)))
         {
@@ -108,6 +110,14 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (player != null) player.ResetAbilities();
         BuildPhase(0, 0, true);
         showTitle = isPaused = victory = false;
+        ShowMemory("Quando os três sinos calaram, Nara ainda ouvia os nomes esquecidos. Ela entrou nas margens para devolvê-los ao mundo.", 8f);
+    }
+
+    private void BeginJourney()
+    {
+        bool firstStart = showTitle && !PlayerPrefs.HasKey("Scadryk.Phase");
+        showTitle = isPaused = false;
+        if (firstStart) ShowMemory("Quando os três sinos calaram, Nara ainda ouvia os nomes esquecidos. Ela entrou nas margens para devolvê-los ao mundo.", 8f);
     }
 
     private void SetupCamera()
@@ -230,6 +240,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (anchorsActivated >= anchorsRequired)
         {
             ShowStatus("O vestígio respondeu. A passagem pode se abrir.", 5f);
+            int id = phaseIndex * RoomsPerPhase + roomIndex;
+            if (id == 3) ShowMemory("O sal guardava uma maré inteira, suspensa no instante em que o Arauto ordenou silêncio. Nara reconhece a voz de quem tentou avisar a costa.", 8f);
+            if (id == 6) ShowMemory("Um sino encalhado repete o pedido dos navegantes: não apagar a lembrança da onda. Eles não pedem vingança; pedem que alguém a escute.", 8f);
             if (enemiesRemaining == 0) UnlockExit();
         }
         else ShowStatus("Um sinal respondeu. Falta mais um.", 4f);
@@ -588,6 +601,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             if (anchorsActivated >= anchorsRequired) UnlockExit();
             statusMessage = "O Arauto do Vazio caiu! Um portal colossal se abriu.";
             statusUntil = Time.time + 9f;
+            ShowMemory("O Arauto ocultou a catástrofe para poupar os vivos da dor. Mas o silêncio aprisionou os mortos. Nara escolhe lembrar e abre o limiar para que todos possam atravessar.", 10f);
             return;
         }
 
@@ -597,6 +611,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             string[] powers = { "Crescente Verdejante", "Estouro de Sal", "Rompante da Maré" };
             int powerIndex = Mathf.Clamp(enemy.BiomeIndex, 0, powers.Length - 1);
             acquiredPower = "Novo poder adquirido: " + powers[powerIndex] + " (tecla " + (powerIndex + 1) + ").";
+            if (powerIndex == 0) ShowMemory("As raízes se abrem. O primeiro zelador entrega a Nara o Crescente e o nome de quem guardava a comporta.", 7f);
+            else if (powerIndex == 1) ShowMemory("O sal volta a brilhar. A segunda guardiã devolve o Estouro e a lembrança da última maré.", 7f);
         }
 
         enemiesRemaining = Mathf.Max(0, enemiesRemaining - 1);
@@ -806,6 +822,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private void ShowStatus(string message, float seconds) { statusMessage = message; statusUntil = Time.time + seconds; }
 
+    private void ShowMemory(string message, float seconds) { memoryText = message; memoryUntil = Time.time + seconds; }
+
     public void ShowAbilityLocked(int index)
     {
         string[] bosses = { "o guardião da primeira fase", "o guardião da segunda fase", "o guardião da terceira fase" };
@@ -889,6 +907,14 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         DrawHud(); DrawMiniMap();
         if (finalBoss != null) DrawFinalBossBar();
         if (Time.time < statusUntil) GUI.Label(new Rect(15, Screen.height - 64, Screen.width - 30, 44), statusMessage, bodyStyle);
+        if (Time.time < memoryUntil && !transitioning)
+        {
+            float width = Mathf.Min(740f, Screen.width - 36f);
+            Rect panel = new Rect((Screen.width - width) * 0.5f, Screen.height - 180f, width, 102f);
+            GUI.color = new Color(0.025f, 0.04f, 0.045f, 0.94f); GUI.DrawTexture(panel, Texture2D.whiteTexture); GUI.color = Color.white;
+            GUI.Label(new Rect(panel.x + 18f, panel.y + 10f, panel.width - 36f, 24f), "VESTÍGIO ESCUTADO", titleStyle);
+            GUI.Label(new Rect(panel.x + 18f, panel.y + 34f, panel.width - 36f, 62f), memoryText, memoryStyle);
+        }
         GUI.Label(new Rect(14, Screen.height - 27, Screen.width - 28, 20), "WASD mover  ·  Mouse mirar  ·  Clique/Space atacar  ·  Shift esquivar  ·  Q pulso  ·  1/2/3 poderes  ·  E portal", smallStyle);
         if (transitionFade > 0f)
         {
@@ -976,12 +1002,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         float center = Screen.width * 0.5f;
         float top = Screen.height * 0.29f;
         GUI.Label(new Rect(center - 300f, top, 600f, 52f), heading, centeredTitleStyle);
-        string message = victory ? "Nara devolveu as vozes aos três lugares. O limiar agora é uma passagem, não uma prisão." :
+        string message = victory ? "Nara devolveu as vozes aos três lugares. A verdade da onda pode ser lembrada sem manter ninguém preso. O limiar agora é uma passagem, não uma prisão." :
             showTitle ? "Nara, a Ouvinte, segue os Ecos até a origem do silêncio." : "A jornada pode esperar por você.";
         GUI.Label(new Rect(center - 340f, top + 48f, 680f, 62f), message, centeredBodyStyle);
         float buttonY = top + 132f;
         if (!victory && GUI.Button(new Rect(center - 115f, buttonY, 230f, 44f), showTitle ? (PlayerPrefs.HasKey("Scadryk.Phase") ? "Continuar jornada" : "Começar jornada") : "Continuar"))
-        { showTitle = false; isPaused = false; }
+            BeginJourney();
         if (GUI.Button(new Rect(center - 115f, buttonY + 54f, 230f, 44f), victory ? "Nova jornada" : "Nova jornada")) StartNewGame();
         if (!victory && GUI.Button(new Rect(center - 115f, buttonY + 108f, 230f, 44f), "Opções e controles")) showOptions = true;
         GUI.Label(new Rect(center - 300f, Screen.height - 58f, 600f, 35f), "Três lugares · nove salas · memórias a libertar", centeredBodyStyle);
@@ -1029,7 +1055,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         bodyStyle = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(14f * scale), normal = { textColor = new Color(0.88f, 0.89f, 0.83f) }, alignment = TextAnchor.MiddleLeft };
         smallStyle = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(11f * scale), normal = { textColor = new Color(0.72f, 0.76f, 0.72f) }, alignment = TextAnchor.MiddleLeft };
         centeredTitleStyle = new GUIStyle(titleStyle) { alignment = TextAnchor.MiddleCenter, fontSize = Mathf.RoundToInt(25f * scale) };
-        centeredBodyStyle = new GUIStyle(bodyStyle) { alignment = TextAnchor.MiddleCenter, fontSize = Mathf.RoundToInt(16f * scale) };
+        centeredBodyStyle = new GUIStyle(bodyStyle) { alignment = TextAnchor.MiddleCenter, wordWrap = true, fontSize = Mathf.RoundToInt(16f * scale) };
         finalBossLabelStyle = new GUIStyle(titleStyle) { alignment = TextAnchor.MiddleCenter, fontSize = Mathf.RoundToInt(14f * scale), normal = { textColor = new Color(1f, 0.73f, 0.86f) } };
+        memoryStyle = new GUIStyle(bodyStyle) { wordWrap = true, alignment = TextAnchor.UpperLeft };
     }
 }
