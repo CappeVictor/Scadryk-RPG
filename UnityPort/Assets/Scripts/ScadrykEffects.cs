@@ -8,6 +8,8 @@ public static class ScadrykEffects
     private static Sprite rootThornSprite;
     private static Sprite saltShardSprite;
     private static Sprite bellWaveSprite;
+    private static Sprite playerSlashSprite;
+    private static Sprite playerPulseSprite;
     public static Sprite WhiteSprite
     {
         get
@@ -18,12 +20,32 @@ public static class ScadrykEffects
     }
 
     public static Sprite SaltShardSprite => LoadEffectSprite("AttackSaltShard", 600f, ref saltShardSprite);
+    private static Sprite PlayerSlashSprite => LoadEffectSprite("AttackPlayerSlash", 600f, ref playerSlashSprite);
+    private static Sprite PlayerPulseSprite => LoadEffectSprite("AttackPlayerPulse", 600f, ref playerPulseSprite);
 
     public static void Burst(Vector2 position, Color color, float diameter) => Create(position, color, diameter, diameter, 0.26f);
     public static void Slash(Vector2 position, Vector2 direction, float length)
     {
+        Sprite slashSprite = PlayerSlashSprite;
+        if (slashSprite != null)
+        {
+            GameObject spriteEffect = CreateSpriteEffect(slashSprite, position + direction * 0.82f, new Vector2(length * 1.65f, length * 0.88f), Color.white, 0.16f, "Player sword arc");
+            spriteEffect.transform.right = direction;
+            return;
+        }
         GameObject go = Create(position + direction * 0.85f, new Color(1f, 0.82f, 0.42f, 0.85f), length * 1.55f, 0.22f, 0.13f);
         go.transform.right = direction;
+    }
+
+    public static void PlayerPulse(Vector2 position, float diameter)
+    {
+        Sprite pulseSprite = PlayerPulseSprite;
+        if (pulseSprite == null)
+        {
+            Burst(position, new Color(0.3f, 0.85f, 0.8f, 0.8f), diameter);
+            return;
+        }
+        CreateSpriteEffect(pulseSprite, position, Vector2.one * diameter * 0.72f, Color.white, 0.3f, "Player special pulse", true);
     }
 
     public static void TelegraphLine(Vector2 start, Vector2 end, Color color, float thickness, float lifetime)
@@ -90,7 +112,7 @@ public static class ScadrykEffects
         return cache;
     }
 
-    private static GameObject CreateSpriteEffect(Sprite sprite, Vector2 position, Vector2 size, Color color, float lifetime, string objectName)
+    private static GameObject CreateSpriteEffect(Sprite sprite, Vector2 position, Vector2 size, Color color, float lifetime, string objectName, bool expand = false)
     {
         var go = new GameObject(objectName);
         go.transform.position = position;
@@ -100,7 +122,7 @@ public static class ScadrykEffects
         renderer.sprite = sprite;
         renderer.color = color;
         renderer.sortingOrder = 22;
-        go.AddComponent<ScadrykTimedVisual>().Initialize(lifetime, color, false);
+        go.AddComponent<ScadrykTimedVisual>().Initialize(lifetime, color, expand);
         return go;
     }
 

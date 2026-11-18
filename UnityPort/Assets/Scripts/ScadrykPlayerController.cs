@@ -126,7 +126,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     {
         if (Time.time < nextShockwaveAt) return;
         nextShockwaveAt = Time.time + shockwaveCooldown;
-        ScadrykEffects.Burst(transform.position, new Color(0.3f, 0.85f, 0.8f, 0.8f), shockwaveRadius * 2f);
+        ScadrykEffects.PlayerPulse(transform.position, shockwaveRadius * 2f);
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, shockwaveRadius, ~0);
         foreach (Collider2D hit in hits)
             if (hit.TryGetComponent<ScadrykEnemyHealth>(out var enemy)) enemy.TakeDamage(shockwaveDamage);

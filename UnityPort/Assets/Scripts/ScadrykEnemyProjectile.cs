@@ -20,10 +20,10 @@ public sealed class ScadrykEnemyProjectile : MonoBehaviour
         shard.transform.position = position;
         shard.transform.localScale = Vector3.one * 0.34f;
         var renderer = shard.AddComponent<SpriteRenderer>();
-        renderer.sprite = ScadrykEffects.WhiteSprite;
-        renderer.color = new Color(1f, 0.78f, 0.34f, 0.96f);
+        renderer.sprite = ScadrykEffects.SaltShardSprite ?? ScadrykEffects.WhiteSprite;
+        renderer.color = Color.white;
         renderer.sortingOrder = 8;
-        shard.transform.right = direction;
+        shard.transform.up = direction;
         var collider = shard.AddComponent<CircleCollider2D>();
         collider.radius = 0.45f;
         collider.isTrigger = true;

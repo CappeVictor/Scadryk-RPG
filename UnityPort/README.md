@@ -35,6 +35,8 @@ As fases jogáveis incluídas são **Margens do Primeiro Eco**, **Bacia do Sal I
 
 Os inimigos usam ataques próprios do bioma: raízes que avançam pelo chão e podem prender Nara por um instante, estilhaços de sal que são lançados à distância e ondas circulares de ressonância na costa. Esses ataques usam sprites ilustrados próprios, além do aviso visual antes de causar dano; guardiões ampliam o alcance ou disparam salvas múltiplas. Inimigos comuns ficam próximos do tamanho de Nara, e guardiões são maiores.
 
+Nara também tem sprites para o golpe básico de espada e para o pulso especial expansivo. O projétil de sal da segunda fase usa seu sprite próprio de cristal.
+
 ## Como ampliar
 
 - `ScadrykGameDirector.cs`: conteúdo das fases, desenho procedural dos mapas, nomes das salas e progressão.
