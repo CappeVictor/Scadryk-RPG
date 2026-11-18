@@ -25,6 +25,8 @@ O avanço é salvo automaticamente ao atravessar cada portal. Ao reabrir o jogo,
 
 Selos circulares ocultos respondem a um poder específico: Crescente na entrada da bacia, Estouro na entrada da costa e Rompante na sala do Arauto. Use o poder perto do selo para libertar um Eco e recuperar vida. Estes encontros são opcionais.
 
+As salas têm ritmos diferentes: entradas do bosque e as travessias trazem combate; a comporta do bosque abre com **E** depois da luta; as entradas da bacia e da costa são momentos calmos com vestígios para escutar; as travessias de sal e de sinos exigem fazer dois objetos ressoarem com **Q**; os guardiões encerram cada bioma. O HUD mostra o objetivo e a contagem dos objetos ativados. Após um período sem progresso, uma pista aparece na parte inferior da tela.
+
 ## Menu, opções e áudio
 
 A tela inicial oferece **Continuar jornada** (último portal salvo) e **Nova jornada** (reinicia sala e poderes). **Esc** ou **Start** pausam; **O** abre opções na tela inicial ou na pausa. O menu de opções ajusta música, efeitos, escala de texto (100–150%), redução de flashes e desligamento do tremor de câmera. Clique no nome de uma tecla e pressione a substituta para remapear ataque, esquiva, pulso, três poderes ou interação. As preferências são salvas localmente em `PlayerPrefs`.

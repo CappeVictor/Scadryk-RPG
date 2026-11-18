@@ -29,11 +29,24 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private GameObject levelRoot, gateObject;
     private ScadrykEnemyHealth finalBoss;
     private GameObject worldSecret;
+    private readonly GameObject[] roomAnchors = new GameObject[2];
+    private int anchorsRequired, anchorsActivated, hintStage;
+    private bool anchorsNeedPulse;
     private readonly bool[] clearedRooms = new bool[RoomsPerPhase];
     private readonly string[][] roomNames = {
         new[] { "Margem Alagada", "Vau de Cinza", "Casa das Comportas" },
         new[] { "Juncal Raso", "Bacia Imóvel", "Câmara do Sal" },
         new[] { "Costa das Badaladas", "Fileira das Bóias", "Coro da Maré Falsa" }
+    };
+    private static readonly string[] RoomGoals = {
+        "Libertar os Ecos da margem", "Abrir a antiga comporta", "Ouvir o guardião das raízes",
+        "Escutar o vestígio do sal", "Ressoar dois cristais com o Pulso", "Libertar o guardião do sal",
+        "Escutar o sino encalhado", "Ressoar dois sinos com o Pulso", "Enfrentar o Arauto do Vazio"
+    };
+    private static readonly string[] RoomStories = {
+        "A água conserva vozes que Nara pensava perdidas.", "A comporta ainda espera a mão de uma Ouvinte.", "O guardião prende nas raízes o primeiro sino.",
+        "A bacia está imóvel, mas o sal ainda se recorda da maré.", "Dois cristais guardam a rota; o Pulso pode fazê-los cantar.", "O zelador do sal protege uma lembrança que não é sua.",
+        "Na costa, as badaladas cessaram antes da última onda.", "Dois sinos respondem ao mesmo ritmo de Nara.", "O Arauto reuniu os três silêncios para esconder a verdade."
     };
     private string statusMessage = "Derrote os ecos para abrir a passagem.";
     private float statusUntil;
@@ -78,8 +91,13 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             if (showOptions) { showOptions = false; rebindingAction = -1; }
             else if (!showTitle) isPaused = !isPaused;
         }
-        if (!IsPaused && gateObject == null && enemiesRemaining == 0)
+        if (!IsPaused && gateObject == null && enemiesRemaining == 0 && anchorsActivated >= anchorsRequired)
             UnlockExit();
+        if (!IsPaused && anchorsActivated < anchorsRequired && Time.time - roomStartedAt > 24f + hintStage * 18f)
+        {
+            hintStage++;
+            ShowStatus(anchorsNeedPulse ? "Pista: aproxime-se dos objetos marcados e use Q para fazê-los ressoar." : "Pista: aproxime-se do vestígio marcado e pressione E.", 7f);
+        }
     }
 
     private void StartNewGame()
@@ -120,6 +138,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         levelRoot = new GameObject("Phase " + (phaseIndex + 1) + " map");
         DrawPhaseMap(levelRoot.transform);
         BuildWorldSecret();
+        BuildRoomAnchors();
         if (player == null)
         {
             var playerObject = new GameObject("Nara — player");
@@ -148,8 +167,72 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         roomStartedAt = Time.time;
         roomDeaths = 0;
         System.Array.Clear(roomPowerUses, 0, roomPowerUses.Length);
-        statusMessage = "Limpe a sala e avance pela passagem.";
-        statusUntil = Time.time + 3f;
+        hintStage = 0;
+        statusMessage = RoomStories[phaseIndex * RoomsPerPhase + roomIndex];
+        statusUntil = Time.time + 6f;
+    }
+
+    private void BuildRoomAnchors()
+    {
+        roomAnchors[0] = roomAnchors[1] = null;
+        anchorsActivated = 0;
+        int id = phaseIndex * RoomsPerPhase + roomIndex;
+        anchorsRequired = id == 1 || id == 3 || id == 6 ? 1 : id == 4 || id == 7 ? 2 : 0;
+        anchorsNeedPulse = id == 4 || id == 7;
+        if (anchorsRequired == 0) return;
+        for (int i = 0; i < anchorsRequired; i++)
+        {
+            Vector2 offset = id == 1 ? new Vector2(5.1f, 2.8f) : id == 3 ? new Vector2(3.8f, -2.9f) :
+                id == 6 ? new Vector2(3.8f, 1.3f) : i == 0 ? new Vector2(-2.2f, 1.25f) : new Vector2(4.2f, 2.65f);
+            var anchor = new GameObject(anchorsNeedPulse ? "Resonant world object" : "Memory world object");
+            anchor.transform.SetParent(levelRoot.transform);
+            anchor.transform.position = roomCenter + offset;
+            var renderer = anchor.AddComponent<SpriteRenderer>();
+            renderer.sprite = environmentSprites != null && environmentSprites.Length > (phaseIndex == 2 ? 14 : 8) ?
+                environmentSprites[phaseIndex == 0 ? 6 : phaseIndex == 1 ? 8 : 14] : CircleSprite;
+            renderer.color = new Color(0.8f, 0.9f, 0.88f, 0.95f);
+            renderer.sortingOrder = 3;
+            anchor.transform.localScale = Vector3.one * 1.35f;
+            roomAnchors[i] = anchor;
+            MakeDecoration(levelRoot.transform, "Resonance mark", anchor.transform.position, new Vector2(1.5f, 1.5f), PhaseAccentColors[phaseIndex] * 0.48f, true, 2);
+        }
+    }
+
+    public void TryInteract(Vector2 position)
+    {
+        if (IsPaused) return;
+        for (int i = 0; i < anchorsRequired; i++)
+        {
+            if (roomAnchors[i] == null || Vector2.Distance(position, roomAnchors[i].transform.position) > 1.8f) continue;
+            if (anchorsNeedPulse) { ShowStatus("Este objeto responde ao Pulso (Q).", 3f); return; }
+            ActivateAnchor(i);
+            return;
+        }
+        TryUseExit(position);
+    }
+
+    public void TryPulseAnchor(Vector2 position)
+    {
+        if (!anchorsNeedPulse || IsPaused) return;
+        for (int i = 0; i < anchorsRequired; i++)
+            if (roomAnchors[i] != null && Vector2.Distance(position, roomAnchors[i].transform.position) < 3.25f) ActivateAnchor(i);
+    }
+
+    private void ActivateAnchor(int index)
+    {
+        GameObject anchor = roomAnchors[index];
+        if (anchor == null) return;
+        roomAnchors[index] = null;
+        anchorsActivated++;
+        ScadrykEffects.Burst(anchor.transform.position, PhaseAccentColors[phaseIndex], 1.8f);
+        ScadrykAudio.Play(ScadrykCue.Portal);
+        Destroy(anchor);
+        if (anchorsActivated >= anchorsRequired)
+        {
+            ShowStatus("O vestígio respondeu. A passagem pode se abrir.", 5f);
+            if (enemiesRemaining == 0) UnlockExit();
+        }
+        else ShowStatus("Um sinal respondeu. Falta mais um.", 4f);
     }
 
     private void DrawPhaseMap(Transform parent)
@@ -458,7 +541,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private void SpawnRoomEnemies()
     {
-        int count = roomIndex == RoomsPerPhase - 1 ? 1 : 3 + roomIndex;
+        int roomId = phaseIndex * RoomsPerPhase + roomIndex;
+        int count = roomIndex == RoomsPerPhase - 1 ? 1 : roomId == 3 || roomId == 6 ? 0 : roomIndex == 1 ? 4 : 3;
         enemiesRemaining = count;
         for (int i = 0; i < count; i++)
         {
@@ -501,7 +585,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         {
             finalBoss = null;
             enemiesRemaining = Mathf.Max(0, enemiesRemaining - 1);
-            UnlockExit();
+            if (anchorsActivated >= anchorsRequired) UnlockExit();
             statusMessage = "O Arauto do Vazio caiu! Um portal colossal se abriu.";
             statusUntil = Time.time + 9f;
             return;
@@ -524,7 +608,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 SpawnFinalBoss();
                 return;
             }
-            statusMessage = "Sala limpa. A passagem está aberta — pressione E.";
+            statusMessage = anchorsActivated >= anchorsRequired ? "Sala limpa. A passagem está aberta — pressione E." :
+                anchorsNeedPulse ? "Sala limpa. Faça os objetos marcados ressoarem com Q." : "Sala limpa. Escute o vestígio marcado com E.";
             statusUntil = Time.time + 8f;
             if (player != null) player.RestoreHealth(22f);
             UnlockExit();
@@ -591,7 +676,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private void UnlockExit()
     {
-        if (gateObject != null) return;
+        if (gateObject != null || anchorsActivated < anchorsRequired) return;
         exitPosition = roomCenter + Vector2.right * 8.05f;
         bool finalPortal = phaseIndex == PhaseNames.Length - 1 && roomIndex == RoomsPerPhase - 1;
         bool phasePortal = roomIndex == RoomsPerPhase - 1;
@@ -611,6 +696,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     {
         if (isPaused || victory || transitioning) return;
         if (enemiesRemaining > 0) { ShowStatus("Ainda restam ecos nesta sala.", 1.5f); return; }
+        if (anchorsActivated < anchorsRequired) { ShowStatus(anchorsNeedPulse ? "Faça os sinais ressoarem com Q." : "Escute o vestígio marcado com E.", 2.5f); return; }
         if (Vector2.Distance(playerPosition, exitPosition) > 1.9f) { ShowStatus("Aproxime-se da passagem para avançar.", 1.5f); return; }
         clearedRooms[roomIndex] = true;
         if (roomIndex < RoomsPerPhase - 1) StartCoroutine(TransitionThroughPortal(phaseIndex, roomIndex + 1));
@@ -807,7 +893,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private void DrawHud()
     {
-        GUI.color = new Color(0.035f, 0.05f, 0.06f, 0.92f); GUI.Box(new Rect(14, 14, 325, 163), GUIContent.none); GUI.color = Color.white;
+        GUI.color = new Color(0.035f, 0.05f, 0.06f, 0.92f); GUI.Box(new Rect(14, 14, 325, 190), GUIContent.none); GUI.color = Color.white;
         GUI.Label(new Rect(28, 22, 300, 25), PhaseNames[phaseIndex] + "  ·  Fase " + (phaseIndex + 1) + "/3", titleStyle);
         GUI.Label(new Rect(28, 51, 300, 23), roomNames[phaseIndex][roomIndex] + "  ·  Sala " + (roomIndex + 1) + "/3", bodyStyle);
         GUI.color = new Color(0.18f, 0.19f, 0.2f); GUI.DrawTexture(new Rect(28, 82, 275, 12), Texture2D.whiteTexture);
@@ -822,6 +908,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             GUI.Label(new Rect(28, 116 + i * 15, 290, 16), (i + 1) + "  " + abilities[i] + "  ·  " + state, smallStyle);
         }
         GUI.color = Color.white;
+        string progress = anchorsRequired > 0 ? "  ·  " + anchorsActivated + "/" + anchorsRequired : "";
+        GUI.Label(new Rect(28, 164, 300, 28), "Objetivo: " + RoomGoals[phaseIndex * RoomsPerPhase + roomIndex] + progress, smallStyle);
     }
 
     private void DrawFinalBossBar()

@@ -84,7 +84,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         if (ScadrykSettings.Down(3) || Input.GetKeyDown(KeyCode.Keypad1) || Input.GetKeyDown(KeyCode.JoystickButton4)) UseAbility(0);
         if (ScadrykSettings.Down(4) || Input.GetKeyDown(KeyCode.Keypad2) || Input.GetKeyDown(KeyCode.JoystickButton5)) UseAbility(1);
         if (ScadrykSettings.Down(5) || Input.GetKeyDown(KeyCode.Keypad3) || Input.GetKeyDown(KeyCode.JoystickButton6)) UseAbility(2);
-        if ((ScadrykSettings.Down(6) || Input.GetKeyDown(KeyCode.JoystickButton3)) && director != null) director.TryUseExit(transform.position);
+        if ((ScadrykSettings.Down(6) || Input.GetKeyDown(KeyCode.JoystickButton3)) && director != null) director.TryInteract(transform.position);
 
         UpdateSprite();
     }
@@ -184,6 +184,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     {
         if (Time.time < nextShockwaveAt) return;
         nextShockwaveAt = Time.time + shockwaveCooldown;
+        if (director != null) director.TryPulseAnchor(transform.position);
         ScadrykAudio.Play(ScadrykCue.Pulse);
         if (animator != null) animator.PlayAttack(facing, true);
         ScadrykEffects.PlayerPulse(transform.position, shockwaveRadius * 2f);
