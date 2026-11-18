@@ -6,7 +6,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private const int RoomsPerPhase = 3;
     private const float RoomSpacing = 23f;
     private static readonly string[] PhaseNames = { "Margens do Primeiro Eco", "Bacia do Sal Imóvel", "Costa das Badaladas" };
-    private static readonly Color[] PhaseColors = { new Color(0.09f, 0.16f, 0.17f), new Color(0.17f, 0.13f, 0.1f), new Color(0.09f, 0.13f, 0.2f) };
+    private static readonly Color[] PhaseColors = { new Color(0.11f, 0.22f, 0.20f), new Color(0.27f, 0.20f, 0.12f), new Color(0.09f, 0.17f, 0.25f) };
+    private static readonly Color[] PhaseWallColors = { new Color(0.17f, 0.29f, 0.26f), new Color(0.35f, 0.27f, 0.16f), new Color(0.13f, 0.28f, 0.36f) };
+    private static readonly Color[] PhaseAccentColors = { new Color(0.36f, 0.62f, 0.48f), new Color(0.78f, 0.59f, 0.30f), new Color(0.30f, 0.68f, 0.76f) };
     private static Sprite SquareSprite;
     private static Sprite CircleSprite;
 
@@ -94,48 +96,160 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private void DrawPhaseMap(Transform parent)
     {
         Color floor = PhaseColors[phaseIndex];
+        Color wall = PhaseWallColors[phaseIndex];
         for (int i = 0; i < RoomsPerPhase; i++)
         {
             float x = i * RoomSpacing;
-            MakeBox(parent, "Room floor " + (i + 1), new Vector2(x, 0), new Vector2(19f, 13f), floor, false, -10);
-            MakeBox(parent, "North wall", new Vector2(x, 6.6f), new Vector2(19.5f, 0.5f), new Color(0.22f, 0.26f, 0.25f), true, 0);
-            MakeBox(parent, "South wall", new Vector2(x, -6.6f), new Vector2(19.5f, 0.5f), new Color(0.22f, 0.26f, 0.25f), true, 0);
-            if (i == 0) MakeBox(parent, "West outer wall", new Vector2(x - 9.7f, 0), new Vector2(0.5f, 13f), new Color(0.22f, 0.26f, 0.25f), true, 0);
+            Color roomFloor = floor * (i == 1 ? 1.08f : 0.96f);
+            MakeBox(parent, "Room floor " + (i + 1), new Vector2(x, 0), new Vector2(19f, 13f), roomFloor, false, -10);
+            DrawRoomScenery(parent, i, x, roomFloor);
+            MakeBox(parent, "North wall", new Vector2(x, 6.6f), new Vector2(19.5f, 0.5f), wall, true, 0);
+            MakeBox(parent, "South wall", new Vector2(x, -6.6f), new Vector2(19.5f, 0.5f), wall, true, 0);
+            if (i == 0) MakeBox(parent, "West outer wall", new Vector2(x - 9.7f, 0), new Vector2(0.5f, 13f), wall, true, 0);
             else
             {
-                MakeBox(parent, "West wall upper", new Vector2(x - 9.7f, 4.7f), new Vector2(0.5f, 4.3f), new Color(0.22f, 0.26f, 0.25f), true, 0);
-                MakeBox(parent, "West wall lower", new Vector2(x - 9.7f, -4.7f), new Vector2(0.5f, 4.3f), new Color(0.22f, 0.26f, 0.25f), true, 0);
+                MakeBox(parent, "West wall upper", new Vector2(x - 9.7f, 4.7f), new Vector2(0.5f, 4.3f), wall, true, 0);
+                MakeBox(parent, "West wall lower", new Vector2(x - 9.7f, -4.7f), new Vector2(0.5f, 4.3f), wall, true, 0);
             }
             if (i == RoomsPerPhase - 1)
             {
-                MakeBox(parent, "East wall upper", new Vector2(x + 9.7f, 4.7f), new Vector2(0.5f, 4.3f), new Color(0.22f, 0.26f, 0.25f), true, 0);
-                MakeBox(parent, "East wall lower", new Vector2(x + 9.7f, -4.7f), new Vector2(0.5f, 4.3f), new Color(0.22f, 0.26f, 0.25f), true, 0);
+                MakeBox(parent, "East wall upper", new Vector2(x + 9.7f, 4.7f), new Vector2(0.5f, 4.3f), wall, true, 0);
+                MakeBox(parent, "East wall lower", new Vector2(x + 9.7f, -4.7f), new Vector2(0.5f, 4.3f), wall, true, 0);
             }
-            MakeBox(parent, "Floor inlay", new Vector2(x, 0), new Vector2(0.1f, 11.8f), new Color(1f, 1f, 1f, 0.045f), false, -9);
+            MakeBox(parent, "Floor inlay", new Vector2(x, 0), new Vector2(0.1f, 11.8f), new Color(1f, 1f, 1f, 0.055f), false, -9);
             if (i < RoomsPerPhase - 1)
             {
                 MakeBox(parent, "Connector floor", new Vector2(x + 11.35f, 0), new Vector2(3.3f, 3.4f), floor * 1.12f, false, -9);
-                MakeBox(parent, "Connector north rail", new Vector2(x + 11.35f, 1.92f), new Vector2(3.4f, 0.28f), new Color(0.22f, 0.26f, 0.25f), true, 0);
-                MakeBox(parent, "Connector south rail", new Vector2(x + 11.35f, -1.92f), new Vector2(3.4f, 0.28f), new Color(0.22f, 0.26f, 0.25f), true, 0);
+                MakeBox(parent, "Connector north rail", new Vector2(x + 11.35f, 1.92f), new Vector2(3.4f, 0.28f), wall, true, 0);
+                MakeBox(parent, "Connector south rail", new Vector2(x + 11.35f, -1.92f), new Vector2(3.4f, 0.28f), wall, true, 0);
             }
             DrawRoomObstacles(parent, i, x);
-            MakeLabelMarker(parent, new Vector2(x, 5.35f), (i + 1).ToString(), new Color(0.78f, 0.67f, 0.4f));
+            MakeLabelMarker(parent, new Vector2(x, 5.35f), (i + 1).ToString(), PhaseAccentColors[phaseIndex]);
         }
+    }
+
+    private void DrawRoomScenery(Transform parent, int room, float x, Color floor)
+    {
+        Color accent = PhaseAccentColors[phaseIndex];
+        Color dim = new Color(accent.r, accent.g, accent.b, 0.19f);
+        Color glow = new Color(accent.r, accent.g, accent.b, 0.38f);
+
+        if (phaseIndex == 0)
+        {
+            // Shallow tide pools and reed banks mark the flooded shore without blocking movement.
+            for (int side = -1; side <= 1; side += 2)
+            {
+                float y = side * (room == 1 ? 4.65f : 4.2f);
+                MakeDecoration(parent, "Tide pool", new Vector2(x - 5.9f, y), new Vector2(3.0f, 1.05f), new Color(0.08f, 0.30f, 0.30f, 0.52f), true, -9);
+                MakeDecoration(parent, "Tide pool", new Vector2(x + 5.6f, -y * 0.78f), new Vector2(2.5f, 0.82f), new Color(0.07f, 0.26f, 0.27f, 0.48f), true, -9);
+                for (int reed = 0; reed < 3; reed++)
+                {
+                    float rx = x - 7.2f + reed * 0.36f;
+                    MakeDecoration(parent, "Reed", new Vector2(rx, y - side * 0.6f), new Vector2(0.12f, 0.88f), glow, false, -8, -18f + reed * 16f);
+                }
+            }
+            DrawRune(parent, new Vector2(x + (room - 1) * 1.15f, 4.1f), 1.8f, dim);
+        }
+        else if (phaseIndex == 1)
+        {
+            // Pale salt seams and crystal clusters distinguish the dry basin from the shore.
+            for (int seam = 0; seam < 5; seam++)
+            {
+                float sx = x - 5.4f + seam * 2.7f;
+                float sy = ((seam + room) % 2 == 0) ? -3.95f : 3.95f;
+                MakeDecoration(parent, "Salt vein", new Vector2(sx, sy), new Vector2(2.5f, 0.075f), dim, false, -9, (seam % 2 == 0) ? 12f : -12f);
+                MakeDecoration(parent, "Salt vein branch", new Vector2(sx + 0.45f, sy + 0.35f), new Vector2(0.95f, 0.06f), dim, false, -9, -36f);
+            }
+            for (int cluster = 0; cluster < 3; cluster++)
+            {
+                float cx = x + (cluster - 1) * 5.8f;
+                float cy = cluster == 1 ? 4.65f : -4.55f;
+                MakeDecoration(parent, "Salt crystal base", new Vector2(cx, cy), new Vector2(1.55f, 0.68f), new Color(0.12f, 0.09f, 0.055f, 0.45f), true, -8);
+                for (int shard = 0; shard < 3; shard++)
+                    MakeDecoration(parent, "Salt crystal", new Vector2(cx + (shard - 1) * 0.28f, cy + 0.18f), new Vector2(0.34f, 0.78f - Mathf.Abs(shard - 1) * 0.18f), new Color(0.82f, 0.68f, 0.39f, 0.66f), false, -7, -18f + shard * 18f);
+            }
+            DrawRune(parent, new Vector2(x, 4.15f), 1.55f, new Color(0.9f, 0.69f, 0.36f, 0.22f));
+        }
+        else
+        {
+            // Tidal bands, buoy lamps and bell marks create a colder coastal palette.
+            for (int band = 0; band < 3; band++)
+            {
+                float y = -4.85f + band * 4.85f;
+                for (int segment = 0; segment < 4; segment++)
+                {
+                    float sx = x - 6.4f + segment * 4.25f + ((band + room) % 2) * 0.55f;
+                    MakeDecoration(parent, "Tidal line", new Vector2(sx, y), new Vector2(2.8f, 0.075f), dim, false, -9, (segment % 2 == 0) ? -4f : 4f);
+                    MakeDecoration(parent, "Tidal foam", new Vector2(sx + 0.5f, y + 0.18f), new Vector2(1.3f, 0.045f), glow, false, -9, -2f);
+                }
+            }
+            for (int buoy = -1; buoy <= 1; buoy += 2)
+            {
+                MakeDecoration(parent, "Bell buoy lamp", new Vector2(x + buoy * 7.15f, 0), new Vector2(0.72f, 0.72f), new Color(0.78f, 0.61f, 0.30f, 0.82f), true, -7);
+                MakeDecoration(parent, "Bell buoy glow", new Vector2(x + buoy * 7.15f, 0), new Vector2(1.55f, 1.55f), new Color(0.24f, 0.72f, 0.78f, 0.16f), true, -8);
+            }
+            DrawRune(parent, new Vector2(x + (room - 1) * 1.25f, 4.25f), 1.75f, glow);
+        }
+
+        // Add fine, low-contrast ground flecks so each room has more depth than a flat fill.
+        for (int fleck = 0; fleck < 8; fleck++)
+        {
+            int seed = room * 17 + phaseIndex * 31 + fleck * 13;
+            float fx = x - 7.3f + (seed % 15) * 0.98f;
+            float fy = -3.5f + ((seed * 7) % 70) * 0.1f;
+            MakeDecoration(parent, "Ground fleck", new Vector2(fx, fy), new Vector2(0.12f, 0.12f), new Color(accent.r, accent.g, accent.b, 0.16f), true, -9);
+        }
+    }
+
+    private static void DrawRune(Transform parent, Vector2 center, float radius, Color color)
+    {
+        MakeDecoration(parent, "Ancient mark", center + Vector2.up * radius, new Vector2(0.12f, radius * 0.62f), color, false, -8, 0f);
+        MakeDecoration(parent, "Ancient mark", center + Vector2.down * radius, new Vector2(0.12f, radius * 0.62f), color, false, -8, 0f);
+        MakeDecoration(parent, "Ancient mark", center + Vector2.left * radius, new Vector2(0.12f, radius * 0.62f), color, false, -8, 90f);
+        MakeDecoration(parent, "Ancient mark", center + Vector2.right * radius, new Vector2(0.12f, radius * 0.62f), color, false, -8, 90f);
+        MakeDecoration(parent, "Ancient mark", center, new Vector2(0.36f, 0.36f), color, true, -8);
     }
 
     private void DrawRoomObstacles(Transform parent, int index, float x)
     {
-        Vector2[] layouts = index switch
+        Vector2[] layouts;
+        if (phaseIndex == 0)
         {
-            0 => new[] { new Vector2(-2.8f, 1.9f), new Vector2(2.9f, -2.1f), new Vector2(0.1f, 0f) },
-            1 => new[] { new Vector2(-3.8f, -1.8f), new Vector2(3.7f, 1.8f), new Vector2(0f, 3f), new Vector2(0f, -3f) },
-            _ => new[] { new Vector2(-3.3f, 2.6f), new Vector2(-3.3f, -2.6f), new Vector2(2.8f, 0f) }
-        };
+            if (index == 0) layouts = new[] { new Vector2(-2.8f, 1.9f), new Vector2(2.9f, -2.1f), new Vector2(0.1f, 0f) };
+            else if (index == 1) layouts = new[] { new Vector2(-3.8f, -1.8f), new Vector2(3.7f, 1.8f), new Vector2(0f, 3f), new Vector2(0f, -3f) };
+            else layouts = new[] { new Vector2(-3.3f, 2.6f), new Vector2(-3.3f, -2.6f), new Vector2(2.8f, 0f) };
+        }
+        else if (phaseIndex == 1)
+        {
+            if (index == 0) layouts = new[] { new Vector2(-3.4f, -2.3f), new Vector2(0f, 2.6f), new Vector2(3.7f, -1.7f) };
+            else if (index == 1) layouts = new[] { new Vector2(-4.2f, 0f), new Vector2(-1.4f, 3.0f), new Vector2(1.7f, -3.0f), new Vector2(4.4f, 0f) };
+            else layouts = new[] { new Vector2(-4.0f, 2.5f), new Vector2(-4.0f, -2.5f), new Vector2(4.1f, 0f) };
+        }
+        else
+        {
+            if (index == 0) layouts = new[] { new Vector2(-3.8f, 2.7f), new Vector2(0f, -3.1f), new Vector2(3.7f, 2.6f) };
+            else if (index == 1) layouts = new[] { new Vector2(-4.4f, 2.9f), new Vector2(-4.4f, -2.9f), new Vector2(0f, 0f), new Vector2(4.4f, 2.9f), new Vector2(4.4f, -2.9f) };
+            else layouts = new[] { new Vector2(-3.5f, 2.6f), new Vector2(-3.5f, -2.6f), new Vector2(4.25f, 0f) };
+        }
         foreach (var offset in layouts)
         {
-            Vector2 size = (index == 2 && offset.x > 0) ? new Vector2(1.3f, 3.4f) : new Vector2(1.15f, 1.15f);
-            MakeBox(parent, "Stone cover", new Vector2(x + offset.x, offset.y), size, new Color(0.19f, 0.24f, 0.24f), true, 2);
+            bool tallPillar = index == 2 && Mathf.Abs(offset.x) > 2.7f && (phaseIndex == 0 || phaseIndex == 2);
+            Vector2 size = tallPillar ? new Vector2(1.2f, 3.25f) : new Vector2(1.12f, 1.12f);
+            MakeBox(parent, "Phase cover", new Vector2(x + offset.x, offset.y), size, PhaseWallColors[phaseIndex] * 0.85f, true, 2);
         }
+    }
+
+    private static void MakeDecoration(Transform parent, string name, Vector2 position, Vector2 size, Color color, bool circle, int order, float rotation = 0f)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent);
+        go.transform.position = position;
+        go.transform.localScale = new Vector3(size.x, size.y, 1f);
+        go.transform.rotation = Quaternion.Euler(0f, 0f, rotation);
+        var renderer = go.AddComponent<SpriteRenderer>();
+        renderer.sprite = circle ? CircleSprite : SquareSprite;
+        renderer.color = color;
+        renderer.sortingOrder = order;
     }
 
     private void SpawnRoomEnemies()

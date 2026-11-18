@@ -1,6 +1,6 @@
 # Scadryk para Unity
 
-`UnityPort` agora é um projeto Unity completo com demo top-down de três fases e nove salas conectadas, mapas procedurais, inimigos e guardiões, HUD, minimapa, combate, esquiva, pulso e pausa. A cena inicial já está salva em `Assets/Scenes/ScadrykDemo.unity`. A compilação de Windows x64 foi gerada no Unity Editor 6.6. Campanha completa, diálogos, missões, equipamentos, animações finais e saves da versão Windows Forms ainda não foram portados.
+`UnityPort` agora é um projeto Unity completo com demo top-down de três fases e nove salas conectadas, mapas procedurais com cenografia própria para cada fase e variações de obstáculos nas nove salas, inimigos e guardiões, HUD, minimapa, combate, esquiva, pulso e pausa. A cena inicial já está salva em `Assets/Scenes/ScadrykDemo.unity`. A compilação de Windows x64 foi gerada no Unity Editor 6.6. Campanha completa, diálogos, missões, equipamentos, animações finais e saves da versão Windows Forms ainda não foram portados.
 
 ## Requisitos
 
