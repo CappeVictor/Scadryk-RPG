@@ -5,6 +5,8 @@ public sealed class ScadrykActorAnimator : MonoBehaviour
 {
     private Rigidbody2D body;
     private Transform visual;
+    private SpriteRenderer visualRenderer;
+    private SpriteRenderer extrusionRenderer;
     private Vector3 baseScale = Vector3.one;
     private Vector3 basePosition;
     private Vector2 attackDirection = Vector2.up;
@@ -15,10 +17,16 @@ public sealed class ScadrykActorAnimator : MonoBehaviour
 
     private void Awake() => body = GetComponent<Rigidbody2D>();
 
-    public void SetVisual(Transform target)
+    public void SetVisual(Transform target, SpriteRenderer extrusion = null)
     {
         visual = target;
-        if (visual != null) { baseScale = visual.localScale; basePosition = visual.localPosition; }
+        extrusionRenderer = extrusion;
+        if (visual != null)
+        {
+            baseScale = visual.localScale;
+            basePosition = visual.localPosition;
+            visualRenderer = visual.GetComponent<SpriteRenderer>();
+        }
     }
 
     public void PlayAttack(Vector2 direction, bool heavy)
@@ -34,13 +42,19 @@ public sealed class ScadrykActorAnimator : MonoBehaviour
     private void LateUpdate()
     {
         if (visual == null) return;
+        if (extrusionRenderer != null && visualRenderer != null)
+        {
+            extrusionRenderer.sprite = visualRenderer.sprite;
+            extrusionRenderer.flipX = visualRenderer.flipX;
+            extrusionRenderer.flipY = visualRenderer.flipY;
+        }
         float speed = body != null ? BodyVelocity.magnitude : 0f;
         float stride = speed > 0.15f ? Mathf.Abs(Mathf.Sin(Time.time * 14f)) : 0f;
         float attack = 0f;
         if (Time.time - attackStartedAt < attackDuration)
             attack = Mathf.Sin(Mathf.Clamp01((Time.time - attackStartedAt) / attackDuration) * Mathf.PI) * attackStrength;
 
-        visual.localPosition = basePosition + Vector3.up * (stride * 0.055f) + (Vector3)(attackDirection * (attack * 0.14f));
+        visual.localPosition = basePosition + Vector3.up * (stride * 0.095f) + (Vector3)(attackDirection * (attack * 0.14f));
         visual.localScale = new Vector3(
             baseScale.x * (1f + stride * 0.045f + attack * 0.13f) * portalScale,
             baseScale.y * (1f - stride * 0.055f - attack * 0.06f) * portalScale,

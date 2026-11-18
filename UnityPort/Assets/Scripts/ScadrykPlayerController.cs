@@ -51,7 +51,8 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         body.freezeRotation = true;
         body.interpolation = RigidbodyInterpolation2D.Interpolate;
         body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
-        sprite = GetComponentInChildren<SpriteRenderer>();
+        Transform visual = transform.Find("Animated visual");
+        sprite = visual != null ? visual.GetComponent<SpriteRenderer>() : GetComponentInChildren<SpriteRenderer>();
         animator = GetComponent<ScadrykActorAnimator>();
         director = FindAnyObjectByType<ScadrykGameDirector>();
     }
@@ -91,7 +92,13 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         if (aim.sqrMagnitude > 0.03f) facing = aim.normalized;
     }
 
-    public void SetSpriteFrames(Sprite[] frames) { spriteFrames = frames; UpdateSprite(); }
+    public void SetSpriteFrames(Sprite[] frames)
+    {
+        spriteFrames = frames;
+        Transform visual = transform.Find("Animated visual");
+        if (visual != null) sprite = visual.GetComponent<SpriteRenderer>();
+        UpdateSprite();
+    }
 
     private void UpdateSprite()
     {

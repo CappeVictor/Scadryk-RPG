@@ -10,6 +10,7 @@ public static class ScadrykEffects
     private static Sprite bellWaveSprite;
     private static Sprite playerSlashSprite;
     private static Sprite playerPulseSprite;
+    private static Sprite softShadowSprite;
     public static Sprite WhiteSprite
     {
         get
@@ -20,6 +21,30 @@ public static class ScadrykEffects
     }
 
     public static Sprite SaltShardSprite => LoadEffectSprite("AttackSaltShard", 600f, ref saltShardSprite);
+    public static Sprite SoftShadowSprite
+    {
+        get
+        {
+            if (softShadowSprite != null) return softShadowSprite;
+            const int width = 128, height = 64;
+            var texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+            texture.filterMode = FilterMode.Bilinear;
+            texture.wrapMode = TextureWrapMode.Clamp;
+            for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++)
+            {
+                float dx = ((x + 0.5f) - width * 0.5f) / (width * 0.5f);
+                float dy = ((y + 0.5f) - height * 0.5f) / (height * 0.5f);
+                float radius = Mathf.Sqrt(dx * dx + dy * dy);
+                float alpha = (1f - Mathf.SmoothStep(0.28f, 1f, radius)) * 0.48f;
+                texture.SetPixel(x, y, new Color(0.008f, 0.014f, 0.02f, alpha));
+            }
+            texture.Apply();
+            softShadowSprite = Sprite.Create(texture, new Rect(0f, 0f, width, height), new Vector2(0.5f, 0.5f), 64f);
+            softShadowSprite.name = "Generated soft contact shadow";
+            return softShadowSprite;
+        }
+    }
     private static Sprite PlayerSlashSprite => LoadEffectSprite("AttackPlayerSlash", 600f, ref playerSlashSprite);
     private static Sprite PlayerPulseSprite => LoadEffectSprite("AttackPlayerPulse", 600f, ref playerPulseSprite);
 
