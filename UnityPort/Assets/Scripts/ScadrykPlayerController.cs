@@ -32,6 +32,8 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     private float maxHealth = 100f;
     private float invulnerableUntil;
     private float rootedUntil;
+    private readonly bool[] learnedAbilities = new bool[3];
+    private readonly float[] abilityReadyAt = new float[3];
     private SpriteRenderer sprite;
     private ScadrykActorAnimator animator;
     private ScadrykGameDirector director;
@@ -43,6 +45,14 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     public float Health01 => maxHealth <= 0f ? 0f : Mathf.Clamp01(health / maxHealth);
     public float DashCooldownLeft => Mathf.Max(0f, nextDashAt - Time.time);
     public float ShockwaveCooldownLeft => Mathf.Max(0f, nextShockwaveAt - Time.time);
+    public bool HasAbility(int index) => index >= 0 && index < learnedAbilities.Length && learnedAbilities[index];
+    public float AbilityCooldownLeft(int index) => index < 0 || index >= abilityReadyAt.Length ? 0f : Mathf.Max(0f, abilityReadyAt[index] - Time.time);
+
+    public void UnlockAbility(int index)
+    {
+        if (index < 0 || index >= learnedAbilities.Length) return;
+        learnedAbilities[index] = true;
+    }
 
     private void Awake()
     {
@@ -66,6 +76,9 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.J)) Attack();
         if (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift) || Input.GetKeyDown(KeyCode.K)) Dash();
         if (Input.GetKeyDown(KeyCode.Q) || Input.GetMouseButtonDown(1)) Shockwave();
+        if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1)) UseAbility(0);
+        if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2)) UseAbility(1);
+        if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3)) UseAbility(2);
         if (Input.GetKeyDown(KeyCode.E) && director != null) director.TryUseExit(transform.position);
 
         UpdateSprite();
@@ -142,6 +155,46 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, shockwaveRadius, ~0);
         foreach (Collider2D hit in hits)
             if (hit.TryGetComponent<ScadrykEnemyHealth>(out var enemy)) enemy.TakeDamage(shockwaveDamage);
+    }
+
+    private void UseAbility(int index)
+    {
+        if (!HasAbility(index))
+        {
+            if (director != null) director.ShowAbilityLocked(index);
+            return;
+        }
+        if (Time.time < abilityReadyAt[index]) return;
+
+        float radius;
+        float damage;
+        float cooldown;
+        if (index == 0)
+        {
+            radius = 3.6f; damage = 78f; cooldown = 6.5f;
+            ScadrykEffects.AbilityCrescent(transform.position, facing);
+        }
+        else if (index == 1)
+        {
+            radius = 4.25f; damage = 92f; cooldown = 9f;
+            ScadrykEffects.AbilitySaltburst(transform.position, radius * 2.1f);
+        }
+        else
+        {
+            radius = 7.6f; damage = 136f; cooldown = 12f;
+            ScadrykEffects.AbilityTidebreaker(transform.position, facing);
+        }
+
+        abilityReadyAt[index] = Time.time + cooldown;
+        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, radius, ~0);
+        foreach (Collider2D hit in hits)
+        {
+            if (!hit.TryGetComponent<ScadrykEnemyHealth>(out var enemy)) continue;
+            Vector2 toEnemy = (Vector2)enemy.transform.position - (Vector2)transform.position;
+            if (index == 0 && (toEnemy.magnitude > radius || Vector2.Dot(facing, toEnemy.normalized) < 0.12f)) continue;
+            if (index == 2 && (toEnemy.magnitude > radius || Vector2.Dot(facing, toEnemy.normalized) < 0.28f)) continue;
+            enemy.TakeDamage(damage);
+        }
     }
 
     public void TakeDamage(float amount)

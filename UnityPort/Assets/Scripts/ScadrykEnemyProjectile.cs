@@ -14,14 +14,14 @@ public sealed class ScadrykEnemyProjectile : MonoBehaviour
     private Vector2 BodyVelocity { set => body.velocity = value; }
 #endif
 
-    public static void Launch(Vector2 position, Vector2 direction, float speed, float damage)
+    public static void Launch(Vector2 position, Vector2 direction, float speed, float damage, Sprite projectileSprite = null, Color? tint = null, float size = 0.34f, string projectileName = "Salt crystal shard")
     {
-        var shard = new GameObject("Salt crystal shard");
+        var shard = new GameObject(projectileName);
         shard.transform.position = position;
-        shard.transform.localScale = Vector3.one * 0.34f;
+        shard.transform.localScale = Vector3.one * size;
         var renderer = shard.AddComponent<SpriteRenderer>();
-        renderer.sprite = ScadrykEffects.SaltShardSprite ?? ScadrykEffects.WhiteSprite;
-        renderer.color = Color.white;
+        renderer.sprite = projectileSprite != null ? projectileSprite : ScadrykEffects.SaltShardSprite ?? ScadrykEffects.WhiteSprite;
+        renderer.color = tint ?? Color.white;
         renderer.sortingOrder = 8;
         shard.transform.up = direction;
         var collider = shard.AddComponent<CircleCollider2D>();
@@ -52,7 +52,7 @@ public sealed class ScadrykEnemyProjectile : MonoBehaviour
     {
         if (!other.TryGetComponent<ScadrykPlayerController>(out var target)) return;
         target.TakeDamage(damage);
-        ScadrykEffects.Burst(transform.position, new Color(1f, 0.75f, 0.3f, 0.82f), 0.72f);
+        ScadrykEffects.Burst(transform.position, new Color(0.93f, 0.36f, 0.67f, 0.82f), 0.72f);
         Destroy(gameObject);
     }
 }

@@ -25,6 +25,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private ScadrykPlayerController player;
     private ScadrykCameraFollow follow;
     private GameObject levelRoot, gateObject;
+    private ScadrykEnemyHealth finalBoss;
     private readonly bool[] clearedRooms = new bool[RoomsPerPhase];
     private readonly string[][] roomNames = {
         new[] { "Margem Alagada", "Vau de Cinza", "Casa das Comportas" },
@@ -35,6 +36,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private float statusUntil;
     private GUIStyle titleStyle, bodyStyle, smallStyle;
     private GUIStyle centeredTitleStyle, centeredBodyStyle;
+    private GUIStyle finalBossLabelStyle;
 
     public bool IsPaused => isPaused || victory || transitioning;
     public int PhaseIndex => phaseIndex;
@@ -421,14 +423,69 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     public void OnEnemyDefeated(ScadrykEnemyHealth enemy)
     {
+        string acquiredPower = null;
+        if (enemy.IsFinalBoss)
+        {
+            finalBoss = null;
+            enemiesRemaining = Mathf.Max(0, enemiesRemaining - 1);
+            UnlockExit();
+            statusMessage = "O Arauto do Vazio caiu! Um portal colossal se abriu.";
+            statusUntil = Time.time + 9f;
+            return;
+        }
+
+        if (enemy.IsBoss && player != null)
+        {
+            player.UnlockAbility(enemy.BiomeIndex);
+            string[] powers = { "Crescente Verdejante", "Estouro de Sal", "Rompante da Maré" };
+            int powerIndex = Mathf.Clamp(enemy.BiomeIndex, 0, powers.Length - 1);
+            acquiredPower = "Novo poder adquirido: " + powers[powerIndex] + " (tecla " + (powerIndex + 1) + ").";
+        }
+
         enemiesRemaining = Mathf.Max(0, enemiesRemaining - 1);
         if (enemiesRemaining == 0)
         {
+            if (phaseIndex == PhaseNames.Length - 1 && roomIndex == RoomsPerPhase - 1 && enemy.IsBoss)
+            {
+                SpawnFinalBoss();
+                return;
+            }
             statusMessage = "Sala limpa. A passagem está aberta — pressione E.";
             statusUntil = Time.time + 8f;
             if (player != null) player.RestoreHealth(18f);
             UnlockExit();
+            if (acquiredPower != null) ShowStatus(acquiredPower, 7f);
         }
+    }
+
+    private void SpawnFinalBoss()
+    {
+        enemiesRemaining = 1;
+        var bossObject = new GameObject("O Arauto do Vazio — superchefe final");
+        bossObject.transform.SetParent(levelRoot.transform);
+        bossObject.transform.position = roomCenter + new Vector2(1.2f, 0.2f);
+        bossObject.transform.localScale = Vector3.one * 2.65f;
+        Sprite[] frames = LoadSheetRow("BossesEndgame", 0, false);
+
+        var shadow = new GameObject("Final boss ground shadow"); shadow.transform.SetParent(bossObject.transform, false);
+        shadow.transform.localPosition = new Vector3(0.12f, -0.24f, 0f); shadow.transform.localScale = new Vector3(1.25f, 0.58f, 1f);
+        var shadowRenderer = shadow.AddComponent<SpriteRenderer>(); shadowRenderer.sprite = ScadrykEffects.SoftShadowSprite; shadowRenderer.color = new Color(0.06f, 0.015f, 0.055f, 0.92f); shadowRenderer.sortingOrder = 3;
+
+        var volume = new GameObject("Final boss depth layer"); volume.transform.SetParent(bossObject.transform, false);
+        volume.transform.localPosition = new Vector3(0f, -0.14f, 0f); volume.transform.localScale = new Vector3(1.025f, 1.025f, 1f);
+        var volumeRenderer = volume.AddComponent<SpriteRenderer>(); volumeRenderer.sprite = frames != null && frames.Length > 0 ? frames[0] : CircleSprite; volumeRenderer.color = new Color(0.12f, 0.015f, 0.08f, 0.88f); volumeRenderer.sortingOrder = 3;
+
+        var visual = new GameObject("Animated visual"); visual.transform.SetParent(bossObject.transform, false);
+        var renderer = visual.AddComponent<SpriteRenderer>(); renderer.sprite = frames != null && frames.Length > 0 ? frames[0] : CircleSprite; renderer.color = Color.white; renderer.sortingOrder = 4;
+        bossObject.AddComponent<CircleCollider2D>().radius = 0.86f;
+        bossObject.AddComponent<Rigidbody2D>();
+        bossObject.AddComponent<ScadrykDepthSort>().SetBias(4);
+        bossObject.AddComponent<ScadrykActorAnimator>().SetVisual(visual.transform, volumeRenderer);
+        finalBoss = bossObject.AddComponent<ScadrykEnemyHealth>();
+        finalBoss.ConfigureFinalBoss(frames);
+        bossObject.AddComponent<ScadrykHealthBar>().Configure(false, true, 2.25f);
+        statusMessage = "Rompante da Maré aprendido! O Arauto do Vazio despertou com três ataques.";
+        statusUntil = Time.time + 8f;
     }
 
     private void UnlockExit()
@@ -437,11 +494,11 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         exitPosition = roomCenter + Vector2.right * 8.05f;
         bool finalPortal = phaseIndex == PhaseNames.Length - 1 && roomIndex == RoomsPerPhase - 1;
         bool phasePortal = roomIndex == RoomsPerPhase - 1;
-        Color portalColor = finalPortal ? new Color(1f, 0.62f, 0.16f) : PhaseAccentColors[phaseIndex];
-        float portalSize = finalPortal ? 5.15f : phasePortal ? 3.8f : 3.15f;
+        Color portalColor = finalPortal ? new Color(0.8f, 0.26f, 1f) : PhaseAccentColors[phaseIndex];
+        float portalSize = finalPortal ? 8.5f : phasePortal ? 3.8f : 3.15f;
         gateObject = ScadrykPortalVisual.Spawn(levelRoot.transform, exitPosition, portalSprite, portalColor, portalSize);
         statusMessage = finalPortal
-            ? "O portal dourado surgiu. Aproxime-se e pressione E para concluir a jornada."
+            ? "O portal colossal do Vazio surgiu. Aproxime-se e pressione E para concluir a jornada."
             : phasePortal
                 ? "O portal da próxima fase surgiu. Aproxime-se e pressione E para atravessar."
                 : "Portal aberto. Aproxime-se e pressione E para seguir à próxima sala.";
@@ -555,6 +612,13 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private void ShowStatus(string message, float seconds) { statusMessage = message; statusUntil = Time.time + seconds; }
 
+    public void ShowAbilityLocked(int index)
+    {
+        string[] bosses = { "o guardião da primeira fase", "o guardião da segunda fase", "o guardião da terceira fase" };
+        int safeIndex = Mathf.Clamp(index, 0, bosses.Length - 1);
+        ShowStatus("Esse poder será aprendido ao derrotar " + bosses[safeIndex] + ".", 2.5f);
+    }
+
     private void MakeLabelMarker(Transform parent, Vector2 position, string text, Color color)
     {
         // A small glowing waypoint keeps the room numbering visible in the world.
@@ -618,9 +682,10 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     {
         EnsureStyles();
         DrawHud(); DrawMiniMap();
+        if (finalBoss != null) DrawFinalBossBar();
         if (isPaused || victory) DrawOverlay();
         if (Time.time < statusUntil) GUI.Label(new Rect(15, Screen.height - 64, Screen.width - 30, 44), statusMessage, bodyStyle);
-        GUI.Label(new Rect(14, Screen.height - 27, Screen.width - 28, 20), "WASD mover  ·  Mouse mirar  ·  Clique/Space atacar  ·  Shift esquivar  ·  Q pulso  ·  E passagem  ·  Esc pausa", smallStyle);
+        GUI.Label(new Rect(14, Screen.height - 27, Screen.width - 28, 20), "WASD mover  ·  Mouse mirar  ·  Clique/Space atacar  ·  Shift esquivar  ·  Q pulso  ·  1/2/3 poderes  ·  E portal", smallStyle);
         if (transitionFade > 0f)
         {
             GUI.color = new Color(0f, 0f, 0f, transitionFade);
@@ -633,12 +698,37 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private void DrawHud()
     {
-        GUI.color = new Color(0.035f, 0.05f, 0.06f, 0.9f); GUI.Box(new Rect(14, 14, 325, 113), GUIContent.none); GUI.color = Color.white;
+        GUI.color = new Color(0.035f, 0.05f, 0.06f, 0.92f); GUI.Box(new Rect(14, 14, 325, 163), GUIContent.none); GUI.color = Color.white;
         GUI.Label(new Rect(28, 22, 300, 25), PhaseNames[phaseIndex] + "  ·  Fase " + (phaseIndex + 1) + "/3", titleStyle);
         GUI.Label(new Rect(28, 51, 300, 23), roomNames[phaseIndex][roomIndex] + "  ·  Sala " + (roomIndex + 1) + "/3", bodyStyle);
         GUI.color = new Color(0.18f, 0.19f, 0.2f); GUI.DrawTexture(new Rect(28, 82, 275, 12), Texture2D.whiteTexture);
         GUI.color = new Color(0.79f, 0.25f, 0.22f); GUI.DrawTexture(new Rect(28, 82, 275 * (player != null ? player.Health / player.MaxHealth : 1f), 12), Texture2D.whiteTexture); GUI.color = Color.white;
         GUI.Label(new Rect(28, 98, 290, 19), "Ecos: " + enemiesRemaining + "    Esquiva: " + Cooldown(player != null ? player.DashCooldownLeft : 0) + "    Pulso: " + Cooldown(player != null ? player.ShockwaveCooldownLeft : 0), smallStyle);
+        string[] abilities = { "Crescente Verdejante", "Estouro de Sal", "Rompante da Maré" };
+        for (int i = 0; i < abilities.Length; i++)
+        {
+            bool learned = player != null && player.HasAbility(i);
+            string state = !learned ? "bloqueado" : player.AbilityCooldownLeft(i) <= 0.02f ? "pronto" : Cooldown(player.AbilityCooldownLeft(i));
+            GUI.color = learned ? new Color(0.72f, 0.9f, 0.79f) : new Color(0.48f, 0.53f, 0.51f);
+            GUI.Label(new Rect(28, 116 + i * 15, 290, 16), (i + 1) + "  " + abilities[i] + "  ·  " + state, smallStyle);
+        }
+        GUI.color = Color.white;
+    }
+
+    private void DrawFinalBossBar()
+    {
+        float width = Mathf.Min(600f, Mathf.Max(250f, Screen.width - 660f));
+        float x = (Screen.width - width) * 0.5f;
+        Rect panel = new Rect(x, 13f, width, 57f);
+        GUI.color = new Color(0.025f, 0.008f, 0.035f, 0.96f); GUI.DrawTexture(panel, Texture2D.whiteTexture);
+        GUI.color = new Color(0.78f, 0.19f, 0.62f, 0.95f); GUI.DrawTexture(new Rect(panel.x, panel.y, panel.width, 2f), Texture2D.whiteTexture);
+        GUI.color = new Color(0.94f, 0.63f, 0.31f, 0.9f); GUI.DrawTexture(new Rect(panel.x, panel.yMax - 2f, panel.width, 2f), Texture2D.whiteTexture);
+        GUI.color = Color.white;
+        GUI.Label(new Rect(panel.x + 10f, panel.y + 3f, panel.width - 20f, 20f), "CHEFE FINAL  ·  O ARAUTO DO VAZIO", finalBossLabelStyle);
+        Rect track = new Rect(panel.x + 12f, panel.y + 31f, panel.width - 24f, 15f);
+        GUI.color = new Color(0.17f, 0.06f, 0.15f, 1f); GUI.DrawTexture(track, Texture2D.whiteTexture);
+        GUI.color = new Color(0.91f, 0.22f, 0.58f, 1f); GUI.DrawTexture(new Rect(track.x, track.y, track.width * finalBoss.Health01, track.height), Texture2D.whiteTexture);
+        GUI.color = Color.white;
     }
 
     private void DrawMiniMap()
@@ -687,5 +777,6 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         smallStyle = new GUIStyle(GUI.skin.label) { fontSize = 11, normal = { textColor = new Color(0.72f, 0.76f, 0.72f) }, alignment = TextAnchor.MiddleLeft };
         centeredTitleStyle = new GUIStyle(titleStyle) { alignment = TextAnchor.MiddleCenter, fontSize = 25 };
         centeredBodyStyle = new GUIStyle(bodyStyle) { alignment = TextAnchor.MiddleCenter, fontSize = 16 };
+        finalBossLabelStyle = new GUIStyle(titleStyle) { alignment = TextAnchor.MiddleCenter, fontSize = 14, normal = { textColor = new Color(1f, 0.73f, 0.86f) } };
     }
 }

@@ -11,6 +11,7 @@ public static class ScadrykEffects
     private static Sprite playerSlashSprite;
     private static Sprite playerPulseSprite;
     private static Sprite softShadowSprite;
+    private static Sprite verdantCrescentSprite, saltburstSprite, tidebreakerSprite, voidburstSprite;
     public static Sprite WhiteSprite
     {
         get
@@ -21,6 +22,10 @@ public static class ScadrykEffects
     }
 
     public static Sprite SaltShardSprite => LoadEffectSprite("AttackSaltShard", 600f, ref saltShardSprite);
+    public static Sprite VerdantCrescentSprite => LoadEffectSprite("AbilityVerdantCrescent", 600f, ref verdantCrescentSprite);
+    public static Sprite SaltburstSprite => LoadEffectSprite("AbilitySaltburst", 600f, ref saltburstSprite);
+    public static Sprite TidebreakerSprite => LoadEffectSprite("AbilityTidebreaker", 600f, ref tidebreakerSprite);
+    public static Sprite VoidburstSprite => LoadEffectSprite("FinalBossVoidburst", 600f, ref voidburstSprite);
     public static Sprite SoftShadowSprite
     {
         get
@@ -72,6 +77,36 @@ public static class ScadrykEffects
             return;
         }
         CreateSpriteEffect(pulseSprite, position, Vector2.one * diameter * 0.72f, Color.white, 0.3f, "Player special pulse", true);
+    }
+
+    public static void AbilityCrescent(Vector2 position, Vector2 direction)
+    {
+        Sprite art = VerdantCrescentSprite ?? PlayerSlashSprite;
+        if (art == null) { Slash(position, direction, 2.7f); return; }
+        GameObject effect = CreateSpriteEffect(art, position + direction * 1.05f, new Vector2(4.1f, 2.8f), Color.white, 0.34f, "Verdant Crescent ability", true);
+        effect.transform.right = direction;
+    }
+
+    public static void AbilitySaltburst(Vector2 position, float diameter)
+    {
+        Sprite art = SaltburstSprite ?? PlayerPulseSprite;
+        if (art == null) { Burst(position, new Color(1f, 0.78f, 0.38f, 0.9f), diameter); return; }
+        CreateSpriteEffect(art, position, Vector2.one * diameter, Color.white, 0.48f, "Saltburst ability", true);
+    }
+
+    public static void AbilityTidebreaker(Vector2 position, Vector2 direction)
+    {
+        Sprite art = TidebreakerSprite ?? PlayerPulseSprite;
+        if (art == null) { GroundLane(position + direction * 2f, direction, 7f, 2.6f, new Color(0.3f, 0.85f, 0.95f, 0.9f), 0.4f); return; }
+        GameObject effect = CreateSpriteEffect(art, position + direction * 2.7f, new Vector2(7.4f, 4.4f), Color.white, 0.52f, "Tidebreaker ability", true);
+        effect.transform.right = direction;
+    }
+
+    public static void Voidburst(Vector2 position, float diameter, float lifetime)
+    {
+        Sprite art = VoidburstSprite;
+        if (art == null) { Ring(position, diameter, new Color(0.96f, 0.18f, 0.54f, 0.95f), lifetime); return; }
+        CreateSpriteEffect(art, position, Vector2.one * diameter, Color.white, lifetime, "Final boss voidburst", true);
     }
 
     public static void TelegraphLine(Vector2 start, Vector2 end, Color color, float thickness, float lifetime)

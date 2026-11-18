@@ -24,9 +24,13 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private int biomeIndex;
     private float touchDamage;
     private float moveSpeed;
+    private bool isFinalBoss;
+    private int finalAttackIndex;
 
     public float Health01 => maxHealth <= 0 ? 0 : Mathf.Clamp01(health / maxHealth);
     public bool IsBoss { get; private set; }
+    public bool IsFinalBoss => isFinalBoss;
+    public int BiomeIndex => biomeIndex;
 
     public void Configure(float hp, float damage, float speed, bool boss, int biome, Sprite[] frames)
     {
@@ -39,11 +43,27 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         collider.radius = boss ? 0.58f : 0.34f;
     }
 
+    public void ConfigureFinalBoss(Sprite[] frames)
+    {
+        isFinalBoss = true;
+        IsBoss = true;
+        maxHealth = 1850f;
+        health = maxHealth;
+        touchDamage = 32f;
+        moveSpeed = 1.35f;
+        attackRange = 10f;
+        biomeIndex = 2;
+        animationFrames = frames;
+        if (sprite != null && frames != null && frames.Length > 0) sprite.sprite = frames[0];
+        GetComponent<CircleCollider2D>().radius = 0.86f;
+    }
+
     private void Awake()
     {
         body = GetComponent<Rigidbody2D>();
         body.gravityScale = 0f; body.freezeRotation = true; body.interpolation = RigidbodyInterpolation2D.Interpolate;
-        sprite = GetComponentInChildren<SpriteRenderer>();
+        Transform visual = transform.Find("Animated visual");
+        sprite = visual != null ? visual.GetComponent<SpriteRenderer>() : GetComponentInChildren<SpriteRenderer>();
         animator = GetComponent<ScadrykActorAnimator>();
         player = FindAnyObjectByType<ScadrykPlayerController>();
         director = FindAnyObjectByType<ScadrykGameDirector>();
@@ -99,6 +119,11 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     {
         attackTarget = player.transform.position;
         if (animator != null) animator.PlayAttack((attackTarget - (Vector2)transform.position).normalized, IsBoss);
+        if (isFinalBoss)
+        {
+            BeginFinalBossAttack();
+            return;
+        }
         float windup = biomeIndex == 0 ? (IsBoss ? 0.95f : 0.72f) : biomeIndex == 1 ? (IsBoss ? 0.86f : 0.68f) : (IsBoss ? 1.05f : 0.82f);
         isWindup = true;
         windupEndsAt = Time.time + windup;
@@ -112,6 +137,29 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             ScadrykEffects.Ring(origin, IsBoss ? 5.3f : 3.65f, new Color(0.34f, 0.9f, 1f, 0.9f), windup);
     }
 
+    private void BeginFinalBossAttack()
+    {
+        isWindup = true;
+        windupEndsAt = Time.time + 1.12f;
+        Vector2 origin = transform.position;
+        if (finalAttackIndex % 3 == 0)
+        {
+            Vector2 direction = (attackTarget - origin).normalized;
+            for (int i = -2; i <= 2; i++)
+                ScadrykEffects.TelegraphLine(origin, origin + Rotate(direction, i * 0.22f) * 7.2f, new Color(0.98f, 0.26f, 0.62f, 0.75f), 0.16f, 1.12f);
+        }
+        else if (finalAttackIndex % 3 == 1)
+        {
+            ScadrykEffects.Voidburst(attackTarget, 3.2f, 1.12f);
+            ScadrykEffects.Ring(attackTarget, 5.4f, new Color(0.98f, 0.26f, 0.62f, 0.9f), 1.12f);
+        }
+        else
+        {
+            ScadrykEffects.Voidburst(origin, 5f, 1.12f);
+            ScadrykEffects.Ring(origin, 13f, new Color(0.98f, 0.26f, 0.62f, 0.95f), 1.12f);
+        }
+    }
+
     private void ResolveAttack()
     {
         isWindup = false;
@@ -120,9 +168,53 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         if (animator != null && player != null) animator.PlayAttack(((Vector2)player.transform.position - (Vector2)transform.position).normalized, IsBoss);
         if (player == null) return;
 
+        if (isFinalBoss)
+        {
+            ResolveFinalBossAttack();
+            return;
+        }
+
         if (biomeIndex == 0) ResolveRootThrust();
         else if (biomeIndex == 1) ResolveCrystalVolley();
         else ResolveBellPulse();
+    }
+
+    private void ResolveFinalBossAttack()
+    {
+        int pattern = finalAttackIndex++ % 3;
+        nextAttackAt = Time.time + 1.05f;
+        Vector2 origin = transform.position;
+        if (pattern == 0)
+        {
+            Vector2 direction = (attackTarget - origin).normalized;
+            for (int i = -3; i <= 3; i++)
+                ScadrykEnemyProjectile.Launch(origin + direction * 0.75f, Rotate(direction, i * 0.19f), 7.1f, 19f, ScadrykEffects.VoidburstSprite, new Color(1f, 0.72f, 0.92f), 0.58f, "Void star");
+            ScadrykEffects.Voidburst(origin + direction * 1.1f, 2.3f, 0.26f);
+        }
+        else if (pattern == 1)
+        {
+            Vector2 target = attackTarget;
+            StartCoroutine(ResolveStarfall(target));
+            Vector2 direction = (target - origin).normalized;
+            for (int i = -1; i <= 1; i++)
+                ScadrykEnemyProjectile.Launch(origin, Rotate(direction, i * 0.48f), 5.4f, 16f, ScadrykEffects.VoidburstSprite, new Color(1f, 0.58f, 0.8f), 0.48f, "Falling void star");
+        }
+        else
+        {
+            float distance = Vector2.Distance(player.transform.position, origin);
+            ScadrykEffects.Voidburst(origin, 13f, 0.42f);
+            ScadrykEffects.Ring(origin, 13f, new Color(0.98f, 0.24f, 0.57f, 0.96f), 0.42f);
+            if (distance > 2.2f && distance < 6.7f) player.TakeDamage(31f);
+        }
+    }
+
+    private System.Collections.IEnumerator ResolveStarfall(Vector2 target)
+    {
+        yield return new WaitForSeconds(0.46f);
+        if (dead) yield break;
+        ScadrykEffects.Voidburst(target, 3.4f, 0.38f);
+        if (player != null && Vector2.Distance(player.transform.position, target) < 1.75f)
+            player.TakeDamage(27f);
     }
 
     private void ResolveRootThrust()

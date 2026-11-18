@@ -26,18 +26,21 @@ Para criar um executável Windows, escolha **Scadryk > Build Windows demo**. O b
 | Clique esquerdo, Espaço ou J | Ataque corpo a corpo na direção da mira |
 | Shift ou K | Esquiva rápida com breve invulnerabilidade e recarga |
 | Q ou clique direito | Pulso que atinge ecos próximos; tem recarga |
+| 1 | Crescente Verdejante — golpe frontal amplo, aprendido após o guardião da primeira fase |
+| 2 | Estouro de Sal — explosão circular de cristais, aprendido após o guardião da segunda fase |
+| 3 | Rompante da Maré — onda frontal de longo alcance, aprendido após o guardião da terceira fase |
 | E perto da passagem | Seguir para a sala/fase seguinte após limpar a sala |
 | Esc | Pausar/retomar |
 
 ## Progressão e mapa
 
-As fases jogáveis incluídas são **Margens do Primeiro Eco**, **Bacia do Sal Imóvel** e **Costa das Badaladas**. Cada uma tem três salas, caminhos laterais, coberturas e um guardião na última sala. O mapa no canto superior direito mostra a posição atual e o estado das salas; o painel superior esquerdo mostra fase, sala, vida, inimigos restantes e recargas. A cada sala limpa, Nara recupera um pouco de vida. Ao zerar a vida, ela retorna ao início da sala atual.
+As fases jogáveis incluídas são **Margens do Primeiro Eco**, **Bacia do Sal Imóvel** e **Costa das Badaladas**. Cada uma tem três salas, caminhos laterais, coberturas e um guardião na última sala. O mapa no canto superior direito mostra a posição atual e o estado das salas; o painel superior esquerdo mostra fase, sala, vida, inimigos restantes, recargas e os poderes aprendidos. A cada sala limpa, Nara recupera um pouco de vida. Ao zerar a vida, ela retorna ao início da sala atual.
 
-Ao limpar qualquer sala, um portal ilustrado se abre para levar Nara ao próximo nível. Ao derrotar o guardião no fim de cada fase, o portal conduz à fase seguinte. Aproxime-se e pressione **E** para ver Nara entrar, atravessar a tela escurecida e emergir pelo portal de chegada. No fim da campanha, o portal dourado é maior e conduz à animação de conclusão.
+Ao limpar qualquer sala, um portal ilustrado se abre para levar Nara ao próximo nível. Cada guardião concede um poder com sprite próprio: **Crescente Verdejante**, **Estouro de Sal** e **Rompante da Maré**. Após o terceiro guardião, o **Arauto do Vazio** surge como superchefe, com 1.850 pontos de vida, barra de chefe própria e três padrões de ataque: salva de estrelas, chuva de impacto marcada no chão e uma onda de vazio que pode ser evitada com esquiva. Ao derrotá-lo, um portal colossal violeta aparece. Aproxime-se e pressione **E** para ver Nara entrar, atravessar a tela escurecida e emergir pelo portal de chegada; usar o portal final conclui a jornada.
 
 Os inimigos usam ataques próprios do bioma: raízes que avançam pelo chão e podem prender Nara por um instante, estilhaços de sal que são lançados à distância e ondas circulares de ressonância na costa. Esses ataques usam sprites ilustrados próprios, além do aviso visual antes de causar dano; guardiões ampliam o alcance ou disparam salvas múltiplas. Inimigos comuns ficam próximos do tamanho de Nara, e guardiões são maiores.
 
-Nara também tem sprites para o golpe básico de espada e para o pulso especial expansivo. O projétil de sal da segunda fase usa seu sprite próprio de cristal.
+Nara também tem sprites para o golpe básico de espada, o pulso especial expansivo e os três poderes conquistados. Os projéteis dos inimigos de sal e do superchefe usam sprites próprios.
 
 As coberturas quadradas foram substituídas por troncos caídos, tocos, cristais e rochas, distribuídos de forma diferente pelas salas e com colisores ajustados ao formato. Nara anima a caminhada pelas direções do sprite e os atores têm movimento de passada e impulso ao atacar. Barras de vida flutuam acima de Nara, dos ecos e dos guardiões.
 
