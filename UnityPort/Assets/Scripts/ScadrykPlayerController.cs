@@ -31,6 +31,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     private float health = 100f;
     private float maxHealth = 100f;
     private float invulnerableUntil;
+    private float rootedUntil;
     private SpriteRenderer sprite;
     private ScadrykGameDirector director;
     private Sprite[] spriteFrames;
@@ -74,7 +75,8 @@ public sealed class ScadrykPlayerController : MonoBehaviour
             BodyVelocity = dashDirection * dashSpeed;
             return;
         }
-        BodyVelocity = Vector2.MoveTowards(BodyVelocity, moveInput * moveSpeed, acceleration * Time.fixedDeltaTime);
+        float effectiveSpeed = Time.time < rootedUntil ? moveSpeed * 0.52f : moveSpeed;
+        BodyVelocity = Vector2.MoveTowards(BodyVelocity, moveInput * effectiveSpeed, acceleration * Time.fixedDeltaTime);
     }
 
     private void AimAtPointer()
@@ -97,7 +99,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
             int column = moveInput.sqrMagnitude > 0.02f ? Mathf.FloorToInt(Time.time * 8f) % 4 : 0;
             sprite.sprite = spriteFrames[row * 4 + column];
         }
-        sprite.color = Time.time < invulnerableUntil && Mathf.FloorToInt(Time.time * 18f) % 2 != 0 ? new Color(0.45f, 0.85f, 1f) : Color.white;
+        sprite.color = Time.time < invulnerableUntil && Mathf.FloorToInt(Time.time * 18f) % 2 != 0 ? new Color(0.45f, 0.85f, 1f) : Time.time < rootedUntil ? new Color(0.72f, 0.92f, 0.56f) : Color.white;
     }
 
     private void Attack()
@@ -143,5 +145,6 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     }
 
     public void RestoreHealth(float amount) => health = Mathf.Min(maxHealth, health + Mathf.Max(0f, amount));
+    public void ApplyRootSlow(float duration) => rootedUntil = Mathf.Max(rootedUntil, Time.time + duration);
     public void ResetForRoom(Vector2 position) { health = maxHealth; transform.position = position; BodyVelocity = Vector2.zero; }
 }

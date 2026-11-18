@@ -346,7 +346,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             var enemy = new GameObject(boss ? "Phase guardian" : "Echo of " + PhaseNames[phaseIndex]);
             enemy.transform.SetParent(levelRoot.transform);
             enemy.transform.position = position;
-            enemy.transform.localScale = Vector3.one * (boss ? 1.65f : 0.9f);
+            enemy.transform.localScale = Vector3.one * (boss ? 1.85f : 0.9f);
             string sheet = boss ? (phaseIndex == 0 ? "Bosses" : phaseIndex == 1 ? "BossesMidgame" : "BossesFinalWave") : "Enemies";
             Sprite[] frames = LoadSheetRow(sheet, boss ? phaseIndex : i % 4, false);
             if (phaseEnemySprites != null && phaseEnemySprites[phaseIndex] != null)
@@ -356,7 +356,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             var collider = enemy.AddComponent<CircleCollider2D>(); collider.radius = 0.48f;
             enemy.AddComponent<Rigidbody2D>();
             var health = enemy.AddComponent<ScadrykEnemyHealth>();
-            health.Configure(boss ? 340f + phaseIndex * 90f : 75f + phaseIndex * 12f, boss ? 23f : 11f + phaseIndex * 2f, boss ? 1.65f : 2f + phaseIndex * 0.12f, boss, frames);
+            health.Configure(boss ? 340f + phaseIndex * 90f : 75f + phaseIndex * 12f, boss ? 23f : 11f + phaseIndex * 2f, boss ? 1.65f : 2f + phaseIndex * 0.12f, boss, phaseIndex, frames);
         }
     }
 
