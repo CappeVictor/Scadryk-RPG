@@ -37,8 +37,8 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         body = GetComponent<Rigidbody2D>();
         body.gravityScale = 0f; body.freezeRotation = true; body.interpolation = RigidbodyInterpolation2D.Interpolate;
         sprite = GetComponent<SpriteRenderer>();
-        player = FindObjectOfType<ScadrykPlayerController>();
-        director = FindObjectOfType<ScadrykGameDirector>();
+        player = FindAnyObjectByType<ScadrykPlayerController>();
+        director = FindAnyObjectByType<ScadrykGameDirector>();
         if (health <= 0f) health = maxHealth;
         GetComponent<CircleCollider2D>().isTrigger = false;
     }

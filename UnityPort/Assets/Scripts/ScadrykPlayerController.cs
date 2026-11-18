@@ -49,7 +49,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         body.interpolation = RigidbodyInterpolation2D.Interpolate;
         body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
         sprite = GetComponent<SpriteRenderer>();
-        director = FindObjectOfType<ScadrykGameDirector>();
+        director = FindAnyObjectByType<ScadrykGameDirector>();
     }
 
     private void Update()
