@@ -31,7 +31,7 @@ public sealed class ScadrykPortalVisual : MonoBehaviour
         var frame = gameObject.AddComponent<SpriteRenderer>();
         frame.sprite = sprite;
         frame.sortingOrder = 14;
-        frame.color = Color.white;
+        frame.color = Color.Lerp(Color.white, accent, accent.r > 0.9f && accent.g < 0.75f ? 0.62f : 0.22f);
         float baseDiameter = sprite.bounds.size.x;
         float scale = diameter / Mathf.Max(0.01f, baseDiameter);
         fullScale = Vector3.one * scale;

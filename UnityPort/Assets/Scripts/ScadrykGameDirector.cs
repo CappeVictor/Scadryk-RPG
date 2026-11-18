@@ -417,18 +417,17 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     {
         if (gateObject != null) return;
         exitPosition = roomCenter + Vector2.right * 8.05f;
-        if (roomIndex == RoomsPerPhase - 1)
-        {
-            gateObject = ScadrykPortalVisual.Spawn(levelRoot.transform, exitPosition, portalSprite, PhaseAccentColors[phaseIndex], 3.6f);
-            statusMessage = phaseIndex < PhaseNames.Length - 1 ? "O portal surgiu. Aproxime-se e pressione E para atravessar." : "O último portal aguarda. Aproxime-se e pressione E.";
-            statusUntil = Time.time + 5f;
-            return;
-        }
-        gateObject = new GameObject("Open passage — E");
-        gateObject.transform.SetParent(levelRoot.transform);
-        gateObject.transform.position = exitPosition;
-        gateObject.transform.localScale = new Vector3(0.5f, 1.8f, 1f);
-        var renderer = gateObject.AddComponent<SpriteRenderer>(); renderer.sprite = SquareSprite; renderer.color = new Color(0.3f, 0.9f, 0.72f, 0.85f); renderer.sortingOrder = 3;
+        bool finalPortal = phaseIndex == PhaseNames.Length - 1 && roomIndex == RoomsPerPhase - 1;
+        bool phasePortal = roomIndex == RoomsPerPhase - 1;
+        Color portalColor = finalPortal ? new Color(1f, 0.62f, 0.16f) : PhaseAccentColors[phaseIndex];
+        float portalSize = finalPortal ? 5.15f : phasePortal ? 3.8f : 3.15f;
+        gateObject = ScadrykPortalVisual.Spawn(levelRoot.transform, exitPosition, portalSprite, portalColor, portalSize);
+        statusMessage = finalPortal
+            ? "O portal dourado surgiu. Aproxime-se e pressione E para concluir a jornada."
+            : phasePortal
+                ? "O portal da próxima fase surgiu. Aproxime-se e pressione E para atravessar."
+                : "Portal aberto. Aproxime-se e pressione E para seguir à próxima sala.";
+        statusUntil = Time.time + 5f;
     }
 
     public void TryUseExit(Vector2 playerPosition)
@@ -437,16 +436,16 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (enemiesRemaining > 0) { ShowStatus("Ainda restam ecos nesta sala.", 1.5f); return; }
         if (Vector2.Distance(playerPosition, exitPosition) > 1.9f) { ShowStatus("Aproxime-se da passagem para avançar.", 1.5f); return; }
         clearedRooms[roomIndex] = true;
-        if (roomIndex < RoomsPerPhase - 1) BuildPhase(phaseIndex, roomIndex + 1, false);
+        if (roomIndex < RoomsPerPhase - 1) StartCoroutine(TransitionThroughPortal(phaseIndex, roomIndex + 1));
         else if (phaseIndex < PhaseNames.Length - 1)
         {
             for (int i = 0; i < clearedRooms.Length; i++) clearedRooms[i] = false;
-            StartCoroutine(TransitionThroughPortal(phaseIndex + 1));
+            StartCoroutine(TransitionThroughPortal(phaseIndex + 1, 0));
         }
         else StartCoroutine(TransitionToVictory());
     }
 
-    private IEnumerator TransitionThroughPortal(int nextPhase)
+    private IEnumerator TransitionThroughPortal(int nextPhase, int nextRoom)
     {
         transitioning = true;
         ScadrykPortalVisual exitPortal = gateObject != null ? gateObject.GetComponent<ScadrykPortalVisual>() : null;
@@ -467,7 +466,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         player.SetPortalTransitPose(target, 0.025f);
         yield return FadeScreen(1f, 0.45f);
 
-        BuildPhase(nextPhase, 0, false);
+        BuildPhase(nextPhase, nextRoom, false);
         Vector2 arrivalPosition = player.transform.position;
         var arrivalObject = ScadrykPortalVisual.Spawn(levelRoot.transform, arrivalPosition, portalSprite, PhaseAccentColors[phaseIndex], 3.3f);
         ScadrykPortalVisual arrivalPortal = arrivalObject.GetComponent<ScadrykPortalVisual>();
