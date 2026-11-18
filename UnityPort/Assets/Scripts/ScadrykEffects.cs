@@ -29,8 +29,9 @@ public static class ScadrykEffects
         Sprite slashSprite = PlayerSlashSprite;
         if (slashSprite != null)
         {
-            GameObject spriteEffect = CreateSpriteEffect(slashSprite, position + direction * 0.82f, new Vector2(length * 1.65f, length * 0.88f), Color.white, 0.16f, "Player sword arc");
+            GameObject spriteEffect = CreateSpriteEffect(slashSprite, position + direction * 0.82f, new Vector2(length * 1.65f, length * 0.88f), Color.white, 0.16f, "Player sword arc", true);
             spriteEffect.transform.right = direction;
+            spriteEffect.GetComponent<ScadrykTimedVisual>().SetSpin(-230f);
             return;
         }
         GameObject go = Create(position + direction * 0.85f, new Color(1f, 0.82f, 0.42f, 0.85f), length * 1.55f, 0.22f, 0.13f);
@@ -67,7 +68,7 @@ public static class ScadrykEffects
             fallback.name = "Root thorn attack";
             return;
         }
-        GameObject go = CreateSpriteEffect(attackSprite, center, new Vector2(length, width), Color.white, lifetime, "Root thorn attack");
+        GameObject go = CreateSpriteEffect(attackSprite, center, new Vector2(length, width), Color.white, lifetime, "Root thorn attack", true);
         go.transform.right = direction;
     }
 

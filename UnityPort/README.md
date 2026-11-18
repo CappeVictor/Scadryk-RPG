@@ -37,6 +37,8 @@ Os inimigos usam ataques próprios do bioma: raízes que avançam pelo chão e p
 
 Nara também tem sprites para o golpe básico de espada e para o pulso especial expansivo. O projétil de sal da segunda fase usa seu sprite próprio de cristal.
 
+As coberturas quadradas foram substituídas por troncos caídos, tocos, cristais e rochas, distribuídos de forma diferente pelas salas e com colisores ajustados ao formato. Nara anima a caminhada pelas direções do sprite e os atores têm movimento de passada e impulso ao atacar. Barras de vida flutuam acima de Nara, dos ecos e dos guardiões.
+
 ## Como ampliar
 
 - `ScadrykGameDirector.cs`: conteúdo das fases, desenho procedural dos mapas, nomes das salas e progressão.

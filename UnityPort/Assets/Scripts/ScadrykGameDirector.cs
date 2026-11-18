@@ -14,6 +14,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private Sprite[] environmentSprites;
     private Sprite[] phaseGroundSprites;
     private Sprite[] phaseEnemySprites;
+    private Sprite fallenWillowLogSprite;
 
     private int phaseIndex, roomIndex, enemiesRemaining;
     private bool isPaused, victory;
@@ -45,6 +46,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         environmentSprites = LoadSheetRow("ScadrykEnvironment", 0, true);
         phaseGroundSprites = new[] { LoadSingleSprite("ForestClearing", 80f), LoadSingleSprite("SaltBasin", 80f), LoadSingleSprite("BellCoast", 80f) };
         phaseEnemySprites = new[] { LoadSingleSprite("Rootbound", 1200f), LoadSingleSprite("SaltCrawler", 1200f), LoadSingleSprite("BellWraith", 1200f) };
+        fallenWillowLogSprite = LoadSingleSprite("FallenWillowLog", 300f);
         SetupCamera();
         BuildPhase(0, 0, true);
     }
@@ -85,12 +87,15 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         {
             var playerObject = new GameObject("Nara — player");
             playerObject.transform.position = roomCenter + Vector2.left * 6.2f;
-            var renderer = playerObject.AddComponent<SpriteRenderer>(); renderer.sprite = CircleSprite; renderer.color = new Color(0.85f, 0.83f, 0.71f); renderer.sortingOrder = 5;
-            playerObject.AddComponent<ScadrykDepthSort>().SetBias(5);
             playerObject.transform.localScale = new Vector3(0.88f, 0.88f, 1f);
+            var playerVisual = new GameObject("Animated visual"); playerVisual.transform.SetParent(playerObject.transform, false);
+            var renderer = playerVisual.AddComponent<SpriteRenderer>(); renderer.sprite = CircleSprite; renderer.color = new Color(0.85f, 0.83f, 0.71f); renderer.sortingOrder = 5;
             playerObject.AddComponent<CircleCollider2D>().radius = 0.42f;
             playerObject.AddComponent<Rigidbody2D>();
+            playerObject.AddComponent<ScadrykDepthSort>().SetBias(5);
+            playerObject.AddComponent<ScadrykActorAnimator>().SetVisual(playerVisual.transform);
             player = playerObject.AddComponent<ScadrykPlayerController>();
+            playerObject.AddComponent<ScadrykHealthBar>().Configure(true, false, 1.25f);
             player.SetSpriteFrames(LoadSheetRow("Listener", 0, true));
         }
         else player.ResetForRoom(roomCenter + Vector2.left * 6.2f);
@@ -261,12 +266,13 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         }
     }
 
-    private void PlaceProp(Transform parent, int spriteIndex, string name, Vector2 position, float scale, bool solid, Vector2 hitboxSize, Vector2 hitboxOffset, ScadrykAmbientMotion motion = ScadrykAmbientMotion.None, float motionStrength = 1f)
+    private void PlaceProp(Transform parent, int spriteIndex, string name, Vector2 position, float scale, bool solid, Vector2 hitboxSize, Vector2 hitboxOffset, ScadrykAmbientMotion motion = ScadrykAmbientMotion.None, float motionStrength = 1f, float rotation = 0f)
     {
         var go = new GameObject(name);
         go.transform.SetParent(parent);
         go.transform.position = position;
         go.transform.localScale = Vector3.one * scale;
+        go.transform.rotation = Quaternion.Euler(0f, 0f, rotation);
         var visual = new GameObject("Visual");
         visual.transform.SetParent(go.transform, false);
         var renderer = visual.AddComponent<SpriteRenderer>();
@@ -296,28 +302,54 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         Vector2[] layouts;
         if (phaseIndex == 0)
         {
-            if (index == 0) layouts = new[] { new Vector2(-2.8f, 1.9f), new Vector2(2.9f, -2.1f), new Vector2(0.1f, 0f) };
-            else if (index == 1) layouts = new[] { new Vector2(-3.8f, -1.8f), new Vector2(3.7f, 1.8f), new Vector2(0f, 3f), new Vector2(0f, -3f) };
-            else layouts = new[] { new Vector2(-3.3f, 2.6f), new Vector2(-3.3f, -2.6f), new Vector2(2.8f, 0f) };
+            if (index == 0) layouts = new[] { new Vector2(-3.4f, 2.9f), new Vector2(3.1f, -2.8f), new Vector2(4.4f, 2.1f) };
+            else if (index == 1) layouts = new[] { new Vector2(-4.0f, -2.5f), new Vector2(1.8f, 3.5f), new Vector2(4.3f, -2.8f), new Vector2(-0.4f, -3.7f) };
+            else layouts = new[] { new Vector2(-4.3f, 2.8f), new Vector2(-2.2f, -3.4f), new Vector2(3.8f, 1.9f) };
         }
         else if (phaseIndex == 1)
         {
-            if (index == 0) layouts = new[] { new Vector2(-3.4f, -2.3f), new Vector2(0f, 2.6f), new Vector2(3.7f, -1.7f) };
-            else if (index == 1) layouts = new[] { new Vector2(-4.2f, 0f), new Vector2(-1.4f, 3.0f), new Vector2(1.7f, -3.0f), new Vector2(4.4f, 0f) };
-            else layouts = new[] { new Vector2(-4.0f, 2.5f), new Vector2(-4.0f, -2.5f), new Vector2(4.1f, 0f) };
+            if (index == 0) layouts = new[] { new Vector2(-3.7f, -2.7f), new Vector2(-1.2f, 3.6f), new Vector2(4.2f, -1.9f) };
+            else if (index == 1) layouts = new[] { new Vector2(-4.1f, 0.8f), new Vector2(-1.7f, 3.7f), new Vector2(1.5f, -3.6f), new Vector2(4.4f, -0.2f) };
+            else layouts = new[] { new Vector2(-4.1f, 2.7f), new Vector2(-4.2f, -2.6f), new Vector2(4.0f, -0.5f) };
         }
         else
         {
-            if (index == 0) layouts = new[] { new Vector2(-3.8f, 2.7f), new Vector2(0f, -3.1f), new Vector2(3.7f, 2.6f) };
-            else if (index == 1) layouts = new[] { new Vector2(-4.4f, 2.9f), new Vector2(-4.4f, -2.9f), new Vector2(0f, 0f), new Vector2(4.4f, 2.9f), new Vector2(4.4f, -2.9f) };
-            else layouts = new[] { new Vector2(-3.5f, 2.6f), new Vector2(-3.5f, -2.6f), new Vector2(4.25f, 0f) };
+            if (index == 0) layouts = new[] { new Vector2(-3.9f, 2.9f), new Vector2(-0.8f, -3.5f), new Vector2(3.9f, 2.5f) };
+            else if (index == 1) layouts = new[] { new Vector2(-4.3f, 3.1f), new Vector2(-4.0f, -3.2f), new Vector2(0.2f, 2.6f), new Vector2(4.2f, -2.9f) };
+            else layouts = new[] { new Vector2(-3.8f, 2.7f), new Vector2(-3.6f, -2.8f), new Vector2(4.2f, 0.8f) };
         }
         foreach (var offset in layouts)
         {
-            bool tallPillar = index == 2 && Mathf.Abs(offset.x) > 2.7f && (phaseIndex == 0 || phaseIndex == 2);
-            Vector2 size = tallPillar ? new Vector2(1.2f, 3.25f) : new Vector2(1.12f, 1.12f);
-            MakeBox(parent, "Phase cover", new Vector2(x + offset.x, offset.y), size, PhaseWallColors[phaseIndex] * 0.85f, true, 2);
+            Vector2 position = new Vector2(x + offset.x, offset.y);
+            int variation = Mathf.Abs(Mathf.RoundToInt(offset.x * 3f + offset.y * 5f)) % 3;
+            if (phaseIndex == 0 && variation == 0 && fallenWillowLogSprite != null)
+                PlaceFallenLog(parent, position, index, variation);
+            else if (phaseIndex == 0)
+                PlaceProp(parent, variation == 1 ? 3 : 4, "Forest boulder and stump", position, variation == 1 ? 0.9f : 0.78f, true, new Vector2(0.85f, 0.62f), new Vector2(0f, 0.12f), ScadrykAmbientMotion.None, 1f, ((index + variation) % 2 == 0) ? 18f : -22f);
+            else if (phaseIndex == 1)
+                PlaceProp(parent, variation == 0 ? 8 : variation == 1 ? 10 : 4, "Salt crystal and crusted rock", position, variation == 0 ? 0.9f : 0.82f, true, new Vector2(0.76f, 0.62f), new Vector2(0f, 0.12f), ScadrykAmbientMotion.None, 1f, ((index + variation) % 2 == 0) ? 12f : -16f);
+            else
+                PlaceProp(parent, variation == 0 ? 13 : variation == 1 ? 14 : 12, "Tide-worn rock and post", position, variation == 1 ? 0.8f : 0.88f, true, new Vector2(0.78f, 0.64f), new Vector2(0f, 0.12f), ScadrykAmbientMotion.None, 1f, ((index + variation) % 2 == 0) ? 14f : -18f);
         }
+    }
+
+    private void PlaceFallenLog(Transform parent, Vector2 position, int room, int variant)
+    {
+        var obstacle = new GameObject("Fallen willow — solid obstacle");
+        obstacle.transform.SetParent(parent);
+        obstacle.transform.position = position;
+        obstacle.transform.rotation = Quaternion.Euler(0f, 0f, ((room + variant) % 2 == 0) ? 13f : -24f);
+        var visual = new GameObject("Fallen tree art");
+        visual.transform.SetParent(obstacle.transform, false);
+        var renderer = visual.AddComponent<SpriteRenderer>();
+        renderer.sprite = fallenWillowLogSprite;
+        renderer.sortingOrder = 1;
+        Vector2 spriteSize = fallenWillowLogSprite.bounds.size;
+        visual.transform.localScale = new Vector3(3.05f / spriteSize.x, 1.12f / spriteSize.y, 1f);
+        obstacle.AddComponent<ScadrykDepthSort>().SetBias(2);
+        var collider = obstacle.AddComponent<CapsuleCollider2D>();
+        collider.direction = CapsuleDirection2D.Horizontal;
+        collider.size = new Vector2(2.75f, 0.72f);
     }
 
     private static void MakeDecoration(Transform parent, string name, Vector2 position, Vector2 size, Color color, bool circle, int order, float rotation = 0f)
@@ -351,12 +383,15 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             Sprite[] frames = LoadSheetRow(sheet, boss ? phaseIndex : i % 4, false);
             if (phaseEnemySprites != null && phaseEnemySprites[phaseIndex] != null)
                 frames = new[] { phaseEnemySprites[phaseIndex], phaseEnemySprites[phaseIndex], phaseEnemySprites[phaseIndex], phaseEnemySprites[phaseIndex] };
-            var renderer = enemy.AddComponent<SpriteRenderer>(); renderer.sprite = frames != null && frames.Length > 0 ? frames[0] : CircleSprite; renderer.color = Color.white; renderer.sortingOrder = 4;
-            enemy.AddComponent<ScadrykDepthSort>().SetBias(4);
+            var enemyVisual = new GameObject("Animated visual"); enemyVisual.transform.SetParent(enemy.transform, false);
+            var renderer = enemyVisual.AddComponent<SpriteRenderer>(); renderer.sprite = frames != null && frames.Length > 0 ? frames[0] : CircleSprite; renderer.color = Color.white; renderer.sortingOrder = 4;
             var collider = enemy.AddComponent<CircleCollider2D>(); collider.radius = 0.48f;
             enemy.AddComponent<Rigidbody2D>();
+            enemy.AddComponent<ScadrykDepthSort>().SetBias(4);
+            enemy.AddComponent<ScadrykActorAnimator>().SetVisual(enemyVisual.transform);
             var health = enemy.AddComponent<ScadrykEnemyHealth>();
             health.Configure(boss ? 340f + phaseIndex * 90f : 75f + phaseIndex * 12f, boss ? 23f : 11f + phaseIndex * 2f, boss ? 1.65f : 2f + phaseIndex * 0.12f, boss, phaseIndex, frames);
+            enemy.AddComponent<ScadrykHealthBar>().Configure(false, boss, boss ? 1.45f : 1.22f);
         }
     }
 

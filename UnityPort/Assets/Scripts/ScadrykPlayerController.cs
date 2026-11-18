@@ -33,12 +33,14 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     private float invulnerableUntil;
     private float rootedUntil;
     private SpriteRenderer sprite;
+    private ScadrykActorAnimator animator;
     private ScadrykGameDirector director;
     private Sprite[] spriteFrames;
 
     public Vector2 Facing => facing;
     public float Health => health;
     public float MaxHealth => maxHealth;
+    public float Health01 => maxHealth <= 0f ? 0f : Mathf.Clamp01(health / maxHealth);
     public float DashCooldownLeft => Mathf.Max(0f, nextDashAt - Time.time);
     public float ShockwaveCooldownLeft => Mathf.Max(0f, nextShockwaveAt - Time.time);
 
@@ -49,7 +51,8 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         body.freezeRotation = true;
         body.interpolation = RigidbodyInterpolation2D.Interpolate;
         body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
-        sprite = GetComponent<SpriteRenderer>();
+        sprite = GetComponentInChildren<SpriteRenderer>();
+        animator = GetComponent<ScadrykActorAnimator>();
         director = FindAnyObjectByType<ScadrykGameDirector>();
     }
 
@@ -106,6 +109,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     {
         if (Time.time < nextAttackAt) return;
         nextAttackAt = Time.time + attackCooldown;
+        if (animator != null) animator.PlayAttack(facing, false);
         ScadrykEffects.Slash(transform.position, facing, attackRange);
         Collider2D[] hits = Physics2D.OverlapCircleAll((Vector2)transform.position + facing * 0.8f, attackRange, ~0);
         foreach (Collider2D hit in hits)
@@ -126,6 +130,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     {
         if (Time.time < nextShockwaveAt) return;
         nextShockwaveAt = Time.time + shockwaveCooldown;
+        if (animator != null) animator.PlayAttack(facing, true);
         ScadrykEffects.PlayerPulse(transform.position, shockwaveRadius * 2f);
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, shockwaveRadius, ~0);
         foreach (Collider2D hit in hits)
@@ -146,5 +151,5 @@ public sealed class ScadrykPlayerController : MonoBehaviour
 
     public void RestoreHealth(float amount) => health = Mathf.Min(maxHealth, health + Mathf.Max(0f, amount));
     public void ApplyRootSlow(float duration) => rootedUntil = Mathf.Max(rootedUntil, Time.time + duration);
-    public void ResetForRoom(Vector2 position) { health = maxHealth; transform.position = position; BodyVelocity = Vector2.zero; }
+    public void ResetForRoom(Vector2 position) { health = maxHealth; rootedUntil = 0f; transform.position = position; BodyVelocity = Vector2.zero; }
 }

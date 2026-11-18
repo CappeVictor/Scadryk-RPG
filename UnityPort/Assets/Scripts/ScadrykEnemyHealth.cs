@@ -16,6 +16,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private SpriteRenderer sprite;
     private ScadrykPlayerController player;
     private ScadrykGameDirector director;
+    private ScadrykActorAnimator animator;
     private bool dead;
     private bool isWindup;
     private Sprite[] animationFrames;
@@ -42,7 +43,8 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     {
         body = GetComponent<Rigidbody2D>();
         body.gravityScale = 0f; body.freezeRotation = true; body.interpolation = RigidbodyInterpolation2D.Interpolate;
-        sprite = GetComponent<SpriteRenderer>();
+        sprite = GetComponentInChildren<SpriteRenderer>();
+        animator = GetComponent<ScadrykActorAnimator>();
         player = FindAnyObjectByType<ScadrykPlayerController>();
         director = FindAnyObjectByType<ScadrykGameDirector>();
         if (health <= 0f) health = maxHealth;
@@ -96,6 +98,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private void BeginAttack()
     {
         attackTarget = player.transform.position;
+        if (animator != null) animator.PlayAttack((attackTarget - (Vector2)transform.position).normalized, IsBoss);
         float windup = biomeIndex == 0 ? (IsBoss ? 0.95f : 0.72f) : biomeIndex == 1 ? (IsBoss ? 0.86f : 0.68f) : (IsBoss ? 1.05f : 0.82f);
         isWindup = true;
         windupEndsAt = Time.time + windup;
@@ -114,6 +117,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         isWindup = false;
         windupEndsAt = 0f;
         nextAttackAt = Time.time + (IsBoss ? 1.55f : 2f);
+        if (animator != null && player != null) animator.PlayAttack(((Vector2)player.transform.position - (Vector2)transform.position).normalized, IsBoss);
         if (player == null) return;
 
         if (biomeIndex == 0) ResolveRootThrust();
