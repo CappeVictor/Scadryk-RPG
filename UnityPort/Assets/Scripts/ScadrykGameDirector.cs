@@ -416,7 +416,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             enemy.AddComponent<ScadrykDepthSort>().SetBias(4);
             enemy.AddComponent<ScadrykActorAnimator>().SetVisual(enemyVisual.transform, enemyVolumeRenderer);
             var health = enemy.AddComponent<ScadrykEnemyHealth>();
-            health.Configure(boss ? 340f + phaseIndex * 90f : 75f + phaseIndex * 12f, boss ? 23f : 11f + phaseIndex * 2f, boss ? 1.65f : 2f + phaseIndex * 0.12f, boss, phaseIndex, frames);
+            health.Configure(boss ? 320f + phaseIndex * 80f : 72f + phaseIndex * 12f, boss ? 21f : 10f + phaseIndex * 2f, boss ? 1.55f : 1.9f + phaseIndex * 0.1f, boss, phaseIndex, frames);
             enemy.AddComponent<ScadrykHealthBar>().Configure(false, boss, boss ? 1.45f : 1.22f);
         }
     }
@@ -447,12 +447,13 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         {
             if (phaseIndex == PhaseNames.Length - 1 && roomIndex == RoomsPerPhase - 1 && enemy.IsBoss)
             {
+                if (player != null) player.RestoreHealth(player.MaxHealth);
                 SpawnFinalBoss();
                 return;
             }
             statusMessage = "Sala limpa. A passagem está aberta — pressione E.";
             statusUntil = Time.time + 8f;
-            if (player != null) player.RestoreHealth(18f);
+            if (player != null) player.RestoreHealth(22f);
             UnlockExit();
             if (acquiredPower != null) ShowStatus(acquiredPower, 7f);
         }

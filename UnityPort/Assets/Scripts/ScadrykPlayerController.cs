@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 /// <summary>Responsive top-down movement, mouse aiming, melee, dash and shockwave.</summary>
@@ -12,11 +13,11 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     [SerializeField, Min(0.1f)] private float dashCooldown = 0.75f;
     [Header("Combat")]
     [SerializeField, Min(0.1f)] private float attackRange = 1.45f;
-    [SerializeField, Min(0f)] private float attackDamage = 32f;
-    [SerializeField, Min(0.05f)] private float attackCooldown = 0.28f;
-    [SerializeField, Min(0f)] private float shockwaveDamage = 48f;
+    [SerializeField, Min(0f)] private float attackDamage = 35f;
+    [SerializeField, Min(0.05f)] private float attackCooldown = 0.32f;
+    [SerializeField, Min(0f)] private float shockwaveDamage = 42f;
     [SerializeField, Min(0.1f)] private float shockwaveRadius = 3.2f;
-    [SerializeField, Min(0.1f)] private float shockwaveCooldown = 4f;
+    [SerializeField, Min(0.1f)] private float shockwaveCooldown = 5f;
 
     private Rigidbody2D body;
 #if UNITY_6000_0_OR_NEWER
@@ -28,8 +29,9 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     private Vector2 facing = Vector2.right;
     private Vector2 dashDirection;
     private float dashEndsAt, nextDashAt, nextAttackAt, nextShockwaveAt;
-    private float health = 100f;
-    private float maxHealth = 100f;
+    private float health = 120f;
+    private float maxHealth = 120f;
+    private bool isDying;
     private float invulnerableUntil;
     private float rootedUntil;
     private readonly bool[] learnedAbilities = new bool[3];
@@ -69,7 +71,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
 
     private void Update()
     {
-        if (director != null && director.IsPaused) { moveInput = Vector2.zero; return; }
+        if (isDying || (director != null && director.IsPaused)) { moveInput = Vector2.zero; return; }
 
         moveInput = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical")).normalized;
         AimAtPointer();
@@ -86,7 +88,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (director != null && director.IsPaused) { BodyVelocity = Vector2.zero; return; }
+        if (isDying || (director != null && director.IsPaused)) { BodyVelocity = Vector2.zero; return; }
         if (Time.time < dashEndsAt)
         {
             BodyVelocity = dashDirection * dashSpeed;
@@ -143,6 +145,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         dashEndsAt = Time.time + dashDuration;
         nextDashAt = Time.time + dashCooldown;
         invulnerableUntil = dashEndsAt + 0.08f;
+        if (animator != null) animator.PlayDash(dashDirection);
         ScadrykEffects.Burst(transform.position, new Color(0.55f, 0.85f, 1f, 0.75f), 0.75f);
     }
 
@@ -152,6 +155,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         nextShockwaveAt = Time.time + shockwaveCooldown;
         if (animator != null) animator.PlayAttack(facing, true);
         ScadrykEffects.PlayerPulse(transform.position, shockwaveRadius * 2f);
+        ShakeCamera(0.055f);
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, shockwaveRadius, ~0);
         foreach (Collider2D hit in hits)
             if (hit.TryGetComponent<ScadrykEnemyHealth>(out var enemy)) enemy.TakeDamage(shockwaveDamage);
@@ -171,21 +175,23 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         float cooldown;
         if (index == 0)
         {
-            radius = 3.6f; damage = 78f; cooldown = 6.5f;
+            radius = 3.6f; damage = 72f; cooldown = 7f;
             ScadrykEffects.AbilityCrescent(transform.position, facing);
         }
         else if (index == 1)
         {
-            radius = 4.25f; damage = 92f; cooldown = 9f;
+            radius = 4.25f; damage = 82f; cooldown = 10f;
             ScadrykEffects.AbilitySaltburst(transform.position, radius * 2.1f);
         }
         else
         {
-            radius = 7.6f; damage = 136f; cooldown = 12f;
+            radius = 7.6f; damage = 120f; cooldown = 14f;
             ScadrykEffects.AbilityTidebreaker(transform.position, facing);
         }
 
         abilityReadyAt[index] = Time.time + cooldown;
+        if (animator != null) animator.PlayAttack(facing, true);
+        ShakeCamera(index == 2 ? 0.12f : 0.075f);
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, radius, ~0);
         foreach (Collider2D hit in hits)
         {
@@ -199,14 +205,34 @@ public sealed class ScadrykPlayerController : MonoBehaviour
 
     public void TakeDamage(float amount)
     {
-        if (Time.time < invulnerableUntil || (director != null && director.IsPaused)) return;
+        if (isDying || Time.time < invulnerableUntil || (director != null && director.IsPaused)) return;
         health -= Mathf.Max(0f, amount);
+        invulnerableUntil = Time.time + 0.62f;
+        if (animator != null) animator.PlayHit(-facing);
+        ShakeCamera(0.095f);
         ScadrykEffects.Burst(transform.position, new Color(1f, 0.27f, 0.2f, 0.7f), 0.8f);
         if (health <= 0f)
         {
-            health = maxHealth;
-            if (director != null) director.RestartCurrentRoom();
+            health = 0f;
+            isDying = true;
+            BodyVelocity = Vector2.zero;
+            if (animator != null) animator.PlayDeath();
+            StartCoroutine(RespawnAfterDeath());
         }
+    }
+
+    private IEnumerator RespawnAfterDeath()
+    {
+        yield return new WaitForSeconds(0.76f);
+        if (director != null) director.RestartCurrentRoom();
+    }
+
+    private static void ShakeCamera(float strength)
+    {
+        Camera camera = Camera.main;
+        if (camera == null) return;
+        ScadrykCameraFollow follow = camera.GetComponent<ScadrykCameraFollow>();
+        if (follow != null) follow.Shake(strength, 0.24f);
     }
 
     public void RestoreHealth(float amount) => health = Mathf.Min(maxHealth, health + Mathf.Max(0f, amount));
@@ -217,5 +243,5 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         body.position = position;
         if (animator != null) animator.SetPortalScale(visibility);
     }
-    public void ResetForRoom(Vector2 position) { health = maxHealth; rootedUntil = 0f; transform.position = position; BodyVelocity = Vector2.zero; if (animator != null) animator.SetPortalScale(1f); }
+    public void ResetForRoom(Vector2 position) { health = maxHealth; rootedUntil = 0f; isDying = false; invulnerableUntil = Time.time + 1f; transform.position = position; BodyVelocity = Vector2.zero; if (animator != null) { animator.SetPortalScale(1f); animator.ResetPose(); } }
 }

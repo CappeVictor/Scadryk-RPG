@@ -14,6 +14,8 @@ public sealed class ScadrykActorAnimator : MonoBehaviour
     private float attackDuration = 0.28f;
     private float attackStrength = 1f;
     private float portalScale = 1f;
+    private float dashUntil, nextTrailAt, hitUntil, deathStartedAt = -1f;
+    private Vector2 dashDirection;
 
     private void Awake() => body = GetComponent<Rigidbody2D>();
 
@@ -39,6 +41,32 @@ public sealed class ScadrykActorAnimator : MonoBehaviour
 
     public void SetPortalScale(float scale) => portalScale = Mathf.Clamp01(scale);
 
+    public void PlayDash(Vector2 direction)
+    {
+        dashDirection = direction.normalized;
+        dashUntil = Time.time + 0.2f;
+        nextTrailAt = 0f;
+    }
+
+    public void PlayHit(Vector2 direction)
+    {
+        attackDirection = direction.sqrMagnitude > 0.01f ? direction.normalized : Vector2.up;
+        hitUntil = Time.time + 0.24f;
+    }
+
+    public void PlayDeath()
+    {
+        deathStartedAt = Time.time;
+        dashUntil = 0f;
+    }
+
+    public void ResetPose()
+    {
+        deathStartedAt = -1f;
+        hitUntil = dashUntil = 0f;
+        if (visualRenderer != null) visualRenderer.color = Color.white;
+    }
+
     private void LateUpdate()
     {
         if (visual == null) return;
@@ -49,16 +77,37 @@ public sealed class ScadrykActorAnimator : MonoBehaviour
             extrusionRenderer.flipY = visualRenderer.flipY;
         }
         float speed = body != null ? BodyVelocity.magnitude : 0f;
-        float stride = speed > 0.15f ? Mathf.Abs(Mathf.Sin(Time.time * 14f)) : 0f;
+        float stride = speed > 0.15f ? Mathf.Sin(Time.time * (9f + speed * 0.7f)) : 0f;
         float attack = 0f;
         if (Time.time - attackStartedAt < attackDuration)
             attack = Mathf.Sin(Mathf.Clamp01((Time.time - attackStartedAt) / attackDuration) * Mathf.PI) * attackStrength;
 
-        visual.localPosition = basePosition + Vector3.up * (stride * 0.095f) + (Vector3)(attackDirection * (attack * 0.14f));
+        float dash = Mathf.Clamp01((dashUntil - Time.time) / 0.2f);
+        float hit = Mathf.Clamp01((hitUntil - Time.time) / 0.24f);
+        float death = deathStartedAt < 0f ? 0f : Mathf.Clamp01((Time.time - deathStartedAt) / 0.72f);
+        if (dash > 0f && Time.time >= nextTrailAt && visualRenderer != null)
+        {
+            ScadrykEffects.Afterimage(visualRenderer, new Color(0.48f, 0.88f, 1f, 0.36f));
+            nextTrailAt = Time.time + 0.052f;
+        }
+        visual.localPosition = basePosition + Vector3.up * (Mathf.Abs(stride) * 0.085f - death * 0.22f) + (Vector3)(attackDirection * (attack * 0.18f - hit * 0.13f));
+        visual.localRotation = Quaternion.Euler(0f, 0f, stride * 2.2f + attack * -8f + dash * -13f * dashDirection.x + death * 82f);
         visual.localScale = new Vector3(
-            baseScale.x * (1f + stride * 0.045f + attack * 0.13f) * portalScale,
-            baseScale.y * (1f - stride * 0.055f - attack * 0.06f) * portalScale,
+            baseScale.x * (1f + stride * 0.035f + attack * 0.17f + dash * 0.22f - hit * 0.12f) * portalScale * (1f - death * 0.38f),
+            baseScale.y * (1f - stride * 0.055f - attack * 0.08f - dash * 0.18f + hit * 0.08f) * portalScale * (1f - death * 0.62f),
             baseScale.z);
+        if (visualRenderer != null)
+        {
+            Color color = hit > 0f ? Color.Lerp(Color.white, new Color(1f, 0.48f, 0.42f), hit) : visualRenderer.color;
+            color.a = 1f - death;
+            visualRenderer.color = color;
+        }
+        if (extrusionRenderer != null)
+        {
+            Color color = extrusionRenderer.color;
+            color.a = 0.72f * (1f - death);
+            extrusionRenderer.color = color;
+        }
     }
 
 #if UNITY_6000_0_OR_NEWER

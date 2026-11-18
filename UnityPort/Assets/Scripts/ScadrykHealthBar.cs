@@ -6,6 +6,7 @@ public sealed class ScadrykHealthBar : MonoBehaviour
     private ScadrykPlayerController player;
     private ScadrykEnemyHealth enemy;
     private Transform fill;
+    private GameObject barObject;
     private float barWidth = 0.82f;
 
     public void Configure(bool forPlayer, bool boss, float height)
@@ -15,6 +16,7 @@ public sealed class ScadrykHealthBar : MonoBehaviour
         barWidth = boss ? 1.04f : 0.82f;
 
         var bar = new GameObject("Floating health bar");
+        barObject = bar;
         bar.transform.SetParent(transform, false);
         float parentScale = Mathf.Max(0.01f, transform.lossyScale.y);
         bar.transform.localPosition = Vector3.up * (height / parentScale);
@@ -24,6 +26,8 @@ public sealed class ScadrykHealthBar : MonoBehaviour
         var healthFill = CreateBarPiece(bar.transform, "Health bar fill", new Vector2(barWidth, 0.075f), forPlayer ? new Color(0.36f, 0.88f, 0.53f) : boss ? new Color(1f, 0.68f, 0.26f) : new Color(0.9f, 0.3f, 0.27f), 151);
         fill = healthFill.transform;
     }
+
+    public void Hide() { if (barObject != null) barObject.SetActive(false); }
 
     private static SpriteRenderer CreateBarPiece(Transform parent, string objectName, Vector2 size, Color color, int order)
     {

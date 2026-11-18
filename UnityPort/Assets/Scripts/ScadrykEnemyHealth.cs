@@ -9,9 +9,9 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private float attackRange = 1.2f;
     private Rigidbody2D body;
 #if UNITY_6000_0_OR_NEWER
-    private Vector2 BodyVelocity { set => body.linearVelocity = value; }
+    private Vector2 BodyVelocity { get => body.linearVelocity; set => body.linearVelocity = value; }
 #else
-    private Vector2 BodyVelocity { set => body.velocity = value; }
+    private Vector2 BodyVelocity { get => body.velocity; set => body.velocity = value; }
 #endif
     private SpriteRenderer sprite;
     private ScadrykPlayerController player;
@@ -47,7 +47,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     {
         isFinalBoss = true;
         IsBoss = true;
-        maxHealth = 1850f;
+        maxHealth = 1250f;
         health = maxHealth;
         touchDamage = 32f;
         moveSpeed = 1.35f;
@@ -85,8 +85,8 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         {
             bool windingUp = isWindup && windupEndsAt > Time.time;
             sprite.color = windingUp ? new Color(1f, 0.68f, 0.24f) : Color.white;
-            if (!windingUp && animationFrames != null && animationFrames.Length >= 4 && distance > 0.15f)
-                sprite.sprite = animationFrames[Mathf.FloorToInt(Time.time * 6f) % animationFrames.Length];
+            if (!windingUp && animationFrames != null && animationFrames.Length >= 4)
+                sprite.sprite = animationFrames[BodyVelocity.sqrMagnitude > 0.05f ? Mathf.FloorToInt(Time.time * 7f) % animationFrames.Length : 0];
         }
 
         if (isWindup)
@@ -164,7 +164,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     {
         isWindup = false;
         windupEndsAt = 0f;
-        nextAttackAt = Time.time + (IsBoss ? 1.55f : 2f);
+        nextAttackAt = Time.time + (IsBoss ? 2.3f : 2.6f);
         if (animator != null && player != null) animator.PlayAttack(((Vector2)player.transform.position - (Vector2)transform.position).normalized, IsBoss);
         if (player == null) return;
 
@@ -182,13 +182,13 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private void ResolveFinalBossAttack()
     {
         int pattern = finalAttackIndex++ % 3;
-        nextAttackAt = Time.time + 1.05f;
+        nextAttackAt = Time.time + 2.15f;
         Vector2 origin = transform.position;
         if (pattern == 0)
         {
             Vector2 direction = (attackTarget - origin).normalized;
             for (int i = -3; i <= 3; i++)
-                ScadrykEnemyProjectile.Launch(origin + direction * 0.75f, Rotate(direction, i * 0.19f), 7.1f, 19f, ScadrykEffects.VoidburstSprite, new Color(1f, 0.72f, 0.92f), 0.58f, "Void star");
+                ScadrykEnemyProjectile.Launch(origin + direction * 0.75f, Rotate(direction, i * 0.19f), 7.1f, 15f, ScadrykEffects.VoidburstSprite, new Color(1f, 0.72f, 0.92f), 0.58f, "Void star");
             ScadrykEffects.Voidburst(origin + direction * 1.1f, 2.3f, 0.26f);
         }
         else if (pattern == 1)
@@ -197,14 +197,14 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             StartCoroutine(ResolveStarfall(target));
             Vector2 direction = (target - origin).normalized;
             for (int i = -1; i <= 1; i++)
-                ScadrykEnemyProjectile.Launch(origin, Rotate(direction, i * 0.48f), 5.4f, 16f, ScadrykEffects.VoidburstSprite, new Color(1f, 0.58f, 0.8f), 0.48f, "Falling void star");
+                ScadrykEnemyProjectile.Launch(origin, Rotate(direction, i * 0.48f), 5.4f, 14f, ScadrykEffects.VoidburstSprite, new Color(1f, 0.58f, 0.8f), 0.48f, "Falling void star");
         }
         else
         {
             float distance = Vector2.Distance(player.transform.position, origin);
             ScadrykEffects.Voidburst(origin, 13f, 0.42f);
             ScadrykEffects.Ring(origin, 13f, new Color(0.98f, 0.24f, 0.57f, 0.96f), 0.42f);
-            if (distance > 2.2f && distance < 6.7f) player.TakeDamage(31f);
+            if (distance > 2.2f && distance < 6.7f) player.TakeDamage(27f);
         }
     }
 
@@ -214,7 +214,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         if (dead) yield break;
         ScadrykEffects.Voidburst(target, 3.4f, 0.38f);
         if (player != null && Vector2.Distance(player.transform.position, target) < 1.75f)
-            player.TakeDamage(27f);
+            player.TakeDamage(23f);
     }
 
     private void ResolveRootThrust()
@@ -227,7 +227,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         ScadrykEffects.GroundLane((start + end) * 0.5f, direction, length, width, new Color(0.42f, 0.72f, 0.28f, 0.95f), 0.3f);
         if (DistanceToSegment(player.transform.position, start, end) <= width * 0.5f + 0.38f)
         {
-            player.TakeDamage(IsBoss ? 25f : 15f);
+            player.TakeDamage(IsBoss ? 21f : 13f);
             player.ApplyRootSlow(IsBoss ? 1.55f : 1.1f);
         }
     }
@@ -241,7 +241,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         {
             float offset = shardCount == 1 ? 0f : (i - 1) * spread;
             Vector2 shardDirection = Rotate(direction, offset);
-            ScadrykEnemyProjectile.Launch(transform.position + (Vector3)(shardDirection * 0.55f), shardDirection, IsBoss ? 7.5f : 6.7f, IsBoss ? 17f : 13f);
+            ScadrykEnemyProjectile.Launch(transform.position + (Vector3)(shardDirection * 0.55f), shardDirection, IsBoss ? 7.5f : 6.7f, IsBoss ? 15f : 11f);
         }
     }
 
@@ -251,7 +251,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         ScadrykEffects.Ring(transform.position, radius * 2f, new Color(0.34f, 0.9f, 1f, 0.96f), 0.32f);
         ScadrykEffects.Burst(transform.position, new Color(0.24f, 0.72f, 0.94f, 0.24f), radius * 1.5f);
         if (Vector2.Distance(player.transform.position, transform.position) <= radius)
-            player.TakeDamage(IsBoss ? 24f : 14f);
+            player.TakeDamage(IsBoss ? 21f : 12f);
     }
 
     private static Vector2 Rotate(Vector2 vector, float radians)
@@ -271,12 +271,18 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     {
         if (dead) return;
         health -= Mathf.Max(0f, amount);
+        if (animator != null) animator.PlayHit(player != null ? ((Vector2)transform.position - (Vector2)player.transform.position).normalized : Vector2.up);
         if (health <= 0f)
         {
             dead = true;
-            ScadrykEffects.Burst(transform.position, IsBoss ? new Color(1f, 0.54f, 0.22f, 0.9f) : new Color(0.55f, 0.84f, 0.8f, 0.8f), IsBoss ? 2f : 1.1f);
+            BodyVelocity = Vector2.zero;
+            GetComponent<Collider2D>().enabled = false;
+            ScadrykHealthBar bar = GetComponent<ScadrykHealthBar>();
+            if (bar != null) bar.Hide();
+            if (animator != null) animator.PlayDeath();
+            ScadrykEffects.DeathBurst(transform.position, IsBoss ? new Color(1f, 0.54f, 0.22f, 0.9f) : new Color(0.55f, 0.84f, 0.8f, 0.8f), IsBoss);
             if (director != null) director.OnEnemyDefeated(this);
-            Destroy(gameObject);
+            Destroy(gameObject, 0.74f);
         }
     }
 }

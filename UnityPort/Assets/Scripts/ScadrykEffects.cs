@@ -54,6 +54,33 @@ public static class ScadrykEffects
     private static Sprite PlayerPulseSprite => LoadEffectSprite("AttackPlayerPulse", 600f, ref playerPulseSprite);
 
     public static void Burst(Vector2 position, Color color, float diameter) => Create(position, color, diameter, diameter, 0.26f);
+    public static void Afterimage(SpriteRenderer source, Color color)
+    {
+        if (source == null || source.sprite == null) return;
+        var ghost = new GameObject("Motion afterimage");
+        ghost.transform.position = source.transform.position;
+        ghost.transform.rotation = source.transform.rotation;
+        ghost.transform.localScale = source.transform.lossyScale;
+        var renderer = ghost.AddComponent<SpriteRenderer>();
+        renderer.sprite = source.sprite;
+        renderer.flipX = source.flipX;
+        renderer.sortingOrder = source.sortingOrder - 1;
+        renderer.color = color;
+        ghost.AddComponent<ScadrykTimedVisual>().Initialize(0.23f, color, false);
+    }
+
+    public static void DeathBurst(Vector2 position, Color color, bool boss)
+    {
+        int count = boss ? 8 : 5;
+        for (int i = 0; i < count; i++)
+        {
+            float angle = i * Mathf.PI * 2f / count;
+            Vector2 direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+            GameObject mote = Create(position + direction * 0.25f, color, boss ? 0.25f : 0.15f, boss ? 0.25f : 0.15f, 0.5f);
+            mote.AddComponent<ScadrykEffectDrift>().Initialize(direction * (boss ? 3f : 1.8f));
+        }
+        Burst(position, color, boss ? 2.1f : 0.95f);
+    }
     public static void Slash(Vector2 position, Vector2 direction, float length)
     {
         Sprite slashSprite = PlayerSlashSprite;
@@ -85,6 +112,7 @@ public static class ScadrykEffects
         if (art == null) { Slash(position, direction, 2.7f); return; }
         GameObject effect = CreateSpriteEffect(art, position + direction * 1.05f, new Vector2(4.1f, 2.8f), Color.white, 0.34f, "Verdant Crescent ability", true);
         effect.transform.right = direction;
+        effect.AddComponent<ScadrykEffectDrift>().Initialize(direction * 3f);
     }
 
     public static void AbilitySaltburst(Vector2 position, float diameter)
@@ -100,6 +128,7 @@ public static class ScadrykEffects
         if (art == null) { GroundLane(position + direction * 2f, direction, 7f, 2.6f, new Color(0.3f, 0.85f, 0.95f, 0.9f), 0.4f); return; }
         GameObject effect = CreateSpriteEffect(art, position + direction * 2.7f, new Vector2(7.4f, 4.4f), Color.white, 0.52f, "Tidebreaker ability", true);
         effect.transform.right = direction;
+        effect.AddComponent<ScadrykEffectDrift>().Initialize(direction * 4f);
     }
 
     public static void Voidburst(Vector2 position, float diameter, float lifetime)
