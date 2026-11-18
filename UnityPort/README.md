@@ -1,5 +1,7 @@
 # Scadryk para Unity
 
+> Direção criativa, diagnóstico e etapas de desenvolvimento: [DESIGN.md](DESIGN.md). A etapa de fundação está em andamento; esta versão ainda não atende a todos os critérios de produto completo.
+
 `UnityPort` agora é um projeto Unity completo com demo top-down de três fases e nove salas conectadas. Cada fase tem cenário ilustrado próprio: bosque encantado, bacia de sal com poças e cristais, e costa rochosa com marés e ruínas de sinos. Cada ambiente também tem inimigos próprios, como o guardião de raízes, a criatura de sal e o espectro das badaladas. Árvores, juncos, cristais, água e lanternas têm movimento sutil. Os mapas mantêm obstáculos e rotas diferentes; o jogo inclui guardiões, HUD, minimapa, combate, esquiva, pulso e pausa. A câmera permanece top-down e acompanha Nara. A cena inicial está em `Assets/Scenes/ScadrykDemo.unity`. Campanha completa, diálogos, missões, equipamentos, animações finais e saves da versão Windows Forms ainda não foram portados.
 
 ## Requisitos
@@ -16,6 +18,8 @@
 5. Limpe os ecos de cada sala. Quando a passagem abrir, vá até o brilho verde à direita e pressione **E**. Complete as nove salas para concluir as três fases.
 
 Para criar um executável Windows, escolha **Scadryk > Build Windows demo**. O build aparece em `Build/ScadrykDemo.exe` dentro do projeto Unity.
+
+O avanço é salvo automaticamente ao atravessar cada portal. Ao reabrir o jogo, a última sala alcançada é carregada com os poderes das fases já vencidas. A conclusão da campanha apaga o marcador de progresso para permitir uma nova jornada. Métricas de duração por sala, mortes, uso dos três poderes e inimigos restantes são gravadas em `scadryk-sessions.csv` na pasta retornada por `Application.persistentDataPath` (no Windows, normalmente `%USERPROFILE%/AppData/LocalLow/<CompanyName>/<ProductName>`). Esse arquivo não envia dados pela rede.
 
 ## Controles
 

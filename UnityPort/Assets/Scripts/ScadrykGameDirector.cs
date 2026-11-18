@@ -1,4 +1,5 @@
 using System.Collections;
+using System.IO;
 using UnityEngine;
 
 /// <summary>Builds the playable three-phase, nine-room Scadryk Unity vertical slice.</summary>
@@ -34,6 +35,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     };
     private string statusMessage = "Derrote os ecos para abrir a passagem.";
     private float statusUntil;
+    private float roomStartedAt;
+    private int roomDeaths;
+    private readonly int[] roomPowerUses = new int[3];
     private GUIStyle titleStyle, bodyStyle, smallStyle;
     private GUIStyle centeredTitleStyle, centeredBodyStyle;
     private GUIStyle finalBossLabelStyle;
@@ -54,7 +58,10 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         fallenWillowLogSprite = LoadSingleSprite("FallenWillowLog", 300f);
         portalSprite = LoadSingleSprite("AncientPortal", 600f);
         SetupCamera();
-        BuildPhase(0, 0, true);
+        int savedPhase = Mathf.Clamp(PlayerPrefs.GetInt("Scadryk.Phase", 0), 0, PhaseNames.Length - 1);
+        int savedRoom = Mathf.Clamp(PlayerPrefs.GetInt("Scadryk.Room", 0), 0, RoomsPerPhase - 1);
+        BuildPhase(savedPhase, savedRoom, true);
+        for (int i = 0; i < savedPhase; i++) player.UnlockAbility(i);
     }
 
     private void Update()
@@ -83,6 +90,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private void BuildPhase(int newPhase, int newRoom, bool newGame)
     {
+        if (levelRoot != null) RecordRoomSession();
         if (levelRoot != null) Destroy(levelRoot);
         if (gateObject != null) Destroy(gateObject);
         gateObject = null;
@@ -115,6 +123,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         else player.ResetForRoom(roomCenter + Vector2.left * 6.2f);
         follow.SetTarget(player.transform);
         SpawnRoomEnemies();
+        roomStartedAt = Time.time;
+        roomDeaths = 0;
+        System.Array.Clear(roomPowerUses, 0, roomPowerUses.Length);
         statusMessage = "Limpe a sala e avance pela passagem.";
         statusUntil = Time.time + 3f;
     }
@@ -459,6 +470,32 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         }
     }
 
+    public void RecordPowerUse(int index)
+    {
+        if (index >= 0 && index < roomPowerUses.Length) roomPowerUses[index]++;
+    }
+
+    private void RecordRoomSession()
+    {
+        try
+        {
+            string path = Path.Combine(Application.persistentDataPath, "scadryk-sessions.csv");
+            if (!File.Exists(path)) File.WriteAllText(path, "utc,phase,room,seconds,deaths,crescent,salt,tide,enemies_left\n");
+            string row = System.DateTime.UtcNow.ToString("o") + "," + (phaseIndex + 1) + "," + (roomIndex + 1) + "," +
+                Mathf.RoundToInt(Time.time - roomStartedAt) + "," + roomDeaths + "," + roomPowerUses[0] + "," +
+                roomPowerUses[1] + "," + roomPowerUses[2] + "," + enemiesRemaining + "\n";
+            File.AppendAllText(path, row);
+        }
+        catch (System.Exception exception) { Debug.LogWarning("Scadryk: não foi possível registrar a sessão: " + exception.Message); }
+    }
+
+    private static void SaveProgress(int phase, int room)
+    {
+        PlayerPrefs.SetInt("Scadryk.Phase", phase);
+        PlayerPrefs.SetInt("Scadryk.Room", room);
+        PlayerPrefs.Save();
+    }
+
     private void SpawnFinalBoss()
     {
         enemiesRemaining = 1;
@@ -543,6 +580,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         yield return FadeScreen(1f, 0.45f);
 
         BuildPhase(nextPhase, nextRoom, false);
+        SaveProgress(nextPhase, nextRoom);
         Vector2 arrivalPosition = player.transform.position;
         var arrivalObject = ScadrykPortalVisual.Spawn(levelRoot.transform, arrivalPosition, portalSprite, PhaseAccentColors[phaseIndex], 3.3f);
         ScadrykPortalVisual arrivalPortal = arrivalObject.GetComponent<ScadrykPortalVisual>();
@@ -589,6 +627,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         transitioning = false;
         transitionFade = 0f;
         victory = true;
+        PlayerPrefs.DeleteKey("Scadryk.Phase");
+        PlayerPrefs.DeleteKey("Scadryk.Room");
+        PlayerPrefs.Save();
         statusMessage = "A maré se aquieta. Você concluiu a demonstração!";
     }
 
@@ -607,6 +648,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     public void RestartCurrentRoom()
     {
+        roomDeaths++;
         BuildPhase(phaseIndex, roomIndex, false);
         ShowStatus("Você caiu e retornou ao começo da sala.", 2.5f);
     }

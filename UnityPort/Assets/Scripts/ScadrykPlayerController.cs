@@ -40,6 +40,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     private ScadrykActorAnimator animator;
     private ScadrykGameDirector director;
     private Sprite[] spriteFrames;
+    private const float BasicAttackWindup = 0.12f;
 
     public Vector2 Facing => facing;
     public float Health => health;
@@ -131,11 +132,24 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     {
         if (Time.time < nextAttackAt) return;
         nextAttackAt = Time.time + attackCooldown;
-        if (animator != null) animator.PlayAttack(facing, false);
-        ScadrykEffects.Slash(transform.position, facing, attackRange);
-        Collider2D[] hits = Physics2D.OverlapCircleAll((Vector2)transform.position + facing * 0.8f, attackRange, ~0);
+        Vector2 direction = facing;
+        if (animator != null) animator.PlayAttack(direction, false);
+        StartCoroutine(ResolveBasicAttack(direction));
+    }
+
+    private IEnumerator ResolveBasicAttack(Vector2 direction)
+    {
+        yield return new WaitForSeconds(BasicAttackWindup);
+        if (isDying || (director != null && director.IsPaused)) yield break;
+        ScadrykEffects.Slash(transform.position, direction, attackRange);
+        Collider2D[] hits = Physics2D.OverlapCircleAll((Vector2)transform.position + direction * 0.75f, attackRange * 0.82f, ~0);
         foreach (Collider2D hit in hits)
-            if (hit.TryGetComponent<ScadrykEnemyHealth>(out var enemy)) enemy.TakeDamage(attackDamage);
+        {
+            if (!hit.TryGetComponent<ScadrykEnemyHealth>(out var enemy)) continue;
+            Vector2 toEnemy = (Vector2)enemy.transform.position - (Vector2)transform.position;
+            if (toEnemy.sqrMagnitude > 0.01f && Vector2.Dot(direction, toEnemy.normalized) < 0.15f) continue;
+            enemy.TakeDamage(attackDamage);
+        }
     }
 
     private void Dash()
@@ -169,6 +183,8 @@ public sealed class ScadrykPlayerController : MonoBehaviour
             return;
         }
         if (Time.time < abilityReadyAt[index]) return;
+
+        if (director != null) director.RecordPowerUse(index);
 
         float radius;
         float damage;
