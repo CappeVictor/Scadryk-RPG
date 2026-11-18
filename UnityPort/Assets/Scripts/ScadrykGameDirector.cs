@@ -136,6 +136,11 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     {
         Color floor = PhaseColors[phaseIndex];
         Color wall = PhaseWallColors[phaseIndex];
+        // The camera can see beyond the first and last traversable rooms. Painted
+        // non-colliding outskirts keep that view within the biome instead of void.
+        MakeBox(parent, "Biome backdrop", new Vector2(RoomSpacing, 0f), new Vector2(RoomSpacing * 6f, 40f), floor * 0.72f, false, -11);
+        PlacePhaseGround(parent, -RoomSpacing, 1);
+        PlacePhaseGround(parent, RoomsPerPhase * RoomSpacing, 1);
         for (int i = 0; i < RoomsPerPhase; i++)
         {
             float x = i * RoomSpacing;
@@ -438,13 +443,15 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
             bool boss = roomIndex == RoomsPerPhase - 1;
+            int role = i % 4;
+            string[] roleNames = { "Caçador", "Atirador", "Ressonador", "Tecelão" };
             float angle = (Mathf.PI * 2f * i / Mathf.Max(1, count)) + 0.3f;
             float radius = boss ? 2.5f : 3.1f + (i % 2) * 0.7f;
             Vector2 position = roomCenter + new Vector2(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius);
-            var enemy = new GameObject(boss ? "Phase guardian" : "Echo of " + PhaseNames[phaseIndex]);
+            var enemy = new GameObject(boss ? "Phase guardian" : roleNames[role] + " — " + PhaseNames[phaseIndex]);
             enemy.transform.SetParent(levelRoot.transform);
             enemy.transform.position = position;
-            enemy.transform.localScale = Vector3.one * (boss ? 1.85f : 0.9f);
+            enemy.transform.localScale = Vector3.one * (boss ? 1.85f : role == 0 ? 0.94f : role == 1 ? 0.78f : role == 2 ? 1.08f : 0.86f);
             string sheet = boss ? (phaseIndex == 0 ? "Bosses" : phaseIndex == 1 ? "BossesMidgame" : "BossesFinalWave") : "Enemies";
             Sprite[] frames = LoadSheetRow(sheet, boss ? phaseIndex : i % 4, false);
             if (phaseEnemySprites != null && phaseEnemySprites[phaseIndex] != null)
@@ -462,7 +469,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             enemy.AddComponent<ScadrykDepthSort>().SetBias(4);
             enemy.AddComponent<ScadrykActorAnimator>().SetVisual(enemyVisual.transform, enemyVolumeRenderer);
             var health = enemy.AddComponent<ScadrykEnemyHealth>();
-            health.Configure(boss ? 320f + phaseIndex * 80f : 72f + phaseIndex * 12f, boss ? 21f : 10f + phaseIndex * 2f, boss ? 1.55f : 1.9f + phaseIndex * 0.1f, boss, phaseIndex, frames);
+            health.Configure(boss ? 320f + phaseIndex * 80f : 72f + phaseIndex * 12f, boss ? 21f : 10f + phaseIndex * 2f, boss ? 1.55f : 1.9f + phaseIndex * 0.1f, boss, phaseIndex, frames, role);
             enemy.AddComponent<ScadrykHealthBar>().Configure(false, boss, boss ? 1.45f : 1.22f);
         }
     }

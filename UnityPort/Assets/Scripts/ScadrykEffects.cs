@@ -22,6 +22,8 @@ public static class ScadrykEffects
     }
 
     public static Sprite SaltShardSprite => LoadEffectSprite("AttackSaltShard", 600f, ref saltShardSprite);
+    public static Sprite RootThrustSprite => LoadEffectSprite("AttackRootThorns", 300f, ref rootThornSprite);
+    public static Sprite BellPulseSprite => LoadEffectSprite("AttackBellWave", 600f, ref bellWaveSprite);
     public static Sprite VerdantCrescentSprite => LoadEffectSprite("AbilityVerdantCrescent", 600f, ref verdantCrescentSprite);
     public static Sprite SaltburstSprite => LoadEffectSprite("AbilitySaltburst", 600f, ref saltburstSprite);
     public static Sprite TidebreakerSprite => LoadEffectSprite("AbilityTidebreaker", 600f, ref tidebreakerSprite);

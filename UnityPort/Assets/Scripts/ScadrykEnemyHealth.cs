@@ -26,17 +26,22 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private float moveSpeed;
     private bool isFinalBoss;
     private int finalAttackIndex;
+    private int combatRole;
+    private Color roleTint = Color.white;
 
     public float Health01 => maxHealth <= 0 ? 0 : Mathf.Clamp01(health / maxHealth);
     public bool IsBoss { get; private set; }
     public bool IsFinalBoss => isFinalBoss;
     public int BiomeIndex => biomeIndex;
 
-    public void Configure(float hp, float damage, float speed, bool boss, int biome, Sprite[] frames)
+    public void Configure(float hp, float damage, float speed, bool boss, int biome, Sprite[] frames, int role = 0)
     {
         maxHealth = hp; health = hp; touchDamage = damage; moveSpeed = speed; IsBoss = boss;
         biomeIndex = Mathf.Clamp(biome, 0, 2);
-        attackRange = biomeIndex == 1 ? 8f : (biomeIndex == 0 ? (boss ? 6.8f : 5.7f) : (boss ? 5.8f : 4.5f));
+        combatRole = boss ? 0 : Mathf.Clamp(role, 0, 3);
+        roleTint = boss ? Color.white : combatRole == 0 ? new Color(1f, 0.87f, 0.75f) : combatRole == 1 ? new Color(0.72f, 0.9f, 1f) : combatRole == 2 ? new Color(1f, 0.76f, 0.85f) : new Color(0.77f, 1f, 0.82f);
+        attackRange = boss ? (biomeIndex == 1 ? 8f : biomeIndex == 0 ? 6.8f : 5.8f) :
+            combatRole == 0 ? 3.1f : combatRole == 1 ? 7.2f : combatRole == 2 ? 3.9f : 5.5f;
         animationFrames = frames;
         if (sprite != null && animationFrames != null && animationFrames.Length > 0) sprite.sprite = animationFrames[0];
         var collider = GetComponent<CircleCollider2D>();
@@ -84,7 +89,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         if (sprite != null)
         {
             bool windingUp = isWindup && windupEndsAt > Time.time;
-            sprite.color = windingUp ? new Color(1f, 0.68f, 0.24f) : Color.white;
+            sprite.color = windingUp ? new Color(1f, 0.68f, 0.24f) : roleTint;
             if (!windingUp && animationFrames != null && animationFrames.Length >= 4)
                 sprite.sprite = animationFrames[BodyVelocity.sqrMagnitude > 0.05f ? Mathf.FloorToInt(Time.time * 7f) % animationFrames.Length : 0];
         }
@@ -103,9 +108,9 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             return;
         }
 
-        if (biomeIndex == 1)
+        if (!IsBoss && (combatRole == 1 || combatRole == 3))
         {
-            if (distance > 5.7f) BodyVelocity = delta.normalized * moveSpeed;
+            if (distance > 5.5f) BodyVelocity = delta.normalized * moveSpeed;
             else if (distance < 3.2f) BodyVelocity = -delta.normalized * moveSpeed * 0.8f;
             else BodyVelocity = Vector2.zero;
         }
@@ -124,17 +129,27 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             BeginFinalBossAttack();
             return;
         }
-        float windup = biomeIndex == 0 ? (IsBoss ? 0.95f : 0.72f) : biomeIndex == 1 ? (IsBoss ? 0.86f : 0.68f) : (IsBoss ? 1.05f : 0.82f);
+        float windup = IsBoss ? (biomeIndex == 0 ? 0.95f : biomeIndex == 1 ? 0.86f : 1.05f) :
+            combatRole == 0 ? 0.7f : combatRole == 1 ? 0.85f : combatRole == 2 ? 0.95f : 1.1f;
         isWindup = true;
         windupEndsAt = Time.time + windup;
         Vector2 origin = transform.position;
 
-        if (biomeIndex == 0)
-            ScadrykEffects.TelegraphLine(origin, attackTarget, new Color(0.64f, 0.86f, 0.35f, 0.78f), IsBoss ? 0.34f : 0.22f, windup);
-        else if (biomeIndex == 1)
-            ScadrykEffects.TelegraphLine(origin, attackTarget, new Color(1f, 0.78f, 0.34f, 0.82f), 0.16f, windup);
+        Color warning = biomeIndex == 0 ? new Color(0.64f, 0.86f, 0.35f, 0.85f) :
+            biomeIndex == 1 ? new Color(1f, 0.78f, 0.34f, 0.85f) : new Color(0.34f, 0.9f, 1f, 0.85f);
+        if (!IsBoss && combatRole == 3)
+            ScadrykEffects.Ring(origin, 5f, new Color(0.38f, 1f, 0.6f, 0.8f), windup);
+        else if (!IsBoss && combatRole == 2)
+            ScadrykEffects.Ring(origin, 6.4f, warning, windup);
+        else if (IsBoss && biomeIndex == 2)
+            ScadrykEffects.Ring(origin, 10.6f, warning, windup);
         else
-            ScadrykEffects.Ring(origin, IsBoss ? 5.3f : 3.65f, new Color(0.34f, 0.9f, 1f, 0.9f), windup);
+        {
+            Vector2 direction = (attackTarget - origin).normalized;
+            Vector2 end = !IsBoss && combatRole == 0 ? origin + direction * 3.3f :
+                IsBoss && biomeIndex == 0 ? origin + direction * Mathf.Clamp(Vector2.Distance(origin, attackTarget) + 1.25f, 2.8f, 7.2f) : attackTarget;
+            ScadrykEffects.TelegraphLine(origin, end, warning, !IsBoss && combatRole == 1 ? 0.16f : 0.34f, windup);
+        }
     }
 
     private void BeginFinalBossAttack()
@@ -174,7 +189,14 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             return;
         }
 
-        if (biomeIndex == 0) ResolveRootThrust();
+        if (!IsBoss)
+        {
+            if (combatRole == 0) ResolveRootThrust();
+            else if (combatRole == 1) ResolveCrystalVolley();
+            else if (combatRole == 2) ResolveAreaPulse();
+            else ResolveSupportPulse();
+        }
+        else if (biomeIndex == 0) ResolveRootThrust();
         else if (biomeIndex == 1) ResolveCrystalVolley();
         else ResolveBellPulse();
     }
@@ -221,14 +243,14 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     {
         Vector2 start = transform.position;
         Vector2 direction = (attackTarget - start).normalized;
-        float length = Mathf.Clamp(Vector2.Distance(start, attackTarget) + 1.25f, 2.8f, IsBoss ? 7.2f : 5.8f);
+        float length = IsBoss ? Mathf.Clamp(Vector2.Distance(start, attackTarget) + 1.25f, 2.8f, 7.2f) : 3.3f;
         float width = IsBoss ? 1.4f : 0.86f;
         Vector2 end = start + direction * length;
         ScadrykEffects.GroundLane((start + end) * 0.5f, direction, length, width, new Color(0.42f, 0.72f, 0.28f, 0.95f), 0.3f);
         if (DistanceToSegment(player.transform.position, start, end) <= width * 0.5f + 0.38f)
         {
             player.TakeDamage(IsBoss ? 21f : 13f);
-            player.ApplyRootSlow(IsBoss ? 1.55f : 1.1f);
+            if (biomeIndex == 0) player.ApplyRootSlow(IsBoss ? 1.55f : 0.65f);
         }
     }
 
@@ -241,9 +263,28 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         {
             float offset = shardCount == 1 ? 0f : (i - 1) * spread;
             Vector2 shardDirection = Rotate(direction, offset);
-            ScadrykEnemyProjectile.Launch(transform.position + (Vector3)(shardDirection * 0.55f), shardDirection, IsBoss ? 7.5f : 6.7f, IsBoss ? 15f : 11f);
+            ScadrykEnemyProjectile.Launch(transform.position + (Vector3)(shardDirection * 0.55f), shardDirection, IsBoss ? 7.5f : 6.7f, IsBoss ? 15f : 11f,
+                biomeIndex == 0 ? ScadrykEffects.RootThrustSprite : biomeIndex == 2 ? ScadrykEffects.BellPulseSprite : ScadrykEffects.SaltShardSprite);
         }
     }
+
+    private void ResolveAreaPulse()
+    {
+        const float radius = 3.2f;
+        Color color = biomeIndex == 0 ? new Color(0.55f, 0.85f, 0.38f) : biomeIndex == 1 ? new Color(1f, 0.72f, 0.35f) : new Color(0.35f, 0.88f, 1f);
+        ScadrykEffects.Ring(transform.position, radius * 2f, color, 0.32f);
+        if (Vector2.Distance(player.transform.position, transform.position) <= radius) player.TakeDamage(12f);
+    }
+
+    private void ResolveSupportPulse()
+    {
+        ScadrykEffects.Ring(transform.position, 5f, new Color(0.38f, 1f, 0.6f), 0.35f);
+        Collider2D[] nearby = Physics2D.OverlapCircleAll(transform.position, 2.5f);
+        foreach (Collider2D hit in nearby)
+            if (hit.TryGetComponent<ScadrykEnemyHealth>(out var ally) && ally != this && !ally.dead) ally.Heal(15f);
+    }
+
+    private void Heal(float amount) { health = Mathf.Min(maxHealth, health + amount); }
 
     private void ResolveBellPulse()
     {
