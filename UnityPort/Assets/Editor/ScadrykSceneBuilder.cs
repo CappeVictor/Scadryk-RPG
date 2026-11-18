@@ -33,7 +33,10 @@ public static class ScadrykSceneBuilder
         foreach (var buildScene in scenes) if (buildScene.path == path) alreadyIncluded = true;
         if (!alreadyIncluded) { scenes.Add(new EditorBuildSettingsScene(path, true)); EditorBuildSettings.scenes = scenes.ToArray(); }
         AssetDatabase.SaveAssets();
-        EditorUtility.DisplayDialog("Scadryk", "Cena pronta! Abra Assets/Scenes/ScadrykDemo e pressione Play.", "OK");
+        if (!Application.isBatchMode)
+            EditorUtility.DisplayDialog("Scadryk", "Cena pronta! Abra Assets/Scenes/ScadrykDemo e pressione Play.", "OK");
     }
 }
 #endif
+
+
