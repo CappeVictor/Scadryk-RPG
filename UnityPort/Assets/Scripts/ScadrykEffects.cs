@@ -5,6 +5,9 @@ public static class ScadrykEffects
 {
     private static Sprite whiteSprite;
     private static Material ringMaterial;
+    private static Sprite rootThornSprite;
+    private static Sprite saltShardSprite;
+    private static Sprite bellWaveSprite;
     public static Sprite WhiteSprite
     {
         get
@@ -13,6 +16,8 @@ public static class ScadrykEffects
             return whiteSprite;
         }
     }
+
+    public static Sprite SaltShardSprite => LoadEffectSprite("AttackSaltShard", 600f, ref saltShardSprite);
 
     public static void Burst(Vector2 position, Color color, float diameter) => Create(position, color, diameter, diameter, 0.26f);
     public static void Slash(Vector2 position, Vector2 direction, float length)
@@ -32,13 +37,28 @@ public static class ScadrykEffects
 
     public static void GroundLane(Vector2 center, Vector2 direction, float length, float width, Color color, float lifetime)
     {
-        GameObject go = Create(center, color, length, width, lifetime);
+        Sprite attackSprite = LoadEffectSprite("AttackRootThorns", 300f, ref rootThornSprite);
+        if (attackSprite == null)
+        {
+            GameObject fallback = Create(center, color, length, width, lifetime);
+            fallback.transform.right = direction;
+            fallback.name = "Root thorn attack";
+            return;
+        }
+        GameObject go = CreateSpriteEffect(attackSprite, center, new Vector2(length, width), Color.white, lifetime, "Root thorn attack");
         go.transform.right = direction;
-        go.name = "Root thorn attack";
     }
 
     public static void Ring(Vector2 center, float diameter, Color color, float lifetime)
     {
+        Sprite waveSprite = LoadEffectSprite("AttackBellWave", 600f, ref bellWaveSprite);
+        if (waveSprite != null)
+        {
+            Color tint = Color.white;
+            tint.a = lifetime > 0.5f ? 0.46f : 0.98f;
+            CreateSpriteEffect(waveSprite, center, Vector2.one * diameter, tint, lifetime, "Bell echo wave");
+            return;
+        }
         GameObject go = new GameObject("Bell pulse warning");
         go.transform.position = center;
         var line = go.AddComponent<LineRenderer>();
@@ -59,6 +79,29 @@ public static class ScadrykEffects
             line.SetPosition(i, new Vector3(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius, 0f));
         }
         go.AddComponent<ScadrykTimedVisual>().Initialize(lifetime, color, false);
+    }
+
+    private static Sprite LoadEffectSprite(string resourceName, float pixelsPerUnit, ref Sprite cache)
+    {
+        if (cache != null) return cache;
+        Texture2D texture = Resources.Load<Texture2D>("ScadrykArt/" + resourceName);
+        if (texture == null) return null;
+        cache = Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), pixelsPerUnit);
+        return cache;
+    }
+
+    private static GameObject CreateSpriteEffect(Sprite sprite, Vector2 position, Vector2 size, Color color, float lifetime, string objectName)
+    {
+        var go = new GameObject(objectName);
+        go.transform.position = position;
+        Vector2 spriteSize = sprite.bounds.size;
+        go.transform.localScale = new Vector3(size.x / spriteSize.x, size.y / spriteSize.y, 1f);
+        var renderer = go.AddComponent<SpriteRenderer>();
+        renderer.sprite = sprite;
+        renderer.color = color;
+        renderer.sortingOrder = 22;
+        go.AddComponent<ScadrykTimedVisual>().Initialize(lifetime, color, false);
+        return go;
     }
 
     private static GameObject Create(Vector2 position, Color color, float width, float height, float life)
