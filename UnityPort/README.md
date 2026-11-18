@@ -1,6 +1,6 @@
 # Scadryk para Unity
 
-`UnityPort` agora é um projeto Unity completo com demo top-down de três fases e nove salas conectadas, mapas procedurais com árvores, pedras, cristais, ruínas, água e objetos costeiros em sprites ilustrados, além de variações de obstáculos nas nove salas; inclui inimigos, guardiões, HUD, minimapa, combate, esquiva, pulso e pausa. A cena inicial já está salva em `Assets/Scenes/ScadrykDemo.unity`. A compilação de Windows x64 foi gerada no Unity Editor 6.6. Campanha completa, diálogos, missões, equipamentos, animações finais e saves da versão Windows Forms ainda não foram portados.
+`UnityPort` agora é um projeto Unity completo com demo top-down de três fases e nove salas conectadas, mapas procedurais com árvores, pedras, cristais, ruínas, água e objetos costeiros em sprites ilustrados; árvores e juncos balançam, cristais e água pulsam, e boias cintilam. Os mapas têm diferentes arranjos de obstáculos nas nove salas; o jogo inclui inimigos, guardiões, HUD, minimapa, combate, esquiva, pulso e pausa. A cena inicial já está salva em `Assets/Scenes/ScadrykDemo.unity`. A compilação de Windows x64 foi gerada no Unity Editor 6.6. Campanha completa, diálogos, missões, equipamentos, animações finais e saves da versão Windows Forms ainda não foram portados.
 
 ## Requisitos
 
@@ -40,6 +40,7 @@ As fases jogáveis incluídas são **Margens do Primeiro Eco**, **Bacia do Sal I
 - `ScadrykEnemyHealth.cs`: vida, perseguição e janela de aviso do ataque inimigo.
 - `ScadrykCameraFollow.cs`: acompanhamento suave do jogador.
 - `ScadrykDepthSort.cs`: ordenação de desenho por profundidade, para Nara passar à frente ou atrás das árvores e pedras.
+- `ScadrykAmbientProp.cs`: movimento sutil para vegetação, cristais, água e lanternas.
 - `Editor/ScadrykSceneBuilder.cs`: cria e registra a cena jogável pelo menu da Unity.
 - `Editor/ScadrykArtImporter.cs`: prepara as texturas para corte dos quadros e dos sprites ambientais em tempo de execução.
 

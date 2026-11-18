@@ -1,0 +1,62 @@
+using UnityEngine;
+
+public enum ScadrykAmbientMotion
+{
+    None,
+    Sway,
+    Glow,
+    Water,
+    Flicker
+}
+
+/// <summary>Small looping motion for trees, crystals, pools and lanterns.</summary>
+public sealed class ScadrykAmbientProp : MonoBehaviour
+{
+    private ScadrykAmbientMotion motion;
+    private SpriteRenderer sprite;
+    private Vector3 baseScale;
+    private Quaternion baseRotation;
+    private Color baseColor;
+    private float phase, strength;
+
+    private void Awake()
+    {
+        sprite = GetComponent<SpriteRenderer>();
+        baseScale = transform.localScale;
+        baseRotation = transform.localRotation;
+        if (sprite != null) baseColor = sprite.color;
+        phase = Random.value * Mathf.PI * 2f;
+    }
+
+    public void Configure(ScadrykAmbientMotion type, float motionStrength = 1f)
+    {
+        motion = type;
+        strength = Mathf.Max(0f, motionStrength);
+    }
+
+    private void Update()
+    {
+        float wave = Mathf.Sin(Time.time * 1.1f + phase);
+        switch (motion)
+        {
+            case ScadrykAmbientMotion.Sway:
+                transform.localRotation = baseRotation * Quaternion.Euler(0f, 0f, wave * 2.2f * strength);
+                break;
+            case ScadrykAmbientMotion.Glow:
+                if (sprite != null) sprite.color = baseColor * (0.9f + (wave + 1f) * 0.08f * strength);
+                break;
+            case ScadrykAmbientMotion.Water:
+                float ripple = 1f + wave * 0.035f * strength;
+                transform.localScale = new Vector3(baseScale.x * ripple, baseScale.y / ripple, baseScale.z);
+                if (sprite != null) sprite.color = baseColor * (0.94f + (wave + 1f) * 0.035f * strength);
+                break;
+            case ScadrykAmbientMotion.Flicker:
+                if (sprite != null)
+                {
+                    float flicker = 0.82f + 0.12f * Mathf.Abs(Mathf.Sin(Time.time * 5.3f + phase)) + 0.06f * Mathf.Abs(Mathf.Sin(Time.time * 9.7f + phase * 0.7f));
+                    sprite.color = baseColor * Mathf.Lerp(1f, flicker, Mathf.Clamp01(strength));
+                }
+                break;
+        }
+    }
+}
