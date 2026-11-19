@@ -267,7 +267,8 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         float width = IsBoss ? 1.4f : 0.86f;
         Vector2 end = start + direction * length;
         ScadrykEffects.GroundLane((start + end) * 0.5f, direction, length, width, new Color(0.42f, 0.72f, 0.28f, 0.95f), 0.3f);
-        if (DistanceToSegment(player.transform.position, start, end) <= width * 0.5f + 0.38f)
+        if (DistanceToSegment(player.transform.position, start, end) <= width * 0.5f + 0.38f &&
+            !ScadrykCombatRules.WorldBlocks(start, player.transform.position))
         {
             player.TakeDamage(IsBoss ? 21f : 13f);
             if (biomeIndex == 0) player.ApplyRootSlow(IsBoss ? 1.55f : 0.65f);

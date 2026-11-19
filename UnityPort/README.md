@@ -74,6 +74,8 @@ Nara também tem sprites para o golpe básico de espada, o pulso especial expans
 
 As coberturas quadradas foram substituídas por troncos caídos, tocos, cristais e rochas, distribuídos de forma diferente pelas salas e com colisores ajustados ao formato. A caminhada agora acompanha a velocidade, a esquiva deixa rastros, os ataques têm deslocamento e expansão, e os personagens reagem ao dano e caem antes de desaparecer ou retornar à sala. O jogo dá um breve período de proteção após Nara receber dano para evitar que salvas de projéteis a eliminem de uma vez. Barras de vida flutuam acima de Nara, dos ecos e dos guardiões.
 
+Os obstáculos sólidos também funcionam como **cobertura**: estilhaços inimigos param ao atingir troncos, rochas ou ruínas; o golpe básico de Nara e a investida de raízes não causam dano através deles. Ataques circulares mágicos continuam a atingir através da cobertura, criando uma decisão entre proteger-se de linhas e sair de áreas anunciadas.
+
 ## Como ampliar
 
 - `ScadrykGameDirector.cs`: conteúdo das fases, desenho procedural dos mapas, nomes das salas e progressão.

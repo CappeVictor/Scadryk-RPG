@@ -50,9 +50,13 @@ public sealed class ScadrykEnemyProjectile : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (!other.TryGetComponent<ScadrykPlayerController>(out var target)) return;
-        target.TakeDamage(damage);
-        ScadrykEffects.Burst(transform.position, new Color(0.93f, 0.36f, 0.67f, 0.82f), 0.72f);
+        if (other.TryGetComponent<ScadrykEnemyHealth>(out _)) return;
+        if (other.TryGetComponent<ScadrykPlayerController>(out var target))
+        {
+            target.TakeDamage(damage);
+            ScadrykEffects.Burst(transform.position, new Color(0.93f, 0.36f, 0.67f, 0.82f), 0.72f);
+        }
+        else if (other.isTrigger) return;
         Destroy(gameObject);
     }
 }

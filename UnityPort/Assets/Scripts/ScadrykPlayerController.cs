@@ -167,6 +167,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
             if (!hit.TryGetComponent<ScadrykEnemyHealth>(out var enemy)) continue;
             Vector2 toEnemy = (Vector2)enemy.transform.position - (Vector2)transform.position;
             if (toEnemy.sqrMagnitude > 0.01f && Vector2.Dot(direction, toEnemy.normalized) < 0.15f) continue;
+            if (ScadrykCombatRules.WorldBlocks(transform.position, enemy.transform.position)) continue;
             enemy.TakeDamage(attackDamage);
         }
     }

@@ -7,6 +7,7 @@
 - O teste não grava salvamento ou métricas do jogador. Na execução `ScadrykSmoke-v3-run.log`, cada poder foi ativado imediatamente após seu guardião e entrou em recarga, além de a campanha terminar com `SUCCESS`.
 - O executável normal abriu e não apresentou exceções no `Player.log` consultado. Capturas de tela estão nos pacotes locais em `outputs/ScadrykStage4` a `ScadrykStage8`.
 - Após incluir movimento remapeável e reduzir efeitos decorativos, `ScadrykSmoke-v4-run.log` repetiu o resultado `SUCCESS` sem erros de eixos de entrada. A build normal dessa etapa compilou e sua tela inicial abriu. Ainda faltam teste físico com controle, sessão manual de teclado remapeado e inspeção visual do menu de opções em uso.
+- A alteração de cobertura passou por `ScadrykSmoke-v5-run.log` com `SUCCESS`. A tentativa de build normal em 19/11/2026 foi interrompida pelo Controle de Aplicativo do Windows: `Bee.TinyProfiler2.dll` do Unity foi bloqueada pela política de integridade de código (eventos 3077/3033). A última build normal validada continua sendo `ScadrykStage9`. A alteração de cobertura ainda não satisfaz o critério de build normal nem tem captura jogável própria.
 
 ## Dados observados e limites
 
@@ -14,7 +15,7 @@ O registro local histórico mostrou mortes repetidas na primeira sala em algumas
 
 ## Sessões com jogadores ainda necessárias
 
-Convidar pelo menos um jogador iniciante, um intermediário e um experiente para jogar sem explicação externa. Para cada um, registrar:
+Convidar pelo menos um jogador iniciante, um intermediário e um experiente para jogar sem explicação externa. O responsável pelo projeto informou em 19/11/2026 que não tem jogadores disponíveis agora; esta validação permanece pendente. Para cada um, registrar:
 
 1. tempo e mortes de cada sala no CSV;
 2. marcas F8 e descrição do ataque difícil de perceber;
