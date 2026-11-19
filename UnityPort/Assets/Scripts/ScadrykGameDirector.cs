@@ -23,6 +23,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private static bool smokeRun;
     private bool isPaused, victory, transitioning, showTitle = true, showOptions;
     private int rebindingAction = -1;
+    private int optionsTab;
     private float transitionFade;
     private Vector2 roomCenter, exitPosition;
     private ScadrykPlayerController player;
@@ -988,7 +989,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             GUI.Label(new Rect(panel.x + 18f, panel.y + 10f, panel.width - 36f, 24f), "VESTÍGIO ESCUTADO", titleStyle);
             GUI.Label(new Rect(panel.x + 18f, panel.y + 34f, panel.width - 36f, 62f), memoryText, memoryStyle);
         }
-        GUI.Label(new Rect(14, Screen.height - 27, Screen.width - 28, 20), "WASD mover  ·  Mouse mirar  ·  Clique/Space atacar  ·  Shift esquivar  ·  Q pulso  ·  1/2/3 poderes  ·  E portal", smallStyle);
+        GUI.Label(new Rect(14, Screen.height - 34, Screen.width - 28, 30), "Mover: teclas/controle  ·  Mouse/analógico mirar  ·  " + ScadrykSettings.Key(0) + " atacar  ·  " + ScadrykSettings.Key(1) + " esquivar  ·  " + ScadrykSettings.Key(2) + " pulso  ·  " + ScadrykSettings.Key(6) + " interagir  ·  Esc pausa", smallStyle);
         if (transitionFade > 0f)
         {
             GUI.color = new Color(0f, 0f, 0f, transitionFade);
@@ -1001,23 +1002,25 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private void DrawHud()
     {
-        GUI.color = new Color(0.035f, 0.05f, 0.06f, 0.92f); GUI.Box(new Rect(14, 14, 325, 190), GUIContent.none); GUI.color = Color.white;
-        GUI.Label(new Rect(28, 22, 300, 25), PhaseNames[phaseIndex] + "  ·  Fase " + (phaseIndex + 1) + "/3", titleStyle);
-        GUI.Label(new Rect(28, 51, 300, 23), roomNames[phaseIndex][roomIndex] + "  ·  Sala " + (roomIndex + 1) + "/3", bodyStyle);
-        GUI.color = new Color(0.18f, 0.19f, 0.2f); GUI.DrawTexture(new Rect(28, 82, 275, 12), Texture2D.whiteTexture);
-        GUI.color = new Color(0.79f, 0.25f, 0.22f); GUI.DrawTexture(new Rect(28, 82, 275 * (player != null ? player.Health / player.MaxHealth : 1f), 12), Texture2D.whiteTexture); GUI.color = Color.white;
-        GUI.Label(new Rect(28, 98, 290, 19), "Ecos: " + enemiesRemaining + "    Esquiva: " + Cooldown(player != null ? player.DashCooldownLeft : 0) + "    Pulso: " + Cooldown(player != null ? player.ShockwaveCooldownLeft : 0), smallStyle);
+        float extra = ScadrykSettings.TextScale - 1f;
+        float textWidth = 300f + extra * 130f, trackWidth = 275f + extra * 120f;
+        GUI.color = new Color(0.035f, 0.05f, 0.06f, 0.92f); GUI.Box(new Rect(14, 14, 325f + extra * 130f, 190f + extra * 86f), GUIContent.none); GUI.color = Color.white;
+        GUI.Label(new Rect(28, 22, textWidth, 25f + extra * 15f), PhaseNames[phaseIndex] + "  ·  Fase " + (phaseIndex + 1) + "/3", titleStyle);
+        GUI.Label(new Rect(28, 51f + extra * 8f, textWidth, 23f + extra * 12f), roomNames[phaseIndex][roomIndex] + "  ·  Sala " + (roomIndex + 1) + "/3", bodyStyle);
+        GUI.color = new Color(0.18f, 0.19f, 0.2f); GUI.DrawTexture(new Rect(28, 82f + extra * 18f, trackWidth, 12), Texture2D.whiteTexture);
+        GUI.color = new Color(0.79f, 0.25f, 0.22f); GUI.DrawTexture(new Rect(28, 82f + extra * 18f, trackWidth * (player != null ? player.Health / player.MaxHealth : 1f), 12), Texture2D.whiteTexture); GUI.color = Color.white;
+        GUI.Label(new Rect(28, 98f + extra * 23f, textWidth, 19f + extra * 10f), "Ecos: " + enemiesRemaining + "    Esquiva: " + Cooldown(player != null ? player.DashCooldownLeft : 0) + "    Pulso: " + Cooldown(player != null ? player.ShockwaveCooldownLeft : 0), smallStyle);
         string[] abilities = { "Crescente Verdejante", "Estouro de Sal", "Rompante da Maré" };
         for (int i = 0; i < abilities.Length; i++)
         {
             bool learned = player != null && player.HasAbility(i);
             string state = !learned ? "bloqueado" : player.AbilityCooldownLeft(i) <= 0.02f ? "pronto" : Cooldown(player.AbilityCooldownLeft(i));
             GUI.color = learned ? new Color(0.72f, 0.9f, 0.79f) : new Color(0.48f, 0.53f, 0.51f);
-            GUI.Label(new Rect(28, 116 + i * 15, 290, 16), (i + 1) + "  " + abilities[i] + "  ·  " + state, smallStyle);
+            GUI.Label(new Rect(28, 116f + extra * 37f + i * (15f + extra * 9f), textWidth, 16f + extra * 9f), (i + 1) + "  " + abilities[i] + "  ·  " + state, smallStyle);
         }
         GUI.color = Color.white;
         string progress = anchorsRequired > 0 ? "  ·  " + anchorsActivated + "/" + anchorsRequired : "";
-        GUI.Label(new Rect(28, 164, 300, 28), "Objetivo: " + RoomGoals[phaseIndex * RoomsPerPhase + roomIndex] + progress, smallStyle);
+        GUI.Label(new Rect(28, 164f + extra * 64f, textWidth, 28f + extra * 10f), "Objetivo: " + RoomGoals[phaseIndex * RoomsPerPhase + roomIndex] + progress, smallStyle);
     }
 
     private void DrawFinalBossBar()
@@ -1041,11 +1044,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private void DrawMiniMap()
     {
-        const float width = 286, height = 126;
+        float extra = ScadrykSettings.TextScale - 1f;
+        float width = 286f + extra * 120f, height = 126f + extra * 24f;
         Rect panel = new Rect(Screen.width - width - 16, 14, width, height);
         GUI.color = new Color(0.035f, 0.05f, 0.06f, 0.9f); GUI.Box(panel, GUIContent.none); GUI.color = Color.white;
-        GUI.Label(new Rect(panel.x + 13, panel.y + 8, 250, 21), "MAPA DA FASE", smallStyle);
-        float mapX = panel.x + 15, mapY = panel.y + 43, roomW = 75, roomH = 57, gap = 8;
+        GUI.Label(new Rect(panel.x + 13, panel.y + 8, width - 26f, 21f + extra * 8f), "MAPA DA FASE", smallStyle);
+        float mapX = panel.x + 15, mapY = panel.y + 43 + extra * 5f, roomW = 75f + extra * 30f, roomH = 57f + extra * 10f, gap = 8;
         for (int i = 0; i < RoomsPerPhase; i++)
         {
             Rect cell = new Rect(mapX + i * (roomW + gap), mapY, roomW, roomH);
@@ -1091,31 +1095,40 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         GUI.color = new Color(0.01f, 0.02f, 0.025f, 0.97f); GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture); GUI.color = Color.white;
         float width = Mathf.Min(620f, Screen.width - 36f), x = (Screen.width - width) * 0.5f, y = Mathf.Max(18f, (Screen.height - 690f) * 0.5f);
         GUI.Label(new Rect(x, y, width, 42f), "OPÇÕES", centeredTitleStyle);
-        GUI.Label(new Rect(x + 15f, y + 52f, 170f, 28f), "Música", bodyStyle);
-        ScadrykSettings.MusicVolume = GUI.HorizontalSlider(new Rect(x + 195f, y + 62f, width - 215f, 24f), ScadrykSettings.MusicVolume, 0f, 1f);
-        GUI.Label(new Rect(x + 15f, y + 92f, 170f, 28f), "Efeitos", bodyStyle);
-        ScadrykSettings.EffectsVolume = GUI.HorizontalSlider(new Rect(x + 195f, y + 102f, width - 215f, 24f), ScadrykSettings.EffectsVolume, 0f, 1f);
-        GUI.Label(new Rect(x + 15f, y + 132f, 170f, 28f), "Tamanho do texto", bodyStyle);
-        float scale = GUI.HorizontalSlider(new Rect(x + 195f, y + 142f, width - 215f, 24f), ScadrykSettings.TextScale, 1f, 1.5f);
-        if (Mathf.Abs(scale - ScadrykSettings.TextScale) > 0.01f) { ScadrykSettings.TextScale = scale; titleStyle = null; }
-        ScadrykSettings.ReduceFlash = GUI.Toggle(new Rect(x + 15f, y + 176f, width - 30f, 30f), ScadrykSettings.ReduceFlash, "Reduzir flashes de dano");
-        ScadrykSettings.ReduceShake = GUI.Toggle(new Rect(x + 15f, y + 208f, width - 30f, 30f), ScadrykSettings.ReduceShake, "Desligar tremor de câmera");
-        GUI.Label(new Rect(x + 15f, y + 247f, width - 30f, 30f), "TECLAS — clique e pressione uma tecla", bodyStyle);
-        for (int i = 0; i < ScadrykSettings.Actions.Length; i++)
+        if (GUI.Button(new Rect(x + 15f, y + 48f, (width - 38f) * 0.5f, 38f), "Som e acessibilidade")) optionsTab = 0;
+        if (GUI.Button(new Rect(x + 23f + (width - 38f) * 0.5f, y + 48f, (width - 38f) * 0.5f, 38f), "Teclas")) optionsTab = 1;
+        if (optionsTab == 0)
         {
-            float row = y + 282f + i * 42f;
-            GUI.Label(new Rect(x + 15f, row, 220f, 36f), ScadrykSettings.Actions[i], bodyStyle);
-            string label = rebindingAction == i ? "Pressione uma tecla…" : ScadrykSettings.Key(i).ToString();
-            if (GUI.Button(new Rect(x + 240f, row, width - 255f, 34f), label)) rebindingAction = i;
+            GUI.Label(new Rect(x + 15f, y + 125f, 170f, 28f), "Música", bodyStyle);
+            ScadrykSettings.MusicVolume = GUI.HorizontalSlider(new Rect(x + 195f, y + 135f, width - 215f, 24f), ScadrykSettings.MusicVolume, 0f, 1f);
+            GUI.Label(new Rect(x + 15f, y + 175f, 170f, 28f), "Efeitos", bodyStyle);
+            ScadrykSettings.EffectsVolume = GUI.HorizontalSlider(new Rect(x + 195f, y + 185f, width - 215f, 24f), ScadrykSettings.EffectsVolume, 0f, 1f);
+            GUI.Label(new Rect(x + 15f, y + 225f, 170f, 28f), "Tamanho do texto", bodyStyle);
+            float scale = GUI.HorizontalSlider(new Rect(x + 195f, y + 235f, width - 215f, 24f), ScadrykSettings.TextScale, 1f, 1.5f);
+            if (Mathf.Abs(scale - ScadrykSettings.TextScale) > 0.01f) { ScadrykSettings.TextScale = scale; titleStyle = null; }
+            ScadrykSettings.ReduceFlash = GUI.Toggle(new Rect(x + 15f, y + 285f, width - 30f, 34f), ScadrykSettings.ReduceFlash, "Reduzir flashes de dano");
+            ScadrykSettings.ReduceShake = GUI.Toggle(new Rect(x + 15f, y + 325f, width - 30f, 34f), ScadrykSettings.ReduceShake, "Desligar tremor de câmera");
+            GUI.Label(new Rect(x + 15f, y + 400f, width - 30f, 70f), "Avisos de perigo permanecem visíveis com os efeitos em silêncio. Para marcar um ataque pouco claro durante testes, pressione F8.", memoryStyle);
         }
-        if (rebindingAction >= 0 && Event.current.type == EventType.KeyDown && Event.current.keyCode != KeyCode.None && Event.current.keyCode != KeyCode.Escape)
+        else
         {
-            ScadrykSettings.Bind(rebindingAction, Event.current.keyCode);
-            rebindingAction = -1;
-            Event.current.Use();
+            GUI.Label(new Rect(x + 15f, y + 99f, width - 30f, 31f), "Clique na tecla para trocar. Teclas repetidas são permutadas.", bodyStyle);
+            for (int i = 0; i < ScadrykSettings.Actions.Length; i++)
+            {
+                float row = y + 135f + i * 39f;
+                GUI.Label(new Rect(x + 15f, row, 220f, 34f), ScadrykSettings.Actions[i], bodyStyle);
+                string label = rebindingAction == i ? "Pressione uma tecla…" : ScadrykSettings.Key(i).ToString();
+                if (GUI.Button(new Rect(x + 240f, row, width - 255f, 32f), label)) rebindingAction = i;
+            }
+            if (rebindingAction >= 0 && Event.current.type == EventType.KeyDown && Event.current.keyCode != KeyCode.None && Event.current.keyCode != KeyCode.Escape)
+            {
+                ScadrykSettings.Bind(rebindingAction, Event.current.keyCode);
+                rebindingAction = -1;
+                Event.current.Use();
+            }
         }
-        if (GUI.Button(new Rect(x + (width - 180f) * 0.5f, y + 595f, 180f, 42f), "Voltar")) { showOptions = false; rebindingAction = -1; }
-        GUI.Label(new Rect(x, y + 646f, width, 24f), "Controle: analógico esquerdo move, direito mira, A ataca, B esquiva, X pulso, Y interage.", smallStyle);
+        if (GUI.Button(new Rect(x + (width - 180f) * 0.5f, y + 585f, 180f, 42f), "Voltar")) { showOptions = false; rebindingAction = -1; }
+        GUI.Label(new Rect(x, y + 637f, width, 28f), "Controle: analógico esquerdo move, direito mira, A ataca, B esquiva, X pulso, Y interage.", smallStyle);
     }
 
     private void EnsureStyles()

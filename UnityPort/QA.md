@@ -5,7 +5,8 @@
 - Unity 6000.6.9f1 compilou a build Windows normal nas etapas de menu, salas, Arauto e narrativa.
 - A build de desenvolvimento com `-scadryk-smoke` atravessou nove salas, acionou os objetos exigidos, conferiu a obtenção dos três poderes, derrotou o Arauto e alcançou a vitória. Resultado: `SCADRYK_SMOKE: SUCCESS` em `ScadrykSmoke-v2-run.log`. O teste usa dano artificial e **não mede dificuldade, legibilidade nem sensação de controle**.
 - O teste não grava salvamento ou métricas do jogador. Na execução `ScadrykSmoke-v3-run.log`, cada poder foi ativado imediatamente após seu guardião e entrou em recarga, além de a campanha terminar com `SUCCESS`.
-- O executável normal abriu e não apresentou exceções no `Player.log` consultado. Capturas de tela estão nos pacotes locais em `outputs/ScadrykStage4` a `ScadrykStage7`.
+- O executável normal abriu e não apresentou exceções no `Player.log` consultado. Capturas de tela estão nos pacotes locais em `outputs/ScadrykStage4` a `ScadrykStage8`.
+- Após incluir movimento remapeável e reduzir efeitos decorativos, `ScadrykSmoke-v4-run.log` repetiu o resultado `SUCCESS` sem erros de eixos de entrada. A build normal dessa etapa compilou e sua tela inicial abriu. Ainda faltam teste físico com controle, sessão manual de teclado remapeado e inspeção visual do menu de opções em uso.
 
 ## Dados observados e limites
 

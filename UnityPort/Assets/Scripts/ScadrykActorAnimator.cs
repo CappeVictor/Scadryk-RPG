@@ -88,7 +88,7 @@ public sealed class ScadrykActorAnimator : MonoBehaviour
         if (dash > 0f && Time.time >= nextTrailAt && visualRenderer != null)
         {
             ScadrykEffects.Afterimage(visualRenderer, new Color(0.48f, 0.88f, 1f, 0.36f));
-            nextTrailAt = Time.time + 0.052f;
+            nextTrailAt = Time.time + 0.09f;
         }
         visual.localPosition = basePosition + Vector3.up * (Mathf.Abs(stride) * 0.085f - death * 0.22f) + (Vector3)(attackDirection * (attack * 0.18f - hit * 0.13f));
         visual.localRotation = Quaternion.Euler(0f, 0f, stride * 2.2f + attack * -8f + dash * -13f * dashDirection.x + death * 82f);

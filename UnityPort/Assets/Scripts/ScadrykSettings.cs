@@ -3,14 +3,18 @@ using UnityEngine;
 /// <summary>Small, persistent settings shared by the front end, input and audio.</summary>
 public static class ScadrykSettings
 {
-    public static readonly string[] Actions = { "Atacar", "Esquivar", "Pulso", "Crescente", "Estouro", "Rompante", "Interagir" };
-    private static readonly KeyCode[] Defaults = { KeyCode.J, KeyCode.LeftShift, KeyCode.Q, KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3, KeyCode.E };
+    public static readonly string[] Actions = { "Atacar", "Esquivar", "Pulso", "Crescente", "Estouro", "Rompante", "Interagir", "Cima", "Baixo", "Esquerda", "Direita" };
+    private static readonly KeyCode[] Defaults = { KeyCode.Space, KeyCode.LeftShift, KeyCode.Q, KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3, KeyCode.E, KeyCode.W, KeyCode.S, KeyCode.A, KeyCode.D };
 
     public static KeyCode Key(int action) => (KeyCode)PlayerPrefs.GetInt("Scadryk.Key." + action, (int)Defaults[action]);
     public static bool Down(int action) => Input.GetKeyDown(Key(action));
+    public static bool Held(int action) => Input.GetKey(Key(action));
     public static void Bind(int action, KeyCode key)
     {
         if (action < 0 || action >= Defaults.Length || key == KeyCode.None || key == KeyCode.Escape) return;
+        KeyCode oldKey = Key(action);
+        for (int i = 0; i < Defaults.Length; i++)
+            if (i != action && Key(i) == key) PlayerPrefs.SetInt("Scadryk.Key." + i, (int)oldKey);
         PlayerPrefs.SetInt("Scadryk.Key." + action, (int)key);
         PlayerPrefs.Save();
     }

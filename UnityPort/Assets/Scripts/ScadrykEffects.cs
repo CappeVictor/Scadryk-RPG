@@ -73,7 +73,7 @@ public static class ScadrykEffects
 
     public static void DeathBurst(Vector2 position, Color color, bool boss)
     {
-        int count = boss ? 8 : 5;
+        int count = boss ? 6 : 3;
         for (int i = 0; i < count; i++)
         {
             float angle = i * Mathf.PI * 2f / count;

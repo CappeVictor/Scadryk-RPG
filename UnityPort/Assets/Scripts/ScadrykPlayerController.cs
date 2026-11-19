@@ -76,14 +76,17 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     {
         if (isDying || (director != null && director.IsPaused)) { moveInput = Vector2.zero; return; }
 
-        moveInput = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical")).normalized;
+        Vector2 keyboard = new Vector2((ScadrykSettings.Held(10) ? 1f : 0f) - (ScadrykSettings.Held(9) ? 1f : 0f),
+            (ScadrykSettings.Held(7) ? 1f : 0f) - (ScadrykSettings.Held(8) ? 1f : 0f));
+        Vector2 stick = new Vector2(Input.GetAxisRaw("Scadryk Move X"), Input.GetAxisRaw("Scadryk Move Y"));
+        moveInput = Vector2.ClampMagnitude(keyboard + stick, 1f);
         AimAtPointer();
-        if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space) || ScadrykSettings.Down(0) || Input.GetKeyDown(KeyCode.JoystickButton0)) Attack();
-        if (ScadrykSettings.Down(1) || Input.GetKeyDown(KeyCode.RightShift) || Input.GetKeyDown(KeyCode.K) || Input.GetKeyDown(KeyCode.JoystickButton1)) Dash();
+        if (Input.GetMouseButtonDown(0) || ScadrykSettings.Down(0) || Input.GetKeyDown(KeyCode.JoystickButton0)) Attack();
+        if (ScadrykSettings.Down(1) || Input.GetKeyDown(KeyCode.JoystickButton1)) Dash();
         if (ScadrykSettings.Down(2) || Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.JoystickButton2)) Shockwave();
-        if (ScadrykSettings.Down(3) || Input.GetKeyDown(KeyCode.Keypad1) || Input.GetKeyDown(KeyCode.JoystickButton4)) UseAbility(0);
-        if (ScadrykSettings.Down(4) || Input.GetKeyDown(KeyCode.Keypad2) || Input.GetKeyDown(KeyCode.JoystickButton5)) UseAbility(1);
-        if (ScadrykSettings.Down(5) || Input.GetKeyDown(KeyCode.Keypad3) || Input.GetKeyDown(KeyCode.JoystickButton6)) UseAbility(2);
+        if (ScadrykSettings.Down(3) || Input.GetKeyDown(KeyCode.JoystickButton4)) UseAbility(0);
+        if (ScadrykSettings.Down(4) || Input.GetKeyDown(KeyCode.JoystickButton5)) UseAbility(1);
+        if (ScadrykSettings.Down(5) || Input.GetKeyDown(KeyCode.JoystickButton6)) UseAbility(2);
         if ((ScadrykSettings.Down(6) || Input.GetKeyDown(KeyCode.JoystickButton3)) && director != null) director.TryInteract(transform.position);
 
         UpdateSprite();

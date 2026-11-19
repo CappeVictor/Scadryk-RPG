@@ -33,7 +33,7 @@ As salas têm ritmos diferentes: entradas do bosque e as travessias trazem comba
 
 ## Menu, opções e áudio
 
-A tela inicial oferece **Continuar jornada** (último portal salvo) e **Nova jornada** (reinicia sala e poderes). **Esc** ou **Start** pausam; **O** abre opções na tela inicial ou na pausa. O menu de opções ajusta música, efeitos, escala de texto (100–150%), redução de flashes e desligamento do tremor de câmera. Clique no nome de uma tecla e pressione a substituta para remapear ataque, esquiva, pulso, três poderes ou interação. As preferências são salvas localmente em `PlayerPrefs`.
+A tela inicial oferece **Continuar jornada** (último portal salvo) e **Nova jornada** (reinicia sala e poderes). **Esc** ou **Start** pausam; **O** abre opções na tela inicial ou na pausa. O menu de opções ajusta música, efeitos, escala de texto (100–150%), redução de flashes e desligamento do tremor de câmera. Na aba **Teclas**, clique na ação e pressione a substituta para remapear ataque, esquiva, pulso, três poderes, interação ou as quatro direções de movimento. Se a tecla já estiver em uso, as duas ações trocam de tecla. As preferências são salvas localmente em `PlayerPrefs`.
 
 A abertura de uma nova jornada apresenta o chamado de Nara. Vestígios do sal e da costa revelam a história da maré; cada guardião libertado acrescenta uma lembrança. Ao derrotar o Arauto, uma última memória explica o silêncio e o encerramento resolve a escolha de Nara. As legendas narrativas aparecem num painel durante o jogo.
 
@@ -45,10 +45,10 @@ O controle usa analógico esquerdo para movimento e direito para mira; A ataca, 
 
 | Tecla ou ação | Função |
 | --- | --- |
-| WASD ou setas | Mover em qualquer direção, com diagonal normalizada |
+| WASD (configurável para setas ou outras teclas) | Mover em qualquer direção, com diagonal normalizada |
 | Mouse | Mirar; a direção de ataque independe da direção do movimento |
-| Clique esquerdo, Espaço ou J | Ataque corpo a corpo na direção da mira |
-| Shift ou K | Esquiva rápida com breve invulnerabilidade e recarga |
+| Clique esquerdo ou Espaço | Ataque corpo a corpo na direção da mira |
+| Shift esquerdo | Esquiva rápida com breve invulnerabilidade e recarga |
 | Q ou clique direito | Pulso que atinge ecos próximos; tem recarga |
 | 1 | Crescente Verdejante — golpe frontal amplo, aprendido após o guardião da primeira fase |
 | 2 | Estouro de Sal — explosão circular de cristais, aprendido após o guardião da segunda fase |
