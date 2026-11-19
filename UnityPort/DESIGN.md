@@ -1,31 +1,23 @@
 # Scadryk — diagnóstico e direção
 
-## Revisão de estado (18/11/2026, após `ac1aad5`)
+## Revisão de estado (19/11/2026, após `95886b2`)
 
-**Já jogável:** três biomas top-down, nove salas em sequência, portais, três poderes obtidos de guardiões, quatro papéis de Eco comum, Arauto final, selos opcionais, salvamento de sala e métricas locais. Há sprites de cenário, Nara, inimigos, ataques e chefes em `Assets/Resources/ScadrykArt`; `ScadrykDemo.unity` contém câmera e diretor, que criam a fase em tempo de execução. A build Windows compila e abre.
+**Já implementado:** campanha top-down com três biomas e nove salas; três poderes de guardiões; quatro papéis de Eco; Arauto em fases; objetivos de ressonância, vestígios narrativos, menu, pausa, opções de acessibilidade, remapeamento e áudio procedural. Há salvamento de progresso e telemetria local. A cobertura de cenário bloqueia alguns projéteis e ataques, e passou pelo smoke test de campanha.
 
-**Ausente ou insuficiente:** as nove salas ainda repetem a condição de eliminar todos os inimigos; exploração e história quase não alteram a progressão. Os papéis dos Ecos usam variações de escala e cor, mas a arte de cada bioma ainda é compartilhada. Faltam sons, música, menu, opções de acessibilidade, controle com mira direita, remapeamento e sessões de QA com jogadores externos. A vitória tem apenas texto de demonstração. A campanha completa não foi validada de ponta a ponta.
+**Validação pendente:** a build normal mais recente é Stage9. A mudança de cobertura ainda não tem build normal, porque o Windows bloqueou `Bee.TinyProfiler2.dll` do Unity por política App Control. Não há jogadores externos disponíveis agora; controle físico, legibilidade em telas menores, balanceamento e conclusão manual das nove salas continuam sem evidência suficiente.
 
-**Riscos técnicos atuais:** `ScadrykGameDirector.cs` tem geração, progressão, HUD e persistência no mesmo arquivo; IMGUI usa medidas absolutas; `Input Manager (Old)` não oferece remapeamento automático; `PlayerPrefs` guarda apenas fase/sala; a barra de vida e os ataques não têm teste automatizado de regressão. A próxima etapa deve oferecer acesso confiável às opções e manter o build Windows compilável.
+**Riscos técnicos:** `ScadrykGameDirector.cs` concentra vários sistemas; o HUD IMGUI usa medidas absolutas; testes automatizados usam dano artificial e não validam sensação ou dificuldade. Não declarar a campanha finalizada nem paridade de qualidade antes da build normal atualizada e sessões de jogo observadas.
 
-## Diagnóstico do projeto inspecionado (18/11/2026)
+## Diagnóstico inicial e direção criativa
 
-**Funciona:** a cena `ScadrykDemo.unity` inicia um jogo top-down; três biomas têm fundos e objetos próprios; nove salas são percorridas por portais; Nara se move, mira, ataca, esquiva e aprende três poderes dos guardiões; há avisos visuais de ataques, barras de vida, minimapa e Arauto do Vazio com portal final.
+Nara é uma Ouvinte que preserva histórias em três sinos de travessia. Os Ecos são memórias separadas pelo silêncio do Arauto. O bosque alagado guarda vozes nas raízes; a bacia de sal cristalizou a última maré; a costa das badaladas usa ruínas e sinos como instrumentos. Cada guardião ensina um poder. O Arauto tenta impedir que a memória da catástrofe volte ao mundo; sua derrota reconecta os lugares por um portal colossal. A câmera permanece top-down, com profundidade criada por sombras, oclusão e escala.
 
-**Falta:** as salas variam sobretudo em obstáculos e quantidade de inimigos, sem objetivos ou segredos próprios. Os inimigos comuns de um bioma compartilham ataque e comportamento. Não há história jogável, áudio, menu inicial, salvamento, opções, remapeamento, suporte completo a controle, telemetria de sessões nem testes externos documentados. O final ainda se descreve como demonstração.
+## Critérios por etapa
 
-**Riscos técnicos:** `ScadrykGameDirector` concentra geração, progressão e HUD; a cena usa arte e inimigos criados em tempo de execução; o HUD usa IMGUI com medidas fixas; o Input Manager legado limita remapeamento; golpes do jogador aplicam dano no mesmo quadro do efeito, sem janela de impacto; a recriação da sala restaura toda a vida. Alterações devem manter uma build Windows compilável e testar a transição entre salas.
+1. Refinar movimento, mira, esquiva, ataques legíveis e poderes táticos.
+2. Dar trajetos e decisões próprios às nove salas e usos de exploração aos poderes.
+3. Ensinar padrões com inimigos e guardiões antes de combiná-los no Arauto.
+4. Apresentar abertura, vestígios, mudanças no mundo, áudio e encerramento.
+5. Completar salvamento, opções, suporte a controle e QA com sessões documentadas.
 
-## Visão original
-
-Nara é uma **Ouvinte** que preserva histórias em três sinos de travessia. Os Ecos são memórias de pessoas e lugares que o silêncio do Arauto separou de seus corpos; libertá-los revela fragmentos da verdade, sem tratá-los como monstros sem identidade. O bosque alagado guarda vozes nas raízes e ensina a abrir caminhos com o Crescente. A bacia de sal cristalizou a última maré e ensina a romper depósitos com o Estouro. A costa das badaladas usa ruínas e sinos como instrumentos para o Rompante. Os três guardiões são zeladores presos ao mesmo voto de silêncio. O Arauto tenta impedir que a memória da catástrofe volte ao mundo; na derrota, o portal colossal reconecta os três lugares. A câmera permanece top-down, com profundidade criada por sombras, oclusão e escala dos objetos.
-
-## Etapas e critérios
-
-1. **Fundação jogável:** leitura dos golpes, esquiva, papéis inimigos, telemetria e salvamento básico. Compilar no Unity e atravessar uma sala.
-2. **Nove salas autorais:** trajetória, evento ou desafio próprio por sala, exploração opcional para cada poder, mapa e pistas. Compilar e percorrer nove salas.
-3. **Guardiões e Arauto:** ensinar padrões antes de combiná-los, fases justas, portal final. Compilar e vencer a campanha.
-4. **Mundo e som:** abertura, vestígios, mudança após guardiões, música e efeitos próprios, encerramento. Compilar e conferir narrativa.
-5. **Produto e QA:** menu, pausa/opções, controle e remapeamento, volume, acessibilidade, coleta e análise de métricas, testes com jogadores. Publicar build e registrar limitações.
-
-Cada etapa exige build que abra, progressão possível, poderes disponíveis imediatamente após conquista e sinais legíveis sem explicação externa. As referências de outros jogos orientam apenas princípios de clareza, descoberta e ritmo; nenhum conteúdo deles será reproduzido.
+As referências de outros jogos orientam clareza, descoberta e ritmo. Não reproduzir conteúdo protegido nem alegar paridade sem evidência comparativa.
