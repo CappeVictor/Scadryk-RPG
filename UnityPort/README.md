@@ -6,7 +6,7 @@ Critérios de comparação com jogos de referência e lacunas verificáveis: [QU
 
 Registro de builds, teste de progressão e roteiro de avaliação com jogadores: [QA.md](QA.md).
 
-`UnityPort` agora é um projeto Unity completo com demo top-down de três fases e nove salas conectadas. Cada fase tem cenário ilustrado próprio: bosque encantado, bacia de sal com poças e cristais, e costa rochosa com marés e ruínas de sinos. Cada ambiente também tem inimigos próprios, como o guardião de raízes, a criatura de sal e o espectro das badaladas. Árvores, juncos, cristais, água e lanternas têm movimento sutil. Os mapas mantêm obstáculos e rotas diferentes; o jogo inclui guardiões, HUD, minimapa, combate, esquiva, pulso e pausa. A câmera permanece top-down e acompanha Nara. A cena inicial está em `Assets/Scenes/ScadrykDemo.unity`. Campanha completa, diálogos, missões, equipamentos, animações finais e saves da versão Windows Forms ainda não foram portados.
+`UnityPort` contém uma aventura top-down em desenvolvimento com três biomas e nove salas conectadas, guardiões, três poderes, Arauto do Vazio, objetivos de exploração e narrativa ambiental. Cada bioma possui cenário e inimigos próprios. A cena inicial está em `Assets/Scenes/ScadrykDemo.unity`. Há menu, pausa, opções, áudio, remapeamento, suporte a controle e salvamento local. O progresso e as limitações de validação estão em `QA.md`; a build normal mais recente validada é Stage9. A alteração de cobertura de cenário ainda aguarda build normal devido a bloqueio do Unity pelo App Control do Windows.
 
 ## Requisitos
 
@@ -88,3 +88,4 @@ Os obstáculos sólidos também funcionam como **cobertura**: estilhaços inimig
 - `Editor/ScadrykArtImporter.cs`: prepara as texturas para corte dos quadros e dos sprites ambientais em tempo de execução.
 
 O jogo original permanece no repositório como versão Windows Forms/GDI+. Os scripts dentro de `UnityPort/Assets` são a nova implementação Unity e foram excluídos da compilação Windows pelo `.csproj`.
+
