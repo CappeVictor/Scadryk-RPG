@@ -4,6 +4,8 @@
 
 Critérios de comparação com jogos de referência e lacunas verificáveis: [QUALITY_BENCHMARK.md](QUALITY_BENCHMARK.md).
 
+Registro de builds, teste de progressão e roteiro de avaliação com jogadores: [QA.md](QA.md).
+
 `UnityPort` agora é um projeto Unity completo com demo top-down de três fases e nove salas conectadas. Cada fase tem cenário ilustrado próprio: bosque encantado, bacia de sal com poças e cristais, e costa rochosa com marés e ruínas de sinos. Cada ambiente também tem inimigos próprios, como o guardião de raízes, a criatura de sal e o espectro das badaladas. Árvores, juncos, cristais, água e lanternas têm movimento sutil. Os mapas mantêm obstáculos e rotas diferentes; o jogo inclui guardiões, HUD, minimapa, combate, esquiva, pulso e pausa. A câmera permanece top-down e acompanha Nara. A cena inicial está em `Assets/Scenes/ScadrykDemo.unity`. Campanha completa, diálogos, missões, equipamentos, animações finais e saves da versão Windows Forms ainda não foram portados.
 
 ## Requisitos
@@ -21,7 +23,9 @@ Critérios de comparação com jogos de referência e lacunas verificáveis: [QU
 
 Para criar um executável Windows, escolha **Scadryk > Build Windows demo**. O build aparece em `Build/ScadrykDemo.exe` dentro do projeto Unity.
 
-O avanço é salvo automaticamente ao atravessar cada portal. Ao reabrir o jogo, a última sala alcançada é carregada com os poderes das fases já vencidas. A conclusão da campanha apaga o marcador de progresso para permitir uma nova jornada. Métricas de duração por sala, mortes, uso dos três poderes e inimigos restantes são gravadas em `scadryk-sessions.csv` na pasta retornada por `Application.persistentDataPath` (no Windows, normalmente `%USERPROFILE%/AppData/LocalLow/<CompanyName>/<ProductName>`). Esse arquivo não envia dados pela rede.
+O avanço é salvo automaticamente ao atravessar cada portal. Ao reabrir o jogo, a última sala alcançada é carregada com os poderes das fases já vencidas. A conclusão da campanha apaga o marcador de progresso para permitir uma nova jornada. As métricas ficam na pasta retornada por `Application.persistentDataPath` (no Windows, normalmente `%USERPROFILE%/AppData/LocalLow/<CompanyName>/<ProductName>`). Nenhum dado é enviado pela rede.
+
+O registro atual usa `scadryk-sessions-v2.csv` e acrescenta `unclear_attacks`. Durante um teste, pressione **F8** quando sofrer ou observar um ataque difícil de perceber; a marca é contada na sala atual. O arquivo anterior `scadryk-sessions.csv` permanece apenas como histórico. Para comparar duas builds, jogue cada sala até o portal e examine tempo, mortes, marcas e uso de poderes antes de alterar o balanceamento.
 
 Selos circulares ocultos respondem a um poder específico: Crescente na entrada da bacia, Estouro na entrada da costa e Rompante na sala do Arauto. Use o poder perto do selo para libertar um Eco e recuperar vida. Estes encontros são opcionais.
 
@@ -57,6 +61,8 @@ O controle usa analógico esquerdo para movimento e direito para mira; A ataca, 
 As fases jogáveis incluídas são **Margens do Primeiro Eco**, **Bacia do Sal Imóvel** e **Costa das Badaladas**. Cada uma tem três salas, caminhos laterais, coberturas e um guardião na última sala. O mapa no canto superior direito mostra a posição atual e o estado das salas; o painel superior esquerdo mostra fase, sala, vida, inimigos restantes, recargas e os poderes aprendidos. A cada sala limpa, Nara recupera um pouco de vida. Ao zerar a vida, ela retorna ao início da sala atual.
 
 Ao limpar qualquer sala, um portal ilustrado se abre para levar Nara ao próximo nível. Cada guardião concede um poder com sprite próprio: **Crescente Verdejante**, **Estouro de Sal** e **Rompante da Maré**. Após o terceiro guardião, o **Arauto do Vazio** surge como superchefe, com 1.250 pontos de vida, barra de chefe própria e três padrões de ataque: salva de estrelas, chuva de impacto marcada no chão e uma onda de vazio que pode ser evitada com esquiva. Ao derrotá-lo, um portal colossal violeta aparece. Aproxime-se e pressione **E** para ver Nara entrar, atravessar a tela escurecida e emergir pelo portal de chegada; usar o portal final conclui a jornada.
+
+Os três poderes têm funções complementares: o **Crescente** interrompe e retarda um Eco (chefes resistem por menos tempo); o **Estouro** deixa os alvos expostos por alguns segundos, aumentando em 30% o dano dos golpes seguintes; o **Rompante** empurra Ecos comuns. Uma sequência útil é Estouro para expor, Crescente para interromper e Rompante para afastar o grupo.
 
 O Arauto agora muda de fase em 70% e 35% da vida: primeiro retoma as raízes, depois os estilhaços do sal e por fim reúne esses ataques à onda da costa. A barra marca os dois limiares. A linha ou círculo no chão precede o dano; a onda final mostra também um anel interno seguro junto ao chefe.
 

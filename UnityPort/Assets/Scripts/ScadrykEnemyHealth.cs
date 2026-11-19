@@ -29,6 +29,8 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private int queuedFinalPattern;
     private int combatRole;
     private Color roleTint = Color.white;
+    private float staggerUntil, exposedUntil, knockbackUntil;
+    private Vector2 knockbackVelocity;
 
     public float Health01 => maxHealth <= 0 ? 0 : Mathf.Clamp01(health / maxHealth);
     public bool IsBoss { get; private set; }
@@ -91,10 +93,13 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         if (sprite != null)
         {
             bool windingUp = isWindup && windupEndsAt > Time.time;
-            sprite.color = windingUp ? new Color(1f, 0.68f, 0.24f) : roleTint;
+            sprite.color = windingUp ? new Color(1f, 0.68f, 0.24f) : Time.time < exposedUntil ? new Color(1f, 0.8f, 0.42f) : roleTint;
             if (!windingUp && animationFrames != null && animationFrames.Length >= 4)
                 sprite.sprite = animationFrames[BodyVelocity.sqrMagnitude > 0.05f ? Mathf.FloorToInt(Time.time * 7f) % animationFrames.Length : 0];
         }
+
+        if (Time.time < knockbackUntil) { BodyVelocity = knockbackVelocity; return; }
+        if (Time.time < staggerUntil) { BodyVelocity = Vector2.zero; return; }
 
         if (isWindup)
         {
@@ -301,6 +306,31 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
 
     private void Heal(float amount) { health = Mathf.Min(maxHealth, health + amount); }
 
+    public void ApplyCrescentControl()
+    {
+        if (dead) return;
+        staggerUntil = Mathf.Max(staggerUntil, Time.time + (IsBoss ? 0.26f : 0.82f));
+        if (isWindup)
+        {
+            isWindup = false;
+            windupEndsAt = 0f;
+            nextAttackAt = staggerUntil + 0.8f;
+        }
+    }
+
+    public void ApplySaltExposure()
+    {
+        if (!dead) exposedUntil = Mathf.Max(exposedUntil, Time.time + (IsBoss ? 3f : 5f));
+    }
+
+    public void ApplyTidePush(Vector2 direction)
+    {
+        if (dead || IsBoss) return;
+        knockbackVelocity = direction.sqrMagnitude > 0.01f ? direction.normalized * 5.5f : Vector2.zero;
+        knockbackUntil = Time.time + 0.24f;
+        staggerUntil = Mathf.Max(staggerUntil, knockbackUntil + 0.25f);
+    }
+
     private void ResolveBellPulse()
     {
         float radius = IsBoss ? 5.3f : 3.65f;
@@ -327,7 +357,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     {
         if (dead) return;
         int previousStage = FinalStage;
-        health -= Mathf.Max(0f, amount);
+        health -= Mathf.Max(0f, amount) * (Time.time < exposedUntil ? 1.3f : 1f);
         if (isFinalBoss && health > 0f && FinalStage != previousStage && director != null) director.ShowBossStage(FinalStage);
         if (animator != null) animator.PlayHit(player != null ? ((Vector2)transform.position - (Vector2)player.transform.position).normalized : Vector2.up);
         if (health <= 0f)

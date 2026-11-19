@@ -240,6 +240,9 @@ public sealed class ScadrykPlayerController : MonoBehaviour
             if (index == 0 && (toEnemy.magnitude > radius || Vector2.Dot(facing, toEnemy.normalized) < 0.12f)) continue;
             if (index == 2 && (toEnemy.magnitude > radius || Vector2.Dot(facing, toEnemy.normalized) < 0.28f)) continue;
             enemy.TakeDamage(damage);
+            if (index == 0) enemy.ApplyCrescentControl();
+            else if (index == 1) enemy.ApplySaltExposure();
+            else enemy.ApplyTidePush(toEnemy);
         }
     }
 

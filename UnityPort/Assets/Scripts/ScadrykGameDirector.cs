@@ -20,6 +20,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private Sprite portalSprite;
 
     private int phaseIndex, roomIndex, enemiesRemaining;
+    private static bool smokeRun;
     private bool isPaused, victory, transitioning, showTitle = true, showOptions;
     private int rebindingAction = -1;
     private float transitionFade;
@@ -54,6 +55,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private float memoryUntil;
     private float roomStartedAt;
     private int roomDeaths;
+    private int unclearAttackMarks;
     private readonly int[] roomPowerUses = new int[3];
     private GUIStyle titleStyle, bodyStyle, smallStyle;
     private GUIStyle centeredTitleStyle, centeredBodyStyle;
@@ -68,6 +70,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private void Start()
     {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        smokeRun = System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-scadryk-smoke") >= 0;
+#endif
         EnsureSprites();
         environmentSprites = LoadSheetRow("ScadrykEnvironment", 0, true);
         phaseGroundSprites = new[] { LoadSingleSprite("ForestClearing", 80f), LoadSingleSprite("SaltBasin", 80f), LoadSingleSprite("BellCoast", 80f) };
@@ -76,10 +81,13 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         portalSprite = LoadSingleSprite("AncientPortal", 600f);
         SetupCamera();
         gameObject.AddComponent<ScadrykAudio>();
-        int savedPhase = Mathf.Clamp(PlayerPrefs.GetInt("Scadryk.Phase", 0), 0, PhaseNames.Length - 1);
-        int savedRoom = Mathf.Clamp(PlayerPrefs.GetInt("Scadryk.Room", 0), 0, RoomsPerPhase - 1);
+        int savedPhase = smokeRun ? 0 : Mathf.Clamp(PlayerPrefs.GetInt("Scadryk.Phase", 0), 0, PhaseNames.Length - 1);
+        int savedRoom = smokeRun ? 0 : Mathf.Clamp(PlayerPrefs.GetInt("Scadryk.Room", 0), 0, RoomsPerPhase - 1);
         BuildPhase(savedPhase, savedRoom, true);
         for (int i = 0; i < savedPhase; i++) player.UnlockAbility(i);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (smokeRun) { showTitle = false; StartCoroutine(SmokeCampaign()); }
+#endif
     }
 
     private void Update()
@@ -99,6 +107,11 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         {
             hintStage++;
             ShowStatus(anchorsNeedPulse ? "Pista: aproxime-se dos objetos marcados e use Q para fazê-los ressoar." : "Pista: aproxime-se do vestígio marcado e pressione E.", 7f);
+        }
+        if (!IsPaused && Input.GetKeyDown(KeyCode.F8))
+        {
+            unclearAttackMarks++;
+            ShowStatus("Ataque difícil de perceber registrado nesta sala.", 3f);
         }
     }
 
@@ -176,6 +189,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         GetComponent<ScadrykAudio>().SetContext(phaseIndex, false);
         roomStartedAt = Time.time;
         roomDeaths = 0;
+        unclearAttackMarks = 0;
         System.Array.Clear(roomPowerUses, 0, roomPowerUses.Length);
         hintStage = 0;
         statusMessage = RoomStories[phaseIndex * RoomsPerPhase + roomIndex];
@@ -640,12 +654,13 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private void RecordRoomSession()
     {
+        if (smokeRun) return;
         try
         {
-            string path = Path.Combine(Application.persistentDataPath, "scadryk-sessions.csv");
-            if (!File.Exists(path)) File.WriteAllText(path, "utc,phase,room,seconds,deaths,crescent,salt,tide,enemies_left\n");
+            string path = Path.Combine(Application.persistentDataPath, "scadryk-sessions-v2.csv");
+            if (!File.Exists(path)) File.WriteAllText(path, "utc,phase,room,seconds,deaths,unclear_attacks,crescent,salt,tide,enemies_left\n");
             string row = System.DateTime.UtcNow.ToString("o") + "," + (phaseIndex + 1) + "," + (roomIndex + 1) + "," +
-                Mathf.RoundToInt(Time.time - roomStartedAt) + "," + roomDeaths + "," + roomPowerUses[0] + "," +
+                Mathf.RoundToInt(Time.time - roomStartedAt) + "," + roomDeaths + "," + unclearAttackMarks + "," + roomPowerUses[0] + "," +
                 roomPowerUses[1] + "," + roomPowerUses[2] + "," + enemiesRemaining + "\n";
             File.AppendAllText(path, row);
         }
@@ -654,6 +669,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private static void SaveProgress(int phase, int room)
     {
+        if (smokeRun) return;
         PlayerPrefs.SetInt("Scadryk.Phase", phase);
         PlayerPrefs.SetInt("Scadryk.Room", room);
         PlayerPrefs.Save();
@@ -794,9 +810,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         transitionFade = 0f;
         victory = true;
         ScadrykAudio.Play(ScadrykCue.Victory);
-        PlayerPrefs.DeleteKey("Scadryk.Phase");
-        PlayerPrefs.DeleteKey("Scadryk.Room");
-        PlayerPrefs.Save();
+        if (!smokeRun)
+        {
+            PlayerPrefs.DeleteKey("Scadryk.Phase");
+            PlayerPrefs.DeleteKey("Scadryk.Room");
+            PlayerPrefs.Save();
+        }
         statusMessage = "A maré se aquieta. Você concluiu a demonstração!";
     }
 
@@ -898,6 +917,60 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (texture == null) return null;
         return Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), pixelsPerUnit);
     }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    private IEnumerator SmokeCampaign()
+    {
+        yield return null;
+        for (int room = 0; room < 9; room++)
+        {
+            if (phaseIndex * RoomsPerPhase + roomIndex != room) { SmokeFail("Sala inesperada: " + room); yield break; }
+            foreach (ScadrykEnemyHealth enemy in FindObjectsByType<ScadrykEnemyHealth>(FindObjectsSortMode.None))
+                if (enemy != null && !enemy.IsFinalBoss) enemy.TakeDamage(99999f);
+            if (room == 8)
+            {
+                if (finalBoss == null) { SmokeFail("Arauto não surgiu após o terceiro guardião"); yield break; }
+                finalBoss.TakeDamage(99999f);
+            }
+            if (roomIndex == 2 && (player == null || !player.HasAbility(phaseIndex)))
+            { SmokeFail("Poder não recebido após guardião da fase " + phaseIndex); yield break; }
+            if (roomIndex == 2)
+            {
+                var useAbility = typeof(ScadrykPlayerController).GetMethod("UseAbility", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                if (useAbility == null) { SmokeFail("Ação de poder indisponível"); yield break; }
+                useAbility.Invoke(player, new object[] { phaseIndex });
+                if (player.AbilityCooldownLeft(phaseIndex) <= 0f)
+                { SmokeFail("Poder recebido não pôde ser usado imediatamente na fase " + phaseIndex); yield break; }
+            }
+            for (int i = 0; i < anchorsRequired; i++)
+            {
+                GameObject anchor = roomAnchors[i];
+                if (anchor == null) continue;
+                Vector2 spot = anchor.transform.position;
+                if (anchorsNeedPulse) TryPulseAnchor(spot);
+                else TryInteract(spot);
+            }
+            if (enemiesRemaining != 0 || anchorsActivated != anchorsRequired || gateObject == null)
+            { SmokeFail("Objetivo não abriu portal na sala " + room); yield break; }
+            int oldRoom = room;
+            TryUseExit(exitPosition);
+            float timeout = Time.time + 8f;
+            while (transitioning && Time.time < timeout) yield return null;
+            if (transitioning || (room < 8 && phaseIndex * RoomsPerPhase + roomIndex == oldRoom))
+            { SmokeFail("Transição falhou após sala " + room); yield break; }
+            Debug.Log("SCADRYK_SMOKE: sala " + (room + 1) + "/9 concluída");
+        }
+        if (!victory) { SmokeFail("Portal final não encerrou a campanha"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: SUCCESS nove salas, três poderes, Arauto e vitória");
+        Application.Quit(0);
+    }
+
+    private static void SmokeFail(string message)
+    {
+        Debug.LogError("SCADRYK_SMOKE: FAIL " + message);
+        Application.Quit(1);
+    }
+#endif
 
     private void OnGUI()
     {
