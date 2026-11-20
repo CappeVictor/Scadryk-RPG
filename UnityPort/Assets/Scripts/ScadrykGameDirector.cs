@@ -1359,8 +1359,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     internal static bool TryLoadCheckpoint(string keyPrefix, out int phase, out int room)
     {
-        bool hasCheckpoint = PlayerPrefs.HasKey(keyPrefix + "Phase");
-        if (!hasCheckpoint)
+        bool hasPhase = PlayerPrefs.HasKey(keyPrefix + "Phase");
+        bool hasRoom = PlayerPrefs.HasKey(keyPrefix + "Room");
+        if (!hasPhase || !hasRoom)
         {
             phase = 0;
             room = 0;
@@ -1712,12 +1713,15 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             PlayerPrefs.SetInt(checkpointTestPrefix + "Room", 2);
             bool ignoresOrphanedRoom = !TryLoadCheckpoint(checkpointTestPrefix, out int orphanPhase, out int orphanRoom) && orphanPhase == 0 && orphanRoom == 0;
             PlayerPrefs.DeleteKey(checkpointTestPrefix + "Room");
+            PlayerPrefs.SetInt(checkpointTestPrefix + "Phase", 2);
+            bool ignoresOrphanedPhase = !TryLoadCheckpoint(checkpointTestPrefix, out int orphanedPhase, out int orphanedRoom) && orphanedPhase == 0 && orphanedRoom == 0;
+            PlayerPrefs.DeleteKey(checkpointTestPrefix + "Phase");
             WriteCheckpoint(checkpointTestPrefix, 2, 2);
             bool restoresLastPortal = TryLoadCheckpoint(checkpointTestPrefix, out int savedPhase, out int savedRoom) && savedPhase == 2 && savedRoom == 2;
             WriteCheckpoint(checkpointTestPrefix, 99, -4);
             bool clampsInvalidData = TryLoadCheckpoint(checkpointTestPrefix, out int clampedPhase, out int clampedRoom) &&
                 clampedPhase == PhaseNames.Length - 1 && clampedRoom == 0;
-            checkpointRoundTrip = newGameDefaults && ignoresOrphanedRoom && restoresLastPortal && clampsInvalidData;
+            checkpointRoundTrip = newGameDefaults && ignoresOrphanedRoom && ignoresOrphanedPhase && restoresLastPortal && clampsInvalidData;
         }
         finally
         {
@@ -1725,7 +1729,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             PlayerPrefs.DeleteKey(checkpointTestPrefix + "Room");
             PlayerPrefs.Save();
         }
-        if (!checkpointRoundTrip) { SmokeFail("Checkpoint não restaura o portal ou limita valores inválidos"); yield break; }
+        if (!checkpointRoundTrip) { SmokeFail("Checkpoint parcial não foi ignorado, ou o portal não foi restaurado/limitado"); yield break; }
         Debug.Log("SCADRYK_SMOKE: checkpoint grava, carrega, limita e limpa chaves temporárias");
         if (!SmokeCoverBlocksOnlyWhenSolid())
         { SmokeFail("Cobertura não bloqueia poderes direcionais ou gatilhos bloqueiam poderes circulares"); yield break; }
