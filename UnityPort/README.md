@@ -11,6 +11,7 @@ Registro de builds, teste de progressão e roteiro de avaliação com jogadores:
 ## Requisitos
 
 - Unity Editor `6000.6.9f1` (ver `ProjectSettings/ProjectVersion.txt`) e o módulo Windows Build Support para gerar o executável Windows.
+- Para builds Windows com backend IL2CPP, o Unity também exige Visual Studio C++ Build Tools e Windows SDK 10.0.19041 ou superior. São ferramentas de compilação; o código continua sendo editado no VS Code, sem precisar abrir o IDE Visual Studio.
 - O projeto usa Input Manager (Old), já configurado em Project Settings. Artes de cenário e inimigos estão em `Assets/Resources/ScadrykArt/`.
 
 ## Programar em C# com VS Code
