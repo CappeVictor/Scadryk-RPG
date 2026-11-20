@@ -1145,10 +1145,11 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     public void RestartCurrentRoom()
     {
-        roomDeaths++;
         BuildPhase(phaseIndex, roomIndex, false, true);
         ShowStatus("Você caiu e retornou ao começo da sala.", 2.5f);
     }
+
+    public void RecordPlayerDeath() => roomDeaths++;
 
     private static void ClearRoomProjectiles()
     {
@@ -1285,6 +1286,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         roomDeaths = 0;
         roomPowerUses[0] = 2;
         RecordInputMode("gamepad");
+        RecordPlayerDeath();
+        if (roomDeaths != 1) { SmokeFail("A derrota não foi contabilizada no instante da morte"); yield break; }
         RestartCurrentRoom();
         if (roomActiveSeconds != 17f || roomDeaths != 1 || roomPowerUses[0] != 2 || sessionInputMode != "gamepad")
         { SmokeFail("Morte reiniciou a sala mas perdeu tempo, mortes, usos de poderes ou dispositivo da sessão"); yield break; }

@@ -332,6 +332,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         {
             health = 0f;
             isDying = true;
+            if (director != null) director.RecordPlayerDeath();
             BodyVelocity = Vector2.zero;
             if (animator != null) animator.PlayDeath();
             StartCoroutine(RespawnAfterDeath());
