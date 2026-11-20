@@ -29,6 +29,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private bool isFinalBoss;
     private int finalAttackIndex;
     private int queuedFinalPattern;
+    private int queuedFinalStage;
     private int combatRole;
     private Color roleTint = Color.white;
     private float staggerUntil, exposedUntil, knockbackUntil;
@@ -168,7 +169,8 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
 
     private void BeginFinalBossAttack()
     {
-        int stage = FinalStage;
+        queuedFinalStage = FinalStage;
+        int stage = queuedFinalStage;
         queuedFinalPattern = finalAttackIndex % (stage == 1 ? 2 : 3);
         float windup = stage == 3 ? 1.18f : 1.35f;
         isWindup = true;
@@ -224,7 +226,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private void ResolveFinalBossAttack()
     {
         int pattern = queuedFinalPattern;
-        int stage = FinalStage;
+        int stage = queuedFinalStage;
         finalAttackIndex++;
         nextAttackAt = Time.time + (stage == 3 ? 1.9f : 2.25f);
         Vector2 origin = transform.position;

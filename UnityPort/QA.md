@@ -20,6 +20,7 @@
 - Cobertura dos poderes: depois de cada guardião, o smoke cria um alvo de vida alta, usa o poder recém-aprendido e exige dano mais seu efeito tático correspondente (interrupção, exposição ou empurrão), além de confirmar a recarga. Essa asserção está apenas na fonte e ainda precisa de compilação e execução no Unity Editor.
 - Pistas de exploração: mensagens de bloqueio agora variam por sala e ficam mais específicas; a costa explica a ordem farol à esquerda → sino do recife à direita. O smoke confere que as etapas não repetem o mesmo texto. Alteração ainda sem compilação ou observação no Editor.
 - Leitura do golpe de onda do Arauto: aviso, área visual no impacto e alcance de dano agora compartilham os mesmos raios (6,7 externo e 2,2 seguro), removendo uma faixa em que o jogador podia receber dano fora do efeito mostrado. Correção de código ainda sem compilação ou verificação em jogo.
+- Transição entre fases do Arauto: a fase e o padrão anunciados ficam registrados até o golpe resolver, mesmo se Nara cruzar um limiar de vida durante o aviso. Isso impede que a salva anunciada se transforme em uma versão mais forte sem novo aviso. Ainda sem validação no Editor.
 
 ## Dados observados e limites
 
