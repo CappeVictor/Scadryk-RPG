@@ -83,6 +83,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private GUIStyle titleStyle, bodyStyle, smallStyle;
     private GUIStyle centeredTitleStyle, centeredBodyStyle;
     private GUIStyle finalBossLabelStyle, memoryStyle;
+    private float cachedTextScale = -1f;
 
     public bool IsPaused => isPaused || showTitle || showOptions || victory || transitioning;
     public int PhaseIndex => phaseIndex;
@@ -1632,8 +1633,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private void EnsureStyles()
     {
-        if (titleStyle != null) return;
-        float scale = ScadrykSettings.TextScale;
+        float scale = Mathf.Clamp(ScadrykSettings.TextScale, 1f, 1.5f);
+        if (titleStyle != null && Mathf.Approximately(cachedTextScale, scale)) return;
+        cachedTextScale = scale;
         GUI.skin.button.fontSize = Mathf.RoundToInt(14f * scale);
         GUI.skin.toggle.fontSize = Mathf.RoundToInt(14f * scale);
         titleStyle = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(17f * scale), fontStyle = FontStyle.Bold, normal = { textColor = new Color(0.91f, 0.81f, 0.57f) }, alignment = TextAnchor.MiddleLeft };
