@@ -1,12 +1,15 @@
 using UnityEngine;
 
-/// <summary>Fast salt crystal fired by the basin creatures.</summary>
+/// <summary>Fast linear projectile shared by basin creatures and the Arauto.</summary>
 [RequireComponent(typeof(Rigidbody2D), typeof(CircleCollider2D))]
 public sealed class ScadrykEnemyProjectile : MonoBehaviour
 {
+    private const float ColliderRadius = 0.45f;
     private Rigidbody2D body;
     private float damage;
     private float expiresAt;
+
+    internal static float HitboxDiameter(float spriteScale) => ColliderRadius * 2f * spriteScale;
 
 #if UNITY_6000_0_OR_NEWER
     private Vector2 BodyVelocity { set => body.linearVelocity = value; }
@@ -28,7 +31,7 @@ public sealed class ScadrykEnemyProjectile : MonoBehaviour
         renderer.sortingOrder = 8;
         shard.transform.up = direction;
         var collider = shard.AddComponent<CircleCollider2D>();
-        collider.radius = 0.45f;
+        collider.radius = ColliderRadius;
         collider.isTrigger = true;
         var body = shard.AddComponent<Rigidbody2D>();
         body.gravityScale = 0f;

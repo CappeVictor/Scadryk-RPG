@@ -1336,6 +1336,32 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 if (announcedVolleyCount != 3)
                 { SmokeFail("O Arauto mudou o tamanho da salva anunciada ao cruzar de fase"); yield break; }
                 Debug.Log("SCADRYK_SMOKE: salva do Arauto permaneceu na fase anunciada durante a transição");
+
+                attackTargetField.SetValue(finalBoss, (Vector2)player.transform.position);
+                attackIndexField.SetValue(finalBoss, 1);
+                ClearSmokeAttackWarnings();
+                beginBossAttack.Invoke(finalBoss, null);
+                float starfallProjectileWidth = ScadrykEnemyProjectile.HitboxDiameter(0.48f);
+                if ((int)queuedStageField.GetValue(finalBoss) != 2 || SmokeAttackWarningCount(starfallProjectileWidth) != 1)
+                { SmokeFail("A queda de estrelas da fase 2 não anuncia seu projétil lateral com a largura correta"); yield break; }
+                resolveBossAttack.Invoke(finalBoss, null);
+                if (SmokeProjectileCount("Arauto — falling memory") != 1)
+                { SmokeFail("A queda de estrelas da fase 2 não correspondeu ao único projétil anunciado"); yield break; }
+                ClearSmokeProjectiles();
+                ClearSmokeAttackWarnings();
+                Debug.Log("SCADRYK_SMOKE: projétil lateral da queda de estrelas anunciado na fase 2");
+
+                finalBoss.TakeDamage(600f);
+                attackIndexField.SetValue(finalBoss, 1);
+                beginBossAttack.Invoke(finalBoss, null);
+                if ((int)queuedStageField.GetValue(finalBoss) != 3 || SmokeAttackWarningCount(starfallProjectileWidth) != 3)
+                { SmokeFail("A queda de estrelas da fase 3 não anuncia os três projéteis laterais"); yield break; }
+                resolveBossAttack.Invoke(finalBoss, null);
+                if (SmokeProjectileCount("Arauto — falling memory") != 3)
+                { SmokeFail("A queda de estrelas da fase 3 não correspondeu aos três projéteis anunciados"); yield break; }
+                ClearSmokeProjectiles();
+                ClearSmokeAttackWarnings();
+                Debug.Log("SCADRYK_SMOKE: três projéteis da queda de estrelas anunciados na fase 3");
                 finalBoss.TakeDamage(99999f);
             }
             if (roomIndex == 2 && (player == null || !player.HasAbility(phaseIndex)))
@@ -1414,6 +1440,39 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (!victory) { SmokeFail("Portal final não encerrou a campanha"); yield break; }
         Debug.Log("SCADRYK_SMOKE: SUCCESS nove salas, três poderes, Arauto e vitória");
         Application.Quit(0);
+    }
+
+    private static void ClearSmokeAttackWarnings()
+    {
+        foreach (ScadrykTimedVisual visual in FindObjectsByType<ScadrykTimedVisual>(FindObjectsSortMode.None))
+            if (visual != null && visual.gameObject.name == "Enemy attack warning")
+            { visual.gameObject.SetActive(false); Destroy(visual.gameObject); }
+    }
+
+    private static int SmokeAttackWarningCount(float expectedWidth)
+    {
+        int count = 0;
+        foreach (ScadrykTimedVisual visual in FindObjectsByType<ScadrykTimedVisual>(FindObjectsSortMode.None))
+        {
+            if (visual == null || !visual.gameObject.activeInHierarchy || visual.gameObject.name != "Enemy attack warning") continue;
+            if (Mathf.Abs(visual.transform.localScale.y - expectedWidth) > 0.001f) return -1;
+            count++;
+        }
+        return count;
+    }
+
+    private static int SmokeProjectileCount(string projectileName)
+    {
+        int count = 0;
+        foreach (ScadrykEnemyProjectile projectile in FindObjectsByType<ScadrykEnemyProjectile>(FindObjectsSortMode.None))
+            if (projectile != null && projectile.gameObject.activeInHierarchy && projectile.gameObject.name == projectileName) count++;
+        return count;
+    }
+
+    private static void ClearSmokeProjectiles()
+    {
+        foreach (ScadrykEnemyProjectile projectile in FindObjectsByType<ScadrykEnemyProjectile>(FindObjectsSortMode.None))
+            if (projectile != null) { projectile.gameObject.SetActive(false); Destroy(projectile.gameObject); }
     }
 
     private static void SmokeFail(string message)

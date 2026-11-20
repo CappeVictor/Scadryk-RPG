@@ -35,6 +35,7 @@
 - Pulso: o diâmetro da arte coincide com o diâmetro do raio efetivo de dano; o smoke confere a relação. Ainda sem execução ou comparação visual no Editor.
 - Ataque básico: dano e arco de espada usam a mesma pegada orientada, expandida pelo colisor inimigo; o smoke verifica limites frontal e lateral. Ainda sem execução ou avaliação manual da sensação de alcance.
 - Queda de estrelas do Arauto: aviso e impacto têm o mesmo raio de 1,75 unidade do dano; o smoke verifica alvos dentro/fora da borda. Ainda sem execução ou teste de reação no Editor.
+- Projéteis laterais da queda de estrelas: cada fase usa as mesmas quantidades/ângulos no anúncio e no disparo; o smoke exige um aviso e um projétil na fase 2 e três de cada na fase 3, com largura equivalente ao colisor. Ainda sem execução ou inspeção visual no Editor.
 - Arte de abertura: nova imagem `ScadrykTitleBackdrop.png` conecta os três biomas e é desenhada atrás do menu inicial com uma camada escura para contraste. O smoke exige que a textura seja carregada; a integração visual ainda não foi compilada ou inspecionada no Editor.
 
 ## Dados observados e limites

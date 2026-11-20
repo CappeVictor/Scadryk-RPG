@@ -7,6 +7,9 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private const float FinalWaveOuterRadius = 6.7f;
     private const float FinalWaveSafeRadius = 2.2f;
     internal const float FinalStarfallRadius = 1.75f;
+    private const float FinalVolleyAngleStep = 0.19f;
+    private const float FinalStarfallProjectileAngleStep = 0.48f;
+    private const float FinalStarfallProjectileScale = 0.48f;
     [SerializeField, Min(1f)] private float maxHealth = 60f;
     private float health, nextAttackAt, windupEndsAt;
     private float attackRange = 1.2f;
@@ -165,7 +168,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             Vector2 end = !IsBoss && combatRole == 0 ? origin + direction * 3.3f :
                 IsBoss && biomeIndex == 0 ? origin + direction * Mathf.Clamp(Vector2.Distance(origin, attackTarget) + 1.25f, 2.8f, 7.2f) : attackTarget;
             float telegraphThickness = !IsBoss && combatRole == 0 ? 0.86f :
-                !IsBoss && combatRole == 1 ? 0.31f : IsBoss && biomeIndex == 0 ? 1.4f : 0.34f;
+            !IsBoss && combatRole == 1 ? ScadrykEnemyProjectile.HitboxDiameter(0.34f) : IsBoss && biomeIndex == 0 ? 1.4f : ScadrykEnemyProjectile.HitboxDiameter(0.34f);
             if ((!IsBoss && combatRole == 0) || (IsBoss && biomeIndex == 0))
                 telegraphThickness = RootLaneVisualWidth(telegraphThickness, PlayerCollisionRadius(player));
             ScadrykEffects.TelegraphLine(origin, end, warning, telegraphThickness, windup);
@@ -187,13 +190,25 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             Vector2 direction = (attackTarget - origin).normalized;
             int halfCount = stage == 1 ? 1 : stage == 2 ? 2 : 3;
             for (int i = -halfCount; i <= halfCount; i++)
-                ScadrykEffects.TelegraphLine(origin, origin + Rotate(direction, i * 0.19f) * 7.2f, warning, 0.52f, windup);
+                ScadrykEffects.TelegraphLine(origin, origin + Rotate(direction, i * FinalVolleyAngleStep) * 7.2f, warning,
+                    ScadrykEnemyProjectile.HitboxDiameter(0.58f), windup);
         }
         else if (queuedFinalPattern == 1)
         {
             float diameter = FinalStarfallVisualDiameter;
             ScadrykEffects.Voidburst(attackTarget, diameter, windup);
             ScadrykEffects.Ring(attackTarget, diameter, warning, windup + 0.46f);
+            if (stage > 1)
+            {
+                Vector2 direction = (attackTarget - origin).normalized;
+                int count = FinalStarfallSideProjectileCount(stage);
+                for (int i = 0; i < count; i++)
+                {
+                    Vector2 shardDirection = Rotate(direction, FinalStarfallSideProjectileAngle(stage, i));
+                    ScadrykEffects.TelegraphLine(origin, origin + shardDirection * 10f, warning,
+                        ScadrykEnemyProjectile.HitboxDiameter(FinalStarfallProjectileScale), windup);
+                }
+            }
         }
         else
         {
@@ -243,7 +258,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             Sprite shot = stage == 1 ? ScadrykEffects.RootThrustSprite : stage == 2 ? ScadrykEffects.SaltShardSprite : ScadrykEffects.VoidburstSprite;
             Color color = stage == 1 ? new Color(0.66f, 1f, 0.52f) : stage == 2 ? new Color(1f, 0.84f, 0.5f) : new Color(1f, 0.72f, 0.92f);
             for (int i = -halfCount; i <= halfCount; i++)
-                ScadrykEnemyProjectile.Launch(origin + direction * 0.75f, Rotate(direction, i * 0.19f), 7.1f, 14f + stage, shot, color, 0.58f, "Arauto — remembered volley");
+                ScadrykEnemyProjectile.Launch(origin + direction * 0.75f, Rotate(direction, i * FinalVolleyAngleStep), 7.1f, 14f + stage, shot, color, 0.58f, "Arauto — remembered volley");
             ScadrykEffects.Voidburst(origin + direction * 1.1f, 2.3f, 0.26f);
         }
         else if (pattern == 1)
@@ -252,8 +267,9 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             StartCoroutine(ResolveStarfall(target));
             Vector2 direction = (target - origin).normalized;
             if (stage > 1)
-                for (int i = stage == 2 ? 0 : -1; i <= (stage == 2 ? 0 : 1); i++)
-                    ScadrykEnemyProjectile.Launch(origin, Rotate(direction, i * 0.48f), 5.4f, 14f, stage == 2 ? ScadrykEffects.SaltShardSprite : ScadrykEffects.VoidburstSprite, new Color(1f, 0.7f, 0.8f), 0.48f, "Arauto — falling memory");
+                for (int i = 0; i < FinalStarfallSideProjectileCount(stage); i++)
+                    ScadrykEnemyProjectile.Launch(origin, Rotate(direction, FinalStarfallSideProjectileAngle(stage, i)), 5.4f, 14f,
+                        stage == 2 ? ScadrykEffects.SaltShardSprite : ScadrykEffects.VoidburstSprite, new Color(1f, 0.7f, 0.8f), FinalStarfallProjectileScale, "Arauto — falling memory");
         }
         else
         {
@@ -276,6 +292,9 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
 
     internal static float FinalStarfallVisualDiameter => FinalStarfallRadius * 2f;
     internal static bool FinalStarfallHits(Vector2 target, Vector2 center) => Vector2.Distance(target, center) <= FinalStarfallRadius;
+    internal static int FinalStarfallSideProjectileCount(int stage) => stage == 2 ? 1 : stage == 3 ? 3 : 0;
+    internal static float FinalStarfallSideProjectileAngle(int stage, int index) =>
+        (index - (FinalStarfallSideProjectileCount(stage) - 1) * 0.5f) * FinalStarfallProjectileAngleStep;
 
     private void ResolveRootThrust()
     {
