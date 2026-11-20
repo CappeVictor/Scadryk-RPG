@@ -876,26 +876,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private void DrawRoomObstacles(Transform parent, int index, float x)
     {
-        Vector2[] layouts;
-        if (phaseIndex == 0)
-        {
-            if (index == 0) layouts = new[] { new Vector2(-3.4f, 2.9f), new Vector2(3.1f, -2.8f), new Vector2(4.4f, 2.1f) };
-            else if (index == 1) layouts = new[] { new Vector2(-4.0f, -2.5f), new Vector2(1.8f, 3.5f), new Vector2(4.3f, -2.8f), new Vector2(-0.4f, -3.7f) };
-            else layouts = new[] { new Vector2(-4.3f, 2.8f), new Vector2(-2.2f, -3.4f), new Vector2(3.8f, 1.9f) };
-        }
-        else if (phaseIndex == 1)
-        {
-            if (index == 0) layouts = new[] { new Vector2(-3.7f, -2.7f), new Vector2(-1.2f, 3.6f), new Vector2(4.2f, -1.9f) };
-            else if (index == 1) layouts = new[] { new Vector2(-4.1f, 0.8f), new Vector2(-1.7f, 3.7f), new Vector2(1.5f, -3.6f), new Vector2(4.4f, -0.2f) };
-            else layouts = new[] { new Vector2(-4.1f, 2.7f), new Vector2(-4.2f, -2.6f), new Vector2(4.0f, -0.5f) };
-        }
-        else
-        {
-            if (index == 0) layouts = new[] { new Vector2(-3.9f, 2.9f), new Vector2(-0.8f, -3.5f), new Vector2(3.9f, 2.5f) };
-            else if (index == 1) layouts = new[] { new Vector2(-4.3f, 3.1f), new Vector2(-4.0f, -3.2f), new Vector2(0.2f, 2.6f), new Vector2(4.2f, -2.9f) };
-            else layouts = new[] { new Vector2(-3.8f, 2.7f), new Vector2(-3.6f, -2.8f), new Vector2(4.2f, 0.8f) };
-        }
-        foreach (var offset in layouts)
+        foreach (var offset in RoomObstacleOffsets(phaseIndex, index))
         {
             Vector2 position = new Vector2(x + offset.x, offset.y);
             int variation = Mathf.Abs(Mathf.RoundToInt(offset.x * 3f + offset.y * 5f)) % 3;
@@ -908,6 +889,57 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             else
                 PlaceProp(parent, variation == 0 ? 13 : variation == 1 ? 14 : 12, "Tide-worn rock and post", position, variation == 1 ? 0.8f : 0.88f, true, new Vector2(0.78f, 0.64f), new Vector2(0f, 0.12f), ScadrykAmbientMotion.None, 1f, ((index + variation) % 2 == 0) ? 14f : -18f);
         }
+    }
+
+    internal static Vector2[] RoomObstacleOffsets(int biome, int room)
+    {
+        biome = Mathf.Clamp(biome, 0, 2);
+        room = Mathf.Clamp(room, 0, 2);
+        if (biome == 0)
+        {
+            if (room == 0) return new[] { new Vector2(-3.4f, 2.9f), new Vector2(3.1f, -2.8f), new Vector2(4.4f, 2.1f) };
+            if (room == 1) return new[] { new Vector2(-4.0f, -2.5f), new Vector2(1.8f, 3.5f), new Vector2(4.3f, -2.8f), new Vector2(-0.4f, -3.7f) };
+            return new[] { new Vector2(-4.3f, 2.8f), new Vector2(-2.2f, -3.4f), new Vector2(3.8f, 1.9f) };
+        }
+        if (biome == 1)
+        {
+            if (room == 0) return new[] { new Vector2(-3.7f, -2.7f), new Vector2(-1.2f, 3.6f), new Vector2(4.2f, -1.9f) };
+            if (room == 1) return new[] { new Vector2(-4.1f, 0.8f), new Vector2(-1.7f, 3.7f), new Vector2(1.5f, -3.6f), new Vector2(4.4f, -0.2f) };
+            return new[] { new Vector2(-4.1f, 2.7f), new Vector2(-4.2f, -2.6f), new Vector2(4.0f, -0.5f) };
+        }
+        if (room == 0) return new[] { new Vector2(-3.9f, 2.9f), new Vector2(-0.8f, -3.5f), new Vector2(3.9f, 2.5f) };
+        if (room == 1) return new[] { new Vector2(-4.3f, 3.1f), new Vector2(-4.0f, -3.2f), new Vector2(0.2f, 2.6f), new Vector2(4.2f, -2.9f) };
+        return new[] { new Vector2(-3.8f, 2.7f), new Vector2(-3.6f, -2.8f), new Vector2(4.2f, 0.8f) };
+    }
+
+    internal static bool RoomObstacleLayoutsAreDistinctAndOpen()
+    {
+        for (int biome = 0; biome < 3; biome++)
+        for (int room = 0; room < 3; room++)
+        {
+            Vector2[] layout = RoomObstacleOffsets(biome, room);
+            if (layout.Length < 3) return false;
+            foreach (Vector2 offset in layout)
+                if (Mathf.Abs(offset.x + 6.2f) < 1.25f || Mathf.Abs(offset.x - 8.05f) < 1.25f || Mathf.Abs(offset.y) > 5.2f)
+                    return false;
+
+            for (int priorBiome = 0; priorBiome <= biome; priorBiome++)
+            for (int priorRoom = 0; priorRoom < 3; priorRoom++)
+            {
+                if (priorBiome == biome && priorRoom >= room) break;
+                Vector2[] prior = RoomObstacleOffsets(priorBiome, priorRoom);
+                if (prior.Length != layout.Length) continue;
+                bool same = true;
+                foreach (Vector2 offset in layout)
+                {
+                    bool found = false;
+                    foreach (Vector2 candidate in prior) if (candidate == offset) { found = true; break; }
+                    if (!found) { same = false; break; }
+                }
+                if (same) return false;
+            }
+        }
+        return true;
     }
 
     private void PlaceFallenLog(Transform parent, Vector2 position, int room, int variant)
@@ -1430,6 +1462,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (!SmokeCoverBlocksOnlyWhenSolid())
         { SmokeFail("Cobertura sólida e gatilhos não diferem ao bloquear ataques lineares"); yield break; }
         Debug.Log("SCADRYK_SMOKE: cobertura sólida bloqueia a linha e gatilho não bloqueia");
+        if (!RoomObstacleLayoutsAreDistinctAndOpen())
+        { SmokeFail("As nove salas repetem obstáculos ou bloqueiam as faixas de entrada e saída"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: nove salas têm obstáculos distintos e mantêm entradas e passagens abertas");
         if (Mathf.Abs(ScadrykEnemyHealth.OpeningAttackDelay(0, false) - 0.3f) > 0.001f ||
             ScadrykEnemyHealth.OpeningAttackDelay(1, false) <= ScadrykEnemyHealth.OpeningAttackDelay(0, false) ||
             ScadrykEnemyHealth.OpeningAttackDelay(2, false) <= ScadrykEnemyHealth.OpeningAttackDelay(1, false) ||

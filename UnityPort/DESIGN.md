@@ -87,3 +87,5 @@ As referências de outros jogos orientam clareza, descoberta e ritmo. Não repro
 - **Saída segura do remapeamento (20/11/2026):** Esc/Start cancela apenas a captura da tecla ou botão quando há uma ação pendente; uma segunda pressão fecha as opções. O smoke cobre os estados booleanos; ainda falta validar teclado e controle físico no Editor.
 
 - **Cadência de abertura do combate (20/11/2026):** em grupos, cada posição recebe uma janela inicial crescente, e um escalonador reserva o próximo começo de ataque com pelo menos 0,52 s entre avisos, mesmo se um Eco só entrar no alcance mais tarde. Guardiões e Arauto têm 1,25 s antes de começarem. Dano, duração dos avisos e recargas não mudam; o smoke cobre os intervalos, mas ainda é preciso observar sobreposição visual e sensação no Editor.
+
+- **Rotas das nove salas (20/11/2026):** os obstáculos sólidos de cada arena ficam em uma tabela única por bioma e sala. O smoke confirma que os nove arranjos diferem, mantêm o surgimento e a saída livres e ficam dentro da área caminhável; isso garante espaço para contornar cobertura, mas não substitui verificar o fluxo das rotas em jogo.
