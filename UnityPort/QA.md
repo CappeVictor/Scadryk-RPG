@@ -100,4 +100,4 @@ Critérios para revisão: nenhum dano sem aviso reconhecível; nenhum poder fica
 
 - Cancelamento de remapeamento: Esc ou Start durante a captura cancela somente a seleção do novo vínculo e mantém as opções abertas; outro toque fecha o menu. O smoke verifica estados de captura ativos/inativos; sequência física no controle e teclado ainda aguarda Editor.
 
-- Mira no controle: ataques pelo gamepad não devem seguir o cursor do mouse quando o analógico direito está neutro. Agora a mira usa o analógico direito, acompanha o analógico esquerdo ao andar, e conserva a última direção se Nara estiver parada. O smoke verifica essas três prioridades; compilação, execução e teste físico continuam pendentes no Unity Editor.
+- Mira no controle: ataques pelo gamepad não devem seguir o cursor do mouse quando o analógico direito está neutro. A mira acompanha o analógico esquerdo como fallback até o jogador usar a mira twin-stick; depois disso, conserva a direção independente ao soltar o analógico direito. O smoke verifica fallback, persistência e prioridade da mira; compilação, execução e teste físico continuam pendentes no Unity Editor.

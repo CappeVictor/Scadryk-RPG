@@ -44,6 +44,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     private const float BasicAttackWindup = 0.12f;
     private Vector3 lastMousePosition;
     private bool usingGamepadAim;
+    private bool hasIndependentGamepadAim;
     private readonly HashSet<ScadrykTerrainZone> terrainZones = new HashSet<ScadrykTerrainZone>();
     private float terrainSpeedScale = 1f;
 
@@ -156,16 +157,18 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         Vector2 stick = new Vector2(Input.GetAxisRaw("Scadryk Aim X"), -Input.GetAxisRaw("Scadryk Aim Y"));
         if (stick.sqrMagnitude > 0.09f)
         {
-            facing = ResolveGamepadFacing(facing, stick, Vector2.zero);
+            hasIndependentGamepadAim = true;
+            facing = ResolveGamepadFacing(facing, stick, Vector2.zero, true);
             usingGamepadAim = true;
             if (director != null) director.RecordInputMode("gamepad");
             return;
         }
-        if (keyboardMouseInput) usingGamepadAim = false;
+        if (keyboardMouseInput) { usingGamepadAim = false; hasIndependentGamepadAim = false; }
         if (gamepadInput) usingGamepadAim = true;
         if (usingGamepadAim)
         {
-            facing = ResolveGamepadFacing(facing, Vector2.zero, new Vector2(Input.GetAxisRaw("Scadryk Move X"), Input.GetAxisRaw("Scadryk Move Y")));
+            facing = ResolveGamepadFacing(facing, Vector2.zero,
+                new Vector2(Input.GetAxisRaw("Scadryk Move X"), Input.GetAxisRaw("Scadryk Move Y")), hasIndependentGamepadAim);
             return;
         }
         if (keyboardMouseInput && director != null) director.RecordInputMode("keyboard_mouse");
@@ -176,10 +179,10 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         if (aim.sqrMagnitude > 0.03f) facing = aim.normalized;
     }
 
-    internal static Vector2 ResolveGamepadFacing(Vector2 lastFacing, Vector2 aimStick, Vector2 moveStick)
+    internal static Vector2 ResolveGamepadFacing(Vector2 lastFacing, Vector2 aimStick, Vector2 moveStick, bool hasIndependentAim)
     {
         if (aimStick.sqrMagnitude > 0.09f) return aimStick.normalized;
-        if (moveStick.sqrMagnitude > 0.01f) return moveStick.normalized;
+        if (!hasIndependentAim && moveStick.sqrMagnitude > 0.01f) return moveStick.normalized;
         return lastFacing.sqrMagnitude > 0.001f ? lastFacing.normalized : Vector2.right;
     }
 

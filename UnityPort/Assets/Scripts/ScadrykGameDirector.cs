@@ -1341,11 +1341,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             FocusLossRequiresPause(false, false, false, false, false, true))
         { SmokeFail("A pausa por perda de foco foi aplicada em estado incorreto"); yield break; }
         Debug.Log("SCADRYK_SMOKE: perda de foco pausa só o jogo ativo");
-        if (Vector2.Distance(ScadrykPlayerController.ResolveGamepadFacing(Vector2.up, Vector2.zero, Vector2.zero), Vector2.up) > 0.001f ||
-            Vector2.Distance(ScadrykPlayerController.ResolveGamepadFacing(Vector2.up, Vector2.zero, Vector2.right), Vector2.right) > 0.001f ||
-            Vector2.Distance(ScadrykPlayerController.ResolveGamepadFacing(Vector2.up, Vector2.left, Vector2.right), Vector2.left) > 0.001f)
+        if (Vector2.Distance(ScadrykPlayerController.ResolveGamepadFacing(Vector2.up, Vector2.zero, Vector2.zero, false), Vector2.up) > 0.001f ||
+            Vector2.Distance(ScadrykPlayerController.ResolveGamepadFacing(Vector2.up, Vector2.zero, Vector2.right, false), Vector2.right) > 0.001f ||
+            Vector2.Distance(ScadrykPlayerController.ResolveGamepadFacing(Vector2.up, Vector2.zero, Vector2.right, true), Vector2.up) > 0.001f ||
+            Vector2.Distance(ScadrykPlayerController.ResolveGamepadFacing(Vector2.up, Vector2.left, Vector2.right, true), Vector2.left) > 0.001f)
         { SmokeFail("A mira do controle não conserva direção nem prioriza o analógico direito"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: mira do controle conserva direção e prioriza o analógico direito");
+        Debug.Log("SCADRYK_SMOKE: mira do controle preserva o twin-stick e tem fallback de movimento");
         if (!RebindingCanBeCancelled(-1, 2) || !RebindingCanBeCancelled(4, -1) || RebindingCanBeCancelled(-1, -1))
         { SmokeFail("Cancelar captura de controle não distingue remapeamento ativo do menu normal"); yield break; }
         Debug.Log("SCADRYK_SMOKE: Escape/Start cancela captura sem fechar opções");

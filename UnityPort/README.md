@@ -38,7 +38,7 @@ A abertura de uma nova jornada apresenta o chamado de Nara. Nas chegadas tranqui
 
 Há trilhas ambientes sintetizadas para os três biomas e para o confronto final; as mudanças entre elas fazem uma transição cruzada de 1,25 s. Também há sinais sonoros originais para ações de Nara, avisos, impactos, dano, portais e para as memórias que Nima compartilha. Os avisos visuais continuam presentes quando o volume está em zero. O mixer aplica os ajustes de volume imediatamente.
 
-O controle usa analógico esquerdo para movimento e direito para mira; A ataca, B esquiva, X usa o pulso, Y interage, LB/RB/Back ativam os três poderes e Start pausa. Se o analógico direito estiver parado, a mira acompanha a direção do movimento; sem movimento, mantém a última direção, para que um ataque pelo controle não dependa do cursor do mouse. A correspondência dos botões e eixos pode variar conforme o controle e o driver do Windows; essa etapa ainda precisa de teste com dispositivos físicos variados.
+O controle usa analógico esquerdo para movimento e direito para mira; A ataca, B esquiva, X usa o pulso, Y interage, LB/RB/Back ativam os três poderes e Start pausa. Antes de usar o analógico direito, a mira acompanha o movimento; depois que o jogador mira com ele, a direção fica independente e é conservada ao soltá-lo. Assim, atacar pelo controle não depende do cursor do mouse e mantém a mira twin-stick. A correspondência dos botões e eixos pode variar conforme o controle e o driver do Windows; essa etapa ainda precisa de teste com dispositivos físicos variados.
 
 ## Controles
 
