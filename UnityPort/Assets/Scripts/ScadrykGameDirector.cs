@@ -65,6 +65,17 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         "A bacia está imóvel, mas o sal ainda se recorda da maré.", "Dois cristais guardam a rota; o Pulso pode fazê-los cantar.", "O zelador do sal protege uma lembrança que não é sua.",
         "Na costa, as badaladas cessaram antes da última onda.", "Ressoar o farol primeiro; o sino do recife responderá depois.", "O Arauto reuniu os três silêncios para esconder a verdade."
     };
+    private static readonly string[] GuardianNames = { "A Raiz-Mor", "A Vigia do Sal", "O Vigia do Coro" };
+    private static readonly string[] GuardianIntroductions = {
+        "A Raiz-Mor: sem mim, os nomes voltam à correnteza.",
+        "A Vigia do Sal: a maré ainda não pode voltar.",
+        "O Vigia do Coro: os sinos devolverão a dor."
+    };
+    private static readonly string[] GuardianMemories = {
+        "A Raiz-Mor entrega a Nara o Crescente e o nome de quem guardava a comporta.",
+        "A Vigia do Sal devolve o Estouro e a lembrança da última maré suspensa.",
+        "O Vigia do Coro entrega o Rompante e revela que o Arauto mandou calar os sinos para poupar os vivos."
+    };
     private static readonly string[] BasinWitnessLines = {
         "Sou Nima, uma voz devolvida pelas raízes. O guardião não protegia a comporta: tentava manter minha última lembrança presa.",
         "O sal ainda segura a onda no instante em que ela partiu. Faça os cristais responderem; a água precisa voltar a seguir."
@@ -453,8 +464,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             System.Array.Clear(roomPowerUses, 0, roomPowerUses.Length);
         }
         hintStage = 0;
-        statusMessage = RoomStories[phaseIndex * RoomsPerPhase + roomIndex];
-        statusUntil = Time.time + 6f;
+        statusMessage = roomIndex == RoomsPerPhase - 1 ? GuardianIntroductions[phaseIndex] : RoomStories[phaseIndex * RoomsPerPhase + roomIndex];
+        statusUntil = Time.time + (roomIndex == RoomsPerPhase - 1 ? 8f : 6f);
     }
 
     private void BuildRoomAnchors()
@@ -943,7 +954,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             float angle = (Mathf.PI * 2f * i / Mathf.Max(1, count)) + 0.3f;
             float radius = boss ? 2.5f : 3.1f + (i % 2) * 0.7f;
             Vector2 position = roomCenter + new Vector2(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius);
-            var enemy = new GameObject(boss ? "Phase guardian" : roleNames[role] + " — " + PhaseNames[phaseIndex]);
+            var enemy = new GameObject(boss ? GuardianNames[phaseIndex] : roleNames[role] + " — " + PhaseNames[phaseIndex]);
             enemy.transform.SetParent(levelRoot.transform);
             enemy.transform.position = position;
             enemy.transform.localScale = Vector3.one * (boss ? 1.85f : role == 0 ? 0.94f : role == 1 ? 0.78f : role == 2 ? 1.08f : 0.86f);
@@ -998,8 +1009,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             int powerIndex = Mathf.Clamp(enemy.BiomeIndex, 0, powers.Length - 1);
             if (worldSecret != null && RequiredWorldSecretPower() == powerIndex) worldSecretHintShown = false;
             acquiredPower = "Novo poder adquirido: " + powers[powerIndex] + " (" + InputBinding(powerIndex + 3) + ").";
-            if (powerIndex == 0) ShowMemory("As raízes se abrem. O primeiro zelador entrega a Nara o Crescente e o nome de quem guardava a comporta.", 7f);
-            else if (powerIndex == 1) ShowMemory("O sal volta a brilhar. A segunda guardiã devolve o Estouro e a lembrança da última maré.", 7f);
+            ShowMemory(GuardianMemories[powerIndex], 7f);
         }
 
         enemiesRemaining = Mathf.Max(0, enemiesRemaining - 1);
@@ -1200,7 +1210,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         yield return new WaitForSeconds(0.35f);
         transitionFade = 0f;
         transitioning = false;
-        ShowStatus("Você chegou a: " + PhaseNames[phaseIndex] + ".", 3f);
+        if (roomIndex == RoomsPerPhase - 1) ShowStatus(GuardianIntroductions[phaseIndex], 8f);
+        else ShowStatus("Você chegou a: " + PhaseNames[phaseIndex] + ".", 3f);
     }
 
     private IEnumerator TransitionToVictory()
@@ -1378,6 +1389,15 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             EnemyRoleForRoom(7, 0) != 1 || EnemyRoleForRoom(7, 1) != 1 || EnemyRoleForRoom(7, 2) != 2 || EnemyRoleForRoom(7, 3) != 3)
         { SmokeFail("As composições dos encontros de quatro inimigos perderam sua identidade tática"); yield break; }
         Debug.Log("SCADRYK_SMOKE: equipes de bosque, sal e costa têm papéis próprios");
+        if (GuardianNames.Length != 3 || GuardianIntroductions.Length != 3 || GuardianMemories.Length != 3)
+        { SmokeFail("Cada bioma precisa de nome, fala e memória próprios para o guardião"); yield break; }
+        for (int guardian = 0; guardian < GuardianNames.Length; guardian++)
+            if (string.IsNullOrWhiteSpace(GuardianNames[guardian]) || !GuardianIntroductions[guardian].StartsWith(GuardianNames[guardian]) ||
+                !GuardianMemories[guardian].Contains(GuardianNames[guardian]))
+            { SmokeFail("Apresentação e lembrança não correspondem ao guardião " + guardian); yield break; }
+        if (GuardianNames[0] == GuardianNames[1] || GuardianNames[1] == GuardianNames[2] || GuardianNames[0] == GuardianNames[2])
+        { SmokeFail("Os guardiões dos três biomas precisam de identidades distintas"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: guardiões recebem identidades e memórias próprias");
         ScadrykCue laneCue = ScadrykEnemyHealth.WarningCueFor(0, false, false, 0);
         ScadrykCue volleyCue = ScadrykEnemyHealth.WarningCueFor(0, false, false, 1);
         ScadrykCue areaCue = ScadrykEnemyHealth.WarningCueFor(0, false, false, 2);
