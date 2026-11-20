@@ -8,8 +8,13 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private const float FinalWaveSafeRadius = 2.2f;
     internal const float FinalStarfallRadius = 1.75f;
     private const float FinalVolleyAngleStep = 0.19f;
+    private const float FinalVolleyLength = 7.2f;
+    private const float FinalVolleySpeed = 7.1f;
+    private const float FinalVolleySpawnOffset = 0.75f;
     private const float FinalStarfallProjectileAngleStep = 0.48f;
     private const float FinalStarfallProjectileScale = 0.48f;
+    private const float FinalStarfallProjectileLength = 10f;
+    private const float FinalStarfallProjectileSpeed = 5.4f;
     [SerializeField, Min(1f)] private float maxHealth = 60f;
     private float health, nextAttackAt, windupEndsAt;
     private float attackRange = 1.2f;
@@ -162,6 +167,17 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             ScadrykEffects.Ring(origin, 6.4f, warning, windup);
         else if (IsBoss && biomeIndex == 2)
             ScadrykEffects.Ring(origin, 10.6f, warning, windup);
+        else if (IsBoss && biomeIndex == 1)
+        {
+            Vector2 direction = (attackTarget - origin).normalized;
+            float length = CrystalVolleyLength(origin, attackTarget);
+            for (int i = -1; i <= 1; i++)
+            {
+                Vector2 shardDirection = Rotate(direction, i * 0.32f);
+                ScadrykEffects.TelegraphLine(origin, origin + shardDirection * length, warning,
+                    ScadrykEnemyProjectile.HitboxDiameter(0.34f), windup);
+            }
+        }
         else
         {
             Vector2 direction = (attackTarget - origin).normalized;
@@ -190,7 +206,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             Vector2 direction = (attackTarget - origin).normalized;
             int halfCount = stage == 1 ? 1 : stage == 2 ? 2 : 3;
             for (int i = -halfCount; i <= halfCount; i++)
-                ScadrykEffects.TelegraphLine(origin, origin + Rotate(direction, i * FinalVolleyAngleStep) * 7.2f, warning,
+                ScadrykEffects.TelegraphLine(origin, origin + Rotate(direction, i * FinalVolleyAngleStep) * FinalVolleyLength, warning,
                     ScadrykEnemyProjectile.HitboxDiameter(0.58f), windup);
         }
         else if (queuedFinalPattern == 1)
@@ -205,7 +221,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
                 for (int i = 0; i < count; i++)
                 {
                     Vector2 shardDirection = Rotate(direction, FinalStarfallSideProjectileAngle(stage, i));
-                    ScadrykEffects.TelegraphLine(origin, origin + shardDirection * 10f, warning,
+                    ScadrykEffects.TelegraphLine(origin, origin + shardDirection * FinalStarfallProjectileLength, warning,
                         ScadrykEnemyProjectile.HitboxDiameter(FinalStarfallProjectileScale), windup);
                 }
             }
@@ -258,7 +274,8 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             Sprite shot = stage == 1 ? ScadrykEffects.RootThrustSprite : stage == 2 ? ScadrykEffects.SaltShardSprite : ScadrykEffects.VoidburstSprite;
             Color color = stage == 1 ? new Color(0.66f, 1f, 0.52f) : stage == 2 ? new Color(1f, 0.84f, 0.5f) : new Color(1f, 0.72f, 0.92f);
             for (int i = -halfCount; i <= halfCount; i++)
-                ScadrykEnemyProjectile.Launch(origin + direction * 0.75f, Rotate(direction, i * FinalVolleyAngleStep), 7.1f, 14f + stage, shot, color, 0.58f, "Arauto — remembered volley");
+                ScadrykEnemyProjectile.Launch(origin + direction * FinalVolleySpawnOffset, Rotate(direction, i * FinalVolleyAngleStep), FinalVolleySpeed, 14f + stage, shot, color, 0.58f, "Arauto — remembered volley",
+                    Mathf.Max(0f, FinalVolleyLength - FinalVolleySpawnOffset - ScadrykEnemyProjectile.HitboxRadius(0.58f)));
             ScadrykEffects.Voidburst(origin + direction * 1.1f, 2.3f, 0.26f);
         }
         else if (pattern == 1)
@@ -268,8 +285,9 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             Vector2 direction = (target - origin).normalized;
             if (stage > 1)
                 for (int i = 0; i < FinalStarfallSideProjectileCount(stage); i++)
-                    ScadrykEnemyProjectile.Launch(origin, Rotate(direction, FinalStarfallSideProjectileAngle(stage, i)), 5.4f, 14f,
-                        stage == 2 ? ScadrykEffects.SaltShardSprite : ScadrykEffects.VoidburstSprite, new Color(1f, 0.7f, 0.8f), FinalStarfallProjectileScale, "Arauto — falling memory");
+                    ScadrykEnemyProjectile.Launch(origin, Rotate(direction, FinalStarfallSideProjectileAngle(stage, i)), FinalStarfallProjectileSpeed, 14f,
+                        stage == 2 ? ScadrykEffects.SaltShardSprite : ScadrykEffects.VoidburstSprite, new Color(1f, 0.7f, 0.8f), FinalStarfallProjectileScale, "Arauto — falling memory",
+                        FinalStarfallProjectileLength - ScadrykEnemyProjectile.HitboxRadius(FinalStarfallProjectileScale));
         }
         else
         {
@@ -318,14 +336,21 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         Vector2 direction = ((Vector2)attackTarget - (Vector2)transform.position).normalized;
         int shardCount = IsBoss ? 3 : 1;
         float spread = IsBoss ? 0.32f : 0f;
+        float speed = IsBoss ? 7.5f : 6.7f;
+        float travelDistance = IsBoss ? CrystalVolleyLength(transform.position, attackTarget) : Vector2.Distance(transform.position, attackTarget);
         for (int i = 0; i < shardCount; i++)
         {
             float offset = shardCount == 1 ? 0f : (i - 1) * spread;
             Vector2 shardDirection = Rotate(direction, offset);
-            ScadrykEnemyProjectile.Launch(transform.position + (Vector3)(shardDirection * 0.55f), shardDirection, IsBoss ? 7.5f : 6.7f, IsBoss ? 15f : 11f,
-                biomeIndex == 0 ? ScadrykEffects.RootThrustSprite : biomeIndex == 2 ? ScadrykEffects.BellPulseSprite : ScadrykEffects.SaltShardSprite);
+            ScadrykEnemyProjectile.Launch(transform.position + (Vector3)(shardDirection * 0.55f), shardDirection, speed, IsBoss ? 15f : 11f,
+                biomeIndex == 0 ? ScadrykEffects.RootThrustSprite : biomeIndex == 2 ? ScadrykEffects.BellPulseSprite : ScadrykEffects.SaltShardSprite,
+                size: 0.34f, projectileName: "Salt crystal shard",
+                travelDistance: Mathf.Max(0f, travelDistance - 0.55f - ScadrykEnemyProjectile.HitboxRadius(0.34f)));
         }
     }
+
+    private static float CrystalVolleyLength(Vector2 origin, Vector2 target) =>
+        Mathf.Clamp(Vector2.Distance(origin, target) + 1.25f, 2.8f, 7.2f);
 
     private void ResolveAreaPulse()
     {

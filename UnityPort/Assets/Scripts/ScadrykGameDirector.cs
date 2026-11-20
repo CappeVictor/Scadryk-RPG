@@ -1326,16 +1326,21 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 { SmokeFail("O teste não cruzou o limiar de fase durante o aviso do Arauto"); yield break; }
                 resolveBossAttack.Invoke(finalBoss, null);
                 int announcedVolleyCount = 0;
+                bool volleyRangeMatchesWarning = true;
                 foreach (ScadrykEnemyProjectile projectile in FindObjectsByType<ScadrykEnemyProjectile>(FindObjectsSortMode.None))
                 {
                     if (projectile == null) continue;
-                    if (projectile.gameObject.name == "Arauto — remembered volley") announcedVolleyCount++;
+                    if (projectile.gameObject.name == "Arauto — remembered volley")
+                    {
+                        announcedVolleyCount++;
+                        if (Mathf.Abs(projectile.TravelDistanceLimit - (7.2f - 0.75f - ScadrykEnemyProjectile.HitboxRadius(0.58f))) > 0.01f) volleyRangeMatchesWarning = false;
+                    }
                     projectile.gameObject.SetActive(false);
                     Destroy(projectile.gameObject);
                 }
-                if (announcedVolleyCount != 3)
-                { SmokeFail("O Arauto mudou o tamanho da salva anunciada ao cruzar de fase"); yield break; }
-                Debug.Log("SCADRYK_SMOKE: salva do Arauto permaneceu na fase anunciada durante a transição");
+                if (announcedVolleyCount != 3 || !volleyRangeMatchesWarning)
+                { SmokeFail("A salva do Arauto mudou de fase ou seu alcance excedeu o aviso"); yield break; }
+                Debug.Log("SCADRYK_SMOKE: salva do Arauto manteve fase e alcance dentro do aviso");
 
                 attackTargetField.SetValue(finalBoss, (Vector2)player.transform.position);
                 attackIndexField.SetValue(finalBoss, 1);
@@ -1345,8 +1350,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 if ((int)queuedStageField.GetValue(finalBoss) != 2 || SmokeAttackWarningCount(starfallProjectileWidth) != 1)
                 { SmokeFail("A queda de estrelas da fase 2 não anuncia seu projétil lateral com a largura correta"); yield break; }
                 resolveBossAttack.Invoke(finalBoss, null);
-                if (SmokeProjectileCount("Arauto — falling memory") != 1)
-                { SmokeFail("A queda de estrelas da fase 2 não correspondeu ao único projétil anunciado"); yield break; }
+                if (SmokeProjectileCount("Arauto — falling memory") != 1 || !SmokeProjectileRangeMatches("Arauto — falling memory", 10f - ScadrykEnemyProjectile.HitboxRadius(0.48f)))
+                { SmokeFail("A queda de estrelas da fase 2 não correspondeu ao aviso ou excedeu seu alcance"); yield break; }
                 ClearSmokeProjectiles();
                 ClearSmokeAttackWarnings();
                 Debug.Log("SCADRYK_SMOKE: projétil lateral da queda de estrelas anunciado na fase 2");
@@ -1357,8 +1362,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 if ((int)queuedStageField.GetValue(finalBoss) != 3 || SmokeAttackWarningCount(starfallProjectileWidth) != 3)
                 { SmokeFail("A queda de estrelas da fase 3 não anuncia os três projéteis laterais"); yield break; }
                 resolveBossAttack.Invoke(finalBoss, null);
-                if (SmokeProjectileCount("Arauto — falling memory") != 3)
-                { SmokeFail("A queda de estrelas da fase 3 não correspondeu aos três projéteis anunciados"); yield break; }
+                if (SmokeProjectileCount("Arauto — falling memory") != 3 || !SmokeProjectileRangeMatches("Arauto — falling memory", 10f - ScadrykEnemyProjectile.HitboxRadius(0.48f)))
+                { SmokeFail("A queda de estrelas da fase 3 não correspondeu aos avisos ou excedeu seu alcance"); yield break; }
                 ClearSmokeProjectiles();
                 ClearSmokeAttackWarnings();
                 Debug.Log("SCADRYK_SMOKE: três projéteis da queda de estrelas anunciados na fase 3");
@@ -1467,6 +1472,18 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         foreach (ScadrykEnemyProjectile projectile in FindObjectsByType<ScadrykEnemyProjectile>(FindObjectsSortMode.None))
             if (projectile != null && projectile.gameObject.activeInHierarchy && projectile.gameObject.name == projectileName) count++;
         return count;
+    }
+
+    private static bool SmokeProjectileRangeMatches(string projectileName, float expectedRange)
+    {
+        int count = 0;
+        foreach (ScadrykEnemyProjectile projectile in FindObjectsByType<ScadrykEnemyProjectile>(FindObjectsSortMode.None))
+        {
+            if (projectile == null || !projectile.gameObject.activeInHierarchy || projectile.gameObject.name != projectileName) continue;
+            count++;
+            if (Mathf.Abs(projectile.TravelDistanceLimit - expectedRange) > 0.01f) return false;
+        }
+        return count > 0;
     }
 
     private static void ClearSmokeProjectiles()

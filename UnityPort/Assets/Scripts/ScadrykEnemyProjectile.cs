@@ -8,8 +8,11 @@ public sealed class ScadrykEnemyProjectile : MonoBehaviour
     private Rigidbody2D body;
     private float damage;
     private float expiresAt;
+    private float travelDistanceLimit;
+    internal float TravelDistanceLimit => travelDistanceLimit;
 
     internal static float HitboxDiameter(float spriteScale) => ColliderRadius * 2f * spriteScale;
+    internal static float HitboxRadius(float spriteScale) => ColliderRadius * spriteScale;
 
 #if UNITY_6000_0_OR_NEWER
     private Vector2 BodyVelocity { set => body.linearVelocity = value; }
@@ -17,7 +20,7 @@ public sealed class ScadrykEnemyProjectile : MonoBehaviour
     private Vector2 BodyVelocity { set => body.velocity = value; }
 #endif
 
-    public static void Launch(Vector2 position, Vector2 direction, float speed, float damage, Sprite projectileSprite = null, Color? tint = null, float size = 0.34f, string projectileName = "Salt crystal shard")
+    public static void Launch(Vector2 position, Vector2 direction, float speed, float damage, Sprite projectileSprite = null, Color? tint = null, float size = 0.34f, string projectileName = "Salt crystal shard", float travelDistance = -1f)
     {
         var shard = new GameObject(projectileName);
         ScadrykGameDirector director = FindAnyObjectByType<ScadrykGameDirector>();
@@ -38,14 +41,16 @@ public sealed class ScadrykEnemyProjectile : MonoBehaviour
         body.bodyType = RigidbodyType2D.Kinematic;
         body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
         var projectile = shard.AddComponent<ScadrykEnemyProjectile>();
-        projectile.Configure(direction, speed, damage);
+        projectile.Configure(direction, speed, damage, travelDistance);
     }
 
-    private void Configure(Vector2 direction, float speed, float hitDamage)
+    private void Configure(Vector2 direction, float speed, float hitDamage, float travelDistance)
     {
         body = GetComponent<Rigidbody2D>();
         damage = hitDamage;
-        expiresAt = Time.time + 3.2f;
+        travelDistanceLimit = travelDistance >= 0f && speed > 0f ? travelDistance : Mathf.Max(0f, speed) * 3.2f;
+        float lifetime = speed > 0f ? travelDistanceLimit / speed : 3.2f;
+        expiresAt = Time.time + lifetime;
         BodyVelocity = direction.normalized * speed;
     }
 
