@@ -85,3 +85,5 @@ As referências de outros jogos orientam clareza, descoberta e ritmo. Não repro
 - **Recuperar comandos (20/11/2026):** botões Padrões nas abas Teclas e Controle apagam somente os vínculos daquele dispositivo, devolvendo os valores padrão por fallback. O smoke verifica o layout compacto; persistência e interação física seguem sem validação no Editor.
 
 - **Saída segura do remapeamento (20/11/2026):** Esc/Start cancela apenas a captura da tecla ou botão quando há uma ação pendente; uma segunda pressão fecha as opções. O smoke cobre os estados booleanos; ainda falta validar teclado e controle físico no Editor.
+
+- **Cadência de abertura do combate (20/11/2026):** em grupos, cada posição recebe uma janela inicial crescente, e um escalonador reserva o próximo começo de ataque com pelo menos 0,52 s entre avisos, mesmo se um Eco só entrar no alcance mais tarde. Guardiões e Arauto têm 1,25 s antes de começarem. Dano, duração dos avisos e recargas não mudam; o smoke cobre os intervalos, mas ainda é preciso observar sobreposição visual e sensação no Editor.

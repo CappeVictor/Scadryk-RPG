@@ -90,6 +90,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private string memoryText;
     private float memoryUntil;
     private float roomActiveSeconds;
+    private float nextOpeningAttackSlotAt;
     private int roomDeaths;
     private int unclearAttackMarks;
     private string sessionInputMode = "unknown";
@@ -415,6 +416,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private void BuildPhase(int newPhase, int newRoom, bool newGame, bool preserveRoomSession = false)
     {
         phaseGuardian = null;
+        nextOpeningAttackSlotAt = 0f;
         if (levelRoot != null && !preserveRoomSession) RecordRoomSession();
         ClearRoomProjectiles();
         if (levelRoot != null) Destroy(levelRoot);
@@ -977,7 +979,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             enemy.AddComponent<ScadrykDepthSort>().SetBias(4);
             enemy.AddComponent<ScadrykActorAnimator>().SetVisual(enemyVisual.transform, enemyVolumeRenderer);
             var health = enemy.AddComponent<ScadrykEnemyHealth>();
-            health.Configure(boss ? 320f + phaseIndex * 80f : 72f + phaseIndex * 12f, boss ? 1.55f : 1.9f + phaseIndex * 0.1f, boss, phaseIndex, frames, role);
+            health.Configure(boss ? 320f + phaseIndex * 80f : 72f + phaseIndex * 12f, boss ? 1.55f : 1.9f + phaseIndex * 0.1f,
+                boss, phaseIndex, frames, role, ScadrykEnemyHealth.OpeningAttackDelay(i, boss));
             if (boss) phaseGuardian = health;
             enemy.AddComponent<ScadrykHealthBar>().Configure(false, boss, boss ? 1.45f : 1.22f);
         }
@@ -990,6 +993,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (roomId == 7) return enemyIndex switch { 0 => 1, 1 => 1, 2 => 2, _ => 3 };
         return enemyIndex % 4;
     }
+
+    internal float ScheduleOpeningAttack(float requestedAt) =>
+        ScadrykEnemyHealth.ReserveOpeningAttackSlot(ref nextOpeningAttackSlotAt, requestedAt);
 
     public void OnEnemyDefeated(ScadrykEnemyHealth enemy)
     {
@@ -1424,6 +1430,22 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (!SmokeCoverBlocksOnlyWhenSolid())
         { SmokeFail("Cobertura sólida e gatilhos não diferem ao bloquear ataques lineares"); yield break; }
         Debug.Log("SCADRYK_SMOKE: cobertura sólida bloqueia a linha e gatilho não bloqueia");
+        if (Mathf.Abs(ScadrykEnemyHealth.OpeningAttackDelay(0, false) - 0.3f) > 0.001f ||
+            ScadrykEnemyHealth.OpeningAttackDelay(1, false) <= ScadrykEnemyHealth.OpeningAttackDelay(0, false) ||
+            ScadrykEnemyHealth.OpeningAttackDelay(2, false) <= ScadrykEnemyHealth.OpeningAttackDelay(1, false) ||
+            ScadrykEnemyHealth.OpeningAttackDelay(3, false) <= ScadrykEnemyHealth.OpeningAttackDelay(2, false) ||
+            Mathf.Abs(ScadrykEnemyHealth.OpeningAttackDelay(0, true) - 1.25f) > 0.001f)
+        { SmokeFail("Os primeiros avisos de ataque dos encontros não estão espaçados"); yield break; }
+        float nextOpeningSlot = 0f;
+        float firstOpeningAttack = ScadrykEnemyHealth.ReserveOpeningAttackSlot(ref nextOpeningSlot, 0.3f);
+        float secondOpeningAttack = ScadrykEnemyHealth.ReserveOpeningAttackSlot(ref nextOpeningSlot, 0.82f);
+        float lateOpeningAttack = ScadrykEnemyHealth.ReserveOpeningAttackSlot(ref nextOpeningSlot, 5f);
+        float followingLateAttack = ScadrykEnemyHealth.ReserveOpeningAttackSlot(ref nextOpeningSlot, 5.1f);
+        if (Mathf.Abs(firstOpeningAttack - 0.3f) > 0.001f || Mathf.Abs(secondOpeningAttack - 0.82f) > 0.001f ||
+            Mathf.Abs(lateOpeningAttack - 5f) > 0.001f ||
+            Mathf.Abs(followingLateAttack - lateOpeningAttack - ScadrykEnemyHealth.OpeningAttackSpacing) > 0.001f)
+        { SmokeFail("O escalonador não mantém intervalo entre avisos quando Ecos chegam ao alcance depois"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: escalonamento preserva intervalo mesmo se um Eco chega ao alcance atrasado");
         if (EnemyRoleForRoom(1, 0) != 0 || EnemyRoleForRoom(1, 1) != 1 || EnemyRoleForRoom(1, 2) != 2 || EnemyRoleForRoom(1, 3) != 3 ||
             EnemyRoleForRoom(4, 0) != 0 || EnemyRoleForRoom(4, 1) != 0 || EnemyRoleForRoom(4, 2) != 2 || EnemyRoleForRoom(4, 3) != 3 ||
             EnemyRoleForRoom(7, 0) != 1 || EnemyRoleForRoom(7, 1) != 1 || EnemyRoleForRoom(7, 2) != 2 || EnemyRoleForRoom(7, 3) != 3)

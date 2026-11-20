@@ -16,6 +16,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private const float FinalStarfallProjectileLength = 10f;
     private const float FinalStarfallProjectileSpeed = 5.4f;
     internal const float SupportPulseRadius = 2.5f;
+    internal const float OpeningAttackSpacing = 0.52f;
     internal static float SupportPulseDiameter => SupportPulseRadius * 2f;
     internal static bool SupportPulseContains(Vector2 origin, Vector2 target) =>
         Vector2.Distance(origin, target) <= SupportPulseRadius;
@@ -34,6 +35,8 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private ScadrykActorAnimator animator;
     private bool dead;
     private bool isWindup;
+    private bool openingAttackPending;
+    private bool openingAttackSlotReserved;
     private Sprite[] animationFrames;
     private Vector2 attackTarget;
     private int biomeIndex;
@@ -70,11 +73,14 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         };
     }
 
-    public void Configure(float hp, float speed, bool boss, int biome, Sprite[] frames, int role = 0)
+    public void Configure(float hp, float speed, bool boss, int biome, Sprite[] frames, int role = 0, float openingAttackDelay = 0f)
     {
         maxHealth = hp; health = hp; moveSpeed = speed; IsBoss = boss;
         biomeIndex = Mathf.Clamp(biome, 0, 2);
         combatRole = boss ? 0 : Mathf.Clamp(role, 0, 3);
+        nextAttackAt = Time.time + Mathf.Max(0f, openingAttackDelay);
+        openingAttackPending = true;
+        openingAttackSlotReserved = false;
         roleTint = boss ? Color.white : combatRole == 0 ? new Color(1f, 0.87f, 0.75f) : combatRole == 1 ? new Color(0.72f, 0.9f, 1f) : combatRole == 2 ? new Color(1f, 0.76f, 0.85f) : new Color(0.77f, 1f, 0.82f);
         attackRange = boss ? (biomeIndex == 1 ? 8f : biomeIndex == 0 ? 6.8f : 5.8f) :
             combatRole == 0 ? 3.1f : combatRole == 1 ? 7.2f : combatRole == 2 ? 3.9f : 5.5f;
@@ -88,6 +94,9 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     {
         isFinalBoss = true;
         IsBoss = true;
+        nextAttackAt = Time.time + OpeningAttackDelay(0, true);
+        openingAttackPending = true;
+        openingAttackSlotReserved = false;
         maxHealth = 1250f;
         health = maxHealth;
         moveSpeed = 1.35f;
@@ -142,6 +151,16 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         if (windupEndsAt > 0f && Time.time >= windupEndsAt) ResolveAttack();
         if (Time.time >= nextAttackAt && distance <= attackRange)
         {
+            if (openingAttackPending)
+            {
+                if (!openingAttackSlotReserved)
+                {
+                    nextAttackAt = director != null ? director.ScheduleOpeningAttack(Time.time) : Time.time;
+                    openingAttackSlotReserved = true;
+                }
+                if (Time.time < nextAttackAt) { BodyVelocity = Vector2.zero; return; }
+                openingAttackPending = false;
+            }
             BeginAttack();
             return;
         }
@@ -328,6 +347,13 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     internal static int FinalStarfallSideProjectileCount(int stage) => stage == 2 ? 1 : stage == 3 ? 3 : 0;
     internal static float FinalStarfallSideProjectileAngle(int stage, int index) =>
         (index - (FinalStarfallSideProjectileCount(stage) - 1) * 0.5f) * FinalStarfallProjectileAngleStep;
+    internal static float OpeningAttackDelay(int enemyIndex, bool boss) => boss ? 1.25f : 0.3f + Mathf.Max(0, enemyIndex) * OpeningAttackSpacing;
+    internal static float ReserveOpeningAttackSlot(ref float nextAvailableAt, float requestedAt)
+    {
+        float scheduledAt = Mathf.Max(nextAvailableAt, requestedAt);
+        nextAvailableAt = scheduledAt + OpeningAttackSpacing;
+        return scheduledAt;
+    }
 
     private void ResolveRootThrust()
     {
