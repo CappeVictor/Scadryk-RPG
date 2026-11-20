@@ -1904,6 +1904,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (!OverlayLayoutFits(400f, 360f))
         { SmokeFail("O menu inicial ou os botões escapam de uma janela compacta"); yield break; }
         Debug.Log("SCADRYK_SMOKE: menu inicial cabe em janela 400×360");
+        if (!MemoryPanelFits(400f, 360f, 120f) || !MemoryPanelFits(700f, 600f, 90f))
+        { SmokeFail("O texto ampliado dos vestígios é cortado ou cobre os comandos inferiores"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: painel de memória cresce com o texto sem cobrir status e controles");
         for (int effect = 0; effect < 40; effect++)
             ScadrykEffects.Burst(roomCenter + Vector2.up * (20f + effect), Color.clear, 0.05f);
         if (ScadrykEffects.SecondaryVisualCount > ScadrykEffects.SecondaryVisualLimit) { SmokeFail("O limite de efeitos secundários não foi respeitado"); yield break; }
@@ -2315,11 +2318,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (Time.time < statusUntil) GUI.Label(new Rect(15, Screen.height - 64, Screen.width - 30, 44), statusMessage, bodyStyle);
         if (Time.time < memoryUntil && !transitioning)
         {
-            float width = Mathf.Min(740f, Screen.width - 36f);
-            Rect panel = new Rect((Screen.width - width) * 0.5f, Screen.height - 180f, width, 102f);
+            float width = Mathf.Max(0f, Mathf.Min(740f, Screen.width - 36f));
+            float bodyHeight = Mathf.Max(62f, memoryStyle.CalcHeight(new GUIContent(memoryText), Mathf.Max(32f, width - 36f)));
+            Rect panel = MemoryPanelRect(Screen.width, Screen.height, bodyHeight);
             GUI.color = new Color(0.025f, 0.04f, 0.045f, 0.94f); GUI.DrawTexture(panel, Texture2D.whiteTexture); GUI.color = Color.white;
             GUI.Label(new Rect(panel.x + 18f, panel.y + 10f, panel.width - 36f, 24f), "VESTÍGIO ESCUTADO", titleStyle);
-            GUI.Label(new Rect(panel.x + 18f, panel.y + 34f, panel.width - 36f, 62f), memoryText, memoryStyle);
+            GUI.Label(MemoryTextRect(panel), memoryText, memoryStyle);
         }
         GUI.Label(new Rect(14, Screen.height - 34, Screen.width - 28, 30), "Mover: teclas/controle  ·  Mouse/analógico mirar  ·  " + InputBinding(0) + " atacar  ·  " + InputBinding(1) + " esquivar  ·  " + InputBinding(2) + " pulso  ·  " + InputBinding(6) + " interagir  ·  Esc pausa", smallStyle);
         if (transitionFade > 0f)
@@ -2541,6 +2545,27 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         float thirdButtonBottom = buttonY + buttonStep * 2f + buttonHeight;
         return screenWidth >= 64f && horizontalWidth <= screenWidth - 32f &&
                messageTop + messageHeight <= buttonY && thirdButtonBottom <= footerTop && footerTop + footerHeight <= screenHeight;
+    }
+
+    private static Rect MemoryPanelRect(float screenWidth, float screenHeight, float bodyHeight)
+    {
+        float width = Mathf.Max(0f, Mathf.Min(740f, screenWidth - 36f));
+        float panelHeight = 40f + Mathf.Max(62f, bodyHeight);
+        float y = Mathf.Max(12f, Mathf.Min(screenHeight - 180f, screenHeight - 78f - panelHeight));
+        return new Rect((screenWidth - width) * 0.5f, y, width, panelHeight);
+    }
+
+    private static Rect MemoryTextRect(Rect panel) =>
+        new Rect(panel.x + 18f, panel.y + 34f, panel.width - 36f, panel.height - 40f);
+
+    private static bool MemoryPanelFits(float screenWidth, float screenHeight, float bodyHeight)
+    {
+        float requiredBodyHeight = Mathf.Max(62f, bodyHeight);
+        Rect panel = MemoryPanelRect(screenWidth, screenHeight, requiredBodyHeight);
+        Rect text = MemoryTextRect(panel);
+        return screenWidth >= 240f && screenHeight >= requiredBodyHeight + 130f &&
+            panel.xMin >= 0f && panel.xMax <= screenWidth && panel.yMin >= 0f && panel.yMax <= screenHeight - 78f &&
+            text.yMin >= panel.yMin && text.yMax <= panel.yMax - 6f && text.height >= requiredBodyHeight;
     }
 
     private bool OverlayButton(Rect rect, string label, int index)
