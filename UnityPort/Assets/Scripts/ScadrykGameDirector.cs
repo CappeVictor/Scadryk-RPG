@@ -706,10 +706,22 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         var renderer = ground.AddComponent<SpriteRenderer>();
         renderer.sprite = phaseGroundSprites[phaseIndex];
         renderer.sortingOrder = -8;
-        renderer.flipX = room == 1;
+        renderer.flipX = GroundFlipX(room);
+        renderer.flipY = GroundFlipY(room);
         Vector2 size = renderer.sprite.bounds.size;
         // Extend the painted ground through the portal corridor so the camera never reveals void strips.
         ground.transform.localScale = new Vector3((RoomSpacing + 0.2f) / size.x, 13f / size.y, 1f);
+    }
+
+    private static bool GroundFlipX(int room) => room == 1;
+    private static bool GroundFlipY(int room) => room == 2;
+
+    internal static bool RoomGroundOrientationsAreUnique()
+    {
+        for (int first = 0; first < RoomsPerPhase; first++)
+        for (int second = first + 1; second < RoomsPerPhase; second++)
+            if (GroundFlipX(first) == GroundFlipX(second) && GroundFlipY(first) == GroundFlipY(second)) return false;
+        return true;
     }
 
     private void DrawRoomScenery(Transform parent, int room, float x, Color floor)
@@ -1653,6 +1665,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private IEnumerator SmokeCampaign()
     {
         yield return null;
+        if (!RoomGroundOrientationsAreUnique())
+        { SmokeFail("As três salas repetem a mesma orientação do cenário de fundo"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: fundos pintados variam entre as três salas de cada bioma");
         Color warningTint = ScadrykEnemyHealth.StateTint(true, false, Color.white);
         Color exposedTint = ScadrykEnemyHealth.StateTint(false, true, Color.white);
         Color interruptedExposeTint = ScadrykEnemyHealth.StateTint(true, true, Color.white);
