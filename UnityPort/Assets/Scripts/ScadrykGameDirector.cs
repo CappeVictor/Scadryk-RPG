@@ -969,7 +969,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         return false;
     }
 
-    private bool ActiveRoomHasWalkableRoute()
+    private bool ActiveRoomHasWalkableRoute(Vector2 center)
     {
         if (levelRoot == null) return false;
         const float step = 0.35f;
@@ -993,7 +993,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         for (int x = 0; x < columns; x++)
         for (int y = 0; y < rows; y++)
         {
-            Vector2 point = new Vector2(minX + x * step, minY + y * step);
+            Vector2 point = center + new Vector2(minX + x * step, minY + y * step);
             foreach (Collider2D solid in solids)
             {
                 if ((solid.ClosestPoint(point) - point).sqrMagnitude < playerRadius * playerRadius)
@@ -1937,8 +1937,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 if (!clearedRooms[previousRoom]) { SmokeFail("O mapa não marcou a sala anterior como concluída: " + previousRoom); yield break; }
             foreach (ScadrykEnemyHealth enemy in FindObjectsByType<ScadrykEnemyHealth>(FindObjectsSortMode.None))
                 if (enemy != null && !enemy.IsFinalBoss) enemy.TakeDamage(99999f);
-            if (!ActiveRoomHasWalkableRoute())
+            if (!ActiveRoomHasWalkableRoute(roomCenter))
             { SmokeFail("A geometria sólida ativa bloqueou a rota caminhável da sala " + (room + 1)); yield break; }
+            Debug.Log("SCADRYK_SMOKE: rota da sala " + (room + 1) + "/9 livre dos colisores sólidos do bioma");
             if (room == 8 && (worldSecretHintShown || !player.HasAbility(2) ||
                 !WorldSecretHint(2).Contains("Rompante da Maré")))
             { SmokeFail("A pista do selo não foi atualizada após aprender Rompante com o guardião"); yield break; }
