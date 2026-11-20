@@ -692,7 +692,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (worldSecret == null) return;
         int requiredPower = RequiredWorldSecretPower();
         Vector2 spot = worldSecret.transform.position;
-        if (power != requiredPower || player == null || !player.AbilityFootprintContainsPoint(requiredPower, spot, source)) return;
+        if (power != requiredPower || player == null || !player.AbilityFootprintContainsPoint(requiredPower, spot, source) ||
+            ScadrykPlayerController.AbilityPathIsBlocked(requiredPower, source, spot)) return;
         ScadrykEffects.Burst(spot, PhaseAccentColors[phaseIndex], 1.5f);
         ScadrykEffects.ReleaseEcho(witnessSprite != null ? witnessSprite : CircleSprite, spot, PhaseAccentColors[phaseIndex]);
         ScadrykAudio.Play(ScadrykCue.Memory);
@@ -1727,8 +1728,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (!checkpointRoundTrip) { SmokeFail("Checkpoint não restaura o portal ou limita valores inválidos"); yield break; }
         Debug.Log("SCADRYK_SMOKE: checkpoint grava, carrega, limita e limpa chaves temporárias");
         if (!SmokeCoverBlocksOnlyWhenSolid())
-        { SmokeFail("Cobertura sólida e gatilhos não diferem ao bloquear ataques lineares"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: cobertura sólida bloqueia a linha e gatilho não bloqueia");
+        { SmokeFail("Cobertura não bloqueia poderes direcionais ou gatilhos bloqueiam poderes circulares"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: cobertura interrompe golpes direcionais, não o Estouro circular, e gatilhos não bloqueiam");
         if (!RoomObstacleLayoutsAreDistinctAndOpen())
         { SmokeFail("As nove salas repetem obstáculos, bloqueiam entrada/saída ou não têm rota caminhável até o portal"); yield break; }
         Debug.Log("SCADRYK_SMOKE: nove layouts distintos têm corredores caminháveis entre entrada e portal");
@@ -2242,13 +2243,19 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             collider.size = new Vector2(0.35f, 1f);
             Physics2D.SyncTransforms();
             bool blocksWhenSolid = ScadrykCombatRules.WorldBlocks(origin, target);
+            bool coverStopsDirectionalPowers = ScadrykPlayerController.AbilityPathIsBlocked(0, origin, target) &&
+                !ScadrykPlayerController.AbilityPathIsBlocked(1, origin, target) &&
+                ScadrykPlayerController.AbilityPathIsBlocked(2, origin, target);
             collider.isTrigger = true;
             Physics2D.SyncTransforms();
             bool ignoresTrigger = !ScadrykCombatRules.WorldBlocks(origin, target);
+            bool powersIgnoreTrigger = !ScadrykPlayerController.AbilityPathIsBlocked(0, origin, target) &&
+                !ScadrykPlayerController.AbilityPathIsBlocked(1, origin, target) &&
+                !ScadrykPlayerController.AbilityPathIsBlocked(2, origin, target);
             collider.enabled = false;
             Physics2D.SyncTransforms();
             bool openLineRemainsClear = !ScadrykCombatRules.WorldBlocks(origin, target);
-            return blocksWhenSolid && ignoresTrigger && openLineRemainsClear;
+            return blocksWhenSolid && coverStopsDirectionalPowers && ignoresTrigger && powersIgnoreTrigger && openLineRemainsClear;
         }
         finally
         {

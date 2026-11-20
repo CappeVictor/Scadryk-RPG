@@ -333,6 +333,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
             Vector2 toEnemy = (Vector2)enemy.transform.position - (Vector2)transform.position;
             float enemyRadius = EnemyCollisionRadius(enemy);
             if ((index == 0 || index == 2) && !AbilityFootprintContainsPoint(index, enemy.transform.position, transform.position, enemyRadius)) continue;
+            if (AbilityPathIsBlocked(index, transform.position, enemy.transform.position)) continue;
             enemy.TakeDamage(damage);
             if (index == 0) enemy.ApplyCrescentControl();
             else if (index == 1) enemy.ApplySaltExposure();
@@ -364,6 +365,9 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         if (index == 2) return WithinVisualFootprint(target, origin, facing, 2.7f, new Vector2(7.4f, 4.4f), targetRadius);
         return false;
     }
+
+    internal static bool AbilityPathIsBlocked(int index, Vector2 origin, Vector2 target) =>
+        (index == 0 || index == 2) && ScadrykCombatRules.WorldBlocks(origin, target);
 
     public void TakeDamage(float amount)
     {

@@ -96,7 +96,7 @@ Nara também tem sprites para o golpe básico de espada, o pulso especial expans
 
 As coberturas quadradas foram substituídas por troncos caídos, tocos, cristais e rochas, distribuídos de forma diferente pelas salas e com colisores ajustados ao formato. A caminhada agora acompanha a velocidade, a esquiva deixa rastros, os ataques têm deslocamento e expansão, e os personagens reagem ao dano e caem antes de desaparecer ou retornar à sala. O jogo dá um breve período de proteção após Nara receber dano para evitar que salvas de projéteis a eliminem de uma vez. Barras de vida flutuam acima de Nara, dos ecos e dos guardiões.
 
-Os obstáculos sólidos também funcionam como **cobertura**: estilhaços inimigos param ao atingir troncos, rochas ou ruínas; o golpe básico de Nara e a investida de raízes não causam dano através deles. Ataques circulares mágicos continuam a atingir através da cobertura, criando uma decisão entre proteger-se de linhas e sair de áreas anunciadas.
+Os obstáculos sólidos também funcionam como **cobertura**: estilhaços inimigos param ao atingir troncos, rochas ou ruínas; o golpe básico, a Crescente Verdejante e o Rompante da Maré não causam dano através deles. O Estouro de Sal e o Pulso circular continuam a atingir através da cobertura, criando uma decisão entre proteger-se de ataques direcionais e sair de áreas anunciadas. Selos de Eco também exigem linha livre para poderes direcionais.
 
 No bosque alagado, as poças rasas reduzem a velocidade de caminhada para 78%, mas não causam dano. A esquiva mantém o impulso normal, permitindo atravessá-las rapidamente quando houver perigo. Na primeira entrada na água, uma mensagem explica esse efeito.
 
