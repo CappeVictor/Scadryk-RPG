@@ -96,8 +96,8 @@ public sealed class ScadrykAudio : MonoBehaviour
         {
             elapsed += Time.unscaledDeltaTime;
             float blend = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / ContextFadeDuration));
-            musicEnvelope = 1f - blend;
-            transitionEnvelope = blend;
+            musicEnvelope = Mathf.Cos(blend * Mathf.PI * 0.5f);
+            transitionEnvelope = Mathf.Sin(blend * Mathf.PI * 0.5f);
             yield return null;
         }
 
