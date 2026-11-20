@@ -165,6 +165,8 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
                 IsBoss && biomeIndex == 0 ? origin + direction * Mathf.Clamp(Vector2.Distance(origin, attackTarget) + 1.25f, 2.8f, 7.2f) : attackTarget;
             float telegraphThickness = !IsBoss && combatRole == 0 ? 0.86f :
                 !IsBoss && combatRole == 1 ? 0.31f : IsBoss && biomeIndex == 0 ? 1.4f : 0.34f;
+            if ((!IsBoss && combatRole == 0) || (IsBoss && biomeIndex == 0))
+                telegraphThickness = RootLaneVisualWidth(telegraphThickness, PlayerCollisionRadius(player));
             ScadrykEffects.TelegraphLine(origin, end, warning, telegraphThickness, windup);
         }
     }
@@ -277,8 +279,9 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         float length = IsBoss ? Mathf.Clamp(Vector2.Distance(start, attackTarget) + 1.25f, 2.8f, 7.2f) : 3.3f;
         float width = IsBoss ? 1.4f : 0.86f;
         Vector2 end = start + direction * length;
-        ScadrykEffects.GroundLane((start + end) * 0.5f, direction, length, width, new Color(0.42f, 0.72f, 0.28f, 0.95f), 0.3f);
-        if (DistanceToSegment(player.transform.position, start, end) <= width * 0.5f + 0.38f &&
+        float warnedWidth = RootLaneVisualWidth(width, PlayerCollisionRadius(player));
+        ScadrykEffects.GroundLane((start + end) * 0.5f, direction, length, warnedWidth, new Color(0.42f, 0.72f, 0.28f, 0.95f), 0.3f);
+        if (RootLaneHits(player.transform.position, start, end, width, PlayerCollisionRadius(player)) &&
             !ScadrykCombatRules.WorldBlocks(start, player.transform.position))
         {
             player.TakeDamage(IsBoss ? 21f : 13f);
@@ -364,6 +367,19 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         float t = segment.sqrMagnitude < 0.001f ? 0f : Mathf.Clamp01(Vector2.Dot(point - start, segment) / segment.sqrMagnitude);
         return Vector2.Distance(point, start + segment * t);
     }
+
+    internal static float PlayerCollisionRadius(ScadrykPlayerController target)
+    {
+        CircleCollider2D collider = target != null ? target.GetComponent<CircleCollider2D>() : null;
+        if (collider == null) return 0.38f;
+        Vector3 scale = target.transform.lossyScale;
+        return collider.radius * Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.y));
+    }
+
+    internal static float RootLaneVisualWidth(float attackWidth, float playerRadius) => attackWidth + playerRadius * 2f;
+
+    internal static bool RootLaneHits(Vector2 target, Vector2 start, Vector2 end, float attackWidth, float playerRadius) =>
+        DistanceToSegment(target, start, end) <= RootLaneVisualWidth(attackWidth, playerRadius) * 0.5f;
 
     public void TakeDamage(float amount)
     {

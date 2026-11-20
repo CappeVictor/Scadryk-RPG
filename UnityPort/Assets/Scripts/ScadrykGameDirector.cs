@@ -1231,6 +1231,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (roomActiveSeconds != 17f || roomDeaths != 1 || roomPowerUses[0] != 2)
         { SmokeFail("Morte reiniciou a sala mas perdeu o tempo, as mortes ou os usos de poder da sessão"); yield break; }
         Debug.Log("SCADRYK_SMOKE: telemetria preserva dados entre mortes na mesma sala");
+        float laneRadius = ScadrykEnemyHealth.PlayerCollisionRadius(player);
+        float laneWidth = ScadrykEnemyHealth.RootLaneVisualWidth(0.86f, laneRadius);
+        if (!ScadrykEnemyHealth.RootLaneHits(new Vector2(1.5f, laneWidth * 0.5f - 0.01f), Vector2.zero, new Vector2(3.3f, 0f), 0.86f, laneRadius) ||
+            ScadrykEnemyHealth.RootLaneHits(new Vector2(1.5f, laneWidth * 0.5f + 0.01f), Vector2.zero, new Vector2(3.3f, 0f), 0.86f, laneRadius))
+        { SmokeFail("A borda de dano do golpe de raízes não corresponde à largura anunciada"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: largura do aviso de raízes corresponde à área de dano");
         var mapLabels = new System.Collections.Generic.HashSet<string>();
         for (int phase = 0; phase < PhaseNames.Length; phase++)
             for (int room = 0; room < RoomsPerPhase; room++)

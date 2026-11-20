@@ -30,6 +30,7 @@
 - Escala do texto: a interface reconstrói os estilos quando a escala é alterada; a preferência agora deve surtir efeito imediatamente. A mudança ainda precisa de compilação e inspeção em 100%, 125% e 150% no Editor.
 - Telemetria após morte: reiniciar a mesma sala preserva cronômetro, contagem acumulada de mortes, marcas de perigo e uso de poderes até a sala terminar; o smoke agora verifica tempo, morte e uso de poder. Esta checagem ainda não foi executada no Unity Editor.
 - Proteção do save: solicitar uma nova jornada com checkpoint abre confirmação; cancelar mantém o menu e o progresso sem alterar PlayerPrefs. O smoke verifica a confirmação e o cancelamento, ainda sem execução no Editor.
+- Aviso de raízes: telegráfico, efeito no chão e área de dano usam a mesma margem de colisão do jogador. O smoke verifica alvos imediatamente dentro/fora da borda; ainda sem execução ou revisão visual no Editor.
 - Arte de abertura: nova imagem `ScadrykTitleBackdrop.png` conecta os três biomas e é desenhada atrás do menu inicial com uma camada escura para contraste. O smoke exige que a textura seja carregada; a integração visual ainda não foi compilada ou inspecionada no Editor.
 
 ## Dados observados e limites
