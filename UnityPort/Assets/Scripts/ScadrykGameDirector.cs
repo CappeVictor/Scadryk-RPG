@@ -318,32 +318,36 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         roomSessionRecorded = false;
     }
 
-    private static string ProgressHint(int roomId, int activated, int stage)
+    internal static string FormatInputBinding(KeyCode key, int padButton, bool useGamepad) =>
+        useGamepad ? ScadrykSettings.PadButtonName(padButton) : key.ToString();
+    private string InputBinding(int action) => FormatInputBinding(ScadrykSettings.Key(action), ScadrykSettings.PadButton(action), sessionInputMode == "gamepad");
+
+    private string ProgressHint(int roomId, int activated, int stage)
     {
         if (roomId == 7)
         {
-            if (activated > 0) return "Pista: o farol já respondeu. Vá ao sino do recife, à direita, e use Q perto dele.";
-            if (stage == 0) return "Pista: os dois sinais da costa respondem ao Pulso (Q). O farol precisa tocar primeiro.";
-            if (stage == 1) return "Pista: procure o farol à esquerda do centro da sala e use Q quando estiver perto.";
+            if (activated > 0) return "Pista: o farol já respondeu. Vá ao sino do recife, à direita, e use o Pulso (" + InputBinding(2) + ") perto dele.";
+            if (stage == 0) return "Pista: os dois sinais da costa respondem ao Pulso (" + InputBinding(2) + "). O farol precisa tocar primeiro.";
+            if (stage == 1) return "Pista: procure o farol à esquerda do centro da sala e use o Pulso (" + InputBinding(2) + ") quando estiver perto.";
             return "Pista: acione primeiro o farol à esquerda; depois, o sino do recife fica à direita.";
         }
 
         if (roomId == 4)
         {
-            if (stage == 0) return "Pista: dois cristais marcados guardam a travessia. Aproxime-se e use Q em cada um.";
-            if (stage == 1) return "Pista: o Pulso (Q) alcança os cristais quando Nara chega perto deles.";
+            if (stage == 0) return "Pista: dois cristais marcados guardam a travessia. Aproxime-se e use o Pulso (" + InputBinding(2) + ") em cada um.";
+            if (stage == 1) return "Pista: o Pulso (" + InputBinding(2) + ") alcança os cristais quando Nara chega perto deles.";
             return "Pista: confira a contagem no HUD; falta ressoar um dos dois cristais.";
         }
 
         if (roomId == 1) return stage == 0
-            ? "Pista: a comporta antiga está marcada no lado direito da sala. Aproxime-se e pressione E."
-            : "Pista: procure o vestígio brilhante junto à passagem da direita e use E ao lado dele.";
+            ? "Pista: a comporta antiga está marcada no lado direito da sala. Aproxime-se e interaja (" + InputBinding(6) + ")."
+            : "Pista: procure o vestígio brilhante junto à passagem da direita e interaja (" + InputBinding(6) + ") ao lado dele.";
         if (roomId == 3) return stage == 0
-            ? "Pista: há uma lembrança marcada no lado sul da bacia. Aproxime-se e pressione E."
-            : "Pista: escute o vestígio no lado sul usando E quando estiver ao lado do brilho marcado.";
+            ? "Pista: há uma lembrança marcada no lado sul da bacia. Aproxime-se e interaja (" + InputBinding(6) + ")."
+            : "Pista: escute o vestígio no lado sul usando interagir (" + InputBinding(6) + ") quando estiver ao lado do brilho marcado.";
         if (roomId == 6) return stage == 0
-            ? "Pista: o sino encalhado está marcado perto do centro da costa. Aproxime-se e pressione E."
-            : "Pista: a lembrança da costa responde a E quando Nara chega perto do sino marcado.";
+            ? "Pista: o sino encalhado está marcado perto do centro da costa. Aproxime-se e interaja (" + InputBinding(6) + ")."
+            : "Pista: a lembrança da costa responde a interagir (" + InputBinding(6) + ") quando Nara chega perto do sino marcado.";
         return "Pista: siga o objetivo marcado nesta sala e aproxime-se do sinal indicado.";
     }
 
@@ -490,7 +494,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         for (int i = 0; i < anchorsRequired; i++)
         {
             if (roomAnchors[i] == null || Vector2.Distance(position, roomAnchors[i].transform.position) > 1.8f) continue;
-            if (anchorsNeedPulse) { ShowStatus("Este objeto responde ao Pulso (Q).", 3f); return; }
+            if (anchorsNeedPulse) { ShowStatus("Este objeto responde ao Pulso (" + InputBinding(2) + ").", 3f); return; }
             ActivateAnchor(i);
             return;
         }
@@ -916,7 +920,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             player.UnlockAbility(enemy.BiomeIndex);
             string[] powers = { "Crescente Verdejante", "Estouro de Sal", "Rompante da Maré" };
             int powerIndex = Mathf.Clamp(enemy.BiomeIndex, 0, powers.Length - 1);
-            acquiredPower = "Novo poder adquirido: " + powers[powerIndex] + " (tecla " + (powerIndex + 1) + ").";
+            acquiredPower = "Novo poder adquirido: " + powers[powerIndex] + " (" + InputBinding(powerIndex + 3) + ").";
             if (powerIndex == 0) ShowMemory("As raízes se abrem. O primeiro zelador entrega a Nara o Crescente e o nome de quem guardava a comporta.", 7f);
             else if (powerIndex == 1) ShowMemory("O sal volta a brilhar. A segunda guardiã devolve o Estouro e a lembrança da última maré.", 7f);
         }
@@ -930,8 +934,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 SpawnFinalBoss();
                 return;
             }
-            statusMessage = anchorsActivated >= anchorsRequired ? "Sala limpa. A passagem está aberta — pressione E." :
-                anchorsNeedPulse ? "Sala limpa. Faça os objetos marcados ressoarem com Q." : "Sala limpa. Escute o vestígio marcado com E.";
+            statusMessage = anchorsActivated >= anchorsRequired ? "Sala limpa. Interaja com a passagem (" + InputBinding(6) + ")." :
+                anchorsNeedPulse ? "Sala limpa. Faça os objetos marcados ressoarem com o Pulso (" + InputBinding(2) + ")." :
+                "Sala limpa. Interaja com o vestígio marcado (" + InputBinding(6) + ").";
             statusUntil = Time.time + 8f;
             if (player != null) player.RestoreHealth(22f);
             UnlockExit();
@@ -1026,10 +1031,10 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         gateObject = ScadrykPortalVisual.Spawn(levelRoot.transform, exitPosition, portalSprite, portalColor, portalSize);
         ScadrykAudio.Play(ScadrykCue.Portal);
         statusMessage = finalPortal
-            ? "O portal colossal do Vazio surgiu. Aproxime-se e pressione E para concluir a jornada."
+            ? "O portal colossal do Vazio surgiu. Aproxime-se e interaja (" + InputBinding(6) + ") para concluir a jornada."
             : phasePortal
-                ? "O portal da próxima fase surgiu. Aproxime-se e pressione E para atravessar."
-                : "Portal aberto. Aproxime-se e pressione E para seguir à próxima sala.";
+                ? "O portal da próxima fase surgiu. Aproxime-se e interaja (" + InputBinding(6) + ") para atravessar."
+                : "Portal aberto. Aproxime-se e interaja (" + InputBinding(6) + ") para seguir à próxima sala.";
         statusUntil = Time.time + 5f;
     }
 
@@ -1037,7 +1042,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     {
         if (isPaused || victory || transitioning) return;
         if (enemiesRemaining > 0) { ShowStatus("Ainda restam ecos nesta sala.", 1.5f); return; }
-        if (anchorsActivated < anchorsRequired) { ShowStatus(anchorsNeedPulse ? "Faça os sinais ressoarem com Q." : "Escute o vestígio marcado com E.", 2.5f); return; }
+        if (anchorsActivated < anchorsRequired)
+        {
+            ShowStatus(anchorsNeedPulse ? "Faça os sinais ressoarem com o Pulso (" + InputBinding(2) + ")." :
+                "Interaja com o vestígio marcado (" + InputBinding(6) + ").", 2.5f);
+            return;
+        }
         if (Vector2.Distance(playerPosition, exitPosition) > 1.9f) { ShowStatus("Aproxime-se da passagem para avançar.", 1.5f); return; }
         ClearRoomProjectiles();
         clearedRooms[roomIndex] = true;
@@ -1254,6 +1264,21 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             !audio.HasCue(supportCue) || !audio.HasCue(ScadrykCue.FinalBossWarning))
         { SmokeFail("Os sinais sonoros de aviso não diferenciam papéis e guardiões"); yield break; }
         Debug.Log("SCADRYK_SMOKE: avisos sonoros diferenciam papéis e Arauto");
+        string previousHintInputMode = sessionInputMode;
+        sessionInputMode = "keyboard_mouse";
+        string keyboardPulseHint = ProgressHint(4, 0, 0);
+        string keyboardInteractHint = ProgressHint(1, 0, 0);
+        sessionInputMode = "gamepad";
+        string gamepadPulseHint = ProgressHint(4, 0, 0);
+        string gamepadInteractHint = ProgressHint(1, 0, 0);
+        sessionInputMode = previousHintInputMode;
+        if (!keyboardPulseHint.Contains("(" + ScadrykSettings.Key(2) + ")") ||
+            !keyboardInteractHint.Contains("(" + ScadrykSettings.Key(6) + ")") ||
+            !gamepadPulseHint.Contains("(" + ScadrykSettings.PadButtonName(ScadrykSettings.PadButton(2)) + ")") ||
+            !gamepadInteractHint.Contains("(" + ScadrykSettings.PadButtonName(ScadrykSettings.PadButton(6)) + ")") ||
+            FormatInputBinding(KeyCode.F, 4, true) != "LB")
+        { SmokeFail("Pistas e HUD não refletem teclas e botões remapeados do dispositivo ativo"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: pistas dinâmicas refletem dispositivo e botões de jogo");
         bool previousPauseState = isPaused;
         float beforePauseClock = Time.time;
         isPaused = true;
@@ -1683,7 +1708,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             GUI.Label(new Rect(panel.x + 18f, panel.y + 10f, panel.width - 36f, 24f), "VESTÍGIO ESCUTADO", titleStyle);
             GUI.Label(new Rect(panel.x + 18f, panel.y + 34f, panel.width - 36f, 62f), memoryText, memoryStyle);
         }
-        GUI.Label(new Rect(14, Screen.height - 34, Screen.width - 28, 30), "Mover: teclas/controle  ·  Mouse/analógico mirar  ·  " + ScadrykSettings.Key(0) + " atacar  ·  " + ScadrykSettings.Key(1) + " esquivar  ·  " + ScadrykSettings.Key(2) + " pulso  ·  " + ScadrykSettings.Key(6) + " interagir  ·  Esc pausa", smallStyle);
+        GUI.Label(new Rect(14, Screen.height - 34, Screen.width - 28, 30), "Mover: teclas/controle  ·  Mouse/analógico mirar  ·  " + InputBinding(0) + " atacar  ·  " + InputBinding(1) + " esquivar  ·  " + InputBinding(2) + " pulso  ·  " + InputBinding(6) + " interagir  ·  Esc pausa", smallStyle);
         if (transitionFade > 0f)
         {
             GUI.color = new Color(0f, 0f, 0f, transitionFade);
@@ -1710,7 +1735,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             bool learned = player != null && player.HasAbility(i);
             string state = !learned ? "bloqueado" : player.AbilityCooldownLeft(i) <= 0.02f ? "pronto" : Cooldown(player.AbilityCooldownLeft(i));
             GUI.color = learned ? new Color(0.72f, 0.9f, 0.79f) : new Color(0.48f, 0.53f, 0.51f);
-            GUI.Label(new Rect(28, 116f + extra * 37f + i * (15f + extra * 9f), textWidth, 16f + extra * 9f), (i + 1) + "  " + abilities[i] + "  ·  " + state, smallStyle);
+            GUI.Label(new Rect(28, 116f + extra * 37f + i * (15f + extra * 9f), textWidth, 16f + extra * 9f), InputBinding(i + 3) + "  " + abilities[i] + "  ·  " + state, smallStyle);
         }
         GUI.color = Color.white;
         string progress = anchorsRequired > 0 ? "  ·  " + anchorsActivated + "/" + anchorsRequired : "";
