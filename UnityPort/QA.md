@@ -22,6 +22,7 @@
 - Leitura do golpe de onda do Arauto: aviso, área visual no impacto e alcance de dano agora compartilham os mesmos raios (6,7 externo e 2,2 seguro), removendo uma faixa em que o jogador podia receber dano fora do efeito mostrado. Correção de código ainda sem compilação ou verificação em jogo.
 - Transição entre fases do Arauto: a fase e o padrão anunciados ficam registrados até o golpe resolver, mesmo se Nara cruzar um limiar de vida durante o aviso. O smoke cruza o limiar durante a primeira salva e confere que continuam sendo disparados três projéteis. Esta nova asserção ainda não foi executada no Editor.
 - Espessura dos avisos lineares: linhas de raízes e salvas agora acompanham a largura das faixas de dano e dos projéteis correspondentes, reduzindo ataques cuja área real excedia o sinal. Ainda precisa de inspeção visual e teste no Editor.
+- Alcance dos objetos de ressonância: cristais e sinais da costa agora respondem dentro do raio real do Pulso; o smoke tenta ativá-los a 0,02 unidade fora do alcance e exige que continuem intactos antes de interagir dentro dele. Ainda sem execução no Editor.
 
 ## Dados observados e limites
 

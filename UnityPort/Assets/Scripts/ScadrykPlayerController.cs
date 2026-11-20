@@ -50,6 +50,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     public Vector2 Facing => facing;
     public float Health => health;
     public float MaxHealth => maxHealth;
+    public float ShockwaveRadius => shockwaveRadius;
     public float Health01 => maxHealth <= 0f ? 0f : Mathf.Clamp01(health / maxHealth);
     public float DashCooldownLeft => Mathf.Max(0f, nextDashAt - Time.time);
     public float ShockwaveCooldownLeft => Mathf.Max(0f, nextShockwaveAt - Time.time);

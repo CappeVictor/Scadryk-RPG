@@ -447,7 +447,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (!anchorsNeedPulse || IsPaused) return;
         for (int i = 0; i < anchorsRequired; i++)
         {
-            if (roomAnchors[i] == null || Vector2.Distance(position, roomAnchors[i].transform.position) >= 3.25f) continue;
+            float pulseRadius = player != null ? player.ShockwaveRadius : 3.2f;
+            if (roomAnchors[i] == null || Vector2.Distance(position, roomAnchors[i].transform.position) > pulseRadius) continue;
             if (anchorsNeedSequence && i != anchorsActivated)
             {
                 ShowStatus(i > anchorsActivated ? "Primeiro ressoe o farol na entrada da costa." : "Esse sinal já respondeu. Siga até o sino do recife.", 3f);
@@ -1279,7 +1280,14 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 GameObject anchor = roomAnchors[i];
                 if (anchor == null) continue;
                 Vector2 spot = anchor.transform.position;
-                if (anchorsNeedPulse) TryPulseAnchor(spot);
+                if (anchorsNeedPulse)
+                {
+                    int activatedBefore = anchorsActivated;
+                    TryPulseAnchor(spot + Vector2.right * (player.ShockwaveRadius + 0.02f));
+                    if (anchorsActivated != activatedBefore || roomAnchors[i] == null)
+                    { SmokeFail("O sinal respondeu fora do alcance visual do Pulso na sala " + room); yield break; }
+                    TryPulseAnchor(spot);
+                }
                 else TryInteract(spot);
             }
             if (enemiesRemaining != 0 || anchorsActivated != anchorsRequired || gateObject == null)
