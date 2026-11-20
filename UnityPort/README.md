@@ -6,7 +6,7 @@ Critérios de comparação com jogos de referência e lacunas verificáveis: [QU
 
 Registro de builds, teste de progressão e roteiro de avaliação com jogadores: [QA.md](QA.md).
 
-`UnityPort` contém uma aventura top-down em desenvolvimento com três biomas e nove salas conectadas, guardiões, três poderes, Arauto do Vazio, objetivos de exploração e narrativa ambiental. Cada bioma possui cenário e inimigos próprios. A cena inicial está em `Assets/Scenes/ScadrykDemo.unity`. Há menu, pausa, opções, áudio, remapeamento, suporte a controle e salvamento local. O progresso e as limitações de validação estão em `QA.md`; a build normal mais recente validada é Stage9. A alteração de cobertura de cenário ainda aguarda build normal devido a bloqueio do Unity pelo App Control do Windows.
+`UnityPort` contém uma aventura top-down em desenvolvimento com três biomas e nove salas conectadas, guardiões, três poderes, Arauto do Vazio, objetivos de exploração e narrativa ambiental. Cada bioma possui cenário e inimigos próprios. A cena inicial está em `Assets/Scenes/ScadrykDemo.unity`. Há menu, pausa, opções, áudio, remapeamento, suporte a controle e salvamento local. O progresso e as limitações de validação estão em `QA.md`; a build normal mais recente validada é Stage9. Desde ela, o código acrescentou cobertura de cenário e limpeza de projéteis entre salas; ambas as alterações aguardam nova build normal. Uma tentativa anterior foi bloqueada pelo App Control do Windows e o Unity Editor não está disponível nos caminhos de instalação usuais deste ambiente.
 
 ## Requisitos
 

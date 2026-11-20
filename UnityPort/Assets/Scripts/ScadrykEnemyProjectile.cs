@@ -17,6 +17,9 @@ public sealed class ScadrykEnemyProjectile : MonoBehaviour
     public static void Launch(Vector2 position, Vector2 direction, float speed, float damage, Sprite projectileSprite = null, Color? tint = null, float size = 0.34f, string projectileName = "Salt crystal shard")
     {
         var shard = new GameObject(projectileName);
+        ScadrykGameDirector director = FindAnyObjectByType<ScadrykGameDirector>();
+        if (director != null && director.ActiveRoomRoot != null)
+            shard.transform.SetParent(director.ActiveRoomRoot, true);
         shard.transform.position = position;
         shard.transform.localScale = Vector3.one * size;
         var renderer = shard.AddComponent<SpriteRenderer>();

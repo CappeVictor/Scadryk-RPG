@@ -68,6 +68,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     public int EnemiesRemaining => enemiesRemaining;
     public Vector2 CurrentRoomCenter => roomCenter;
     public Vector2 ExitPosition => exitPosition;
+    public Transform ActiveRoomRoot => levelRoot != null ? levelRoot.transform : null;
 
     private void Start()
     {
@@ -153,6 +154,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private void BuildPhase(int newPhase, int newRoom, bool newGame)
     {
         if (levelRoot != null) RecordRoomSession();
+        ClearRoomProjectiles();
         if (levelRoot != null) Destroy(levelRoot);
         if (gateObject != null) Destroy(gateObject);
         gateObject = null;
@@ -731,6 +733,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (enemiesRemaining > 0) { ShowStatus("Ainda restam ecos nesta sala.", 1.5f); return; }
         if (anchorsActivated < anchorsRequired) { ShowStatus(anchorsNeedPulse ? "Faça os sinais ressoarem com Q." : "Escute o vestígio marcado com E.", 2.5f); return; }
         if (Vector2.Distance(playerPosition, exitPosition) > 1.9f) { ShowStatus("Aproxime-se da passagem para avançar.", 1.5f); return; }
+        ClearRoomProjectiles();
         clearedRooms[roomIndex] = true;
         if (roomIndex < RoomsPerPhase - 1) StartCoroutine(TransitionThroughPortal(phaseIndex, roomIndex + 1));
         else if (phaseIndex < PhaseNames.Length - 1)
@@ -791,6 +794,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private IEnumerator TransitionToVictory()
     {
+        ClearRoomProjectiles();
         transitioning = true;
         ScadrykPortalVisual exitPortal = gateObject != null ? gateObject.GetComponent<ScadrykPortalVisual>() : null;
         Vector2 start = player.transform.position;
@@ -838,6 +842,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         roomDeaths++;
         BuildPhase(phaseIndex, roomIndex, false);
         ShowStatus("Você caiu e retornou ao começo da sala.", 2.5f);
+    }
+
+    private static void ClearRoomProjectiles()
+    {
+        foreach (ScadrykEnemyProjectile projectile in FindObjectsByType<ScadrykEnemyProjectile>(FindObjectsSortMode.None))
+            if (projectile != null) Destroy(projectile.gameObject);
     }
 
     private void ShowStatus(string message, float seconds) { statusMessage = message; statusUntil = Time.time + seconds; }
@@ -953,12 +963,19 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             }
             if (enemiesRemaining != 0 || anchorsActivated != anchorsRequired || gateObject == null)
             { SmokeFail("Objetivo não abriu portal na sala " + room); yield break; }
+            ScadrykEnemyProjectile.Launch(roomCenter + Vector2.up * 6f, Vector2.right, 0.1f, 0f);
+            ScadrykEnemyProjectile smokeProjectile = FindAnyObjectByType<ScadrykEnemyProjectile>();
+            if (smokeProjectile == null || !smokeProjectile.transform.IsChildOf(levelRoot.transform))
+            { SmokeFail("Projétil de inimigo não foi associado à sala " + room); yield break; }
             int oldRoom = room;
             TryUseExit(exitPosition);
             float timeout = Time.time + 8f;
             while (transitioning && Time.time < timeout) yield return null;
+            yield return null;
             if (transitioning || (room < 8 && phaseIndex * RoomsPerPhase + roomIndex == oldRoom))
             { SmokeFail("Transição falhou após sala " + room); yield break; }
+            if (FindAnyObjectByType<ScadrykEnemyProjectile>() != null)
+            { SmokeFail("Projétil de inimigo sobreviveu à transição da sala " + (room + 1)); yield break; }
             Debug.Log("SCADRYK_SMOKE: sala " + (room + 1) + "/9 concluída");
         }
         if (!victory) { SmokeFail("Portal final não encerrou a campanha"); yield break; }

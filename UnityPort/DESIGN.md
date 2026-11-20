@@ -8,6 +8,15 @@
 
 **Riscos técnicos:** `ScadrykGameDirector.cs` concentra vários sistemas; o HUD IMGUI usa medidas absolutas; testes automatizados usam dano artificial e não validam sensação ou dificuldade. Não declarar a campanha finalizada nem paridade de qualidade antes da build normal atualizada e sessões de jogo observadas.
 
+## Inspeção de código e conteúdo (19/11/2026, branch `codex/unity-playable-phase-maps`)
+
+- O port é um projeto Unity 6.6.9f1 válido: uma cena serializada, 16 scripts de runtime, quatro ferramentas de editor, `ProjectSettings`, pacotes e 40 PNG originais em `Resources/ScadrykArt` (cerca de 68 MB). As nove salas são construídas em runtime pelo diretor; não são nove cenas separadas.
+- `ScadrykPlayerController` usa `Rigidbody2D`, aceleração, mira por mouse/analógico, ataques com janela de 0,12 s, esquiva invulnerável, pulso e três poderes. `ScadrykEnemyHealth` contém quatro papéis de Eco, avisos de ataque, cobertura por raycast, guardiões e três fases do Arauto. `ScadrykGameDirector` concentra geração de salas, portais, objetivos, saves, métricas, menus e smoke test (1.148 linhas na inspeção).
+- O contrato para poderes, exploração, narrativa, opções, telemetria e cenas consta no README; a cobertura sólida e o teste da campanha existem no código. Smoke test usa dano artificial e, mesmo passando, não substitui combate jogado nem observação humana.
+- **Defeito encontrado nesta revisão:** os projéteis eram objetos de cena sem pai. Ao trocar ou reiniciar a sala, o mapa antigo era destruído, mas um projétil em voo podia sobreviver até seu timeout e atingir Nara na sala seguinte. A correção associa cada projétil à sala ativa, limpa os restantes na passagem e estende o smoke test para conferir ambas as condições.
+- **Riscos que continuam:** o diretor ainda concentra responsabilidades; o teste de smoke não valida colisões ou sensação em combate real; o layout do HUD usa áreas fixas; não há sessões atuais com participantes iniciantes, intermediários e experientes.
+- A versão normal mais recente registrada é Stage9. Este ambiente não localizou o Unity Editor nos caminhos de instalação usuais; a build normal atual e a captura desta revisão, portanto, continuam pendentes. O App Control já havia bloqueado uma DLL do Editor numa tentativa anterior. Não confundir o smoke test anterior com build normal ou apresentação visual desta revisão.
+
 ## Diagnóstico inicial e direção criativa
 
 Nara é uma Ouvinte que preserva histórias em três sinos de travessia. Os Ecos são memórias separadas pelo silêncio do Arauto. O bosque alagado guarda vozes nas raízes; a bacia de sal cristalizou a última maré; a costa das badaladas usa ruínas e sinos como instrumentos. Cada guardião ensina um poder. O Arauto tenta impedir que a memória da catástrofe volte ao mundo; sua derrota reconecta os lugares por um portal colossal. A câmera permanece top-down, com profundidade criada por sombras, oclusão e escala.
