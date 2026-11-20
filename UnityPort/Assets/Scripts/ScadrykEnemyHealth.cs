@@ -163,7 +163,9 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             Vector2 direction = (attackTarget - origin).normalized;
             Vector2 end = !IsBoss && combatRole == 0 ? origin + direction * 3.3f :
                 IsBoss && biomeIndex == 0 ? origin + direction * Mathf.Clamp(Vector2.Distance(origin, attackTarget) + 1.25f, 2.8f, 7.2f) : attackTarget;
-            ScadrykEffects.TelegraphLine(origin, end, warning, !IsBoss && combatRole == 1 ? 0.16f : 0.34f, windup);
+            float telegraphThickness = !IsBoss && combatRole == 0 ? 0.86f :
+                !IsBoss && combatRole == 1 ? 0.31f : IsBoss && biomeIndex == 0 ? 1.4f : 0.34f;
+            ScadrykEffects.TelegraphLine(origin, end, warning, telegraphThickness, windup);
         }
     }
 
@@ -182,7 +184,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             Vector2 direction = (attackTarget - origin).normalized;
             int halfCount = stage == 1 ? 1 : stage == 2 ? 2 : 3;
             for (int i = -halfCount; i <= halfCount; i++)
-                ScadrykEffects.TelegraphLine(origin, origin + Rotate(direction, i * 0.19f) * 7.2f, warning, 0.16f, windup);
+                ScadrykEffects.TelegraphLine(origin, origin + Rotate(direction, i * 0.19f) * 7.2f, warning, 0.52f, windup);
         }
         else if (queuedFinalPattern == 1)
         {
