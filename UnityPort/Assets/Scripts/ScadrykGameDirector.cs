@@ -1896,9 +1896,10 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             ScadrykEnemyHealth.WarningCueFor(2, true, false, 0) != areaCue ||
             ScadrykEnemyHealth.WarningCueFor(2, true, true, 0) != ScadrykCue.FinalBossWarning ||
             audio == null || !audio.HasCue(laneCue) || !audio.HasCue(volleyCue) || !audio.HasCue(areaCue) ||
-            !audio.HasCue(supportCue) || !audio.HasCue(ScadrykCue.FinalBossWarning))
+            !audio.HasCue(supportCue) || !audio.HasCue(ScadrykCue.FinalBossWarning) || !audio.HasCue(ScadrykCue.PlayerStrike) ||
+            ScadrykCue.PlayerStrike == ScadrykCue.Impact || ScadrykCue.PlayerStrike == ScadrykCue.Sword)
         { SmokeFail("Os sinais sonoros de aviso não diferenciam papéis e guardiões"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: avisos sonoros diferenciam papéis e Arauto");
+        Debug.Log("SCADRYK_SMOKE: sinais distinguem golpe confirmado de Nara, papéis inimigos e Arauto");
         if (!FocusLossRequiresPause(false, false, false, false, false, false) ||
             FocusLossRequiresPause(true, false, false, false, false, false) ||
             FocusLossRequiresPause(false, true, false, false, false, false) ||

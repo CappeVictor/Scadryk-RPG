@@ -253,13 +253,16 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         ScadrykEffects.Slash(transform.position, direction, attackRange);
         Vector2 footprint = ScadrykEffects.PlayerSlashFootprint(attackRange);
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, footprint.x + footprint.y, ~0);
+        bool hitEnemy = false;
         foreach (Collider2D hit in hits)
         {
             if (!hit.TryGetComponent<ScadrykEnemyHealth>(out var enemy)) continue;
             if (!WithinVisualFootprint(enemy.transform.position, transform.position, direction, ScadrykEffects.PlayerSlashForwardOffset, footprint, EnemyCollisionRadius(enemy))) continue;
             if (ScadrykCombatRules.WorldBlocks(transform.position, enemy.transform.position)) continue;
             enemy.TakeDamage(attackDamage);
+            hitEnemy = true;
         }
+        if (hitEnemy) ScadrykAudio.Play(ScadrykCue.PlayerStrike);
     }
 
     private void Dash()

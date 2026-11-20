@@ -65,6 +65,8 @@ O mapa completo pode ser consultado durante a exploração e pausa o combate par
 
 O objetivo compartilhado pelo HUD e pelo mapa acompanha o estado real da sala: mostra a quantidade de Ecos a derrotar, troca para o próximo cristal/sinal ou vestígio quando o combate termina e passa a pedir a travessia quando o portal abre. Na arena final, identifica o guardião, o breve momento para ouvir sua lembrança e o Arauto quando ele desperta. Isso evita que a indicação continue mandando o jogador cumprir uma etapa que já terminou.
 
+O ataque básico de Nara mantém seu som de preparação e a animação do golpe; quando acerta um ou mais alvos válidos, toca uma única confirmação aguda de impacto, diferente do impacto grave dos Ecos. O efeito visual e o dano continuam resolvidos uma vez por inimigo atingido. A confirmação ainda precisa de avaliação auditiva com o volume de efeitos e a música ativos.
+
 ## Critérios por etapa
 
 1. Refinar movimento, mira, esquiva, ataques legíveis e poderes táticos.
