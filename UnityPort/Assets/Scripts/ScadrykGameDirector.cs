@@ -19,6 +19,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private Sprite fallenWillowLogSprite;
     private Sprite portalSprite;
     private Sprite witnessSprite;
+    private Texture2D titleBackdropTexture;
 
     private int phaseIndex, roomIndex, enemiesRemaining;
     private static bool smokeRun;
@@ -98,6 +99,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         fallenWillowLogSprite = LoadSingleSprite("FallenWillowLog", 300f);
         portalSprite = LoadSingleSprite("AncientPortal", 600f);
         witnessSprite = LoadSingleSprite("DrownedMemory", 280f);
+        titleBackdropTexture = Resources.Load<Texture2D>("ScadrykArt/ScadrykTitleBackdrop");
         SetupCamera();
         gameObject.AddComponent<ScadrykAudio>();
         int savedPhase = smokeRun ? 0 : Mathf.Clamp(PlayerPrefs.GetInt("Scadryk.Phase", 0), 0, PhaseNames.Length - 1);
@@ -1174,6 +1176,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private IEnumerator SmokeCampaign()
     {
         yield return null;
+        if (titleBackdropTexture == null) { SmokeFail("A arte de abertura ScadrykTitleBackdrop não foi carregada"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: arte original da tela inicial carregada");
         if (ProgressHint(1, 0, 0) == ProgressHint(1, 0, 1) ||
             ProgressHint(3, 0, 0) == ProgressHint(3, 0, 1) ||
             ProgressHint(4, 0, 0) == ProgressHint(4, 0, 1) || ProgressHint(4, 0, 1) == ProgressHint(4, 0, 2) ||
@@ -1458,7 +1462,20 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private void DrawOverlay()
     {
-        GUI.color = new Color(0.015f, 0.02f, 0.025f, 0.91f); GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture); GUI.color = Color.white;
+        Rect screenRect = new Rect(0, 0, Screen.width, Screen.height);
+        if (showTitle && titleBackdropTexture != null)
+        {
+            GUI.color = Color.white;
+            GUI.DrawTexture(screenRect, titleBackdropTexture, ScaleMode.ScaleAndCrop);
+            GUI.color = new Color(0.01f, 0.02f, 0.025f, 0.44f);
+            GUI.DrawTexture(screenRect, Texture2D.whiteTexture);
+        }
+        else
+        {
+            GUI.color = new Color(0.015f, 0.02f, 0.025f, 0.91f);
+            GUI.DrawTexture(screenRect, Texture2D.whiteTexture);
+        }
+        GUI.color = Color.white;
         string heading = victory ? "AS VOZES VOLTAM" : showTitle ? "SCADRYK" : "PAUSADO";
         float center = Screen.width * 0.5f;
         float top = Screen.height * 0.29f;
