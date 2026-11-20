@@ -1250,6 +1250,16 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         ApplyPauseTimeScale();
         if (!pauseClockStopped) { SmokeFail("A pausa deixou o relógio de combate avançar"); yield break; }
         Debug.Log("SCADRYK_SMOKE: pausa congela o relógio e os avisos temporizados");
+        bool previousReduceShake = ScadrykSettings.ReduceShake;
+        if (follow == null) { SmokeFail("A câmera não foi criada para verificar redução de tremor"); yield break; }
+        ScadrykSettings.ReduceShake = false;
+        follow.Shake(0.1f, 0.4f);
+        ScadrykSettings.ReduceShake = true;
+        follow.ApplyReducedMotion();
+        bool shakeStopped = !follow.IsShaking;
+        ScadrykSettings.ReduceShake = previousReduceShake;
+        if (!shakeStopped) { SmokeFail("Reduzir tremor não interrompeu a sacudida já ativa"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: redução de tremor interrompe sacudida ativa");
         if (titleBackdropTexture == null) { SmokeFail("A arte de abertura ScadrykTitleBackdrop não foi carregada"); yield break; }
         Debug.Log("SCADRYK_SMOKE: arte original da tela inicial carregada");
         RequestNewGame(true);
