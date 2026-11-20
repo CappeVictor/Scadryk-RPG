@@ -1187,6 +1187,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (narrowHud.Overlaps(narrowMap) || narrowMap.xMin < 0f || narrowMap.yMin < 0f || narrowMap.xMax > 700f || narrowMap.yMax > 600f)
         { SmokeFail("Minimapa sobrepõe o HUD ou sai da janela estreita com texto ampliado"); yield break; }
         Debug.Log("SCADRYK_SMOKE: minimapa empilha abaixo do HUD em janela estreita");
+        if (!OptionsLayoutFits(600f))
+        { SmokeFail("O menu de opções corta as teclas remapeáveis ou os controles de retorno a 600px de altura"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: menu de opções cabe em janela de 600px de altura");
         for (int effect = 0; effect < 40; effect++)
             ScadrykEffects.Burst(roomCenter + Vector2.up * (20f + effect), Color.clear, 0.05f);
         if (ScadrykEffects.SecondaryVisualCount > ScadrykEffects.SecondaryVisualLimit) { SmokeFail("O limite de efeitos secundários não foi respeitado"); yield break; }
@@ -1490,7 +1493,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private void DrawOptions()
     {
         GUI.color = new Color(0.01f, 0.02f, 0.025f, 0.97f); GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture); GUI.color = Color.white;
-        float width = Mathf.Min(620f, Screen.width - 36f), x = (Screen.width - width) * 0.5f, y = Mathf.Max(18f, (Screen.height - 690f) * 0.5f);
+        bool compact = Screen.height < 720f;
+        float width = Mathf.Min(620f, Screen.width - 36f), x = (Screen.width - width) * 0.5f;
+        float y = compact ? 8f : Mathf.Max(18f, (Screen.height - 690f) * 0.5f);
+        float keyRowStart = compact ? 130f : 135f, keyRowStep = compact ? 34f : 39f, keyRowHeight = compact ? 30f : 32f;
+        float padRowStart = compact ? 130f : 135f, padRowStep = compact ? 40f : 45f, padRowHeight = compact ? 30f : 32f;
+        float backOffset = compact ? 512f : 585f, footerOffset = compact ? 560f : 637f;
         GUI.Label(new Rect(x, y, width, 42f), "OPÇÕES", centeredTitleStyle);
         float tabWidth = (width - 46f) / 3f;
         if (OptionButton(new Rect(x + 15f, y + 48f, tabWidth, 38f), "Som", 0)) { optionsTab = 0; optionsSelection = 0; }
@@ -1519,10 +1527,10 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             GUI.Label(new Rect(x + 15f, y + 99f, width - 30f, 31f), "Clique na tecla para trocar. Teclas repetidas são permutadas.", bodyStyle);
             for (int i = 0; i < ScadrykSettings.Actions.Length; i++)
             {
-                float row = y + 135f + i * 39f;
-                GUI.Label(new Rect(x + 15f, row, 220f, 34f), ScadrykSettings.Actions[i], bodyStyle);
+                float row = y + keyRowStart + i * keyRowStep;
+                GUI.Label(new Rect(x + 15f, row, 220f, keyRowHeight), ScadrykSettings.Actions[i], bodyStyle);
                 string label = rebindingAction == i ? "Pressione uma tecla…" : ScadrykSettings.Key(i).ToString();
-                Rect keyButton = new Rect(x + 240f, row, width - 255f, 32f);
+                Rect keyButton = new Rect(x + 240f, row, width - 255f, keyRowHeight);
                 if (OptionButton(keyButton, label, i + 3)) rebindingAction = i;
             }
             if (rebindingAction >= 0 && Event.current.type == EventType.KeyDown && Event.current.keyCode != KeyCode.None && Event.current.keyCode != KeyCode.Escape)
@@ -1537,14 +1545,24 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             GUI.Label(new Rect(x + 15f, y + 99f, width - 30f, 31f), "Selecione uma ação e pressione o botão desejado.", bodyStyle);
             for (int i = 0; i < 7; i++)
             {
-                float row = y + 135f + i * 45f;
-                GUI.Label(new Rect(x + 15f, row, 220f, 34f), ScadrykSettings.Actions[i], bodyStyle);
+                float row = y + padRowStart + i * padRowStep;
+                GUI.Label(new Rect(x + 15f, row, 220f, padRowHeight), ScadrykSettings.Actions[i], bodyStyle);
                 string label = gamepadRebindAction == i ? "Pressione um botão…" : ScadrykSettings.PadButtonName(ScadrykSettings.PadButton(i));
-                if (OptionButton(new Rect(x + 240f, row, width - 255f, 32f), label, i + 3)) { gamepadRebindAction = i; gamepadRebindAfterFrame = Time.frameCount; }
+                if (OptionButton(new Rect(x + 240f, row, width - 255f, padRowHeight), label, i + 3)) { gamepadRebindAction = i; gamepadRebindAfterFrame = Time.frameCount; }
             }
         }
-        if (OptionButton(new Rect(x + (width - 180f) * 0.5f, y + 585f, 180f, 42f), "Voltar", optionsTab == 0 ? 8 : optionsTab == 1 ? 14 : 10)) { showOptions = false; rebindingAction = gamepadRebindAction = -1; }
-        GUI.Label(new Rect(x, y + 637f, width, 28f), "Controle: analógico navega · A confirma · B volta · Start pausa.", smallStyle);
+        if (OptionButton(new Rect(x + (width - 180f) * 0.5f, y + backOffset, 180f, 42f), "Voltar", optionsTab == 0 ? 8 : optionsTab == 1 ? 14 : 10)) { showOptions = false; rebindingAction = gamepadRebindAction = -1; }
+        GUI.Label(new Rect(x, y + footerOffset, width, 28f), "Controle: analógico navega · A confirma · B volta · Start pausa.", smallStyle);
+    }
+
+    private static bool OptionsLayoutFits(float screenHeight)
+    {
+        bool compact = screenHeight < 720f;
+        float y = compact ? 8f : Mathf.Max(18f, (screenHeight - 690f) * 0.5f);
+        float rowStart = compact ? 130f : 135f, rowStep = compact ? 34f : 39f, rowHeight = compact ? 30f : 32f;
+        float backOffset = compact ? 512f : 585f, footerOffset = compact ? 560f : 637f;
+        float lastKeyRowBottom = y + rowStart + (ScadrykSettings.Actions.Length - 1) * rowStep + rowHeight;
+        return lastKeyRowBottom <= y + backOffset && y + backOffset + 42f <= screenHeight && y + footerOffset + 28f <= screenHeight;
     }
 
     private bool OptionButton(Rect rect, string label, int selection)

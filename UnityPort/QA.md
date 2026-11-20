@@ -24,6 +24,7 @@
 - Espessura dos avisos lineares: linhas de raízes e salvas agora acompanham a largura das faixas de dano e dos projéteis correspondentes, reduzindo ataques cuja área real excedia o sinal. Ainda precisa de inspeção visual e teste no Editor.
 - Alcance dos objetos de ressonância: cristais e sinais da costa agora respondem dentro do raio real do Pulso; o smoke tenta ativá-los a 0,02 unidade fora do alcance e exige que continuem intactos antes de interagir dentro dele. Ainda sem execução no Editor.
 - HUD em janela estreita: o minimapa é reposicionado abaixo do painel principal quando não há largura para exibi-los lado a lado; o smoke confere ausência de sobreposição e limites da janela a 700×600 com texto em 150%. Ainda sem execução ou inspeção visual no Editor.
+- Opções em janela baixa: abaixo de 720px o menu reduz o espaçamento das 11 linhas de remapeamento para manter teclado, Voltar e instruções visíveis; o smoke confere o limite vertical em 600px. Ainda sem execução/inspeção no Editor.
 
 ## Dados observados e limites
 
