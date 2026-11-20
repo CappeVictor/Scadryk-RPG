@@ -1278,6 +1278,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             !gamepadInteractHint.Contains("(" + ScadrykSettings.PadButtonName(ScadrykSettings.PadButton(6)) + ")") ||
             FormatInputBinding(KeyCode.F, 4, false) != "F" ||
             FormatInputBinding(KeyCode.Alpha1, 4, false) != "1" ||
+            FormatInputBinding(KeyCode.Keypad1, 4, false) != "Num 1" ||
             FormatInputBinding(KeyCode.Space, 4, false) != "Espaço" ||
             FormatInputBinding(KeyCode.F, 4, true) != "LB")
         { SmokeFail("Pistas e HUD não refletem teclas e botões remapeados do dispositivo ativo"); yield break; }
