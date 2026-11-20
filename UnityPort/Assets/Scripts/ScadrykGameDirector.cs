@@ -104,7 +104,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private string sessionInputMode = "unknown";
     private bool roomSessionRecorded;
     private readonly int[] roomPowerUses = new int[3];
-    private GUIStyle titleStyle, bodyStyle, smallStyle, openingTitleStyle, openingBodyStyle;
+    private GUIStyle titleStyle, bodyStyle, smallStyle, openingTitleStyle, openingBodyStyle, offscreenTargetStyle;
     private GUIStyle centeredTitleStyle, centeredBodyStyle;
     private GUIStyle finalBossLabelStyle, memoryStyle;
     private float cachedTextScale = -1f;
@@ -1976,6 +1976,13 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 if (!mapLabels.Add(MapRoomLabel(phase, room))) { SmokeFail("O minimapa repete o nome de uma das nove salas"); yield break; }
         if (mapLabels.Count != PhaseNames.Length * RoomsPerPhase) { SmokeFail("O minimapa não identifica as nove salas"); yield break; }
         Debug.Log("SCADRYK_SMOKE: minimapa diferencia as nove salas");
+        if (OffscreenTargetArrow(new Vector2(0.5f, 0.5f)) != null ||
+            OffscreenTargetArrow(new Vector2(1.2f, 0.5f)) != "→" ||
+            OffscreenTargetArrow(new Vector2(-0.2f, 0.5f)) != "←" ||
+            OffscreenTargetArrow(new Vector2(0.5f, 1.2f)) != "↑" ||
+            OffscreenTargetArrow(new Vector2(0.5f, -0.2f)) != "↓")
+        { SmokeFail("A bússola de tela não reconhece alvo visível nem as quatro direções fora da câmera"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: direção para alvo fora da câmera aponta para o quadrante correto");
         if (!MiniMapPortalLabelFits(new Rect(0f, 0f, 75f, 57f), 1f) ||
             !MiniMapPortalLabelFits(new Rect(0f, 0f, 90f, 67f), 1.5f))
         { SmokeFail("O marcador do portal sai do cartão da sala no minimapa"); yield break; }
@@ -2459,7 +2466,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (showOpeningStory) { DrawOpeningStory(); return; }
         if (showOptions) { DrawOptions(); return; }
         if (showTitle || isPaused || victory) { DrawOverlay(); return; }
-        DrawHud(); DrawMiniMap();
+        DrawHud(); DrawMiniMap(); DrawOffscreenTargetHint();
         DrawWitnessPrompt();
         if (phaseGuardian != null) DrawPhaseGuardianTitle();
         if (finalBoss != null) DrawFinalBossBar();
@@ -2601,6 +2608,33 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         DrawMiniMapLegendItem(legend.x + columnWidth * 2f, legend.y, columnWidth, MiniMapRoomColor(false, false), "Futura");
         DrawMiniMapLegendItem(legend.x + columnWidth * 3f, legend.y, columnWidth, new Color(0.28f, 0.88f, 1f), "Alvo", true);
         GUI.color = Color.white;
+    }
+
+    private void DrawOffscreenTargetHint()
+    {
+        if (player == null || Time.time < statusUntil || Time.time < memoryUntil || !TryGetMiniMapTarget(out Vector2 target)) return;
+        Camera sceneCamera = Camera.main;
+        if (sceneCamera == null) return;
+        Vector3 viewport = sceneCamera.WorldToViewportPoint(target);
+        if (viewport.z <= 0f) return;
+        string arrow = OffscreenTargetArrow(new Vector2(viewport.x, viewport.y));
+        if (arrow == null) return;
+
+        float width = Mathf.Min(280f, Screen.width - 32f);
+        Rect hint = new Rect((Screen.width - width) * 0.5f, Screen.height - 74f, width, 28f);
+        GUI.color = new Color(0.025f, 0.04f, 0.045f, 0.9f);
+        GUI.DrawTexture(hint, Texture2D.whiteTexture);
+        GUI.color = new Color(0.28f, 0.88f, 1f, 1f);
+        GUI.Label(hint, arrow + "  ALVO FORA DA TELA", offscreenTargetStyle);
+        GUI.color = Color.white;
+    }
+
+    internal static string OffscreenTargetArrow(Vector2 viewportPosition)
+    {
+        if (viewportPosition.x >= 0f && viewportPosition.x <= 1f && viewportPosition.y >= 0f && viewportPosition.y <= 1f) return null;
+        Vector2 offset = viewportPosition - new Vector2(0.5f, 0.5f);
+        if (Mathf.Abs(offset.x) > Mathf.Abs(offset.y)) return offset.x >= 0f ? "→" : "←";
+        return offset.y >= 0f ? "↑" : "↓";
     }
 
     internal static Rect MiniMapPositionMarkerRect(Rect roomCell, Vector2 roomOffset, float textScale)
@@ -2975,6 +3009,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         openingTitleStyle = new GUIStyle(centeredTitleStyle);
         centeredBodyStyle = new GUIStyle(bodyStyle) { alignment = TextAnchor.MiddleCenter, wordWrap = true, fontSize = Mathf.RoundToInt(16f * scale) };
         openingBodyStyle = new GUIStyle(centeredBodyStyle);
+        offscreenTargetStyle = new GUIStyle(centeredBodyStyle) { fontSize = Mathf.RoundToInt(13f * scale), fontStyle = FontStyle.Bold };
         finalBossLabelStyle = new GUIStyle(titleStyle) { alignment = TextAnchor.MiddleCenter, fontSize = Mathf.RoundToInt(14f * scale), normal = { textColor = new Color(1f, 0.73f, 0.86f) } };
         memoryStyle = new GUIStyle(bodyStyle) { wordWrap = true, alignment = TextAnchor.UpperLeft };
     }
