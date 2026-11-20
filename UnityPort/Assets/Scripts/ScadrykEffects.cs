@@ -130,15 +130,18 @@ public static class ScadrykEffects
         go.transform.right = direction;
     }
 
-    public static void PlayerPulse(Vector2 position, float diameter)
+    internal static float PlayerPulseDiameter(float hitRadius) => hitRadius * 2f;
+
+    public static void PlayerPulse(Vector2 position, float hitRadius)
     {
+        float diameter = PlayerPulseDiameter(hitRadius);
         Sprite pulseSprite = PlayerPulseSprite;
         if (pulseSprite == null)
         {
             Burst(position, new Color(0.3f, 0.85f, 0.8f, 0.8f), diameter);
             return;
         }
-        CreateSpriteEffect(pulseSprite, position, Vector2.one * diameter * 0.72f, Color.white, 0.3f, "Player special pulse", true);
+        CreateSpriteEffect(pulseSprite, position, Vector2.one * diameter, Color.white, 0.3f, "Player special pulse", true);
     }
 
     public static void AbilityCrescent(Vector2 position, Vector2 direction)

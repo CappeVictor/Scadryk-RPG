@@ -216,7 +216,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         if (director != null) director.TryPulseAnchor(transform.position);
         ScadrykAudio.Play(ScadrykCue.Pulse);
         if (animator != null) animator.PlayAttack(facing, true);
-        ScadrykEffects.PlayerPulse(transform.position, shockwaveRadius * 2f);
+        ScadrykEffects.PlayerPulse(transform.position, shockwaveRadius);
         ShakeCamera(0.055f);
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, shockwaveRadius, ~0);
         foreach (Collider2D hit in hits)

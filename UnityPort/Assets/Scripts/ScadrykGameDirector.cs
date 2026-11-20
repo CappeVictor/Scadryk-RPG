@@ -1245,6 +1245,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             ScadrykPlayerController.WithinVisualFootprint(new Vector2(1.5f, 1.41f), Vector2.zero, Vector2.right, 1.05f, new Vector2(4.1f, 2.8f)))
         { SmokeFail("As áreas de acerto dos poderes Crescente e Rompante divergem das dimensões dos efeitos visuais"); yield break; }
         Debug.Log("SCADRYK_SMOKE: áreas do Crescente e Rompante respeitam as dimensões anunciadas");
+        if (Mathf.Abs(ScadrykEffects.PlayerPulseDiameter(player.ShockwaveRadius) * 0.5f - player.ShockwaveRadius) > 0.001f)
+        { SmokeFail("O anel do Pulso não alcança o raio que pode causar dano"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: anel do Pulso cobre o raio efetivo de dano");
         var mapLabels = new System.Collections.Generic.HashSet<string>();
         for (int phase = 0; phase < PhaseNames.Length; phase++)
             for (int room = 0; room < RoomsPerPhase; room++)
