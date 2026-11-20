@@ -25,6 +25,7 @@
 - Alcance dos objetos de ressonância: cristais e sinais da costa agora respondem dentro do raio real do Pulso; o smoke tenta ativá-los a 0,02 unidade fora do alcance e exige que continuem intactos antes de interagir dentro dele. Ainda sem execução no Editor.
 - HUD em janela estreita: o minimapa é reposicionado abaixo do painel principal quando não há largura para exibi-los lado a lado; o smoke confere ausência de sobreposição e limites da janela a 700×600 com texto em 150%. Ainda sem execução ou inspeção visual no Editor.
 - Opções em janela baixa: abaixo de 720px o menu reduz o espaçamento das 11 linhas de remapeamento para manter teclado, Voltar e instruções visíveis; o smoke confere o limite vertical em 600px. Ainda sem execução/inspeção no Editor.
+- Menu inicial compacto: caixas de título, história, botões e rodapé agora respeitam a largura e a altura disponíveis; o smoke mede 400×360px. Ainda sem execução ou inspeção visual no Editor.
 - Arte de abertura: nova imagem `ScadrykTitleBackdrop.png` conecta os três biomas e é desenhada atrás do menu inicial com uma camada escura para contraste. O smoke exige que a textura seja carregada; a integração visual ainda não foi compilada ou inspecionada no Editor.
 
 ## Dados observados e limites

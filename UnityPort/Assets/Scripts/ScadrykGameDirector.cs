@@ -1194,6 +1194,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (!OptionsLayoutFits(600f))
         { SmokeFail("O menu de opções corta as teclas remapeáveis ou os controles de retorno a 600px de altura"); yield break; }
         Debug.Log("SCADRYK_SMOKE: menu de opções cabe em janela de 600px de altura");
+        if (!OverlayLayoutFits(400f, 360f))
+        { SmokeFail("O menu inicial ou os botões escapam de uma janela compacta"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: menu inicial cabe em janela 400×360");
         for (int effect = 0; effect < 40; effect++)
             ScadrykEffects.Burst(roomCenter + Vector2.up * (20f + effect), Color.clear, 0.05f);
         if (ScadrykEffects.SecondaryVisualCount > ScadrykEffects.SecondaryVisualLimit) { SmokeFail("O limite de efeitos secundários não foi respeitado"); yield break; }
@@ -1478,17 +1481,45 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         GUI.color = Color.white;
         string heading = victory ? "AS VOZES VOLTAM" : showTitle ? "SCADRYK" : "PAUSADO";
         float center = Screen.width * 0.5f;
-        float top = Screen.height * 0.29f;
-        GUI.Label(new Rect(center - 300f, top, 600f, 52f), heading, centeredTitleStyle);
+        bool compact = Screen.height < 520f;
+        float top = compact ? 18f : Screen.height * 0.29f;
+        float titleWidth = Mathf.Min(600f, Screen.width - 32f);
+        float messageWidth = Mathf.Min(680f, Screen.width - 32f);
+        float buttonWidth = Mathf.Min(230f, Screen.width - 32f);
+        float titleHeight = compact ? 42f : 52f;
+        float messageTop = top + (compact ? 42f : 48f);
+        float messageHeight = compact ? 86f : 62f;
+        float buttonY = top + (compact ? 136f : 132f);
+        float buttonHeight = compact ? 40f : 44f;
+        float buttonStep = compact ? 48f : 54f;
+        GUI.Label(new Rect(center - titleWidth * 0.5f, top, titleWidth, titleHeight), heading, centeredTitleStyle);
         string message = victory ? "Nara devolveu as vozes aos três lugares. A verdade da onda pode ser lembrada sem manter ninguém preso. O limiar agora é uma passagem, não uma prisão." :
             showTitle ? "Nara, a Ouvinte, segue os Ecos até a origem do silêncio." : "A jornada pode esperar por você.";
-        GUI.Label(new Rect(center - 340f, top + 48f, 680f, 62f), message, centeredBodyStyle);
-        float buttonY = top + 132f;
-        if (!victory && OverlayButton(new Rect(center - 115f, buttonY, 230f, 44f), showTitle ? (PlayerPrefs.HasKey("Scadryk.Phase") ? "Continuar jornada" : "Começar jornada") : "Continuar", 0))
+        GUI.Label(new Rect(center - messageWidth * 0.5f, messageTop, messageWidth, messageHeight), message, centeredBodyStyle);
+        if (!victory && OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY, buttonWidth, buttonHeight), showTitle ? (PlayerPrefs.HasKey("Scadryk.Phase") ? "Continuar jornada" : "Começar jornada") : "Continuar", 0))
             BeginJourney();
-        if (OverlayButton(new Rect(center - 115f, buttonY + 54f, 230f, 44f), "Nova jornada", 1)) StartNewGame();
-        if (!victory && OverlayButton(new Rect(center - 115f, buttonY + 108f, 230f, 44f), "Opções e controles", 2)) { showOptions = true; optionsTab = optionsSelection = 0; }
-        GUI.Label(new Rect(center - 300f, Screen.height - 58f, 600f, 35f), "Três lugares · nove salas · memórias a libertar", centeredBodyStyle);
+        if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep, buttonWidth, buttonHeight), "Nova jornada", 1)) StartNewGame();
+        if (!victory && OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep * 2f, buttonWidth, buttonHeight), "Opções e controles", 2)) { showOptions = true; optionsTab = optionsSelection = 0; }
+        float footerWidth = Mathf.Min(600f, Screen.width - 32f), footerHeight = compact ? 28f : 35f;
+        float footerTop = Screen.height - (compact ? 42f : 58f);
+        GUI.Label(new Rect(center - footerWidth * 0.5f, footerTop, footerWidth, footerHeight), "Três lugares · nove salas · memórias a libertar", centeredBodyStyle);
+    }
+
+    private static bool OverlayLayoutFits(float screenWidth, float screenHeight)
+    {
+        bool compact = screenHeight < 520f;
+        float top = compact ? 18f : screenHeight * 0.29f;
+        float messageTop = top + (compact ? 42f : 48f);
+        float messageHeight = compact ? 86f : 62f;
+        float buttonY = top + (compact ? 136f : 132f);
+        float buttonHeight = compact ? 40f : 44f;
+        float buttonStep = compact ? 48f : 54f;
+        float footerTop = screenHeight - (compact ? 42f : 58f);
+        float footerHeight = compact ? 28f : 35f;
+        float horizontalWidth = Mathf.Min(680f, screenWidth - 32f);
+        float thirdButtonBottom = buttonY + buttonStep * 2f + buttonHeight;
+        return screenWidth >= 64f && horizontalWidth <= screenWidth - 32f &&
+               messageTop + messageHeight <= buttonY && thirdButtonBottom <= footerTop && footerTop + footerHeight <= screenHeight;
     }
 
     private bool OverlayButton(Rect rect, string label, int index)
