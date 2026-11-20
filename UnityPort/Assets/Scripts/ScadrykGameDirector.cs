@@ -625,6 +625,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private string WorldSecretHint(int power)
     {
         string[] names = { "Crescente Verdejante", "Estouro de Sal", "Rompante da Maré" };
+        if (player == null || !player.HasAbility(power))
+            return "Selo de Eco: esta lembrança só poderá ser libertada após derrotar o guardião deste lugar.";
         string binding = InputBinding(power + 3);
         return "Selo de Eco: use " + names[power] + " (" + binding + ") perto dele para libertar uma memória.";
     }
@@ -965,6 +967,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             player.UnlockAbility(enemy.BiomeIndex);
             string[] powers = { "Crescente Verdejante", "Estouro de Sal", "Rompante da Maré" };
             int powerIndex = Mathf.Clamp(enemy.BiomeIndex, 0, powers.Length - 1);
+            if (worldSecret != null && RequiredWorldSecretPower() == powerIndex) worldSecretHintShown = false;
             acquiredPower = "Novo poder adquirido: " + powers[powerIndex] + " (" + InputBinding(powerIndex + 3) + ").";
             if (powerIndex == 0) ShowMemory("As raízes se abrem. O primeiro zelador entrega a Nara o Crescente e o nome de quem guardava a comporta.", 7f);
             else if (powerIndex == 1) ShowMemory("O sal volta a brilhar. A segunda guardiã devolve o Estouro e a lembrança da última maré.", 7f);
@@ -1472,6 +1475,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         for (int room = 0; room < 9; room++)
         {
             if (phaseIndex * RoomsPerPhase + roomIndex != room) { SmokeFail("Sala inesperada: " + room); yield break; }
+            if (room == 8)
+            {
+                if (player.HasAbility(2) || !WorldSecretHint(2).Contains("após derrotar o guardião"))
+                { SmokeFail("A pista do selo da arena final presume Rompante antes de derrotar o guardião"); yield break; }
+                worldSecretHintShown = true;
+            }
             if (room == 3 || room == 6)
             {
                 int requiredPower = room == 3 ? 0 : 1;
@@ -1489,6 +1498,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 if (!clearedRooms[previousRoom]) { SmokeFail("O mapa não marcou a sala anterior como concluída: " + previousRoom); yield break; }
             foreach (ScadrykEnemyHealth enemy in FindObjectsByType<ScadrykEnemyHealth>(FindObjectsSortMode.None))
                 if (enemy != null && !enemy.IsFinalBoss) enemy.TakeDamage(99999f);
+            if (room == 8 && (worldSecretHintShown || !player.HasAbility(2) ||
+                !WorldSecretHint(2).Contains("Rompante da Maré")))
+            { SmokeFail("A pista do selo não foi atualizada após aprender Rompante com o guardião"); yield break; }
             if (room == 8 && !SmokeRevealWorldSecret(2))
             { SmokeFail("O selo opcional da costa não exigiu Rompante ou não concedeu cura após o guardião"); yield break; }
             if (room == 8)
