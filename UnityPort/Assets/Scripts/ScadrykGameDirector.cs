@@ -1883,6 +1883,10 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 if (!mapLabels.Add(MapRoomLabel(phase, room))) { SmokeFail("O minimapa repete o nome de uma das nove salas"); yield break; }
         if (mapLabels.Count != PhaseNames.Length * RoomsPerPhase) { SmokeFail("O minimapa não identifica as nove salas"); yield break; }
         Debug.Log("SCADRYK_SMOKE: minimapa diferencia as nove salas");
+        if (!MiniMapPortalLabelFits(new Rect(0f, 0f, 75f, 57f), 1f) ||
+            !MiniMapPortalLabelFits(new Rect(0f, 0f, 90f, 67f), 1.5f))
+        { SmokeFail("O marcador do portal sai do cartão da sala no minimapa"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: marcador PORTAL cabe no minimapa com texto padrão e ampliado");
         if (ProgressHint(1, 0, 0) == ProgressHint(1, 0, 1) ||
             ProgressHint(3, 0, 0) == ProgressHint(3, 0, 1) ||
             ProgressHint(4, 0, 0) == ProgressHint(4, 0, 1) || ProgressHint(4, 0, 1) == ProgressHint(4, 0, 2) ||
@@ -2446,6 +2450,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             GUI.color = MiniMapRoomColor(i == roomIndex, clearedRooms[i]);
             GUI.Box(cell, GUIContent.none); GUI.color = new Color(0.75f, 0.74f, 0.67f);
             GUI.Label(new Rect(cell.x + 3, cell.y + 2, roomW - 6, 18), (i + 1) + ". " + MapRoomLabel(phaseIndex, i), smallStyle);
+            if (i == roomIndex && gateObject != null)
+            {
+                GUI.color = PhaseAccentColors[phaseIndex];
+                GUI.Label(MiniMapPortalLabelRect(cell, ScadrykSettings.TextScale), "PORTAL", centeredBodyStyle);
+                GUI.color = Color.white;
+            }
             if (i < RoomsPerPhase - 1) GUI.Label(new Rect(cell.xMax, cell.y + 20, gap + 2, 20), "›", bodyStyle);
         }
         if (player != null)
@@ -2481,6 +2491,21 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         float scale = Mathf.Clamp(textScale, 1f, 1.5f);
         float height = 22f * scale;
         return new Rect(panel.x + 15f, panel.yMax - height, panel.width - 30f, height);
+    }
+
+    private static Rect MiniMapPortalLabelRect(Rect roomCell, float textScale)
+    {
+        float scale = Mathf.Clamp(textScale, 1f, 1.5f);
+        float inset = 3f * scale;
+        float height = 18f * scale;
+        return new Rect(roomCell.x + inset, roomCell.yMax - height - inset, roomCell.width - inset * 2f, height);
+    }
+
+    private static bool MiniMapPortalLabelFits(Rect roomCell, float textScale)
+    {
+        Rect label = MiniMapPortalLabelRect(roomCell, textScale);
+        return label.xMin >= roomCell.xMin && label.xMax <= roomCell.xMax &&
+            label.yMin >= roomCell.yMin && label.yMax <= roomCell.yMax;
     }
 
     private static Rect MiniMapPanelRect(float screenWidth, float screenHeight, float textScale)
