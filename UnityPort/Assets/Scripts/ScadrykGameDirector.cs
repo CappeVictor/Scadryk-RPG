@@ -37,6 +37,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private GameObject levelRoot, gateObject, witnessObject;
     private int witnessLine;
     private ScadrykEnemyHealth finalBoss;
+    private ScadrykEnemyHealth phaseGuardian;
     private GameObject worldSecret;
     private bool worldSecretHintShown;
     private readonly GameObject[] roomAnchors = new GameObject[2];
@@ -413,6 +414,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private void BuildPhase(int newPhase, int newRoom, bool newGame, bool preserveRoomSession = false)
     {
+        phaseGuardian = null;
         if (levelRoot != null && !preserveRoomSession) RecordRoomSession();
         ClearRoomProjectiles();
         if (levelRoot != null) Destroy(levelRoot);
@@ -976,6 +978,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             enemy.AddComponent<ScadrykActorAnimator>().SetVisual(enemyVisual.transform, enemyVolumeRenderer);
             var health = enemy.AddComponent<ScadrykEnemyHealth>();
             health.Configure(boss ? 320f + phaseIndex * 80f : 72f + phaseIndex * 12f, boss ? 1.55f : 1.9f + phaseIndex * 0.1f, boss, phaseIndex, frames, role);
+            if (boss) phaseGuardian = health;
             enemy.AddComponent<ScadrykHealthBar>().Configure(false, boss, boss ? 1.45f : 1.22f);
         }
     }
@@ -991,6 +994,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     public void OnEnemyDefeated(ScadrykEnemyHealth enemy)
     {
         string acquiredPower = null;
+        if (enemy == phaseGuardian) phaseGuardian = null;
         if (enemy.IsFinalBoss)
         {
             finalBoss = null;
@@ -1594,6 +1598,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         for (int room = 0; room < 9; room++)
         {
             if (phaseIndex * RoomsPerPhase + roomIndex != room) { SmokeFail("Sala inesperada: " + room); yield break; }
+            if (room % RoomsPerPhase == RoomsPerPhase - 1 &&
+                (phaseGuardian == null || phaseGuardian.gameObject.name != GuardianNames[room / RoomsPerPhase]))
+            { SmokeFail("O nome persistente não corresponde ao guardião da sala " + (room + 1)); yield break; }
             if (room == 8)
             {
                 if (player.HasAbility(2) || !WorldSecretHint(2).Contains("após derrotar o guardião"))
@@ -1947,6 +1954,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (showTitle || isPaused || victory) { DrawOverlay(); return; }
         DrawHud(); DrawMiniMap();
         DrawWitnessPrompt();
+        if (phaseGuardian != null) DrawPhaseGuardianTitle();
         if (finalBoss != null) DrawFinalBossBar();
         if (Time.time < statusUntil) GUI.Label(new Rect(15, Screen.height - 64, Screen.width - 30, 44), statusMessage, bodyStyle);
         if (Time.time < memoryUntil && !transitioning)
@@ -2004,6 +2012,23 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     }
 
     private string WitnessPromptText() => InputBinding(6) + "  ·  FALAR COM NIMA";
+
+    private void DrawPhaseGuardianTitle()
+    {
+        Camera sceneCamera = Camera.main;
+        if (sceneCamera == null || phaseGuardian == null) return;
+        Vector3 screen = sceneCamera.WorldToScreenPoint(phaseGuardian.transform.position + Vector3.up * 2f);
+        if (screen.z <= 0f || screen.x < 8f || screen.x > Screen.width - 8f || screen.y < 8f || screen.y > Screen.height - 8f) return;
+        float width = Mathf.Min(240f, Screen.width - 16f);
+        Rect panel = new Rect(Mathf.Clamp(screen.x - width * 0.5f, 8f, Screen.width - width - 8f),
+            Mathf.Clamp(Screen.height - screen.y - 28f, 8f, Screen.height - 36f), width, 28f);
+        GUI.color = new Color(0.025f, 0.035f, 0.03f, 0.92f);
+        GUI.DrawTexture(panel, Texture2D.whiteTexture);
+        GUI.color = PhaseAccentColors[phaseIndex];
+        GUI.DrawTexture(new Rect(panel.x, panel.y, panel.width, 2f), Texture2D.whiteTexture);
+        GUI.color = Color.white;
+        GUI.Label(panel, GuardianNames[phaseIndex], centeredBodyStyle);
+    }
 
     private void DrawFinalBossBar()
     {
