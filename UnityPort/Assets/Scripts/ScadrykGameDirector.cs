@@ -48,6 +48,11 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         new[] { "Juncal Raso", "Bacia Imóvel", "Câmara do Sal" },
         new[] { "Costa das Badaladas", "Fileira das Bóias", "Coro da Maré Falsa" }
     };
+    private static readonly string[][] MapRoomLabels = {
+        new[] { "Margem", "Vau cinza", "Comporta" },
+        new[] { "Juncal", "Bacia", "Câmara sal" },
+        new[] { "Badaladas", "Bóias", "Coro maré" }
+    };
     private static readonly string[] RoomGoals = {
         "Libertar os Ecos da margem", "Abrir a antiga comporta", "Ouvir o guardião das raízes",
         "Escutar o vestígio do sal", "Ressoar dois cristais com o Pulso", "Libertar o guardião do sal",
@@ -1178,6 +1183,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         yield return null;
         if (titleBackdropTexture == null) { SmokeFail("A arte de abertura ScadrykTitleBackdrop não foi carregada"); yield break; }
         Debug.Log("SCADRYK_SMOKE: arte original da tela inicial carregada");
+        var mapLabels = new System.Collections.Generic.HashSet<string>();
+        for (int phase = 0; phase < PhaseNames.Length; phase++)
+            for (int room = 0; room < RoomsPerPhase; room++)
+                if (!mapLabels.Add(MapRoomLabel(phase, room))) { SmokeFail("O minimapa repete o nome de uma das nove salas"); yield break; }
+        if (mapLabels.Count != PhaseNames.Length * RoomsPerPhase) { SmokeFail("O minimapa não identifica as nove salas"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: minimapa diferencia as nove salas");
         if (ProgressHint(1, 0, 0) == ProgressHint(1, 0, 1) ||
             ProgressHint(3, 0, 0) == ProgressHint(3, 0, 1) ||
             ProgressHint(4, 0, 0) == ProgressHint(4, 0, 1) || ProgressHint(4, 0, 1) == ProgressHint(4, 0, 2) ||
@@ -1422,14 +1433,14 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         float width = 286f + extra * 120f;
         Rect panel = MiniMapPanelRect(Screen.width, Screen.height, ScadrykSettings.TextScale);
         GUI.color = new Color(0.035f, 0.05f, 0.06f, 0.9f); GUI.Box(panel, GUIContent.none); GUI.color = Color.white;
-        GUI.Label(new Rect(panel.x + 13, panel.y + 8, width - 26f, 21f + extra * 8f), "MAPA DA FASE", smallStyle);
+        GUI.Label(new Rect(panel.x + 13, panel.y + 8, width - 26f, 21f + extra * 8f), "MAPA · " + PhaseNames[phaseIndex], smallStyle);
         float mapX = panel.x + 15, mapY = panel.y + 43 + extra * 5f, roomW = 75f + extra * 30f, roomH = 57f + extra * 10f, gap = 8;
         for (int i = 0; i < RoomsPerPhase; i++)
         {
             Rect cell = new Rect(mapX + i * (roomW + gap), mapY, roomW, roomH);
             GUI.color = i == roomIndex ? new Color(0.19f, 0.36f, 0.35f) : (clearedRooms[i] ? new Color(0.16f, 0.25f, 0.22f) : new Color(0.12f, 0.15f, 0.16f));
             GUI.Box(cell, GUIContent.none); GUI.color = new Color(0.75f, 0.74f, 0.67f);
-            GUI.Label(new Rect(cell.x + 3, cell.y + 2, roomW - 6, 18), (i + 1) + ". " + ShortRoomName(i), smallStyle);
+            GUI.Label(new Rect(cell.x + 3, cell.y + 2, roomW - 6, 18), (i + 1) + ". " + MapRoomLabel(phaseIndex, i), smallStyle);
             if (i < RoomsPerPhase - 1) GUI.Label(new Rect(cell.xMax, cell.y + 20, gap + 2, 20), "›", bodyStyle);
         }
         if (player != null)
@@ -1460,7 +1471,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         return new Rect(x, y, width, height);
     }
 
-    private string ShortRoomName(int index) => index == 0 ? "Entrada" : index == 1 ? "Travessia" : "Guardião";
+    private static string MapRoomLabel(int phase, int room) => MapRoomLabels[phase][room];
     private static string Cooldown(float value) => value <= 0.02f ? "pronto" : value.ToString("0.0") + "s";
 
     private void DrawOverlay()
