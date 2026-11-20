@@ -29,7 +29,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     private Vector2 moveInput;
     private Vector2 facing = Vector2.right;
     private Vector2 dashDirection;
-    private float dashEndsAt, nextDashAt, nextAttackAt, nextShockwaveAt, attackBufferedUntil;
+    private float dashEndsAt, nextDashAt, nextAttackAt, nextShockwaveAt, dashBufferedUntil, attackBufferedUntil;
     private float health = 120f;
     private float maxHealth = 120f;
     private bool isDying;
@@ -43,6 +43,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     private Sprite[] spriteFrames;
     private const float BasicAttackWindup = 0.12f;
     internal const float BasicAttackBufferWindow = 0.2f;
+    internal const float DashBufferWindow = 0.12f;
     private Vector3 lastMousePosition;
     private bool usingGamepadAim;
     private bool hasIndependentGamepadAim;
@@ -80,7 +81,12 @@ public sealed class ScadrykPlayerController : MonoBehaviour
 
     private void Update()
     {
-        if (isDying || (director != null && director.IsPaused)) { moveInput = Vector2.zero; return; }
+        if (isDying || (director != null && director.IsPaused))
+        {
+            moveInput = Vector2.zero;
+            dashBufferedUntil = attackBufferedUntil = 0f;
+            return;
+        }
 
         Vector2 keyboard = new Vector2((ScadrykSettings.Held(10) ? 1f : 0f) - (ScadrykSettings.Held(9) ? 1f : 0f),
             (ScadrykSettings.Held(7) ? 1f : 0f) - (ScadrykSettings.Held(8) ? 1f : 0f));
@@ -104,9 +110,10 @@ public sealed class ScadrykPlayerController : MonoBehaviour
                 director.RecordInputMode("gamepad");
         }
         AimAtPointer(keyboard.sqrMagnitude > 0.01f || keyboardAction, stick.sqrMagnitude > 0.01f || gamepadAction);
+        if (keyboardDash || gamepadDash) dashBufferedUntil = Time.time + DashBufferWindow;
+        TryStartBufferedDash();
         if (mouseAttack || keyboardAttack || gamepadAttack) attackBufferedUntil = Time.time + BasicAttackBufferWindow;
         TryStartBufferedAttack();
-        if (keyboardDash || gamepadDash) Dash();
         if (keyboardPulse || mousePulse || gamepadPulse) Shockwave();
         if (keyboardCrescent || gamepadCrescent) UseAbility(0);
         if (keyboardSaltburst || gamepadSaltburst) UseAbility(1);
@@ -208,12 +215,25 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         sprite.color = Time.time < invulnerableUntil && (ScadrykSettings.ReduceFlash || Mathf.FloorToInt(Time.time * 18f) % 2 != 0) ? new Color(0.45f, 0.85f, 1f) : Time.time < rootedUntil ? new Color(0.72f, 0.92f, 0.56f) : Color.white;
     }
 
-    internal static bool AttackBufferCanStart(float now, float bufferedUntil, float cooldownEndsAt) =>
+    internal static bool InputBufferCanStart(float now, float bufferedUntil, float cooldownEndsAt) =>
         bufferedUntil > now && now >= cooldownEndsAt;
+    internal static bool DashBufferCanStart(float now, float bufferedUntil, float cooldownEndsAt) =>
+        InputBufferCanStart(now, bufferedUntil, cooldownEndsAt);
+
+    private void TryStartBufferedDash()
+    {
+        if (!DashBufferCanStart(Time.time, dashBufferedUntil, nextDashAt))
+        {
+            if (Time.time >= dashBufferedUntil) dashBufferedUntil = 0f;
+            return;
+        }
+        dashBufferedUntil = 0f;
+        Dash();
+    }
 
     private void TryStartBufferedAttack()
     {
-        if (!AttackBufferCanStart(Time.time, attackBufferedUntil, nextAttackAt))
+        if (!InputBufferCanStart(Time.time, attackBufferedUntil, nextAttackAt))
         {
             if (Time.time >= attackBufferedUntil) attackBufferedUntil = 0f;
             return;
@@ -389,7 +409,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     public void ResetCombatCooldowns()
     {
         dashEndsAt = nextDashAt = nextAttackAt = nextShockwaveAt = 0f;
-        attackBufferedUntil = 0f;
+        dashBufferedUntil = attackBufferedUntil = 0f;
         System.Array.Clear(abilityReadyAt, 0, abilityReadyAt.Length);
     }
     public void ApplyRootSlow(float duration) => rootedUntil = Mathf.Max(rootedUntil, Time.time + duration);
@@ -399,5 +419,5 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         body.position = position;
         if (animator != null) animator.SetPortalScale(visibility);
     }
-    public void ResetForRoom(Vector2 position) { health = maxHealth; rootedUntil = 0f; attackBufferedUntil = 0f; terrainZones.Clear(); terrainSpeedScale = 1f; isDying = false; invulnerableUntil = Time.time + 1f; transform.position = position; BodyVelocity = Vector2.zero; if (animator != null) { animator.SetPortalScale(1f); animator.ResetPose(); } }
+    public void ResetForRoom(Vector2 position) { health = maxHealth; rootedUntil = 0f; dashBufferedUntil = attackBufferedUntil = 0f; terrainZones.Clear(); terrainSpeedScale = 1f; isDying = false; invulnerableUntil = Time.time + 1f; transform.position = position; BodyVelocity = Vector2.zero; if (animator != null) { animator.SetPortalScale(1f); animator.ResetPose(); } }
 }
