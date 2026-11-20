@@ -1251,7 +1251,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         finalBoss = bossObject.AddComponent<ScadrykEnemyHealth>();
         finalBoss.ConfigureFinalBoss(frames);
         bossObject.AddComponent<ScadrykHealthBar>().Configure(false, true, 2.25f);
-        statusMessage = "Rompante da Maré aprendido! O Arauto do Vazio despertou com três ataques.";
+        statusMessage = "Rompante da Maré (" + InputBinding(5) + ") aprendido! O Arauto do Vazio despertou com três ataques.";
         statusUntil = Time.time + 8f;
     }
 
@@ -1818,6 +1818,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             if (room == 8)
             {
                 if (finalBoss == null) { SmokeFail("Arauto não surgiu após o terceiro guardião"); yield break; }
+                if (string.IsNullOrEmpty(InputBinding(5)) || !statusMessage.Contains(InputBinding(5)))
+                { SmokeFail("O aviso do terceiro poder não mostrou o vínculo atual antes da luta final"); yield break; }
                 var bossType = typeof(ScadrykEnemyHealth);
                 var queuedStageField = bossType.GetField("queuedFinalStage", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
                 var attackIndexField = bossType.GetField("finalAttackIndex", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
