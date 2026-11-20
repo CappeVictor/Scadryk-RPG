@@ -33,6 +33,7 @@
 - Aviso de raízes: telegráfico, efeito no chão e área de dano usam a mesma margem de colisão do jogador. O smoke verifica alvos imediatamente dentro/fora da borda; ainda sem execução ou revisão visual no Editor.
 - Crescente e Rompante: dano e efeitos de controle usam os retângulos orientados dos sprites exibidos, com expansão pelo raio do colisor do inimigo; o smoke verifica as bordas frontal e lateral. Ainda sem execução, compilação ou balanceamento manual no Editor.
 - Pulso: o diâmetro da arte coincide com o diâmetro do raio efetivo de dano; o smoke confere a relação. Ainda sem execução ou comparação visual no Editor.
+- Ataque básico: dano e arco de espada usam a mesma pegada orientada, expandida pelo colisor inimigo; o smoke verifica limites frontal e lateral. Ainda sem execução ou avaliação manual da sensação de alcance.
 - Arte de abertura: nova imagem `ScadrykTitleBackdrop.png` conecta os três biomas e é desenhada atrás do menu inicial com uma camada escura para contraste. O smoke exige que a textura seja carregada; a integração visual ainda não foi compilada ou inspecionada no Editor.
 
 ## Dados observados e limites

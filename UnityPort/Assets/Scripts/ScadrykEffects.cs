@@ -24,6 +24,8 @@ public static class ScadrykEffects
     private static Sprite playerPulseSprite;
     private static Sprite softShadowSprite;
     private static Sprite verdantCrescentSprite, saltburstSprite, tidebreakerSprite, voidburstSprite;
+    internal const float PlayerSlashForwardOffset = 0.82f;
+    internal static Vector2 PlayerSlashFootprint(float length) => new Vector2(length * 1.65f, length * 0.88f);
     public static Sprite WhiteSprite
     {
         get
@@ -118,15 +120,16 @@ public static class ScadrykEffects
     }
     public static void Slash(Vector2 position, Vector2 direction, float length)
     {
+        Vector2 footprint = PlayerSlashFootprint(length);
         Sprite slashSprite = PlayerSlashSprite;
         if (slashSprite != null)
         {
-            GameObject spriteEffect = CreateSpriteEffect(slashSprite, position + direction * 0.82f, new Vector2(length * 1.65f, length * 0.88f), Color.white, 0.16f, "Player sword arc", true);
+            GameObject spriteEffect = CreateSpriteEffect(slashSprite, position + direction * PlayerSlashForwardOffset, footprint, Color.white, 0.16f, "Player sword arc", true);
             spriteEffect.transform.right = direction;
             spriteEffect.GetComponent<ScadrykTimedVisual>().SetSpin(-230f);
             return;
         }
-        GameObject go = Create(position + direction * 0.85f, new Color(1f, 0.82f, 0.42f, 0.85f), length * 1.55f, 0.22f, 0.13f);
+        GameObject go = Create(position + direction * PlayerSlashForwardOffset, new Color(1f, 0.82f, 0.42f, 0.85f), footprint.x, footprint.y, 0.13f);
         go.transform.right = direction;
     }
 

@@ -1245,6 +1245,14 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             ScadrykPlayerController.WithinVisualFootprint(new Vector2(1.5f, 1.41f), Vector2.zero, Vector2.right, 1.05f, new Vector2(4.1f, 2.8f)))
         { SmokeFail("As áreas de acerto dos poderes Crescente e Rompante divergem das dimensões dos efeitos visuais"); yield break; }
         Debug.Log("SCADRYK_SMOKE: áreas do Crescente e Rompante respeitam as dimensões anunciadas");
+        Vector2 slashFootprint = ScadrykEffects.PlayerSlashFootprint(1.45f);
+        float slashTargetRadius = 0.5f;
+        if (!ScadrykPlayerController.WithinVisualFootprint(new Vector2(ScadrykEffects.PlayerSlashForwardOffset + slashFootprint.x * 0.5f + slashTargetRadius - 0.01f, 0f), Vector2.zero, Vector2.right, ScadrykEffects.PlayerSlashForwardOffset, slashFootprint, slashTargetRadius) ||
+            ScadrykPlayerController.WithinVisualFootprint(new Vector2(ScadrykEffects.PlayerSlashForwardOffset + slashFootprint.x * 0.5f + slashTargetRadius + 0.01f, 0f), Vector2.zero, Vector2.right, ScadrykEffects.PlayerSlashForwardOffset, slashFootprint, slashTargetRadius) ||
+            !ScadrykPlayerController.WithinVisualFootprint(new Vector2(ScadrykEffects.PlayerSlashForwardOffset, slashFootprint.y * 0.5f + slashTargetRadius - 0.01f), Vector2.zero, Vector2.right, ScadrykEffects.PlayerSlashForwardOffset, slashFootprint, slashTargetRadius) ||
+            ScadrykPlayerController.WithinVisualFootprint(new Vector2(ScadrykEffects.PlayerSlashForwardOffset, slashFootprint.y * 0.5f + slashTargetRadius + 0.01f), Vector2.zero, Vector2.right, ScadrykEffects.PlayerSlashForwardOffset, slashFootprint, slashTargetRadius))
+        { SmokeFail("A borda do ataque básico não corresponde ao arco de espada visível"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: área do ataque básico corresponde ao arco de espada");
         if (Mathf.Abs(ScadrykEffects.PlayerPulseDiameter(player.ShockwaveRadius) * 0.5f - player.ShockwaveRadius) > 0.001f)
         { SmokeFail("O anel do Pulso não alcança o raio que pode causar dano"); yield break; }
         Debug.Log("SCADRYK_SMOKE: anel do Pulso cobre o raio efetivo de dano");
