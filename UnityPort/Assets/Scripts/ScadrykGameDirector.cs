@@ -166,7 +166,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private void OnApplicationFocus(bool hasFocus)
     {
-        if (!FocusLossRequiresPause(hasFocus, showTitle, isPaused, showOptions, victory, transitioning)) return;
+        if (smokeRun || !FocusLossRequiresPause(hasFocus, showTitle, isPaused, showOptions, victory, transitioning)) return;
         isPaused = true;
         ApplyPauseTimeScale();
     }

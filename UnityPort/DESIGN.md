@@ -78,6 +78,6 @@ As referências de outros jogos orientam clareza, descoberta e ritmo. Não repro
 
 - **Recompensa narrativa opcional (20/11/2026):** cada Selo de Eco agora libera uma figura de memória que sobe e desaparece, reproduz o motivo sonoro de Nima e revela um fragmento de história próprio do bioma. O smoke prepara verificações de efeito, texto e cura; silhueta, mistura sonora e ritmo da narrativa continuam sem inspeção no Editor.
 
-- **Segurança ao alternar janelas (20/11/2026):** perder foco pausa o combate ativo imediatamente e exige retomada explícita; estado de menu, opção, pausa, vitória ou portal é ignorado. Smoke verifica a regra de decisão, ainda sem teste real de foco no Editor.
+- **Segurança ao alternar janelas (20/11/2026):** perder foco pausa o combate ativo imediatamente e exige retomada explícita; estado de menu, opção, pausa, vitória ou portal é ignorado. Smoke verifica a regra de decisão e não é pausado por foco externo durante a automação; falta teste real de alternância de janelas no Editor.
 
 - **Pista condicionada ao guardião final (20/11/2026):** o Selo de Eco da arena não apresenta Rompante como disponível antes da vitória do guardião. Se a dica bloqueada já tiver aparecido, ela é rearmada quando Nara aprende o poder; o smoke simula essa transição, ainda sem execução no Editor.
