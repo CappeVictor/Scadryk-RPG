@@ -1678,6 +1678,10 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private IEnumerator SmokeCampaign()
     {
         yield return null;
+        if (ScadrykSettings.CanBindKey(KeyCode.None) || ScadrykSettings.CanBindKey(KeyCode.Escape) ||
+            ScadrykSettings.CanBindKey(KeyCode.F8) || !ScadrykSettings.CanBindKey(KeyCode.F))
+        { SmokeFail("Remapeamento permite tecla reservada ou rejeita uma tecla normal"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: Esc e F8 reservados; teclas normais podem ser remapeadas");
         bool[] blockedHeadings = new bool[10];
         blockedHeadings[0] = true;
         blockedHeadings[1] = true;
@@ -2803,7 +2807,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         }
         else if (optionsTab == 1)
         {
-            GUI.Label(new Rect(x + 15f, y + 99f, width - 185f, 31f), "Clique para trocar tecla.", smallStyle);
+            GUI.Label(new Rect(x + 15f, y + 99f, width - 185f, 31f), "Clique para trocar; F8 registra ataques.", smallStyle);
             if (OptionButton(new Rect(x + width - 155f, y + 95f, 140f, 32f), "Padrões", 14))
             {
                 ScadrykSettings.ResetKeyboardBindings();
@@ -2818,7 +2822,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 Rect keyButton = new Rect(x + 240f, row, width - 255f, keyRowHeight);
                 if (OptionButton(keyButton, label, i + 3)) rebindingAction = i;
             }
-            if (rebindingAction >= 0 && Event.current.type == EventType.KeyDown && Event.current.keyCode != KeyCode.None && Event.current.keyCode != KeyCode.Escape)
+            if (rebindingAction >= 0 && Event.current.type == EventType.KeyDown && ScadrykSettings.CanBindKey(Event.current.keyCode))
             {
                 ScadrykSettings.Bind(rebindingAction, Event.current.keyCode);
                 rebindingAction = -1;

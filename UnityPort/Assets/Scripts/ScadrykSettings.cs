@@ -55,6 +55,7 @@ public static class ScadrykSettings
     };
     public static bool Down(int action) => Input.GetKeyDown(Key(action));
     public static bool Held(int action) => Input.GetKey(Key(action));
+    internal static bool CanBindKey(KeyCode key) => key != KeyCode.None && key != KeyCode.Escape && key != KeyCode.F8;
     public static int PadButton(int action) => PadButton(action, "Scadryk.Pad.");
     internal static int PadButton(int action, string prefix) => PlayerPrefs.GetInt(prefix + action, PadDefaults[action]);
     public static bool PadDown(int action) => action >= 0 && action < PadDefaults.Length && PadButtonDown(PadButton(action));
@@ -67,7 +68,7 @@ public static class ScadrykSettings
 
     public static void Bind(int action, KeyCode key)
     {
-        if (action < 0 || action >= Defaults.Length || key == KeyCode.None || key == KeyCode.Escape) return;
+        if (action < 0 || action >= Defaults.Length || !CanBindKey(key)) return;
         KeyCode oldKey = Key(action);
         for (int i = 0; i < Defaults.Length; i++)
             if (i != action && Key(i) == key) PlayerPrefs.SetInt("Scadryk.Key." + i, (int)oldKey);
