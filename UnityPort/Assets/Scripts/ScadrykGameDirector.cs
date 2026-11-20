@@ -7,6 +7,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 {
     private const int RoomsPerPhase = 3;
     private const float RoomSpacing = 23f;
+    private const string SessionCsvHeader = "utc,phase,room,seconds,deaths,unclear_attacks,crescent,salt,tide,enemies_left,completed,input_mode\n";
     private static readonly string[] PhaseNames = { "Margens do Primeiro Eco", "Bacia do Sal Imóvel", "Costa das Badaladas" };
     private static readonly Color[] PhaseColors = { new Color(0.11f, 0.22f, 0.20f), new Color(0.27f, 0.20f, 0.12f), new Color(0.09f, 0.17f, 0.25f) };
     private static readonly Color[] PhaseWallColors = { new Color(0.17f, 0.29f, 0.26f), new Color(0.35f, 0.27f, 0.16f), new Color(0.13f, 0.28f, 0.36f) };
@@ -948,6 +949,13 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (mode == "keyboard_mouse" || mode == "gamepad") sessionInputMode = mode;
     }
 
+    private string FormatSessionCsvRow(bool completed)
+    {
+        return System.DateTime.UtcNow.ToString("o") + "," + (phaseIndex + 1) + "," + (roomIndex + 1) + "," +
+            Mathf.RoundToInt(Mathf.Max(0f, roomActiveSeconds)) + "," + roomDeaths + "," + unclearAttackMarks + "," + roomPowerUses[0] + "," +
+            roomPowerUses[1] + "," + roomPowerUses[2] + "," + enemiesRemaining + "," + completed.ToString().ToLowerInvariant() + "," + sessionInputMode + "\n";
+    }
+
     private void RecordRoomSession()
     {
         if (smokeRun || showTitle || roomSessionRecorded) return;
@@ -955,12 +963,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         try
         {
             string path = Path.Combine(Application.persistentDataPath, "scadryk-sessions-v4.csv");
-            if (!File.Exists(path)) File.WriteAllText(path, "utc,phase,room,seconds,deaths,unclear_attacks,crescent,salt,tide,enemies_left,completed,input_mode\n");
+            if (!File.Exists(path)) File.WriteAllText(path, SessionCsvHeader);
             bool completed = roomIndex >= 0 && roomIndex < clearedRooms.Length && clearedRooms[roomIndex];
-            string row = System.DateTime.UtcNow.ToString("o") + "," + (phaseIndex + 1) + "," + (roomIndex + 1) + "," +
-                Mathf.RoundToInt(Mathf.Max(0f, roomActiveSeconds)) + "," + roomDeaths + "," + unclearAttackMarks + "," + roomPowerUses[0] + "," +
-                roomPowerUses[1] + "," + roomPowerUses[2] + "," + enemiesRemaining + "," + completed.ToString().ToLowerInvariant() + "," + sessionInputMode + "\n";
-            File.AppendAllText(path, row);
+            File.AppendAllText(path, FormatSessionCsvRow(completed));
         }
         catch (System.Exception exception) { Debug.LogWarning("Scadryk: não foi possível registrar a sessão: " + exception.Message); }
     }
@@ -1283,7 +1288,11 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         RestartCurrentRoom();
         if (roomActiveSeconds != 17f || roomDeaths != 1 || roomPowerUses[0] != 2 || sessionInputMode != "gamepad")
         { SmokeFail("Morte reiniciou a sala mas perdeu tempo, mortes, usos de poderes ou dispositivo da sessão"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: telemetria preserva dados e dispositivo entre mortes na mesma sala");
+        string[] csvHeaderColumns = SessionCsvHeader.TrimEnd('\n').Split(',');
+        string[] csvRowColumns = FormatSessionCsvRow(true).TrimEnd('\n').Split(',');
+        if (csvRowColumns.Length != csvHeaderColumns.Length || csvRowColumns[csvRowColumns.Length - 1] != "gamepad")
+        { SmokeFail("A linha CSV da sessão não corresponde ao cabeçalho ou omite o dispositivo"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: telemetria preserva dados e dispositivo e serializa o CSV corretamente");
         float laneRadius = ScadrykEnemyHealth.PlayerCollisionRadius(player);
         float laneWidth = ScadrykEnemyHealth.RootLaneVisualWidth(0.86f, laneRadius);
         if (!ScadrykEnemyHealth.RootLaneHits(new Vector2(1.5f, laneWidth * 0.5f - 0.01f), Vector2.zero, new Vector2(3.3f, 0f), 0.86f, laneRadius) ||
