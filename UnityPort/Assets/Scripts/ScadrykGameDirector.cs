@@ -917,10 +917,10 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     {
         const float step = 0.35f;
         const float playerRadius = 0.42f;
-        float minX = -RoomSpacing * 0.5f + playerRadius;
-        float maxX = RoomSpacing * 0.5f - playerRadius;
-        float minY = -6.5f + playerRadius;
-        float maxY = 6.5f - playerRadius;
+        float minX = -9.7f + 0.25f + playerRadius;
+        float maxX = 9.7f - 0.25f - playerRadius;
+        float minY = -6.6f + 0.25f + playerRadius;
+        float maxY = 6.6f - 0.25f - playerRadius;
         int columns = Mathf.FloorToInt((maxX - minX) / step) + 1;
         int rows = Mathf.FloorToInt((maxY - minY) / step) + 1;
         var blocked = new bool[columns, rows];
@@ -947,6 +947,70 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         int read = 0, write = 0;
         int startIndex = startY * columns + startX;
         queue[write++] = startIndex;
+        visited[startX, startY] = true;
+        while (read < write)
+        {
+            int current = queue[read++];
+            int x = current % columns;
+            int y = current / columns;
+            if (x == exitX && y == exitY) return true;
+            for (int dx = -1; dx <= 1; dx++)
+            for (int dy = -1; dy <= 1; dy++)
+            {
+                if (dx == 0 && dy == 0) continue;
+                int nextX = x + dx, nextY = y + dy;
+                if (nextX < 0 || nextX >= columns || nextY < 0 || nextY >= rows ||
+                    visited[nextX, nextY] || blocked[nextX, nextY]) continue;
+                if (dx != 0 && dy != 0 && (blocked[x + dx, y] || blocked[x, y + dy])) continue;
+                visited[nextX, nextY] = true;
+                queue[write++] = nextY * columns + nextX;
+            }
+        }
+        return false;
+    }
+
+    private bool ActiveRoomHasWalkableRoute()
+    {
+        if (levelRoot == null) return false;
+        const float step = 0.35f;
+        const float playerRadius = 0.42f;
+        float minX = -9.7f + 0.25f + playerRadius;
+        float maxX = 9.7f - 0.25f - playerRadius;
+        float minY = -6.6f + 0.25f + playerRadius;
+        float maxY = 6.6f - 0.25f - playerRadius;
+        int columns = Mathf.FloorToInt((maxX - minX) / step) + 1;
+        int rows = Mathf.FloorToInt((maxY - minY) / step) + 1;
+        var solids = new System.Collections.Generic.List<Collider2D>();
+        foreach (Collider2D collider in levelRoot.GetComponentsInChildren<Collider2D>())
+        {
+            if (collider == null || !collider.enabled || collider.isTrigger ||
+                collider.GetComponentInParent<ScadrykPlayerController>() != null ||
+                collider.GetComponentInParent<ScadrykEnemyHealth>() != null) continue;
+            solids.Add(collider);
+        }
+
+        var blocked = new bool[columns, rows];
+        for (int x = 0; x < columns; x++)
+        for (int y = 0; y < rows; y++)
+        {
+            Vector2 point = new Vector2(minX + x * step, minY + y * step);
+            foreach (Collider2D solid in solids)
+            {
+                if ((solid.ClosestPoint(point) - point).sqrMagnitude < playerRadius * playerRadius)
+                { blocked[x, y] = true; break; }
+            }
+        }
+
+        int startX = Mathf.RoundToInt((-6.2f - minX) / step);
+        int startY = Mathf.RoundToInt(-minY / step);
+        int exitX = Mathf.RoundToInt((8.05f - minX) / step);
+        int exitY = startY;
+        if (blocked[startX, startY] || blocked[exitX, exitY]) return false;
+
+        var visited = new bool[columns, rows];
+        var queue = new int[columns * rows];
+        int read = 0, write = 0;
+        queue[write++] = startY * columns + startX;
         visited[startX, startY] = true;
         while (read < write)
         {
@@ -1873,6 +1937,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 if (!clearedRooms[previousRoom]) { SmokeFail("O mapa não marcou a sala anterior como concluída: " + previousRoom); yield break; }
             foreach (ScadrykEnemyHealth enemy in FindObjectsByType<ScadrykEnemyHealth>(FindObjectsSortMode.None))
                 if (enemy != null && !enemy.IsFinalBoss) enemy.TakeDamage(99999f);
+            if (!ActiveRoomHasWalkableRoute())
+            { SmokeFail("A geometria sólida ativa bloqueou a rota caminhável da sala " + (room + 1)); yield break; }
             if (room == 8 && (worldSecretHintShown || !player.HasAbility(2) ||
                 !WorldSecretHint(2).Contains("Rompante da Maré")))
             { SmokeFail("A pista do selo não foi atualizada após aprender Rompante com o guardião"); yield break; }
