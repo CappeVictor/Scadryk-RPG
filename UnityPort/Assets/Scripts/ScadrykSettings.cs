@@ -72,4 +72,10 @@ public static class ScadrykSettings
         get => PlayerPrefs.GetInt("Scadryk.ReduceShake", 0) != 0;
         set { if (ReduceShake == value) return; PlayerPrefs.SetInt("Scadryk.ReduceShake", value ? 1 : 0); PlayerPrefs.Save(); }
     }
+
+    public static bool HighContrastWarnings
+    {
+        get => PlayerPrefs.GetInt("Scadryk.HighContrastWarnings", 0) != 0;
+        set { if (HighContrastWarnings == value) return; PlayerPrefs.SetInt("Scadryk.HighContrastWarnings", value ? 1 : 0); PlayerPrefs.Save(); }
+    }
 }

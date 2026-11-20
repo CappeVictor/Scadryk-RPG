@@ -182,7 +182,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         {
             if (showOptions)
             {
-                int max = optionsTab == 0 ? 8 : optionsTab == 1 ? 14 : 10;
+                int max = optionsTab == 0 ? 9 : optionsTab == 1 ? 14 : 10;
                 optionsSelection = Mathf.Clamp(optionsSelection - (navigation.y > 0f ? 1 : -1), 0, max);
             }
             else overlaySelection = Mathf.Clamp(overlaySelection - (navigation.y > 0f ? 1 : -1), victory ? 1 : 0, confirmNewJourney || victory ? 1 : 2);
@@ -243,7 +243,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         {
             if (optionsSelection == 6) ScadrykSettings.ReduceFlash = !ScadrykSettings.ReduceFlash;
             else if (optionsSelection == 7) ScadrykSettings.ReduceShake = !ScadrykSettings.ReduceShake;
-            else if (optionsSelection == 8) showOptions = false;
+            else if (optionsSelection == 8) ScadrykSettings.HighContrastWarnings = !ScadrykSettings.HighContrastWarnings;
+            else if (optionsSelection == 9) showOptions = false;
         }
         else if (optionsTab == 1)
         {
@@ -1297,6 +1298,18 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (!OptionsLayoutFits(600f))
         { SmokeFail("O menu de opções corta as teclas remapeáveis ou os controles de retorno a 600px de altura"); yield break; }
         Debug.Log("SCADRYK_SMOKE: menu de opções cabe em janela de 600px de altura");
+        if (!SoundOptionsLayoutFits(600f))
+        { SmokeFail("O controle de alto contraste ou as instruções de avisos saem do menu em janela baixa"); yield break; }
+        bool oldHighContrast = ScadrykSettings.HighContrastWarnings;
+        ScadrykSettings.HighContrastWarnings = false;
+        float standardWarningWidth = ScadrykEffects.DangerWarningWidth(1f);
+        ScadrykSettings.HighContrastWarnings = true;
+        float highContrastWarningWidth = ScadrykEffects.DangerWarningWidth(1f);
+        bool highContrastBrightensSignal = ScadrykEffects.DangerWarningColor(new Color(0.2f, 0.4f, 0.8f, 0.6f)).r > 0.2f;
+        ScadrykSettings.HighContrastWarnings = oldHighContrast;
+        if (Mathf.Abs(standardWarningWidth - 1f) > 0.001f || Mathf.Abs(highContrastWarningWidth - 1.4f) > 0.001f || !highContrastBrightensSignal)
+        { SmokeFail("A opção de alto contraste não amplia e clareia os avisos de perigo"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: alto contraste clareia e amplia os avisos de perigo");
         if (!OverlayLayoutFits(400f, 360f))
         { SmokeFail("O menu inicial ou os botões escapam de uma janela compacta"); yield break; }
         Debug.Log("SCADRYK_SMOKE: menu inicial cabe em janela 400×360");
@@ -1554,7 +1567,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             Vector2 expectedDirection = ((Vector2)(Quaternion.Euler(0f, 0f, angleDegrees * offset) * (Vector3)forward)).normalized;
             Vector2 expectedCenter = origin + expectedDirection * (length * 0.5f);
             if (Mathf.Abs(visual.transform.localScale.x - length) > 0.01f ||
-                Mathf.Abs(visual.transform.localScale.y - width) > 0.001f ||
+                Mathf.Abs(visual.transform.localScale.y - ScadrykEffects.DangerWarningWidth(width)) > 0.001f ||
                 Vector2.Angle(expectedDirection, actualDirection) > 0.5f ||
                 Vector2.Distance((Vector2)visual.transform.position, expectedCenter) > 0.02f) return false;
             count++;
@@ -1828,6 +1841,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             if (optionsSelection == 5) DrawSelection(new Rect(x + 10f, y + 216f, width - 20f, 48f));
             if (optionsSelection == 6) DrawSelection(new Rect(x + 10f, y + 278f, width - 20f, 42f));
             if (optionsSelection == 7) DrawSelection(new Rect(x + 10f, y + 318f, width - 20f, 42f));
+            if (optionsSelection == 8) DrawSelection(new Rect(x + 10f, y + 358f, width - 20f, 42f));
             GUI.Label(new Rect(x + 15f, y + 125f, 170f, 28f), "Música", bodyStyle);
             ScadrykSettings.MusicVolume = GUI.HorizontalSlider(new Rect(x + 195f, y + 135f, width - 215f, 24f), ScadrykSettings.MusicVolume, 0f, 1f);
             GUI.Label(new Rect(x + 15f, y + 175f, 170f, 28f), "Efeitos", bodyStyle);
@@ -1837,7 +1851,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             if (Mathf.Abs(scale - ScadrykSettings.TextScale) > 0.01f) { ScadrykSettings.TextScale = scale; titleStyle = null; }
             ScadrykSettings.ReduceFlash = GUI.Toggle(new Rect(x + 15f, y + 285f, width - 30f, 34f), ScadrykSettings.ReduceFlash, "Reduzir flashes de dano");
             ScadrykSettings.ReduceShake = GUI.Toggle(new Rect(x + 15f, y + 325f, width - 30f, 34f), ScadrykSettings.ReduceShake, "Desligar tremor de câmera");
-            GUI.Label(new Rect(x + 15f, y + 400f, width - 30f, 70f), "Avisos de perigo permanecem visíveis com os efeitos em silêncio. Para marcar um ataque pouco claro durante testes, pressione F8.", memoryStyle);
+            ScadrykSettings.HighContrastWarnings = GUI.Toggle(new Rect(x + 15f, y + 365f, width - 30f, 34f), ScadrykSettings.HighContrastWarnings, "Alto contraste nos avisos de perigo");
+            GUI.Label(new Rect(x + 15f, y + 410f, width - 30f, 70f), "Avisos permanecem visíveis com os efeitos em silêncio. F8 marca um ataque pouco claro durante testes.", memoryStyle);
         }
         else if (optionsTab == 1)
         {
@@ -1868,7 +1883,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 if (OptionButton(new Rect(x + 240f, row, width - 255f, padRowHeight), label, i + 3)) { gamepadRebindAction = i; gamepadRebindAfterFrame = Time.frameCount; }
             }
         }
-        if (OptionButton(new Rect(x + (width - 180f) * 0.5f, y + backOffset, 180f, 42f), "Voltar", optionsTab == 0 ? 8 : optionsTab == 1 ? 14 : 10)) { showOptions = false; rebindingAction = gamepadRebindAction = -1; }
+        if (OptionButton(new Rect(x + (width - 180f) * 0.5f, y + backOffset, 180f, 42f), "Voltar", optionsTab == 0 ? 9 : optionsTab == 1 ? 14 : 10)) { showOptions = false; rebindingAction = gamepadRebindAction = -1; }
         GUI.Label(new Rect(x, y + footerOffset, width, 28f), "Controle: analógico navega · A confirma · B volta · Start pausa.", smallStyle);
     }
 
@@ -1880,6 +1895,17 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         float backOffset = compact ? 512f : 585f, footerOffset = compact ? 560f : 637f;
         float lastKeyRowBottom = y + rowStart + (ScadrykSettings.Actions.Length - 1) * rowStep + rowHeight;
         return lastKeyRowBottom <= y + backOffset && y + backOffset + 42f <= screenHeight && y + footerOffset + 28f <= screenHeight;
+    }
+
+    private static bool SoundOptionsLayoutFits(float screenHeight)
+    {
+        bool compact = screenHeight < 720f;
+        float y = compact ? 8f : Mathf.Max(18f, (screenHeight - 690f) * 0.5f);
+        float warningToggleBottom = y + 365f + 34f;
+        float warningHelpBottom = y + 410f + 70f;
+        float backTop = y + (compact ? 512f : 585f);
+        float footerBottom = y + (compact ? 560f : 637f) + 28f;
+        return warningToggleBottom <= warningHelpBottom && warningHelpBottom <= backTop && footerBottom <= screenHeight;
     }
 
     private bool OptionButton(Rect rect, string label, int selection)

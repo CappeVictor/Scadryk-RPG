@@ -26,6 +26,14 @@ public static class ScadrykEffects
     private static Sprite verdantCrescentSprite, saltburstSprite, tidebreakerSprite, voidburstSprite;
     internal const float PlayerSlashForwardOffset = 0.82f;
     internal static Vector2 PlayerSlashFootprint(float length) => new Vector2(length * 1.65f, length * 0.88f);
+    internal static float DangerWarningWidth(float width) => width * (ScadrykSettings.HighContrastWarnings ? 1.4f : 1f);
+    internal static Color DangerWarningColor(Color color)
+    {
+        if (!ScadrykSettings.HighContrastWarnings) return color;
+        Color highContrast = Color.Lerp(color, Color.white, 0.55f);
+        highContrast.a = Mathf.Max(color.a, 0.98f);
+        return highContrast;
+    }
     public static Sprite WhiteSprite
     {
         get
@@ -183,7 +191,7 @@ public static class ScadrykEffects
     {
         Vector2 delta = end - start;
         if (delta.sqrMagnitude < 0.01f) return;
-        GameObject go = Create((start + end) * 0.5f, color, delta.magnitude, thickness, lifetime, true);
+        GameObject go = Create((start + end) * 0.5f, DangerWarningColor(color), delta.magnitude, DangerWarningWidth(thickness), lifetime, true);
         go.transform.right = delta.normalized;
         go.name = "Enemy attack warning";
     }
@@ -193,7 +201,7 @@ public static class ScadrykEffects
         Sprite attackSprite = LoadEffectSprite("AttackRootThorns", 300f, ref rootThornSprite);
         if (attackSprite == null)
         {
-            GameObject fallback = Create(center, color, length, width, lifetime);
+            GameObject fallback = Create(center, DangerWarningColor(color), length, DangerWarningWidth(width), lifetime);
             fallback.transform.right = direction;
             fallback.name = "Root thorn attack";
             return;
@@ -204,6 +212,7 @@ public static class ScadrykEffects
 
     public static void Ring(Vector2 center, float diameter, Color color, float lifetime)
     {
+        color = DangerWarningColor(color);
         Sprite waveSprite = LoadEffectSprite("AttackBellWave", 600f, ref bellWaveSprite);
         if (waveSprite != null)
         {
