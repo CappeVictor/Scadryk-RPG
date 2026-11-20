@@ -938,7 +938,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
             bool boss = roomIndex == RoomsPerPhase - 1;
-            int role = i % 4;
+            int role = EnemyRoleForRoom(roomId, i);
             string[] roleNames = { "Caçador", "Atirador", "Ressonador", "Tecelão" };
             float angle = (Mathf.PI * 2f * i / Mathf.Max(1, count)) + 0.3f;
             float radius = boss ? 2.5f : 3.1f + (i % 2) * 0.7f;
@@ -967,6 +967,14 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             health.Configure(boss ? 320f + phaseIndex * 80f : 72f + phaseIndex * 12f, boss ? 1.55f : 1.9f + phaseIndex * 0.1f, boss, phaseIndex, frames, role);
             enemy.AddComponent<ScadrykHealthBar>().Configure(false, boss, boss ? 1.45f : 1.22f);
         }
+    }
+
+    internal static int EnemyRoleForRoom(int roomId, int enemyIndex)
+    {
+        if (enemyIndex < 0) return 0;
+        if (roomId == 4) return enemyIndex switch { 0 => 0, 1 => 0, 2 => 2, _ => 3 };
+        if (roomId == 7) return enemyIndex switch { 0 => 1, 1 => 1, 2 => 2, _ => 3 };
+        return enemyIndex % 4;
     }
 
     public void OnEnemyDefeated(ScadrykEnemyHealth enemy)
@@ -1362,6 +1370,11 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         }
         if (!checkpointRoundTrip) { SmokeFail("Checkpoint não restaura o portal ou limita valores inválidos"); yield break; }
         Debug.Log("SCADRYK_SMOKE: checkpoint grava, carrega, limita e limpa chaves temporárias");
+        if (EnemyRoleForRoom(1, 0) != 0 || EnemyRoleForRoom(1, 1) != 1 || EnemyRoleForRoom(1, 2) != 2 || EnemyRoleForRoom(1, 3) != 3 ||
+            EnemyRoleForRoom(4, 0) != 0 || EnemyRoleForRoom(4, 1) != 0 || EnemyRoleForRoom(4, 2) != 2 || EnemyRoleForRoom(4, 3) != 3 ||
+            EnemyRoleForRoom(7, 0) != 1 || EnemyRoleForRoom(7, 1) != 1 || EnemyRoleForRoom(7, 2) != 2 || EnemyRoleForRoom(7, 3) != 3)
+        { SmokeFail("As composições dos encontros de quatro inimigos perderam sua identidade tática"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: equipes de bosque, sal e costa têm papéis próprios");
         ScadrykCue laneCue = ScadrykEnemyHealth.WarningCueFor(0, false, false, 0);
         ScadrykCue volleyCue = ScadrykEnemyHealth.WarningCueFor(0, false, false, 1);
         ScadrykCue areaCue = ScadrykEnemyHealth.WarningCueFor(0, false, false, 2);
