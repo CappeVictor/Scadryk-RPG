@@ -341,7 +341,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private void RequestNewGame()
     {
-        RequestNewGame(PlayerPrefs.HasKey("Scadryk.Phase"));
+        RequestNewGame(HasCheckpoint("Scadryk."));
     }
 
     private void RequestNewGame(bool hasSavedProgress)
@@ -357,7 +357,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private void BeginJourney()
     {
-        bool firstStart = showTitle && !PlayerPrefs.HasKey("Scadryk.Phase");
+        bool firstStart = showTitle && !HasCheckpoint("Scadryk.");
         confirmNewJourney = false;
         overlaySelection = 0;
         showTitle = isPaused = false;
@@ -1357,11 +1357,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         PlayerPrefs.Save();
     }
 
+    internal static bool HasCheckpoint(string keyPrefix) =>
+        PlayerPrefs.HasKey(keyPrefix + "Phase") && PlayerPrefs.HasKey(keyPrefix + "Room");
+
     internal static bool TryLoadCheckpoint(string keyPrefix, out int phase, out int room)
     {
-        bool hasPhase = PlayerPrefs.HasKey(keyPrefix + "Phase");
-        bool hasRoom = PlayerPrefs.HasKey(keyPrefix + "Room");
-        if (!hasPhase || !hasRoom)
+        if (!HasCheckpoint(keyPrefix))
         {
             phase = 0;
             room = 0;
@@ -1709,15 +1710,19 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         bool checkpointRoundTrip = false;
         try
         {
-            bool newGameDefaults = !TryLoadCheckpoint(checkpointTestPrefix, out int defaultPhase, out int defaultRoom) && defaultPhase == 0 && defaultRoom == 0;
+            bool newGameDefaults = !HasCheckpoint(checkpointTestPrefix) &&
+                !TryLoadCheckpoint(checkpointTestPrefix, out int defaultPhase, out int defaultRoom) && defaultPhase == 0 && defaultRoom == 0;
             PlayerPrefs.SetInt(checkpointTestPrefix + "Room", 2);
-            bool ignoresOrphanedRoom = !TryLoadCheckpoint(checkpointTestPrefix, out int orphanPhase, out int orphanRoom) && orphanPhase == 0 && orphanRoom == 0;
+            bool ignoresOrphanedRoom = !HasCheckpoint(checkpointTestPrefix) &&
+                !TryLoadCheckpoint(checkpointTestPrefix, out int orphanPhase, out int orphanRoom) && orphanPhase == 0 && orphanRoom == 0;
             PlayerPrefs.DeleteKey(checkpointTestPrefix + "Room");
             PlayerPrefs.SetInt(checkpointTestPrefix + "Phase", 2);
-            bool ignoresOrphanedPhase = !TryLoadCheckpoint(checkpointTestPrefix, out int orphanedPhase, out int orphanedRoom) && orphanedPhase == 0 && orphanedRoom == 0;
+            bool ignoresOrphanedPhase = !HasCheckpoint(checkpointTestPrefix) &&
+                !TryLoadCheckpoint(checkpointTestPrefix, out int orphanedPhase, out int orphanedRoom) && orphanedPhase == 0 && orphanedRoom == 0;
             PlayerPrefs.DeleteKey(checkpointTestPrefix + "Phase");
             WriteCheckpoint(checkpointTestPrefix, 2, 2);
-            bool restoresLastPortal = TryLoadCheckpoint(checkpointTestPrefix, out int savedPhase, out int savedRoom) && savedPhase == 2 && savedRoom == 2;
+            bool restoresLastPortal = HasCheckpoint(checkpointTestPrefix) &&
+                TryLoadCheckpoint(checkpointTestPrefix, out int savedPhase, out int savedRoom) && savedPhase == 2 && savedRoom == 2;
             WriteCheckpoint(checkpointTestPrefix, 99, -4);
             bool clampsInvalidData = TryLoadCheckpoint(checkpointTestPrefix, out int clampedPhase, out int clampedRoom) &&
                 clampedPhase == PhaseNames.Length - 1 && clampedRoom == 0;
@@ -2701,7 +2706,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             GUI.Label(new Rect(center - footerWidth * 0.5f, footerTop, footerWidth, footerHeight), "Esc, B ou Start cancela", centeredBodyStyle);
             return;
         }
-        if (!victory && OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY, buttonWidth, buttonHeight), showTitle ? (PlayerPrefs.HasKey("Scadryk.Phase") ? "Continuar jornada" : "Começar jornada") : "Continuar", 0))
+        if (!victory && OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY, buttonWidth, buttonHeight), showTitle ? (HasCheckpoint("Scadryk.") ? "Continuar jornada" : "Começar jornada") : "Continuar", 0))
             BeginJourney();
         if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep, buttonWidth, buttonHeight), "Nova jornada", 1)) RequestNewGame();
         if (!victory && OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep * 2f, buttonWidth, buttonHeight), "Opções e controles", 2)) { showOptions = true; optionsTab = optionsSelection = 0; }
