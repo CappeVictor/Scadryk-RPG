@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
@@ -49,6 +50,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private bool shallowWaterHintShown;
     private bool smokeProjectileCoverPassed;
     private readonly bool[] clearedRooms = new bool[RoomsPerPhase];
+    private readonly List<ScadrykEnemyHealth> activeEnemies = new List<ScadrykEnemyHealth>();
     private readonly string[][] roomNames = {
         new[] { "Margem Alagada", "Vau de Cinza", "Casa das Comportas" },
         new[] { "Juncal Raso", "Bacia Imóvel", "Câmara do Sal" },
@@ -427,6 +429,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         gateObject = null;
         if (newGame || phaseIndex != newPhase)
             System.Array.Clear(clearedRooms, 0, clearedRooms.Length);
+        activeEnemies.Clear();
         for (int i = 0; i < Mathf.Clamp(newRoom, 0, RoomsPerPhase); i++) clearedRooms[i] = true;
         phaseIndex = newPhase; roomIndex = newRoom; victory = false;
         roomCenter = new Vector2(roomIndex * RoomSpacing, 0f);
@@ -1115,6 +1118,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private void SpawnRoomEnemies()
     {
+        activeEnemies.Clear();
         int roomId = phaseIndex * RoomsPerPhase + roomIndex;
         int count = EnemyCountForRoom(roomId);
         enemiesRemaining = count;
@@ -1154,6 +1158,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             var health = enemy.AddComponent<ScadrykEnemyHealth>();
             health.Configure(boss ? 320f + phaseIndex * 80f : 72f + phaseIndex * 12f, boss ? 1.55f : 1.9f + phaseIndex * 0.1f,
                 boss, phaseIndex, frames, role, ScadrykEnemyHealth.OpeningAttackDelay(i, boss));
+            activeEnemies.Add(health);
             if (boss) phaseGuardian = health;
             enemy.AddComponent<ScadrykHealthBar>().Configure(false, boss, boss ? 1.45f : 1.22f);
         }
@@ -1253,6 +1258,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     public void OnEnemyDefeated(ScadrykEnemyHealth enemy)
     {
+        activeEnemies.Remove(enemy);
         string acquiredPower = null;
         if (enemy == phaseGuardian) phaseGuardian = null;
         if (enemy.IsFinalBoss)
@@ -1387,6 +1393,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         bossObject.AddComponent<ScadrykActorAnimator>().SetVisual(visual.transform, volumeRenderer);
         finalBoss = bossObject.AddComponent<ScadrykEnemyHealth>();
         finalBoss.ConfigureFinalBoss(frames);
+        activeEnemies.Add(finalBoss);
         bossObject.AddComponent<ScadrykHealthBar>().Configure(false, true, 2.25f);
         statusMessage = "Rompante da Maré (" + InputBinding(5) + ") aprendido! O Arauto do Vazio despertou com três ataques.";
         statusUntil = Time.time + 8f;
@@ -1902,6 +1909,13 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             !MiniMapPortalLabelFits(new Rect(0f, 0f, 90f, 67f), 1.5f))
         { SmokeFail("O marcador do portal sai do cartão da sala no minimapa"); yield break; }
         Debug.Log("SCADRYK_SMOKE: marcador PORTAL cabe no minimapa com texto padrão e ampliado");
+        Rect markerCell = new Rect(0f, 0f, 75f, 57f), largeMarkerCell = new Rect(0f, 0f, 90f, 67f);
+        if (!MiniMapPositionMarkerFits(markerCell, new Vector2(-100f, -100f), 1f) ||
+            !MiniMapPositionMarkerFits(markerCell, new Vector2(100f, 100f), 1f) ||
+            !MiniMapPositionMarkerFits(largeMarkerCell, new Vector2(-100f, -100f), 1.5f) ||
+            !MiniMapPositionMarkerFits(largeMarkerCell, new Vector2(100f, 100f), 1.5f))
+        { SmokeFail("Os marcadores do jogador ou alvo escapam do cartão do minimapa"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: marcadores de jogador e alvo cabem no minimapa em limites e escala ampliada");
         if (ProgressHint(1, 0, 0) == ProgressHint(1, 0, 1) ||
             ProgressHint(3, 0, 0) == ProgressHint(3, 0, 1) ||
             ProgressHint(4, 0, 0) == ProgressHint(4, 0, 1) || ProgressHint(4, 0, 1) == ProgressHint(4, 0, 2) ||
@@ -1950,6 +1964,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         for (int room = 0; room < 9; room++)
         {
             if (phaseIndex * RoomsPerPhase + roomIndex != room) { SmokeFail("Sala inesperada: " + room); yield break; }
+            if (!TryGetMiniMapTarget(out _)) { SmokeFail("O minimapa não identificou um alvo ativo na sala " + (room + 1)); yield break; }
             if (room % RoomsPerPhase == RoomsPerPhase - 1 &&
                 (phaseGuardian == null || phaseGuardian.gameObject.name != GuardianNames[room / RoomsPerPhase]))
             { SmokeFail("O nome persistente não corresponde ao guardião da sala " + (room + 1)); yield break; }
@@ -2149,6 +2164,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             }
             if (enemiesRemaining != 0 || anchorsActivated != anchorsRequired || gateObject == null)
             { SmokeFail("Objetivo não abriu portal na sala " + room); yield break; }
+            if (!TryGetMiniMapTarget(out Vector2 portalTarget) || Vector2.Distance(portalTarget, exitPosition) > 0.001f)
+            { SmokeFail("O minimapa não marcou o portal aberto na sala " + (room + 1)); yield break; }
             ScadrykEnemyProjectile.Launch(roomCenter + Vector2.up * 6f, Vector2.right, 0.1f, 0f);
             ScadrykEnemyProjectile smokeProjectile = FindAnyObjectByType<ScadrykEnemyProjectile>();
             if (smokeProjectile == null || !smokeProjectile.transform.IsChildOf(levelRoot.transform))
@@ -2473,20 +2490,66 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             }
             if (i < RoomsPerPhase - 1) GUI.Label(new Rect(cell.xMax, cell.y + 20, gap + 2, 20), "›", bodyStyle);
         }
+        Rect currentCell = new Rect(mapX + roomIndex * (roomW + gap), mapY, roomW, roomH);
+        if (TryGetMiniMapTarget(out Vector2 target))
+        {
+            Rect targetMarker = MiniMapPositionMarkerRect(currentCell, target - roomCenter, ScadrykSettings.TextScale);
+            GUI.color = Color.white;
+            GUI.DrawTexture(new Rect(targetMarker.x - 1f, targetMarker.y - 1f, targetMarker.width + 2f, targetMarker.height + 2f), Texture2D.whiteTexture);
+            GUI.color = new Color(0.28f, 0.88f, 1f, 1f);
+            GUI.DrawTexture(targetMarker, Texture2D.whiteTexture);
+        }
         if (player != null)
         {
             Vector2 relative = (Vector2)player.transform.position - roomCenter;
-            float dx = Mathf.Clamp(relative.x / 22f, -0.42f, 0.42f) * (roomW - 10);
-            float dy = Mathf.Clamp(relative.y / 15f, -0.35f, 0.35f) * (roomH - 12);
-            Rect dot = new Rect(mapX + roomIndex * (roomW + gap) + roomW / 2f + dx - 3.5f, mapY + roomH / 2f - dy - 3.5f, 7, 7);
+            Rect dot = MiniMapPositionMarkerRect(currentCell, relative, ScadrykSettings.TextScale);
             GUI.color = new Color(1f, 0.82f, 0.38f); GUI.DrawTexture(dot, Texture2D.whiteTexture);
         }
         Rect legend = MiniMapLegendRect(panel, ScadrykSettings.TextScale);
-        float columnWidth = legend.width / 3f;
+        float columnWidth = legend.width / 4f;
         DrawMiniMapLegendItem(legend.x, legend.y, columnWidth, MiniMapRoomColor(true, false), "Você");
-        DrawMiniMapLegendItem(legend.x + columnWidth, legend.y, columnWidth, MiniMapRoomColor(false, true), "Concluída");
-        DrawMiniMapLegendItem(legend.x + columnWidth * 2f, legend.y, columnWidth, MiniMapRoomColor(false, false), "Adiante");
+        DrawMiniMapLegendItem(legend.x + columnWidth, legend.y, columnWidth, MiniMapRoomColor(false, true), "Feita");
+        DrawMiniMapLegendItem(legend.x + columnWidth * 2f, legend.y, columnWidth, MiniMapRoomColor(false, false), "Futura");
+        DrawMiniMapLegendItem(legend.x + columnWidth * 3f, legend.y, columnWidth, new Color(0.28f, 0.88f, 1f), "Alvo");
         GUI.color = Color.white;
+    }
+
+    internal static Rect MiniMapPositionMarkerRect(Rect roomCell, Vector2 roomOffset, float textScale)
+    {
+        float scale = Mathf.Clamp(textScale, 1f, 1.5f);
+        float dx = Mathf.Clamp(roomOffset.x / 22f, -0.42f, 0.42f) * (roomCell.width - 10f * scale);
+        float dy = Mathf.Clamp(roomOffset.y / 15f, -0.35f, 0.35f) * (roomCell.height - 12f * scale);
+        float size = 7f * scale;
+        return new Rect(roomCell.center.x + dx - size * 0.5f, roomCell.center.y - dy - size * 0.5f, size, size);
+    }
+
+    internal static bool MiniMapPositionMarkerFits(Rect roomCell, Vector2 roomOffset, float textScale)
+    {
+        Rect marker = MiniMapPositionMarkerRect(roomCell, roomOffset, textScale);
+        return marker.xMin >= roomCell.xMin && marker.xMax <= roomCell.xMax &&
+            marker.yMin >= roomCell.yMin && marker.yMax <= roomCell.yMax;
+    }
+
+    private bool TryGetMiniMapTarget(out Vector2 target)
+    {
+        ScadrykEnemyHealth nearestEnemy = null;
+        float nearestDistance = float.MaxValue;
+        if (player != null)
+        {
+            for (int i = activeEnemies.Count - 1; i >= 0; i--)
+            {
+                ScadrykEnemyHealth enemy = activeEnemies[i];
+                if (enemy == null || enemy.Health <= 0f) { activeEnemies.RemoveAt(i); continue; }
+                float distance = ((Vector2)enemy.transform.position - (Vector2)player.transform.position).sqrMagnitude;
+                if (distance < nearestDistance) { nearestDistance = distance; nearestEnemy = enemy; }
+            }
+        }
+        if (nearestEnemy != null) { target = nearestEnemy.transform.position; return true; }
+        for (int i = 0; i < anchorsRequired; i++)
+            if (roomAnchors[i] != null) { target = roomAnchors[i].transform.position; return true; }
+        if (gateObject != null) { target = exitPosition; return true; }
+        target = Vector2.zero;
+        return false;
     }
 
     private void DrawMiniMapLegendItem(float x, float y, float width, Color swatch, string label)
