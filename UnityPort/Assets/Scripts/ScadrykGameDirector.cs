@@ -1370,6 +1370,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         }
         if (!checkpointRoundTrip) { SmokeFail("Checkpoint não restaura o portal ou limita valores inválidos"); yield break; }
         Debug.Log("SCADRYK_SMOKE: checkpoint grava, carrega, limita e limpa chaves temporárias");
+        if (!SmokeCoverBlocksOnlyWhenSolid())
+        { SmokeFail("Cobertura sólida e gatilhos não diferem ao bloquear ataques lineares"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: cobertura sólida bloqueia a linha e gatilho não bloqueia");
         if (EnemyRoleForRoom(1, 0) != 0 || EnemyRoleForRoom(1, 1) != 1 || EnemyRoleForRoom(1, 2) != 2 || EnemyRoleForRoom(1, 3) != 3 ||
             EnemyRoleForRoom(4, 0) != 0 || EnemyRoleForRoom(4, 1) != 0 || EnemyRoleForRoom(4, 2) != 2 || EnemyRoleForRoom(4, 3) != 3 ||
             EnemyRoleForRoom(7, 0) != 1 || EnemyRoleForRoom(7, 1) != 1 || EnemyRoleForRoom(7, 2) != 2 || EnemyRoleForRoom(7, 3) != 3)
@@ -1785,6 +1788,33 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         foreach (ScadrykTimedVisual visual in FindObjectsByType<ScadrykTimedVisual>(FindObjectsSortMode.None))
             if (visual != null && visual.gameObject.name == objectName) count++;
         return count;
+    }
+
+    private bool SmokeCoverBlocksOnlyWhenSolid()
+    {
+        var cover = new GameObject("Smoke-only cover probe");
+        try
+        {
+            Vector2 origin = roomCenter + Vector2.up * 25f + Vector2.left * 2f;
+            Vector2 target = roomCenter + Vector2.up * 25f + Vector2.right * 2f;
+            cover.transform.position = roomCenter + Vector2.up * 25f;
+            BoxCollider2D collider = cover.AddComponent<BoxCollider2D>();
+            collider.size = new Vector2(0.35f, 1f);
+            Physics2D.SyncTransforms();
+            bool blocksWhenSolid = ScadrykCombatRules.WorldBlocks(origin, target);
+            collider.isTrigger = true;
+            Physics2D.SyncTransforms();
+            bool ignoresTrigger = !ScadrykCombatRules.WorldBlocks(origin, target);
+            collider.enabled = false;
+            Physics2D.SyncTransforms();
+            bool openLineRemainsClear = !ScadrykCombatRules.WorldBlocks(origin, target);
+            return blocksWhenSolid && ignoresTrigger && openLineRemainsClear;
+        }
+        finally
+        {
+            Destroy(cover);
+            Physics2D.SyncTransforms();
+        }
     }
 
     private bool SmokeRevealWorldSecret(int requiredPower)
