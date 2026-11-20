@@ -1289,6 +1289,11 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             !audio.HasCue(supportCue) || !audio.HasCue(ScadrykCue.FinalBossWarning))
         { SmokeFail("Os sinais sonoros de aviso não diferenciam papéis e guardiões"); yield break; }
         Debug.Log("SCADRYK_SMOKE: avisos sonoros diferenciam papéis e Arauto");
+        if (!ScadrykEnemyHealth.SupportPulseContains(Vector2.zero, new Vector2(2.49f, 0f)) ||
+            ScadrykEnemyHealth.SupportPulseContains(Vector2.zero, new Vector2(2.51f, 0f)) ||
+            Mathf.Abs(ScadrykEnemyHealth.SupportPulseDiameter - ScadrykEnemyHealth.SupportPulseRadius * 2f) > 0.001f)
+        { SmokeFail("A cura do Tecelão ultrapassa o círculo verde anunciado"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: cura do Tecelão respeita o limite do círculo anunciado");
         string previousHintInputMode = sessionInputMode;
         sessionInputMode = "keyboard_mouse";
         string keyboardPulseHint = ProgressHint(4, 0, 0);

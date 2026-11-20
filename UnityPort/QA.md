@@ -83,3 +83,5 @@ Use um código anônimo em vez de nome. Preencha uma ficha por sessão e não mi
 Critérios para revisão: nenhum dano sem aviso reconhecível; nenhum poder fica sem uso por duas salas após ser aprendido; sala repetitiva deve ganhar decisão própria; travamento deve produzir uma pista compreensível; jogadores de níveis diferentes devem concluir a campanha sem ajuda do desenvolvedor. Ainda não há avaliação externa suficiente para declarar essa etapa aprovada.
 
 - Os selos agora ocupam lados distintos das salas e dão uma pista contextual, com o nome do poder e o vínculo atual, quando Nara se aproxima. O smoke também verifica o texto da pista junto das geometrias de cada poder. Fonte atualizada; compilação, leitura da pista no ritmo normal e descoberta sem ajuda continuam pendentes no Unity Editor.
+
+- Tecelão: a cura agora verifica também a distância entre centros dos Ecos para não alcançar além do círculo verde visível. O smoke verifica pontos logo dentro/fora e o diâmetro do aviso; continua sem execução no Unity Editor ou avaliação de leitura em combate real.

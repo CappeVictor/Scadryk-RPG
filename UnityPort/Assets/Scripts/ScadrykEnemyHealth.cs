@@ -15,6 +15,10 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private const float FinalStarfallProjectileScale = 0.48f;
     private const float FinalStarfallProjectileLength = 10f;
     private const float FinalStarfallProjectileSpeed = 5.4f;
+    internal const float SupportPulseRadius = 2.5f;
+    internal static float SupportPulseDiameter => SupportPulseRadius * 2f;
+    internal static bool SupportPulseContains(Vector2 origin, Vector2 target) =>
+        Vector2.Distance(origin, target) <= SupportPulseRadius;
     [SerializeField, Min(1f)] private float maxHealth = 60f;
     private float health, nextAttackAt, windupEndsAt;
     private float attackRange = 1.2f;
@@ -375,10 +379,11 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
 
     private void ResolveSupportPulse()
     {
-        ScadrykEffects.Ring(transform.position, 5f, new Color(0.38f, 1f, 0.6f), 0.35f);
-        Collider2D[] nearby = Physics2D.OverlapCircleAll(transform.position, 2.5f);
+        ScadrykEffects.Ring(transform.position, SupportPulseDiameter, new Color(0.38f, 1f, 0.6f), 0.35f);
+        Collider2D[] nearby = Physics2D.OverlapCircleAll(transform.position, SupportPulseRadius);
         foreach (Collider2D hit in nearby)
-            if (hit.TryGetComponent<ScadrykEnemyHealth>(out var ally) && ally != this && !ally.dead) ally.Heal(15f);
+            if (hit.TryGetComponent<ScadrykEnemyHealth>(out var ally) && ally != this && !ally.dead &&
+                SupportPulseContains(transform.position, ally.transform.position)) ally.Heal(15f);
     }
 
     private void Heal(float amount) { health = Mathf.Min(maxHealth, health + amount); }
