@@ -83,3 +83,5 @@ As referências de outros jogos orientam clareza, descoberta e ritmo. Não repro
 - **Pista condicionada ao guardião final (20/11/2026):** o Selo de Eco da arena não apresenta Rompante como disponível antes da vitória do guardião. Se a dica bloqueada já tiver aparecido, ela é rearmada quando Nara aprende o poder; o smoke simula essa transição, ainda sem execução no Editor.
 
 - **Recuperar comandos (20/11/2026):** botões Padrões nas abas Teclas e Controle apagam somente os vínculos daquele dispositivo, devolvendo os valores padrão por fallback. O smoke verifica o layout compacto; persistência e interação física seguem sem validação no Editor.
+
+- **Saída segura do remapeamento (20/11/2026):** Esc/Start cancela apenas a captura da tecla ou botão quando há uma ação pendente; uma segunda pressão fecha as opções. O smoke cobre os estados booleanos; ainda falta validar teclado e controle físico no Editor.

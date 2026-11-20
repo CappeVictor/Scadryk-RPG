@@ -97,3 +97,5 @@ Critérios para revisão: nenhum dano sem aviso reconhecível; nenhum poder fica
 - Pista do selo final: enquanto Rompante está bloqueado, a aproximação explica que é preciso vencer o guardião; ao aprender o poder, a pista se atualiza para o comando correto mesmo se Nara já estiver perto do selo. O smoke simula a pista antiga e confere as duas transições; ainda sem execução no Editor.
 
 - Recuperação de remapeamento: abas Teclas e Controle agora têm um botão Padrões separado, que remove apenas os vínculos salvos daquele dispositivo e volta aos padrões definidos no projeto. O smoke mede a faixa do botão ao lado das instruções em largura compacta; a interação e persistência aguardam compilação no Unity.
+
+- Cancelamento de remapeamento: Esc ou Start durante a captura cancela somente a seleção do novo vínculo e mantém as opções abertas; outro toque fecha o menu. O smoke verifica estados de captura ativos/inativos; sequência física no controle e teclado ainda aguarda Editor.

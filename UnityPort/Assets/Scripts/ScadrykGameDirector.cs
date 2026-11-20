@@ -138,7 +138,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         }
         if (!victory && (Input.GetKeyDown(KeyCode.Escape) || ScadrykSettings.PadButtonDown(7)))
         {
-            if (showOptions) { showOptions = false; rebindingAction = gamepadRebindAction = -1; }
+            if (showOptions && RebindingCanBeCancelled(rebindingAction, gamepadRebindAction))
+            {
+                rebindingAction = gamepadRebindAction = -1;
+                ShowStatus("Remapeamento cancelado.", 2f);
+            }
+            else if (showOptions) { showOptions = false; rebindingAction = gamepadRebindAction = -1; }
             else if (confirmNewJourney) { confirmNewJourney = false; overlaySelection = 0; }
             else if (!showTitle) isPaused = !isPaused;
         }
@@ -173,6 +178,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     internal static bool FocusLossRequiresPause(bool hasFocus, bool title, bool paused, bool options, bool won, bool portalTransition) =>
         !hasFocus && !title && !paused && !options && !won && !portalTransition;
+
+    internal static bool RebindingCanBeCancelled(int keyboardAction, int gamepadAction) =>
+        keyboardAction >= 0 || gamepadAction >= 0;
 
     private void UpdateGamepadMenus()
     {
@@ -1333,6 +1341,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             FocusLossRequiresPause(false, false, false, false, false, true))
         { SmokeFail("A pausa por perda de foco foi aplicada em estado incorreto"); yield break; }
         Debug.Log("SCADRYK_SMOKE: perda de foco pausa só o jogo ativo");
+        if (!RebindingCanBeCancelled(-1, 2) || !RebindingCanBeCancelled(4, -1) || RebindingCanBeCancelled(-1, -1))
+        { SmokeFail("Cancelar captura de controle não distingue remapeamento ativo do menu normal"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: Escape/Start cancela captura sem fechar opções");
         if (!ScadrykEnemyHealth.SupportPulseContains(Vector2.zero, new Vector2(2.49f, 0f)) ||
             ScadrykEnemyHealth.SupportPulseContains(Vector2.zero, new Vector2(2.51f, 0f)) ||
             Mathf.Abs(ScadrykEnemyHealth.SupportPulseDiameter - ScadrykEnemyHealth.SupportPulseRadius * 2f) > 0.001f)
