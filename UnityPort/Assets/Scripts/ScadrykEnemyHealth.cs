@@ -73,6 +73,9 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         };
     }
 
+    internal static Color StateTint(bool windingUp, bool exposed, Color roleTint) =>
+        windingUp ? new Color(1f, 0.68f, 0.24f) : exposed ? new Color(0.58f, 0.9f, 1f) : roleTint;
+
     public void Configure(float hp, float speed, bool boss, int biome, Sprite[] frames, int role = 0, float openingAttackDelay = 0f)
     {
         maxHealth = hp; health = hp; moveSpeed = speed; IsBoss = boss;
@@ -133,7 +136,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         if (sprite != null)
         {
             bool windingUp = isWindup && windupEndsAt > Time.time;
-            sprite.color = windingUp ? new Color(1f, 0.68f, 0.24f) : Time.time < exposedUntil ? new Color(1f, 0.8f, 0.42f) : roleTint;
+            sprite.color = StateTint(windingUp, Time.time < exposedUntil, roleTint);
             if (!windingUp && animationFrames != null && animationFrames.Length >= 4)
                 sprite.sprite = animationFrames[BodyVelocity.sqrMagnitude > 0.05f ? Mathf.FloorToInt(Time.time * 7f) % animationFrames.Length : 0];
         }

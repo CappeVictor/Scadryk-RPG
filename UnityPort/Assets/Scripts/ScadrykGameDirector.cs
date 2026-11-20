@@ -1578,6 +1578,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private IEnumerator SmokeCampaign()
     {
         yield return null;
+        Color warningTint = ScadrykEnemyHealth.StateTint(true, false, Color.white);
+        Color exposedTint = ScadrykEnemyHealth.StateTint(false, true, Color.white);
+        Color interruptedExposeTint = ScadrykEnemyHealth.StateTint(true, true, Color.white);
+        if (warningTint == exposedTint || warningTint != interruptedExposeTint)
+        { SmokeFail("O aviso de ataque se confunde com a vulnerabilidade ou perde prioridade durante a exposição"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: aviso âmbar e vulnerabilidade azul são distintos; aviso permanece prioritário");
         yield return SmokeProjectileCover();
         if (!smokeProjectileCoverPassed) { SmokeFail("Projéteis em movimento não param na cobertura sólida ou atravessam o gatilho de teste"); yield break; }
         Debug.Log("SCADRYK_SMOKE: projétil colide com cobertura sólida e atravessa gatilho sem parar");
