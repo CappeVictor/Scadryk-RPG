@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-public enum ScadrykCue { Sword, Dash, Pulse, Power, Warning, Impact, Hurt, Portal, Victory, Memory }
+public enum ScadrykCue { Sword, Dash, Pulse, Power, Warning, Impact, Hurt, Portal, Victory, Memory, LaneWarning, VolleyWarning, AreaWarning, SupportWarning, FinalBossWarning }
 
 /// <summary>Original, lightweight synthesized motifs and combat signals; no external audio assets.</summary>
 public sealed class ScadrykAudio : MonoBehaviour
@@ -14,7 +14,8 @@ public sealed class ScadrykAudio : MonoBehaviour
     private const float ContextFadeDuration = 1.25f;
     private AudioClip[] biomeLoops;
     private AudioClip[] cueClips;
-    private readonly float[] nextCueAt = new float[10];
+    private readonly float[] nextCueAt = new float[System.Enum.GetValues(typeof(ScadrykCue)).Length];
+    internal bool HasCue(ScadrykCue cue) => cueClips != null && (int)cue >= 0 && (int)cue < cueClips.Length;
 
     private void Awake()
     {
@@ -33,7 +34,10 @@ public sealed class ScadrykAudio : MonoBehaviour
             MakeCue("Nara pulse", 330f, 0.32f, 0.33f), MakeCue("Nara power", 520f, 0.45f, 0.38f),
             MakeCue("Echo warning", 160f, 0.27f, 0.24f), MakeCue("Echo impact", 95f, 0.22f, 0.38f),
             MakeCue("Nara hurt", 135f, 0.25f, 0.4f), MakeCue("Portal passage", 290f, 0.65f, 0.25f),
-            MakeCue("Voices return", 440f, 0.9f, 0.32f), MakeCue("Nima remembers", 365f, 0.48f, 0.2f)
+            MakeCue("Voices return", 440f, 0.9f, 0.32f), MakeCue("Nima remembers", 365f, 0.48f, 0.2f),
+            MakeCue("Root lane warning", 112f, 0.34f, 0.3f), MakeCue("Crystal volley warning", 690f, 0.22f, 0.22f),
+            MakeCue("Echo area warning", 215f, 0.42f, 0.28f), MakeCue("Weaver support warning", 810f, 0.31f, 0.18f),
+            MakeCue("Void herald warning", 146.83f, 0.58f, 0.34f)
         };
     }
 
@@ -115,9 +119,12 @@ public sealed class ScadrykAudio : MonoBehaviour
         if (instance == null || instance.effects == null) return;
         int index = (int)cue;
         if (index < 0 || index >= instance.cueClips.Length || Time.unscaledTime < instance.nextCueAt[index]) return;
-        instance.nextCueAt[index] = Time.unscaledTime + (cue == ScadrykCue.Warning || cue == ScadrykCue.Impact ? 0.13f : 0.04f);
+        instance.nextCueAt[index] = Time.unscaledTime + (cue == ScadrykCue.Warning || cue == ScadrykCue.Impact || IsWarningCue(cue) ? 0.13f : 0.04f);
         instance.effects.PlayOneShot(instance.cueClips[index]);
     }
+
+    private static bool IsWarningCue(ScadrykCue cue) => cue is ScadrykCue.LaneWarning or ScadrykCue.VolleyWarning or
+        ScadrykCue.AreaWarning or ScadrykCue.SupportWarning or ScadrykCue.FinalBossWarning;
 
     private static AudioClip MakeLoop(string name, float root, float character)
     {

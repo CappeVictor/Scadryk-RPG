@@ -54,6 +54,19 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     public int FinalStage => !isFinalBoss ? 0 : Health01 > 0.7f ? 1 : Health01 > 0.35f ? 2 : 3;
     public int BiomeIndex => biomeIndex;
 
+    internal static ScadrykCue WarningCueFor(int biome, bool boss, bool finalBoss, int role)
+    {
+        if (finalBoss) return ScadrykCue.FinalBossWarning;
+        int attackRole = boss ? biome == 0 ? 0 : biome == 1 ? 1 : 2 : Mathf.Clamp(role, 0, 3);
+        return attackRole switch
+        {
+            0 => ScadrykCue.LaneWarning,
+            1 => ScadrykCue.VolleyWarning,
+            2 => ScadrykCue.AreaWarning,
+            _ => ScadrykCue.SupportWarning
+        };
+    }
+
     public void Configure(float hp, float damage, float speed, bool boss, int biome, Sprite[] frames, int role = 0)
     {
         maxHealth = hp; health = hp; touchDamage = damage; moveSpeed = speed; IsBoss = boss;
@@ -146,7 +159,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private void BeginAttack()
     {
         attackTarget = player.transform.position;
-        ScadrykAudio.Play(ScadrykCue.Warning);
+        ScadrykAudio.Play(WarningCueFor(biomeIndex, IsBoss, isFinalBoss, combatRole));
         if (animator != null) animator.PlayAttack((attackTarget - (Vector2)transform.position).normalized, IsBoss);
         if (isFinalBoss)
         {

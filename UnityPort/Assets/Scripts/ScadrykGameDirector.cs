@@ -1150,7 +1150,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             "Os três silêncios se juntam. O anel interno indica abrigo da onda.";
         ScadrykEffects.Burst(finalBoss != null ? (Vector2)finalBoss.transform.position : roomCenter, new Color(0.95f, 0.48f, 0.75f), 2.8f);
         ShowStatus(message, 7f);
-        ScadrykAudio.Play(ScadrykCue.Warning);
+        ScadrykAudio.Play(ScadrykCue.FinalBossWarning);
     }
 
     private void MakeLabelMarker(Transform parent, Vector2 position, string text, Color color)
@@ -1216,6 +1216,20 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private IEnumerator SmokeCampaign()
     {
         yield return null;
+        ScadrykCue laneCue = ScadrykEnemyHealth.WarningCueFor(0, false, false, 0);
+        ScadrykCue volleyCue = ScadrykEnemyHealth.WarningCueFor(0, false, false, 1);
+        ScadrykCue areaCue = ScadrykEnemyHealth.WarningCueFor(0, false, false, 2);
+        ScadrykCue supportCue = ScadrykEnemyHealth.WarningCueFor(0, false, false, 3);
+        ScadrykAudio audio = GetComponent<ScadrykAudio>();
+        if (laneCue == volleyCue || laneCue == areaCue || laneCue == supportCue || volleyCue == areaCue || volleyCue == supportCue || areaCue == supportCue ||
+            ScadrykEnemyHealth.WarningCueFor(0, true, false, 0) != laneCue ||
+            ScadrykEnemyHealth.WarningCueFor(1, true, false, 0) != volleyCue ||
+            ScadrykEnemyHealth.WarningCueFor(2, true, false, 0) != areaCue ||
+            ScadrykEnemyHealth.WarningCueFor(2, true, true, 0) != ScadrykCue.FinalBossWarning ||
+            audio == null || !audio.HasCue(laneCue) || !audio.HasCue(volleyCue) || !audio.HasCue(areaCue) ||
+            !audio.HasCue(supportCue) || !audio.HasCue(ScadrykCue.FinalBossWarning))
+        { SmokeFail("Os sinais sonoros de aviso não diferenciam papéis e guardiões"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: avisos sonoros diferenciam papéis e Arauto");
         if (titleBackdropTexture == null) { SmokeFail("A arte de abertura ScadrykTitleBackdrop não foi carregada"); yield break; }
         Debug.Log("SCADRYK_SMOKE: arte original da tela inicial carregada");
         RequestNewGame(true);
