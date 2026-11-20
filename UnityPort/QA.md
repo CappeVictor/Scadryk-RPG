@@ -19,7 +19,7 @@
 
 ## Dados observados e limites
 
-O registro local histórico mostrou mortes repetidas na primeira sala em algumas tentativas de aproximadamente 15 segundos; outras passagens tiveram duração de 8 a 14 segundos e nenhuma morte. Os dados não identificam nível de experiência, método de controle ou intervenção de teste. Portanto, não autorizam concluir que o jogo está balanceado. A partir desta versão, `scadryk-sessions-v2.csv` acrescenta marcas de ataques difíceis de perceber pelo jogador com **F8**.
+O registro local histórico mostrou mortes repetidas na primeira sala em algumas tentativas de aproximadamente 15 segundos; outras passagens tiveram duração de 8 a 14 segundos e nenhuma morte. Os dados não identificam nível de experiência, método de controle ou intervenção de teste. Portanto, não autorizam concluir que o jogo está balanceado. A telemetria atual usa `scadryk-sessions-v3.csv`, acrescenta a marca F8 para ataques difíceis de perceber e distingue salas concluídas de registros interrompidos.
 
 ## Sessões com jogadores ainda necessárias
 
@@ -31,5 +31,6 @@ Convidar pelo menos um jogador iniciante, um intermediário e um experiente para
 4. sala em que não soube o que fazer e pista que resolveu o bloqueio;
 5. se consegue resumir quem é Nara, o que são os Ecos e por que o Arauto se opõe a ela;
 6. conforto do volume, legibilidade do texto, flashes, tremor e controle utilizado.
+7. se percebeu a redução de velocidade nas poças e usou a esquiva para atravessá-las.
 
 Critérios para revisão: nenhum dano sem aviso reconhecível; nenhum poder fica sem uso por duas salas após ser aprendido; sala repetitiva deve ganhar decisão própria; travamento deve produzir uma pista compreensível; jogadores de níveis diferentes devem concluir a campanha sem ajuda do desenvolvedor. Ainda não há avaliação externa suficiente para declarar essa etapa aprovada.

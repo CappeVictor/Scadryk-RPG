@@ -71,6 +71,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private float roomStartedAt;
     private int roomDeaths;
     private int unclearAttackMarks;
+    private bool roomSessionRecorded;
     private readonly int[] roomPowerUses = new int[3];
     private GUIStyle titleStyle, bodyStyle, smallStyle;
     private GUIStyle centeredTitleStyle, centeredBodyStyle;
@@ -245,6 +246,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (player != null) player.ResetAbilities();
         BuildPhase(0, 0, true);
         showTitle = isPaused = victory = false;
+        StartRoomTimer();
         ShowMemory("Quando os três sinos calaram, Nara ainda ouvia os nomes esquecidos. Ela entrou nas margens para devolvê-los ao mundo.", 8f);
     }
 
@@ -252,7 +254,14 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     {
         bool firstStart = showTitle && !PlayerPrefs.HasKey("Scadryk.Phase");
         showTitle = isPaused = false;
+        StartRoomTimer();
         if (firstStart) ShowMemory("Quando os três sinos calaram, Nara ainda ouvia os nomes esquecidos. Ela entrou nas margens para devolvê-los ao mundo.", 8f);
+    }
+
+    private void StartRoomTimer()
+    {
+        roomStartedAt = Time.time;
+        roomSessionRecorded = false;
     }
 
     private void SetupCamera()
@@ -317,6 +326,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         roomStartedAt = Time.time;
         roomDeaths = 0;
         unclearAttackMarks = 0;
+        roomSessionRecorded = false;
         System.Array.Clear(roomPowerUses, 0, roomPowerUses.Length);
         hintStage = 0;
         statusMessage = RoomStories[phaseIndex * RoomsPerPhase + roomIndex];
@@ -834,17 +844,24 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private void RecordRoomSession()
     {
-        if (smokeRun) return;
+        if (smokeRun || showTitle || roomSessionRecorded) return;
+        roomSessionRecorded = true;
         try
         {
-            string path = Path.Combine(Application.persistentDataPath, "scadryk-sessions-v2.csv");
-            if (!File.Exists(path)) File.WriteAllText(path, "utc,phase,room,seconds,deaths,unclear_attacks,crescent,salt,tide,enemies_left\n");
+            string path = Path.Combine(Application.persistentDataPath, "scadryk-sessions-v3.csv");
+            if (!File.Exists(path)) File.WriteAllText(path, "utc,phase,room,seconds,deaths,unclear_attacks,crescent,salt,tide,enemies_left,completed\n");
+            bool completed = roomIndex >= 0 && roomIndex < clearedRooms.Length && clearedRooms[roomIndex];
             string row = System.DateTime.UtcNow.ToString("o") + "," + (phaseIndex + 1) + "," + (roomIndex + 1) + "," +
-                Mathf.RoundToInt(Time.time - roomStartedAt) + "," + roomDeaths + "," + unclearAttackMarks + "," + roomPowerUses[0] + "," +
-                roomPowerUses[1] + "," + roomPowerUses[2] + "," + enemiesRemaining + "\n";
+                Mathf.RoundToInt(Mathf.Max(0f, Time.time - roomStartedAt)) + "," + roomDeaths + "," + unclearAttackMarks + "," + roomPowerUses[0] + "," +
+                roomPowerUses[1] + "," + roomPowerUses[2] + "," + enemiesRemaining + "," + completed.ToString().ToLowerInvariant() + "\n";
             File.AppendAllText(path, row);
         }
         catch (System.Exception exception) { Debug.LogWarning("Scadryk: não foi possível registrar a sessão: " + exception.Message); }
+    }
+
+    private void OnApplicationQuit()
+    {
+        if (levelRoot != null) RecordRoomSession();
     }
 
     private static void SaveProgress(int phase, int room)
@@ -915,7 +932,6 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (roomIndex < RoomsPerPhase - 1) StartCoroutine(TransitionThroughPortal(phaseIndex, roomIndex + 1));
         else if (phaseIndex < PhaseNames.Length - 1)
         {
-            for (int i = 0; i < clearedRooms.Length; i++) clearedRooms[i] = false;
             StartCoroutine(TransitionThroughPortal(phaseIndex + 1, 0));
         }
         else StartCoroutine(TransitionToVictory());
@@ -988,6 +1004,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             yield return null;
         }
         yield return FadeScreen(1f, 0.45f);
+        RecordRoomSession();
         transitioning = false;
         transitionFade = 0f;
         victory = true;
