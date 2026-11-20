@@ -63,6 +63,8 @@ A abertura narrativa da primeira jornada e de uma jornada reiniciada é modal: c
 
 O mapa completo pode ser consultado durante a exploração e pausa o combate para leitura segura. Ele mostra as três regiões em ordem, destaca as salas concluídas e a posição de Nara e mantém visível o objetivo da sala atual. O minimapa continua servindo para orientação imediata durante a luta.
 
+O objetivo compartilhado pelo HUD e pelo mapa acompanha o estado real da sala: mostra a quantidade de Ecos a derrotar, troca para o próximo cristal/sinal ou vestígio quando o combate termina e passa a pedir a travessia quando o portal abre. Na arena final, identifica o guardião, o breve momento para ouvir sua lembrança e o Arauto quando ele desperta. Isso evita que a indicação continue mandando o jogador cumprir uma etapa que já terminou.
+
 ## Critérios por etapa
 
 1. Refinar movimento, mira, esquiva, ataques legíveis e poderes táticos.

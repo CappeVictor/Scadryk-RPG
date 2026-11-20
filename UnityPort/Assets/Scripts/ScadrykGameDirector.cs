@@ -1305,6 +1305,41 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         return enemyIndex % 4;
     }
 
+    internal static string ObjectiveText(int phase, int room, int enemiesLeft, int anchorsDone, int anchorsNeeded,
+        bool anchorsNeedPulse, bool anchorsNeedSequence, bool portalOpen, string combatLabel, string interactBinding, string pulseBinding)
+    {
+        int index = Mathf.Clamp(phase, 0, PhaseNames.Length - 1) * RoomsPerPhase + Mathf.Clamp(room, 0, RoomsPerPhase - 1);
+        if (enemiesLeft > 0)
+            return combatLabel + " · " + enemiesLeft + (enemiesLeft == 1 ? " restante" : " restantes");
+        if (anchorsDone < anchorsNeeded)
+        {
+            if (anchorsNeedSequence)
+                return (anchorsDone == 0 ? "Ressoar o farol" : "Ressoar o sino do recife") + " (" + anchorsDone + "/" + anchorsNeeded + ")";
+            if (anchorsNeedPulse)
+                return "Ressoar os cristais com o Pulso (" + pulseBinding + ", " + anchorsDone + "/" + anchorsNeeded + ")";
+            return "Interagir com o vestígio marcado (" + interactBinding + ", " + anchorsDone + "/" + anchorsNeeded + ")";
+        }
+        if (portalOpen)
+            return phase == PhaseNames.Length - 1 && room == RoomsPerPhase - 1
+                ? "Atravessar o portal colossal (" + interactBinding + ")"
+                : room == RoomsPerPhase - 1
+                    ? "Atravessar o portal para o próximo bioma (" + interactBinding + ")"
+                    : "Atravessar o portal para a próxima sala (" + interactBinding + ")";
+        return RoomGoals[index];
+    }
+
+    private string ActiveCombatObjectiveLabel()
+    {
+        if (finalBoss != null) return "Derrotar o Arauto do Vazio";
+        if (phaseGuardian != null) return "Derrotar " + phaseGuardian.name;
+        if (phaseIndex == PhaseNames.Length - 1 && roomIndex == RoomsPerPhase - 1)
+            return "Escutar a última lembrança antes do despertar";
+        return "Derrotar os Ecos";
+    }
+
+    private string ActiveObjectiveText() => ObjectiveText(phaseIndex, roomIndex, enemiesRemaining, anchorsActivated, anchorsRequired,
+        anchorsNeedPulse, anchorsNeedSequence, gateObject != null, ActiveCombatObjectiveLabel(), InputBinding(6), InputBinding(2));
+
     internal float ScheduleOpeningAttack(float requestedAt) =>
         ScadrykEnemyHealth.ReserveOpeningAttackSlot(ref nextOpeningAttackSlotAt, requestedAt);
 
@@ -1740,6 +1775,13 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             ScadrykSettings.CanBindPadButton(7) || ScadrykSettings.CanBindPadButton(8) || !ScadrykSettings.CanBindPadButton(9))
         { SmokeFail("Remapeamento permite tecla/botão reservado ou rejeita um vínculo normal"); yield break; }
         Debug.Log("SCADRYK_SMOKE: Esc, F8, M, Start e L3 reservados; vínculos normais disponíveis");
+        if (!ObjectiveText(0, 0, 3, 0, 0, false, false, false, "Derrotar os Ecos", "E", "Q").Contains("3 restantes") ||
+            !ObjectiveText(0, 0, 1, 0, 0, false, false, false, "Derrotar os Ecos", "E", "Q").Contains("1 restante") ||
+            !ObjectiveText(1, 1, 0, 1, 2, true, false, false, "Derrotar os Ecos", "E", "Q").Contains("1/2") ||
+            !ObjectiveText(2, 1, 0, 1, 2, true, true, false, "Derrotar os Ecos", "E", "Q").StartsWith("Ressoar o sino do recife") ||
+            !ObjectiveText(2, 2, 0, 0, 0, false, false, true, "Derrotar o Arauto", "E", "Q").StartsWith("Atravessar o portal colossal"))
+        { SmokeFail("O objetivo ativo não acompanha combate, sinais, sequência e abertura do portal"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: objetivo ativo avança de combate para sinais e travessia do portal");
         bool[] blockedHeadings = new bool[10];
         blockedHeadings[0] = true;
         blockedHeadings[1] = true;
@@ -2558,8 +2600,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             GUI.Label(new Rect(28, 116f + extra * 37f + i * (15f + extra * 9f), textWidth, 16f + extra * 9f), InputBinding(i + 3) + "  " + abilities[i] + "  ·  " + state, smallStyle);
         }
         GUI.color = Color.white;
-        string progress = anchorsRequired > 0 ? "  ·  " + anchorsActivated + "/" + anchorsRequired : "";
-        GUI.Label(new Rect(28, 164f + extra * 64f, textWidth, 28f + extra * 10f), "Objetivo: " + RoomGoals[phaseIndex * RoomsPerPhase + roomIndex] + progress, smallStyle);
+        string objective = ActiveObjectiveText();
+        GUI.Label(new Rect(28, 164f + extra * 64f, textWidth, 28f + extra * 10f), "Objetivo: " + objective, smallStyle);
     }
 
     private void DrawWitnessPrompt()
@@ -2942,7 +2984,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             }
         }
 
-        string currentObjective = "Objetivo: " + RoomGoals[phaseIndex * RoomsPerPhase + roomIndex];
+        string currentObjective = "Objetivo: " + ActiveObjectiveText();
         GUIContent objectiveContent = new GUIContent(currentObjective);
         float objectiveWidth = panel.width - 32f;
         worldMapObjectiveStyle.fontSize = Mathf.RoundToInt(11f * Mathf.Clamp(ScadrykSettings.TextScale, 1f, 1.5f));
