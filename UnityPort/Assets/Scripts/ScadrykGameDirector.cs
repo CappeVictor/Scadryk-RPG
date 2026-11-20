@@ -1328,14 +1328,18 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         return RoomGoals[index];
     }
 
-    private string ActiveCombatObjectiveLabel()
+    internal static string CombatObjectiveLabel(int phase, int room, string guardianName, bool finalBossAwake, bool awaitingFinalMemory)
     {
-        if (finalBoss != null) return "Derrotar o Arauto do Vazio";
-        if (phaseGuardian != null) return "Derrotar " + phaseGuardian.name;
-        if (phaseIndex == PhaseNames.Length - 1 && roomIndex == RoomsPerPhase - 1)
+        if (finalBossAwake) return "Derrotar o Arauto do Vazio";
+        if (!string.IsNullOrWhiteSpace(guardianName)) return "Derrotar " + guardianName;
+        if (awaitingFinalMemory && phase == PhaseNames.Length - 1 && room == RoomsPerPhase - 1)
             return "Escutar a última lembrança antes do despertar";
         return "Derrotar os Ecos";
     }
+
+    private string ActiveCombatObjectiveLabel() => CombatObjectiveLabel(phaseIndex, roomIndex,
+        phaseGuardian != null ? phaseGuardian.name : null, finalBoss != null,
+        phaseIndex == PhaseNames.Length - 1 && roomIndex == RoomsPerPhase - 1 && enemiesRemaining > 0 && phaseGuardian == null);
 
     private string ActiveObjectiveText() => ObjectiveText(phaseIndex, roomIndex, enemiesRemaining, anchorsActivated, anchorsRequired,
         anchorsNeedPulse, anchorsNeedSequence, gateObject != null, ActiveCombatObjectiveLabel(), InputBinding(6), InputBinding(2));
@@ -1779,7 +1783,10 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             !ObjectiveText(0, 0, 1, 0, 0, false, false, false, "Derrotar os Ecos", "E", "Q").Contains("1 restante") ||
             !ObjectiveText(1, 1, 0, 1, 2, true, false, false, "Derrotar os Ecos", "E", "Q").Contains("1/2") ||
             !ObjectiveText(2, 1, 0, 1, 2, true, true, false, "Derrotar os Ecos", "E", "Q").StartsWith("Ressoar o sino do recife") ||
-            !ObjectiveText(2, 2, 0, 0, 0, false, false, true, "Derrotar o Arauto", "E", "Q").StartsWith("Atravessar o portal colossal"))
+            !ObjectiveText(2, 2, 0, 0, 0, false, false, true, "Derrotar o Arauto", "E", "Q").StartsWith("Atravessar o portal colossal") ||
+            CombatObjectiveLabel(0, 2, "A Raiz-Mor", false, false) != "Derrotar A Raiz-Mor" ||
+            CombatObjectiveLabel(2, 2, null, false, true) != "Escutar a última lembrança antes do despertar" ||
+            CombatObjectiveLabel(2, 2, null, true, false) != "Derrotar o Arauto do Vazio")
         { SmokeFail("O objetivo ativo não acompanha combate, sinais, sequência e abertura do portal"); yield break; }
         Debug.Log("SCADRYK_SMOKE: objetivo ativo avança de combate para sinais e travessia do portal");
         bool[] blockedHeadings = new bool[10];
