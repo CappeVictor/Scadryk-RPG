@@ -28,7 +28,7 @@ O registro atual usa `scadryk-sessions-v3.csv`, com `unclear_attacks` e `complet
 
 Selos circulares ocultos respondem a um poder específico: Crescente na entrada da bacia, Estouro na entrada da costa e Rompante na sala do Arauto. Use o poder perto do selo para libertar um Eco e recuperar vida. Estes encontros são opcionais.
 
-As salas têm ritmos diferentes: entradas do bosque e as travessias trazem combate; a comporta do bosque abre com **E** depois da luta; as entradas da bacia e da costa são momentos calmos com vestígios para escutar; a travessia de sal exige ressoar dois cristais com **Q**, enquanto na costa é preciso fazer o farol responder antes do sino do recife; os guardiões encerram cada bioma. O HUD mostra o objetivo e a contagem dos objetos ativados. Após um período sem progresso ativo, uma pista aparece na parte inferior da tela.
+As salas têm ritmos diferentes: entradas do bosque e as travessias trazem combate; a comporta do bosque abre com **E** depois da luta; as entradas da bacia e da costa são momentos calmos com vestígios para escutar; a travessia de sal exige ressoar dois cristais com **Q**, enquanto na costa é preciso fazer o farol responder antes do sino do recife; os guardiões encerram cada bioma. O HUD mostra o objetivo e a contagem dos objetos ativados. Após um período sem progresso ativo, surgem pistas graduais específicas para a sala; na costa, elas explicam a ordem e a posição do farol e do sino do recife.
 
 ## Menu, opções e áudio
 
