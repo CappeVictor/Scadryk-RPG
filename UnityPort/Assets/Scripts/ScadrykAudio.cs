@@ -136,7 +136,8 @@ public sealed class ScadrykAudio : MonoBehaviour
             float edge = Mathf.Min(1f, Mathf.Min(t, 8f - t) * 6f);
             float pad = Mathf.Sin(2f * Mathf.PI * root * t) * 0.11f + Mathf.Sin(2f * Mathf.PI * root * 1.5f * t) * 0.065f;
             float beat = t % 2f;
-            float bell = Mathf.Sin(2f * Mathf.PI * root * (character + 1.5f) * t) * Mathf.Exp(-beat * 4f) * 0.08f;
+            float bellAttack = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(beat / 0.018f));
+            float bell = Mathf.Sin(2f * Mathf.PI * root * (character + 1.5f) * t) * bellAttack * Mathf.Exp(-beat * 4f) * 0.08f;
             data[i] = (pad * (0.8f + 0.2f * Mathf.Sin(t * 0.8f)) + bell) * edge;
         }
         AudioClip clip = AudioClip.Create(name, count, 1, SampleRate, false);
