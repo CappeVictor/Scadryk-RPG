@@ -1202,6 +1202,34 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             if (room == 8)
             {
                 if (finalBoss == null) { SmokeFail("Arauto não surgiu após o terceiro guardião"); yield break; }
+                var bossType = typeof(ScadrykEnemyHealth);
+                var queuedStageField = bossType.GetField("queuedFinalStage", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                var attackIndexField = bossType.GetField("finalAttackIndex", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                var attackTargetField = bossType.GetField("attackTarget", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                var beginBossAttack = bossType.GetMethod("BeginFinalBossAttack", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                var resolveBossAttack = bossType.GetMethod("ResolveFinalBossAttack", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                if (queuedStageField == null || attackIndexField == null || attackTargetField == null || beginBossAttack == null || resolveBossAttack == null)
+                { SmokeFail("Não foi possível preparar a checagem de fase do Arauto"); yield break; }
+                foreach (ScadrykEnemyProjectile projectile in FindObjectsByType<ScadrykEnemyProjectile>(FindObjectsSortMode.None))
+                    if (projectile != null) Destroy(projectile.gameObject);
+                attackIndexField.SetValue(finalBoss, 0);
+                attackTargetField.SetValue(finalBoss, (Vector2)player.transform.position);
+                beginBossAttack.Invoke(finalBoss, null);
+                int announcedStage = (int)queuedStageField.GetValue(finalBoss);
+                finalBoss.TakeDamage(400f);
+                if (announcedStage != 1 || finalBoss.FinalStage != 2)
+                { SmokeFail("O teste não cruzou o limiar de fase durante o aviso do Arauto"); yield break; }
+                resolveBossAttack.Invoke(finalBoss, null);
+                int announcedVolleyCount = 0;
+                foreach (ScadrykEnemyProjectile projectile in FindObjectsByType<ScadrykEnemyProjectile>(FindObjectsSortMode.None))
+                {
+                    if (projectile == null) continue;
+                    if (projectile.gameObject.name == "Arauto — remembered volley") announcedVolleyCount++;
+                    Destroy(projectile.gameObject);
+                }
+                if (announcedVolleyCount != 3)
+                { SmokeFail("O Arauto mudou o tamanho da salva anunciada ao cruzar de fase"); yield break; }
+                Debug.Log("SCADRYK_SMOKE: salva do Arauto permaneceu na fase anunciada durante a transição");
                 finalBoss.TakeDamage(99999f);
             }
             if (roomIndex == 2 && (player == null || !player.HasAbility(phaseIndex)))
