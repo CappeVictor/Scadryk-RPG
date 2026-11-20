@@ -39,6 +39,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private readonly GameObject[] roomAnchors = new GameObject[2];
     private int anchorsRequired, anchorsActivated, hintStage;
     private bool anchorsNeedPulse;
+    private bool shallowWaterHintShown;
     private readonly bool[] clearedRooms = new bool[RoomsPerPhase];
     private readonly string[][] roomNames = {
         new[] { "Margem Alagada", "Vau de Cinza", "Casa das Comportas" },
@@ -522,7 +523,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             {
                 float y = side * (room == 1 ? 4.65f : 4.2f);
                 MakeDecoration(parent, "Tide pool", new Vector2(x - 5.9f, y), new Vector2(3.0f, 1.05f), new Color(0.08f, 0.30f, 0.30f, 0.52f), true, -9);
+                MakeShallowWaterZone(parent, new Vector2(x - 5.9f, y), new Vector2(3.0f, 1.05f));
                 MakeDecoration(parent, "Tide pool", new Vector2(x + 5.6f, -y * 0.78f), new Vector2(2.5f, 0.82f), new Color(0.07f, 0.26f, 0.27f, 0.48f), true, -9);
+                MakeShallowWaterZone(parent, new Vector2(x + 5.6f, -y * 0.78f), new Vector2(2.5f, 0.82f));
                 for (int reed = 0; reed < 3; reed++)
                 {
                     float rx = x - 7.2f + reed * 0.36f;
@@ -582,6 +585,24 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         }
 
         DrawPhaseProps(parent, room, x);
+    }
+
+    private static void MakeShallowWaterZone(Transform parent, Vector2 position, Vector2 size)
+    {
+        var zoneObject = new GameObject("Shallow water · slows movement");
+        zoneObject.transform.SetParent(parent);
+        zoneObject.transform.position = position;
+        BoxCollider2D trigger = zoneObject.AddComponent<BoxCollider2D>();
+        trigger.isTrigger = true;
+        trigger.size = size;
+        zoneObject.AddComponent<ScadrykTerrainZone>().Configure(0.78f);
+    }
+
+    public void ShowShallowWaterHint()
+    {
+        if (shallowWaterHintShown) return;
+        shallowWaterHintShown = true;
+        ShowStatus("A água rasa reduz seu passo. A esquiva mantém o impulso.", 4f);
     }
 
     private void DrawPhaseProps(Transform parent, int room, float x)
@@ -1092,6 +1113,13 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         for (int room = 0; room < 9; room++)
         {
             if (phaseIndex * RoomsPerPhase + roomIndex != room) { SmokeFail("Sala inesperada: " + room); yield break; }
+            if (room < RoomsPerPhase)
+            {
+                ScadrykTerrainZone[] waterZones = FindObjectsByType<ScadrykTerrainZone>(FindObjectsSortMode.None);
+                if (waterZones.Length == 0) { SmokeFail("Águas rasas sem zonas de terreno na sala " + (room + 1)); yield break; }
+                foreach (ScadrykTerrainZone zone in waterZones)
+                    if (zone.MovementScale >= 1f) { SmokeFail("Zona de água não reduz o movimento"); yield break; }
+            }
             for (int previousRoom = 0; previousRoom < roomIndex; previousRoom++)
                 if (!clearedRooms[previousRoom]) { SmokeFail("O mapa não marcou a sala anterior como concluída: " + previousRoom); yield break; }
             foreach (ScadrykEnemyHealth enemy in FindObjectsByType<ScadrykEnemyHealth>(FindObjectsSortMode.None))

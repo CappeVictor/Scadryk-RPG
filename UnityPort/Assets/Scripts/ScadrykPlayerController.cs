@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>Responsive top-down movement, mouse aiming, melee, dash and shockwave.</summary>
@@ -43,6 +44,8 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     private const float BasicAttackWindup = 0.12f;
     private Vector3 lastMousePosition;
     private bool usingGamepadAim;
+    private readonly HashSet<ScadrykTerrainZone> terrainZones = new HashSet<ScadrykTerrainZone>();
+    private float terrainSpeedScale = 1f;
 
     public Vector2 Facing => facing;
     public float Health => health;
@@ -100,8 +103,29 @@ public sealed class ScadrykPlayerController : MonoBehaviour
             BodyVelocity = dashDirection * dashSpeed;
             return;
         }
-        float effectiveSpeed = Time.time < rootedUntil ? moveSpeed * 0.52f : moveSpeed;
+        float effectiveSpeed = moveSpeed * terrainSpeedScale;
+        if (Time.time < rootedUntil) effectiveSpeed *= 0.52f;
         BodyVelocity = Vector2.MoveTowards(BodyVelocity, moveInput * effectiveSpeed, acceleration * Time.fixedDeltaTime);
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (!other.TryGetComponent<ScadrykTerrainZone>(out var zone) || !terrainZones.Add(zone)) return;
+        RefreshTerrainSpeed();
+        if (director != null) director.ShowShallowWaterHint();
+    }
+
+    private void OnTriggerExit2D(Collider2D other)
+    {
+        if (!other.TryGetComponent<ScadrykTerrainZone>(out var zone) || !terrainZones.Remove(zone)) return;
+        RefreshTerrainSpeed();
+    }
+
+    private void RefreshTerrainSpeed()
+    {
+        terrainSpeedScale = 1f;
+        foreach (ScadrykTerrainZone zone in terrainZones)
+            if (zone != null) terrainSpeedScale = Mathf.Min(terrainSpeedScale, zone.MovementScale);
     }
 
     private void AimAtPointer()
@@ -297,5 +321,5 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         body.position = position;
         if (animator != null) animator.SetPortalScale(visibility);
     }
-    public void ResetForRoom(Vector2 position) { health = maxHealth; rootedUntil = 0f; isDying = false; invulnerableUntil = Time.time + 1f; transform.position = position; BodyVelocity = Vector2.zero; if (animator != null) { animator.SetPortalScale(1f); animator.ResetPose(); } }
+    public void ResetForRoom(Vector2 position) { health = maxHealth; rootedUntil = 0f; terrainZones.Clear(); terrainSpeedScale = 1f; isDying = false; invulnerableUntil = Time.time + 1f; transform.position = position; BodyVelocity = Vector2.zero; if (animator != null) { animator.SetPortalScale(1f); animator.ResetPose(); } }
 }

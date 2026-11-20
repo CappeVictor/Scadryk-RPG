@@ -75,6 +75,8 @@ As coberturas quadradas foram substituídas por troncos caídos, tocos, cristais
 
 Os obstáculos sólidos também funcionam como **cobertura**: estilhaços inimigos param ao atingir troncos, rochas ou ruínas; o golpe básico de Nara e a investida de raízes não causam dano através deles. Ataques circulares mágicos continuam a atingir através da cobertura, criando uma decisão entre proteger-se de linhas e sair de áreas anunciadas.
 
+No bosque alagado, as poças rasas reduzem a velocidade de caminhada para 78%, mas não causam dano. A esquiva mantém o impulso normal, permitindo atravessá-las rapidamente quando houver perigo. Na primeira entrada na água, uma mensagem explica esse efeito.
+
 ## Como ampliar
 
 - `ScadrykGameDirector.cs`: conteúdo das fases, desenho procedural dos mapas, nomes das salas e progressão.
