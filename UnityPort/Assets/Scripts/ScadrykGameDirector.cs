@@ -1359,9 +1359,45 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+    private static bool SmokeBindingResetIsolation()
+    {
+        const int keyboardCount = 11, gamepadCount = 7;
+        string testPrefix = "Scadryk.Smoke." + System.DateTime.UtcNow.Ticks + ".bindings.";
+        string keyPrefix = testPrefix + "Key.";
+        string padPrefix = testPrefix + "Pad.";
+        try
+        {
+            KeyCode[] defaultKeys = { KeyCode.Space, KeyCode.LeftShift, KeyCode.Q, KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3, KeyCode.E, KeyCode.W, KeyCode.S, KeyCode.A, KeyCode.D };
+            int[] defaultButtons = { 0, 1, 2, 4, 5, 6, 3 };
+            PlayerPrefs.SetInt(keyPrefix + "0", (int)KeyCode.F);
+            PlayerPrefs.SetInt(padPrefix + "0", 19);
+            ScadrykSettings.ResetKeyboardBindings(keyPrefix);
+            bool keyboardDefaultsRestored = true;
+            for (int i = 0; i < defaultKeys.Length; i++)
+                keyboardDefaultsRestored &= ScadrykSettings.Key(i, keyPrefix) == defaultKeys[i];
+            bool gamepadSurvivedKeyboardReset = ScadrykSettings.PadButton(0, padPrefix) == 19;
+
+            PlayerPrefs.SetInt(keyPrefix + "1", (int)KeyCode.G);
+            ScadrykSettings.ResetGamepadBindings(padPrefix);
+            bool gamepadDefaultsRestored = true;
+            for (int i = 0; i < defaultButtons.Length; i++)
+                gamepadDefaultsRestored &= ScadrykSettings.PadButton(i, padPrefix) == defaultButtons[i];
+            bool keyboardSurvivedGamepadReset = ScadrykSettings.Key(1, keyPrefix) == KeyCode.G;
+            return keyboardDefaultsRestored && gamepadSurvivedKeyboardReset && gamepadDefaultsRestored && keyboardSurvivedGamepadReset;
+        }
+        finally
+        {
+            for (int i = 0; i < keyboardCount; i++) PlayerPrefs.DeleteKey(keyPrefix + i);
+            for (int i = 0; i < gamepadCount; i++) PlayerPrefs.DeleteKey(padPrefix + i);
+            PlayerPrefs.Save();
+        }
+    }
+
     private IEnumerator SmokeCampaign()
     {
         yield return null;
+        if (!SmokeBindingResetIsolation()) { SmokeFail("Restaurar controles alterou outro dispositivo ou preferências"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: padrões de teclado e controle são independentes e preservam preferências");
         string checkpointTestPrefix = "Scadryk.Smoke." + System.DateTime.UtcNow.Ticks + ".";
         bool checkpointRoundTrip = false;
         try

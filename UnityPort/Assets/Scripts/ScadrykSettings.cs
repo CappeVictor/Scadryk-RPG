@@ -15,7 +15,8 @@ public static class ScadrykSettings
         KeyCode.JoystickButton16, KeyCode.JoystickButton17, KeyCode.JoystickButton18, KeyCode.JoystickButton19
     };
 
-    public static KeyCode Key(int action) => (KeyCode)PlayerPrefs.GetInt("Scadryk.Key." + action, (int)Defaults[action]);
+    public static KeyCode Key(int action) => Key(action, "Scadryk.Key.");
+    internal static KeyCode Key(int action, string prefix) => (KeyCode)PlayerPrefs.GetInt(prefix + action, (int)Defaults[action]);
     public static string KeyName(KeyCode key) => key switch
     {
         KeyCode.Space => "Espaço",
@@ -54,7 +55,8 @@ public static class ScadrykSettings
     };
     public static bool Down(int action) => Input.GetKeyDown(Key(action));
     public static bool Held(int action) => Input.GetKey(Key(action));
-    public static int PadButton(int action) => PlayerPrefs.GetInt("Scadryk.Pad." + action, PadDefaults[action]);
+    public static int PadButton(int action) => PadButton(action, "Scadryk.Pad.");
+    internal static int PadButton(int action, string prefix) => PlayerPrefs.GetInt(prefix + action, PadDefaults[action]);
     public static bool PadDown(int action) => action >= 0 && action < PadDefaults.Length && PadButtonDown(PadButton(action));
     public static bool PadButtonDown(int button) => button >= 0 && button < PadButtons.Length && Input.GetKeyDown(PadButtons[button]);
     public static string PadButtonName(int button) => button switch
@@ -85,13 +87,23 @@ public static class ScadrykSettings
 
     public static void ResetKeyboardBindings()
     {
-        for (int i = 0; i < Defaults.Length; i++) PlayerPrefs.DeleteKey("Scadryk.Key." + i);
+        ResetKeyboardBindings("Scadryk.Key.");
+    }
+
+    internal static void ResetKeyboardBindings(string prefix)
+    {
+        for (int i = 0; i < Defaults.Length; i++) PlayerPrefs.DeleteKey(prefix + i);
         PlayerPrefs.Save();
     }
 
     public static void ResetGamepadBindings()
     {
-        for (int i = 0; i < PadDefaults.Length; i++) PlayerPrefs.DeleteKey("Scadryk.Pad." + i);
+        ResetGamepadBindings("Scadryk.Pad.");
+    }
+
+    internal static void ResetGamepadBindings(string prefix)
+    {
+        for (int i = 0; i < PadDefaults.Length; i++) PlayerPrefs.DeleteKey(prefix + i);
         PlayerPrefs.Save();
     }
 
