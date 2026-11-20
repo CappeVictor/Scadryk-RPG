@@ -2008,6 +2008,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 float finalBossSpawnDeadline = Time.time + 8f;
                 while (finalBoss == null && Time.time < finalBossSpawnDeadline) yield return null;
                 if (finalBoss == null) { SmokeFail("Arauto não surgiu após o terceiro guardião"); yield break; }
+                if (!TryGetMiniMapTarget(out Vector2 bossMapTarget) ||
+                    Vector2.Distance(bossMapTarget, finalBoss.transform.position) > 0.001f)
+                { SmokeFail("O minimapa não acompanhou o Arauto após a última memória"); yield break; }
                 if (string.IsNullOrEmpty(InputBinding(5)) || !statusMessage.Contains(InputBinding(5)))
                 { SmokeFail("O aviso do terceiro poder não mostrou o vínculo atual antes da luta final"); yield break; }
                 var bossType = typeof(ScadrykEnemyHealth);
@@ -2140,11 +2143,19 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 if (memoryText != expectedMemory) { SmokeFail("Nima não respondeu à interação na sala " + room); yield break; }
                 Debug.Log("SCADRYK_SMOKE: Nima respondeu na sala " + (room + 1) + "/9");
             }
+            GameObject nextAnchor = null;
+            for (int i = 0; i < anchorsRequired; i++)
+                if (roomAnchors[i] != null) { nextAnchor = roomAnchors[i]; break; }
+            if (nextAnchor != null && (!TryGetMiniMapTarget(out Vector2 anchorMapTarget) ||
+                Vector2.Distance(anchorMapTarget, nextAnchor.transform.position) > 0.001f))
+            { SmokeFail("O minimapa não apontou para o próximo sinal na sala " + (room + 1)); yield break; }
             if (room == 7 && anchorsNeedSequence && roomAnchors[1] != null)
             {
                 TryPulseAnchor(roomAnchors[1].transform.position);
                 if (anchorsActivated != 0 || roomAnchors[1] == null)
                 { SmokeFail("O sino do recife respondeu antes do farol"); yield break; }
+                if (!TryGetMiniMapTarget(out anchorMapTarget) || Vector2.Distance(anchorMapTarget, roomAnchors[0].transform.position) > 0.001f)
+                { SmokeFail("A indicação do minimapa mudou após uma ordem de sinais inválida"); yield break; }
                 Debug.Log("SCADRYK_SMOKE: sala 8 exige farol antes do sino do recife");
             }
             for (int i = 0; i < anchorsRequired; i++)
