@@ -111,8 +111,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         titleBackdropTexture = Resources.Load<Texture2D>("ScadrykArt/ScadrykTitleBackdrop");
         SetupCamera();
         gameObject.AddComponent<ScadrykAudio>();
-        int savedPhase = smokeRun ? 0 : Mathf.Clamp(PlayerPrefs.GetInt("Scadryk.Phase", 0), 0, PhaseNames.Length - 1);
-        int savedRoom = smokeRun ? 0 : Mathf.Clamp(PlayerPrefs.GetInt("Scadryk.Room", 0), 0, RoomsPerPhase - 1);
+        int savedPhase = 0, savedRoom = 0;
+        if (!smokeRun) TryLoadCheckpoint("Scadryk.", out savedPhase, out savedRoom);
         BuildPhase(savedPhase, savedRoom, true);
         for (int i = 0; i < savedPhase; i++) player.UnlockAbility(i);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -1053,9 +1053,28 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private static void SaveProgress(int phase, int room)
     {
         if (smokeRun) return;
-        PlayerPrefs.SetInt("Scadryk.Phase", phase);
-        PlayerPrefs.SetInt("Scadryk.Room", room);
+        WriteCheckpoint("Scadryk.", phase, room);
+    }
+
+    internal static void WriteCheckpoint(string keyPrefix, int phase, int room)
+    {
+        PlayerPrefs.SetInt(keyPrefix + "Phase", Mathf.Clamp(phase, 0, PhaseNames.Length - 1));
+        PlayerPrefs.SetInt(keyPrefix + "Room", Mathf.Clamp(room, 0, RoomsPerPhase - 1));
         PlayerPrefs.Save();
+    }
+
+    internal static bool TryLoadCheckpoint(string keyPrefix, out int phase, out int room)
+    {
+        bool hasCheckpoint = PlayerPrefs.HasKey(keyPrefix + "Phase");
+        if (!hasCheckpoint)
+        {
+            phase = 0;
+            room = 0;
+            return false;
+        }
+        phase = Mathf.Clamp(PlayerPrefs.GetInt(keyPrefix + "Phase", 0), 0, PhaseNames.Length - 1);
+        room = Mathf.Clamp(PlayerPrefs.GetInt(keyPrefix + "Room", 0), 0, RoomsPerPhase - 1);
+        return true;
     }
 
     private void SpawnFinalBoss()
@@ -1320,6 +1339,29 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private IEnumerator SmokeCampaign()
     {
         yield return null;
+        string checkpointTestPrefix = "Scadryk.Smoke." + System.DateTime.UtcNow.Ticks + ".";
+        bool checkpointRoundTrip = false;
+        try
+        {
+            bool newGameDefaults = !TryLoadCheckpoint(checkpointTestPrefix, out int defaultPhase, out int defaultRoom) && defaultPhase == 0 && defaultRoom == 0;
+            PlayerPrefs.SetInt(checkpointTestPrefix + "Room", 2);
+            bool ignoresOrphanedRoom = !TryLoadCheckpoint(checkpointTestPrefix, out int orphanPhase, out int orphanRoom) && orphanPhase == 0 && orphanRoom == 0;
+            PlayerPrefs.DeleteKey(checkpointTestPrefix + "Room");
+            WriteCheckpoint(checkpointTestPrefix, 2, 2);
+            bool restoresLastPortal = TryLoadCheckpoint(checkpointTestPrefix, out int savedPhase, out int savedRoom) && savedPhase == 2 && savedRoom == 2;
+            WriteCheckpoint(checkpointTestPrefix, 99, -4);
+            bool clampsInvalidData = TryLoadCheckpoint(checkpointTestPrefix, out int clampedPhase, out int clampedRoom) &&
+                clampedPhase == PhaseNames.Length - 1 && clampedRoom == 0;
+            checkpointRoundTrip = newGameDefaults && ignoresOrphanedRoom && restoresLastPortal && clampsInvalidData;
+        }
+        finally
+        {
+            PlayerPrefs.DeleteKey(checkpointTestPrefix + "Phase");
+            PlayerPrefs.DeleteKey(checkpointTestPrefix + "Room");
+            PlayerPrefs.Save();
+        }
+        if (!checkpointRoundTrip) { SmokeFail("Checkpoint não restaura o portal ou limita valores inválidos"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: checkpoint grava, carrega, limita e limpa chaves temporárias");
         ScadrykCue laneCue = ScadrykEnemyHealth.WarningCueFor(0, false, false, 0);
         ScadrykCue volleyCue = ScadrykEnemyHealth.WarningCueFor(0, false, false, 1);
         ScadrykCue areaCue = ScadrykEnemyHealth.WarningCueFor(0, false, false, 2);
