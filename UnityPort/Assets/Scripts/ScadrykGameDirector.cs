@@ -2495,9 +2495,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         {
             Rect targetMarker = MiniMapPositionMarkerRect(currentCell, target - roomCenter, ScadrykSettings.TextScale);
             GUI.color = Color.white;
-            GUI.DrawTexture(new Rect(targetMarker.x - 1f, targetMarker.y - 1f, targetMarker.width + 2f, targetMarker.height + 2f), Texture2D.whiteTexture);
+            DrawMiniMapDiamond(new Rect(targetMarker.x - 1f, targetMarker.y - 1f, targetMarker.width + 2f, targetMarker.height + 2f));
             GUI.color = new Color(0.28f, 0.88f, 1f, 1f);
-            GUI.DrawTexture(targetMarker, Texture2D.whiteTexture);
+            DrawMiniMapDiamond(targetMarker);
         }
         if (player != null)
         {
@@ -2510,7 +2510,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         DrawMiniMapLegendItem(legend.x, legend.y, columnWidth, MiniMapRoomColor(true, false), "Você");
         DrawMiniMapLegendItem(legend.x + columnWidth, legend.y, columnWidth, MiniMapRoomColor(false, true), "Feita");
         DrawMiniMapLegendItem(legend.x + columnWidth * 2f, legend.y, columnWidth, MiniMapRoomColor(false, false), "Futura");
-        DrawMiniMapLegendItem(legend.x + columnWidth * 3f, legend.y, columnWidth, new Color(0.28f, 0.88f, 1f), "Alvo");
+        DrawMiniMapLegendItem(legend.x + columnWidth * 3f, legend.y, columnWidth, new Color(0.28f, 0.88f, 1f), "Alvo", true);
         GUI.color = Color.white;
     }
 
@@ -2552,13 +2552,25 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         return false;
     }
 
-    private void DrawMiniMapLegendItem(float x, float y, float width, Color swatch, string label)
+    private void DrawMiniMapLegendItem(float x, float y, float width, Color swatch, string label, bool diamond = false)
     {
         float scale = ScadrykSettings.TextScale;
         GUI.color = swatch;
-        GUI.DrawTexture(new Rect(x, y + 4f * scale, 9f * scale, 9f * scale), Texture2D.whiteTexture);
+        Rect icon = new Rect(x, y + 4f * scale, 9f * scale, 9f * scale);
+        if (diamond) DrawMiniMapDiamond(icon);
+        else GUI.DrawTexture(icon, Texture2D.whiteTexture);
         GUI.color = Color.white;
         GUI.Label(new Rect(x + 13f * scale, y, width - 13f * scale, 18f * scale), label, smallStyle);
+    }
+
+    private static void DrawMiniMapDiamond(Rect rect)
+    {
+        float unitX = rect.width / 5f, unitY = rect.height / 5f;
+        GUI.DrawTexture(new Rect(rect.x + unitX * 2f, rect.y, unitX, unitY), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(rect.x + unitX, rect.y + unitY, unitX * 3f, unitY), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(rect.x, rect.y + unitY * 2f, rect.width, unitY), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(rect.x + unitX, rect.y + unitY * 3f, unitX * 3f, unitY), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(rect.x + unitX * 2f, rect.y + unitY * 4f, unitX, unitY), Texture2D.whiteTexture);
     }
 
     private static Color MiniMapRoomColor(bool current, bool cleared) =>
