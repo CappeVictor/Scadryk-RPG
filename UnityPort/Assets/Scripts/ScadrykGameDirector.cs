@@ -1803,6 +1803,11 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             ScadrykEnemyHealth.AttackRecoveryDuration(false, true) <= ScadrykEnemyHealth.AttackRecoveryDuration(true, false))
         { SmokeFail("A recuperação após impacto perdeu duração ou gradação por porte do inimigo"); yield break; }
         Debug.Log("SCADRYK_SMOKE: recuperação de impacto aumenta de Eco comum a guardião e Arauto");
+        if (ScadrykActorAnimator.WindupStrength(1f, 1f, 1f) != 0f ||
+            Mathf.Abs(ScadrykActorAnimator.WindupStrength(1.5f, 1f, 1f) - 0.5f) > 0.001f ||
+            ScadrykActorAnimator.WindupStrength(2f, 1f, 1f) != 1f)
+        { SmokeFail("A preparação animada não percorre o início, meio e fim do aviso inimigo"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: pose de preparação acompanha o aviso até a resolução do ataque");
         if (!RoomGroundOrientationsAreUnique())
         { SmokeFail("As três salas repetem a mesma orientação do cenário de fundo"); yield break; }
         Debug.Log("SCADRYK_SMOKE: fundos pintados variam entre as três salas de cada bioma");

@@ -67,6 +67,8 @@ O objetivo compartilhado pelo HUD e pelo mapa acompanha o estado real da sala: m
 
 O ataque básico de Nara mantém seu som de preparação e a animação do golpe; quando acerta um ou mais alvos válidos, toca uma única confirmação aguda de impacto, diferente do impacto grave dos Ecos. O efeito visual e o dano continuam resolvidos uma vez por inimigo atingido. A confirmação ainda precisa de avaliação auditiva com o volume de efeitos e a música ativos.
 
+Os Ecos agora sustentam uma pose de preparação crescente durante todo o telegráfico. Ao resolver o golpe, a animação troca para o movimento de impacto; depois, a pausa de recuperação oferece a janela de reposicionamento já existente. O smoke mede o início, meio e fim dessa progressão; sua leitura visual e o ritmo ainda precisam ser conferidos numa compilação do Editor.
+
 ## Critérios por etapa
 
 1. Refinar movimento, mira, esquiva, ataques legíveis e poderes táticos.

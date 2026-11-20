@@ -252,7 +252,6 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     {
         attackTarget = player.transform.position;
         ScadrykAudio.Play(WarningCueFor(biomeIndex, IsBoss, isFinalBoss, combatRole));
-        if (animator != null) animator.PlayAttack((attackTarget - (Vector2)transform.position).normalized, IsBoss);
         if (isFinalBoss)
         {
             BeginFinalBossAttack();
@@ -260,6 +259,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         }
         float windup = IsBoss ? (biomeIndex == 0 ? 0.95f : biomeIndex == 1 ? 0.86f : 1.05f) :
             combatRole == 0 ? 0.7f : combatRole == 1 ? 0.85f : combatRole == 2 ? 0.95f : 1.1f;
+        if (animator != null) animator.PlayWindup((attackTarget - (Vector2)transform.position).normalized, windup);
         isWindup = true;
         windupEndsAt = Time.time + windup;
         Vector2 origin = transform.position;
@@ -302,6 +302,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         int stage = queuedFinalStage;
         queuedFinalPattern = finalAttackIndex % (stage == 1 ? 2 : 3);
         float windup = stage == 3 ? 1.18f : 1.35f;
+        if (animator != null) animator.PlayWindup((attackTarget - (Vector2)transform.position).normalized, windup);
         isWindup = true;
         windupEndsAt = Time.time + windup;
         Vector2 origin = transform.position;
@@ -493,6 +494,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             isWindup = false;
             windupEndsAt = 0f;
             nextAttackAt = staggerUntil + 0.8f;
+            if (animator != null) animator.CancelWindup();
         }
     }
 
