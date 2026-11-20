@@ -7,6 +7,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 {
     private const int RoomsPerPhase = 3;
     private const float RoomSpacing = 23f;
+    private const string OpeningMemory = "Depois que a Grande Onda cobriu a costa, os três sinos emudeceram. Nara, a Ouvinte, ainda escutava os nomes perdidos e seguiu a maré imóvel.";
+    private const string EndingMemory = "O Arauto quis ocultar a catástrofe para poupar os vivos da dor, mas o silêncio aprisionou os mortos. Nara escolhe lembrar e abre o limiar para que todos possam atravessar.";
     private const string SessionCsvHeader = "utc,phase,room,seconds,deaths,unclear_attacks,crescent,salt,tide,enemies_left,completed,input_mode\n";
     private static readonly string[] PhaseNames = { "Margens do Primeiro Eco", "Bacia do Sal Imóvel", "Costa das Badaladas" };
     private static readonly Color[] PhaseColors = { new Color(0.11f, 0.22f, 0.20f), new Color(0.27f, 0.20f, 0.12f), new Color(0.09f, 0.17f, 0.25f) };
@@ -74,12 +76,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         "O Vigia do Coro: os sinos devolverão a dor."
     };
     private static readonly string[] GuardianMemories = {
-        "A Raiz-Mor entrega a Nara o Crescente e o nome de quem guardava a comporta.",
-        "A Vigia do Sal devolve o Estouro e a lembrança da última maré suspensa.",
+        "A Raiz-Mor entrega o Crescente e revela que Nima tocou o primeiro sino; seu nome ficou guardado nas raízes.",
+        "A Vigia do Sal devolve o Estouro e revela que o Arauto deteve a última onda, deixando a costa presa no instante em que perdeu suas vozes.",
         "O Vigia do Coro entrega o Rompante e revela que o Arauto mandou calar os sinos para poupar os vivos."
     };
     private static readonly string[] BasinWitnessLines = {
-        "Sou Nima, uma voz devolvida pelas raízes. O guardião não protegia a comporta: tentava manter minha última lembrança presa.",
+        "Sou Nima, a voz do primeiro sino. A Raiz-Mor guardou meu nome para que o silêncio não me apagasse. Ainda lembro o Arauto chamando esse silêncio de abrigo.",
         "O sal ainda segura a onda no instante em que ela partiu. Faça os cristais responderem; a água precisa voltar a seguir."
     };
     private static readonly string[] CoastWitnessLines = {
@@ -329,7 +331,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         BuildPhase(0, 0, true);
         showTitle = isPaused = victory = false;
         StartRoomTimer();
-        ShowMemory("Quando os três sinos calaram, Nara ainda ouvia os nomes esquecidos. Ela entrou nas margens para devolvê-los ao mundo.", 8f);
+        ShowMemory(OpeningMemory, 8f);
     }
 
     private void RequestNewGame()
@@ -355,7 +357,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         overlaySelection = 0;
         showTitle = isPaused = false;
         StartRoomTimer();
-        if (firstStart) ShowMemory("Quando os três sinos calaram, Nara ainda ouvia os nomes esquecidos. Ela entrou nas margens para devolvê-los ao mundo.", 8f);
+        if (firstStart) ShowMemory(OpeningMemory, 8f);
     }
 
     private void StartRoomTimer()
@@ -1248,7 +1250,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             if (anchorsActivated >= anchorsRequired) UnlockExit();
             statusMessage = "O Arauto do Vazio caiu! Um portal colossal se abriu.";
             statusUntil = Time.time + 9f;
-            ShowMemory("O Arauto ocultou a catástrofe para poupar os vivos da dor. Mas o silêncio aprisionou os mortos. Nara escolhe lembrar e abre o limiar para que todos possam atravessar.", 10f);
+            ShowMemory(EndingMemory, 10f);
             return;
         }
 
@@ -1717,6 +1719,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         Debug.Log("SCADRYK_SMOKE: equipes de bosque, sal e costa têm papéis próprios");
         if (GuardianNames.Length != 3 || GuardianIntroductions.Length != 3 || GuardianMemories.Length != 3)
         { SmokeFail("Cada bioma precisa de nome, fala e memória próprios para o guardião"); yield break; }
+        if (!OpeningMemory.Contains("Grande Onda") || !OpeningMemory.Contains("Nara") ||
+            !GuardianMemories[0].Contains("Nima") || !BasinWitnessLines[0].Contains("primeiro sino") ||
+            !GuardianMemories[1].Contains("última onda") || !GuardianMemories[2].Contains("poupar os vivos") ||
+            !EndingMemory.Contains("Nara escolhe lembrar") || !EndingMemory.Contains("aprisionou os mortos"))
+        { SmokeFail("A história perdeu a causa da maré imóvel, a ligação de Nima ou a resolução do conflito"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: abertura, memórias de Nima e dos guardiões e resolução final formam o arco da maré");
         for (int guardian = 0; guardian < GuardianNames.Length; guardian++)
             if (string.IsNullOrWhiteSpace(GuardianNames[guardian]) || !GuardianIntroductions[guardian].StartsWith(GuardianNames[guardian]) ||
                 !GuardianMemories[guardian].Contains(GuardianNames[guardian]))
