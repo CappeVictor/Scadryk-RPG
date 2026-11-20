@@ -10,7 +10,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private const float RoomSpacing = 23f;
     private const string OpeningMemory = "Depois que a Grande Onda cobriu a costa, os três sinos emudeceram. Nara, a Ouvinte, ainda escutava os nomes perdidos e seguiu a maré imóvel.";
     private const string EndingMemory = "O Arauto quis ocultar a catástrofe para poupar os vivos da dor, mas o silêncio aprisionou os mortos. Nara escolhe lembrar e abre o limiar para que todos possam atravessar.";
-    private const string SessionCsvHeader = "utc,phase,room,seconds,deaths,unclear_attacks,crescent,salt,tide,enemies_left,completed,input_mode\n";
+    private const string SessionCsvHeader = "session_id,utc,phase,room,seconds,deaths,unclear_attacks,crescent,salt,tide,enemies_left,completed,input_mode\n";
     private static readonly string[] PhaseNames = { "Margens do Primeiro Eco", "Bacia do Sal Imóvel", "Costa das Badaladas" };
     private static readonly Color[] PhaseColors = { new Color(0.11f, 0.22f, 0.20f), new Color(0.27f, 0.20f, 0.12f), new Color(0.09f, 0.17f, 0.25f) };
     private static readonly Color[] PhaseWallColors = { new Color(0.17f, 0.29f, 0.26f), new Color(0.35f, 0.27f, 0.16f), new Color(0.13f, 0.28f, 0.36f) };
@@ -28,6 +28,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private int phaseIndex, roomIndex, enemiesRemaining;
     private static bool smokeRun;
     private bool isPaused, victory, transitioning, showTitle = true, showOptions, confirmNewJourney;
+    private string sessionId;
     private int rebindingAction = -1;
     private int gamepadRebindAction = -1;
     private int optionsTab, optionsSelection, overlaySelection;
@@ -119,6 +120,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         smokeRun = System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-scadryk-smoke") >= 0;
 #endif
+        sessionId = System.Guid.NewGuid().ToString("N");
+        Debug.Log("SCADRYK_SESSION: " + sessionId);
         EnsureSprites();
         environmentSprites = LoadSheetRow("ScadrykEnvironment", 0, true);
         phaseGroundSprites = new[] { LoadSingleSprite("ForestClearing", 80f), LoadSingleSprite("SaltBasin", 80f), LoadSingleSprite("BellCoast", 80f) };
@@ -1315,7 +1318,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private string FormatSessionCsvRow(bool completed)
     {
-        return System.DateTime.UtcNow.ToString("o") + "," + (phaseIndex + 1) + "," + (roomIndex + 1) + "," +
+        return sessionId + "," + System.DateTime.UtcNow.ToString("o") + "," + (phaseIndex + 1) + "," + (roomIndex + 1) + "," +
             Mathf.RoundToInt(Mathf.Max(0f, roomActiveSeconds)) + "," + roomDeaths + "," + unclearAttackMarks + "," + roomPowerUses[0] + "," +
             roomPowerUses[1] + "," + roomPowerUses[2] + "," + enemiesRemaining + "," + completed.ToString().ToLowerInvariant() + "," + sessionInputMode + "\n";
     }
@@ -1326,7 +1329,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         roomSessionRecorded = true;
         try
         {
-            string path = Path.Combine(Application.persistentDataPath, "scadryk-sessions-v4.csv");
+            string path = Path.Combine(Application.persistentDataPath, "scadryk-sessions-v5.csv");
             if (!File.Exists(path)) File.WriteAllText(path, SessionCsvHeader);
             bool completed = roomIndex >= 0 && roomIndex < clearedRooms.Length && clearedRooms[roomIndex];
             File.AppendAllText(path, FormatSessionCsvRow(completed));
@@ -1873,7 +1876,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         RecordPlayerDeath();
         if (roomDeaths != 1) { SmokeFail("A derrota não foi contabilizada no instante da morte"); yield break; }
         string[] deathCsvColumns = FormatSessionCsvRow(false).TrimEnd('\n').Split(',');
-        if (deathCsvColumns.Length != SessionCsvHeader.TrimEnd('\n').Split(',').Length || deathCsvColumns[4] != "1")
+        if (!System.Guid.TryParseExact(sessionId, "N", out _) ||
+            deathCsvColumns.Length != SessionCsvHeader.TrimEnd('\n').Split(',').Length || deathCsvColumns[0] != sessionId || deathCsvColumns[5] != "1")
         { SmokeFail("O CSV não registraria uma morte antes de terminar a animação"); yield break; }
         RestartCurrentRoom();
         if (roomActiveSeconds != 17f || roomDeaths != 1 || roomPowerUses[0] != 2 || sessionInputMode != "gamepad")

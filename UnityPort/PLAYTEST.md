@@ -1,6 +1,6 @@
 # Ficha de sessão de teste — Scadryk
 
-Use este roteiro em uma build identificada por commit. Não ensine objetivos, segredos ou estratégias durante a primeira tentativa; apresente apenas os controles. Peça autorização antes de registrar comentários e use um apelido ou código, sem dados pessoais. O jogo grava duração, mortes, ataques difíceis de perceber e usos de poderes por sala em `scadryk-sessions-v4.csv` dentro de `Application.persistentDataPath`.
+Use este roteiro em uma build identificada por commit. Não ensine objetivos, segredos ou estratégias durante a primeira tentativa; apresente apenas os controles. Peça autorização antes de registrar comentários e use um apelido ou código, sem dados pessoais. O jogo grava duração, mortes, ataques difíceis de perceber e usos de poderes por sala em `scadryk-sessions-v5.csv` dentro de `Application.persistentDataPath`. O mesmo `session_id` agrupa as salas gravadas em uma execução; ele também aparece no log como `SCADRYK_SESSION`.
 
 ## Participante e build
 
@@ -8,14 +8,14 @@ Use este roteiro em uma build identificada por commit. Não ensine objetivos, se
 - Experiência declarada: `iniciante / intermediária / experiente`
 - Familiaridade com jogos de ação top-down/ARPG: `____________________`
 - Build/commit: `____________________`
-- Data e dispositivo de entrada: `____________________`
+- Data, `session_id` do CSV/log e dispositivo de entrada: `____________________`
 - Observador: `____________________`
 
 Convide ao menos duas pessoas por nível de experiência (seis sessões) antes de comparar padrões. Cada pessoa deve começar sem save anterior e jogar até concluir ou decidir parar. Não combine métricas de builds diferentes como se fossem a mesma versão.
 
 ## Registro por sala
 
-Depois da sessão, associe as linhas do CSV à sessão pelo horário UTC e copie os valores automáticos abaixo. O jogo preserva mortes e usos de poderes ao reiniciar a sala, então os valores da linha já cobrem as tentativas daquela sala na campanha. Se a pessoa repetir a campanha, mantenha cada tentativa separada. Anote cada marca F8 com uma descrição do ataque e do que o jogador percebeu.
+Depois da sessão, filtre o CSV pelo `session_id` e copie os valores automáticos abaixo. O jogo preserva mortes e usos de poderes ao reiniciar a sala, então os valores da linha já cobrem as tentativas daquela sala na campanha. Se a pessoa repetir a campanha em outra execução, o ID muda; mantenha cada tentativa separada. Anote cada marca F8 com uma descrição do ataque e do que o jogador percebeu.
 
 | Fase / sala | Segundos ativos | Mortes | F8 / sinais pouco claros | Crescente | Estouro | Rompante | Objetivo compreendido sem ajuda? | Comentário curto |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
