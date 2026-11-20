@@ -115,10 +115,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         if (smokeRun) { showTitle = false; StartCoroutine(SmokeCampaign()); }
 #endif
+        ApplyPauseTimeScale();
     }
 
     private void Update()
     {
+        ApplyPauseTimeScale();
         if (!showTitle && !isPaused && !showOptions && !victory && !transitioning)
             roomActiveSeconds += Time.deltaTime;
         if (transitioning) return;
@@ -150,6 +152,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             unclearAttackMarks++;
             ShowStatus("Ataque difícil de perceber registrado nesta sala.", 3f);
         }
+        ApplyPauseTimeScale();
+    }
+
+    private void ApplyPauseTimeScale()
+    {
+        Time.timeScale = showTitle || isPaused || showOptions || victory ? 0f : 1f;
     }
 
     private void UpdateGamepadMenus()
@@ -951,6 +959,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private void OnApplicationQuit()
     {
+        Time.timeScale = 1f;
         if (levelRoot != null) RecordRoomSession();
     }
 
@@ -1231,6 +1240,16 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             !audio.HasCue(supportCue) || !audio.HasCue(ScadrykCue.FinalBossWarning))
         { SmokeFail("Os sinais sonoros de aviso não diferenciam papéis e guardiões"); yield break; }
         Debug.Log("SCADRYK_SMOKE: avisos sonoros diferenciam papéis e Arauto");
+        bool previousPauseState = isPaused;
+        float beforePauseClock = Time.time;
+        isPaused = true;
+        ApplyPauseTimeScale();
+        yield return new WaitForSecondsRealtime(0.1f);
+        bool pauseClockStopped = Time.timeScale == 0f && Mathf.Abs(Time.time - beforePauseClock) < 0.001f;
+        isPaused = previousPauseState;
+        ApplyPauseTimeScale();
+        if (!pauseClockStopped) { SmokeFail("A pausa deixou o relógio de combate avançar"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: pausa congela o relógio e os avisos temporizados");
         if (titleBackdropTexture == null) { SmokeFail("A arte de abertura ScadrykTitleBackdrop não foi carregada"); yield break; }
         Debug.Log("SCADRYK_SMOKE: arte original da tela inicial carregada");
         RequestNewGame(true);
