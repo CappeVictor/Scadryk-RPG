@@ -1,10 +1,10 @@
 # Scadryk
 
-Scadryk é um RPG de ação 2D em fantasia sombria, feito em C# com .NET 8 e Windows Forms. O desenho usa GDI+; o projeto não depende de Godot nem de outro motor de jogo. Diablo é uma referência de ritmo, combate e progressão. O mundo, os nomes e os itens de Scadryk são próprios. A meta de longo prazo é alcançar uma aventura de ação e loot 2D rica e rejogável, construída em etapas e sem copiar a história ou os personagens de outros jogos.
+Scadryk é um RPG de ação top-down de fantasia sombria, com identidade, mundo e personagens próprios. O repositório contém duas implementações em C#: o protótipo original .NET/Windows Forms na raiz e o port em Unity em `UnityPort/`. A experiência Unity é o foco da aventura com três biomas, nove salas, poderes e o Arauto do Vazio; ela ainda está em desenvolvimento e não deve ser confundida com a campanha mais extensa do protótipo original. Diablo serve apenas como referência de ritmo, combate e progressão, sem copiar sua história, personagens ou conteúdo visual.
 
 ## Usar o protótipo na Unity
 
-O jogo original foi feito para Windows Forms. [`UnityPort/`](UnityPort/README.md) agora também é um projeto Unity completo, com a cena `ScadrykDemo`, três fases e nove salas, mapas com árvores, pedras, cristais e ruínas ilustradas e animadas, além de inimigos, guardiões, controles aprimorados e build Windows. Abra a pasta `UnityPort` pelo Unity Hub para testar. Campanha completa, diálogos, missões, equipamentos, animações e salvamento ainda precisam ser migrados.
+Para abrir a aventura Unity, use o Unity Hub e selecione a pasta `UnityPort`; consulte o [guia do UnityPort](UnityPort/README.md) para a versão exata do Editor, controles e estado da validação. A cena inicial é `Assets/Scenes/ScadrykDemo.unity`. O port reúne três biomas e nove salas conectadas, mas ainda não alcança a amplitude do protótipo original nem todos os critérios de produto completo. Não abra a pasta da raiz como se fosse o projeto Unity.
 
 O [objetivo completo do projeto](OBJETIVO_SCADRYK.md) descreve a experiência desejada, os sistemas e os critérios para cada etapa.
 
