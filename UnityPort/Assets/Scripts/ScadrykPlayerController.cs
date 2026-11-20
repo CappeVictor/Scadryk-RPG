@@ -81,13 +81,13 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         Vector2 stick = new Vector2(Input.GetAxisRaw("Scadryk Move X"), Input.GetAxisRaw("Scadryk Move Y"));
         moveInput = Vector2.ClampMagnitude(keyboard + stick, 1f);
         AimAtPointer();
-        if (Input.GetMouseButtonDown(0) || ScadrykSettings.Down(0) || Input.GetKeyDown(KeyCode.JoystickButton0)) Attack();
-        if (ScadrykSettings.Down(1) || Input.GetKeyDown(KeyCode.JoystickButton1)) Dash();
-        if (ScadrykSettings.Down(2) || Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.JoystickButton2)) Shockwave();
-        if (ScadrykSettings.Down(3) || Input.GetKeyDown(KeyCode.JoystickButton4)) UseAbility(0);
-        if (ScadrykSettings.Down(4) || Input.GetKeyDown(KeyCode.JoystickButton5)) UseAbility(1);
-        if (ScadrykSettings.Down(5) || Input.GetKeyDown(KeyCode.JoystickButton6)) UseAbility(2);
-        if ((ScadrykSettings.Down(6) || Input.GetKeyDown(KeyCode.JoystickButton3)) && director != null) director.TryInteract(transform.position);
+        if (Input.GetMouseButtonDown(0) || ScadrykSettings.Down(0) || ScadrykSettings.PadDown(0)) Attack();
+        if (ScadrykSettings.Down(1) || ScadrykSettings.PadDown(1)) Dash();
+        if (ScadrykSettings.Down(2) || Input.GetMouseButtonDown(1) || ScadrykSettings.PadDown(2)) Shockwave();
+        if (ScadrykSettings.Down(3) || ScadrykSettings.PadDown(3)) UseAbility(0);
+        if (ScadrykSettings.Down(4) || ScadrykSettings.PadDown(4)) UseAbility(1);
+        if (ScadrykSettings.Down(5) || ScadrykSettings.PadDown(5)) UseAbility(2);
+        if ((ScadrykSettings.Down(6) || ScadrykSettings.PadDown(6)) && director != null) director.TryInteract(transform.position);
 
         UpdateSprite();
     }

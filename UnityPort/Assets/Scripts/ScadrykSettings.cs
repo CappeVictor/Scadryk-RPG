@@ -5,10 +5,28 @@ public static class ScadrykSettings
 {
     public static readonly string[] Actions = { "Atacar", "Esquivar", "Pulso", "Crescente", "Estouro", "Rompante", "Interagir", "Cima", "Baixo", "Esquerda", "Direita" };
     private static readonly KeyCode[] Defaults = { KeyCode.Space, KeyCode.LeftShift, KeyCode.Q, KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3, KeyCode.E, KeyCode.W, KeyCode.S, KeyCode.A, KeyCode.D };
+    private static readonly int[] PadDefaults = { 0, 1, 2, 4, 5, 6, 3 };
+    private static readonly KeyCode[] PadButtons =
+    {
+        KeyCode.JoystickButton0, KeyCode.JoystickButton1, KeyCode.JoystickButton2, KeyCode.JoystickButton3,
+        KeyCode.JoystickButton4, KeyCode.JoystickButton5, KeyCode.JoystickButton6, KeyCode.JoystickButton7,
+        KeyCode.JoystickButton8, KeyCode.JoystickButton9, KeyCode.JoystickButton10, KeyCode.JoystickButton11,
+        KeyCode.JoystickButton12, KeyCode.JoystickButton13, KeyCode.JoystickButton14, KeyCode.JoystickButton15,
+        KeyCode.JoystickButton16, KeyCode.JoystickButton17, KeyCode.JoystickButton18, KeyCode.JoystickButton19
+    };
 
     public static KeyCode Key(int action) => (KeyCode)PlayerPrefs.GetInt("Scadryk.Key." + action, (int)Defaults[action]);
     public static bool Down(int action) => Input.GetKeyDown(Key(action));
     public static bool Held(int action) => Input.GetKey(Key(action));
+    public static int PadButton(int action) => PlayerPrefs.GetInt("Scadryk.Pad." + action, PadDefaults[action]);
+    public static bool PadDown(int action) => action >= 0 && action < PadDefaults.Length && PadButtonDown(PadButton(action));
+    public static bool PadButtonDown(int button) => button >= 0 && button < PadButtons.Length && Input.GetKeyDown(PadButtons[button]);
+    public static string PadButtonName(int button) => button switch
+    {
+        0 => "A", 1 => "B", 2 => "X", 3 => "Y", 4 => "LB", 5 => "RB", 6 => "Back", 7 => "Start",
+        _ => "Botão " + button
+    };
+
     public static void Bind(int action, KeyCode key)
     {
         if (action < 0 || action >= Defaults.Length || key == KeyCode.None || key == KeyCode.Escape) return;
@@ -16,6 +34,16 @@ public static class ScadrykSettings
         for (int i = 0; i < Defaults.Length; i++)
             if (i != action && Key(i) == key) PlayerPrefs.SetInt("Scadryk.Key." + i, (int)oldKey);
         PlayerPrefs.SetInt("Scadryk.Key." + action, (int)key);
+        PlayerPrefs.Save();
+    }
+
+    public static void BindPad(int action, int button)
+    {
+        if (action < 0 || action >= PadDefaults.Length || button < 0 || button >= PadButtons.Length) return;
+        int oldButton = PadButton(action);
+        for (int i = 0; i < PadDefaults.Length; i++)
+            if (i != action && PadButton(i) == button) PlayerPrefs.SetInt("Scadryk.Pad." + i, oldButton);
+        PlayerPrefs.SetInt("Scadryk.Pad." + action, button);
         PlayerPrefs.Save();
     }
 

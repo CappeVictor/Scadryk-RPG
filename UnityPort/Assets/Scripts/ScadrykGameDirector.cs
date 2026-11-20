@@ -23,7 +23,10 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private static bool smokeRun;
     private bool isPaused, victory, transitioning, showTitle = true, showOptions;
     private int rebindingAction = -1;
-    private int optionsTab;
+    private int gamepadRebindAction = -1;
+    private int optionsTab, optionsSelection, overlaySelection;
+    private int gamepadRebindAfterFrame;
+    private float nextGamepadNavigationAt;
     private float transitionFade;
     private Vector2 roomCenter, exitPosition;
     private ScadrykPlayerController player;
@@ -95,14 +98,18 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private void Update()
     {
         if (transitioning) return;
-        if (showTitle && !showOptions && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.JoystickButton0)))
+        if (showTitle && !showOptions && Input.GetKeyDown(KeyCode.Return))
             BeginJourney();
-        if ((showTitle || isPaused) && !showOptions && Input.GetKeyDown(KeyCode.O)) showOptions = true;
-        if (!victory && (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.JoystickButton7)))
+        if ((showTitle || isPaused) && !showOptions && Input.GetKeyDown(KeyCode.O))
         {
-            if (showOptions) { showOptions = false; rebindingAction = -1; }
+            showOptions = true; optionsTab = 0; optionsSelection = 0; gamepadRebindAction = rebindingAction = -1;
+        }
+        if (!victory && (Input.GetKeyDown(KeyCode.Escape) || ScadrykSettings.PadButtonDown(7)))
+        {
+            if (showOptions) { showOptions = false; rebindingAction = gamepadRebindAction = -1; }
             else if (!showTitle) isPaused = !isPaused;
         }
+        if (showOptions || showTitle || isPaused || victory) UpdateGamepadMenus();
         if (!IsPaused && gateObject == null && enemiesRemaining == 0 && anchorsActivated >= anchorsRequired)
             UnlockExit();
         if (!IsPaused && anchorsActivated < anchorsRequired && Time.time - roomStartedAt > 24f + hintStage * 18f)
@@ -114,6 +121,107 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         {
             unclearAttackMarks++;
             ShowStatus("Ataque difícil de perceber registrado nesta sala.", 3f);
+        }
+    }
+
+    private void UpdateGamepadMenus()
+    {
+        if (gamepadRebindAction >= 0)
+        {
+            if (Time.frameCount > gamepadRebindAfterFrame)
+            {
+                for (int button = 0; button < 20; button++)
+                {
+                    if (button == 7) continue; // Start remains reserved for pause.
+                    if (!ScadrykSettings.PadButtonDown(button)) continue;
+                    ScadrykSettings.BindPad(gamepadRebindAction, button);
+                    gamepadRebindAction = -1;
+                    ShowStatus("Botão do controle remapeado.", 2f);
+                    break;
+                }
+            }
+            return;
+        }
+
+        if (rebindingAction >= 0)
+        {
+            if (ScadrykSettings.PadButtonDown(1)) rebindingAction = -1;
+            return;
+        }
+
+        Vector2 navigation = new Vector2(Input.GetAxisRaw("Scadryk Move X"), Input.GetAxisRaw("Scadryk Move Y"));
+        if (Time.unscaledTime >= nextGamepadNavigationAt && Mathf.Abs(navigation.y) > 0.55f)
+        {
+            if (showOptions)
+            {
+                int max = optionsTab == 0 ? 8 : optionsTab == 1 ? 14 : 10;
+                optionsSelection = Mathf.Clamp(optionsSelection - (navigation.y > 0f ? 1 : -1), 0, max);
+            }
+            else overlaySelection = Mathf.Clamp(overlaySelection - (navigation.y > 0f ? 1 : -1), victory ? 1 : 0, victory ? 1 : 2);
+            nextGamepadNavigationAt = Time.unscaledTime + 0.2f;
+        }
+        else if (Mathf.Abs(navigation.y) < 0.2f) nextGamepadNavigationAt = 0f;
+
+        if (showOptions && optionsSelection < 3 && Time.unscaledTime >= nextGamepadNavigationAt && Mathf.Abs(navigation.x) > 0.55f)
+        {
+            optionsTab = (optionsTab + (navigation.x > 0f ? 1 : 2)) % 3;
+            optionsSelection = optionsTab;
+            nextGamepadNavigationAt = Time.unscaledTime + 0.2f;
+        }
+        else if (showOptions && optionsTab == 0 && Time.unscaledTime >= nextGamepadNavigationAt && Mathf.Abs(navigation.x) > 0.55f)
+        {
+            float step = navigation.x > 0f ? 0.05f : -0.05f;
+            if (optionsSelection == 3) ScadrykSettings.MusicVolume += step;
+            else if (optionsSelection == 4) ScadrykSettings.EffectsVolume += step;
+            else if (optionsSelection == 5) { ScadrykSettings.TextScale += step; titleStyle = null; }
+            nextGamepadNavigationAt = Time.unscaledTime + 0.16f;
+        }
+
+        if (showOptions)
+        {
+            if (ScadrykSettings.PadButtonDown(0)) SubmitGamepadOptions();
+            if (ScadrykSettings.PadButtonDown(1)) { showOptions = false; rebindingAction = gamepadRebindAction = -1; }
+            return;
+        }
+
+        if (ScadrykSettings.PadButtonDown(0)) SubmitGamepadOverlay();
+        if (ScadrykSettings.PadButtonDown(1) && !showTitle && !victory) isPaused = false;
+    }
+
+    private void SubmitGamepadOverlay()
+    {
+        if (victory) { StartNewGame(); return; }
+        if (overlaySelection == 0)
+        {
+            if (showTitle) BeginJourney();
+            else isPaused = false;
+        }
+        else if (overlaySelection == 1) StartNewGame();
+        else { showOptions = true; optionsTab = 0; optionsSelection = 0; }
+    }
+
+    private void SubmitGamepadOptions()
+    {
+        if (optionsSelection < 3) { optionsTab = optionsSelection; return; }
+        if (optionsTab == 0)
+        {
+            if (optionsSelection == 6) ScadrykSettings.ReduceFlash = !ScadrykSettings.ReduceFlash;
+            else if (optionsSelection == 7) ScadrykSettings.ReduceShake = !ScadrykSettings.ReduceShake;
+            else if (optionsSelection == 8) showOptions = false;
+        }
+        else if (optionsTab == 1)
+        {
+            if (optionsSelection is >= 3 and <= 13) rebindingAction = optionsSelection - 3;
+            else if (optionsSelection == 14) showOptions = false;
+        }
+        else if (optionsTab == 2)
+        {
+            if (optionsSelection is >= 3 and <= 9)
+            {
+                gamepadRebindAction = optionsSelection - 3;
+                gamepadRebindAfterFrame = Time.frameCount;
+            }
+            else if (optionsSelection == 10) showOptions = false;
         }
     }
 
@@ -1100,11 +1208,27 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             showTitle ? "Nara, a Ouvinte, segue os Ecos até a origem do silêncio." : "A jornada pode esperar por você.";
         GUI.Label(new Rect(center - 340f, top + 48f, 680f, 62f), message, centeredBodyStyle);
         float buttonY = top + 132f;
-        if (!victory && GUI.Button(new Rect(center - 115f, buttonY, 230f, 44f), showTitle ? (PlayerPrefs.HasKey("Scadryk.Phase") ? "Continuar jornada" : "Começar jornada") : "Continuar"))
+        if (!victory && OverlayButton(new Rect(center - 115f, buttonY, 230f, 44f), showTitle ? (PlayerPrefs.HasKey("Scadryk.Phase") ? "Continuar jornada" : "Começar jornada") : "Continuar", 0))
             BeginJourney();
-        if (GUI.Button(new Rect(center - 115f, buttonY + 54f, 230f, 44f), victory ? "Nova jornada" : "Nova jornada")) StartNewGame();
-        if (!victory && GUI.Button(new Rect(center - 115f, buttonY + 108f, 230f, 44f), "Opções e controles")) showOptions = true;
+        if (OverlayButton(new Rect(center - 115f, buttonY + 54f, 230f, 44f), "Nova jornada", 1)) StartNewGame();
+        if (!victory && OverlayButton(new Rect(center - 115f, buttonY + 108f, 230f, 44f), "Opções e controles", 2)) { showOptions = true; optionsTab = optionsSelection = 0; }
         GUI.Label(new Rect(center - 300f, Screen.height - 58f, 600f, 35f), "Três lugares · nove salas · memórias a libertar", centeredBodyStyle);
+    }
+
+    private bool OverlayButton(Rect rect, string label, int index)
+    {
+        if (overlaySelection == index) DrawSelection(rect);
+        return GUI.Button(rect, label);
+    }
+
+    private static void DrawSelection(Rect rect)
+    {
+        GUI.color = new Color(1f, 0.78f, 0.28f, 0.95f);
+        GUI.DrawTexture(new Rect(rect.x - 3f, rect.y - 3f, rect.width + 6f, 3f), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(rect.x - 3f, rect.yMax, rect.width + 6f, 3f), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(rect.x - 3f, rect.y, 3f, rect.height), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(rect.xMax, rect.y, 3f, rect.height), Texture2D.whiteTexture);
+        GUI.color = Color.white;
     }
 
     private void DrawOptions()
@@ -1112,10 +1236,17 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         GUI.color = new Color(0.01f, 0.02f, 0.025f, 0.97f); GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture); GUI.color = Color.white;
         float width = Mathf.Min(620f, Screen.width - 36f), x = (Screen.width - width) * 0.5f, y = Mathf.Max(18f, (Screen.height - 690f) * 0.5f);
         GUI.Label(new Rect(x, y, width, 42f), "OPÇÕES", centeredTitleStyle);
-        if (GUI.Button(new Rect(x + 15f, y + 48f, (width - 38f) * 0.5f, 38f), "Som e acessibilidade")) optionsTab = 0;
-        if (GUI.Button(new Rect(x + 23f + (width - 38f) * 0.5f, y + 48f, (width - 38f) * 0.5f, 38f), "Teclas")) optionsTab = 1;
+        float tabWidth = (width - 46f) / 3f;
+        if (OptionButton(new Rect(x + 15f, y + 48f, tabWidth, 38f), "Som", 0)) { optionsTab = 0; optionsSelection = 0; }
+        if (OptionButton(new Rect(x + 23f + tabWidth, y + 48f, tabWidth, 38f), "Teclas", 1)) { optionsTab = 1; optionsSelection = 1; }
+        if (OptionButton(new Rect(x + 31f + tabWidth * 2f, y + 48f, tabWidth, 38f), "Controle", 2)) { optionsTab = 2; optionsSelection = 2; }
         if (optionsTab == 0)
         {
+            if (optionsSelection == 3) DrawSelection(new Rect(x + 10f, y + 116f, width - 20f, 48f));
+            if (optionsSelection == 4) DrawSelection(new Rect(x + 10f, y + 166f, width - 20f, 48f));
+            if (optionsSelection == 5) DrawSelection(new Rect(x + 10f, y + 216f, width - 20f, 48f));
+            if (optionsSelection == 6) DrawSelection(new Rect(x + 10f, y + 278f, width - 20f, 42f));
+            if (optionsSelection == 7) DrawSelection(new Rect(x + 10f, y + 318f, width - 20f, 42f));
             GUI.Label(new Rect(x + 15f, y + 125f, 170f, 28f), "Música", bodyStyle);
             ScadrykSettings.MusicVolume = GUI.HorizontalSlider(new Rect(x + 195f, y + 135f, width - 215f, 24f), ScadrykSettings.MusicVolume, 0f, 1f);
             GUI.Label(new Rect(x + 15f, y + 175f, 170f, 28f), "Efeitos", bodyStyle);
@@ -1127,7 +1258,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             ScadrykSettings.ReduceShake = GUI.Toggle(new Rect(x + 15f, y + 325f, width - 30f, 34f), ScadrykSettings.ReduceShake, "Desligar tremor de câmera");
             GUI.Label(new Rect(x + 15f, y + 400f, width - 30f, 70f), "Avisos de perigo permanecem visíveis com os efeitos em silêncio. Para marcar um ataque pouco claro durante testes, pressione F8.", memoryStyle);
         }
-        else
+        else if (optionsTab == 1)
         {
             GUI.Label(new Rect(x + 15f, y + 99f, width - 30f, 31f), "Clique na tecla para trocar. Teclas repetidas são permutadas.", bodyStyle);
             for (int i = 0; i < ScadrykSettings.Actions.Length; i++)
@@ -1135,7 +1266,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 float row = y + 135f + i * 39f;
                 GUI.Label(new Rect(x + 15f, row, 220f, 34f), ScadrykSettings.Actions[i], bodyStyle);
                 string label = rebindingAction == i ? "Pressione uma tecla…" : ScadrykSettings.Key(i).ToString();
-                if (GUI.Button(new Rect(x + 240f, row, width - 255f, 32f), label)) rebindingAction = i;
+                Rect keyButton = new Rect(x + 240f, row, width - 255f, 32f);
+                if (OptionButton(keyButton, label, i + 3)) rebindingAction = i;
             }
             if (rebindingAction >= 0 && Event.current.type == EventType.KeyDown && Event.current.keyCode != KeyCode.None && Event.current.keyCode != KeyCode.Escape)
             {
@@ -1144,8 +1276,25 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 Event.current.Use();
             }
         }
-        if (GUI.Button(new Rect(x + (width - 180f) * 0.5f, y + 585f, 180f, 42f), "Voltar")) { showOptions = false; rebindingAction = -1; }
-        GUI.Label(new Rect(x, y + 637f, width, 28f), "Controle: analógico esquerdo move, direito mira, A ataca, B esquiva, X pulso, Y interage.", smallStyle);
+        else if (optionsTab == 2)
+        {
+            GUI.Label(new Rect(x + 15f, y + 99f, width - 30f, 31f), "Selecione uma ação e pressione o botão desejado.", bodyStyle);
+            for (int i = 0; i < 7; i++)
+            {
+                float row = y + 135f + i * 45f;
+                GUI.Label(new Rect(x + 15f, row, 220f, 34f), ScadrykSettings.Actions[i], bodyStyle);
+                string label = gamepadRebindAction == i ? "Pressione um botão…" : ScadrykSettings.PadButtonName(ScadrykSettings.PadButton(i));
+                if (OptionButton(new Rect(x + 240f, row, width - 255f, 32f), label, i + 3)) { gamepadRebindAction = i; gamepadRebindAfterFrame = Time.frameCount; }
+            }
+        }
+        if (OptionButton(new Rect(x + (width - 180f) * 0.5f, y + 585f, 180f, 42f), "Voltar", optionsTab == 0 ? 8 : optionsTab == 1 ? 14 : 10)) { showOptions = false; rebindingAction = gamepadRebindAction = -1; }
+        GUI.Label(new Rect(x, y + 637f, width, 28f), "Controle: analógico navega · A confirma · B volta · Start pausa.", smallStyle);
+    }
+
+    private bool OptionButton(Rect rect, string label, int selection)
+    {
+        if (optionsSelection == selection) DrawSelection(rect);
+        return GUI.Button(rect, label);
     }
 
     private void EnsureStyles()
