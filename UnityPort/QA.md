@@ -61,4 +61,22 @@ Convidar pelo menos um jogador iniciante, um intermediário e um experiente para
 6. conforto do volume, legibilidade do texto, flashes, tremor e controle utilizado.
 7. se percebeu a redução de velocidade nas poças e usou a esquiva para atravessá-las.
 
+### Ficha curta por participante
+
+Use um código anônimo em vez de nome. Preencha uma ficha por sessão e não misture dados de builds diferentes.
+
+| Campo | Registro |
+| --- | --- |
+| Código anônimo / data |  |
+| Build (commit) |  |
+| Experiência autodeclarada com ARPGs | Iniciante / intermediário / experiente |
+| Dispositivo predominante | Teclado e mouse / controle / alternou |
+| CSV da sessão |  |
+| Concluiu as nove salas sem ajuda? | Sim / não; sala em que parou: |
+| Clareza dos avisos (1–5) |  |
+| Sala mais confusa ou repetitiva |  |
+| Poder menos usado e por quê |  |
+| Conforto com áudio, flashes e tremor |  |
+| Resumo espontâneo da história |  |
+
 Critérios para revisão: nenhum dano sem aviso reconhecível; nenhum poder fica sem uso por duas salas após ser aprendido; sala repetitiva deve ganhar decisão própria; travamento deve produzir uma pista compreensível; jogadores de níveis diferentes devem concluir a campanha sem ajuda do desenvolvedor. Ainda não há avaliação externa suficiente para declarar essa etapa aprovada.
