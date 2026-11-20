@@ -6,6 +6,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
 {
     private const float FinalWaveOuterRadius = 6.7f;
     private const float FinalWaveSafeRadius = 2.2f;
+    internal const float FinalStarfallRadius = 1.75f;
     [SerializeField, Min(1f)] private float maxHealth = 60f;
     private float health, nextAttackAt, windupEndsAt;
     private float attackRange = 1.2f;
@@ -190,8 +191,9 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         }
         else if (queuedFinalPattern == 1)
         {
-            ScadrykEffects.Voidburst(attackTarget, 3.2f, windup);
-            ScadrykEffects.Ring(attackTarget, 3.5f, warning, windup + 0.46f);
+            float diameter = FinalStarfallVisualDiameter;
+            ScadrykEffects.Voidburst(attackTarget, diameter, windup);
+            ScadrykEffects.Ring(attackTarget, diameter, warning, windup + 0.46f);
         }
         else
         {
@@ -267,10 +269,13 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     {
         yield return new WaitForSeconds(0.46f);
         if (dead) yield break;
-        ScadrykEffects.Voidburst(target, 3.4f, 0.38f);
-        if (player != null && Vector2.Distance(player.transform.position, target) < 1.75f)
+        ScadrykEffects.Voidburst(target, FinalStarfallVisualDiameter, 0.38f);
+        if (player != null && FinalStarfallHits(player.transform.position, target))
             player.TakeDamage(23f);
     }
+
+    internal static float FinalStarfallVisualDiameter => FinalStarfallRadius * 2f;
+    internal static bool FinalStarfallHits(Vector2 target, Vector2 center) => Vector2.Distance(target, center) <= FinalStarfallRadius;
 
     private void ResolveRootThrust()
     {

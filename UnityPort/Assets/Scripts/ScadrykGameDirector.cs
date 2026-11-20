@@ -1256,6 +1256,11 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (Mathf.Abs(ScadrykEffects.PlayerPulseDiameter(player.ShockwaveRadius) * 0.5f - player.ShockwaveRadius) > 0.001f)
         { SmokeFail("O anel do Pulso não alcança o raio que pode causar dano"); yield break; }
         Debug.Log("SCADRYK_SMOKE: anel do Pulso cobre o raio efetivo de dano");
+        if (Mathf.Abs(ScadrykEnemyHealth.FinalStarfallVisualDiameter * 0.5f - ScadrykEnemyHealth.FinalStarfallRadius) > 0.001f ||
+            !ScadrykEnemyHealth.FinalStarfallHits(new Vector2(ScadrykEnemyHealth.FinalStarfallRadius - 0.01f, 0f), Vector2.zero) ||
+            ScadrykEnemyHealth.FinalStarfallHits(new Vector2(ScadrykEnemyHealth.FinalStarfallRadius + 0.01f, 0f), Vector2.zero))
+        { SmokeFail("Aviso e impacto da queda de estrelas não correspondem à área de dano"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: raio da queda de estrelas corresponde ao dano");
         var mapLabels = new System.Collections.Generic.HashSet<string>();
         for (int phase = 0; phase < PhaseNames.Length; phase++)
             for (int room = 0; room < RoomsPerPhase; room++)
