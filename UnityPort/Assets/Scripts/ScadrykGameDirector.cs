@@ -1347,6 +1347,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             Vector2.Distance(ScadrykPlayerController.ResolveGamepadFacing(Vector2.up, Vector2.left, Vector2.right, true), Vector2.left) > 0.001f)
         { SmokeFail("A mira do controle não conserva direção nem prioriza o analógico direito"); yield break; }
         Debug.Log("SCADRYK_SMOKE: mira do controle preserva o twin-stick e tem fallback de movimento");
+        if (ScadrykPlayerController.AttackBufferCanStart(1.1f, 1.3f, 1.2f) ||
+            !ScadrykPlayerController.AttackBufferCanStart(1.21f, 1.3f, 1.2f) ||
+            ScadrykPlayerController.AttackBufferCanStart(1.31f, 1.3f, 1.2f) ||
+            Mathf.Abs(ScadrykPlayerController.BasicAttackBufferWindow - 0.2f) > 0.001f)
+        { SmokeFail("A janela curta do ataque básico inicia antes da recarga ou após expirar"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: ataque básico respeita recarga e buffer de 0,2 s");
         if (!RebindingCanBeCancelled(-1, 2) || !RebindingCanBeCancelled(4, -1) || RebindingCanBeCancelled(-1, -1))
         { SmokeFail("Cancelar captura de controle não distingue remapeamento ativo do menu normal"); yield break; }
         Debug.Log("SCADRYK_SMOKE: Escape/Start cancela captura sem fechar opções");

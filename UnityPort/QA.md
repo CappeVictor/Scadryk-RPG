@@ -101,3 +101,5 @@ Critérios para revisão: nenhum dano sem aviso reconhecível; nenhum poder fica
 - Cancelamento de remapeamento: Esc ou Start durante a captura cancela somente a seleção do novo vínculo e mantém as opções abertas; outro toque fecha o menu. O smoke verifica estados de captura ativos/inativos; sequência física no controle e teclado ainda aguarda Editor.
 
 - Mira no controle: ataques pelo gamepad não devem seguir o cursor do mouse quando o analógico direito está neutro. A mira acompanha o analógico esquerdo como fallback até o jogador usar a mira twin-stick; depois disso, conserva a direção independente ao soltar o analógico direito. O smoke verifica fallback, persistência e prioridade da mira; compilação, execução e teste físico continuam pendentes no Unity Editor.
+
+- Resposta do ataque básico: um comando de ataque durante a recarga agora fica enfileirado por até 0,2 s e inicia ao terminar a recarga; comandos expirados não disparam depois. O smoke verifica antes/durante/depois da janela e a duração configurada. Compilação e avaliação da sensação de combate continuam pendentes no Unity Editor.
