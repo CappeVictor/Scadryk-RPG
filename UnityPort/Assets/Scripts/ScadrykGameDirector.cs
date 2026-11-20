@@ -1276,6 +1276,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             !keyboardInteractHint.Contains("(" + ScadrykSettings.Key(6) + ")") ||
             !gamepadPulseHint.Contains("(" + ScadrykSettings.PadButtonName(ScadrykSettings.PadButton(2)) + ")") ||
             !gamepadInteractHint.Contains("(" + ScadrykSettings.PadButtonName(ScadrykSettings.PadButton(6)) + ")") ||
+            FormatInputBinding(KeyCode.F, 4, false) != "F" ||
             FormatInputBinding(KeyCode.F, 4, true) != "LB")
         { SmokeFail("Pistas e HUD não refletem teclas e botões remapeados do dispositivo ativo"); yield break; }
         Debug.Log("SCADRYK_SMOKE: pistas dinâmicas refletem dispositivo e botões de jogo");
