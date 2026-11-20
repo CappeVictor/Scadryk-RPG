@@ -1672,6 +1672,15 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private IEnumerator SmokeCampaign()
     {
         yield return null;
+        bool[] blockedHeadings = new bool[10];
+        blockedHeadings[0] = true;
+        blockedHeadings[1] = true;
+        Vector2 steeredHeading = ScadrykEnemyHealth.SelectSteeringHeading(Vector2.right, blockedHeadings);
+        for (int i = 0; i < blockedHeadings.Length; i++) blockedHeadings[i] = true;
+        Vector2 enclosedHeading = ScadrykEnemyHealth.SelectSteeringHeading(Vector2.right, blockedHeadings);
+        if (Vector2.Dot(steeredHeading, Vector2.right) < 0.8f || Vector2.Distance(enclosedHeading, Vector2.right) > 0.001f)
+        { SmokeFail("A navegação dos Ecos não contorna um bloqueio ou não mantém avanço quando todos os lados estão fechados"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: direção de contorno mantém avanço e tem fallback quando não há passagem livre");
         if (!RoomGroundOrientationsAreUnique())
         { SmokeFail("As três salas repetem a mesma orientação do cenário de fundo"); yield break; }
         Debug.Log("SCADRYK_SMOKE: fundos pintados variam entre as três salas de cada bioma");

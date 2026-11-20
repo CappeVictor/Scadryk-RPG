@@ -17,6 +17,9 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private const float FinalStarfallProjectileSpeed = 5.4f;
     internal const float SupportPulseRadius = 2.5f;
     internal const float OpeningAttackSpacing = 0.52f;
+    private static readonly float[] SteeringAngles = { 0f, 35f, -35f, 70f, -70f, 110f, -110f, 145f, -145f, 180f };
+    private readonly RaycastHit2D[] steeringHits = new RaycastHit2D[16];
+    private readonly bool[] blockedSteeringHeadings = new bool[10];
     internal static float SupportPulseDiameter => SupportPulseRadius * 2f;
     internal static bool SupportPulseContains(Vector2 origin, Vector2 target) =>
         Vector2.Distance(origin, target) <= SupportPulseRadius;
@@ -24,6 +27,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private float health, nextAttackAt, windupEndsAt;
     private float attackRange = 1.2f;
     private Rigidbody2D body;
+    private CircleCollider2D bodyCollider;
 #if UNITY_6000_0_OR_NEWER
     private Vector2 BodyVelocity { get => body.linearVelocity; set => body.linearVelocity = value; }
 #else
@@ -113,6 +117,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private void Awake()
     {
         body = GetComponent<Rigidbody2D>();
+        bodyCollider = GetComponent<CircleCollider2D>();
         body.gravityScale = 0f; body.freezeRotation = true; body.interpolation = RigidbodyInterpolation2D.Interpolate;
         Transform visual = transform.Find("Animated visual");
         sprite = visual != null ? visual.GetComponent<SpriteRenderer>() : GetComponentInChildren<SpriteRenderer>();
@@ -133,6 +138,8 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
 
         Vector2 delta = (Vector2)player.transform.position - body.position;
         float distance = delta.magnitude;
+        bool requiresClearShot = !isFinalBoss && (IsBoss ? biomeIndex == 1 : combatRole == 1);
+        bool shotBlocked = requiresClearShot && ScadrykCombatRules.WorldBlocks(body.position, player.transform.position);
         if (sprite != null)
         {
             bool windingUp = isWindup && windupEndsAt > Time.time;
@@ -152,7 +159,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         }
 
         if (windupEndsAt > 0f && Time.time >= windupEndsAt) ResolveAttack();
-        if (Time.time >= nextAttackAt && distance <= attackRange)
+        if (Time.time >= nextAttackAt && distance <= attackRange && !shotBlocked)
         {
             if (openingAttackPending)
             {
@@ -168,16 +175,75 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             return;
         }
 
+        // Crystal throwers and the salt guardian move until they can see Nara;
+        // all other pursuers steer around solid scenery instead of pushing into it.
+        if (shotBlocked)
+        {
+            BodyVelocity = MoveWithObstacleAvoidance(delta.normalized, distance) * moveSpeed;
+            return;
+        }
+
         if (!IsBoss && (combatRole == 1 || combatRole == 3))
         {
-            if (distance > 5.5f) BodyVelocity = delta.normalized * moveSpeed;
-            else if (distance < 3.2f) BodyVelocity = -delta.normalized * moveSpeed * 0.8f;
+            if (distance > 5.5f) BodyVelocity = MoveWithObstacleAvoidance(delta.normalized, distance) * moveSpeed;
+            else if (distance < 3.2f) BodyVelocity = MoveWithObstacleAvoidance(-delta.normalized, distance) * moveSpeed * 0.8f;
             else BodyVelocity = Vector2.zero;
         }
         else if (distance > Mathf.Min(attackRange * 0.72f, 3.1f))
-            BodyVelocity = delta.normalized * moveSpeed;
+            BodyVelocity = MoveWithObstacleAvoidance(delta.normalized, distance) * moveSpeed;
         else
             BodyVelocity = Vector2.zero;
+    }
+
+    private Vector2 MoveWithObstacleAvoidance(Vector2 desiredHeading, float distanceToTarget)
+    {
+        if (desiredHeading.sqrMagnitude < 0.001f) return Vector2.zero;
+        desiredHeading.Normalize();
+        float castDistance = Mathf.Min(Mathf.Max(0f, distanceToTarget), 1.7f);
+        if (castDistance < 0.05f) return desiredHeading;
+
+        float radius = bodyCollider != null ? bodyCollider.radius * Mathf.Max(Mathf.Abs(transform.lossyScale.x), Mathf.Abs(transform.lossyScale.y)) : 0.34f;
+        blockedSteeringHeadings[0] = SolidAhead(desiredHeading, radius, castDistance);
+        if (!blockedSteeringHeadings[0]) return desiredHeading;
+        for (int i = 1; i < SteeringAngles.Length; i++)
+        {
+            Vector2 heading = Rotate(desiredHeading, SteeringAngles[i] * Mathf.Deg2Rad);
+            blockedSteeringHeadings[i] = SolidAhead(heading, radius, castDistance);
+        }
+        return SelectSteeringHeading(desiredHeading, blockedSteeringHeadings);
+    }
+
+    private bool SolidAhead(Vector2 heading, float radius, float distance)
+    {
+        int hitCount = Physics2D.CircleCastNonAlloc(body.position, radius * 0.92f, heading, steeringHits, distance);
+        for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
+        {
+            Collider2D hit = steeringHits[hitIndex].collider;
+            if (hit == null || !hit.enabled || hit.isTrigger || hit.transform == transform || hit.transform.IsChildOf(transform)) continue;
+            if (hit.GetComponent<ScadrykEnemyHealth>() != null || hit.GetComponent<ScadrykPlayerController>() != null || hit.GetComponent<ScadrykEnemyProjectile>() != null) continue;
+            return true;
+        }
+        return false;
+    }
+
+    internal static Vector2 SelectSteeringHeading(Vector2 desiredHeading, bool[] blocked)
+    {
+        if (desiredHeading.sqrMagnitude < 0.001f) return Vector2.zero;
+        desiredHeading.Normalize();
+        if (blocked == null || blocked.Length < SteeringAngles.Length || !blocked[0]) return desiredHeading;
+
+        float bestProgress = float.NegativeInfinity;
+        Vector2 bestHeading = desiredHeading;
+        for (int i = 1; i < SteeringAngles.Length; i++)
+        {
+            if (blocked[i]) continue;
+            Vector2 candidate = Rotate(desiredHeading, SteeringAngles[i] * Mathf.Deg2Rad);
+            float progress = Vector2.Dot(candidate, desiredHeading);
+            if (progress <= bestProgress) continue;
+            bestProgress = progress;
+            bestHeading = candidate;
+        }
+        return bestHeading;
     }
 
     private void BeginAttack()
