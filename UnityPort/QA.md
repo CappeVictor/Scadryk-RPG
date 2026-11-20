@@ -15,6 +15,7 @@
 - Correção do minimapa: `BuildPhase` reconstrói como concluídas as salas anteriores ao portal salvo e o smoke verifica as marcas após cada transição. Fonte alterada; ainda sem execução no Unity.
 - Etapa ambiental do bosque: poças rasas agora têm zonas de terreno que reduzem a velocidade de caminhada para 78%; a esquiva preserva seu impulso. Uma pista aparece no primeiro contato. O smoke foi ampliado para confirmar zonas ativas nas três salas do bosque e que elas aplicam redução. Ainda sem compilação ou execução no Unity Editor; não tratar a asserção de código como resultado de teste.
 - Limite de efeitos secundários: a fonte mantém no máximo 24 efeitos não prioritários simultâneos e protege avisos/áreas de perigo desse orçamento. O smoke cria 40 efeitos e verifica o limite. Ainda sem execução no Unity Editor.
+- Música dinâmica: mudanças de bioma e entrada do Arauto agora usam transição cruzada de 1,25 s. A fonte ainda aguarda compilação e avaliação auditiva no Unity Editor.
 
 ## Dados observados e limites
 

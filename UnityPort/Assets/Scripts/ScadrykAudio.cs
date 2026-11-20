@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public enum ScadrykCue { Sword, Dash, Pulse, Power, Warning, Impact, Hurt, Portal, Victory, Memory }
@@ -7,7 +8,10 @@ public sealed class ScadrykAudio : MonoBehaviour
 {
     private const int SampleRate = 22050;
     private static ScadrykAudio instance;
-    private AudioSource music, effects;
+    private AudioSource music, transitionMusic, effects;
+    private Coroutine musicTransition;
+    private float musicEnvelope = 1f, transitionEnvelope;
+    private const float ContextFadeDuration = 1.25f;
     private AudioClip[] biomeLoops;
     private AudioClip[] cueClips;
     private readonly float[] nextCueAt = new float[10];
@@ -18,6 +22,9 @@ public sealed class ScadrykAudio : MonoBehaviour
         music = gameObject.AddComponent<AudioSource>();
         music.loop = true;
         music.playOnAwake = false;
+        transitionMusic = gameObject.AddComponent<AudioSource>();
+        transitionMusic.loop = true;
+        transitionMusic.playOnAwake = false;
         effects = gameObject.AddComponent<AudioSource>();
         effects.playOnAwake = false;
         biomeLoops = new[] { MakeLoop("Roots remember", 110f, 1.0f), MakeLoop("Salt remembers", 146.83f, 0.72f), MakeLoop("Bells remember", 123.47f, 1.35f), MakeLoop("The silence breaks", 82.41f, 1.8f) };
@@ -32,17 +39,75 @@ public sealed class ScadrykAudio : MonoBehaviour
 
     private void Update()
     {
-        if (music != null) music.volume = ScadrykSettings.MusicVolume * 0.34f;
+        float musicVolume = ScadrykSettings.MusicVolume * 0.34f;
+        if (music != null) music.volume = musicVolume * musicEnvelope;
+        if (transitionMusic != null) transitionMusic.volume = musicVolume * transitionEnvelope;
         if (effects != null) effects.volume = ScadrykSettings.EffectsVolume * 0.65f;
     }
 
     public void SetContext(int biome, bool finalBoss)
     {
         int index = finalBoss ? 3 : Mathf.Clamp(biome, 0, 2);
-        if (music.clip == biomeLoops[index]) return;
+        AudioClip target = biomeLoops[index];
+        if (musicTransition != null)
+        {
+            StopCoroutine(musicTransition);
+            musicTransition = null;
+            if (transitionEnvelope > musicEnvelope)
+            {
+                AudioSource previous = music;
+                music = transitionMusic;
+                transitionMusic = previous;
+                transitionMusic.Stop();
+                musicEnvelope = 1f;
+            }
+            else
+            {
+                transitionMusic.Stop();
+                musicEnvelope = 1f;
+            }
+            transitionEnvelope = 0f;
+        }
+
+        if (music.clip == target)
+        {
+            musicEnvelope = 1f;
+            return;
+        }
+
+        if (music.clip == null)
+        {
+            music.clip = target;
+            musicEnvelope = 1f;
+            music.Play();
+            return;
+        }
+
+        transitionMusic.clip = target;
+        transitionMusic.Play();
+        transitionEnvelope = 0f;
+        musicTransition = StartCoroutine(CrossfadeMusic());
+    }
+
+    private IEnumerator CrossfadeMusic()
+    {
+        float elapsed = 0f;
+        while (elapsed < ContextFadeDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float blend = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / ContextFadeDuration));
+            musicEnvelope = 1f - blend;
+            transitionEnvelope = blend;
+            yield return null;
+        }
+
         music.Stop();
-        music.clip = biomeLoops[index];
-        music.Play();
+        AudioSource previous = music;
+        music = transitionMusic;
+        transitionMusic = previous;
+        musicEnvelope = 1f;
+        transitionEnvelope = 0f;
+        musicTransition = null;
     }
 
     public static void Play(ScadrykCue cue)

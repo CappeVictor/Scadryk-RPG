@@ -36,7 +36,7 @@ A tela inicial oferece **Continuar jornada** (último portal salvo) e **Nova jor
 
 A abertura de uma nova jornada apresenta o chamado de Nara. Nas chegadas tranquilas à bacia e à costa, Nima — uma voz devolvida pelas raízes — reaparece depois dos primeiros guardiões e conta como suas lembranças mudam com o sal e os sinos. Aproxime-se e use **E** ou **Y** para conversar; a indicação surge junto dela. Vestígios do sal e da costa ampliam a história da maré. Ao derrotar o Arauto, uma última memória explica o silêncio e o encerramento resolve a escolha de Nara. As legendas narrativas aparecem num painel durante o jogo.
 
-Há trilhas ambientes sintetizadas para os três biomas e para o confronto final, além de sinais sonoros originais para ações de Nara, avisos, impactos, dano, portais e para as memórias que Nima compartilha. Os avisos visuais continuam presentes quando o volume está em zero. O mixer aplica os ajustes de volume imediatamente.
+Há trilhas ambientes sintetizadas para os três biomas e para o confronto final; as mudanças entre elas fazem uma transição cruzada de 1,25 s. Também há sinais sonoros originais para ações de Nara, avisos, impactos, dano, portais e para as memórias que Nima compartilha. Os avisos visuais continuam presentes quando o volume está em zero. O mixer aplica os ajustes de volume imediatamente.
 
 O controle usa analógico esquerdo para movimento e direito para mira; A ataca, B esquiva, X usa o pulso, Y interage, LB/RB/Back ativam os três poderes e Start pausa. A correspondência dos botões e eixos pode variar conforme o controle e o driver do Windows; essa etapa ainda precisa de teste com dispositivos físicos variados.
 
