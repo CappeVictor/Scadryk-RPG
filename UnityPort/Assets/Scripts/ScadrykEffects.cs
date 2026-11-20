@@ -26,6 +26,11 @@ public static class ScadrykEffects
     private static Sprite verdantCrescentSprite, saltburstSprite, tidebreakerSprite, voidburstSprite;
     internal const float PlayerSlashForwardOffset = 0.82f;
     internal static Vector2 PlayerSlashFootprint(float length) => new Vector2(length * 1.65f, length * 0.88f);
+    internal static float FlashAlphaScale(bool reduceFlash) => reduceFlash ? 0.48f : 1f;
+    internal static float FlashDiameterScale(bool reduceFlash) => reduceFlash ? 0.8f : 1f;
+    internal static float FlashExpansionScale(float progress, bool reduceFlash) =>
+        Mathf.Lerp(reduceFlash ? 0.94f : 0.72f, reduceFlash ? 1.06f : 1.32f, Mathf.Sin(Mathf.Clamp01(progress) * Mathf.PI * 0.5f));
+    internal static int DeathBurstMoteCount(bool boss, bool reduceFlash) => reduceFlash ? (boss ? 3 : 2) : (boss ? 6 : 3);
     internal static float DangerWarningWidth(float width) => width * (ScadrykSettings.HighContrastWarnings ? 1.4f : 1f);
     internal static Color DangerWarningColor(Color color)
     {
@@ -97,7 +102,13 @@ public static class ScadrykEffects
         if (visual != null) SecondaryVisuals.Add(visual);
     }
 
-    public static void Burst(Vector2 position, Color color, float diameter) => Create(position, color, diameter, diameter, 0.26f);
+    public static void Burst(Vector2 position, Color color, float diameter)
+    {
+        bool reduceFlash = ScadrykSettings.ReduceFlash;
+        color.a *= FlashAlphaScale(reduceFlash);
+        float size = diameter * FlashDiameterScale(reduceFlash);
+        Create(position, color, size, size, reduceFlash ? 0.34f : 0.26f);
+    }
     public static void Afterimage(SpriteRenderer source, Color color)
     {
         if (source == null || source.sprite == null) return;
@@ -116,13 +127,17 @@ public static class ScadrykEffects
 
     public static void DeathBurst(Vector2 position, Color color, bool boss)
     {
-        int count = boss ? 6 : 3;
+        bool reduceFlash = ScadrykSettings.ReduceFlash;
+        int count = DeathBurstMoteCount(boss, reduceFlash);
+        Color moteColor = color;
+        moteColor.a *= FlashAlphaScale(reduceFlash);
         for (int i = 0; i < count; i++)
         {
             float angle = i * Mathf.PI * 2f / count;
             Vector2 direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
-            GameObject mote = Create(position + direction * 0.25f, color, boss ? 0.25f : 0.15f, boss ? 0.25f : 0.15f, 0.5f);
-            mote.AddComponent<ScadrykEffectDrift>().Initialize(direction * (boss ? 3f : 1.8f));
+            float moteSize = (boss ? 0.25f : 0.15f) * FlashDiameterScale(reduceFlash);
+            GameObject mote = Create(position + direction * 0.25f, moteColor, moteSize, moteSize, 0.5f);
+            mote.AddComponent<ScadrykEffectDrift>().Initialize(direction * (boss ? 3f : 1.8f) * (reduceFlash ? 0.65f : 1f));
         }
         Burst(position, color, boss ? 2.1f : 0.95f);
     }

@@ -21,7 +21,7 @@ public sealed class ScadrykTimedVisual : MonoBehaviour
         float progress = Mathf.Clamp01(age / Mathf.Max(0.01f, lifetime));
         var renderer = GetComponent<SpriteRenderer>();
         if (renderer != null) { var c = initialColor; c.a *= 1f - Mathf.SmoothStep(0.45f, 1f, progress); renderer.color = c; }
-        if (expanding) transform.localScale = initialScale * Mathf.Lerp(0.72f, 1.32f, Mathf.Sin(progress * Mathf.PI * 0.5f));
+        if (expanding) transform.localScale = initialScale * ScadrykEffects.FlashExpansionScale(progress, ScadrykSettings.ReduceFlash);
         if (spinDegreesPerSecond != 0f) transform.Rotate(0f, 0f, spinDegreesPerSecond * Time.deltaTime);
         if (age >= lifetime) Destroy(gameObject);
     }

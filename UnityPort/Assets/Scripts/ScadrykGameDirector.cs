@@ -1310,6 +1310,11 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (Mathf.Abs(standardWarningWidth - 1f) > 0.001f || Mathf.Abs(highContrastWarningWidth - 1.4f) > 0.001f || !highContrastBrightensSignal)
         { SmokeFail("A opção de alto contraste não amplia e clareia os avisos de perigo"); yield break; }
         Debug.Log("SCADRYK_SMOKE: alto contraste clareia e amplia os avisos de perigo");
+        if (ScadrykEffects.FlashAlphaScale(true) >= 1f || ScadrykEffects.FlashDiameterScale(true) >= 1f ||
+            ScadrykEffects.FlashExpansionScale(1f, true) >= ScadrykEffects.FlashExpansionScale(1f, false) ||
+            ScadrykEffects.DeathBurstMoteCount(true, true) >= ScadrykEffects.DeathBurstMoteCount(true, false))
+        { SmokeFail("Reduzir flashes não atenua explosões, expansões ou partículas de derrota"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: reduzir flashes atenua explosões e expansões sem remover a leitura de perigo");
         if (!OverlayLayoutFits(400f, 360f))
         { SmokeFail("O menu inicial ou os botões escapam de uma janela compacta"); yield break; }
         Debug.Log("SCADRYK_SMOKE: menu inicial cabe em janela 400×360");
