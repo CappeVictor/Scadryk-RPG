@@ -6,22 +6,21 @@ Critérios de comparação com jogos de referência e lacunas verificáveis: [QU
 
 Registro de builds, teste de progressão e roteiro de avaliação com jogadores: [QA.md](QA.md).
 
-`UnityPort` contém uma aventura top-down em desenvolvimento com três biomas e nove salas conectadas, guardiões, três poderes, Arauto do Vazio, objetivos de exploração e narrativa ambiental. Cada bioma possui cenário e inimigos próprios. A cena inicial está em `Assets/Scenes/ScadrykDemo.unity`. Há menu, pausa, opções, áudio, remapeamento, suporte a controle e salvamento local. O progresso e as limitações de validação estão em `QA.md`; a build normal mais recente validada é Stage9. Desde ela, o código acrescentou cobertura de cenário e limpeza de projéteis entre salas; ambas as alterações aguardam nova build normal. Uma tentativa anterior foi bloqueada pelo App Control do Windows e o Unity Editor não está disponível nos caminhos de instalação usuais deste ambiente.
+`UnityPort` contém uma aventura top-down em desenvolvimento com três biomas e nove salas conectadas, guardiões, três poderes, Arauto do Vazio, objetivos de exploração e narrativa ambiental. Cada bioma possui cenário e inimigos próprios. A cena inicial está em `Assets/Scenes/ScadrykDemo.unity`. Há menu, pausa, opções, áudio, remapeamento, suporte a controle e salvamento local. O progresso e as limitações de validação estão em `QA.md`; a build normal mais recente validada é Stage9. As alterações posteriores de cobertura, limpeza de projéteis e menus de controle aguardam compilação e verificação no Editor. O CI atual da raiz compila o projeto .NET original, não valida este port Unity. Uma tentativa anterior de build local foi bloqueada pelo App Control do Windows; não há Unity Editor instalado nos caminhos usuais deste ambiente.
 
 ## Requisitos
 
-- Unity 6.6 ou versão Unity 6 compatível.
+- Unity Editor `6000.6.9f1` (ver `ProjectSettings/ProjectVersion.txt`) e o módulo Windows Build Support para gerar o executável Windows.
 - O projeto usa Input Manager (Old), já configurado em Project Settings. Artes de cenário e inimigos estão em `Assets/Resources/ScadrykArt/`.
 
 ## Abrir e jogar
 
-1. Abra o Unity Hub e vá em **Projects**.
-2. Escolha **Add > Add project from disk**.
-3. Selecione a pasta `UnityPort` deste repositório, ou a pasta `ScadrykUnity` disponibilizada junto do projeto local.
-4. Abra a cena `Assets/Scenes/ScadrykDemo.unity` e pressione **Play**.
-5. Limpe os ecos de cada sala. Quando a passagem abrir, vá até o brilho verde à direita e pressione **E**. Complete as nove salas para concluir as três fases.
+1. Instale/abra o Unity Hub e instale o Editor `6000.6.9f1` com o módulo Windows Build Support.
+2. Em **Projects**, escolha **Add > Add project from disk** e selecione a pasta `UnityPort` deste repositório (a pasta que contém `Assets`, `Packages` e `ProjectSettings`).
+3. Abra `Assets/Scenes/ScadrykDemo.unity` e pressione **Play** no Editor.
+4. Comece pelo menu. Limpe os Ecos e conclua o objetivo indicado em cada sala; quando o portal surgir, aproxime-se e pressione **E**. Complete as nove salas para concluir os três biomas e enfrentar o Arauto.
 
-Para criar um executável Windows, escolha **Scadryk > Build Windows demo**. O build aparece em `Build/ScadrykDemo.exe` dentro do projeto Unity.
+Para criar um executável Windows, escolha **Scadryk > Build Windows demo**. O build aparece em `Build/ScadrykDemo.exe` dentro do projeto Unity. Essa etapa ainda aguarda nova execução no Editor para validar os commits atuais.
 
 O avanço é salvo automaticamente ao atravessar cada portal. Ao reabrir o jogo, a última sala alcançada é carregada com os poderes das fases já vencidas. A conclusão da campanha apaga o marcador de progresso para permitir uma nova jornada. As métricas ficam na pasta retornada por `Application.persistentDataPath` (no Windows, normalmente `%USERPROFILE%/AppData/LocalLow/<CompanyName>/<ProductName>`). Nenhum dado é enviado pela rede.
 
