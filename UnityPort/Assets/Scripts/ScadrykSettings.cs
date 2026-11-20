@@ -55,7 +55,8 @@ public static class ScadrykSettings
     };
     public static bool Down(int action) => Input.GetKeyDown(Key(action));
     public static bool Held(int action) => Input.GetKey(Key(action));
-    internal static bool CanBindKey(KeyCode key) => key != KeyCode.None && key != KeyCode.Escape && key != KeyCode.F8;
+    internal static bool CanBindKey(KeyCode key) => key != KeyCode.None && key != KeyCode.Escape && key != KeyCode.F8 && key != KeyCode.M;
+    internal static bool CanBindPadButton(int button) => button >= 0 && button < PadButtons.Length && button != 7 && button != 8;
     public static int PadButton(int action) => PadButton(action, "Scadryk.Pad.");
     internal static int PadButton(int action, string prefix) => PlayerPrefs.GetInt(prefix + action, PadDefaults[action]);
     public static bool PadDown(int action) => action >= 0 && action < PadDefaults.Length && PadButtonDown(PadButton(action));
@@ -63,6 +64,7 @@ public static class ScadrykSettings
     public static string PadButtonName(int button) => button switch
     {
         0 => "A", 1 => "B", 2 => "X", 3 => "Y", 4 => "LB", 5 => "RB", 6 => "Back", 7 => "Start",
+        8 => "L3",
         _ => "Botão " + button
     };
 
@@ -78,13 +80,35 @@ public static class ScadrykSettings
 
     public static void BindPad(int action, int button)
     {
-        if (action < 0 || action >= PadDefaults.Length || button < 0 || button >= PadButtons.Length) return;
+        if (action < 0 || action >= PadDefaults.Length || !CanBindPadButton(button)) return;
         int oldButton = PadButton(action);
         for (int i = 0; i < PadDefaults.Length; i++)
             if (i != action && PadButton(i) == button) PlayerPrefs.SetInt("Scadryk.Pad." + i, oldButton);
         PlayerPrefs.SetInt("Scadryk.Pad." + action, button);
         PlayerPrefs.Save();
     }
+
+    internal static void ClearReservedBindings(string keyPrefix, string padPrefix)
+    {
+        bool changed = false;
+        for (int i = 0; i < Defaults.Length; i++)
+        {
+            KeyCode saved = (KeyCode)PlayerPrefs.GetInt(keyPrefix + i, (int)Defaults[i]);
+            if (CanBindKey(saved)) continue;
+            PlayerPrefs.DeleteKey(keyPrefix + i);
+            changed = true;
+        }
+        for (int i = 0; i < PadDefaults.Length; i++)
+        {
+            int saved = PlayerPrefs.GetInt(padPrefix + i, PadDefaults[i]);
+            if (CanBindPadButton(saved)) continue;
+            PlayerPrefs.DeleteKey(padPrefix + i);
+            changed = true;
+        }
+        if (changed) PlayerPrefs.Save();
+    }
+
+    public static void ClearReservedBindings() => ClearReservedBindings("Scadryk.Key.", "Scadryk.Pad.");
 
     public static void ResetKeyboardBindings()
     {

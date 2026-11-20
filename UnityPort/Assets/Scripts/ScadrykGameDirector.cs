@@ -11,6 +11,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private const string OpeningMemory = "Depois que a Grande Onda cobriu a costa, os três sinos emudeceram. Nara, a Ouvinte, ainda escutava os nomes perdidos e seguiu a maré imóvel.";
     private static readonly GUIContent OpeningTitleContent = new GUIContent("OS TRÊS SINOS EMUDECERAM");
     private static readonly GUIContent OpeningMemoryContent = new GUIContent(OpeningMemory);
+    private static readonly GUIContent WorldMapTitleContent = new GUIContent("MAPA DA JORNADA");
     private const string EndingMemory = "O Arauto quis ocultar a catástrofe para poupar os vivos da dor, mas o silêncio aprisionou os mortos. Nara escolhe lembrar e abre o limiar para que todos possam atravessar.";
     private const string SessionCsvHeader = "session_id,utc,phase,room,seconds,deaths,unclear_attacks,crescent,salt,tide,enemies_left,completed,input_mode\n";
     private static readonly string[] PhaseNames = { "Margens do Primeiro Eco", "Bacia do Sal Imóvel", "Costa das Badaladas" };
@@ -29,7 +30,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private int phaseIndex, roomIndex, enemiesRemaining;
     private static bool smokeRun;
-    private bool isPaused, victory, transitioning, showTitle = true, showOptions, confirmNewJourney, showOpeningStory;
+    private bool isPaused, victory, transitioning, showTitle = true, showOptions, confirmNewJourney, showOpeningStory, showWorldMap;
     private string sessionId;
     private int rebindingAction = -1;
     private int gamepadRebindAction = -1;
@@ -105,11 +106,11 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private bool roomSessionRecorded;
     private readonly int[] roomPowerUses = new int[3];
     private GUIStyle titleStyle, bodyStyle, smallStyle, openingTitleStyle, openingBodyStyle, offscreenTargetStyle;
-    private GUIStyle centeredTitleStyle, centeredBodyStyle;
+    private GUIStyle centeredTitleStyle, centeredBodyStyle, worldMapRoomStyle, worldMapStateStyle, worldMapObjectiveStyle, worldMapInstructionStyle, controlHintStyle;
     private GUIStyle finalBossLabelStyle, memoryStyle;
     private float cachedTextScale = -1f;
 
-    public bool IsPaused => isPaused || showTitle || showOptions || victory || transitioning || showOpeningStory;
+    public bool IsPaused => isPaused || showTitle || showOptions || victory || transitioning || showOpeningStory || showWorldMap;
     public int PhaseIndex => phaseIndex;
     public int RoomIndex => roomIndex;
     public int EnemiesRemaining => enemiesRemaining;
@@ -122,6 +123,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         smokeRun = System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-scadryk-smoke") >= 0;
 #endif
+        ScadrykSettings.ClearReservedBindings();
         sessionId = System.Guid.NewGuid().ToString("N");
         Debug.Log("SCADRYK_SESSION: " + sessionId);
         EnsureSprites();
@@ -147,13 +149,26 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private void Update()
     {
         ApplyPauseTimeScale();
-        if (!showTitle && !isPaused && !showOptions && !victory && !transitioning && !showOpeningStory)
+        if (!showTitle && !isPaused && !showOptions && !victory && !transitioning && !showOpeningStory && !showWorldMap)
             roomActiveSeconds += Time.deltaTime;
         if (transitioning) return;
         if (showOpeningStory)
         {
             if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space) || ScadrykSettings.Down(6) ||
                 ScadrykSettings.PadButtonDown(0) || ScadrykSettings.PadDown(6)) DismissOpeningStory();
+            return;
+        }
+        if (showWorldMap)
+        {
+            if (Input.GetKeyDown(KeyCode.M) || Input.GetKeyDown(KeyCode.Escape) ||
+                ScadrykSettings.PadButtonDown(8) || ScadrykSettings.PadButtonDown(7))
+            { showWorldMap = false; ApplyPauseTimeScale(); }
+            return;
+        }
+        if (!IsPaused && (Input.GetKeyDown(KeyCode.M) || ScadrykSettings.PadButtonDown(8)))
+        {
+            showWorldMap = true;
+            ApplyPauseTimeScale();
             return;
         }
         if (showTitle && !showOptions && Input.GetKeyDown(KeyCode.Return))
@@ -195,12 +210,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private void ApplyPauseTimeScale()
     {
-        Time.timeScale = showTitle || isPaused || showOptions || victory || showOpeningStory ? 0f : 1f;
+        Time.timeScale = showTitle || isPaused || showOptions || victory || showOpeningStory || showWorldMap ? 0f : 1f;
     }
 
     private void OnApplicationFocus(bool hasFocus)
     {
-        if (smokeRun || showOpeningStory || !FocusLossRequiresPause(hasFocus, showTitle, isPaused, showOptions, victory, transitioning)) return;
+        if (smokeRun || showOpeningStory || showWorldMap || !FocusLossRequiresPause(hasFocus, showTitle, isPaused, showOptions, victory, transitioning)) return;
         isPaused = true;
         ApplyPauseTimeScale();
     }
@@ -219,7 +234,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             {
                 for (int button = 0; button < 20; button++)
                 {
-                    if (button == 7) continue; // Start remains reserved for pause.
+                    if (!ScadrykSettings.CanBindPadButton(button)) continue; // Start pauses; L3 opens the map.
                     if (!ScadrykSettings.PadButtonDown(button)) continue;
                     ScadrykSettings.BindPad(gamepadRebindAction, button);
                     gamepadRebindAction = -1;
@@ -244,7 +259,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 int max = optionsTab == 0 ? 9 : optionsTab == 1 ? 15 : 11;
                 optionsSelection = Mathf.Clamp(optionsSelection - (navigation.y > 0f ? 1 : -1), 0, max);
             }
-            else overlaySelection = Mathf.Clamp(overlaySelection - (navigation.y > 0f ? 1 : -1), victory ? 1 : 0, confirmNewJourney || victory ? 1 : 2);
+            else overlaySelection = Mathf.Clamp(overlaySelection - (navigation.y > 0f ? 1 : -1), victory ? 1 : 0,
+                confirmNewJourney || victory ? 1 : showTitle ? 2 : 3);
             nextGamepadNavigationAt = Time.unscaledTime + 0.2f;
         }
         else if (Mathf.Abs(navigation.y) < 0.2f) nextGamepadNavigationAt = 0f;
@@ -286,12 +302,15 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             else overlaySelection = 0;
             return;
         }
-        if (overlaySelection == 0)
+        if (showTitle && overlaySelection == 0)
         {
-            if (showTitle) BeginJourney();
-            else isPaused = false;
+            BeginJourney();
         }
-        else if (overlaySelection == 1) RequestNewGame();
+        else if (showTitle && overlaySelection == 1) RequestNewGame();
+        else if (showTitle) { showOptions = true; optionsTab = 0; optionsSelection = 0; }
+        else if (overlaySelection == 0) isPaused = false;
+        else if (overlaySelection == 1) { showWorldMap = true; isPaused = false; }
+        else if (overlaySelection == 2) RequestNewGame();
         else { showOptions = true; optionsTab = 0; optionsSelection = 0; }
     }
 
@@ -338,6 +357,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         confirmNewJourney = false;
         showOptions = false;
         isPaused = false;
+        showWorldMap = false;
         showOpeningStory = true;
         ApplyPauseTimeScale();
         PlayerPrefs.DeleteKey("Scadryk.Phase");
@@ -1679,6 +1699,15 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         {
             KeyCode[] defaultKeys = { KeyCode.Space, KeyCode.LeftShift, KeyCode.Q, KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3, KeyCode.E, KeyCode.W, KeyCode.S, KeyCode.A, KeyCode.D };
             int[] defaultButtons = { 0, 1, 2, 4, 5, 6, 3 };
+            PlayerPrefs.SetInt(keyPrefix + "0", (int)KeyCode.M);
+            PlayerPrefs.SetInt(padPrefix + "0", 8);
+            PlayerPrefs.SetInt(keyPrefix + "1", (int)KeyCode.G);
+            PlayerPrefs.SetInt(padPrefix + "1", 19);
+            ScadrykSettings.ClearReservedBindings(keyPrefix, padPrefix);
+            bool reservedBindingsCleared = ScadrykSettings.Key(0, keyPrefix) == defaultKeys[0] &&
+                ScadrykSettings.PadButton(0, padPrefix) == defaultButtons[0] &&
+                ScadrykSettings.Key(1, keyPrefix) == KeyCode.G && ScadrykSettings.PadButton(1, padPrefix) == 19;
+
             PlayerPrefs.SetInt(keyPrefix + "0", (int)KeyCode.F);
             PlayerPrefs.SetInt(padPrefix + "0", 19);
             ScadrykSettings.ResetKeyboardBindings(keyPrefix);
@@ -1693,7 +1722,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             for (int i = 0; i < defaultButtons.Length; i++)
                 gamepadDefaultsRestored &= ScadrykSettings.PadButton(i, padPrefix) == defaultButtons[i];
             bool keyboardSurvivedGamepadReset = ScadrykSettings.Key(1, keyPrefix) == KeyCode.G;
-            return keyboardDefaultsRestored && gamepadSurvivedKeyboardReset && gamepadDefaultsRestored && keyboardSurvivedGamepadReset;
+            return reservedBindingsCleared && keyboardDefaultsRestored && gamepadSurvivedKeyboardReset && gamepadDefaultsRestored && keyboardSurvivedGamepadReset;
         }
         finally
         {
@@ -1707,9 +1736,10 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     {
         yield return null;
         if (ScadrykSettings.CanBindKey(KeyCode.None) || ScadrykSettings.CanBindKey(KeyCode.Escape) ||
-            ScadrykSettings.CanBindKey(KeyCode.F8) || !ScadrykSettings.CanBindKey(KeyCode.F))
-        { SmokeFail("Remapeamento permite tecla reservada ou rejeita uma tecla normal"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: Esc e F8 reservados; teclas normais podem ser remapeadas");
+            ScadrykSettings.CanBindKey(KeyCode.F8) || ScadrykSettings.CanBindKey(KeyCode.M) || !ScadrykSettings.CanBindKey(KeyCode.F) ||
+            ScadrykSettings.CanBindPadButton(7) || ScadrykSettings.CanBindPadButton(8) || !ScadrykSettings.CanBindPadButton(9))
+        { SmokeFail("Remapeamento permite tecla/botão reservado ou rejeita um vínculo normal"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: Esc, F8, M, Start e L3 reservados; vínculos normais disponíveis");
         bool[] blockedHeadings = new bool[10];
         blockedHeadings[0] = true;
         blockedHeadings[1] = true;
@@ -1976,6 +2006,15 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 if (!mapLabels.Add(MapRoomLabel(phase, room))) { SmokeFail("O minimapa repete o nome de uma das nove salas"); yield break; }
         if (mapLabels.Count != PhaseNames.Length * RoomsPerPhase) { SmokeFail("O minimapa não identifica as nove salas"); yield break; }
         Debug.Log("SCADRYK_SMOKE: minimapa diferencia as nove salas");
+        bool[] mapCleared = { true, false, false };
+        if (WorldMapRoomStatus(0, 2, 1, 1, mapCleared) != 2 ||
+            WorldMapRoomStatus(1, 0, 1, 1, mapCleared) != 2 ||
+            WorldMapRoomStatus(1, 1, 1, 1, mapCleared) != 1 ||
+            WorldMapRoomStatus(1, 2, 1, 1, mapCleared) != 0 ||
+            WorldMapRoomStatus(2, 0, 1, 1, mapCleared) != 0 ||
+            !WorldMapLayoutFits(400f, 360f) || !WorldMapLayoutFits(700f, 600f))
+        { SmokeFail("O mapa geral perde estados de progresso ou sai da janela compacta"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: mapa geral marca bioma anterior, salas concluídas, atual e futuras em duas resoluções");
         if (OffscreenTargetArrow(new Vector2(0.5f, 0.5f)) != null ||
             OffscreenTargetArrow(new Vector2(1.2f, 0.5f)) != "→" ||
             OffscreenTargetArrow(new Vector2(-0.2f, 0.5f)) != "←" ||
@@ -2029,9 +2068,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             ScadrykEffects.DeathBurstMoteCount(true, true) >= ScadrykEffects.DeathBurstMoteCount(true, false))
         { SmokeFail("Reduzir flashes não atenua explosões, expansões ou partículas de derrota"); yield break; }
         Debug.Log("SCADRYK_SMOKE: reduzir flashes atenua explosões e expansões sem remover a leitura de perigo");
-        if (!OverlayLayoutFits(400f, 360f))
-        { SmokeFail("O menu inicial ou os botões escapam de uma janela compacta"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: menu inicial cabe em janela 400×360");
+        if (!OverlayLayoutFits(400f, 360f) || !PauseMapOverlayLayoutFits(400f, 360f))
+        { SmokeFail("O menu inicial ou o menu de pausa com acesso ao mapa escapam de uma janela compacta"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: menus inicial e de pausa cabem em janela 400×360");
         if (!MemoryPanelFits(400f, 360f, 120f) || !MemoryPanelFits(700f, 600f, 90f))
         { SmokeFail("O texto ampliado dos vestígios é cortado ou cobre os comandos inferiores"); yield break; }
         Debug.Log("SCADRYK_SMOKE: painel de memória cresce com o texto sem cobrir status e controles");
@@ -2464,6 +2503,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     {
         EnsureStyles();
         if (showOpeningStory) { DrawOpeningStory(); return; }
+        if (showWorldMap) { DrawWorldMap(); return; }
         if (showOptions) { DrawOptions(); return; }
         if (showTitle || isPaused || victory) { DrawOverlay(); return; }
         DrawHud(); DrawMiniMap(); DrawOffscreenTargetHint();
@@ -2480,7 +2520,15 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             GUI.Label(new Rect(panel.x + 18f, panel.y + 10f, panel.width - 36f, 24f), "VESTÍGIO ESCUTADO", titleStyle);
             GUI.Label(MemoryTextRect(panel), memoryText, memoryStyle);
         }
-        GUI.Label(new Rect(14, Screen.height - 34, Screen.width - 28, 30), "Mover: teclas/controle  ·  Mouse/analógico mirar  ·  " + InputBinding(0) + " atacar  ·  " + InputBinding(1) + " esquivar  ·  " + InputBinding(2) + " pulso  ·  " + InputBinding(6) + " interagir  ·  Esc pausa", smallStyle);
+        string controlHint = Screen.width < 840f
+            ? "M/L3 mapa · Esc/Start pausa · " + InputBinding(0) + " atacar · " + InputBinding(1) + " esquivar"
+            : "Mover: teclas/controle  ·  Mouse/analógico mirar  ·  " + InputBinding(0) + " atacar  ·  " + InputBinding(1) + " esquivar  ·  " + InputBinding(2) + " pulso  ·  " + InputBinding(6) + " interagir  ·  M/L3 mapa  ·  Esc pausa";
+        Rect controlHintRect = new Rect(14, Screen.height - 34, Screen.width - 28, 30);
+        controlHintStyle.fontSize = smallStyle.fontSize;
+        float measuredControlHintWidth = controlHintStyle.CalcSize(new GUIContent(controlHint)).x;
+        if (measuredControlHintWidth > controlHintRect.width && measuredControlHintWidth > 0f)
+            controlHintStyle.fontSize = Mathf.Max(9, Mathf.FloorToInt(controlHintStyle.fontSize * controlHintRect.width / measuredControlHintWidth));
+        GUI.Label(controlHintRect, controlHint, controlHintStyle);
         if (transitionFade > 0f)
         {
             GUI.color = new Color(0f, 0f, 0f, transitionFade);
@@ -2760,16 +2808,17 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         string heading = confirmNewJourney ? "NOVA JORNADA?" : victory ? "AS VOZES VOLTAM" : showTitle ? "SCADRYK" : "PAUSADO";
         float center = Screen.width * 0.5f;
         bool compact = Screen.height < 520f;
+        bool pauseMapMenu = !showTitle && !victory && !confirmNewJourney;
         float top = compact ? 18f : Screen.height * 0.29f;
         float titleWidth = Mathf.Min(600f, Screen.width - 32f);
         float messageWidth = Mathf.Min(680f, Screen.width - 32f);
         float buttonWidth = Mathf.Min(230f, Screen.width - 32f);
         float titleHeight = compact ? 42f : 52f;
         float messageTop = top + (compact ? 42f : 48f);
-        float messageHeight = compact ? 86f : 62f;
-        float buttonY = top + (compact ? 136f : 132f);
-        float buttonHeight = compact ? 40f : 44f;
-        float buttonStep = compact ? 48f : 54f;
+        float messageHeight = compact ? (pauseMapMenu ? 68f : 86f) : 62f;
+        float buttonY = top + (compact ? (pauseMapMenu ? 118f : 136f) : 132f);
+        float buttonHeight = compact ? (pauseMapMenu ? 42f : 40f) : 44f;
+        float buttonStep = compact ? (pauseMapMenu ? 44f : 48f) : 54f;
         float footerWidth = Mathf.Min(600f, Screen.width - 32f), footerHeight = compact ? 28f : 35f;
         float footerTop = Screen.height - (compact ? 42f : 58f);
         GUI.Label(new Rect(center - titleWidth * 0.5f, top, titleWidth, titleHeight), heading, centeredTitleStyle);
@@ -2784,10 +2833,24 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             GUI.Label(new Rect(center - footerWidth * 0.5f, footerTop, footerWidth, footerHeight), "Esc, B ou Start cancela", centeredBodyStyle);
             return;
         }
-        if (!victory && OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY, buttonWidth, buttonHeight), showTitle ? (HasCheckpoint("Scadryk.") ? "Continuar jornada" : "Começar jornada") : "Continuar", 0))
-            BeginJourney();
-        if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep, buttonWidth, buttonHeight), "Nova jornada", 1)) RequestNewGame();
-        if (!victory && OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep * 2f, buttonWidth, buttonHeight), "Opções e controles", 2)) { showOptions = true; optionsTab = optionsSelection = 0; }
+        if (showTitle)
+        {
+            if (!victory && OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY, buttonWidth, buttonHeight), HasCheckpoint("Scadryk.") ? "Continuar jornada" : "Começar jornada", 0)) BeginJourney();
+            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep, buttonWidth, buttonHeight), "Nova jornada", 1)) RequestNewGame();
+            if (!victory && OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep * 2f, buttonWidth, buttonHeight), "Opções e controles", 2)) { showOptions = true; optionsTab = optionsSelection = 0; }
+        }
+        else if (victory)
+        {
+            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY, buttonWidth, buttonHeight), "Nova jornada", 1)) StartNewGame();
+        }
+        else
+        {
+            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY, buttonWidth, buttonHeight), "Continuar", 0)) isPaused = false;
+            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep, buttonWidth, buttonHeight), "Mapa da jornada", 1))
+            { isPaused = false; showWorldMap = true; ApplyPauseTimeScale(); }
+            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep * 2f, buttonWidth, buttonHeight), "Nova jornada", 2)) RequestNewGame();
+            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep * 3f, buttonWidth, buttonHeight), "Opções e controles", 3)) { showOptions = true; optionsTab = optionsSelection = 0; }
+        }
         GUI.Label(new Rect(center - footerWidth * 0.5f, footerTop, footerWidth, footerHeight), "Três lugares · nove salas · memórias a libertar", centeredBodyStyle);
     }
 
@@ -2826,6 +2889,111 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         GUI.color = Color.white;
     }
 
+    private void DrawWorldMap()
+    {
+        Rect screen = new Rect(0f, 0f, Screen.width, Screen.height);
+        GUI.color = new Color(0.008f, 0.015f, 0.02f, 0.9f);
+        GUI.DrawTexture(screen, Texture2D.whiteTexture);
+        Rect panel = WorldMapPanelRect(Screen.width, Screen.height);
+        GUI.color = new Color(0.025f, 0.045f, 0.05f, 0.98f);
+        GUI.DrawTexture(panel, Texture2D.whiteTexture);
+        GUI.color = new Color(0.74f, 0.63f, 0.34f, 1f);
+        GUI.DrawTexture(new Rect(panel.x, panel.y, panel.width, 3f), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(panel.x, panel.yMax - 3f, panel.width, 3f), Texture2D.whiteTexture);
+        GUI.color = Color.white;
+
+        float titleWidth = Mathf.Max(0f, panel.width - 150f);
+        openingTitleStyle.fontSize = centeredTitleStyle.fontSize;
+        float measuredTitleWidth = openingTitleStyle.CalcSize(WorldMapTitleContent).x;
+        if (measuredTitleWidth > titleWidth && measuredTitleWidth > 0f)
+            openingTitleStyle.fontSize = Mathf.Max(12, Mathf.FloorToInt(openingTitleStyle.fontSize * titleWidth / measuredTitleWidth));
+        GUI.Label(new Rect(panel.center.x - titleWidth * 0.5f, panel.y + 4f, titleWidth, 40f), WorldMapTitleContent, openingTitleStyle);
+        worldMapInstructionStyle.fontSize = Mathf.Min(smallStyle.fontSize, 12);
+        GUI.Label(new Rect(panel.x + 16f, panel.y + 45f, panel.width - 32f, 17f),
+            "TRÊS BIOMAS · NOVE SALAS · O CAMINHO DE NARA", worldMapInstructionStyle);
+        if (GUI.Button(new Rect(panel.xMax - 92f, panel.y + 14f, 76f, 28f), "FECHAR")) CloseWorldMap();
+
+        float rowHeight = WorldMapRowHeight(panel.height);
+        float contentX = panel.x + 16f;
+        float contentWidth = panel.width - 32f;
+        float cardGap = 8f;
+        float cardWidth = (contentWidth - cardGap * 2f) / 3f;
+        for (int phase = 0; phase < PhaseNames.Length; phase++)
+        {
+            float rowY = panel.y + 62f + phase * rowHeight;
+            GUI.color = PhaseAccentColors[phase];
+            GUI.Label(new Rect(contentX, rowY, contentWidth, 18f), PhaseNames[phase], smallStyle);
+            GUI.color = Color.white;
+            for (int room = 0; room < RoomsPerPhase; room++)
+            {
+                int state = WorldMapRoomStatus(phase, room, phaseIndex, roomIndex, clearedRooms);
+                Rect card = new Rect(contentX + room * (cardWidth + cardGap), rowY + 19f, cardWidth, rowHeight - 21f);
+                GUI.color = WorldMapRoomColor(state);
+                GUI.DrawTexture(card, Texture2D.whiteTexture);
+                GUI.color = state == 1 ? new Color(0.45f, 0.95f, 0.9f) : state == 2 ? new Color(0.42f, 0.78f, 0.53f) : new Color(0.45f, 0.49f, 0.48f);
+                GUI.DrawTexture(new Rect(card.x, card.y, card.width, 2f), Texture2D.whiteTexture);
+                GUI.color = Color.white;
+                GUI.Label(new Rect(card.x + 3f, card.y + 3f, card.width - 6f, card.height * 0.5f),
+                    (room + 1) + ". " + MapRoomLabel(phase, room), worldMapRoomStyle);
+                string stateLabel = state == 1 ? "VOCÊ ESTÁ AQUI" : state == 2 ? "CONCLUÍDA" : "ADIANTE";
+                GUI.color = state == 1 ? new Color(0.55f, 1f, 0.94f) : state == 2 ? new Color(0.62f, 0.9f, 0.68f) : new Color(0.7f, 0.73f, 0.71f);
+                GUI.Label(new Rect(card.x + 2f, card.yMax - 18f, card.width - 4f, 15f), stateLabel, worldMapStateStyle);
+                GUI.color = Color.white;
+            }
+        }
+
+        string currentObjective = "Objetivo: " + RoomGoals[phaseIndex * RoomsPerPhase + roomIndex];
+        GUIContent objectiveContent = new GUIContent(currentObjective);
+        float objectiveWidth = panel.width - 32f;
+        worldMapObjectiveStyle.fontSize = Mathf.RoundToInt(11f * Mathf.Clamp(ScadrykSettings.TextScale, 1f, 1.5f));
+        float measuredObjectiveWidth = worldMapObjectiveStyle.CalcSize(objectiveContent).x;
+        if (measuredObjectiveWidth > objectiveWidth && measuredObjectiveWidth > 0f)
+            worldMapObjectiveStyle.fontSize = Mathf.Max(9, Mathf.FloorToInt(worldMapObjectiveStyle.fontSize * objectiveWidth / measuredObjectiveWidth));
+        GUI.Label(new Rect(panel.x + 16f, panel.yMax - 55f, objectiveWidth, 22f), objectiveContent, worldMapObjectiveStyle);
+        GUI.Label(new Rect(panel.x + 16f, panel.yMax - 29f, panel.width - 32f, 18f),
+            "M · L3 · Esc · Start para voltar", worldMapInstructionStyle);
+        GUI.color = Color.white;
+    }
+
+    private void CloseWorldMap()
+    {
+        showWorldMap = false;
+        ApplyPauseTimeScale();
+    }
+
+    private static Rect WorldMapPanelRect(float screenWidth, float screenHeight)
+    {
+        float width = Mathf.Max(0f, Mathf.Min(1100f, screenWidth - 32f));
+        float height = Mathf.Max(0f, Mathf.Min(700f, screenHeight - 32f));
+        return new Rect((screenWidth - width) * 0.5f, (screenHeight - height) * 0.5f, width, height);
+    }
+
+    private static float WorldMapRowHeight(float panelHeight) => Mathf.Max(60f, (panelHeight - 142f) / PhaseNames.Length);
+
+    internal static int WorldMapRoomStatus(int phase, int room, int currentPhase, int currentRoom, bool[] currentPhaseCleared)
+    {
+        if (phase < currentPhase) return 2;
+        if (phase > currentPhase) return 0;
+        if (room == currentRoom) return 1;
+        return currentPhaseCleared != null && room >= 0 && room < currentPhaseCleared.Length && currentPhaseCleared[room] ? 2 : 0;
+    }
+
+    private static Color WorldMapRoomColor(int state) => state == 1 ? new Color(0.1f, 0.24f, 0.25f, 0.98f) :
+        state == 2 ? new Color(0.1f, 0.2f, 0.14f, 0.98f) : new Color(0.065f, 0.085f, 0.09f, 0.98f);
+
+    internal static bool WorldMapLayoutFits(float screenWidth, float screenHeight)
+    {
+        Rect panel = WorldMapPanelRect(screenWidth, screenHeight);
+        float contentWidth = panel.width - 32f;
+        float cardWidth = (contentWidth - 16f) / 3f;
+        float rowHeight = WorldMapRowHeight(panel.height);
+        float finalCardBottom = panel.y + 62f + (PhaseNames.Length - 1) * rowHeight + rowHeight - 2f;
+        float objectiveTop = panel.yMax - 55f;
+        float footerBottom = panel.yMax - 11f;
+        return screenWidth >= 160f && screenHeight >= 180f && cardWidth > 0f &&
+            finalCardBottom <= objectiveTop && objectiveTop + 22f <= panel.yMax - 29f && footerBottom <= panel.yMax;
+    }
+
     private static bool OverlayLayoutFits(float screenWidth, float screenHeight)
     {
         bool compact = screenHeight < 520f;
@@ -2841,6 +3009,19 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         float thirdButtonBottom = buttonY + buttonStep * 2f + buttonHeight;
         return screenWidth >= 64f && horizontalWidth <= screenWidth - 32f &&
                messageTop + messageHeight <= buttonY && thirdButtonBottom <= footerTop && footerTop + footerHeight <= screenHeight;
+    }
+
+    private static bool PauseMapOverlayLayoutFits(float screenWidth, float screenHeight)
+    {
+        bool compact = screenHeight < 520f;
+        float top = compact ? 18f : screenHeight * 0.29f;
+        float messageBottom = top + (compact ? 42f + 68f : 48f + 62f);
+        float buttonY = top + (compact ? 118f : 132f);
+        float buttonHeight = compact ? 42f : 44f;
+        float buttonStep = compact ? 44f : 54f;
+        float footerTop = screenHeight - (compact ? 42f : 58f);
+        float fourthButtonBottom = buttonY + buttonStep * 3f + buttonHeight;
+        return screenWidth >= 64f && messageBottom <= buttonY && fourthButtonBottom <= footerTop && footerTop + (compact ? 28f : 35f) <= screenHeight;
     }
 
     private static Rect MemoryPanelRect(float screenWidth, float screenHeight, float bodyHeight)
@@ -2916,7 +3097,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         }
         else if (optionsTab == 1)
         {
-            GUI.Label(new Rect(x + 15f, y + 99f, width - 185f, 31f), "Clique para trocar; F8 registra ataques.", smallStyle);
+            GUI.Label(new Rect(x + 15f, y + 99f, width - 185f, 31f), "Clique para trocar; M mapa; F8 QA.", smallStyle);
             if (OptionButton(new Rect(x + width - 155f, y + 95f, 140f, 32f), "Padrões", 14))
             {
                 ScadrykSettings.ResetKeyboardBindings();
@@ -2956,7 +3137,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             }
         }
         if (OptionButton(new Rect(x + (width - 180f) * 0.5f, y + backOffset, 180f, 42f), "Voltar", optionsTab == 0 ? 9 : optionsTab == 1 ? 15 : 11)) { showOptions = false; rebindingAction = gamepadRebindAction = -1; }
-        GUI.Label(new Rect(x, y + footerOffset, width, 28f), "Controle: analógico navega · A confirma · B volta · Start pausa.", smallStyle);
+        GUI.Label(new Rect(x, y + footerOffset, width, 28f), "Controle: analógico navega · A confirma · B volta · Start pausa · L3 mapa.", smallStyle);
     }
 
     private static bool OptionsLayoutFits(float screenHeight)
@@ -3009,6 +3190,11 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         openingTitleStyle = new GUIStyle(centeredTitleStyle);
         centeredBodyStyle = new GUIStyle(bodyStyle) { alignment = TextAnchor.MiddleCenter, wordWrap = true, fontSize = Mathf.RoundToInt(16f * scale) };
         openingBodyStyle = new GUIStyle(centeredBodyStyle);
+        worldMapRoomStyle = new GUIStyle(centeredBodyStyle) { fontSize = Mathf.RoundToInt(10f * scale), wordWrap = true, fontStyle = FontStyle.Bold };
+        worldMapStateStyle = new GUIStyle(smallStyle) { fontSize = Mathf.RoundToInt(9f * scale), alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+        worldMapObjectiveStyle = new GUIStyle(centeredBodyStyle) { fontSize = Mathf.RoundToInt(11f * scale), wordWrap = false };
+        worldMapInstructionStyle = new GUIStyle(smallStyle) { alignment = TextAnchor.MiddleCenter };
+        controlHintStyle = new GUIStyle(smallStyle) { alignment = TextAnchor.MiddleCenter };
         offscreenTargetStyle = new GUIStyle(centeredBodyStyle) { fontSize = Mathf.RoundToInt(13f * scale), fontStyle = FontStyle.Bold };
         finalBossLabelStyle = new GUIStyle(titleStyle) { alignment = TextAnchor.MiddleCenter, fontSize = Mathf.RoundToInt(14f * scale), normal = { textColor = new Color(1f, 0.73f, 0.86f) } };
         memoryStyle = new GUIStyle(bodyStyle) { wordWrap = true, alignment = TextAnchor.UpperLeft };

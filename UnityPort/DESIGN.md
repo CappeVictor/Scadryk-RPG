@@ -61,6 +61,8 @@ Nara é uma Ouvinte que preserva histórias em três sinos de travessia. Os Ecos
 
 A abertura narrativa da primeira jornada e de uma jornada reiniciada é modal: combate, cronômetro e avisos temporizados permanecem pausados até a confirmação do jogador. A intenção é dar espaço para ler o chamado de Nara antes de entrar na primeira luta.
 
+O mapa completo pode ser consultado durante a exploração e pausa o combate para leitura segura. Ele mostra as três regiões em ordem, destaca as salas concluídas e a posição de Nara e mantém visível o objetivo da sala atual. O minimapa continua servindo para orientação imediata durante a luta.
+
 ## Critérios por etapa
 
 1. Refinar movimento, mira, esquiva, ataques legíveis e poderes táticos.
