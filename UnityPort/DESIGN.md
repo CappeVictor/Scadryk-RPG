@@ -6,6 +6,8 @@
 
 **Validação pendente:** a build normal mais recente registrada continua Stage9; as alterações posteriores no UnityPort ainda não foram compiladas nem executadas. Uma tentativa anterior foi bloqueada pelo App Control do Windows (`Bee.TinyProfiler2.dll`). O Unity Hub 4.0.1, o Unity CLI 1.0.1 e o Editor 6000.6.9f1 estão instalados; o CLI reconhece `C:\Outros Arquivos\Unity\Editors\6000.6.9f1\Editor\Unity.exe`. O módulo Windows Build Support (IL2CPP) terminou de baixar e aguarda confirmação UAC para instalar. O jogo não foi aberto neste PC. Controle físico, legibilidade em telas menores, balanceamento e conclusão manual das nove salas continuam sem evidência suficiente.
 
+**Ferramenta de validação:** `Tools/compile-unity.ps1` importa o projeto em batch mode para validar a compilação dos scripts sem abrir a cena. `Tools/build-windows.ps1` gera separadamente o executável e precisa do módulo Windows Build Support. Nenhum dos scripts inicia o jogo.
+
 **Riscos técnicos:** `ScadrykGameDirector.cs` concentra vários sistemas; o HUD IMGUI usa medidas absolutas; testes automatizados usam dano artificial e não validam sensação ou dificuldade. Não declarar a campanha finalizada nem paridade de qualidade antes da build normal atualizada e sessões de jogo observadas.
 
 ## Inspeção de código e conteúdo (20/11/2026, branch `codex/unity-playable-phase-maps`)

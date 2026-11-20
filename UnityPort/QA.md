@@ -3,6 +3,7 @@
 ## Verificações executadas
 
 - **20/11/2026 — instalação do Editor:** o Unity 6000.6.9f1 foi instalado pelo Unity CLI em `C:\Outros Arquivos\Unity\Editors\6000.6.9f1\Editor\Unity.exe`, e `unity editors --installed` o reconhece. O módulo Windows Build Support (IL2CPP) terminou de baixar e a instalação aguarda um segundo UAC. Não houve build, abertura do jogo ou Play Mode nesta etapa.
+- **20/11/2026 — validação sem executar o jogo:** foi adicionado `Tools/compile-unity.ps1` para importar e compilar os scripts no Editor em batch mode, separado da geração de build Windows e sem abrir a cena. Ainda não foi executado enquanto o instalador do módulo Windows aguarda UAC.
 - **20/11/2026 — transiente de áudio:** a camada percussiva de cada trilha agora aplica uma entrada suave de 18 ms sempre que o pulso reinicia. A inspeção do código identificou e removeu uma descontinuidade de amplitude; ainda falta ouvir a saída real no Editor para confirmar ausência de estalos e avaliar o timbre.
 - **20/11/2026 — encerramento narrativo:** o painel de vitória confirma que os sinos respondem, que Nara escolheu lembrar e que o limiar já não prende ninguém. A frase menor preserva os elementos da resolução com menos risco de corte em janelas estreitas; o smoke verifica o conteúdo selecionado pelo painel, ainda sem execução no Editor nem revisão visual a 150%.
 

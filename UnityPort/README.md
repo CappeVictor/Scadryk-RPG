@@ -33,7 +33,9 @@ Não instale o pacote Unity antigo `com.unity.ide.vscode`: ele foi descontinuado
 
 Para criar um executável Windows, escolha **Scadryk > Build Windows demo**. O build aparece em `Build/ScadrykDemo.exe` dentro do projeto Unity. Essa etapa ainda aguarda nova execução no Editor para validar os commits atuais.
 
-Também é possível compilar sem abrir a cena em Play Mode. Na pasta `UnityPort`, execute no PowerShell `.\Tools\build-windows.ps1`. O script procura o Editor `6000.6.9f1` primeiro no destino configurado `C:\Outros Arquivos\Unity\Editors` e depois no caminho padrão do Unity Hub; se estiver em outro local, informe `-UnityEditorPath 'C:\caminho\para\Unity.exe'`. Ele usa o método de build do Editor, grava o log temporário em `%TEMP%` e confirma se `Build/ScadrykDemo.exe` foi gerado; não abre a cena em Play Mode nem inicia o executável. A compilação ainda depende do Unity instalado e não substitui a avaliação manual da campanha.
+Para importar e compilar os scripts sem gerar ou abrir o jogo, execute no PowerShell `.\Tools\compile-unity.ps1`. Esse passo não requer Windows Build Support. O script procura o Editor `6000.6.9f1` no destino configurado `C:\Outros Arquivos\Unity\Editors` e depois no caminho padrão do Unity Hub; para outro local, informe `-UnityEditorPath 'C:\caminho\para\Unity.exe'`.
+
+Para gerar o executável Windows sem abrir a cena em Play Mode, execute `.\Tools\build-windows.ps1` na pasta `UnityPort`. Esse segundo passo requer o módulo Windows Build Support; procura o Editor nos mesmos caminhos e confirma se `Build/ScadrykDemo.exe` foi gerado. Ambos gravam logs em `%TEMP%`; nenhum inicia o executável. A compilação não substitui a avaliação manual da campanha.
 
 O avanço é salvo automaticamente ao atravessar cada portal. Ao reabrir o jogo, a última sala alcançada é carregada com os poderes das fases já vencidas. A conclusão da campanha apaga o marcador de progresso para permitir uma nova jornada. As métricas ficam na pasta retornada por `Application.persistentDataPath` (no Windows, normalmente `%USERPROFILE%/AppData/LocalLow/<CompanyName>/<ProductName>`). Nenhum dado é enviado pela rede.
 
