@@ -1317,12 +1317,15 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 { SmokeFail("Não foi possível preparar a checagem de fase do Arauto"); yield break; }
                 foreach (ScadrykEnemyProjectile projectile in FindObjectsByType<ScadrykEnemyProjectile>(FindObjectsSortMode.None))
                     if (projectile != null) { projectile.gameObject.SetActive(false); Destroy(projectile.gameObject); }
+                ClearSmokeAttackWarnings();
                 attackIndexField.SetValue(finalBoss, 0);
                 attackTargetField.SetValue(finalBoss, (Vector2)player.transform.position);
+                Vector2 volleyForward = ((Vector2)player.transform.position - (Vector2)finalBoss.transform.position).normalized;
                 beginBossAttack.Invoke(finalBoss, null);
                 int announcedStage = (int)queuedStageField.GetValue(finalBoss);
                 finalBoss.TakeDamage(400f);
-                if (announcedStage != 1 || finalBoss.FinalStage != 2)
+                float volleyWidth = ScadrykEnemyProjectile.HitboxDiameter(0.58f);
+                if (announcedStage != 1 || finalBoss.FinalStage != 2 || !SmokeAttackWarningsMatch((Vector2)finalBoss.transform.position, volleyForward, 7.2f, volleyWidth, 0.19f, 1))
                 { SmokeFail("O teste não cruzou o limiar de fase durante o aviso do Arauto"); yield break; }
                 resolveBossAttack.Invoke(finalBoss, null);
                 int announcedVolleyCount = 0;
@@ -1343,11 +1346,26 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 Debug.Log("SCADRYK_SMOKE: salva do Arauto manteve fase e alcance dentro do aviso");
 
                 attackTargetField.SetValue(finalBoss, (Vector2)player.transform.position);
-                attackIndexField.SetValue(finalBoss, 1);
+                attackIndexField.SetValue(finalBoss, 0);
                 ClearSmokeAttackWarnings();
+                volleyForward = ((Vector2)player.transform.position - (Vector2)finalBoss.transform.position).normalized;
+                beginBossAttack.Invoke(finalBoss, null);
+                float expectedCrystalRange = Mathf.Clamp(Vector2.Distance(finalBoss.transform.position, player.transform.position) + 1.25f, 2.8f, 7.2f);
+                if ((int)queuedStageField.GetValue(finalBoss) != 2 ||
+                    !SmokeAttackWarningsMatch((Vector2)finalBoss.transform.position, volleyForward, 7.2f, ScadrykEnemyProjectile.HitboxDiameter(0.58f), 0.19f, 2))
+                { SmokeFail("A salva da fase 2 não anuncia as cinco trajetórias"); yield break; }
+                resolveBossAttack.Invoke(finalBoss, null);
+                if (SmokeProjectileCount("Arauto — remembered volley") != 5 ||
+                    !SmokeProjectileRangeMatches("Arauto — remembered volley", expectedCrystalRange - 0.55f - ScadrykEnemyProjectile.HitboxRadius(0.34f)))
+                { SmokeFail("As cinco trajetórias da fase 2 não respeitam a faixa anunciada"); yield break; }
+                ClearSmokeProjectiles();
+                ClearSmokeAttackWarnings();
+
+                attackIndexField.SetValue(finalBoss, 1);
+                Vector2 starfallForward = ((Vector2)player.transform.position - (Vector2)finalBoss.transform.position).normalized;
                 beginBossAttack.Invoke(finalBoss, null);
                 float starfallProjectileWidth = ScadrykEnemyProjectile.HitboxDiameter(0.48f);
-                if ((int)queuedStageField.GetValue(finalBoss) != 2 || SmokeAttackWarningCount(starfallProjectileWidth) != 1)
+                if ((int)queuedStageField.GetValue(finalBoss) != 2 || !SmokeAttackWarningsMatch((Vector2)finalBoss.transform.position, starfallForward, 10f, starfallProjectileWidth, 0.48f, 0))
                 { SmokeFail("A queda de estrelas da fase 2 não anuncia seu projétil lateral com a largura correta"); yield break; }
                 resolveBossAttack.Invoke(finalBoss, null);
                 if (SmokeProjectileCount("Arauto — falling memory") != 1 || !SmokeProjectileRangeMatches("Arauto — falling memory", 10f - ScadrykEnemyProjectile.HitboxRadius(0.48f)))
@@ -1357,9 +1375,25 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 Debug.Log("SCADRYK_SMOKE: projétil lateral da queda de estrelas anunciado na fase 2");
 
                 finalBoss.TakeDamage(600f);
-                attackIndexField.SetValue(finalBoss, 1);
+                attackIndexField.SetValue(finalBoss, 0);
+                ClearSmokeAttackWarnings();
+                volleyForward = ((Vector2)player.transform.position - (Vector2)finalBoss.transform.position).normalized;
                 beginBossAttack.Invoke(finalBoss, null);
-                if ((int)queuedStageField.GetValue(finalBoss) != 3 || SmokeAttackWarningCount(starfallProjectileWidth) != 3)
+                expectedCrystalRange = Mathf.Clamp(Vector2.Distance(finalBoss.transform.position, player.transform.position) + 1.25f, 2.8f, 7.2f);
+                if ((int)queuedStageField.GetValue(finalBoss) != 3 ||
+                    !SmokeAttackWarningsMatch((Vector2)finalBoss.transform.position, volleyForward, 7.2f, ScadrykEnemyProjectile.HitboxDiameter(0.58f), 0.19f, 3))
+                { SmokeFail("A salva da fase 3 não anuncia as sete trajetórias"); yield break; }
+                resolveBossAttack.Invoke(finalBoss, null);
+                if (SmokeProjectileCount("Arauto — remembered volley") != 7 ||
+                    !SmokeProjectileRangeMatches("Arauto — remembered volley", expectedCrystalRange - 0.55f - ScadrykEnemyProjectile.HitboxRadius(0.34f)))
+                { SmokeFail("As sete trajetórias da fase 3 não respeitam a faixa anunciada"); yield break; }
+                ClearSmokeProjectiles();
+                ClearSmokeAttackWarnings();
+
+                attackIndexField.SetValue(finalBoss, 1);
+                starfallForward = ((Vector2)player.transform.position - (Vector2)finalBoss.transform.position).normalized;
+                beginBossAttack.Invoke(finalBoss, null);
+                if ((int)queuedStageField.GetValue(finalBoss) != 3 || !SmokeAttackWarningsMatch((Vector2)finalBoss.transform.position, starfallForward, 10f, starfallProjectileWidth, 0.48f, 1))
                 { SmokeFail("A queda de estrelas da fase 3 não anuncia os três projéteis laterais"); yield break; }
                 resolveBossAttack.Invoke(finalBoss, null);
                 if (SmokeProjectileCount("Arauto — falling memory") != 3 || !SmokeProjectileRangeMatches("Arauto — falling memory", 10f - ScadrykEnemyProjectile.HitboxRadius(0.48f)))
@@ -1454,16 +1488,28 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             { visual.gameObject.SetActive(false); Destroy(visual.gameObject); }
     }
 
-    private static int SmokeAttackWarningCount(float expectedWidth)
+    private static bool SmokeAttackWarningsMatch(Vector2 origin, Vector2 forward, float length, float width, float angleStep, int halfCount)
     {
         int count = 0;
+        bool[] seenAngles = new bool[halfCount * 2 + 1];
         foreach (ScadrykTimedVisual visual in FindObjectsByType<ScadrykTimedVisual>(FindObjectsSortMode.None))
         {
             if (visual == null || !visual.gameObject.activeInHierarchy || visual.gameObject.name != "Enemy attack warning") continue;
-            if (Mathf.Abs(visual.transform.localScale.y - expectedWidth) > 0.001f) return -1;
+            if (count > halfCount * 2) return false;
+            Vector2 actualDirection = visual.transform.right;
+            float angleDegrees = angleStep * Mathf.Rad2Deg;
+            int offset = angleStep == 0f ? 0 : Mathf.RoundToInt(Vector2.SignedAngle(forward, actualDirection) / angleDegrees);
+            if (offset < -halfCount || offset > halfCount || seenAngles[offset + halfCount]) return false;
+            seenAngles[offset + halfCount] = true;
+            Vector2 expectedDirection = ((Vector2)(Quaternion.Euler(0f, 0f, angleDegrees * offset) * (Vector3)forward)).normalized;
+            Vector2 expectedCenter = origin + expectedDirection * (length * 0.5f);
+            if (Mathf.Abs(visual.transform.localScale.x - length) > 0.01f ||
+                Mathf.Abs(visual.transform.localScale.y - width) > 0.001f ||
+                Vector2.Angle(expectedDirection, actualDirection) > 0.5f ||
+                Vector2.Distance((Vector2)visual.transform.position, expectedCenter) > 0.02f) return false;
             count++;
         }
-        return count;
+        return count == halfCount * 2 + 1;
     }
 
     private static int SmokeProjectileCount(string projectileName)
