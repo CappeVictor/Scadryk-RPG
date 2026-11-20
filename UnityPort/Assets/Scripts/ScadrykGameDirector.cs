@@ -204,7 +204,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         {
             if (showOptions)
             {
-                int max = optionsTab == 0 ? 9 : optionsTab == 1 ? 14 : 10;
+                int max = optionsTab == 0 ? 9 : optionsTab == 1 ? 15 : 11;
                 optionsSelection = Mathf.Clamp(optionsSelection - (navigation.y > 0f ? 1 : -1), 0, max);
             }
             else overlaySelection = Mathf.Clamp(overlaySelection - (navigation.y > 0f ? 1 : -1), victory ? 1 : 0, confirmNewJourney || victory ? 1 : 2);
@@ -271,7 +271,13 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         else if (optionsTab == 1)
         {
             if (optionsSelection is >= 3 and <= 13) rebindingAction = optionsSelection - 3;
-            else if (optionsSelection == 14) showOptions = false;
+            else if (optionsSelection == 14)
+            {
+                ScadrykSettings.ResetKeyboardBindings();
+                rebindingAction = -1;
+                ShowStatus("Teclas padrão restauradas.", 2f);
+            }
+            else if (optionsSelection == 15) showOptions = false;
         }
         else if (optionsTab == 2)
         {
@@ -280,7 +286,13 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 gamepadRebindAction = optionsSelection - 3;
                 gamepadRebindAfterFrame = Time.frameCount;
             }
-            else if (optionsSelection == 10) showOptions = false;
+            else if (optionsSelection == 10)
+            {
+                ScadrykSettings.ResetGamepadBindings();
+                gamepadRebindAction = -1;
+                ShowStatus("Controle padrão restaurado.", 2f);
+            }
+            else if (optionsSelection == 11) showOptions = false;
         }
     }
 
@@ -1445,9 +1457,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             narrowLegend.yMin < narrowMap.yMin || narrowLegend.yMax > narrowMap.yMax)
         { SmokeFail("Minimapa sobrepõe o HUD ou sai da janela estreita com texto ampliado"); yield break; }
         Debug.Log("SCADRYK_SMOKE: minimapa e legenda cabem em janela estreita");
-        if (!OptionsLayoutFits(600f))
+        if (!OptionsLayoutFits(600f) || !OptionsResetRowFits(400f))
         { SmokeFail("O menu de opções corta as teclas remapeáveis ou os controles de retorno a 600px de altura"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: menu de opções cabe em janela de 600px de altura");
+        Debug.Log("SCADRYK_SMOKE: menu de opções e restauração de comandos cabem em janela compacta");
         if (!SoundOptionsLayoutFits(600f))
         { SmokeFail("O controle de alto contraste ou as instruções de avisos saem do menu em janela baixa"); yield break; }
         bool oldHighContrast = ScadrykSettings.HighContrastWarnings;
@@ -2068,7 +2080,13 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         }
         else if (optionsTab == 1)
         {
-            GUI.Label(new Rect(x + 15f, y + 99f, width - 30f, 31f), "Clique na tecla para trocar. Teclas repetidas são permutadas.", bodyStyle);
+            GUI.Label(new Rect(x + 15f, y + 99f, width - 185f, 31f), "Clique para trocar tecla.", smallStyle);
+            if (OptionButton(new Rect(x + width - 155f, y + 95f, 140f, 32f), "Padrões", 14))
+            {
+                ScadrykSettings.ResetKeyboardBindings();
+                rebindingAction = -1;
+                ShowStatus("Teclas padrão restauradas.", 2f);
+            }
             for (int i = 0; i < ScadrykSettings.Actions.Length; i++)
             {
                 float row = y + keyRowStart + i * keyRowStep;
@@ -2086,7 +2104,13 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         }
         else if (optionsTab == 2)
         {
-            GUI.Label(new Rect(x + 15f, y + 99f, width - 30f, 31f), "Selecione uma ação e pressione o botão desejado.", bodyStyle);
+            GUI.Label(new Rect(x + 15f, y + 99f, width - 185f, 31f), "Selecione ação e botão.", smallStyle);
+            if (OptionButton(new Rect(x + width - 155f, y + 95f, 140f, 32f), "Padrões", 10))
+            {
+                ScadrykSettings.ResetGamepadBindings();
+                gamepadRebindAction = -1;
+                ShowStatus("Controle padrão restaurado.", 2f);
+            }
             for (int i = 0; i < 7; i++)
             {
                 float row = y + padRowStart + i * padRowStep;
@@ -2095,7 +2119,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 if (OptionButton(new Rect(x + 240f, row, width - 255f, padRowHeight), label, i + 3)) { gamepadRebindAction = i; gamepadRebindAfterFrame = Time.frameCount; }
             }
         }
-        if (OptionButton(new Rect(x + (width - 180f) * 0.5f, y + backOffset, 180f, 42f), "Voltar", optionsTab == 0 ? 9 : optionsTab == 1 ? 14 : 10)) { showOptions = false; rebindingAction = gamepadRebindAction = -1; }
+        if (OptionButton(new Rect(x + (width - 180f) * 0.5f, y + backOffset, 180f, 42f), "Voltar", optionsTab == 0 ? 9 : optionsTab == 1 ? 15 : 11)) { showOptions = false; rebindingAction = gamepadRebindAction = -1; }
         GUI.Label(new Rect(x, y + footerOffset, width, 28f), "Controle: analógico navega · A confirma · B volta · Start pausa.", smallStyle);
     }
 
@@ -2107,6 +2131,15 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         float backOffset = compact ? 512f : 585f, footerOffset = compact ? 560f : 637f;
         float lastKeyRowBottom = y + rowStart + (ScadrykSettings.Actions.Length - 1) * rowStep + rowHeight;
         return lastKeyRowBottom <= y + backOffset && y + backOffset + 42f <= screenHeight && y + footerOffset + 28f <= screenHeight;
+    }
+
+    private static bool OptionsResetRowFits(float screenWidth)
+    {
+        float width = Mathf.Min(620f, screenWidth - 36f);
+        float x = (screenWidth - width) * 0.5f;
+        Rect instructions = new Rect(x + 15f, 8f + 99f, width - 185f, 31f);
+        Rect reset = new Rect(x + width - 155f, 8f + 95f, 140f, 32f);
+        return width >= 175f && reset.xMin >= x && reset.xMax <= x + width && !instructions.Overlaps(reset);
     }
 
     private static bool SoundOptionsLayoutFits(float screenHeight)

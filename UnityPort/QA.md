@@ -95,3 +95,5 @@ Critérios para revisão: nenhum dano sem aviso reconhecível; nenhum poder fica
 - Pausa por perda de foco: o jogo ativo pausa imediatamente quando a janela perde foco, sem retomar sozinho ao voltar; menus, pausa e travessia por portal não acionam a regra. O smoke verifica a decisão para cada estado e ignora eventos de foco externos durante a automação; ainda não foi executado nem conferido por alternância de janelas no Editor.
 
 - Pista do selo final: enquanto Rompante está bloqueado, a aproximação explica que é preciso vencer o guardião; ao aprender o poder, a pista se atualiza para o comando correto mesmo se Nara já estiver perto do selo. O smoke simula a pista antiga e confere as duas transições; ainda sem execução no Editor.
+
+- Recuperação de remapeamento: abas Teclas e Controle agora têm um botão Padrões separado, que remove apenas os vínculos salvos daquele dispositivo e volta aos padrões definidos no projeto. O smoke mede a faixa do botão ao lado das instruções em largura compacta; a interação e persistência aguardam compilação no Unity.

@@ -81,3 +81,5 @@ As referências de outros jogos orientam clareza, descoberta e ritmo. Não repro
 - **Segurança ao alternar janelas (20/11/2026):** perder foco pausa o combate ativo imediatamente e exige retomada explícita; estado de menu, opção, pausa, vitória ou portal é ignorado. Smoke verifica a regra de decisão e não é pausado por foco externo durante a automação; falta teste real de alternância de janelas no Editor.
 
 - **Pista condicionada ao guardião final (20/11/2026):** o Selo de Eco da arena não apresenta Rompante como disponível antes da vitória do guardião. Se a dica bloqueada já tiver aparecido, ela é rearmada quando Nara aprende o poder; o smoke simula essa transição, ainda sem execução no Editor.
+
+- **Recuperar comandos (20/11/2026):** botões Padrões nas abas Teclas e Controle apagam somente os vínculos daquele dispositivo, devolvendo os valores padrão por fallback. O smoke verifica o layout compacto; persistência e interação física seguem sem validação no Editor.

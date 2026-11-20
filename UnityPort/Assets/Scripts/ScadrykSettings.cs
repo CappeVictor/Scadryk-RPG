@@ -83,6 +83,18 @@ public static class ScadrykSettings
         PlayerPrefs.Save();
     }
 
+    public static void ResetKeyboardBindings()
+    {
+        for (int i = 0; i < Defaults.Length; i++) PlayerPrefs.DeleteKey("Scadryk.Key." + i);
+        PlayerPrefs.Save();
+    }
+
+    public static void ResetGamepadBindings()
+    {
+        for (int i = 0; i < PadDefaults.Length; i++) PlayerPrefs.DeleteKey("Scadryk.Pad." + i);
+        PlayerPrefs.Save();
+    }
+
     public static float MusicVolume
     {
         get => PlayerPrefs.GetFloat("Scadryk.Music", 0.42f);
