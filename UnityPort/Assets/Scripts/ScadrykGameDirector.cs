@@ -585,8 +585,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     {
         if (worldSecret == null) return;
         int requiredPower = phaseIndex == 1 && roomIndex == 0 ? 0 : phaseIndex == 2 && roomIndex == 0 ? 1 : 2;
-        if (power != requiredPower || Vector2.Distance(source, worldSecret.transform.position) > 6.5f) return;
         Vector2 spot = worldSecret.transform.position;
+        if (power != requiredPower || player == null || !player.AbilityFootprintContainsPoint(requiredPower, spot, source)) return;
         ScadrykEffects.Burst(spot, PhaseAccentColors[phaseIndex], 1.5f);
         Destroy(worldSecret);
         worldSecret = null;
@@ -1500,16 +1500,25 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     {
         if (worldSecret == null || player == null || !player.HasAbility(requiredPower)) return false;
         var playerHealthField = typeof(ScadrykPlayerController).GetField("health", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-        if (playerHealthField == null) return false;
+        var playerFacingField = typeof(ScadrykPlayerController).GetField("facing", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        if (playerHealthField == null || playerFacingField == null) return false;
         float originalHealth = player.Health;
+        Vector2 originalFacing = player.Facing;
         Vector2 sealPosition = worldSecret.transform.position;
+        Vector2 direction = Vector2.up;
+        float validDistance = requiredPower == 0 ? 2.5f : requiredPower == 1 ? 4f : 6f;
+        float invalidDistance = requiredPower == 0 ? 3.12f : requiredPower == 1 ? 4.26f : 6.41f;
+        Vector2 validSource = sealPosition - direction * validDistance;
+        Vector2 invalidSource = sealPosition - direction * invalidDistance;
         playerHealthField.SetValue(player, player.MaxHealth - 35f);
-        TryRevealSecret((requiredPower + 1) % 3, sealPosition);
-        TryRevealSecret(requiredPower, sealPosition + Vector2.right * 6.51f);
+        playerFacingField.SetValue(player, direction);
+        TryRevealSecret((requiredPower + 1) % 3, validSource);
+        TryRevealSecret(requiredPower, invalidSource);
         bool rejectedInvalidUses = worldSecret != null && Mathf.Abs(player.Health - (player.MaxHealth - 35f)) <= 0.01f;
-        if (rejectedInvalidUses) TryRevealSecret(requiredPower, sealPosition);
+        if (rejectedInvalidUses) TryRevealSecret(requiredPower, validSource);
         bool grantedReward = worldSecret == null && Mathf.Abs(player.Health - player.MaxHealth) <= 0.01f;
         playerHealthField.SetValue(player, originalHealth);
+        playerFacingField.SetValue(player, originalFacing);
         if (!rejectedInvalidUses || !grantedReward) return false;
         Debug.Log("SCADRYK_SMOKE: selo opcional exige o poder correto e restaura vida (poder " + (requiredPower + 1) + ")");
         return true;

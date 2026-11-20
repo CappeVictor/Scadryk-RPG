@@ -267,8 +267,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
             if (!hit.TryGetComponent<ScadrykEnemyHealth>(out var enemy)) continue;
             Vector2 toEnemy = (Vector2)enemy.transform.position - (Vector2)transform.position;
             float enemyRadius = EnemyCollisionRadius(enemy);
-            if (index == 0 && !WithinVisualFootprint(enemy.transform.position, transform.position, facing, 1.05f, new Vector2(4.1f, 2.8f), enemyRadius)) continue;
-            if (index == 2 && !WithinVisualFootprint(enemy.transform.position, transform.position, facing, 2.7f, new Vector2(7.4f, 4.4f), enemyRadius)) continue;
+            if ((index == 0 || index == 2) && !AbilityFootprintContainsPoint(index, enemy.transform.position, transform.position, enemyRadius)) continue;
             enemy.TakeDamage(damage);
             if (index == 0) enemy.ApplyCrescentControl();
             else if (index == 1) enemy.ApplySaltExposure();
@@ -291,6 +290,14 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         float along = Vector2.Dot(offset, forward);
         float across = Mathf.Abs(offset.x * -forward.y + offset.y * forward.x);
         return Mathf.Abs(along - forwardCenter) <= size.x * 0.5f + targetRadius && across <= size.y * 0.5f + targetRadius;
+    }
+
+    internal bool AbilityFootprintContainsPoint(int index, Vector2 target, Vector2 origin, float targetRadius = 0f)
+    {
+        if (index == 0) return WithinVisualFootprint(target, origin, facing, 1.05f, new Vector2(4.1f, 2.8f), targetRadius);
+        if (index == 1) return Vector2.Distance(target, origin) <= 4.25f + targetRadius;
+        if (index == 2) return WithinVisualFootprint(target, origin, facing, 2.7f, new Vector2(7.4f, 4.4f), targetRadius);
+        return false;
     }
 
     public void TakeDamage(float amount)
