@@ -78,6 +78,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private float roomActiveSeconds;
     private int roomDeaths;
     private int unclearAttackMarks;
+    private string sessionInputMode = "unknown";
     private bool roomSessionRecorded;
     private readonly int[] roomPowerUses = new int[3];
     private GUIStyle titleStyle, bodyStyle, smallStyle;
@@ -312,6 +313,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private void StartRoomTimer()
     {
         roomActiveSeconds = 0f;
+        sessionInputMode = "unknown";
         roomSessionRecorded = false;
     }
 
@@ -408,6 +410,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             roomActiveSeconds = 0f;
             roomDeaths = 0;
             unclearAttackMarks = 0;
+            sessionInputMode = "unknown";
             roomSessionRecorded = false;
             System.Array.Clear(roomPowerUses, 0, roomPowerUses.Length);
         }
@@ -940,18 +943,23 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (index >= 0 && index < roomPowerUses.Length) roomPowerUses[index]++;
     }
 
+    public void RecordInputMode(string mode)
+    {
+        if (mode == "keyboard_mouse" || mode == "gamepad") sessionInputMode = mode;
+    }
+
     private void RecordRoomSession()
     {
         if (smokeRun || showTitle || roomSessionRecorded) return;
         roomSessionRecorded = true;
         try
         {
-            string path = Path.Combine(Application.persistentDataPath, "scadryk-sessions-v3.csv");
-            if (!File.Exists(path)) File.WriteAllText(path, "utc,phase,room,seconds,deaths,unclear_attacks,crescent,salt,tide,enemies_left,completed\n");
+            string path = Path.Combine(Application.persistentDataPath, "scadryk-sessions-v4.csv");
+            if (!File.Exists(path)) File.WriteAllText(path, "utc,phase,room,seconds,deaths,unclear_attacks,crescent,salt,tide,enemies_left,completed,input_mode\n");
             bool completed = roomIndex >= 0 && roomIndex < clearedRooms.Length && clearedRooms[roomIndex];
             string row = System.DateTime.UtcNow.ToString("o") + "," + (phaseIndex + 1) + "," + (roomIndex + 1) + "," +
                 Mathf.RoundToInt(Mathf.Max(0f, roomActiveSeconds)) + "," + roomDeaths + "," + unclearAttackMarks + "," + roomPowerUses[0] + "," +
-                roomPowerUses[1] + "," + roomPowerUses[2] + "," + enemiesRemaining + "," + completed.ToString().ToLowerInvariant() + "\n";
+                roomPowerUses[1] + "," + roomPowerUses[2] + "," + enemiesRemaining + "," + completed.ToString().ToLowerInvariant() + "," + sessionInputMode + "\n";
             File.AppendAllText(path, row);
         }
         catch (System.Exception exception) { Debug.LogWarning("Scadryk: não foi possível registrar a sessão: " + exception.Message); }
@@ -1271,10 +1279,11 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         roomActiveSeconds = 17f;
         roomDeaths = 0;
         roomPowerUses[0] = 2;
+        RecordInputMode("gamepad");
         RestartCurrentRoom();
-        if (roomActiveSeconds != 17f || roomDeaths != 1 || roomPowerUses[0] != 2)
-        { SmokeFail("Morte reiniciou a sala mas perdeu o tempo, as mortes ou os usos de poder da sessão"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: telemetria preserva dados entre mortes na mesma sala");
+        if (roomActiveSeconds != 17f || roomDeaths != 1 || roomPowerUses[0] != 2 || sessionInputMode != "gamepad")
+        { SmokeFail("Morte reiniciou a sala mas perdeu tempo, mortes, usos de poderes ou dispositivo da sessão"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: telemetria preserva dados e dispositivo entre mortes na mesma sala");
         float laneRadius = ScadrykEnemyHealth.PlayerCollisionRadius(player);
         float laneWidth = ScadrykEnemyHealth.RootLaneVisualWidth(0.86f, laneRadius);
         if (!ScadrykEnemyHealth.RootLaneHits(new Vector2(1.5f, laneWidth * 0.5f - 0.01f), Vector2.zero, new Vector2(3.3f, 0f), 0.86f, laneRadius) ||

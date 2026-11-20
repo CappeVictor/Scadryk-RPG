@@ -84,6 +84,20 @@ public sealed class ScadrykPlayerController : MonoBehaviour
             (ScadrykSettings.Held(7) ? 1f : 0f) - (ScadrykSettings.Held(8) ? 1f : 0f));
         Vector2 stick = new Vector2(Input.GetAxisRaw("Scadryk Move X"), Input.GetAxisRaw("Scadryk Move Y"));
         moveInput = Vector2.ClampMagnitude(keyboard + stick, 1f);
+        bool keyboardAction = Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1);
+        bool gamepadAction = false;
+        for (int action = 0; action < ScadrykSettings.Actions.Length; action++)
+        {
+            keyboardAction |= ScadrykSettings.Down(action);
+            gamepadAction |= ScadrykSettings.PadDown(action);
+        }
+        if (director != null)
+        {
+            if (keyboard.sqrMagnitude > 0.01f || keyboardAction || Input.mousePosition != lastMousePosition)
+                director.RecordInputMode("keyboard_mouse");
+            if (stick.sqrMagnitude > 0.01f || gamepadAction)
+                director.RecordInputMode("gamepad");
+        }
         AimAtPointer();
         if (Input.GetMouseButtonDown(0) || ScadrykSettings.Down(0) || ScadrykSettings.PadDown(0)) Attack();
         if (ScadrykSettings.Down(1) || ScadrykSettings.PadDown(1)) Dash();
@@ -136,12 +150,14 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         {
             facing = stick.normalized;
             usingGamepadAim = true;
+            if (director != null) director.RecordInputMode("gamepad");
             return;
         }
         if (Input.mousePosition != lastMousePosition)
         {
             usingGamepadAim = false;
             lastMousePosition = Input.mousePosition;
+            if (director != null) director.RecordInputMode("keyboard_mouse");
         }
         if (usingGamepadAim) return;
         Camera cam = Camera.main;

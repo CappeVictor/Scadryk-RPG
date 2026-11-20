@@ -28,7 +28,7 @@
 - Menu inicial compacto: caixas de título, história, botões e rodapé agora respeitam a largura e a altura disponíveis; o smoke mede 400×360px. Ainda sem execução ou inspeção visual no Editor.
 - Minimapa das nove salas: cabeçalho mostra o bioma atual e cada sala recebe um rótulo próprio; o smoke confere que os nove são únicos. Ainda sem execução ou avaliação de legibilidade no Editor.
 - Escala do texto: a interface reconstrói os estilos quando a escala é alterada; a preferência agora deve surtir efeito imediatamente. A mudança ainda precisa de compilação e inspeção em 100%, 125% e 150% no Editor.
-- Telemetria após morte: reiniciar a mesma sala preserva cronômetro, contagem acumulada de mortes, marcas de perigo e uso de poderes até a sala terminar; o smoke agora verifica tempo, morte e uso de poder. Esta checagem ainda não foi executada no Unity Editor.
+- Telemetria após morte: reiniciar a mesma sala preserva cronômetro, contagem acumulada de mortes, marcas de perigo e uso de poderes até a sala terminar; o smoke agora verifica tempo, morte, uso de poder e preservação do último dispositivo. Ainda não foi executado no Unity Editor.
 - Proteção do save: solicitar uma nova jornada com checkpoint abre confirmação; cancelar mantém o menu e o progresso sem alterar PlayerPrefs. O smoke verifica a confirmação e o cancelamento, ainda sem execução no Editor.
 - Aviso de raízes: telegráfico, efeito no chão e área de dano usam a mesma margem de colisão do jogador. O smoke verifica alvos imediatamente dentro/fora da borda; ainda sem execução ou revisão visual no Editor.
 - Crescente e Rompante: dano e efeitos de controle usam os retângulos orientados dos sprites exibidos, com expansão pelo raio do colisor do inimigo; o smoke verifica as bordas frontal e lateral. Ainda sem execução, compilação ou balanceamento manual no Editor.
@@ -47,7 +47,7 @@
 
 ## Dados observados e limites
 
-O registro local histórico mostrou mortes repetidas na primeira sala em algumas tentativas de aproximadamente 15 segundos; outras passagens tiveram duração de 8 a 14 segundos e nenhuma morte. Os dados não identificam nível de experiência, método de controle ou intervenção de teste. Portanto, não autorizam concluir que o jogo está balanceado. A telemetria atual usa `scadryk-sessions-v3.csv`, acrescenta a marca F8 para ataques difíceis de perceber, distingue salas concluídas de registros interrompidos e conta tempo ativo sem pausas.
+O registro local histórico mostrou mortes repetidas na primeira sala em algumas tentativas de aproximadamente 15 segundos; outras passagens tiveram duração de 8 a 14 segundos e nenhuma morte. Os dados não identificam nível de experiência, método de controle ou intervenção de teste. Portanto, não autorizam concluir que o jogo está balanceado. A telemetria atual usa `scadryk-sessions-v4.csv`, acrescenta `input_mode` para identificar o último teclado/mouse ou gamepad detectado, mantém a marca F8 para ataques difíceis de perceber, distingue salas concluídas de registros interrompidos e conta tempo ativo sem pausas. Os registros históricos não contêm nível de experiência nem método de controle.
 
 ## Sessões com jogadores ainda necessárias
 
