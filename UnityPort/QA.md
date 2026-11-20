@@ -43,7 +43,7 @@
 - Redução de flashes: além de tirar o piscar de invulnerabilidade, a opção agora diminui a intensidade e o tamanho dos clarões, reduz as partículas da derrota de chefes e comprime a expansão dos efeitos. O smoke compara esses limites; falta observar a leitura de impactos e perigos com a opção ligada no Editor.
 - Redução de tremor: o smoke aciona uma sacudida, liga a opção e verifica que ela foi eliminada. Ainda falta conferir a alternância durante um impacto no Editor.
 - Pausa real: o relógio escalado congela em pausa, tela inicial, opções e vitória, mas continua ativo durante portais animados. O smoke aguarda tempo real e verifica que o relógio de combate não avança; ainda falta confirmar no Editor que projéteis e avisos persistem intactos enquanto a pausa está aberta.
-- Selos de exploração: o poder só revela o selo dentro da própria área visível/de acerto (arco do Crescente, raio do Estouro e retângulo do Rompante). O smoke verifica os três selos, rejeita poder e posição fora dessa geometria, confirma a cura e respeita a ordem de aquisição do Rompante após o terceiro guardião. Ainda sem execução no Unity Editor ou teste de descoberta sem instruções.
+- Selos de exploração: ficam em desvios diferentes, pulsam e mostram uma pista contextual ao chegar perto; o poder só revela o selo dentro da própria área visível/de acerto (arco do Crescente, raio do Estouro e retângulo do Rompante). O smoke verifica os três selos, rejeita poder e posição fora dessa geometria, confirma a cura e respeita a ordem de aquisição do Rompante após o terceiro guardião. Ainda sem execução no Unity Editor ou teste de descoberta sem instruções.
 - Arte de abertura: nova imagem `ScadrykTitleBackdrop.png` conecta os três biomas e é desenhada atrás do menu inicial com uma camada escura para contraste. O smoke exige que a textura seja carregada; a integração visual ainda não foi compilada ou inspecionada no Editor.
 
 ## Dados observados e limites
@@ -81,3 +81,5 @@ Use um código anônimo em vez de nome. Preencha uma ficha por sessão e não mi
 | Resumo espontâneo da história |  |
 
 Critérios para revisão: nenhum dano sem aviso reconhecível; nenhum poder fica sem uso por duas salas após ser aprendido; sala repetitiva deve ganhar decisão própria; travamento deve produzir uma pista compreensível; jogadores de níveis diferentes devem concluir a campanha sem ajuda do desenvolvedor. Ainda não há avaliação externa suficiente para declarar essa etapa aprovada.
+
+- Os selos agora ocupam lados distintos das salas e dão uma pista contextual, com o nome do poder e o vínculo atual, quando Nara se aproxima. O smoke também verifica o texto da pista junto das geometrias de cada poder. Fonte atualizada; compilação, leitura da pista no ritmo normal e descoberta sem ajuda continuam pendentes no Unity Editor.

@@ -38,6 +38,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private int witnessLine;
     private ScadrykEnemyHealth finalBoss;
     private GameObject worldSecret;
+    private bool worldSecretHintShown;
     private readonly GameObject[] roomAnchors = new GameObject[2];
     private int anchorsRequired, anchorsActivated, hintStage;
     private bool anchorsNeedPulse;
@@ -149,6 +150,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             ShowStatus(ProgressHint(phaseIndex * RoomsPerPhase + roomIndex, anchorsActivated, hintStage), 7f);
             hintStage++;
         }
+        if (!IsPaused) TryShowWorldSecretHint();
         if (!IsPaused && Input.GetKeyDown(KeyCode.F8))
         {
             unclearAttackMarks++;
@@ -582,11 +584,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private void BuildWorldSecret()
     {
         worldSecret = null;
-        int requiredPower = phaseIndex == 1 && roomIndex == 0 ? 0 :
-            phaseIndex == 2 && roomIndex == 0 ? 1 :
-            phaseIndex == 2 && roomIndex == 2 ? 2 : -1;
+        worldSecretHintShown = false;
+        int requiredPower = RequiredWorldSecretPower();
         if (requiredPower < 0) return;
-        Vector2 spot = roomCenter + new Vector2(0.8f, 4.75f);
+        Vector2 spot = requiredPower == 0 ? roomCenter + new Vector2(6.8f, 4.15f) :
+            requiredPower == 1 ? roomCenter + new Vector2(-7.2f, -4.1f) :
+            roomCenter + new Vector2(7.2f, 4.15f);
         worldSecret = new GameObject("Hidden echo seal — power " + (requiredPower + 1));
         worldSecret.transform.SetParent(levelRoot.transform);
         worldSecret.transform.position = spot;
@@ -595,13 +598,35 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         marker.color = new Color(PhaseAccentColors[phaseIndex].r, PhaseAccentColors[phaseIndex].g, PhaseAccentColors[phaseIndex].b, 0.72f);
         marker.sortingOrder = 2;
         worldSecret.transform.localScale = Vector3.one * 0.75f;
+        worldSecret.AddComponent<ScadrykAmbientProp>().Configure(ScadrykAmbientMotion.Glow, 1.2f);
         MakeDecoration(worldSecret.transform, "Seal center", spot, new Vector2(0.2f, 0.2f), Color.white, true, 3);
+    }
+
+    private int RequiredWorldSecretPower() => phaseIndex == 1 && roomIndex == 0 ? 0 :
+        phaseIndex == 2 && roomIndex == 0 ? 1 : phaseIndex == 2 && roomIndex == 2 ? 2 : -1;
+
+    private string WorldSecretHint(int power)
+    {
+        string[] names = { "Crescente Verdejante", "Estouro de Sal", "Rompante da Maré" };
+        string binding = InputBinding(power + 3);
+        return "Selo de Eco: use " + names[power] + " (" + binding + ") perto dele para libertar uma memória.";
+    }
+
+    private bool TryShowWorldSecretHint()
+    {
+        if (worldSecretHintShown || worldSecret == null || player == null ||
+            Vector2.Distance(player.transform.position, worldSecret.transform.position) > 3.2f) return false;
+        int power = RequiredWorldSecretPower();
+        if (power < 0) return false;
+        ShowStatus(WorldSecretHint(power), 6f);
+        worldSecretHintShown = true;
+        return true;
     }
 
     public void TryRevealSecret(int power, Vector2 source)
     {
         if (worldSecret == null) return;
-        int requiredPower = phaseIndex == 1 && roomIndex == 0 ? 0 : phaseIndex == 2 && roomIndex == 0 ? 1 : 2;
+        int requiredPower = RequiredWorldSecretPower();
         Vector2 spot = worldSecret.transform.position;
         if (power != requiredPower || player == null || !player.AbilityFootprintContainsPoint(requiredPower, spot, source)) return;
         ScadrykEffects.Burst(spot, PhaseAccentColors[phaseIndex], 1.5f);
@@ -1613,6 +1638,17 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private bool SmokeRevealWorldSecret(int requiredPower)
     {
         if (worldSecret == null || player == null || !player.HasAbility(requiredPower)) return false;
+        string[] powerNames = { "Crescente Verdejante", "Estouro de Sal", "Rompante da Maré" };
+        if (requiredPower < 0 || requiredPower >= powerNames.Length || !WorldSecretHint(requiredPower).Contains(powerNames[requiredPower])) return false;
+        Vector2 originalPosition = player.transform.position;
+        bool originalHintState = worldSecretHintShown;
+        player.transform.position = worldSecret.transform.position + Vector3.down * 2f;
+        worldSecretHintShown = false;
+        bool hintShown = TryShowWorldSecretHint() && statusMessage.Contains(powerNames[requiredPower]) &&
+            statusMessage.Contains("(" + InputBinding(requiredPower + 3) + ")");
+        player.transform.position = originalPosition;
+        worldSecretHintShown = originalHintState;
+        if (!hintShown) return false;
         var playerHealthField = typeof(ScadrykPlayerController).GetField("health", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
         var playerFacingField = typeof(ScadrykPlayerController).GetField("facing", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
         if (playerHealthField == null || playerFacingField == null) return false;

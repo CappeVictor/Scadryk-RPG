@@ -67,3 +67,5 @@ Nara é uma Ouvinte que preserva histórias em três sinos de travessia. Os Ecos
 5. Completar salvamento, opções, suporte a controle e QA com sessões documentadas.
 
 As referências de outros jogos orientam clareza, descoberta e ritmo. Não reproduzir conteúdo protegido nem alegar paridade sem evidência comparativa.
+
+- **Descoberta dos selos (20/11/2026):** os três selos opcionais agora ficam em pontos diferentes das salas e pulsam suavemente. Ao se aproximar, a pista apresenta o poder correto e seu vínculo atual; a recompensa segue opcional. O smoke inclui uma checagem do texto da pista, mas descoberta, visibilidade e legibilidade ainda não foram avaliadas no Editor nem por jogadores.
