@@ -1237,6 +1237,14 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             ScadrykEnemyHealth.RootLaneHits(new Vector2(1.5f, laneWidth * 0.5f + 0.01f), Vector2.zero, new Vector2(3.3f, 0f), 0.86f, laneRadius))
         { SmokeFail("A borda de dano do golpe de raízes não corresponde à largura anunciada"); yield break; }
         Debug.Log("SCADRYK_SMOKE: largura do aviso de raízes corresponde à área de dano");
+        if (!ScadrykPlayerController.WithinVisualFootprint(new Vector2(3.09f, 0f), Vector2.zero, Vector2.right, 1.05f, new Vector2(4.1f, 2.8f)) ||
+            ScadrykPlayerController.WithinVisualFootprint(new Vector2(3.11f, 0f), Vector2.zero, Vector2.right, 1.05f, new Vector2(4.1f, 2.8f)) ||
+            !ScadrykPlayerController.WithinVisualFootprint(new Vector2(6.39f, 0f), Vector2.zero, Vector2.right, 2.7f, new Vector2(7.4f, 4.4f)) ||
+            ScadrykPlayerController.WithinVisualFootprint(new Vector2(6.41f, 0f), Vector2.zero, Vector2.right, 2.7f, new Vector2(7.4f, 4.4f)) ||
+            !ScadrykPlayerController.WithinVisualFootprint(new Vector2(1.5f, 1.39f), Vector2.zero, Vector2.right, 1.05f, new Vector2(4.1f, 2.8f)) ||
+            ScadrykPlayerController.WithinVisualFootprint(new Vector2(1.5f, 1.41f), Vector2.zero, Vector2.right, 1.05f, new Vector2(4.1f, 2.8f)))
+        { SmokeFail("As áreas de acerto dos poderes Crescente e Rompante divergem das dimensões dos efeitos visuais"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: áreas do Crescente e Rompante respeitam as dimensões anunciadas");
         var mapLabels = new System.Collections.Generic.HashSet<string>();
         for (int phase = 0; phase < PhaseNames.Length; phase++)
             for (int room = 0; room < RoomsPerPhase; room++)

@@ -266,13 +266,31 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         {
             if (!hit.TryGetComponent<ScadrykEnemyHealth>(out var enemy)) continue;
             Vector2 toEnemy = (Vector2)enemy.transform.position - (Vector2)transform.position;
-            if (index == 0 && (toEnemy.magnitude > radius || Vector2.Dot(facing, toEnemy.normalized) < 0.12f)) continue;
-            if (index == 2 && (toEnemy.magnitude > radius || Vector2.Dot(facing, toEnemy.normalized) < 0.28f)) continue;
+            float enemyRadius = EnemyCollisionRadius(enemy);
+            if (index == 0 && !WithinVisualFootprint(enemy.transform.position, transform.position, facing, 1.05f, new Vector2(4.1f, 2.8f), enemyRadius)) continue;
+            if (index == 2 && !WithinVisualFootprint(enemy.transform.position, transform.position, facing, 2.7f, new Vector2(7.4f, 4.4f), enemyRadius)) continue;
             enemy.TakeDamage(damage);
             if (index == 0) enemy.ApplyCrescentControl();
             else if (index == 1) enemy.ApplySaltExposure();
             else enemy.ApplyTidePush(toEnemy);
         }
+    }
+
+    private static float EnemyCollisionRadius(ScadrykEnemyHealth enemy)
+    {
+        CircleCollider2D collider = enemy != null ? enemy.GetComponent<CircleCollider2D>() : null;
+        if (collider == null) return 0f;
+        Vector3 scale = enemy.transform.lossyScale;
+        return collider.radius * Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.y));
+    }
+
+    internal static bool WithinVisualFootprint(Vector2 target, Vector2 origin, Vector2 direction, float forwardCenter, Vector2 size, float targetRadius = 0f)
+    {
+        Vector2 forward = direction.sqrMagnitude > 0.001f ? direction.normalized : Vector2.right;
+        Vector2 offset = target - origin;
+        float along = Vector2.Dot(offset, forward);
+        float across = Mathf.Abs(offset.x * -forward.y + offset.y * forward.x);
+        return Mathf.Abs(along - forwardCenter) <= size.x * 0.5f + targetRadius && across <= size.y * 0.5f + targetRadius;
     }
 
     public void TakeDamage(float amount)
