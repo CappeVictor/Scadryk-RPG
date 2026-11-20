@@ -1211,7 +1211,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 if (queuedStageField == null || attackIndexField == null || attackTargetField == null || beginBossAttack == null || resolveBossAttack == null)
                 { SmokeFail("Não foi possível preparar a checagem de fase do Arauto"); yield break; }
                 foreach (ScadrykEnemyProjectile projectile in FindObjectsByType<ScadrykEnemyProjectile>(FindObjectsSortMode.None))
-                    if (projectile != null) Destroy(projectile.gameObject);
+                    if (projectile != null) { projectile.gameObject.SetActive(false); Destroy(projectile.gameObject); }
                 attackIndexField.SetValue(finalBoss, 0);
                 attackTargetField.SetValue(finalBoss, (Vector2)player.transform.position);
                 beginBossAttack.Invoke(finalBoss, null);
@@ -1225,6 +1225,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 {
                     if (projectile == null) continue;
                     if (projectile.gameObject.name == "Arauto — remembered volley") announcedVolleyCount++;
+                    projectile.gameObject.SetActive(false);
                     Destroy(projectile.gameObject);
                 }
                 if (announcedVolleyCount != 3)
