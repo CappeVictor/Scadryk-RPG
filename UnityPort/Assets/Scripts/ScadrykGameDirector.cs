@@ -1268,7 +1268,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             if (phaseIndex == PhaseNames.Length - 1 && roomIndex == RoomsPerPhase - 1 && enemy.IsBoss)
             {
                 if (player != null) player.RestoreHealth(player.MaxHealth);
-                SpawnFinalBoss();
+                enemiesRemaining = 1;
+                ShowStatus("Nara escuta a última lembrança antes que algo desperte além dos sinos.", 7f);
+                StartCoroutine(SpawnFinalBossAfterMemory());
                 return;
             }
             statusMessage = anchorsActivated >= anchorsRequired ? "Sala limpa. Interaja com a passagem (" + InputBinding(6) + ")." :
@@ -1374,6 +1376,13 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         bossObject.AddComponent<ScadrykHealthBar>().Configure(false, true, 2.25f);
         statusMessage = "Rompante da Maré (" + InputBinding(5) + ") aprendido! O Arauto do Vazio despertou com três ataques.";
         statusUntil = Time.time + 8f;
+    }
+
+    private IEnumerator SpawnFinalBossAfterMemory()
+    {
+        while (Time.time < memoryUntil) yield return null;
+        if (player == null || victory || showTitle) yield break;
+        SpawnFinalBoss();
     }
 
     private void UnlockExit()
@@ -1943,6 +1952,10 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             if (!ActiveRoomHasWalkableRoute(roomCenter))
             { SmokeFail("A geometria sólida ativa bloqueou a rota caminhável da sala " + (room + 1)); yield break; }
             Debug.Log("SCADRYK_SMOKE: rota da sala " + (room + 1) + "/9 livre dos colisores sólidos do bioma");
+            if (room == 8 && finalBoss != null)
+            { SmokeFail("O Arauto apareceu antes de Nara concluir a memória do terceiro guardião"); yield break; }
+            if (room == 8 && !statusMessage.Contains("última lembrança"))
+            { SmokeFail("O intervalo seguro antes do Arauto não explicou a última lembrança"); yield break; }
             if (room == 8 && (worldSecretHintShown || !player.HasAbility(2) ||
                 !WorldSecretHint(2).Contains("Rompante da Maré")))
             { SmokeFail("A pista do selo não foi atualizada após aprender Rompante com o guardião"); yield break; }
@@ -1950,6 +1963,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             { SmokeFail("O selo opcional da costa não exigiu Rompante ou não concedeu cura após o guardião"); yield break; }
             if (room == 8)
             {
+                float finalBossSpawnDeadline = Time.time + 8f;
+                while (finalBoss == null && Time.time < finalBossSpawnDeadline) yield return null;
                 if (finalBoss == null) { SmokeFail("Arauto não surgiu após o terceiro guardião"); yield break; }
                 if (string.IsNullOrEmpty(InputBinding(5)) || !statusMessage.Contains(InputBinding(5)))
                 { SmokeFail("O aviso do terceiro poder não mostrou o vínculo atual antes da luta final"); yield break; }
