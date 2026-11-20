@@ -12,6 +12,7 @@
 - Etapa de navegação/remapeamento de gamepad implementada na fonte: analógico navega, A confirma, B volta, Start pausa; a aba Controle permite associar botões aos sete comandos de combate. Checagem com controle físico, compilação e inspeção de foco visual ainda pendentes; sem resultado de build ou aceite desta etapa.
 - Escopo de CI conferido: `.github/workflows/validate.yml` compila, testa e publica somente `Scadryk.csproj` (Windows Forms/.NET da raiz). O commit Unity atual não tem checks associados, e esse workflow não compila `UnityPort`. Uma build no Editor Unity continua sendo necessária para validar os scripts do port.
 - Nova etapa de narrativa: Nima reaparece nos dois espaços calmos após derrotar os guardiões da floresta e do sal; cada visita oferece duas falas contextuais e um som próprio. O smoke test agora verifica presença e primeira resposta de interação. A fonte e a verificação foram preparadas, ainda sem execução no Editor, inspeção de legibilidade ou captura.
+- Correção do minimapa: `BuildPhase` reconstrói como concluídas as salas anteriores ao portal salvo e o smoke verifica as marcas após cada transição. Fonte alterada; ainda sem execução no Unity.
 
 ## Dados observados e limites
 

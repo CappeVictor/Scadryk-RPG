@@ -277,6 +277,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (levelRoot != null) Destroy(levelRoot);
         if (gateObject != null) Destroy(gateObject);
         gateObject = null;
+        if (newGame || phaseIndex != newPhase)
+            System.Array.Clear(clearedRooms, 0, clearedRooms.Length);
+        for (int i = 0; i < Mathf.Clamp(newRoom, 0, RoomsPerPhase); i++) clearedRooms[i] = true;
         phaseIndex = newPhase; roomIndex = newRoom; victory = false;
         roomCenter = new Vector2(roomIndex * RoomSpacing, 0f);
         exitPosition = roomCenter + Vector2.right * 8.05f;
@@ -1089,6 +1092,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         for (int room = 0; room < 9; room++)
         {
             if (phaseIndex * RoomsPerPhase + roomIndex != room) { SmokeFail("Sala inesperada: " + room); yield break; }
+            for (int previousRoom = 0; previousRoom < roomIndex; previousRoom++)
+                if (!clearedRooms[previousRoom]) { SmokeFail("O mapa não marcou a sala anterior como concluída: " + previousRoom); yield break; }
             foreach (ScadrykEnemyHealth enemy in FindObjectsByType<ScadrykEnemyHealth>(FindObjectsSortMode.None))
                 if (enemy != null && !enemy.IsFinalBoss) enemy.TakeDamage(99999f);
             if (room == 8)
