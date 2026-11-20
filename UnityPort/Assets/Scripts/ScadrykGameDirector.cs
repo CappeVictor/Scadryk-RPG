@@ -23,7 +23,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private int phaseIndex, roomIndex, enemiesRemaining;
     private static bool smokeRun;
-    private bool isPaused, victory, transitioning, showTitle = true, showOptions;
+    private bool isPaused, victory, transitioning, showTitle = true, showOptions, confirmNewJourney;
     private int rebindingAction = -1;
     private int gamepadRebindAction = -1;
     private int optionsTab, optionsSelection, overlaySelection;
@@ -123,7 +123,10 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             roomActiveSeconds += Time.deltaTime;
         if (transitioning) return;
         if (showTitle && !showOptions && Input.GetKeyDown(KeyCode.Return))
-            BeginJourney();
+        {
+            if (confirmNewJourney) SubmitGamepadOverlay();
+            else BeginJourney();
+        }
         if ((showTitle || isPaused) && !showOptions && Input.GetKeyDown(KeyCode.O))
         {
             showOptions = true; optionsTab = 0; optionsSelection = 0; gamepadRebindAction = rebindingAction = -1;
@@ -131,6 +134,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (!victory && (Input.GetKeyDown(KeyCode.Escape) || ScadrykSettings.PadButtonDown(7)))
         {
             if (showOptions) { showOptions = false; rebindingAction = gamepadRebindAction = -1; }
+            else if (confirmNewJourney) { confirmNewJourney = false; overlaySelection = 0; }
             else if (!showTitle) isPaused = !isPaused;
         }
         if (showOptions || showTitle || isPaused || victory) UpdateGamepadMenus();
@@ -181,7 +185,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 int max = optionsTab == 0 ? 8 : optionsTab == 1 ? 14 : 10;
                 optionsSelection = Mathf.Clamp(optionsSelection - (navigation.y > 0f ? 1 : -1), 0, max);
             }
-            else overlaySelection = Mathf.Clamp(overlaySelection - (navigation.y > 0f ? 1 : -1), victory ? 1 : 0, victory ? 1 : 2);
+            else overlaySelection = Mathf.Clamp(overlaySelection - (navigation.y > 0f ? 1 : -1), victory ? 1 : 0, confirmNewJourney || victory ? 1 : 2);
             nextGamepadNavigationAt = Time.unscaledTime + 0.2f;
         }
         else if (Mathf.Abs(navigation.y) < 0.2f) nextGamepadNavigationAt = 0f;
@@ -209,18 +213,26 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         }
 
         if (ScadrykSettings.PadButtonDown(0)) SubmitGamepadOverlay();
-        if (ScadrykSettings.PadButtonDown(1) && !showTitle && !victory) isPaused = false;
+        if (ScadrykSettings.PadButtonDown(1) && confirmNewJourney) { confirmNewJourney = false; overlaySelection = 0; }
+        else if (ScadrykSettings.PadButtonDown(1) && !showTitle && !victory) isPaused = false;
     }
 
     private void SubmitGamepadOverlay()
     {
         if (victory) { StartNewGame(); return; }
+        if (confirmNewJourney)
+        {
+            confirmNewJourney = false;
+            if (overlaySelection == 0) StartNewGame();
+            else overlaySelection = 0;
+            return;
+        }
         if (overlaySelection == 0)
         {
             if (showTitle) BeginJourney();
             else isPaused = false;
         }
-        else if (overlaySelection == 1) StartNewGame();
+        else if (overlaySelection == 1) RequestNewGame();
         else { showOptions = true; optionsTab = 0; optionsSelection = 0; }
     }
 
@@ -251,6 +263,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private void StartNewGame()
     {
+        confirmNewJourney = false;
         PlayerPrefs.DeleteKey("Scadryk.Phase");
         PlayerPrefs.DeleteKey("Scadryk.Room");
         PlayerPrefs.Save();
@@ -261,9 +274,27 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         ShowMemory("Quando os três sinos calaram, Nara ainda ouvia os nomes esquecidos. Ela entrou nas margens para devolvê-los ao mundo.", 8f);
     }
 
+    private void RequestNewGame()
+    {
+        RequestNewGame(PlayerPrefs.HasKey("Scadryk.Phase"));
+    }
+
+    private void RequestNewGame(bool hasSavedProgress)
+    {
+        if (hasSavedProgress)
+        {
+            confirmNewJourney = true;
+            overlaySelection = 0;
+            return;
+        }
+        StartNewGame();
+    }
+
     private void BeginJourney()
     {
         bool firstStart = showTitle && !PlayerPrefs.HasKey("Scadryk.Phase");
+        confirmNewJourney = false;
+        overlaySelection = 0;
         showTitle = isPaused = false;
         StartRoomTimer();
         if (firstStart) ShowMemory("Quando os três sinos calaram, Nara ainda ouvia os nomes esquecidos. Ela entrou nas margens para devolvê-los ao mundo.", 8f);
@@ -1187,6 +1218,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         yield return null;
         if (titleBackdropTexture == null) { SmokeFail("A arte de abertura ScadrykTitleBackdrop não foi carregada"); yield break; }
         Debug.Log("SCADRYK_SMOKE: arte original da tela inicial carregada");
+        RequestNewGame(true);
+        if (!confirmNewJourney) { SmokeFail("Uma jornada nova não pediu confirmação diante de progresso salvo"); yield break; }
+        overlaySelection = 1;
+        SubmitGamepadOverlay();
+        if (confirmNewJourney || overlaySelection != 0) { SmokeFail("Cancelar a jornada nova não restaurou o menu sem apagar o checkpoint"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: nova jornada com save pode ser cancelada");
         roomActiveSeconds = 17f;
         roomDeaths = 0;
         roomPowerUses[0] = 2;
@@ -1501,7 +1538,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             GUI.DrawTexture(screenRect, Texture2D.whiteTexture);
         }
         GUI.color = Color.white;
-        string heading = victory ? "AS VOZES VOLTAM" : showTitle ? "SCADRYK" : "PAUSADO";
+        string heading = confirmNewJourney ? "NOVA JORNADA?" : victory ? "AS VOZES VOLTAM" : showTitle ? "SCADRYK" : "PAUSADO";
         float center = Screen.width * 0.5f;
         bool compact = Screen.height < 520f;
         float top = compact ? 18f : Screen.height * 0.29f;
@@ -1514,16 +1551,24 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         float buttonY = top + (compact ? 136f : 132f);
         float buttonHeight = compact ? 40f : 44f;
         float buttonStep = compact ? 48f : 54f;
-        GUI.Label(new Rect(center - titleWidth * 0.5f, top, titleWidth, titleHeight), heading, centeredTitleStyle);
-        string message = victory ? "Nara devolveu as vozes aos três lugares. A verdade da onda pode ser lembrada sem manter ninguém preso. O limiar agora é uma passagem, não uma prisão." :
-            showTitle ? "Nara, a Ouvinte, segue os Ecos até a origem do silêncio." : "A jornada pode esperar por você.";
-        GUI.Label(new Rect(center - messageWidth * 0.5f, messageTop, messageWidth, messageHeight), message, centeredBodyStyle);
-        if (!victory && OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY, buttonWidth, buttonHeight), showTitle ? (PlayerPrefs.HasKey("Scadryk.Phase") ? "Continuar jornada" : "Começar jornada") : "Continuar", 0))
-            BeginJourney();
-        if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep, buttonWidth, buttonHeight), "Nova jornada", 1)) StartNewGame();
-        if (!victory && OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep * 2f, buttonWidth, buttonHeight), "Opções e controles", 2)) { showOptions = true; optionsTab = optionsSelection = 0; }
         float footerWidth = Mathf.Min(600f, Screen.width - 32f), footerHeight = compact ? 28f : 35f;
         float footerTop = Screen.height - (compact ? 42f : 58f);
+        GUI.Label(new Rect(center - titleWidth * 0.5f, top, titleWidth, titleHeight), heading, centeredTitleStyle);
+        string message = confirmNewJourney ? "Uma jornada nova apaga o progresso salvo. Quer substituir seu checkpoint?" :
+            victory ? "Nara devolveu as vozes aos três lugares. A verdade da onda pode ser lembrada sem manter ninguém preso. O limiar agora é uma passagem, não uma prisão." :
+            showTitle ? "Nara, a Ouvinte, segue os Ecos até a origem do silêncio." : "A jornada pode esperar por você.";
+        GUI.Label(new Rect(center - messageWidth * 0.5f, messageTop, messageWidth, messageHeight), message, centeredBodyStyle);
+        if (confirmNewJourney)
+        {
+            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY, buttonWidth, buttonHeight), "Apagar e começar", 0)) StartNewGame();
+            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep, buttonWidth, buttonHeight), "Manter progresso", 1)) { confirmNewJourney = false; overlaySelection = 0; }
+            GUI.Label(new Rect(center - footerWidth * 0.5f, footerTop, footerWidth, footerHeight), "Esc, B ou Start cancela", centeredBodyStyle);
+            return;
+        }
+        if (!victory && OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY, buttonWidth, buttonHeight), showTitle ? (PlayerPrefs.HasKey("Scadryk.Phase") ? "Continuar jornada" : "Começar jornada") : "Continuar", 0))
+            BeginJourney();
+        if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep, buttonWidth, buttonHeight), "Nova jornada", 1)) RequestNewGame();
+        if (!victory && OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep * 2f, buttonWidth, buttonHeight), "Opções e controles", 2)) { showOptions = true; optionsTab = optionsSelection = 0; }
         GUI.Label(new Rect(center - footerWidth * 0.5f, footerTop, footerWidth, footerHeight), "Três lugares · nove salas · memórias a libertar", centeredBodyStyle);
     }
 
