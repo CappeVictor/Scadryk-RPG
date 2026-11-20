@@ -101,7 +101,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
             if (stick.sqrMagnitude > 0.01f || gamepadAction)
                 director.RecordInputMode("gamepad");
         }
-        AimAtPointer();
+        AimAtPointer(keyboard.sqrMagnitude > 0.01f || keyboardAction, stick.sqrMagnitude > 0.01f || gamepadAction);
         if (mouseAttack || keyboardAttack || gamepadAttack) Attack();
         if (keyboardDash || gamepadDash) Dash();
         if (keyboardPulse || mousePulse || gamepadPulse) Shockwave();
@@ -146,28 +146,41 @@ public sealed class ScadrykPlayerController : MonoBehaviour
             if (zone != null) terrainSpeedScale = Mathf.Min(terrainSpeedScale, zone.MovementScale);
     }
 
-    private void AimAtPointer()
+    private void AimAtPointer(bool keyboardMouseInput, bool gamepadInput)
     {
+        if (Input.mousePosition != lastMousePosition)
+        {
+            keyboardMouseInput = true;
+            lastMousePosition = Input.mousePosition;
+        }
         Vector2 stick = new Vector2(Input.GetAxisRaw("Scadryk Aim X"), -Input.GetAxisRaw("Scadryk Aim Y"));
         if (stick.sqrMagnitude > 0.09f)
         {
-            facing = stick.normalized;
+            facing = ResolveGamepadFacing(facing, stick, Vector2.zero);
             usingGamepadAim = true;
             if (director != null) director.RecordInputMode("gamepad");
             return;
         }
-        if (Input.mousePosition != lastMousePosition)
+        if (keyboardMouseInput) usingGamepadAim = false;
+        if (gamepadInput) usingGamepadAim = true;
+        if (usingGamepadAim)
         {
-            usingGamepadAim = false;
-            lastMousePosition = Input.mousePosition;
-            if (director != null) director.RecordInputMode("keyboard_mouse");
+            facing = ResolveGamepadFacing(facing, Vector2.zero, new Vector2(Input.GetAxisRaw("Scadryk Move X"), Input.GetAxisRaw("Scadryk Move Y")));
+            return;
         }
-        if (usingGamepadAim) return;
+        if (keyboardMouseInput && director != null) director.RecordInputMode("keyboard_mouse");
         Camera cam = Camera.main;
         if (cam == null) return;
         Vector3 pointer = cam.ScreenToWorldPoint(Input.mousePosition);
         Vector2 aim = (Vector2)pointer - body.position;
         if (aim.sqrMagnitude > 0.03f) facing = aim.normalized;
+    }
+
+    internal static Vector2 ResolveGamepadFacing(Vector2 lastFacing, Vector2 aimStick, Vector2 moveStick)
+    {
+        if (aimStick.sqrMagnitude > 0.09f) return aimStick.normalized;
+        if (moveStick.sqrMagnitude > 0.01f) return moveStick.normalized;
+        return lastFacing.sqrMagnitude > 0.001f ? lastFacing.normalized : Vector2.right;
     }
 
     public void SetSpriteFrames(Sprite[] frames)

@@ -99,3 +99,5 @@ Critérios para revisão: nenhum dano sem aviso reconhecível; nenhum poder fica
 - Recuperação de remapeamento: abas Teclas e Controle agora têm um botão Padrões separado, que remove apenas os vínculos salvos daquele dispositivo e volta aos padrões definidos no projeto. O smoke mede a faixa do botão ao lado das instruções em largura compacta; a interação e persistência aguardam compilação no Unity.
 
 - Cancelamento de remapeamento: Esc ou Start durante a captura cancela somente a seleção do novo vínculo e mantém as opções abertas; outro toque fecha o menu. O smoke verifica estados de captura ativos/inativos; sequência física no controle e teclado ainda aguarda Editor.
+
+- Mira no controle: ataques pelo gamepad não devem seguir o cursor do mouse quando o analógico direito está neutro. Agora a mira usa o analógico direito, acompanha o analógico esquerdo ao andar, e conserva a última direção se Nara estiver parada. O smoke verifica essas três prioridades; compilação, execução e teste físico continuam pendentes no Unity Editor.
