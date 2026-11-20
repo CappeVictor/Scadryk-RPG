@@ -1,14 +1,14 @@
 # Scadryk — diagnóstico e direção
 
-## Revisão de estado (19/11/2026, após `95886b2`)
+## Revisão de estado (20/11/2026; branch `codex/unity-playable-phase-maps`)
 
-**Já implementado:** campanha top-down com três biomas e nove salas; três poderes de guardiões; quatro papéis de Eco; Arauto em fases; objetivos de ressonância, vestígios narrativos, menu, pausa, opções de acessibilidade, remapeamento e áudio procedural. Há salvamento de progresso e telemetria local. A cobertura de cenário bloqueia alguns projéteis e ataques, e passou pelo smoke test de campanha.
+**Já implementado na fonte:** campanha top-down com três biomas e nove salas; três poderes de guardiões; quatro papéis de Eco; Arauto em fases; objetivos de ressonância, vestígios narrativos, menu, pausa, opções de acessibilidade, remapeamento, áudio procedural, salvamento de progresso e telemetria local. As melhorias recentes também alinham a história de Nara e Nima, aguardam a leitura da memória antes do Arauto, identificam o portal no minimapa e verificam regras de cobertura por fonte e smoke test ainda não executado.
 
-**Validação pendente:** a build normal mais recente é Stage9. A mudança de cobertura ainda não tem build normal, porque o Windows bloqueou `Bee.TinyProfiler2.dll` do Unity por política App Control. Não há jogadores externos disponíveis agora; controle físico, legibilidade em telas menores, balanceamento e conclusão manual das nove salas continuam sem evidência suficiente.
+**Validação pendente:** a build normal mais recente registrada continua Stage9; as alterações posteriores no UnityPort ainda não foram compiladas nem executadas. Uma tentativa anterior foi bloqueada pelo App Control do Windows (`Bee.TinyProfiler2.dll`); a checagem atual também não encontrou Unity Editor instalado, e `C:\Outros Arquivos` segue sem permissão de gravação para esta conta, portanto a pasta pedida para instalação não existe. O jogo não foi aberto neste PC. Controle físico, legibilidade em telas menores, balanceamento e conclusão manual das nove salas continuam sem evidência suficiente.
 
 **Riscos técnicos:** `ScadrykGameDirector.cs` concentra vários sistemas; o HUD IMGUI usa medidas absolutas; testes automatizados usam dano artificial e não validam sensação ou dificuldade. Não declarar a campanha finalizada nem paridade de qualidade antes da build normal atualizada e sessões de jogo observadas.
 
-## Inspeção de código e conteúdo (19/11/2026, branch `codex/unity-playable-phase-maps`)
+## Inspeção de código e conteúdo (20/11/2026, branch `codex/unity-playable-phase-maps`)
 
 - O port é um projeto Unity 6.6.9f1 válido: uma cena serializada, 16 scripts de runtime, quatro ferramentas de editor, `ProjectSettings`, pacotes e 40 PNG originais em `Resources/ScadrykArt` (cerca de 68 MB). As nove salas são construídas em runtime pelo diretor; não são nove cenas separadas.
 - `ScadrykPlayerController` usa `Rigidbody2D`, aceleração, mira por mouse/analógico, ataques com janela de 0,12 s, esquiva invulnerável, pulso e três poderes. `ScadrykEnemyHealth` contém quatro papéis de Eco, avisos de ataque, cobertura por raycast, guardiões e três fases do Arauto. `ScadrykGameDirector` concentra geração de salas, portais, objetivos, saves, métricas, menus e smoke test (1.148 linhas na inspeção).
