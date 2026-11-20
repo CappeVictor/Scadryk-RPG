@@ -84,13 +84,16 @@ public sealed class ScadrykPlayerController : MonoBehaviour
             (ScadrykSettings.Held(7) ? 1f : 0f) - (ScadrykSettings.Held(8) ? 1f : 0f));
         Vector2 stick = new Vector2(Input.GetAxisRaw("Scadryk Move X"), Input.GetAxisRaw("Scadryk Move Y"));
         moveInput = Vector2.ClampMagnitude(keyboard + stick, 1f);
-        bool keyboardAction = Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1);
-        bool gamepadAction = false;
-        for (int action = 0; action < ScadrykSettings.Actions.Length; action++)
-        {
-            keyboardAction |= ScadrykSettings.Down(action);
-            gamepadAction |= ScadrykSettings.PadDown(action);
-        }
+        bool keyboardAttack = ScadrykSettings.Down(0), gamepadAttack = ScadrykSettings.PadDown(0);
+        bool keyboardDash = ScadrykSettings.Down(1), gamepadDash = ScadrykSettings.PadDown(1);
+        bool keyboardPulse = ScadrykSettings.Down(2), gamepadPulse = ScadrykSettings.PadDown(2);
+        bool keyboardCrescent = ScadrykSettings.Down(3), gamepadCrescent = ScadrykSettings.PadDown(3);
+        bool keyboardSaltburst = ScadrykSettings.Down(4), gamepadSaltburst = ScadrykSettings.PadDown(4);
+        bool keyboardTidebreaker = ScadrykSettings.Down(5), gamepadTidebreaker = ScadrykSettings.PadDown(5);
+        bool keyboardInteract = ScadrykSettings.Down(6), gamepadInteract = ScadrykSettings.PadDown(6);
+        bool mouseAttack = Input.GetMouseButtonDown(0), mousePulse = Input.GetMouseButtonDown(1);
+        bool keyboardAction = keyboardAttack || keyboardDash || keyboardPulse || keyboardCrescent || keyboardSaltburst || keyboardTidebreaker || keyboardInteract || mouseAttack || mousePulse;
+        bool gamepadAction = gamepadAttack || gamepadDash || gamepadPulse || gamepadCrescent || gamepadSaltburst || gamepadTidebreaker || gamepadInteract;
         if (director != null)
         {
             if (keyboard.sqrMagnitude > 0.01f || keyboardAction || Input.mousePosition != lastMousePosition)
@@ -99,13 +102,13 @@ public sealed class ScadrykPlayerController : MonoBehaviour
                 director.RecordInputMode("gamepad");
         }
         AimAtPointer();
-        if (Input.GetMouseButtonDown(0) || ScadrykSettings.Down(0) || ScadrykSettings.PadDown(0)) Attack();
-        if (ScadrykSettings.Down(1) || ScadrykSettings.PadDown(1)) Dash();
-        if (ScadrykSettings.Down(2) || Input.GetMouseButtonDown(1) || ScadrykSettings.PadDown(2)) Shockwave();
-        if (ScadrykSettings.Down(3) || ScadrykSettings.PadDown(3)) UseAbility(0);
-        if (ScadrykSettings.Down(4) || ScadrykSettings.PadDown(4)) UseAbility(1);
-        if (ScadrykSettings.Down(5) || ScadrykSettings.PadDown(5)) UseAbility(2);
-        if ((ScadrykSettings.Down(6) || ScadrykSettings.PadDown(6)) && director != null) director.TryInteract(transform.position);
+        if (mouseAttack || keyboardAttack || gamepadAttack) Attack();
+        if (keyboardDash || gamepadDash) Dash();
+        if (keyboardPulse || mousePulse || gamepadPulse) Shockwave();
+        if (keyboardCrescent || gamepadCrescent) UseAbility(0);
+        if (keyboardSaltburst || gamepadSaltburst) UseAbility(1);
+        if (keyboardTidebreaker || gamepadTidebreaker) UseAbility(2);
+        if ((keyboardInteract || gamepadInteract) && director != null) director.TryInteract(transform.position);
 
         UpdateSprite();
     }
