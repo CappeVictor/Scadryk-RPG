@@ -18,7 +18,7 @@ Registro de builds, teste de progressão e roteiro de avaliação com jogadores:
 1. Instale/abra o Unity Hub e instale o Editor `6000.6.9f1` com o módulo Windows Build Support.
 2. Em **Projects**, escolha **Add > Add project from disk** e selecione a pasta `UnityPort` deste repositório (a pasta que contém `Assets`, `Packages` e `ProjectSettings`).
 3. Abra `Assets/Scenes/ScadrykDemo.unity` e pressione **Play** no Editor.
-4. Comece pelo menu. Limpe os Ecos e conclua o objetivo indicado em cada sala; quando o portal surgir, aproxime-se e pressione **E**. Complete as nove salas para concluir os três biomas e enfrentar o Arauto.
+4. Comece pelo menu. Limpe os Ecos e conclua o objetivo indicado em cada sala; quando o portal surgir, aproxime-se e use o comando de interação mostrado na tela (padrão **E** no teclado ou **Y** no controle). Complete as nove salas para concluir os três biomas e enfrentar o Arauto.
 
 Para criar um executável Windows, escolha **Scadryk > Build Windows demo**. O build aparece em `Build/ScadrykDemo.exe` dentro do projeto Unity. Essa etapa ainda aguarda nova execução no Editor para validar os commits atuais.
 
@@ -28,7 +28,7 @@ O registro atual usa `scadryk-sessions-v4.csv`, com `unclear_attacks`, `complete
 
 Selos de Eco ocupam desvios distintos na entrada da bacia, na chegada à costa e na arena final. O brilho pulsante denuncia cada um; ao se aproximar, Nara recebe uma pista contextual. Se ainda precisar vencer o guardião local, o jogo explica isso antes de indicar o poder e o comando disponíveis. Use Crescente, Estouro ou Rompante junto ao selo correspondente para libertar uma memória: a silhueta de um Eco sobe do selo, toca um som próprio e revela um fragmento de história enquanto Nara recupera vida. Os três encontros são opcionais.
 
-As salas têm ritmos diferentes: entradas do bosque e as travessias trazem combate; a comporta do bosque abre com **E** depois da luta; as entradas da bacia e da costa são momentos calmos com vestígios para escutar; a travessia de sal exige ressoar dois cristais com **Q**, enquanto na costa é preciso fazer o farol responder antes do sino do recife; os guardiões encerram cada bioma. O HUD mostra o objetivo e a contagem dos objetos ativados. Após um período sem progresso ativo, surgem pistas graduais específicas para a sala; na costa, elas explicam a ordem e a posição do farol e do sino do recife.
+As salas têm ritmos diferentes: entradas do bosque e as travessias trazem combate; a comporta do bosque abre com o comando de interação configurado depois da luta (padrão **E** no teclado ou **Y** no controle); as entradas da bacia e da costa são momentos calmos com vestígios para escutar. Na travessia de sal, ressoe dois cristais com o Pulso (padrão **Q** ou clique direito; no controle, **X**). Na costa, faça o farol responder antes do sino do recife; os guardiões encerram cada bioma. O HUD mostra o objetivo e a contagem dos objetos ativados. Após um período sem progresso ativo, surgem pistas graduais específicas para a sala; na costa, elas explicam a ordem e a posição do farol e do sino do recife.
 
 ## Menu, opções e áudio
 
@@ -42,24 +42,26 @@ O controle usa analógico esquerdo para movimento e direito para mira; A ataca, 
 
 ## Controles
 
+A tabela mostra os comandos padrão; ataque, esquiva, Pulso, poderes, interação e direções podem ser remapeados nas opções.
+
 | Tecla ou ação | Função |
 | --- | --- |
 | WASD (configurável para setas ou outras teclas) | Mover em qualquer direção, com diagonal normalizada |
 | Mouse | Mirar; a direção de ataque independe da direção do movimento |
 | Clique esquerdo ou Espaço | Ataque corpo a corpo na direção da mira |
 | Shift esquerdo | Esquiva rápida com breve invulnerabilidade e recarga |
-| Q ou clique direito | Pulso que atinge ecos próximos; tem recarga |
+| Q ou clique direito (padrão; X no controle) | Pulso que atinge Ecos próximos; tem recarga |
 | 1 | Crescente Verdejante — golpe frontal amplo, aprendido após o guardião da primeira fase |
 | 2 | Estouro de Sal — explosão circular de cristais, aprendido após o guardião da segunda fase |
 | 3 | Rompante da Maré — onda frontal de longo alcance, aprendido após o guardião da terceira fase |
-| E perto da passagem | Seguir para a sala/fase seguinte após limpar a sala |
+| Interagir (padrão E / Y) perto da passagem | Seguir para a sala/fase seguinte após limpar a sala |
 | Esc | Pausar/retomar |
 
 ## Progressão e mapa
 
 As fases jogáveis incluídas são **Margens do Primeiro Eco**, **Bacia do Sal Imóvel** e **Costa das Badaladas**. Cada uma tem três salas, caminhos laterais, coberturas e um guardião na última sala. O mapa mostra a posição de Nara e identifica as salas atuais, concluídas e adiante por cores com legenda; o progresso das salas anteriores também é reconstruído ao continuar de um portal salvo. Em janelas estreitas, o mapa fica abaixo do painel de fase e vida, com a legenda incluída na área reservada. A cada sala limpa, Nara recupera um pouco de vida. Ao zerar a vida, ela retorna ao início da sala atual.
 
-Ao limpar qualquer sala, um portal ilustrado se abre para levar Nara ao próximo nível. Cada guardião concede um poder com sprite próprio: **Crescente Verdejante**, **Estouro de Sal** e **Rompante da Maré**. Após o terceiro guardião, o **Arauto do Vazio** surge como superchefe, com 1.250 pontos de vida, barra de chefe própria e três padrões de ataque: salva de estrelas, chuva de impacto marcada no chão e uma onda de vazio que pode ser evitada com esquiva. Ao derrotá-lo, um portal colossal violeta aparece. Aproxime-se e pressione **E** para ver Nara entrar, atravessar a tela escurecida e emergir pelo portal de chegada; usar o portal final conclui a jornada.
+Ao limpar qualquer sala, um portal ilustrado se abre para levar Nara ao próximo nível; aproxime-se e use o comando de interação configurado (padrão **E** no teclado ou **Y** no controle). Cada guardião concede um poder com sprite próprio: **Crescente Verdejante**, **Estouro de Sal** e **Rompante da Maré**. Após o terceiro guardião, o **Arauto do Vazio** surge como superchefe, com 1.250 pontos de vida, barra de chefe própria e três padrões de ataque: salva de estrelas, chuva de impacto marcada no chão e uma onda de vazio que pode ser evitada com esquiva. Ao derrotá-lo, um portal colossal violeta aparece. Aproxime-se e use o comando de interação mostrado na tela para ver Nara entrar, atravessar a tela escurecida e emergir pelo portal de chegada; usar o portal final conclui a jornada.
 
 Os três poderes têm funções complementares: o **Crescente** interrompe e retarda um Eco (chefes resistem por menos tempo); o **Estouro** deixa os alvos expostos por alguns segundos, aumentando em 30% o dano dos golpes seguintes; o **Rompante** empurra Ecos comuns. Uma sequência útil é Estouro para expor, Crescente para interromper e Rompante para afastar o grupo.
 
