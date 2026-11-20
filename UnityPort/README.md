@@ -13,6 +13,17 @@ Registro de builds, teste de progressão e roteiro de avaliação com jogadores:
 - Unity Editor `6000.6.9f1` (ver `ProjectSettings/ProjectVersion.txt`) e o módulo Windows Build Support para gerar o executável Windows.
 - O projeto usa Input Manager (Old), já configurado em Project Settings. Artes de cenário e inimigos estão em `Assets/Resources/ScadrykArt/`.
 
+## Programar em C# com VS Code
+
+O VS Code é o editor de código do projeto; não é necessário instalar o Visual Studio. O Unity Editor continua necessário para importar scripts, compilar a cena, jogar e gerar a build.
+
+1. Instale a extensão [Unity for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=visualstudiotoolsforunity.vstuc), publicada pela Microsoft. Ela instala as dependências de C# e o C# Dev Kit; siga o aviso da extensão para instalar o runtime .NET exigido, se necessário.
+2. Abra o projeto `UnityPort` no Unity Editor e confirme no Package Manager que **Visual Studio Editor** está na versão 2.0.20 ou superior. O projeto usa a versão 2.0.26 em `Packages/manifest.json`.
+3. No Unity, abra **Edit > Preferences > External Tools**, selecione **Visual Studio Code** em **External Script Editor**, ative **Generate all .csproj files** e use **Regenerate project files**.
+4. No VS Code, abra a pasta `UnityPort`. Edite os scripts em `Assets/Scripts`; deixe o Unity Editor aberto para recompilar e conferir alterações.
+
+Não instale o pacote Unity antigo `com.unity.ide.vscode`: ele foi descontinuado. O fluxo atual usa a extensão Unity do VS Code e o pacote **Visual Studio Editor** já declarado no projeto.
+
 ## Abrir e jogar
 
 1. Instale/abra o Unity Hub e instale o Editor `6000.6.9f1` com o módulo Windows Build Support.
