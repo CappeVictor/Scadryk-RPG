@@ -1293,6 +1293,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         for (int room = 0; room < 9; room++)
         {
             if (phaseIndex * RoomsPerPhase + roomIndex != room) { SmokeFail("Sala inesperada: " + room); yield break; }
+            if (room == 3 || room == 6)
+            {
+                int requiredPower = room == 3 ? 0 : 1;
+                if (!SmokeRevealWorldSecret(requiredPower))
+                { SmokeFail("O selo opcional não exigiu o poder correto ou não concedeu cura na sala " + (room + 1)); yield break; }
+            }
             if (room < RoomsPerPhase)
             {
                 ScadrykTerrainZone[] waterZones = FindObjectsByType<ScadrykTerrainZone>(FindObjectsSortMode.None);
@@ -1304,6 +1310,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 if (!clearedRooms[previousRoom]) { SmokeFail("O mapa não marcou a sala anterior como concluída: " + previousRoom); yield break; }
             foreach (ScadrykEnemyHealth enemy in FindObjectsByType<ScadrykEnemyHealth>(FindObjectsSortMode.None))
                 if (enemy != null && !enemy.IsFinalBoss) enemy.TakeDamage(99999f);
+            if (room == 8 && !SmokeRevealWorldSecret(2))
+            { SmokeFail("O selo opcional da costa não exigiu Rompante ou não concedeu cura após o guardião"); yield break; }
             if (room == 8)
             {
                 if (finalBoss == null) { SmokeFail("Arauto não surgiu após o terceiro guardião"); yield break; }
@@ -1486,6 +1494,25 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         foreach (ScadrykTimedVisual visual in FindObjectsByType<ScadrykTimedVisual>(FindObjectsSortMode.None))
             if (visual != null && visual.gameObject.name == "Enemy attack warning")
             { visual.gameObject.SetActive(false); Destroy(visual.gameObject); }
+    }
+
+    private bool SmokeRevealWorldSecret(int requiredPower)
+    {
+        if (worldSecret == null || player == null || !player.HasAbility(requiredPower)) return false;
+        var playerHealthField = typeof(ScadrykPlayerController).GetField("health", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        if (playerHealthField == null) return false;
+        float originalHealth = player.Health;
+        Vector2 sealPosition = worldSecret.transform.position;
+        playerHealthField.SetValue(player, player.MaxHealth - 35f);
+        TryRevealSecret((requiredPower + 1) % 3, sealPosition);
+        TryRevealSecret(requiredPower, sealPosition + Vector2.right * 6.51f);
+        bool rejectedInvalidUses = worldSecret != null && Mathf.Abs(player.Health - (player.MaxHealth - 35f)) <= 0.01f;
+        if (rejectedInvalidUses) TryRevealSecret(requiredPower, sealPosition);
+        bool grantedReward = worldSecret == null && Mathf.Abs(player.Health - player.MaxHealth) <= 0.01f;
+        playerHealthField.SetValue(player, originalHealth);
+        if (!rejectedInvalidUses || !grantedReward) return false;
+        Debug.Log("SCADRYK_SMOKE: selo opcional exige o poder correto e restaura vida (poder " + (requiredPower + 1) + ")");
+        return true;
     }
 
     private static bool SmokeAttackWarningsMatch(Vector2 origin, Vector2 forward, float length, float width, float angleStep, int halfCount)
