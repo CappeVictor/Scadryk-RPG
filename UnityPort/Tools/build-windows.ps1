@@ -1,13 +1,19 @@
 param(
-    [Parameter(Mandatory = $true)]
-    [ValidateNotNullOrEmpty()]
     [string]$UnityEditorPath
 )
 
 $ErrorActionPreference = 'Stop'
 
-if (-not (Test-Path -LiteralPath $UnityEditorPath -PathType Leaf)) {
-    throw "Unity Editor não encontrado: $UnityEditorPath"
+if ([string]::IsNullOrWhiteSpace($UnityEditorPath)) {
+    $editorCandidates = @(
+        'C:\Outros Arquivos\Unity\Editors\6000.6.9f1\Editor\Unity.exe',
+        'C:\Program Files\Unity\Hub\Editor\6000.6.9f1\Editor\Unity.exe'
+    )
+    $UnityEditorPath = $editorCandidates | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
+}
+
+if ([string]::IsNullOrWhiteSpace($UnityEditorPath) -or -not (Test-Path -LiteralPath $UnityEditorPath -PathType Leaf)) {
+    throw "Unity Editor 6000.6.9f1 não encontrado. Instale essa versão ou informe o caminho com -UnityEditorPath."
 }
 
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
