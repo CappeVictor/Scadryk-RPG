@@ -981,16 +981,21 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private void SpawnRoomEnemies()
     {
         int roomId = phaseIndex * RoomsPerPhase + roomIndex;
-        int count = roomIndex == RoomsPerPhase - 1 ? 1 : roomId == 3 || roomId == 6 ? 0 : roomIndex == 1 ? 4 : 3;
+        int count = EnemyCountForRoom(roomId);
         enemiesRemaining = count;
+        var placedOffsets = new Vector2[count];
+        var placedRadii = new float[count];
         for (int i = 0; i < count; i++)
         {
             bool boss = roomIndex == RoomsPerPhase - 1;
             int role = EnemyRoleForRoom(roomId, i);
             string[] roleNames = { "Caçador", "Atirador", "Ressonador", "Tecelão" };
-            float angle = (Mathf.PI * 2f * i / Mathf.Max(1, count)) + 0.3f;
-            float radius = boss ? 2.5f : 3.1f + (i % 2) * 0.7f;
-            Vector2 position = roomCenter + new Vector2(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius);
+            float collisionRadius = EnemySpawnCollisionRadius(role, boss);
+            Vector2 offset = FindEnemySpawnOffset(phaseIndex, roomIndex, i, count, boss, role,
+                fallenWillowLogSprite != null, placedOffsets, placedRadii, i);
+            placedOffsets[i] = offset;
+            placedRadii[i] = collisionRadius;
+            Vector2 position = roomCenter + offset;
             var enemy = new GameObject(boss ? GuardianNames[phaseIndex] : roleNames[role] + " — " + PhaseNames[phaseIndex]);
             enemy.transform.SetParent(levelRoot.transform);
             enemy.transform.position = position;
@@ -1017,6 +1022,87 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             if (boss) phaseGuardian = health;
             enemy.AddComponent<ScadrykHealthBar>().Configure(false, boss, boss ? 1.45f : 1.22f);
         }
+    }
+
+    internal static int EnemyCountForRoom(int roomId)
+    {
+        int room = Mathf.Abs(roomId) % RoomsPerPhase;
+        if (room == RoomsPerPhase - 1) return 1;
+        if (roomId == 3 || roomId == 6) return 0;
+        return room == 1 ? 4 : 3;
+    }
+
+    internal static float EnemySpawnCollisionRadius(int role, bool boss)
+    {
+        if (boss) return 0.58f * 1.85f;
+        float scale = role == 0 ? 0.94f : role == 1 ? 0.78f : role == 2 ? 1.08f : 0.86f;
+        return 0.34f * scale;
+    }
+
+    private static float ObstacleSpawnCollisionRadius(int biome, Vector2 offset, bool hasFallenLog)
+    {
+        int variation = Mathf.Abs(Mathf.RoundToInt(offset.x * 3f + offset.y * 5f)) % 3;
+        if (biome == 0 && variation == 0 && hasFallenLog) return 1.48f;
+        if (biome == 0) return variation == 1 ? 0.49f : 0.43f;
+        if (biome == 1) return variation == 0 ? 0.45f : 0.42f;
+        return variation == 1 ? 0.42f : 0.46f;
+    }
+
+    internal static Vector2 FindEnemySpawnOffset(int biome, int room, int enemyIndex, int enemyCount, bool boss, int role,
+        bool hasFallenLog, Vector2[] previousOffsets, float[] previousRadii, int previousCount)
+    {
+        int safeCount = Mathf.Max(1, enemyCount);
+        float angle = Mathf.PI * 2f * enemyIndex / safeCount + 0.3f;
+        float orbitRadius = boss ? 2.5f : 3.1f + (enemyIndex % 2) * 0.7f;
+        float ownRadius = EnemySpawnCollisionRadius(role, boss);
+        float bestMargin = float.NegativeInfinity;
+        int availablePrevious = previousOffsets == null || previousRadii == null ? 0 : Mathf.Min(previousCount, Mathf.Min(previousOffsets.Length, previousRadii.Length));
+        Vector2 best = new Vector2(Mathf.Cos(angle) * orbitRadius, Mathf.Sin(angle) * orbitRadius);
+        Vector2[] obstacles = RoomObstacleOffsets(biome, room);
+        for (int attempt = 0; attempt < 32; attempt++)
+        {
+            int step = (attempt + 1) / 2;
+            float direction = attempt == 0 || attempt % 2 == 1 ? 1f : -1f;
+            if (attempt == 0) step = 0;
+            float candidateAngle = angle + direction * step * (Mathf.PI * 2f / 32f);
+            Vector2 candidate = new Vector2(Mathf.Cos(candidateAngle) * orbitRadius, Mathf.Sin(candidateAngle) * orbitRadius);
+            float margin = float.PositiveInfinity;
+            foreach (Vector2 obstacle in obstacles)
+                margin = Mathf.Min(margin, Vector2.Distance(candidate, obstacle) - ownRadius - ObstacleSpawnCollisionRadius(biome, obstacle, hasFallenLog) - 0.12f);
+            for (int placed = 0; placed < availablePrevious; placed++)
+                margin = Mathf.Min(margin, Vector2.Distance(candidate, previousOffsets[placed]) - ownRadius - previousRadii[placed] - 0.12f);
+            if (margin > bestMargin) { bestMargin = margin; best = candidate; }
+            if (margin >= 0f) return candidate;
+        }
+        return best;
+    }
+
+    private bool EncounterSpawnsAvoidCover()
+    {
+        for (int biome = 0; biome < PhaseNames.Length; biome++)
+        for (int room = 0; room < RoomsPerPhase; room++)
+        {
+            int roomId = biome * RoomsPerPhase + room;
+            int count = EnemyCountForRoom(roomId);
+            var offsets = new Vector2[count];
+            var radii = new float[count];
+            bool boss = room == RoomsPerPhase - 1;
+            for (int i = 0; i < count; i++)
+            {
+                int role = EnemyRoleForRoom(roomId, i);
+                float ownRadius = EnemySpawnCollisionRadius(role, boss);
+                Vector2 offset = FindEnemySpawnOffset(biome, room, i, count, boss, role, fallenWillowLogSprite != null, offsets, radii, i);
+                foreach (Vector2 obstacle in RoomObstacleOffsets(biome, room))
+                    if (Vector2.Distance(offset, obstacle) < ownRadius + ObstacleSpawnCollisionRadius(biome, obstacle, fallenWillowLogSprite != null) + 0.119f)
+                        return false;
+                for (int prior = 0; prior < i; prior++)
+                    if (Vector2.Distance(offset, offsets[prior]) < ownRadius + radii[prior] + 0.119f)
+                        return false;
+                offsets[i] = offset;
+                radii[i] = ownRadius;
+            }
+        }
+        return true;
     }
 
     internal static int EnemyRoleForRoom(int roomId, int enemyIndex)
@@ -1469,6 +1555,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (!RoomObstacleLayoutsAreDistinctAndOpen())
         { SmokeFail("As nove salas repetem obstáculos ou bloqueiam as faixas de entrada e saída"); yield break; }
         Debug.Log("SCADRYK_SMOKE: nove salas têm obstáculos distintos e mantêm entradas e passagens abertas");
+        if (!EncounterSpawnsAvoidCover())
+        { SmokeFail("Um Eco ou guardião nasce dentro da cobertura ou sobre outro inimigo"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: surgimento dos encontros evita cobertura sólida nas nove salas");
         if (Mathf.Abs(ScadrykEnemyHealth.OpeningAttackDelay(0, false) - 0.3f) > 0.001f ||
             ScadrykEnemyHealth.OpeningAttackDelay(1, false) <= ScadrykEnemyHealth.OpeningAttackDelay(0, false) ||
             ScadrykEnemyHealth.OpeningAttackDelay(2, false) <= ScadrykEnemyHealth.OpeningAttackDelay(1, false) ||
