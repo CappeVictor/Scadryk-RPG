@@ -28,6 +28,7 @@
 - Menu inicial compacto: caixas de título, história, botões e rodapé agora respeitam a largura e a altura disponíveis; o smoke mede 400×360px. Ainda sem execução ou inspeção visual no Editor.
 - Minimapa das nove salas: cabeçalho mostra o bioma atual e cada sala recebe um rótulo próprio; o smoke confere que os nove são únicos. Ainda sem execução ou avaliação de legibilidade no Editor.
 - Escala do texto: a interface reconstrói os estilos quando a escala é alterada; a preferência agora deve surtir efeito imediatamente. A mudança ainda precisa de compilação e inspeção em 100%, 125% e 150% no Editor.
+- Telemetria após morte: reiniciar a mesma sala preserva cronômetro, contagem acumulada de mortes, marcas de perigo e uso de poderes até a sala terminar; o smoke agora verifica tempo, morte e uso de poder. Esta checagem ainda não foi executada no Unity Editor.
 - Arte de abertura: nova imagem `ScadrykTitleBackdrop.png` conecta os três biomas e é desenhada atrás do menu inicial com uma camada escura para contraste. O smoke exige que a textura seja carregada; a integração visual ainda não foi compilada ou inspecionada no Editor.
 
 ## Dados observados e limites

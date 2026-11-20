@@ -320,9 +320,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (follow == null) follow = cam.gameObject.AddComponent<ScadrykCameraFollow>();
     }
 
-    private void BuildPhase(int newPhase, int newRoom, bool newGame)
+    private void BuildPhase(int newPhase, int newRoom, bool newGame, bool preserveRoomSession = false)
     {
-        if (levelRoot != null) RecordRoomSession();
+        if (levelRoot != null && !preserveRoomSession) RecordRoomSession();
         ClearRoomProjectiles();
         if (levelRoot != null) Destroy(levelRoot);
         if (gateObject != null) Destroy(gateObject);
@@ -363,11 +363,14 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         follow.SetTarget(player.transform);
         SpawnRoomEnemies();
         GetComponent<ScadrykAudio>().SetContext(phaseIndex, false);
-        roomActiveSeconds = 0f;
-        roomDeaths = 0;
-        unclearAttackMarks = 0;
-        roomSessionRecorded = false;
-        System.Array.Clear(roomPowerUses, 0, roomPowerUses.Length);
+        if (!preserveRoomSession)
+        {
+            roomActiveSeconds = 0f;
+            roomDeaths = 0;
+            unclearAttackMarks = 0;
+            roomSessionRecorded = false;
+            System.Array.Clear(roomPowerUses, 0, roomPowerUses.Length);
+        }
         hintStage = 0;
         statusMessage = RoomStories[phaseIndex * RoomsPerPhase + roomIndex];
         statusUntil = Time.time + 6f;
@@ -1089,7 +1092,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     public void RestartCurrentRoom()
     {
         roomDeaths++;
-        BuildPhase(phaseIndex, roomIndex, false);
+        BuildPhase(phaseIndex, roomIndex, false, true);
         ShowStatus("Você caiu e retornou ao começo da sala.", 2.5f);
     }
 
@@ -1184,6 +1187,13 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         yield return null;
         if (titleBackdropTexture == null) { SmokeFail("A arte de abertura ScadrykTitleBackdrop não foi carregada"); yield break; }
         Debug.Log("SCADRYK_SMOKE: arte original da tela inicial carregada");
+        roomActiveSeconds = 17f;
+        roomDeaths = 0;
+        roomPowerUses[0] = 2;
+        RestartCurrentRoom();
+        if (roomActiveSeconds != 17f || roomDeaths != 1 || roomPowerUses[0] != 2)
+        { SmokeFail("Morte reiniciou a sala mas perdeu o tempo, as mortes ou os usos de poder da sessão"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: telemetria preserva dados entre mortes na mesma sala");
         var mapLabels = new System.Collections.Generic.HashSet<string>();
         for (int phase = 0; phase < PhaseNames.Length; phase++)
             for (int room = 0; room < RoomsPerPhase; room++)
