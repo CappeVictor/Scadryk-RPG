@@ -59,6 +59,8 @@
 
 Nara é uma Ouvinte que preserva histórias em três sinos de travessia. Os Ecos são memórias separadas pelo silêncio do Arauto. O bosque alagado guarda vozes nas raízes; a bacia de sal cristalizou a última maré; a costa das badaladas usa ruínas e sinos como instrumentos. Cada guardião ensina um poder. O Arauto tenta impedir que a memória da catástrofe volte ao mundo; sua derrota reconecta os lugares por um portal colossal. A câmera permanece top-down, com profundidade criada por sombras, oclusão e escala.
 
+A abertura narrativa da primeira jornada e de uma jornada reiniciada é modal: combate, cronômetro e avisos temporizados permanecem pausados até a confirmação do jogador. A intenção é dar espaço para ler o chamado de Nara antes de entrar na primeira luta.
+
 ## Critérios por etapa
 
 1. Refinar movimento, mira, esquiva, ataques legíveis e poderes táticos.

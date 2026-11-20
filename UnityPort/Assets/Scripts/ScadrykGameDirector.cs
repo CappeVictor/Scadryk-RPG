@@ -27,7 +27,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private int phaseIndex, roomIndex, enemiesRemaining;
     private static bool smokeRun;
-    private bool isPaused, victory, transitioning, showTitle = true, showOptions, confirmNewJourney;
+    private bool isPaused, victory, transitioning, showTitle = true, showOptions, confirmNewJourney, showOpeningStory;
     private string sessionId;
     private int rebindingAction = -1;
     private int gamepadRebindAction = -1;
@@ -107,7 +107,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private GUIStyle finalBossLabelStyle, memoryStyle;
     private float cachedTextScale = -1f;
 
-    public bool IsPaused => isPaused || showTitle || showOptions || victory || transitioning;
+    public bool IsPaused => isPaused || showTitle || showOptions || victory || transitioning || showOpeningStory;
     public int PhaseIndex => phaseIndex;
     public int RoomIndex => roomIndex;
     public int EnemiesRemaining => enemiesRemaining;
@@ -145,9 +145,15 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private void Update()
     {
         ApplyPauseTimeScale();
-        if (!showTitle && !isPaused && !showOptions && !victory && !transitioning)
+        if (!showTitle && !isPaused && !showOptions && !victory && !transitioning && !showOpeningStory)
             roomActiveSeconds += Time.deltaTime;
         if (transitioning) return;
+        if (showOpeningStory)
+        {
+            if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space) || ScadrykSettings.Down(6) ||
+                ScadrykSettings.PadButtonDown(0) || ScadrykSettings.PadDown(6)) DismissOpeningStory();
+            return;
+        }
         if (showTitle && !showOptions && Input.GetKeyDown(KeyCode.Return))
         {
             if (confirmNewJourney) SubmitGamepadOverlay();
@@ -187,12 +193,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private void ApplyPauseTimeScale()
     {
-        Time.timeScale = showTitle || isPaused || showOptions || victory ? 0f : 1f;
+        Time.timeScale = showTitle || isPaused || showOptions || victory || showOpeningStory ? 0f : 1f;
     }
 
     private void OnApplicationFocus(bool hasFocus)
     {
-        if (smokeRun || !FocusLossRequiresPause(hasFocus, showTitle, isPaused, showOptions, victory, transitioning)) return;
+        if (smokeRun || showOpeningStory || !FocusLossRequiresPause(hasFocus, showTitle, isPaused, showOptions, victory, transitioning)) return;
         isPaused = true;
         ApplyPauseTimeScale();
     }
@@ -328,15 +334,19 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private void StartNewGame()
     {
         confirmNewJourney = false;
+        showOptions = false;
+        isPaused = false;
+        showOpeningStory = true;
+        ApplyPauseTimeScale();
         PlayerPrefs.DeleteKey("Scadryk.Phase");
         PlayerPrefs.DeleteKey("Scadryk.Room");
         PlayerPrefs.Save();
         if (player != null) player.ResetAbilities();
         if (player != null) player.ResetCombatCooldowns();
         BuildPhase(0, 0, true);
-        showTitle = isPaused = victory = false;
-        StartRoomTimer();
-        ShowMemory(OpeningMemory, 8f);
+        showTitle = false;
+        victory = false;
+        ApplyPauseTimeScale();
     }
 
     private void RequestNewGame()
@@ -360,9 +370,25 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         bool firstStart = showTitle && !HasCheckpoint("Scadryk.");
         confirmNewJourney = false;
         overlaySelection = 0;
-        showTitle = isPaused = false;
+        showTitle = false;
+        isPaused = false;
+        if (firstStart)
+        {
+            showOpeningStory = true;
+            ApplyPauseTimeScale();
+            return;
+        }
         StartRoomTimer();
-        if (firstStart) ShowMemory(OpeningMemory, 8f);
+        ApplyPauseTimeScale();
+    }
+
+    private void DismissOpeningStory()
+    {
+        showOpeningStory = false;
+        memoryText = null;
+        memoryUntil = 0f;
+        StartRoomTimer();
+        ApplyPauseTimeScale();
     }
 
     private void StartRoomTimer()
@@ -1865,6 +1891,17 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         ApplyPauseTimeScale();
         if (!pauseClockStopped) { SmokeFail("A pausa deixou o relógio de combate avançar"); yield break; }
         Debug.Log("SCADRYK_SMOKE: pausa congela o relógio e os avisos temporizados");
+        bool previousOpeningStory = showOpeningStory;
+        float beforeOpeningStoryClock = Time.time;
+        showOpeningStory = true;
+        ApplyPauseTimeScale();
+        yield return new WaitForSecondsRealtime(0.1f);
+        bool openingStoryPausesCombat = IsPaused && Time.timeScale == 0f &&
+            Mathf.Abs(Time.time - beforeOpeningStoryClock) < 0.001f;
+        showOpeningStory = previousOpeningStory;
+        ApplyPauseTimeScale();
+        if (!openingStoryPausesCombat) { SmokeFail("A abertura narrativa deixou o combate ou o cronômetro avançar"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: abertura narrativa pausa combate e cronômetro até confirmação");
         bool previousReduceShake = ScadrykSettings.ReduceShake;
         if (follow == null) { SmokeFail("A câmera não foi criada para verificar redução de tremor"); yield break; }
         ScadrykSettings.ReduceShake = false;
@@ -2417,6 +2454,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private void OnGUI()
     {
         EnsureStyles();
+        if (showOpeningStory) { DrawOpeningStory(); return; }
         if (showOptions) { DrawOptions(); return; }
         if (showTitle || isPaused || victory) { DrawOverlay(); return; }
         DrawHud(); DrawMiniMap();
@@ -2715,6 +2753,31 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep, buttonWidth, buttonHeight), "Nova jornada", 1)) RequestNewGame();
         if (!victory && OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep * 2f, buttonWidth, buttonHeight), "Opções e controles", 2)) { showOptions = true; optionsTab = optionsSelection = 0; }
         GUI.Label(new Rect(center - footerWidth * 0.5f, footerTop, footerWidth, footerHeight), "Três lugares · nove salas · memórias a libertar", centeredBodyStyle);
+    }
+
+    private void DrawOpeningStory()
+    {
+        Rect screen = new Rect(0f, 0f, Screen.width, Screen.height);
+        if (titleBackdropTexture != null) GUI.DrawTexture(screen, titleBackdropTexture, ScaleMode.ScaleAndCrop);
+        GUI.color = new Color(0.008f, 0.015f, 0.02f, 0.76f);
+        GUI.DrawTexture(screen, Texture2D.whiteTexture);
+        float width = Mathf.Max(0f, Mathf.Min(740f, Screen.width - 32f));
+        float height = Mathf.Max(0f, Mathf.Min(310f, Screen.height - 24f));
+        Rect panel = new Rect((Screen.width - width) * 0.5f, (Screen.height - height) * 0.5f, width, height);
+        GUI.color = new Color(0.025f, 0.045f, 0.05f, 0.97f);
+        GUI.DrawTexture(panel, Texture2D.whiteTexture);
+        GUI.color = new Color(0.74f, 0.63f, 0.34f, 1f);
+        GUI.DrawTexture(new Rect(panel.x, panel.y, panel.width, 3f), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(panel.x, panel.yMax - 3f, panel.width, 3f), Texture2D.whiteTexture);
+        GUI.color = Color.white;
+        GUI.Label(new Rect(panel.x + 18f, panel.y + 16f, panel.width - 36f, 40f), "OS TRÊS SINOS EMUDECERAM", centeredTitleStyle);
+        GUI.Label(new Rect(panel.x + 28f, panel.y + 68f, panel.width - 56f, Mathf.Max(48f, panel.height - 150f)), OpeningMemory, centeredBodyStyle);
+        Rect begin = new Rect(panel.center.x - Mathf.Min(150f, panel.width * 0.38f), panel.yMax - 68f,
+            Mathf.Min(300f, panel.width * 0.76f), 38f);
+        if (GUI.Button(begin, "COMEÇAR A JORNADA")) DismissOpeningStory();
+        GUI.Label(new Rect(panel.x + 12f, panel.yMax - 27f, panel.width - 24f, 20f),
+            "Enter · Espaço · A · " + InputBinding(6) + " para continuar", smallStyle);
+        GUI.color = Color.white;
     }
 
     private static bool OverlayLayoutFits(float screenWidth, float screenHeight)
