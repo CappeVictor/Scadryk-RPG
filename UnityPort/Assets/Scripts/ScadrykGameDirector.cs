@@ -39,6 +39,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private readonly GameObject[] roomAnchors = new GameObject[2];
     private int anchorsRequired, anchorsActivated, hintStage;
     private bool anchorsNeedPulse;
+    private bool anchorsNeedSequence;
     private bool shallowWaterHintShown;
     private readonly bool[] clearedRooms = new bool[RoomsPerPhase];
     private readonly string[][] roomNames = {
@@ -49,12 +50,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private static readonly string[] RoomGoals = {
         "Libertar os Ecos da margem", "Abrir a antiga comporta", "Ouvir o guardião das raízes",
         "Escutar o vestígio do sal", "Ressoar dois cristais com o Pulso", "Libertar o guardião do sal",
-        "Escutar o sino encalhado", "Ressoar dois sinos com o Pulso", "Enfrentar o Arauto do Vazio"
+        "Escutar o sino encalhado", "Ressoar farol e sino do recife nessa ordem", "Enfrentar o Arauto do Vazio"
     };
     private static readonly string[] RoomStories = {
         "A água conserva vozes que Nara pensava perdidas.", "A comporta ainda espera a mão de uma Ouvinte.", "O guardião prende nas raízes o primeiro sino.",
         "A bacia está imóvel, mas o sal ainda se recorda da maré.", "Dois cristais guardam a rota; o Pulso pode fazê-los cantar.", "O zelador do sal protege uma lembrança que não é sua.",
-        "Na costa, as badaladas cessaram antes da última onda.", "Dois sinos respondem ao mesmo ritmo de Nara.", "O Arauto reuniu os três silêncios para esconder a verdade."
+        "Na costa, as badaladas cessaram antes da última onda.", "Ressoar o farol primeiro; o sino do recife responderá depois.", "O Arauto reuniu os três silêncios para esconder a verdade."
     };
     private static readonly string[] BasinWitnessLines = {
         "Sou Nima, uma voz devolvida pelas raízes. O guardião não protegia a comporta: tentava manter minha última lembrança presa.",
@@ -340,14 +341,19 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         roomAnchors[0] = roomAnchors[1] = null;
         anchorsActivated = 0;
         int id = phaseIndex * RoomsPerPhase + roomIndex;
+        anchorsNeedSequence = id == 7;
         anchorsRequired = id == 1 || id == 3 || id == 6 ? 1 : id == 4 || id == 7 ? 2 : 0;
         anchorsNeedPulse = id == 4 || id == 7;
         if (anchorsRequired == 0) return;
         for (int i = 0; i < anchorsRequired; i++)
         {
             Vector2 offset = id == 1 ? new Vector2(5.1f, 2.8f) : id == 3 ? new Vector2(3.8f, -2.9f) :
-                id == 6 ? new Vector2(3.8f, 1.3f) : i == 0 ? new Vector2(-2.2f, 1.25f) : new Vector2(4.2f, 2.65f);
-            var anchor = new GameObject(anchorsNeedPulse ? "Resonant world object" : "Memory world object");
+                id == 6 ? new Vector2(3.8f, 1.3f) : anchorsNeedSequence ?
+                    (i == 0 ? new Vector2(-3.2f, -1.45f) : new Vector2(5.4f, 2.15f)) :
+                    i == 0 ? new Vector2(-2.2f, 1.25f) : new Vector2(4.2f, 2.65f);
+            string anchorName = anchorsNeedSequence ? (i == 0 ? "Coast beacon resonator" : "Reef bell resonator") :
+                anchorsNeedPulse ? "Resonant world object" : "Memory world object";
+            var anchor = new GameObject(anchorName);
             anchor.transform.SetParent(levelRoot.transform);
             anchor.transform.position = roomCenter + offset;
             var renderer = anchor.AddComponent<SpriteRenderer>();
@@ -411,7 +417,16 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     {
         if (!anchorsNeedPulse || IsPaused) return;
         for (int i = 0; i < anchorsRequired; i++)
-            if (roomAnchors[i] != null && Vector2.Distance(position, roomAnchors[i].transform.position) < 3.25f) ActivateAnchor(i);
+        {
+            if (roomAnchors[i] == null || Vector2.Distance(position, roomAnchors[i].transform.position) >= 3.25f) continue;
+            if (anchorsNeedSequence && i != anchorsActivated)
+            {
+                ShowStatus(i > anchorsActivated ? "Primeiro ressoe o farol na entrada da costa." : "Esse sinal já respondeu. Siga até o sino do recife.", 3f);
+                return;
+            }
+            ActivateAnchor(i);
+            return;
+        }
     }
 
     private void ActivateAnchor(int index)
@@ -1169,6 +1184,13 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 TryInteract((Vector2)witnessObject.transform.position);
                 if (memoryText != expectedMemory) { SmokeFail("Nima não respondeu à interação na sala " + room); yield break; }
                 Debug.Log("SCADRYK_SMOKE: Nima respondeu na sala " + (room + 1) + "/9");
+            }
+            if (room == 7 && anchorsNeedSequence && roomAnchors[1] != null)
+            {
+                TryPulseAnchor(roomAnchors[1].transform.position);
+                if (anchorsActivated != 0 || roomAnchors[1] == null)
+                { SmokeFail("O sino do recife respondeu antes do farol"); yield break; }
+                Debug.Log("SCADRYK_SMOKE: sala 8 exige farol antes do sino do recife");
             }
             for (int i = 0; i < anchorsRequired; i++)
             {
