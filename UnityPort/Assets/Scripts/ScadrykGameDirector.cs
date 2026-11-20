@@ -68,7 +68,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private float statusUntil;
     private string memoryText;
     private float memoryUntil;
-    private float roomStartedAt;
+    private float roomActiveSeconds;
     private int roomDeaths;
     private int unclearAttackMarks;
     private bool roomSessionRecorded;
@@ -110,6 +110,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private void Update()
     {
+        if (!showTitle && !isPaused && !showOptions && !victory && !transitioning)
+            roomActiveSeconds += Time.deltaTime;
         if (transitioning) return;
         if (showTitle && !showOptions && Input.GetKeyDown(KeyCode.Return))
             BeginJourney();
@@ -125,7 +127,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (showOptions || showTitle || isPaused || victory) UpdateGamepadMenus();
         if (!IsPaused && gateObject == null && enemiesRemaining == 0 && anchorsActivated >= anchorsRequired)
             UnlockExit();
-        if (!IsPaused && anchorsActivated < anchorsRequired && Time.time - roomStartedAt > 24f + hintStage * 18f)
+        if (!IsPaused && anchorsActivated < anchorsRequired && roomActiveSeconds > 24f + hintStage * 18f)
         {
             hintStage++;
             ShowStatus(anchorsNeedPulse ? "Pista: aproxime-se dos objetos marcados e use Q para fazê-los ressoar." : "Pista: aproxime-se do vestígio marcado e pressione E.", 7f);
@@ -260,7 +262,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private void StartRoomTimer()
     {
-        roomStartedAt = Time.time;
+        roomActiveSeconds = 0f;
         roomSessionRecorded = false;
     }
 
@@ -323,7 +325,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         follow.SetTarget(player.transform);
         SpawnRoomEnemies();
         GetComponent<ScadrykAudio>().SetContext(phaseIndex, false);
-        roomStartedAt = Time.time;
+        roomActiveSeconds = 0f;
         roomDeaths = 0;
         unclearAttackMarks = 0;
         roomSessionRecorded = false;
@@ -852,7 +854,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             if (!File.Exists(path)) File.WriteAllText(path, "utc,phase,room,seconds,deaths,unclear_attacks,crescent,salt,tide,enemies_left,completed\n");
             bool completed = roomIndex >= 0 && roomIndex < clearedRooms.Length && clearedRooms[roomIndex];
             string row = System.DateTime.UtcNow.ToString("o") + "," + (phaseIndex + 1) + "," + (roomIndex + 1) + "," +
-                Mathf.RoundToInt(Mathf.Max(0f, Time.time - roomStartedAt)) + "," + roomDeaths + "," + unclearAttackMarks + "," + roomPowerUses[0] + "," +
+                Mathf.RoundToInt(Mathf.Max(0f, roomActiveSeconds)) + "," + roomDeaths + "," + unclearAttackMarks + "," + roomPowerUses[0] + "," +
                 roomPowerUses[1] + "," + roomPowerUses[2] + "," + enemiesRemaining + "," + completed.ToString().ToLowerInvariant() + "\n";
             File.AppendAllText(path, row);
         }

@@ -19,7 +19,7 @@
 
 ## Dados observados e limites
 
-O registro local histórico mostrou mortes repetidas na primeira sala em algumas tentativas de aproximadamente 15 segundos; outras passagens tiveram duração de 8 a 14 segundos e nenhuma morte. Os dados não identificam nível de experiência, método de controle ou intervenção de teste. Portanto, não autorizam concluir que o jogo está balanceado. A telemetria atual usa `scadryk-sessions-v3.csv`, acrescenta a marca F8 para ataques difíceis de perceber e distingue salas concluídas de registros interrompidos.
+O registro local histórico mostrou mortes repetidas na primeira sala em algumas tentativas de aproximadamente 15 segundos; outras passagens tiveram duração de 8 a 14 segundos e nenhuma morte. Os dados não identificam nível de experiência, método de controle ou intervenção de teste. Portanto, não autorizam concluir que o jogo está balanceado. A telemetria atual usa `scadryk-sessions-v3.csv`, acrescenta a marca F8 para ataques difíceis de perceber, distingue salas concluídas de registros interrompidos e conta tempo ativo sem pausas.
 
 ## Sessões com jogadores ainda necessárias
 
