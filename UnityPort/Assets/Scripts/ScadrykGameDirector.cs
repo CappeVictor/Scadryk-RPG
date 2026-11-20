@@ -964,7 +964,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             enemy.AddComponent<ScadrykDepthSort>().SetBias(4);
             enemy.AddComponent<ScadrykActorAnimator>().SetVisual(enemyVisual.transform, enemyVolumeRenderer);
             var health = enemy.AddComponent<ScadrykEnemyHealth>();
-            health.Configure(boss ? 320f + phaseIndex * 80f : 72f + phaseIndex * 12f, boss ? 21f : 10f + phaseIndex * 2f, boss ? 1.55f : 1.9f + phaseIndex * 0.1f, boss, phaseIndex, frames, role);
+            health.Configure(boss ? 320f + phaseIndex * 80f : 72f + phaseIndex * 12f, boss ? 1.55f : 1.9f + phaseIndex * 0.1f, boss, phaseIndex, frames, role);
             enemy.AddComponent<ScadrykHealthBar>().Configure(false, boss, boss ? 1.45f : 1.22f);
         }
     }
@@ -1652,7 +1652,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 var testBody = testTarget.AddComponent<Rigidbody2D>();
                 testBody.gravityScale = 0f;
                 var testHealth = testTarget.AddComponent<ScadrykEnemyHealth>();
-                testHealth.Configure(1000f, 0f, 0f, false, phaseIndex, null, 0);
+                testHealth.Configure(1000f, 0f, false, phaseIndex, null, 0);
                 Physics2D.SyncTransforms();
                 var useAbility = typeof(ScadrykPlayerController).GetMethod("UseAbility", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
                 if (useAbility == null) { SmokeFail("Ação de poder indisponível"); yield break; }

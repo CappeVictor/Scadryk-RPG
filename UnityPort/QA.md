@@ -105,3 +105,5 @@ Critérios para revisão: nenhum dano sem aviso reconhecível; nenhum poder fica
 - Resposta do ataque básico: um comando de ataque durante a recarga agora fica enfileirado por até 0,2 s e inicia ao terminar a recarga; comandos expirados não disparam depois. O smoke verifica antes/durante/depois da janela e a duração configurada. Compilação e avaliação da sensação de combate continuam pendentes no Unity Editor.
 
 - Reset de recargas: ao morrer ou iniciar uma nova jornada, ataque, esquiva, Pulso e poderes começam prontos, sem apagar poderes já aprendidos durante o retorno após morte; transições normais entre salas continuam preservando recargas. Confirmar em sessão que a retomada fica justa e não concede repetição excessiva de poderes; ainda sem compilação ou execução no Editor.
+
+- Auditoria de fontes de dano: a revisão encontrou um parâmetro de dano por contato configurado mas nunca usado. Removi esse estado sem efeito e deixei explícito que encostar num Eco não causa dano; todas as chamadas de dano a Nara partem de áreas anunciadas ou projéteis. Esta é uma revisão estática de código, não substitui observar cada golpe em execução no Editor.

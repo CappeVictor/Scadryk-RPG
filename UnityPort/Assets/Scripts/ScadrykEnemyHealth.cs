@@ -1,6 +1,6 @@
 using UnityEngine;
 
-/// <summary>Biome-themed enemy attacks with readable wind-ups and distinct movement.</summary>
+/// <summary>Biome-themed enemies with readable attacks; player damage comes from announced attacks, never contact alone.</summary>
 [RequireComponent(typeof(Rigidbody2D), typeof(CircleCollider2D))]
 public sealed class ScadrykEnemyHealth : MonoBehaviour
 {
@@ -37,7 +37,6 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private Sprite[] animationFrames;
     private Vector2 attackTarget;
     private int biomeIndex;
-    private float touchDamage;
     private float moveSpeed;
     private bool isFinalBoss;
     private int finalAttackIndex;
@@ -71,9 +70,9 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         };
     }
 
-    public void Configure(float hp, float damage, float speed, bool boss, int biome, Sprite[] frames, int role = 0)
+    public void Configure(float hp, float speed, bool boss, int biome, Sprite[] frames, int role = 0)
     {
-        maxHealth = hp; health = hp; touchDamage = damage; moveSpeed = speed; IsBoss = boss;
+        maxHealth = hp; health = hp; moveSpeed = speed; IsBoss = boss;
         biomeIndex = Mathf.Clamp(biome, 0, 2);
         combatRole = boss ? 0 : Mathf.Clamp(role, 0, 3);
         roleTint = boss ? Color.white : combatRole == 0 ? new Color(1f, 0.87f, 0.75f) : combatRole == 1 ? new Color(0.72f, 0.9f, 1f) : combatRole == 2 ? new Color(1f, 0.76f, 0.85f) : new Color(0.77f, 1f, 0.82f);
@@ -91,7 +90,6 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         IsBoss = true;
         maxHealth = 1250f;
         health = maxHealth;
-        touchDamage = 32f;
         moveSpeed = 1.35f;
         attackRange = 10f;
         biomeIndex = 2;
