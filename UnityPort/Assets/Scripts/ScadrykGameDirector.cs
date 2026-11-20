@@ -1110,6 +1110,10 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private IEnumerator SmokeCampaign()
     {
         yield return null;
+        for (int effect = 0; effect < 40; effect++)
+            ScadrykEffects.Burst(roomCenter + Vector2.up * (20f + effect), Color.clear, 0.05f);
+        if (ScadrykEffects.SecondaryVisualCount > ScadrykEffects.SecondaryVisualLimit) { SmokeFail("O limite de efeitos secundários não foi respeitado"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: efeitos secundários respeitam o limite; avisos prioritários preservados");
         for (int room = 0; room < 9; room++)
         {
             if (phaseIndex * RoomsPerPhase + roomIndex != room) { SmokeFail("Sala inesperada: " + room); yield break; }

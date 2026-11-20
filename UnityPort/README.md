@@ -77,6 +77,8 @@ Os obstáculos sólidos também funcionam como **cobertura**: estilhaços inimig
 
 No bosque alagado, as poças rasas reduzem a velocidade de caminhada para 78%, mas não causam dano. A esquiva mantém o impulso normal, permitindo atravessá-las rapidamente quando houver perigo. Na primeira entrada na água, uma mensagem explica esse efeito.
 
+Para manter os sinais de combate legíveis, a tela limita efeitos visuais secundários a 24 de cada vez. Avisos de ataques e áreas perigosas têm prioridade e não são descartados por esse limite.
+
 ## Como ampliar
 
 - `ScadrykGameDirector.cs`: conteúdo das fases, desenho procedural dos mapas, nomes das salas e progressão.

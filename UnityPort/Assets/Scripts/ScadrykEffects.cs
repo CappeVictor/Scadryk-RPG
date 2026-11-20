@@ -3,6 +3,18 @@ using UnityEngine;
 /// <summary>Lightweight hit and dash visuals made from Unity's built-in white sprite.</summary>
 public static class ScadrykEffects
 {
+    public const int SecondaryVisualLimit = 24;
+    private const int MaxSecondaryVisuals = SecondaryVisualLimit;
+    private static readonly System.Collections.Generic.List<ScadrykTimedVisual> SecondaryVisuals = new System.Collections.Generic.List<ScadrykTimedVisual>(MaxSecondaryVisuals);
+    public static int SecondaryVisualCount
+    {
+        get
+        {
+            for (int i = SecondaryVisuals.Count - 1; i >= 0; i--)
+                if (SecondaryVisuals[i] == null) SecondaryVisuals.RemoveAt(i);
+            return SecondaryVisuals.Count;
+        }
+    }
     private static Sprite whiteSprite;
     private static Material ringMaterial;
     private static Sprite rootThornSprite;
@@ -55,6 +67,26 @@ public static class ScadrykEffects
     private static Sprite PlayerSlashSprite => LoadEffectSprite("AttackPlayerSlash", 600f, ref playerSlashSprite);
     private static Sprite PlayerPulseSprite => LoadEffectSprite("AttackPlayerPulse", 600f, ref playerPulseSprite);
 
+    private static void RegisterSecondary(GameObject effect)
+    {
+        ScadrykTimedVisual visual = effect.GetComponent<ScadrykTimedVisual>();
+        for (int i = SecondaryVisuals.Count - 1; i >= 0; i--)
+            if (SecondaryVisuals[i] == null) SecondaryVisuals.RemoveAt(i);
+
+        if (SecondaryVisuals.Count >= MaxSecondaryVisuals)
+        {
+            ScadrykTimedVisual oldest = SecondaryVisuals[0];
+            SecondaryVisuals.RemoveAt(0);
+            if (oldest != null)
+            {
+                oldest.gameObject.SetActive(false);
+                Object.Destroy(oldest.gameObject);
+            }
+        }
+
+        if (visual != null) SecondaryVisuals.Add(visual);
+    }
+
     public static void Burst(Vector2 position, Color color, float diameter) => Create(position, color, diameter, diameter, 0.26f);
     public static void Afterimage(SpriteRenderer source, Color color)
     {
@@ -69,6 +101,7 @@ public static class ScadrykEffects
         renderer.sortingOrder = source.sortingOrder - 1;
         renderer.color = color;
         ghost.AddComponent<ScadrykTimedVisual>().Initialize(0.23f, color, false);
+        RegisterSecondary(ghost);
     }
 
     public static void DeathBurst(Vector2 position, Color color, bool boss)
@@ -137,14 +170,14 @@ public static class ScadrykEffects
     {
         Sprite art = VoidburstSprite;
         if (art == null) { Ring(position, diameter, new Color(0.96f, 0.18f, 0.54f, 0.95f), lifetime); return; }
-        CreateSpriteEffect(art, position, Vector2.one * diameter, Color.white, lifetime, "Final boss voidburst", true);
+        CreateSpriteEffect(art, position, Vector2.one * diameter, Color.white, lifetime, "Final boss voidburst", true, true);
     }
 
     public static void TelegraphLine(Vector2 start, Vector2 end, Color color, float thickness, float lifetime)
     {
         Vector2 delta = end - start;
         if (delta.sqrMagnitude < 0.01f) return;
-        GameObject go = Create((start + end) * 0.5f, color, delta.magnitude, thickness, lifetime);
+        GameObject go = Create((start + end) * 0.5f, color, delta.magnitude, thickness, lifetime, true);
         go.transform.right = delta.normalized;
         go.name = "Enemy attack warning";
     }
@@ -159,7 +192,7 @@ public static class ScadrykEffects
             fallback.name = "Root thorn attack";
             return;
         }
-        GameObject go = CreateSpriteEffect(attackSprite, center, new Vector2(length, width), Color.white, lifetime, "Root thorn attack", true);
+        GameObject go = CreateSpriteEffect(attackSprite, center, new Vector2(length, width), Color.white, lifetime, "Root thorn attack", true, true);
         go.transform.right = direction;
     }
 
@@ -170,7 +203,7 @@ public static class ScadrykEffects
         {
             Color tint = color;
             tint.a *= lifetime > 0.5f ? 0.46f : 0.98f;
-            CreateSpriteEffect(waveSprite, center, Vector2.one * diameter, tint, lifetime, "Bell echo wave");
+            CreateSpriteEffect(waveSprite, center, Vector2.one * diameter, tint, lifetime, "Bell echo wave", false, true);
             return;
         }
         GameObject go = new GameObject("Bell pulse warning");
@@ -204,7 +237,7 @@ public static class ScadrykEffects
         return cache;
     }
 
-    private static GameObject CreateSpriteEffect(Sprite sprite, Vector2 position, Vector2 size, Color color, float lifetime, string objectName, bool expand = false)
+    private static GameObject CreateSpriteEffect(Sprite sprite, Vector2 position, Vector2 size, Color color, float lifetime, string objectName, bool expand = false, bool protectFromBudget = false)
     {
         var go = new GameObject(objectName);
         go.transform.position = position;
@@ -215,10 +248,11 @@ public static class ScadrykEffects
         renderer.color = color;
         renderer.sortingOrder = 22;
         go.AddComponent<ScadrykTimedVisual>().Initialize(lifetime, color, expand);
+        if (!protectFromBudget) RegisterSecondary(go);
         return go;
     }
 
-    private static GameObject Create(Vector2 position, Color color, float width, float height, float life)
+    private static GameObject Create(Vector2 position, Color color, float width, float height, float life, bool protectFromBudget = false)
     {
         var go = new GameObject("Combat effect");
         go.transform.position = position;
@@ -228,6 +262,7 @@ public static class ScadrykEffects
         renderer.color = color;
         renderer.sortingOrder = 20;
         go.AddComponent<ScadrykTimedVisual>().Initialize(life, color, false);
+        if (!protectFromBudget) RegisterSecondary(go);
         return go;
     }
 }
