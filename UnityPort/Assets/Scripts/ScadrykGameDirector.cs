@@ -1681,6 +1681,11 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (Vector2.Dot(steeredHeading, Vector2.right) < 0.8f || Vector2.Distance(enclosedHeading, Vector2.right) > 0.001f)
         { SmokeFail("A navegação dos Ecos não contorna um bloqueio ou não mantém avanço quando todos os lados estão fechados"); yield break; }
         Debug.Log("SCADRYK_SMOKE: direção de contorno mantém avanço e tem fallback quando não há passagem livre");
+        if (ScadrykEnemyHealth.AttackRecoveryDuration(false, false) <= 0f ||
+            ScadrykEnemyHealth.AttackRecoveryDuration(true, false) <= ScadrykEnemyHealth.AttackRecoveryDuration(false, false) ||
+            ScadrykEnemyHealth.AttackRecoveryDuration(false, true) <= ScadrykEnemyHealth.AttackRecoveryDuration(true, false))
+        { SmokeFail("A recuperação após impacto perdeu duração ou gradação por porte do inimigo"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: recuperação de impacto aumenta de Eco comum a guardião e Arauto");
         if (!RoomGroundOrientationsAreUnique())
         { SmokeFail("As três salas repetem a mesma orientação do cenário de fundo"); yield break; }
         Debug.Log("SCADRYK_SMOKE: fundos pintados variam entre as três salas de cada bioma");

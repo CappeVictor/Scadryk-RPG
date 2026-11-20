@@ -17,6 +17,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private const float FinalStarfallProjectileSpeed = 5.4f;
     internal const float SupportPulseRadius = 2.5f;
     internal const float OpeningAttackSpacing = 0.52f;
+    internal static float AttackRecoveryDuration(bool boss, bool finalBoss) => finalBoss ? 0.42f : boss ? 0.36f : 0.24f;
     private static readonly float[] SteeringAngles = { 0f, 35f, -35f, 70f, -70f, 110f, -110f, 145f, -145f, 180f };
     private readonly RaycastHit2D[] steeringHits = new RaycastHit2D[16];
     private readonly bool[] blockedSteeringHeadings = new bool[10];
@@ -51,7 +52,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private int queuedFinalStage;
     private int combatRole;
     private Color roleTint = Color.white;
-    private float staggerUntil, exposedUntil, knockbackUntil;
+    private float staggerUntil, exposedUntil, knockbackUntil, recoveryUntil;
     private Vector2 knockbackVelocity;
 
     public float Health => health;
@@ -159,6 +160,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         }
 
         if (windupEndsAt > 0f && Time.time >= windupEndsAt) ResolveAttack();
+        if (Time.time < recoveryUntil) { BodyVelocity = Vector2.zero; return; }
         if (Time.time >= nextAttackAt && distance <= attackRange && !shotBlocked)
         {
             if (openingAttackPending)
@@ -343,6 +345,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         windupEndsAt = 0f;
         nextAttackAt = Time.time + (IsBoss ? 2.3f : 2.6f);
         if (animator != null && player != null) animator.PlayAttack(((Vector2)player.transform.position - (Vector2)transform.position).normalized, IsBoss);
+        recoveryUntil = Time.time + AttackRecoveryDuration(IsBoss, isFinalBoss);
         if (player == null) return;
 
         if (isFinalBoss)
