@@ -10,6 +10,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private const float RoomSpacing = 23f;
     private const string OpeningMemory = "Depois que a Grande Onda cobriu a costa, os três sinos emudeceram. Nara, a Ouvinte, ainda escutava os nomes perdidos e seguiu a maré imóvel.";
     private static readonly GUIContent OpeningTitleContent = new GUIContent("OS TRÊS SINOS EMUDECERAM");
+    private static readonly GUIContent OpeningMemoryContent = new GUIContent(OpeningMemory);
     private const string EndingMemory = "O Arauto quis ocultar a catástrofe para poupar os vivos da dor, mas o silêncio aprisionou os mortos. Nara escolhe lembrar e abre o limiar para que todos possam atravessar.";
     private const string SessionCsvHeader = "session_id,utc,phase,room,seconds,deaths,unclear_attacks,crescent,salt,tide,enemies_left,completed,input_mode\n";
     private static readonly string[] PhaseNames = { "Margens do Primeiro Eco", "Bacia do Sal Imóvel", "Costa das Badaladas" };
@@ -103,7 +104,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private string sessionInputMode = "unknown";
     private bool roomSessionRecorded;
     private readonly int[] roomPowerUses = new int[3];
-    private GUIStyle titleStyle, bodyStyle, smallStyle, openingTitleStyle;
+    private GUIStyle titleStyle, bodyStyle, smallStyle, openingTitleStyle, openingBodyStyle;
     private GUIStyle centeredTitleStyle, centeredBodyStyle;
     private GUIStyle finalBossLabelStyle, memoryStyle;
     private float cachedTextScale = -1f;
@@ -2777,7 +2778,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (measuredTitleWidth > titleWidth && measuredTitleWidth > 0f)
             openingTitleStyle.fontSize = Mathf.Max(12, Mathf.FloorToInt(openingTitleStyle.fontSize * titleWidth / measuredTitleWidth));
         GUI.Label(new Rect(panel.x + 18f, panel.y + 16f, titleWidth, 40f), OpeningTitleContent, openingTitleStyle);
-        GUI.Label(new Rect(panel.x + 28f, panel.y + 68f, panel.width - 56f, Mathf.Max(48f, panel.height - 150f)), OpeningMemory, centeredBodyStyle);
+        Rect storyBody = new Rect(panel.x + 28f, panel.y + 68f, panel.width - 56f, Mathf.Max(48f, panel.height - 150f));
+        openingBodyStyle.fontSize = centeredBodyStyle.fontSize;
+        float measuredBodyHeight = openingBodyStyle.CalcHeight(OpeningMemoryContent, storyBody.width);
+        if (measuredBodyHeight > storyBody.height && measuredBodyHeight > 0f)
+            openingBodyStyle.fontSize = Mathf.Max(12, Mathf.FloorToInt(openingBodyStyle.fontSize * storyBody.height / measuredBodyHeight));
+        GUI.Label(storyBody, OpeningMemoryContent, openingBodyStyle);
         Rect begin = new Rect(panel.center.x - Mathf.Min(150f, panel.width * 0.38f), panel.yMax - 68f,
             Mathf.Min(300f, panel.width * 0.76f), 38f);
         if (GUI.Button(begin, "COMEÇAR A JORNADA")) DismissOpeningStory();
@@ -2968,6 +2974,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         centeredTitleStyle = new GUIStyle(titleStyle) { alignment = TextAnchor.MiddleCenter, fontSize = Mathf.RoundToInt(25f * scale) };
         openingTitleStyle = new GUIStyle(centeredTitleStyle);
         centeredBodyStyle = new GUIStyle(bodyStyle) { alignment = TextAnchor.MiddleCenter, wordWrap = true, fontSize = Mathf.RoundToInt(16f * scale) };
+        openingBodyStyle = new GUIStyle(centeredBodyStyle);
         finalBossLabelStyle = new GUIStyle(titleStyle) { alignment = TextAnchor.MiddleCenter, fontSize = Mathf.RoundToInt(14f * scale), normal = { textColor = new Color(1f, 0.73f, 0.86f) } };
         memoryStyle = new GUIStyle(bodyStyle) { wordWrap = true, alignment = TextAnchor.UpperLeft };
     }
