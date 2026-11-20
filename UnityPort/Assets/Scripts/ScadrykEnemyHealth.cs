@@ -32,9 +32,13 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private float staggerUntil, exposedUntil, knockbackUntil;
     private Vector2 knockbackVelocity;
 
+    public float Health => health;
     public float Health01 => maxHealth <= 0 ? 0 : Mathf.Clamp01(health / maxHealth);
     public bool IsBoss { get; private set; }
     public bool IsFinalBoss => isFinalBoss;
+    public bool IsStaggered => !dead && Time.time < staggerUntil;
+    public bool IsExposed => !dead && Time.time < exposedUntil;
+    public bool IsKnockedBack => !dead && Time.time < knockbackUntil;
     public int FinalStage => !isFinalBoss ? 0 : Health01 > 0.7f ? 1 : Health01 > 0.35f ? 2 : 3;
     public int BiomeIndex => biomeIndex;
 

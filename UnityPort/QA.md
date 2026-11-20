@@ -17,6 +17,7 @@
 - Limite de efeitos secundários: a fonte mantém no máximo 24 efeitos não prioritários simultâneos e protege avisos/áreas de perigo desse orçamento. O smoke cria 40 efeitos e verifica o limite. Ainda sem execução no Unity Editor.
 - Música dinâmica: mudanças de bioma e entrada do Arauto agora usam transição cruzada de 1,25 s. A fonte ainda aguarda compilação e avaliação auditiva no Unity Editor.
 - Sequência de ressonância da costa: o smoke tenta o sino do recife antes do farol e exige que nada seja ativado; depois conclui na ordem ensinada pelo texto. Ainda sem execução no Editor.
+- Cobertura dos poderes: depois de cada guardião, o smoke cria um alvo de vida alta, usa o poder recém-aprendido e exige dano mais seu efeito tático correspondente (interrupção, exposição ou empurrão), além de confirmar a recarga. Essa asserção está apenas na fonte e ainda precisa de compilação e execução no Unity Editor.
 
 ## Dados observados e limites
 

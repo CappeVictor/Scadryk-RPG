@@ -1171,11 +1171,27 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             { SmokeFail("Poder não recebido após guardião da fase " + phaseIndex); yield break; }
             if (roomIndex == 2)
             {
+                Vector2 testDirection = player.Facing.sqrMagnitude > 0.01f ? player.Facing.normalized : Vector2.right;
+                float targetDistance = phaseIndex == 2 ? 5.5f : 2.75f;
+                var testTarget = new GameObject("Smoke target for newly learned power");
+                testTarget.transform.SetParent(levelRoot.transform);
+                testTarget.transform.position = (Vector2)player.transform.position + testDirection * targetDistance;
+                testTarget.AddComponent<CircleCollider2D>();
+                var testBody = testTarget.AddComponent<Rigidbody2D>();
+                testBody.gravityScale = 0f;
+                var testHealth = testTarget.AddComponent<ScadrykEnemyHealth>();
+                testHealth.Configure(1000f, 0f, 0f, false, phaseIndex, null, 0);
+                Physics2D.SyncTransforms();
                 var useAbility = typeof(ScadrykPlayerController).GetMethod("UseAbility", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
                 if (useAbility == null) { SmokeFail("Ação de poder indisponível"); yield break; }
                 useAbility.Invoke(player, new object[] { phaseIndex });
                 if (player.AbilityCooldownLeft(phaseIndex) <= 0f)
                 { SmokeFail("Poder recebido não pôde ser usado imediatamente na fase " + phaseIndex); yield break; }
+                bool tacticalEffect = phaseIndex == 0 ? testHealth.IsStaggered : phaseIndex == 1 ? testHealth.IsExposed : testHealth.IsKnockedBack;
+                if (testHealth.Health >= 1000f || !tacticalEffect)
+                { SmokeFail("Poder da fase " + phaseIndex + " não causou dano ou não aplicou seu efeito tático"); yield break; }
+                Debug.Log("SCADRYK_SMOKE: poder " + (phaseIndex + 1) + " causou dano e aplicou seu efeito tático");
+                Destroy(testTarget);
             }
             if (room == 3 || room == 6)
             {
