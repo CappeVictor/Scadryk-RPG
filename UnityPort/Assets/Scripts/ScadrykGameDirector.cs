@@ -319,7 +319,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     }
 
     internal static string FormatInputBinding(KeyCode key, int padButton, bool useGamepad) =>
-        useGamepad ? ScadrykSettings.PadButtonName(padButton) : key.ToString();
+        useGamepad ? ScadrykSettings.PadButtonName(padButton) : ScadrykSettings.KeyName(key);
     private string InputBinding(int action) => FormatInputBinding(ScadrykSettings.Key(action), ScadrykSettings.PadButton(action), sessionInputMode == "gamepad");
 
     private string ProgressHint(int roomId, int activated, int stage)
@@ -1272,11 +1272,13 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         string gamepadPulseHint = ProgressHint(4, 0, 0);
         string gamepadInteractHint = ProgressHint(1, 0, 0);
         sessionInputMode = previousHintInputMode;
-        if (!keyboardPulseHint.Contains("(" + ScadrykSettings.Key(2) + ")") ||
-            !keyboardInteractHint.Contains("(" + ScadrykSettings.Key(6) + ")") ||
+        if (!keyboardPulseHint.Contains("(" + ScadrykSettings.KeyName(ScadrykSettings.Key(2)) + ")") ||
+            !keyboardInteractHint.Contains("(" + ScadrykSettings.KeyName(ScadrykSettings.Key(6)) + ")") ||
             !gamepadPulseHint.Contains("(" + ScadrykSettings.PadButtonName(ScadrykSettings.PadButton(2)) + ")") ||
             !gamepadInteractHint.Contains("(" + ScadrykSettings.PadButtonName(ScadrykSettings.PadButton(6)) + ")") ||
             FormatInputBinding(KeyCode.F, 4, false) != "F" ||
+            FormatInputBinding(KeyCode.Alpha1, 4, false) != "1" ||
+            FormatInputBinding(KeyCode.Space, 4, false) != "Espaço" ||
             FormatInputBinding(KeyCode.F, 4, true) != "LB")
         { SmokeFail("Pistas e HUD não refletem teclas e botões remapeados do dispositivo ativo"); yield break; }
         Debug.Log("SCADRYK_SMOKE: pistas dinâmicas refletem dispositivo e botões de jogo");
@@ -1752,7 +1754,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (screen.z <= 0f) return;
         Rect prompt = new Rect(screen.x - 130f, Screen.height - screen.y - 16f, 260f, 30f);
         GUI.color = new Color(0.025f, 0.04f, 0.045f, 0.9f); GUI.DrawTexture(prompt, Texture2D.whiteTexture); GUI.color = Color.white;
-        GUI.Label(prompt, ScadrykSettings.Key(6) + " / " + ScadrykSettings.PadButtonName(ScadrykSettings.PadButton(6)) + "  ·  FALAR COM NIMA", centeredBodyStyle);
+        GUI.Label(prompt, ScadrykSettings.KeyName(ScadrykSettings.Key(6)) + " / " + ScadrykSettings.PadButtonName(ScadrykSettings.PadButton(6)) + "  ·  FALAR COM NIMA", centeredBodyStyle);
     }
 
     private void DrawFinalBossBar()
@@ -1945,7 +1947,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             {
                 float row = y + keyRowStart + i * keyRowStep;
                 GUI.Label(new Rect(x + 15f, row, 220f, keyRowHeight), ScadrykSettings.Actions[i], bodyStyle);
-                string label = rebindingAction == i ? "Pressione uma tecla…" : ScadrykSettings.Key(i).ToString();
+                string label = rebindingAction == i ? "Pressione uma tecla…" : ScadrykSettings.KeyName(ScadrykSettings.Key(i));
                 Rect keyButton = new Rect(x + 240f, row, width - 255f, keyRowHeight);
                 if (OptionButton(keyButton, label, i + 3)) rebindingAction = i;
             }

@@ -16,6 +16,32 @@ public static class ScadrykSettings
     };
 
     public static KeyCode Key(int action) => (KeyCode)PlayerPrefs.GetInt("Scadryk.Key." + action, (int)Defaults[action]);
+    public static string KeyName(KeyCode key) => key switch
+    {
+        KeyCode.Space => "Espaço",
+        KeyCode.LeftShift or KeyCode.RightShift => "Shift",
+        KeyCode.LeftControl or KeyCode.RightControl => "Ctrl",
+        KeyCode.LeftAlt or KeyCode.RightAlt => "Alt",
+        KeyCode.Return => "Enter",
+        KeyCode.KeypadEnter => "Enter numérico",
+        KeyCode.Escape => "Esc",
+        KeyCode.Backspace => "Backspace",
+        KeyCode.UpArrow => "↑",
+        KeyCode.DownArrow => "↓",
+        KeyCode.LeftArrow => "←",
+        KeyCode.RightArrow => "→",
+        KeyCode.Alpha0 => "0",
+        KeyCode.Alpha1 => "1",
+        KeyCode.Alpha2 => "2",
+        KeyCode.Alpha3 => "3",
+        KeyCode.Alpha4 => "4",
+        KeyCode.Alpha5 => "5",
+        KeyCode.Alpha6 => "6",
+        KeyCode.Alpha7 => "7",
+        KeyCode.Alpha8 => "8",
+        KeyCode.Alpha9 => "9",
+        _ => key.ToString()
+    };
     public static bool Down(int action) => Input.GetKeyDown(Key(action));
     public static bool Held(int action) => Input.GetKey(Key(action));
     public static int PadButton(int action) => PlayerPrefs.GetInt("Scadryk.Pad." + action, PadDefaults[action]);
