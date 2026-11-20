@@ -130,8 +130,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             UnlockExit();
         if (!IsPaused && anchorsActivated < anchorsRequired && roomActiveSeconds > 24f + hintStage * 18f)
         {
+            ShowStatus(ProgressHint(phaseIndex * RoomsPerPhase + roomIndex, anchorsActivated, hintStage), 7f);
             hintStage++;
-            ShowStatus(anchorsNeedPulse ? "Pista: aproxime-se dos objetos marcados e use Q para fazê-los ressoar." : "Pista: aproxime-se do vestígio marcado e pressione E.", 7f);
         }
         if (!IsPaused && Input.GetKeyDown(KeyCode.F8))
         {
@@ -265,6 +265,35 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     {
         roomActiveSeconds = 0f;
         roomSessionRecorded = false;
+    }
+
+    private static string ProgressHint(int roomId, int activated, int stage)
+    {
+        if (roomId == 7)
+        {
+            if (activated > 0) return "Pista: o farol já respondeu. Vá ao sino do recife, à direita, e use Q perto dele.";
+            if (stage == 0) return "Pista: os dois sinais da costa respondem ao Pulso (Q). O farol precisa tocar primeiro.";
+            if (stage == 1) return "Pista: procure o farol à esquerda do centro da sala e use Q quando estiver perto.";
+            return "Pista: acione primeiro o farol à esquerda; depois, o sino do recife fica à direita.";
+        }
+
+        if (roomId == 4)
+        {
+            if (stage == 0) return "Pista: dois cristais marcados guardam a travessia. Aproxime-se e use Q em cada um.";
+            if (stage == 1) return "Pista: o Pulso (Q) alcança os cristais quando Nara chega perto deles.";
+            return "Pista: confira a contagem no HUD; falta ressoar um dos dois cristais.";
+        }
+
+        if (roomId == 1) return stage == 0
+            ? "Pista: a comporta antiga está marcada no lado direito da sala. Aproxime-se e pressione E."
+            : "Pista: procure o vestígio brilhante junto à passagem da direita e use E ao lado dele.";
+        if (roomId == 3) return stage == 0
+            ? "Pista: há uma lembrança marcada no lado sul da bacia. Aproxime-se e pressione E."
+            : "Pista: escute o vestígio no lado sul usando E quando estiver ao lado do brilho marcado.";
+        if (roomId == 6) return stage == 0
+            ? "Pista: o sino encalhado está marcado perto do centro da costa. Aproxime-se e pressione E."
+            : "Pista: a lembrança da costa responde a E quando Nara chega perto do sino marcado.";
+        return "Pista: siga o objetivo marcado nesta sala e aproxime-se do sinal indicado.";
     }
 
     private void SetupCamera()
@@ -1144,6 +1173,14 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private IEnumerator SmokeCampaign()
     {
         yield return null;
+        if (ProgressHint(1, 0, 0) == ProgressHint(1, 0, 1) ||
+            ProgressHint(3, 0, 0) == ProgressHint(3, 0, 1) ||
+            ProgressHint(4, 0, 0) == ProgressHint(4, 0, 1) || ProgressHint(4, 0, 1) == ProgressHint(4, 0, 2) ||
+            ProgressHint(6, 0, 0) == ProgressHint(6, 0, 1) ||
+            ProgressHint(7, 0, 0) == ProgressHint(7, 0, 1) || ProgressHint(7, 0, 1) == ProgressHint(7, 0, 2) ||
+            !ProgressHint(7, 1, 0).Contains("sino do recife"))
+        { SmokeFail("As pistas graduais de exploração não diferenciam as salas e etapas"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: pistas graduais específicas e ordem da costa verificadas");
         for (int effect = 0; effect < 40; effect++)
             ScadrykEffects.Burst(roomCenter + Vector2.up * (20f + effect), Color.clear, 0.05f);
         if (ScadrykEffects.SecondaryVisualCount > ScadrykEffects.SecondaryVisualLimit) { SmokeFail("O limite de efeitos secundários não foi respeitado"); yield break; }

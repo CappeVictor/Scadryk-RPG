@@ -18,6 +18,7 @@
 - Música dinâmica: mudanças de bioma e entrada do Arauto agora usam transição cruzada de 1,25 s. A fonte ainda aguarda compilação e avaliação auditiva no Unity Editor.
 - Sequência de ressonância da costa: o smoke tenta o sino do recife antes do farol e exige que nada seja ativado; depois conclui na ordem ensinada pelo texto. Ainda sem execução no Editor.
 - Cobertura dos poderes: depois de cada guardião, o smoke cria um alvo de vida alta, usa o poder recém-aprendido e exige dano mais seu efeito tático correspondente (interrupção, exposição ou empurrão), além de confirmar a recarga. Essa asserção está apenas na fonte e ainda precisa de compilação e execução no Unity Editor.
+- Pistas de exploração: mensagens de bloqueio agora variam por sala e ficam mais específicas; a costa explica a ordem farol à esquerda → sino do recife à direita. O smoke confere que as etapas não repetem o mesmo texto. Alteração ainda sem compilação ou observação no Editor.
 
 ## Dados observados e limites
 
