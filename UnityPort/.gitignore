@@ -8,7 +8,8 @@
 [Uu]ser[Ss]ettings/
 .vs/
 .idea/
-.vscode/
+.vscode/*
+!.vscode/extensions.json
 *.csproj
 *.sln
 *.slnx

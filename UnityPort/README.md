@@ -20,7 +20,7 @@ O VS Code é o editor de código do projeto; não é necessário instalar o Visu
 1. Instale a extensão [Unity for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=visualstudiotoolsforunity.vstuc), publicada pela Microsoft. Ela instala as dependências de C# e o C# Dev Kit; siga o aviso da extensão para instalar o runtime .NET exigido, se necessário.
 2. Abra o projeto `UnityPort` no Unity Editor e confirme no Package Manager que **Visual Studio Editor** está na versão 2.0.20 ou superior. O projeto usa a versão 2.0.26 em `Packages/manifest.json`.
 3. No Unity, abra **Edit > Preferences > External Tools**, selecione **Visual Studio Code** em **External Script Editor**, ative **Generate all .csproj files** e use **Regenerate project files**.
-4. No VS Code, abra a pasta `UnityPort`. Edite os scripts em `Assets/Scripts`; deixe o Unity Editor aberto para recompilar e conferir alterações.
+4. No VS Code, abra a pasta `UnityPort`. O workspace recomenda a extensão Unity e C# Dev Kit; aceite a instalação sugerida se ainda não estiverem presentes. Edite os scripts em `Assets/Scripts`; deixe o Unity Editor aberto para recompilar e conferir alterações.
 
 Não instale o pacote Unity antigo `com.unity.ide.vscode`: ele foi descontinuado. O fluxo atual usa a extensão Unity do VS Code e o pacote **Visual Studio Editor** já declarado no projeto.
 
