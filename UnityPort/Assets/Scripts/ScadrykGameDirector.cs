@@ -1288,6 +1288,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         RecordInputMode("gamepad");
         RecordPlayerDeath();
         if (roomDeaths != 1) { SmokeFail("A derrota não foi contabilizada no instante da morte"); yield break; }
+        string[] deathCsvColumns = FormatSessionCsvRow(false).TrimEnd('\n').Split(',');
+        if (deathCsvColumns.Length != SessionCsvHeader.TrimEnd('\n').Split(',').Length || deathCsvColumns[4] != "1")
+        { SmokeFail("O CSV não registraria uma morte antes de terminar a animação"); yield break; }
         RestartCurrentRoom();
         if (roomActiveSeconds != 17f || roomDeaths != 1 || roomPowerUses[0] != 2 || sessionInputMode != "gamepad")
         { SmokeFail("Morte reiniciou a sala mas perdeu tempo, mortes, usos de poderes ou dispositivo da sessão"); yield break; }
