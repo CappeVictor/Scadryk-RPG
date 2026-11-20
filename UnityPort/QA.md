@@ -85,3 +85,5 @@ Critérios para revisão: nenhum dano sem aviso reconhecível; nenhum poder fica
 - Os selos agora ocupam lados distintos das salas e dão uma pista contextual, com o nome do poder e o vínculo atual, quando Nara se aproxima. O smoke também verifica o texto da pista junto das geometrias de cada poder. Fonte atualizada; compilação, leitura da pista no ritmo normal e descoberta sem ajuda continuam pendentes no Unity Editor.
 
 - Tecelão: a cura agora verifica também a distância entre centros dos Ecos para não alcançar além do círculo verde visível. O smoke verifica pontos logo dentro/fora e o diâmetro do aviso; continua sem execução no Unity Editor ou avaliação de leitura em combate real.
+
+- Legenda do minimapa: agora identifica sala atual, concluída e adiante com as mesmas cores dos cartões; o smoke mede se a legenda cabe no painel a 150% em janela 700×600. Ainda sem compilação ou inspeção visual no Unity Editor.

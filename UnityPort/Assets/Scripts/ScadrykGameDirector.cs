@@ -1404,9 +1404,11 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         Debug.Log("SCADRYK_SMOKE: pistas graduais específicas e ordem da costa verificadas");
         Rect narrowHud = new Rect(14f, 14f, 325f + 0.5f * 130f, 190f + 0.5f * 86f);
         Rect narrowMap = MiniMapPanelRect(700f, 600f, 1.5f);
-        if (narrowHud.Overlaps(narrowMap) || narrowMap.xMin < 0f || narrowMap.yMin < 0f || narrowMap.xMax > 700f || narrowMap.yMax > 600f)
+        Rect narrowLegend = MiniMapLegendRect(narrowMap, 1.5f);
+        if (narrowHud.Overlaps(narrowMap) || narrowMap.xMin < 0f || narrowMap.yMin < 0f || narrowMap.xMax > 700f || narrowMap.yMax > 600f ||
+            narrowLegend.yMin < narrowMap.yMin || narrowLegend.yMax > narrowMap.yMax)
         { SmokeFail("Minimapa sobrepõe o HUD ou sai da janela estreita com texto ampliado"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: minimapa empilha abaixo do HUD em janela estreita");
+        Debug.Log("SCADRYK_SMOKE: minimapa e legenda cabem em janela estreita");
         if (!OptionsLayoutFits(600f))
         { SmokeFail("O menu de opções corta as teclas remapeáveis ou os controles de retorno a 600px de altura"); yield break; }
         Debug.Log("SCADRYK_SMOKE: menu de opções cabe em janela de 600px de altura");
@@ -1829,7 +1831,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         for (int i = 0; i < RoomsPerPhase; i++)
         {
             Rect cell = new Rect(mapX + i * (roomW + gap), mapY, roomW, roomH);
-            GUI.color = i == roomIndex ? new Color(0.19f, 0.36f, 0.35f) : (clearedRooms[i] ? new Color(0.16f, 0.25f, 0.22f) : new Color(0.12f, 0.15f, 0.16f));
+            GUI.color = MiniMapRoomColor(i == roomIndex, clearedRooms[i]);
             GUI.Box(cell, GUIContent.none); GUI.color = new Color(0.75f, 0.74f, 0.67f);
             GUI.Label(new Rect(cell.x + 3, cell.y + 2, roomW - 6, 18), (i + 1) + ". " + MapRoomLabel(phaseIndex, i), smallStyle);
             if (i < RoomsPerPhase - 1) GUI.Label(new Rect(cell.xMax, cell.y + 20, gap + 2, 20), "›", bodyStyle);
@@ -1842,7 +1844,31 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             Rect dot = new Rect(mapX + roomIndex * (roomW + gap) + roomW / 2f + dx - 3.5f, mapY + roomH / 2f - dy - 3.5f, 7, 7);
             GUI.color = new Color(1f, 0.82f, 0.38f); GUI.DrawTexture(dot, Texture2D.whiteTexture);
         }
+        Rect legend = MiniMapLegendRect(panel, ScadrykSettings.TextScale);
+        float columnWidth = legend.width / 3f;
+        DrawMiniMapLegendItem(legend.x, legend.y, columnWidth, MiniMapRoomColor(true, false), "Você");
+        DrawMiniMapLegendItem(legend.x + columnWidth, legend.y, columnWidth, MiniMapRoomColor(false, true), "Concluída");
+        DrawMiniMapLegendItem(legend.x + columnWidth * 2f, legend.y, columnWidth, MiniMapRoomColor(false, false), "Adiante");
         GUI.color = Color.white;
+    }
+
+    private void DrawMiniMapLegendItem(float x, float y, float width, Color swatch, string label)
+    {
+        float scale = ScadrykSettings.TextScale;
+        GUI.color = swatch;
+        GUI.DrawTexture(new Rect(x, y + 4f * scale, 9f * scale, 9f * scale), Texture2D.whiteTexture);
+        GUI.color = Color.white;
+        GUI.Label(new Rect(x + 13f * scale, y, width - 13f * scale, 18f * scale), label, smallStyle);
+    }
+
+    private static Color MiniMapRoomColor(bool current, bool cleared) =>
+        current ? new Color(0.19f, 0.36f, 0.35f) : cleared ? new Color(0.16f, 0.25f, 0.22f) : new Color(0.12f, 0.15f, 0.16f);
+
+    private static Rect MiniMapLegendRect(Rect panel, float textScale)
+    {
+        float scale = Mathf.Clamp(textScale, 1f, 1.5f);
+        float height = 22f * scale;
+        return new Rect(panel.x + 15f, panel.yMax - height, panel.width - 30f, height);
     }
 
     private static Rect MiniMapPanelRect(float screenWidth, float screenHeight, float textScale)

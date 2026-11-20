@@ -71,3 +71,5 @@ As referências de outros jogos orientam clareza, descoberta e ritmo. Não repro
 - **Descoberta dos selos (20/11/2026):** os três selos opcionais agora ficam em pontos diferentes das salas e pulsam suavemente. Ao se aproximar, a pista apresenta o poder correto e seu vínculo atual; a recompensa segue opcional. O smoke inclui uma checagem do texto da pista, mas descoberta, visibilidade e legibilidade ainda não foram avaliadas no Editor nem por jogadores.
 
 - **Limite de cura do Tecelão (20/11/2026):** cura de aliados agora segue exatamente o raio do círculo verde; o raio do colisor de um Eco já não estende a cura além da área mostrada. Smoke preparado para borda interna/externa e diâmetro, ainda sem execução no Editor.
+
+- **Leitura do minimapa (20/11/2026):** legenda explícita associa as cores de estado a Você, Concluída e Adiante, incluindo cálculo de altura e escala do texto. Smoke cobre os limites do painel em janela estreita a 150%; a revisão visual segue pendente no Editor.
