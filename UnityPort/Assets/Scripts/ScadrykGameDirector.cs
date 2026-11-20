@@ -913,6 +913,62 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         return new[] { new Vector2(-3.8f, 2.7f), new Vector2(-3.6f, -2.8f), new Vector2(4.2f, 0.8f) };
     }
 
+    private static bool RoomHasWalkableRoute(int biome, int room)
+    {
+        const float step = 0.35f;
+        const float playerRadius = 0.42f;
+        float minX = -RoomSpacing * 0.5f + playerRadius;
+        float maxX = RoomSpacing * 0.5f - playerRadius;
+        float minY = -6.5f + playerRadius;
+        float maxY = 6.5f - playerRadius;
+        int columns = Mathf.FloorToInt((maxX - minX) / step) + 1;
+        int rows = Mathf.FloorToInt((maxY - minY) / step) + 1;
+        var blocked = new bool[columns, rows];
+        Vector2[] obstacles = RoomObstacleOffsets(biome, room);
+        for (int x = 0; x < columns; x++)
+        for (int y = 0; y < rows; y++)
+        {
+            Vector2 point = new Vector2(minX + x * step, minY + y * step);
+            foreach (Vector2 obstacle in obstacles)
+            {
+                float clearance = ObstacleSpawnCollisionRadius(biome, obstacle, true) + playerRadius + 0.12f;
+                if (Vector2.Distance(point, obstacle) < clearance) { blocked[x, y] = true; break; }
+            }
+        }
+
+        int startX = Mathf.RoundToInt((-6.2f - minX) / step);
+        int startY = Mathf.RoundToInt(-minY / step);
+        int exitX = Mathf.RoundToInt((8.05f - minX) / step);
+        int exitY = startY;
+        if (blocked[startX, startY] || blocked[exitX, exitY]) return false;
+
+        var visited = new bool[columns, rows];
+        var queue = new int[columns * rows];
+        int read = 0, write = 0;
+        int startIndex = startY * columns + startX;
+        queue[write++] = startIndex;
+        visited[startX, startY] = true;
+        while (read < write)
+        {
+            int current = queue[read++];
+            int x = current % columns;
+            int y = current / columns;
+            if (x == exitX && y == exitY) return true;
+            for (int dx = -1; dx <= 1; dx++)
+            for (int dy = -1; dy <= 1; dy++)
+            {
+                if (dx == 0 && dy == 0) continue;
+                int nextX = x + dx, nextY = y + dy;
+                if (nextX < 0 || nextX >= columns || nextY < 0 || nextY >= rows ||
+                    visited[nextX, nextY] || blocked[nextX, nextY]) continue;
+                if (dx != 0 && dy != 0 && (blocked[x + dx, y] || blocked[x, y + dy])) continue;
+                visited[nextX, nextY] = true;
+                queue[write++] = nextY * columns + nextX;
+            }
+        }
+        return false;
+    }
+
     internal static bool RoomObstacleLayoutsAreDistinctAndOpen()
     {
         for (int biome = 0; biome < 3; biome++)
@@ -923,6 +979,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             foreach (Vector2 offset in layout)
                 if (Mathf.Abs(offset.x + 6.2f) < 1.25f || Mathf.Abs(offset.x - 8.05f) < 1.25f || Mathf.Abs(offset.y) > 5.2f)
                     return false;
+            if (!RoomHasWalkableRoute(biome, room)) return false;
 
             for (int priorBiome = 0; priorBiome <= biome; priorBiome++)
             for (int priorRoom = 0; priorRoom < 3; priorRoom++)
@@ -1553,8 +1610,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         { SmokeFail("Cobertura sólida e gatilhos não diferem ao bloquear ataques lineares"); yield break; }
         Debug.Log("SCADRYK_SMOKE: cobertura sólida bloqueia a linha e gatilho não bloqueia");
         if (!RoomObstacleLayoutsAreDistinctAndOpen())
-        { SmokeFail("As nove salas repetem obstáculos ou bloqueiam as faixas de entrada e saída"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: nove salas têm obstáculos distintos e mantêm entradas e passagens abertas");
+        { SmokeFail("As nove salas repetem obstáculos, bloqueiam entrada/saída ou não têm rota caminhável até o portal"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: nove layouts distintos têm corredores caminháveis entre entrada e portal");
         if (!EncounterSpawnsAvoidCover())
         { SmokeFail("Um Eco ou guardião nasce dentro da cobertura ou sobre outro inimigo"); yield break; }
         Debug.Log("SCADRYK_SMOKE: surgimento dos encontros evita cobertura sólida nas nove salas");
