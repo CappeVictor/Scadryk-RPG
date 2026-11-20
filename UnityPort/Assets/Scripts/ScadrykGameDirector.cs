@@ -605,6 +605,13 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private int RequiredWorldSecretPower() => phaseIndex == 1 && roomIndex == 0 ? 0 :
         phaseIndex == 2 && roomIndex == 0 ? 1 : phaseIndex == 2 && roomIndex == 2 ? 2 : -1;
 
+    private static string WorldSecretMemory(int power) => power switch
+    {
+        0 => "Uma voz recorda a comporta se abrindo pela primeira vez, quando as raízes ainda conheciam todos os nomes.",
+        1 => "Uma lembrança solta devolve ao sal o instante da última maré antes de o tempo parar.",
+        _ => "Um Eco reconhece sua própria voz no coro dos três sinos. A lembrança já não precisa ficar presa."
+    };
+
     private string WorldSecretHint(int power)
     {
         string[] names = { "Crescente Verdejante", "Estouro de Sal", "Rompante da Maré" };
@@ -630,10 +637,13 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         Vector2 spot = worldSecret.transform.position;
         if (power != requiredPower || player == null || !player.AbilityFootprintContainsPoint(requiredPower, spot, source)) return;
         ScadrykEffects.Burst(spot, PhaseAccentColors[phaseIndex], 1.5f);
+        ScadrykEffects.ReleaseEcho(witnessSprite != null ? witnessSprite : CircleSprite, spot, PhaseAccentColors[phaseIndex]);
+        ScadrykAudio.Play(ScadrykCue.Memory);
         Destroy(worldSecret);
         worldSecret = null;
         if (player != null) player.RestoreHealth(35f);
-        ShowStatus("Um Eco oculto respondeu ao poder. Nara recuperou vida.", 5f);
+        ShowMemory(WorldSecretMemory(requiredPower), 7f);
+        ShowStatus("Uma memória foi libertada. Nara recuperou 35 pontos de vida.", 5f);
     }
 
     private void PlacePhaseGround(Transform parent, float x, int room)
@@ -1646,6 +1656,14 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             { visual.gameObject.SetActive(false); Destroy(visual.gameObject); }
     }
 
+    private static int SmokeEffectCount(string objectName)
+    {
+        int count = 0;
+        foreach (ScadrykTimedVisual visual in FindObjectsByType<ScadrykTimedVisual>(FindObjectsSortMode.None))
+            if (visual != null && visual.gameObject.name == objectName) count++;
+        return count;
+    }
+
     private bool SmokeRevealWorldSecret(int requiredPower)
     {
         if (worldSecret == null || player == null || !player.HasAbility(requiredPower)) return false;
@@ -1671,6 +1689,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         float invalidDistance = requiredPower == 0 ? 3.12f : requiredPower == 1 ? 4.26f : 6.41f;
         Vector2 validSource = sealPosition - direction * validDistance;
         Vector2 invalidSource = sealPosition - direction * invalidDistance;
+        int echoCountBeforeReveal = SmokeEffectCount("Liberated echo memory");
         playerHealthField.SetValue(player, player.MaxHealth - 35f);
         playerFacingField.SetValue(player, direction);
         TryRevealSecret((requiredPower + 1) % 3, validSource);
@@ -1678,9 +1697,11 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         bool rejectedInvalidUses = worldSecret != null && Mathf.Abs(player.Health - (player.MaxHealth - 35f)) <= 0.01f;
         if (rejectedInvalidUses) TryRevealSecret(requiredPower, validSource);
         bool grantedReward = worldSecret == null && Mathf.Abs(player.Health - player.MaxHealth) <= 0.01f;
+        bool echoVisualShown = SmokeEffectCount("Liberated echo memory") > echoCountBeforeReveal;
+        bool echoStoryShown = memoryText == WorldSecretMemory(requiredPower);
         playerHealthField.SetValue(player, originalHealth);
         playerFacingField.SetValue(player, originalFacing);
-        if (!rejectedInvalidUses || !grantedReward) return false;
+        if (!rejectedInvalidUses || !grantedReward || !echoVisualShown || !echoStoryShown) return false;
         Debug.Log("SCADRYK_SMOKE: selo opcional exige o poder correto e restaura vida (poder " + (requiredPower + 1) + ")");
         return true;
     }

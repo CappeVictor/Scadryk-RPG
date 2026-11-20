@@ -141,6 +141,15 @@ public static class ScadrykEffects
         }
         Burst(position, color, boss ? 2.1f : 0.95f);
     }
+
+    public static GameObject ReleaseEcho(Sprite echoSprite, Vector2 position, Color color)
+    {
+        GameObject echo = CreateSpriteEffect(echoSprite ?? WhiteSprite, position, new Vector2(0.78f, 0.92f), color,
+            1.2f, "Liberated echo memory");
+        echo.AddComponent<ScadrykEffectDrift>().Initialize(Vector2.up * 0.85f);
+        return echo;
+    }
+
     public static void Slash(Vector2 position, Vector2 direction, float length)
     {
         Vector2 footprint = PlayerSlashFootprint(length);

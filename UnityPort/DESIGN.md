@@ -75,3 +75,5 @@ As referências de outros jogos orientam clareza, descoberta e ritmo. Não repro
 - **Leitura do minimapa (20/11/2026):** legenda explícita associa as cores de estado a Você, Concluída e Adiante, incluindo cálculo de altura e escala do texto. Smoke cobre os limites do painel em janela estreita a 150%; a revisão visual segue pendente no Editor.
 
 - **Consistência dos prompts (20/11/2026):** o aviso de conversa com Nima usa o mesmo vínculo dinâmico do HUD, alternando entre teclado e controle conforme a entrada recente. Smoke confere as duas strings; falta inspecionar o posicionamento e legibilidade no Editor.
+
+- **Recompensa narrativa opcional (20/11/2026):** cada Selo de Eco agora libera uma figura de memória que sobe e desaparece, reproduz o motivo sonoro de Nima e revela um fragmento de história próprio do bioma. O smoke prepara verificações de efeito, texto e cura; silhueta, mistura sonora e ritmo da narrativa continuam sem inspeção no Editor.

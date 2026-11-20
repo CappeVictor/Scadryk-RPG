@@ -89,3 +89,5 @@ Critérios para revisão: nenhum dano sem aviso reconhecível; nenhum poder fica
 - Legenda do minimapa: agora identifica sala atual, concluída e adiante com as mesmas cores dos cartões; o smoke mede se a legenda cabe no painel a 150% em janela 700×600. Ainda sem compilação ou inspeção visual no Unity Editor.
 
 - Prompt de conversa: o aviso junto a Nima agora mostra só a tecla ou o botão correspondente ao último dispositivo usado. O smoke verifica a formatação nos dois modos junto das pistas do HUD; compilação e leitura visual continuam pendentes.
+
+- Recompensa dos Selos de Eco: cada selo agora libera uma silhueta ascendente, um motivo sonoro e uma lembrança própria, além da cura. O smoke exige o novo efeito, texto narrativo e recuperação de vida após cada poder; ainda sem execução, inspeção visual ou escuta no Editor.
