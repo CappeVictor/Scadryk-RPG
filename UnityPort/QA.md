@@ -11,6 +11,7 @@
 - Na revisão seguinte, foi encontrado e corrigido um caso em que projéteis inimigos sem parent podiam persistir entre salas ou após reiniciar. `ScadrykEnemyProjectile` agora é filho da raiz da sala ativa; troca de sala, reinício e conclusão limpam projéteis remanescentes. O smoke test agora cria um projétil em cada sala e verifica associação e remoção. Esta alteração ainda precisa rodar no Unity Editor; não há resultado de build/smoke novo nem captura para ela.
 - Etapa de navegação/remapeamento de gamepad implementada na fonte: analógico navega, A confirma, B volta, Start pausa; a aba Controle permite associar botões aos sete comandos de combate. Checagem com controle físico, compilação e inspeção de foco visual ainda pendentes; sem resultado de build ou aceite desta etapa.
 - Escopo de CI conferido: `.github/workflows/validate.yml` compila, testa e publica somente `Scadryk.csproj` (Windows Forms/.NET da raiz). O commit Unity atual não tem checks associados, e esse workflow não compila `UnityPort`. Uma build no Editor Unity continua sendo necessária para validar os scripts do port.
+- Nova etapa de narrativa: Nima reaparece nos dois espaços calmos após derrotar os guardiões da floresta e do sal; cada visita oferece duas falas contextuais e um som próprio. O smoke test agora verifica presença e primeira resposta de interação. A fonte e a verificação foram preparadas, ainda sem execução no Editor, inspeção de legibilidade ou captura.
 
 ## Dados observados e limites
 

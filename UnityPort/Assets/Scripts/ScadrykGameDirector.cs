@@ -18,6 +18,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private Sprite[] phaseEnemySprites;
     private Sprite fallenWillowLogSprite;
     private Sprite portalSprite;
+    private Sprite witnessSprite;
 
     private int phaseIndex, roomIndex, enemiesRemaining;
     private static bool smokeRun;
@@ -31,7 +32,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private Vector2 roomCenter, exitPosition;
     private ScadrykPlayerController player;
     private ScadrykCameraFollow follow;
-    private GameObject levelRoot, gateObject;
+    private GameObject levelRoot, gateObject, witnessObject;
+    private int witnessLine;
     private ScadrykEnemyHealth finalBoss;
     private GameObject worldSecret;
     private readonly GameObject[] roomAnchors = new GameObject[2];
@@ -52,6 +54,14 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         "A água conserva vozes que Nara pensava perdidas.", "A comporta ainda espera a mão de uma Ouvinte.", "O guardião prende nas raízes o primeiro sino.",
         "A bacia está imóvel, mas o sal ainda se recorda da maré.", "Dois cristais guardam a rota; o Pulso pode fazê-los cantar.", "O zelador do sal protege uma lembrança que não é sua.",
         "Na costa, as badaladas cessaram antes da última onda.", "Dois sinos respondem ao mesmo ritmo de Nara.", "O Arauto reuniu os três silêncios para esconder a verdade."
+    };
+    private static readonly string[] BasinWitnessLines = {
+        "Sou Nima, uma voz devolvida pelas raízes. O guardião não protegia a comporta: tentava manter minha última lembrança presa.",
+        "O sal ainda segura a onda no instante em que ela partiu. Faça os cristais responderem; a água precisa voltar a seguir."
+    };
+    private static readonly string[] CoastWitnessLines = {
+        "Você devolveu movimento ao sal. Agora os sinos lembram que cada voz tinha alguém esperando por ela.",
+        "O Arauto chama o silêncio de abrigo. Pergunte a quem perdeu o próprio nome se isso parece paz."
     };
     private string statusMessage = "Derrote os ecos para abrir a passagem.";
     private float statusUntil;
@@ -84,6 +94,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         phaseEnemySprites = new[] { LoadSingleSprite("Rootbound", 1200f), LoadSingleSprite("SaltCrawler", 1200f), LoadSingleSprite("BellWraith", 1200f) };
         fallenWillowLogSprite = LoadSingleSprite("FallenWillowLog", 300f);
         portalSprite = LoadSingleSprite("AncientPortal", 600f);
+        witnessSprite = LoadSingleSprite("DrownedMemory", 280f);
         SetupCamera();
         gameObject.AddComponent<ScadrykAudio>();
         int savedPhase = smokeRun ? 0 : Mathf.Clamp(PlayerPrefs.GetInt("Scadryk.Phase", 0), 0, PhaseNames.Length - 1);
@@ -273,6 +284,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         DrawPhaseMap(levelRoot.transform);
         BuildWorldSecret();
         BuildRoomAnchors();
+        BuildWitness();
         if (player == null)
         {
             var playerObject = new GameObject("Nara — player");
@@ -333,9 +345,42 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         }
     }
 
+    private void BuildWitness()
+    {
+        witnessObject = null;
+        witnessLine = 0;
+        // Nima returns in the two quiet arrival rooms after the first and second guardians.
+        if (roomIndex != 0 || phaseIndex == 0) return;
+
+        Vector2 position = roomCenter + new Vector2(-5.4f, 1.1f);
+        witnessObject = new GameObject("Nima — voz libertada das raízes");
+        witnessObject.transform.SetParent(levelRoot.transform);
+        witnessObject.transform.position = position;
+
+        MakeDecoration(levelRoot.transform, "Nima's reflected pool", position + Vector2.down * 0.52f,
+            new Vector2(0.9f, 0.28f), new Color(PhaseAccentColors[phaseIndex].r, PhaseAccentColors[phaseIndex].g,
+                PhaseAccentColors[phaseIndex].b, 0.42f), true, 2);
+        var visual = new GameObject("Nima — Echo witness");
+        visual.transform.SetParent(witnessObject.transform, false);
+        var renderer = visual.AddComponent<SpriteRenderer>();
+        renderer.sprite = witnessSprite != null ? witnessSprite : CircleSprite;
+        renderer.color = Color.white;
+        renderer.sortingOrder = 5;
+        visual.transform.localScale = Vector3.one * 0.36f;
+        witnessObject.AddComponent<ScadrykDepthSort>().SetBias(4);
+    }
+
     public void TryInteract(Vector2 position)
     {
         if (IsPaused) return;
+        if (witnessObject != null && Vector2.Distance(position, witnessObject.transform.position) <= 1.9f)
+        {
+            string[] lines = phaseIndex == 1 ? BasinWitnessLines : CoastWitnessLines;
+            ShowMemory(lines[witnessLine % lines.Length], 8f);
+            witnessLine++;
+            ScadrykAudio.Play(ScadrykCue.Memory);
+            return;
+        }
         for (int i = 0; i < anchorsRequired; i++)
         {
             if (roomAnchors[i] == null || Vector2.Distance(position, roomAnchors[i].transform.position) > 1.8f) continue;
@@ -1061,6 +1106,14 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 if (player.AbilityCooldownLeft(phaseIndex) <= 0f)
                 { SmokeFail("Poder recebido não pôde ser usado imediatamente na fase " + phaseIndex); yield break; }
             }
+            if (room == 3 || room == 6)
+            {
+                if (witnessObject == null) { SmokeFail("Nima não apareceu na sala tranquila " + room); yield break; }
+                string expectedMemory = room == 3 ? BasinWitnessLines[0] : CoastWitnessLines[0];
+                TryInteract((Vector2)witnessObject.transform.position);
+                if (memoryText != expectedMemory) { SmokeFail("Nima não respondeu à interação na sala " + room); yield break; }
+                Debug.Log("SCADRYK_SMOKE: Nima respondeu na sala " + (room + 1) + "/9");
+            }
             for (int i = 0; i < anchorsRequired; i++)
             {
                 GameObject anchor = roomAnchors[i];
@@ -1104,6 +1157,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (showOptions) { DrawOptions(); return; }
         if (showTitle || isPaused || victory) { DrawOverlay(); return; }
         DrawHud(); DrawMiniMap();
+        DrawWitnessPrompt();
         if (finalBoss != null) DrawFinalBossBar();
         if (Time.time < statusUntil) GUI.Label(new Rect(15, Screen.height - 64, Screen.width - 30, 44), statusMessage, bodyStyle);
         if (Time.time < memoryUntil && !transitioning)
@@ -1146,6 +1200,18 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         GUI.color = Color.white;
         string progress = anchorsRequired > 0 ? "  ·  " + anchorsActivated + "/" + anchorsRequired : "";
         GUI.Label(new Rect(28, 164f + extra * 64f, textWidth, 28f + extra * 10f), "Objetivo: " + RoomGoals[phaseIndex * RoomsPerPhase + roomIndex] + progress, smallStyle);
+    }
+
+    private void DrawWitnessPrompt()
+    {
+        if (witnessObject == null || player == null || Vector2.Distance(player.transform.position, witnessObject.transform.position) > 2.2f) return;
+        Camera sceneCamera = Camera.main;
+        if (sceneCamera == null) return;
+        Vector3 screen = sceneCamera.WorldToScreenPoint(witnessObject.transform.position + Vector3.up * 1.35f);
+        if (screen.z <= 0f) return;
+        Rect prompt = new Rect(screen.x - 130f, Screen.height - screen.y - 16f, 260f, 30f);
+        GUI.color = new Color(0.025f, 0.04f, 0.045f, 0.9f); GUI.DrawTexture(prompt, Texture2D.whiteTexture); GUI.color = Color.white;
+        GUI.Label(prompt, ScadrykSettings.Key(6) + " / " + ScadrykSettings.PadButtonName(ScadrykSettings.PadButton(6)) + "  ·  FALAR COM NIMA", centeredBodyStyle);
     }
 
     private void DrawFinalBossBar()

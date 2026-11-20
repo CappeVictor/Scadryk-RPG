@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public enum ScadrykCue { Sword, Dash, Pulse, Power, Warning, Impact, Hurt, Portal, Victory }
+public enum ScadrykCue { Sword, Dash, Pulse, Power, Warning, Impact, Hurt, Portal, Victory, Memory }
 
 /// <summary>Original, lightweight synthesized motifs and combat signals; no external audio assets.</summary>
 public sealed class ScadrykAudio : MonoBehaviour
@@ -10,7 +10,7 @@ public sealed class ScadrykAudio : MonoBehaviour
     private AudioSource music, effects;
     private AudioClip[] biomeLoops;
     private AudioClip[] cueClips;
-    private readonly float[] nextCueAt = new float[9];
+    private readonly float[] nextCueAt = new float[10];
 
     private void Awake()
     {
@@ -26,7 +26,7 @@ public sealed class ScadrykAudio : MonoBehaviour
             MakeCue("Nara pulse", 330f, 0.32f, 0.33f), MakeCue("Nara power", 520f, 0.45f, 0.38f),
             MakeCue("Echo warning", 160f, 0.27f, 0.24f), MakeCue("Echo impact", 95f, 0.22f, 0.38f),
             MakeCue("Nara hurt", 135f, 0.25f, 0.4f), MakeCue("Portal passage", 290f, 0.65f, 0.25f),
-            MakeCue("Voices return", 440f, 0.9f, 0.32f)
+            MakeCue("Voices return", 440f, 0.9f, 0.32f), MakeCue("Nima remembers", 365f, 0.48f, 0.2f)
         };
     }
 
