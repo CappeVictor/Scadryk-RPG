@@ -164,6 +164,16 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         Time.timeScale = showTitle || isPaused || showOptions || victory ? 0f : 1f;
     }
 
+    private void OnApplicationFocus(bool hasFocus)
+    {
+        if (!FocusLossRequiresPause(hasFocus, showTitle, isPaused, showOptions, victory, transitioning)) return;
+        isPaused = true;
+        ApplyPauseTimeScale();
+    }
+
+    internal static bool FocusLossRequiresPause(bool hasFocus, bool title, bool paused, bool options, bool won, bool portalTransition) =>
+        !hasFocus && !title && !paused && !options && !won && !portalTransition;
+
     private void UpdateGamepadMenus()
     {
         if (gamepadRebindAction >= 0)
@@ -1299,6 +1309,15 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             !audio.HasCue(supportCue) || !audio.HasCue(ScadrykCue.FinalBossWarning))
         { SmokeFail("Os sinais sonoros de aviso não diferenciam papéis e guardiões"); yield break; }
         Debug.Log("SCADRYK_SMOKE: avisos sonoros diferenciam papéis e Arauto");
+        if (!FocusLossRequiresPause(false, false, false, false, false, false) ||
+            FocusLossRequiresPause(true, false, false, false, false, false) ||
+            FocusLossRequiresPause(false, true, false, false, false, false) ||
+            FocusLossRequiresPause(false, false, true, false, false, false) ||
+            FocusLossRequiresPause(false, false, false, true, false, false) ||
+            FocusLossRequiresPause(false, false, false, false, true, false) ||
+            FocusLossRequiresPause(false, false, false, false, false, true))
+        { SmokeFail("A pausa por perda de foco foi aplicada em estado incorreto"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: perda de foco pausa só o jogo ativo");
         if (!ScadrykEnemyHealth.SupportPulseContains(Vector2.zero, new Vector2(2.49f, 0f)) ||
             ScadrykEnemyHealth.SupportPulseContains(Vector2.zero, new Vector2(2.51f, 0f)) ||
             Mathf.Abs(ScadrykEnemyHealth.SupportPulseDiameter - ScadrykEnemyHealth.SupportPulseRadius * 2f) > 0.001f)

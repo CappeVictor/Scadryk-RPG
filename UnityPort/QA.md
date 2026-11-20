@@ -91,3 +91,5 @@ Critérios para revisão: nenhum dano sem aviso reconhecível; nenhum poder fica
 - Prompt de conversa: o aviso junto a Nima agora mostra só a tecla ou o botão correspondente ao último dispositivo usado. O smoke verifica a formatação nos dois modos junto das pistas do HUD; compilação e leitura visual continuam pendentes.
 
 - Recompensa dos Selos de Eco: cada selo agora libera uma silhueta ascendente, um motivo sonoro e uma lembrança própria, além da cura. O smoke exige o novo efeito, texto narrativo e recuperação de vida após cada poder; ainda sem execução, inspeção visual ou escuta no Editor.
+
+- Pausa por perda de foco: o jogo ativo pausa imediatamente quando a janela perde foco, sem retomar sozinho ao voltar; menus, pausa e travessia por portal não acionam a regra. O smoke verifica a decisão para cada estado, mas ainda não foi executado nem conferido por alternância de janelas no Editor.
