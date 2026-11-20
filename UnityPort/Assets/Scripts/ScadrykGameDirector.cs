@@ -13,7 +13,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private static readonly GUIContent OpeningMemoryContent = new GUIContent(OpeningMemory);
     private static readonly GUIContent WorldMapTitleContent = new GUIContent("MAPA DA JORNADA");
     private const string EndingMemory = "O Arauto quis ocultar a catástrofe para poupar os vivos da dor, mas o silêncio aprisionou os mortos. Nara escolhe lembrar e abre o limiar para que todos possam atravessar.";
-    private const string VictoryStatus = "As vozes atravessaram o limiar. Os sinos voltam a responder.";
+    private const string VictoryEndingText = "Os sinos respondem. Nara não apagou a dor da Grande Onda; devolveu às vozes o direito de serem lembradas. O limiar já não prende ninguém.";
     private const string SessionCsvHeader = "session_id,utc,phase,room,seconds,deaths,unclear_attacks,crescent,salt,tide,enemies_left,completed,input_mode\n";
     private static readonly string[] PhaseNames = { "Margens do Primeiro Eco", "Bacia do Sal Imóvel", "Costa das Badaladas" };
     private static readonly Color[] PhaseColors = { new Color(0.11f, 0.22f, 0.20f), new Color(0.27f, 0.20f, 0.12f), new Color(0.09f, 0.17f, 0.25f) };
@@ -1618,7 +1618,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             PlayerPrefs.DeleteKey("Scadryk.Room");
             PlayerPrefs.Save();
         }
-        statusMessage = VictoryStatus;
+        statusMessage = VictoryEndingText;
     }
 
     private IEnumerator FadeScreen(float targetAlpha, float duration)
@@ -1891,6 +1891,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             !EndingMemory.Contains("Nara escolhe lembrar") || !EndingMemory.Contains("aprisionou os mortos"))
         { SmokeFail("A história perdeu a causa da maré imóvel, a ligação de Nima ou a resolução do conflito"); yield break; }
         Debug.Log("SCADRYK_SMOKE: abertura, memórias de Nima e dos guardiões e resolução final formam o arco da maré");
+        if (OverlayMessage(false, true, false) != VictoryEndingText)
+        { SmokeFail("O estado de vitória não seleciona a mensagem de encerramento apresentada ao jogador"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: o painel de vitória seleciona o encerramento da história");
         for (int guardian = 0; guardian < GuardianNames.Length; guardian++)
             if (string.IsNullOrWhiteSpace(GuardianNames[guardian]) || !GuardianIntroductions[guardian].StartsWith(GuardianNames[guardian]) ||
                 !GuardianMemories[guardian].Contains(GuardianNames[guardian]))
@@ -2366,7 +2369,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             Debug.Log("SCADRYK_SMOKE: sala " + (room + 1) + "/9 concluída");
         }
         if (!victory) { SmokeFail("Portal final não encerrou a campanha"); yield break; }
-        if (statusMessage != VictoryStatus) { SmokeFail("O encerramento não confirmou o retorno das vozes e dos sinos"); yield break; }
+        if (statusMessage != VictoryEndingText) { SmokeFail("O encerramento não confirmou o retorno das vozes e dos sinos"); yield break; }
         Debug.Log("SCADRYK_SMOKE: SUCCESS nove salas, três poderes, Arauto e vitória");
         Application.Quit(0);
     }
@@ -2846,6 +2849,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private static string MapRoomLabel(int phase, int room) => MapRoomLabels[phase][room];
     private static string Cooldown(float value) => value <= 0.02f ? "pronto" : value.ToString("0.0") + "s";
 
+    internal static string OverlayMessage(bool confirmNewJourney, bool victory, bool showTitle) =>
+        confirmNewJourney ? "Uma jornada nova apaga o progresso salvo. Quer substituir seu checkpoint?" :
+        victory ? VictoryEndingText :
+        showTitle ? "Nara, a Ouvinte, segue os Ecos até a origem do silêncio." :
+        "A jornada pode esperar por você.";
+
     private void DrawOverlay()
     {
         Rect screenRect = new Rect(0, 0, Screen.width, Screen.height);
@@ -2879,9 +2888,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         float footerWidth = Mathf.Min(600f, Screen.width - 32f), footerHeight = compact ? 28f : 35f;
         float footerTop = Screen.height - (compact ? 42f : 58f);
         GUI.Label(new Rect(center - titleWidth * 0.5f, top, titleWidth, titleHeight), heading, centeredTitleStyle);
-        string message = confirmNewJourney ? "Uma jornada nova apaga o progresso salvo. Quer substituir seu checkpoint?" :
-            victory ? "Nara devolveu as vozes aos três lugares. A verdade da onda pode ser lembrada sem manter ninguém preso. O limiar agora é uma passagem, não uma prisão." :
-            showTitle ? "Nara, a Ouvinte, segue os Ecos até a origem do silêncio." : "A jornada pode esperar por você.";
+        string message = OverlayMessage(confirmNewJourney, victory, showTitle);
         GUI.Label(new Rect(center - messageWidth * 0.5f, messageTop, messageWidth, messageHeight), message, centeredBodyStyle);
         if (confirmNewJourney)
         {
