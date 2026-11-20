@@ -1298,14 +1298,18 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         sessionInputMode = "keyboard_mouse";
         string keyboardPulseHint = ProgressHint(4, 0, 0);
         string keyboardInteractHint = ProgressHint(1, 0, 0);
+        string keyboardWitnessPrompt = WitnessPromptText();
         sessionInputMode = "gamepad";
         string gamepadPulseHint = ProgressHint(4, 0, 0);
         string gamepadInteractHint = ProgressHint(1, 0, 0);
+        string gamepadWitnessPrompt = WitnessPromptText();
         sessionInputMode = previousHintInputMode;
         if (!keyboardPulseHint.Contains("(" + ScadrykSettings.KeyName(ScadrykSettings.Key(2)) + ")") ||
             !keyboardInteractHint.Contains("(" + ScadrykSettings.KeyName(ScadrykSettings.Key(6)) + ")") ||
+            keyboardWitnessPrompt != ScadrykSettings.KeyName(ScadrykSettings.Key(6)) + "  ·  FALAR COM NIMA" ||
             !gamepadPulseHint.Contains("(" + ScadrykSettings.PadButtonName(ScadrykSettings.PadButton(2)) + ")") ||
             !gamepadInteractHint.Contains("(" + ScadrykSettings.PadButtonName(ScadrykSettings.PadButton(6)) + ")") ||
+            gamepadWitnessPrompt != ScadrykSettings.PadButtonName(ScadrykSettings.PadButton(6)) + "  ·  FALAR COM NIMA" ||
             FormatInputBinding(KeyCode.F, 4, false) != "F" ||
             FormatInputBinding(KeyCode.Alpha1, 4, false) != "1" ||
             FormatInputBinding(KeyCode.Keypad1, 4, false) != "Num 1" ||
@@ -1798,8 +1802,10 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (screen.z <= 0f) return;
         Rect prompt = new Rect(screen.x - 130f, Screen.height - screen.y - 16f, 260f, 30f);
         GUI.color = new Color(0.025f, 0.04f, 0.045f, 0.9f); GUI.DrawTexture(prompt, Texture2D.whiteTexture); GUI.color = Color.white;
-        GUI.Label(prompt, ScadrykSettings.KeyName(ScadrykSettings.Key(6)) + " / " + ScadrykSettings.PadButtonName(ScadrykSettings.PadButton(6)) + "  ·  FALAR COM NIMA", centeredBodyStyle);
+        GUI.Label(prompt, WitnessPromptText(), centeredBodyStyle);
     }
+
+    private string WitnessPromptText() => InputBinding(6) + "  ·  FALAR COM NIMA";
 
     private void DrawFinalBossBar()
     {

@@ -87,3 +87,5 @@ Critérios para revisão: nenhum dano sem aviso reconhecível; nenhum poder fica
 - Tecelão: a cura agora verifica também a distância entre centros dos Ecos para não alcançar além do círculo verde visível. O smoke verifica pontos logo dentro/fora e o diâmetro do aviso; continua sem execução no Unity Editor ou avaliação de leitura em combate real.
 
 - Legenda do minimapa: agora identifica sala atual, concluída e adiante com as mesmas cores dos cartões; o smoke mede se a legenda cabe no painel a 150% em janela 700×600. Ainda sem compilação ou inspeção visual no Unity Editor.
+
+- Prompt de conversa: o aviso junto a Nima agora mostra só a tecla ou o botão correspondente ao último dispositivo usado. O smoke verifica a formatação nos dois modos junto das pistas do HUD; compilação e leitura visual continuam pendentes.

@@ -73,3 +73,5 @@ As referências de outros jogos orientam clareza, descoberta e ritmo. Não repro
 - **Limite de cura do Tecelão (20/11/2026):** cura de aliados agora segue exatamente o raio do círculo verde; o raio do colisor de um Eco já não estende a cura além da área mostrada. Smoke preparado para borda interna/externa e diâmetro, ainda sem execução no Editor.
 
 - **Leitura do minimapa (20/11/2026):** legenda explícita associa as cores de estado a Você, Concluída e Adiante, incluindo cálculo de altura e escala do texto. Smoke cobre os limites do painel em janela estreita a 150%; a revisão visual segue pendente no Editor.
+
+- **Consistência dos prompts (20/11/2026):** o aviso de conversa com Nima usa o mesmo vínculo dinâmico do HUD, alternando entre teclado e controle conforme a entrada recente. Smoke confere as duas strings; falta inspecionar o posicionamento e legibilidade no Editor.
