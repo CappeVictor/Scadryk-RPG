@@ -2,6 +2,8 @@
 
 ## Verificações executadas
 
+- **20/11/2026 — instalação do Editor:** após a permissão de gravação ser concedida, foram criadas `C:\Outros Arquivos\Unity\Editors` e iniciada a instalação oficial do Unity 6000.6.9f1 pelo Unity CLI. Download e validação terminaram; o instalador ainda aguarda UAC. `unity editors --installed` ainda não lista Editor instalado e a pasta de versão segue vazia. Não houve build, abertura do jogo ou Play Mode nesta etapa.
+
 - Unity 6000.6.9f1 compilou a build Windows normal nas etapas de menu, salas, Arauto e narrativa.
 - A build de desenvolvimento com `-scadryk-smoke` atravessou nove salas, acionou os objetos exigidos, conferiu a obtenção dos três poderes, derrotou o Arauto e alcançou a vitória. Resultado: `SCADRYK_SMOKE: SUCCESS` em `ScadrykSmoke-v2-run.log`. O teste usa dano artificial e **não mede dificuldade, legibilidade nem sensação de controle**.
 - Os logs de smoke citados acima não verificam carregamento do checkpoint nem gravam as métricas da sessão. A fonte agora verifica o ciclo de gravação/leitura com chaves temporárias `Scadryk.Smoke.*`, preservando o save real; essa verificação nova ainda aguarda execução. Na execução histórica `ScadrykSmoke-v3-run.log`, cada poder foi ativado imediatamente após seu guardião e entrou em recarga, além de a campanha terminar com `SUCCESS`.
