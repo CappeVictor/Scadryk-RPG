@@ -20,15 +20,21 @@ $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $outputPath = Join-Path $projectRoot 'Build/ScadrykDemo.exe'
 $logPath = Join-Path $env:TEMP ('Scadryk-Unity-Build-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.log')
 
-& $UnityEditorPath `
-    -batchmode `
-    -quit `
-    -projectPath $projectRoot `
-    -executeMethod ScadrykBuildMenu.BuildWindowsDemo `
-    -logFile $logPath
-
-if ($LASTEXITCODE -ne 0) {
-    throw "Build do Unity falhou (código $LASTEXITCODE). Consulte o log: $logPath"
+$editorArguments = @(
+    '-batchmode',
+    '-quit',
+    '-projectPath', ('"{0}"' -f $projectRoot),
+    '-executeMethod',
+    'ScadrykBuildMenu.BuildWindowsDemo',
+    '-logFile', ('"{0}"' -f $logPath)
+)
+$unityProcess = Start-Process -FilePath $UnityEditorPath -ArgumentList $editorArguments -Wait -PassThru
+$licenseError = Select-String -LiteralPath $logPath -Pattern 'No valid Unity Editor license found|Please activate your license' -ErrorAction SilentlyContinue
+if ($licenseError) {
+    throw "Unity não tem uma licença ativa. Entre no Unity Hub e ative uma licença Personal ou válida. Consulte: $logPath"
+}
+if ($unityProcess.ExitCode -ne 0) {
+    throw "Build do Unity falhou (código $($unityProcess.ExitCode)). Consulte o log: $logPath"
 }
 
 if (-not (Test-Path -LiteralPath $outputPath -PathType Leaf)) {

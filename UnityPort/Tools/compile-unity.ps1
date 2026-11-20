@@ -19,13 +19,18 @@ if ([string]::IsNullOrWhiteSpace($UnityEditorPath) -or -not (Test-Path -LiteralP
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $logPath = Join-Path $env:TEMP ('Scadryk-Unity-Compile-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.log')
 
-& $UnityEditorPath `
-    -batchmode `
-    -quit `
-    -projectPath $projectRoot `
-    -logFile $logPath
-
-$unityExitCode = $LASTEXITCODE
+$editorArguments = @(
+    '-batchmode',
+    '-quit',
+    '-projectPath', ('"{0}"' -f $projectRoot),
+    '-logFile', ('"{0}"' -f $logPath)
+)
+$unityProcess = Start-Process -FilePath $UnityEditorPath -ArgumentList $editorArguments -Wait -PassThru
+$unityExitCode = $unityProcess.ExitCode
+$licenseError = Select-String -LiteralPath $logPath -Pattern 'No valid Unity Editor license found|Please activate your license' -ErrorAction SilentlyContinue
+if ($licenseError) {
+    throw "Unity não tem uma licença ativa. Entre no Unity Hub e ative uma licença Personal ou válida. Consulte: $logPath"
+}
 $compilerErrors = Select-String -LiteralPath $logPath -Pattern '\berror CS\d+:' -ErrorAction SilentlyContinue
 if ($unityExitCode -ne 0 -or $compilerErrors) {
     throw "Compilação do Unity falhou (código $unityExitCode). Consulte o log: $logPath"
