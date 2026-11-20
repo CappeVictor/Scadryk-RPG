@@ -1182,6 +1182,11 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             !ProgressHint(7, 1, 0).Contains("sino do recife"))
         { SmokeFail("As pistas graduais de exploração não diferenciam as salas e etapas"); yield break; }
         Debug.Log("SCADRYK_SMOKE: pistas graduais específicas e ordem da costa verificadas");
+        Rect narrowHud = new Rect(14f, 14f, 325f + 0.5f * 130f, 190f + 0.5f * 86f);
+        Rect narrowMap = MiniMapPanelRect(700f, 600f, 1.5f);
+        if (narrowHud.Overlaps(narrowMap) || narrowMap.xMin < 0f || narrowMap.yMin < 0f || narrowMap.xMax > 700f || narrowMap.yMax > 600f)
+        { SmokeFail("Minimapa sobrepõe o HUD ou sai da janela estreita com texto ampliado"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: minimapa empilha abaixo do HUD em janela estreita");
         for (int effect = 0; effect < 40; effect++)
             ScadrykEffects.Burst(roomCenter + Vector2.up * (20f + effect), Color.clear, 0.05f);
         if (ScadrykEffects.SecondaryVisualCount > ScadrykEffects.SecondaryVisualLimit) { SmokeFail("O limite de efeitos secundários não foi respeitado"); yield break; }
@@ -1404,8 +1409,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private void DrawMiniMap()
     {
         float extra = ScadrykSettings.TextScale - 1f;
-        float width = 286f + extra * 120f, height = 126f + extra * 24f;
-        Rect panel = new Rect(Screen.width - width - 16, 14, width, height);
+        float width = 286f + extra * 120f;
+        Rect panel = MiniMapPanelRect(Screen.width, Screen.height, ScadrykSettings.TextScale);
         GUI.color = new Color(0.035f, 0.05f, 0.06f, 0.9f); GUI.Box(panel, GUIContent.none); GUI.color = Color.white;
         GUI.Label(new Rect(panel.x + 13, panel.y + 8, width - 26f, 21f + extra * 8f), "MAPA DA FASE", smallStyle);
         float mapX = panel.x + 15, mapY = panel.y + 43 + extra * 5f, roomW = 75f + extra * 30f, roomH = 57f + extra * 10f, gap = 8;
@@ -1426,6 +1431,23 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             GUI.color = new Color(1f, 0.82f, 0.38f); GUI.DrawTexture(dot, Texture2D.whiteTexture);
         }
         GUI.color = Color.white;
+    }
+
+    private static Rect MiniMapPanelRect(float screenWidth, float screenHeight, float textScale)
+    {
+        float extra = Mathf.Clamp(textScale, 1f, 1.5f) - 1f;
+        float width = 286f + extra * 120f;
+        float height = 126f + extra * 24f;
+        float hudWidth = 325f + extra * 130f;
+        float hudHeight = 190f + extra * 86f;
+        float x = screenWidth - width - 16f;
+        float y = 14f;
+        if (x < 14f + hudWidth + 16f)
+        {
+            y = 14f + hudHeight + 8f;
+            if (y + height > screenHeight - 8f) y = Mathf.Max(8f, screenHeight - height - 8f);
+        }
+        return new Rect(x, y, width, height);
     }
 
     private string ShortRoomName(int index) => index == 0 ? "Entrada" : index == 1 ? "Travessia" : "Guardião";
