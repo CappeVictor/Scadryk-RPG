@@ -45,6 +45,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private bool anchorsNeedPulse;
     private bool anchorsNeedSequence;
     private bool shallowWaterHintShown;
+    private bool smokeProjectileCoverPassed;
     private readonly bool[] clearedRooms = new bool[RoomsPerPhase];
     private readonly string[][] roomNames = {
         new[] { "Margem Alagada", "Vau de Cinza", "Casa das Comportas" },
@@ -1434,6 +1435,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private IEnumerator SmokeCampaign()
     {
         yield return null;
+        yield return SmokeProjectileCover();
+        if (!smokeProjectileCoverPassed) { SmokeFail("Projéteis em movimento não param na cobertura sólida ou atravessam o gatilho de teste"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: projétil colide com cobertura sólida e atravessa gatilho sem parar");
         if (!SmokeBindingResetIsolation()) { SmokeFail("Restaurar controles alterou outro dispositivo ou preferências"); yield break; }
         Debug.Log("SCADRYK_SMOKE: padrões de teclado e controle são independentes e preservam preferências");
         string checkpointTestPrefix = "Scadryk.Smoke." + System.DateTime.UtcNow.Ticks + ".";
@@ -1939,6 +1943,44 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             Destroy(cover);
             Physics2D.SyncTransforms();
         }
+    }
+
+    private IEnumerator SmokeProjectileCover()
+    {
+        smokeProjectileCoverPassed = false;
+        string projectileName = "Smoke projectile cover probe";
+        Vector2 origin = roomCenter + Vector2.up * 25f + Vector2.left * 2f;
+        Vector2 wallPosition = roomCenter + Vector2.up * 25f;
+        var cover = new GameObject("Smoke projectile solid cover");
+        try
+        {
+            cover.transform.position = wallPosition;
+            cover.AddComponent<BoxCollider2D>().size = new Vector2(0.35f, 1f);
+            Physics2D.SyncTransforms();
+            ScadrykEnemyProjectile.Launch(origin, Vector2.right, 25f, 0f, size: 0.34f, projectileName: projectileName, travelDistance: 10f);
+            for (int step = 0; step < 12 && FindSmokeProjectile(projectileName) != null; step++) yield return new WaitForFixedUpdate();
+            bool solidStopsProjectile = FindSmokeProjectile(projectileName) == null;
+
+            cover.GetComponent<BoxCollider2D>().isTrigger = true;
+            Physics2D.SyncTransforms();
+            ScadrykEnemyProjectile.Launch(origin, Vector2.right, 25f, 0f, size: 0.34f, projectileName: projectileName, travelDistance: 10f);
+            for (int step = 0; step < 4; step++) yield return new WaitForFixedUpdate();
+            smokeProjectileCoverPassed = solidStopsProjectile && FindSmokeProjectile(projectileName) != null;
+        }
+        finally
+        {
+            ScadrykEnemyProjectile projectile = FindSmokeProjectile(projectileName);
+            if (projectile != null) Destroy(projectile.gameObject);
+            Destroy(cover);
+            Physics2D.SyncTransforms();
+        }
+    }
+
+    private static ScadrykEnemyProjectile FindSmokeProjectile(string projectileName)
+    {
+        foreach (ScadrykEnemyProjectile projectile in FindObjectsByType<ScadrykEnemyProjectile>(FindObjectsSortMode.None))
+            if (projectile != null && projectile.gameObject.name == projectileName) return projectile;
+        return null;
     }
 
     private bool SmokeRevealWorldSecret(int requiredPower)
