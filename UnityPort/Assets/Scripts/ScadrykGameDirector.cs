@@ -311,6 +311,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         PlayerPrefs.DeleteKey("Scadryk.Room");
         PlayerPrefs.Save();
         if (player != null) player.ResetAbilities();
+        if (player != null) player.ResetCombatCooldowns();
         BuildPhase(0, 0, true);
         showTitle = isPaused = victory = false;
         StartRoomTimer();
@@ -1223,6 +1224,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     public void RestartCurrentRoom()
     {
+        if (player != null) player.ResetCombatCooldowns();
         BuildPhase(phaseIndex, roomIndex, false, true);
         ShowStatus("Você caiu e retornou ao começo da sala.", 2.5f);
     }

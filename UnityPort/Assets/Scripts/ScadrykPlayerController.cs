@@ -386,6 +386,12 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         System.Array.Clear(learnedAbilities, 0, learnedAbilities.Length);
         System.Array.Clear(abilityReadyAt, 0, abilityReadyAt.Length);
     }
+    public void ResetCombatCooldowns()
+    {
+        dashEndsAt = nextDashAt = nextAttackAt = nextShockwaveAt = 0f;
+        attackBufferedUntil = 0f;
+        System.Array.Clear(abilityReadyAt, 0, abilityReadyAt.Length);
+    }
     public void ApplyRootSlow(float duration) => rootedUntil = Mathf.Max(rootedUntil, Time.time + duration);
     public void SetPortalTransitPose(Vector2 position, float visibility)
     {
