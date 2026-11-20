@@ -13,6 +13,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private static readonly GUIContent OpeningMemoryContent = new GUIContent(OpeningMemory);
     private static readonly GUIContent WorldMapTitleContent = new GUIContent("MAPA DA JORNADA");
     private const string EndingMemory = "O Arauto quis ocultar a catástrofe para poupar os vivos da dor, mas o silêncio aprisionou os mortos. Nara escolhe lembrar e abre o limiar para que todos possam atravessar.";
+    private const string VictoryStatus = "As vozes atravessaram o limiar. Os sinos voltam a responder.";
     private const string SessionCsvHeader = "session_id,utc,phase,room,seconds,deaths,unclear_attacks,crescent,salt,tide,enemies_left,completed,input_mode\n";
     private static readonly string[] PhaseNames = { "Margens do Primeiro Eco", "Bacia do Sal Imóvel", "Costa das Badaladas" };
     private static readonly Color[] PhaseColors = { new Color(0.11f, 0.22f, 0.20f), new Color(0.27f, 0.20f, 0.12f), new Color(0.09f, 0.17f, 0.25f) };
@@ -1617,7 +1618,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             PlayerPrefs.DeleteKey("Scadryk.Room");
             PlayerPrefs.Save();
         }
-        statusMessage = "A maré se aquieta. Você concluiu a demonstração!";
+        statusMessage = VictoryStatus;
     }
 
     private IEnumerator FadeScreen(float targetAlpha, float duration)
@@ -2365,6 +2366,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             Debug.Log("SCADRYK_SMOKE: sala " + (room + 1) + "/9 concluída");
         }
         if (!victory) { SmokeFail("Portal final não encerrou a campanha"); yield break; }
+        if (statusMessage != VictoryStatus) { SmokeFail("O encerramento não confirmou o retorno das vozes e dos sinos"); yield break; }
         Debug.Log("SCADRYK_SMOKE: SUCCESS nove salas, três poderes, Arauto e vitória");
         Application.Quit(0);
     }

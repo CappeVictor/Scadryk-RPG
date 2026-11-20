@@ -4,6 +4,7 @@
 
 - **20/11/2026 — instalação do Editor:** após a permissão de gravação ser concedida, foram criadas `C:\Outros Arquivos\Unity\Editors` e iniciada a instalação oficial do Unity 6000.6.9f1 pelo Unity CLI. Download e validação terminaram; o instalador ainda aguarda UAC. `unity editors --installed` ainda não lista Editor instalado e a pasta de versão segue vazia. Não houve build, abertura do jogo ou Play Mode nesta etapa.
 - **20/11/2026 — transiente de áudio:** a camada percussiva de cada trilha agora aplica uma entrada suave de 18 ms sempre que o pulso reinicia. A inspeção do código identificou e removeu uma descontinuidade de amplitude; ainda falta ouvir a saída real no Editor para confirmar ausência de estalos e avaliar o timbre.
+- **20/11/2026 — encerramento narrativo:** o estado de vitória comunica que as vozes atravessaram o limiar e os sinos respondem novamente. O smoke exige essa frase ao terminar a campanha; a verificação está na fonte e não foi executada no Editor.
 
 - Unity 6000.6.9f1 compilou a build Windows normal nas etapas de menu, salas, Arauto e narrativa.
 - A build de desenvolvimento com `-scadryk-smoke` atravessou nove salas, acionou os objetos exigidos, conferiu a obtenção dos três poderes, derrotou o Arauto e alcançou a vitória. Resultado: `SCADRYK_SMOKE: SUCCESS` em `ScadrykSmoke-v2-run.log`. O teste usa dano artificial e **não mede dificuldade, legibilidade nem sensação de controle**.
