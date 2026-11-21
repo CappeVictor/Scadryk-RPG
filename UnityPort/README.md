@@ -110,7 +110,8 @@ Para manter os sinais de combate legíveis, a tela limita efeitos visuais secund
 
 ## Como ampliar
 
-- `ScadrykGameDirector.cs`: conteúdo das fases, desenho procedural dos mapas, nomes das salas e progressão.
+- `ScadrykGameDirector.cs`: estado da campanha, conteúdo e nomes das fases/salas, transições por portal, salvamento e fluxo de progressão.
+- `ScadrykGameDirector.World.cs`: montagem das salas, cenário, obstáculos, rotas, pontos de surgimento e interações com objetos do mundo.
 - `ScadrykGameDirector.UI.cs`: desenho do HUD, minimapa, telas narrativas, menus, mapa da jornada e opções; é uma parte da classe parcial `ScadrykGameDirector`.
 - `ScadrykPlayerController.cs`: velocidade, resposta dos controles, ataque, esquiva e pulso.
 - `ScadrykEnemyHealth.cs`: vida, perseguição e janela de aviso do ataque inimigo.
