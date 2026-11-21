@@ -121,7 +121,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private void Start()
     {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if DEBUG
         smokeRun = System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-scadryk-smoke") >= 0;
 #endif
         ScadrykSettings.ClearReservedBindings();
@@ -141,7 +141,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (!smokeRun) TryLoadCheckpoint("Scadryk.", out savedPhase, out savedRoom);
         BuildPhase(savedPhase, savedRoom, true);
         for (int i = 0; i < savedPhase; i++) player.UnlockAbility(i);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if DEBUG
         if (smokeRun) { showTitle = false; StartCoroutine(SmokeCampaign()); }
 #endif
         ApplyPauseTimeScale();
@@ -1728,7 +1728,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         return Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), pixelsPerUnit);
     }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if DEBUG
     private static bool SmokeBindingResetIsolation()
     {
         const int keyboardCount = 11, gamepadCount = 7;

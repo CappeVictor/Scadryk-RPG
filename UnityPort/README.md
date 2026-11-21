@@ -33,11 +33,13 @@ Não instale o pacote Unity antigo `com.unity.ide.vscode`: ele foi descontinuado
 3. Abra `Assets/Scenes/ScadrykDemo.unity` e pressione **Play** no Editor.
 4. Comece pelo menu. Limpe os Ecos e conclua o objetivo indicado em cada sala; quando o portal surgir, aproxime-se e use o comando de interação mostrado na tela (padrão **E** no teclado ou **Y** no controle). Complete as nove salas para concluir os três biomas e enfrentar o Arauto.
 
-Para criar um executável Windows, escolha **Scadryk > Build Windows demo**. O build aparece em `Build/ScadrykDemo.exe` dentro do projeto Unity. Essa etapa ainda aguarda nova execução no Editor para validar os commits atuais.
+Para criar um executável Windows, escolha **Scadryk > Build Windows demo**. O build aparece em `Build/ScadrykDemo.exe` dentro do projeto Unity. A build mais recente foi gerada com o Editor 6000.6.9f1; ela não foi iniciada nesta etapa.
 
 Para importar e compilar os scripts sem gerar ou abrir o jogo, execute no PowerShell `.\Tools\compile-unity.ps1`. Esse passo não requer Windows Build Support. O script procura o Editor `6000.6.9f1` no destino configurado `C:\Outros Arquivos\Unity\Editors` e depois no caminho padrão do Unity Hub; para outro local, informe `-UnityEditorPath 'C:\caminho\para\Unity.exe'`.
 
 Para gerar o executável Windows sem abrir a cena em Play Mode, execute `.\Tools\build-windows.ps1` na pasta `UnityPort`. Esse segundo passo requer o módulo Windows Build Support; procura o Editor nos mesmos caminhos e confirma se `Build/ScadrykDemo.exe` foi gerado. Ambos gravam logs em `%TEMP%`; nenhum inicia o executável. A compilação não substitui a avaliação manual da campanha.
+
+Para jogar a build gerada no Windows, abra `Build/ScadrykDemo.exe`. Mantenha os arquivos e pastas auxiliares da pasta `Build` juntos do `.exe`; não copie só o executável para outro local. A build atual ainda precisa de uma sessão de avaliação de gameplay.
 
 O avanço é salvo automaticamente ao atravessar cada portal. Ao reabrir o jogo, a última sala alcançada é carregada com os poderes das fases já vencidas. A conclusão da campanha apaga o marcador de progresso para permitir uma nova jornada. As métricas ficam na pasta retornada por `Application.persistentDataPath` (no Windows, normalmente `%USERPROFILE%/AppData/LocalLow/<CompanyName>/<ProductName>`). Nenhum dado é enviado pela rede.
 
