@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **20/11/2026 — percurso e enquadramento das salas:** reduzi a câmera ortográfica de 7,3 para 5,8 unidades e sincronizei o valor no construtor da cena, no diretor e no asset da cena inicial. Em 16:9, isso enquadra cerca de 20,6×11,6 unidades em uma arena de 23×13; pontos de entrada, saída e bordas não cabem todos juntos, incentivando avançar pelo espaço. As rotas, obstáculos e colisões permaneceram inalterados. Unity Editor 6000.6.9f1 compilou o projeto em batch mode com saída 0 e `Build Successful`; a nova build está em `Build/ScadrykDemo.exe`. Não iniciei o jogo nem executei gameplay. Revisar a leitura dos telegráficos, enquadramento em janela estreita e tempo de travessia com jogadores.
+
 ## Verificações executadas
 
 - **20/11/2026 — instalação do Editor:** o Unity 6000.6.9f1 foi instalado pelo Unity CLI em `C:\Outros Arquivos\Unity\Editors\6000.6.9f1\Editor\Unity.exe`, e `unity editors --installed` o reconhece. O módulo Windows Build Support (IL2CPP) terminou de baixar e a instalação aguarda um segundo UAC. Não houve build, abertura do jogo ou Play Mode nesta etapa.

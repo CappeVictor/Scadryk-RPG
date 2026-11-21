@@ -63,6 +63,8 @@
 
 Nara é uma Ouvinte que preserva histórias em três sinos de travessia. Os Ecos são memórias separadas pelo silêncio do Arauto. O bosque alagado guarda vozes nas raízes; a bacia de sal cristalizou a última maré; a costa das badaladas usa ruínas e sinos como instrumentos. Cada guardião ensina um poder. O Arauto tenta impedir que a memória da catástrofe volte ao mundo; sua derrota reconecta os lugares por um portal colossal. A câmera permanece top-down, com profundidade criada por sombras, oclusão e escala.
 
+- **Travessia em escala de sala (20/11/2026):** a câmera ortográfica passou de 7,3 para 5,8 unidades de altura. Em tela 16:9, o enquadramento cobre cerca de 20,6×11,6 unidades, dentro das dimensões de cada arena (23×13); o começo, a saída e as margens deixam de aparecer juntos. As salas continuam com o mesmo layout e colisões. Compilação/build não medem por si só velocidade percebida, clareza de combate ou enquadramento em proporções de tela diferentes.
+
 A abertura narrativa da primeira jornada e de uma jornada reiniciada é modal: combate, cronômetro e avisos temporizados permanecem pausados até a confirmação do jogador. A intenção é dar espaço para ler o chamado de Nara antes de entrar na primeira luta.
 
 O mapa completo pode ser consultado durante a exploração e pausa o combate para leitura segura. Ele mostra as três regiões em ordem, destaca as salas concluídas e a posição de Nara e mantém visível o objetivo da sala atual. O minimapa continua servindo para orientação imediata durante a luta.

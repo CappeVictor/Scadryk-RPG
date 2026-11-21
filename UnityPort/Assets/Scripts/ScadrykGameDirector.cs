@@ -474,7 +474,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             cameraObject.tag = "MainCamera";
         }
         cam.orthographic = true;
-        cam.orthographicSize = 7.3f;
+        cam.orthographicSize = 5.8f;
         cam.backgroundColor = new Color(0.025f, 0.035f, 0.045f);
         follow = cam.GetComponent<ScadrykCameraFollow>();
         if (follow == null) follow = cam.gameObject.AddComponent<ScadrykCameraFollow>();
