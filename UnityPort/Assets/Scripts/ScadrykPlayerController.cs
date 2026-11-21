@@ -294,7 +294,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
             if (comboStep == BasicAttackComboLength - 1) enemy.ApplyBasicFinisherStagger();
             hitEnemy = true;
         }
-        if (hitEnemy) ScadrykAudio.Play(ScadrykCue.PlayerStrike);
+        if (hitEnemy) ScadrykAudio.Play(comboStep == BasicAttackComboLength - 1 ? ScadrykCue.PlayerFinisher : ScadrykCue.PlayerStrike);
     }
 
     private void Dash()
