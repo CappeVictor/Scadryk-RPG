@@ -248,6 +248,15 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     internal static bool RebindingCanBeCancelled(int keyboardAction, int gamepadAction) =>
         keyboardAction >= 0 || gamepadAction >= 0;
 
+    internal static int MovePauseGridSelection(int selection, int horizontalDirection, int verticalDirection)
+    {
+        int row = Mathf.Clamp(selection, 0, 4) / 2;
+        int column = Mathf.Clamp(selection, 0, 4) % 2;
+        if (verticalDirection != 0) row = Mathf.Clamp(row + System.Math.Sign(verticalDirection), 0, 2);
+        if (horizontalDirection != 0 && row < 2) column = horizontalDirection > 0 ? 1 : 0;
+        return row == 2 ? 4 : row * 2 + column;
+    }
+
     private void UpdateKeyboardMenus()
     {
         if (rebindingAction >= 0 || gamepadRebindAction >= 0) return;
@@ -285,16 +294,10 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         {
             if (up || down)
             {
-                int row = overlaySelection / 2;
-                int column = overlaySelection % 2;
-                row = Mathf.Clamp(row + (down ? 1 : -1), 0, 2);
-                overlaySelection = row == 2 ? 4 : row * 2 + column;
+                overlaySelection = MovePauseGridSelection(overlaySelection, 0, down ? 1 : -1);
             }
             if (left || right)
-            {
-                int row = overlaySelection / 2;
-                if (row < 2) overlaySelection = row * 2 + (right ? 1 : 0);
-            }
+                overlaySelection = MovePauseGridSelection(overlaySelection, right ? 1 : -1, 0);
         }
         else if (up || down)
         {
@@ -341,10 +344,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             }
             else if (!showTitle && !victory && !confirmNewJourney)
             {
-                int row = overlaySelection / 2;
-                int column = overlaySelection % 2;
-                row = Mathf.Clamp(row + (navigation.y > 0f ? -1 : 1), 0, 2);
-                overlaySelection = row == 2 ? 4 : row * 2 + column;
+                overlaySelection = MovePauseGridSelection(overlaySelection, 0, navigation.y > 0f ? -1 : 1);
             }
             else overlaySelection = Mathf.Clamp(overlaySelection - (navigation.y > 0f ? 1 : -1), victory ? 1 : 0,
                 confirmNewJourney || victory ? 1 : showTitle ? 2 : 4);
@@ -352,8 +352,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         }
         else if (!showOptions && !showTitle && !victory && !confirmNewJourney && Time.unscaledTime >= nextGamepadNavigationAt && Mathf.Abs(navigation.x) > 0.55f)
         {
-            int row = overlaySelection / 2;
-            if (row < 2) overlaySelection = row * 2 + (navigation.x > 0f ? 1 : 0);
+            overlaySelection = MovePauseGridSelection(overlaySelection, navigation.x > 0f ? 1 : -1, 0);
             nextGamepadNavigationAt = Time.unscaledTime + 0.2f;
         }
         else if (Mathf.Abs(navigation.y) < 0.2f && Mathf.Abs(navigation.x) < 0.2f) nextGamepadNavigationAt = 0f;
@@ -1511,6 +1510,12 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (!OverlayLayoutFits(400f, 360f) || !PauseMapOverlayLayoutFits(400f, 360f))
         { SmokeFail("O menu inicial ou o menu de pausa com acesso ao mapa escapam de uma janela compacta"); yield break; }
         Debug.Log("SCADRYK_SMOKE: menus inicial e de pausa cabem em janela 400×360");
+        bool pauseGridNavigationWorks = MovePauseGridSelection(0, 0, 1) == 2 &&
+            MovePauseGridSelection(3, 0, 1) == 4 && MovePauseGridSelection(4, 0, -1) == 2 &&
+            MovePauseGridSelection(0, 1, 0) == 1 && MovePauseGridSelection(1, -1, 0) == 0 &&
+            MovePauseGridSelection(4, 1, 0) == 4;
+        if (!pauseGridNavigationWorks) { SmokeFail("A navegação da grade da pausa perde a seleção nas bordas"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: navegação da grade da pausa mantém coluna e respeita a última linha");
         if (!MemoryPanelFits(400f, 360f, 120f) || !MemoryPanelFits(700f, 600f, 90f))
         { SmokeFail("O texto ampliado dos vestígios é cortado ou cobre os comandos inferiores"); yield break; }
         Debug.Log("SCADRYK_SMOKE: painel de memória cresce com o texto sem cobrir status e controles");
