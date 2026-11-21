@@ -8,7 +8,7 @@
 
 **Ferramenta de validação:** `Tools/compile-unity.ps1` importa o projeto em batch mode para validar a compilação dos scripts sem abrir a cena. `Tools/build-windows.ps1` gera separadamente o executável e precisa do módulo Windows Build Support. Nenhum dos scripts inicia o jogo.
 
-**Riscos técnicos:** `ScadrykGameDirector.cs` concentra vários sistemas; o HUD IMGUI usa medidas absolutas; testes automatizados usam dano artificial e não validam sensação ou dificuldade. Não declarar a campanha finalizada nem paridade de qualidade antes da build normal atualizada e sessões de jogo observadas.
+**Riscos técnicos:** geração de mapas, progressão, encontros e salvamentos ainda compartilham o mesmo `ScadrykGameDirector`; o desenho do HUD/menus foi extraído para `ScadrykGameDirector.UI.cs` como parte parcial da mesma classe. O HUD IMGUI usa medidas absolutas; testes automatizados usam dano artificial e não validam sensação ou dificuldade. Não declarar a campanha finalizada nem paridade de qualidade antes da build normal atualizada e sessões de jogo observadas.
 
 ## Inspeção de código e conteúdo (20/11/2026, branch `codex/unity-playable-phase-maps`)
 
