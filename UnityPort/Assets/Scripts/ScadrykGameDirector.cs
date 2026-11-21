@@ -600,6 +600,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (enemy == phaseGuardian) phaseGuardian = null;
         if (enemy.IsFinalBoss)
         {
+            ClearRoomProjectiles();
             finalBoss = null;
             enemiesRemaining = Mathf.Max(0, enemiesRemaining - 1);
             if (anchorsActivated >= anchorsRequired) UnlockExit();
@@ -622,6 +623,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         enemiesRemaining = Mathf.Max(0, enemiesRemaining - 1);
         if (enemiesRemaining == 0)
         {
+            ClearRoomProjectiles();
             if (phaseIndex == PhaseNames.Length - 1 && roomIndex == RoomsPerPhase - 1 && enemy.IsBoss)
             {
                 if (player != null) player.RestoreHealth(player.MaxHealth);
@@ -891,7 +893,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private static void ClearRoomProjectiles()
     {
         foreach (ScadrykEnemyProjectile projectile in FindObjectsByType<ScadrykEnemyProjectile>())
-            if (projectile != null) Destroy(projectile.gameObject);
+            if (projectile != null)
+            {
+                projectile.gameObject.SetActive(false);
+                Destroy(projectile.gameObject);
+            }
     }
 
     private void ShowStatus(string message, float seconds) { statusMessage = message; statusUntil = Time.time + seconds; }
@@ -1065,7 +1071,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Debug.Log("SCADRYK_SMOKE: aviso âmbar e vulnerabilidade azul são distintos; aviso permanece prioritário");
         yield return SmokeProjectileCover();
         if (!smokeProjectileCoverPassed) { SmokeFail("Projéteis em movimento não param na cobertura sólida ou atravessam o gatilho de teste"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: projétil colide com cobertura sólida e atravessa gatilho sem parar");
+        Debug.Log("SCADRYK_SMOKE: projétil respeita cobertura, atravessa gatilho e é limpo no fim do encontro");
         if (!SmokeBindingResetIsolation()) { SmokeFail("Restaurar controles alterou outro dispositivo ou preferências"); yield break; }
         Debug.Log("SCADRYK_SMOKE: padrões de teclado e controle são independentes e preservam preferências");
         string checkpointTestPrefix = "Scadryk.Smoke." + System.DateTime.UtcNow.Ticks + ".";
@@ -1574,6 +1580,10 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 ClearSmokeAttackWarnings();
                 Debug.Log("SCADRYK_SMOKE: três projéteis da queda de estrelas anunciados na fase 3");
                 finalBoss.TakeDamage(99999f);
+                if (finalBoss != null || gateObject == null || !statusMessage.Contains("portal colossal") ||
+                    FindAnyObjectByType<ScadrykEnemyProjectile>() != null)
+                { SmokeFail("Derrotar o Arauto não abriu o portal final ou deixou projéteis ativos"); yield break; }
+                Debug.Log("SCADRYK_SMOKE: derrota do Arauto limpa projéteis e abre o portal colossal");
             }
             if (roomIndex == 2 && (player == null || !player.HasAbility(phaseIndex)))
             { SmokeFail("Poder não recebido após guardião da fase " + phaseIndex); yield break; }
@@ -1734,7 +1744,13 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             Physics2D.SyncTransforms();
             ScadrykEnemyProjectile.Launch(origin, Vector2.right, 25f, 0f, size: 0.34f, projectileName: projectileName, travelDistance: 10f);
             for (int step = 0; step < 4; step++) yield return new WaitForFixedUpdate();
-            smokeProjectileCoverPassed = solidStopsProjectile && FindSmokeProjectile(projectileName) != null;
+            bool triggerAllowsProjectile = FindSmokeProjectile(projectileName) != null;
+            ScadrykEnemyProjectile cleanupProbe = FindSmokeProjectile(projectileName);
+            ClearRoomProjectiles();
+            bool deactivatedImmediately = cleanupProbe != null && !cleanupProbe.gameObject.activeSelf;
+            yield return null;
+            bool destroyedByCleanup = FindSmokeProjectile(projectileName) == null;
+            smokeProjectileCoverPassed = solidStopsProjectile && triggerAllowsProjectile && deactivatedImmediately && destroyedByCleanup;
         }
         finally
         {
