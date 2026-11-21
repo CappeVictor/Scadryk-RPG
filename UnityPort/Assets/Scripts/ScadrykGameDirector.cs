@@ -194,11 +194,6 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ApplyPauseTimeScale();
             return;
         }
-        if (showTitle && !showOptions && Input.GetKeyDown(KeyCode.Return))
-        {
-            if (confirmNewJourney) SubmitGamepadOverlay();
-            else BeginJourney();
-        }
         if ((showTitle || isPaused) && !showOptions && Input.GetKeyDown(KeyCode.O))
         {
             showOptions = true; optionsTab = 0; optionsSelection = 0; gamepadRebindAction = rebindingAction = -1;
@@ -214,7 +209,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             else if (confirmNewJourney) { confirmNewJourney = false; overlaySelection = 0; }
             else if (!showTitle) isPaused = !isPaused;
         }
-        if (showOptions || showTitle || isPaused || victory) UpdateGamepadMenus();
+        if (showOptions || showTitle || isPaused || victory)
+        {
+            UpdateKeyboardMenus();
+            UpdateGamepadMenus();
+        }
         if (!IsPaused && gateObject == null && enemiesRemaining == 0 && anchorsActivated >= anchorsRequired)
             UnlockExit();
         if (!IsPaused && anchorsActivated < anchorsRequired && roomActiveSeconds > 24f + hintStage * 18f)
@@ -248,6 +247,64 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     internal static bool RebindingCanBeCancelled(int keyboardAction, int gamepadAction) =>
         keyboardAction >= 0 || gamepadAction >= 0;
+
+    private void UpdateKeyboardMenus()
+    {
+        if (rebindingAction >= 0 || gamepadRebindAction >= 0) return;
+        bool up = Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W);
+        bool down = Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.S);
+        bool left = Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A);
+        bool right = Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D);
+
+        if (showOptions)
+        {
+            if (optionsSelection < 3 && (left || right))
+            {
+                optionsTab = (optionsTab + (right ? 1 : 2)) % 3;
+                optionsSelection = optionsTab;
+            }
+            else if (optionsTab == 0 && (left || right))
+            {
+                float step = right ? 0.05f : -0.05f;
+                if (optionsSelection == 3) ScadrykSettings.MusicVolume += step;
+                else if (optionsSelection == 4) ScadrykSettings.EffectsVolume += step;
+                else if (optionsSelection == 5) { ScadrykSettings.TextScale += step; titleStyle = null; }
+            }
+            if (up || down)
+            {
+                int max = optionsTab == 0 ? 9 : optionsTab == 1 ? 15 : 11;
+                optionsSelection = Mathf.Clamp(optionsSelection + (down ? 1 : -1), 0, max);
+            }
+            if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Space))
+                SubmitGamepadOptions();
+            return;
+        }
+
+        if (!showTitle && !isPaused && !victory && !confirmNewJourney) return;
+        if (isPaused && !showTitle && !victory && !confirmNewJourney)
+        {
+            if (up || down)
+            {
+                int row = overlaySelection / 2;
+                int column = overlaySelection % 2;
+                row = Mathf.Clamp(row + (down ? 1 : -1), 0, 2);
+                overlaySelection = row == 2 ? 4 : row * 2 + column;
+            }
+            if (left || right)
+            {
+                int row = overlaySelection / 2;
+                if (row < 2) overlaySelection = row * 2 + (right ? 1 : 0);
+            }
+        }
+        else if (up || down)
+        {
+            int max = confirmNewJourney || victory ? 1 : showTitle ? 2 : 0;
+            overlaySelection = Mathf.Clamp(overlaySelection + (down ? 1 : -1), victory ? 1 : 0, max);
+        }
+
+        if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Space))
+            SubmitGamepadOverlay();
+    }
 
     private void UpdateGamepadMenus()
     {
