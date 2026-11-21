@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public enum ScadrykCue { Sword, Dash, Pulse, Power, Warning, Impact, Hurt, Portal, Victory, Memory, LaneWarning, VolleyWarning, AreaWarning, SupportWarning, FinalBossWarning, PlayerStrike, PlayerFinisher }
@@ -13,6 +14,7 @@ public sealed class ScadrykAudio : MonoBehaviour
     private float musicEnvelope = 1f, transitionEnvelope, combatEnvelope, combatTarget;
     private const float ContextFadeDuration = 1.25f;
     private const float CombatIntensityFadeDuration = 0.85f;
+    private readonly List<float> activeWarningCueEndsAt = new List<float>(5);
     private AudioClip[] biomeLoops;
     private AudioClip combatLoop;
     private AudioClip[] cueClips;
@@ -81,6 +83,8 @@ public sealed class ScadrykAudio : MonoBehaviour
 
     internal static float BlendCombatIntensity(float current, float target, float deltaTime) =>
         Mathf.MoveTowards(current, target, Mathf.Max(0f, deltaTime) / CombatIntensityFadeDuration);
+
+    internal static float WarningCueVolumeScale(int overlappingWarnings) => 0.8f / Mathf.Max(1, overlappingWarnings + 1);
 
     public void SetContext(int biome, bool finalBoss)
     {
@@ -152,8 +156,18 @@ public sealed class ScadrykAudio : MonoBehaviour
         if (instance == null || instance.effects == null) return;
         int index = (int)cue;
         if (index < 0 || index >= instance.cueClips.Length || Time.unscaledTime < instance.nextCueAt[index]) return;
+        float volumeScale = 1f;
+        if (IsWarningCue(cue))
+        {
+            float now = Time.unscaledTime;
+            for (int active = instance.activeWarningCueEndsAt.Count - 1; active >= 0; active--)
+                if (instance.activeWarningCueEndsAt[active] <= now) instance.activeWarningCueEndsAt.RemoveAt(active);
+            int overlappingWarnings = instance.activeWarningCueEndsAt.Count;
+            volumeScale = WarningCueVolumeScale(overlappingWarnings);
+            instance.activeWarningCueEndsAt.Add(now + instance.cueClips[index].length);
+        }
         instance.nextCueAt[index] = Time.unscaledTime + (cue == ScadrykCue.Warning || cue == ScadrykCue.Impact || IsWarningCue(cue) ? 0.13f : 0.04f);
-        instance.effects.PlayOneShot(instance.cueClips[index]);
+        instance.effects.PlayOneShot(instance.cueClips[index], volumeScale);
     }
 
     private static bool IsWarningCue(ScadrykCue cue) => cue is ScadrykCue.LaneWarning or ScadrykCue.VolleyWarning or

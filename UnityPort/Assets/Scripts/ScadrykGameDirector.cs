@@ -1180,6 +1180,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             Mathf.Abs(ScadrykAudio.CombatIntensityFor(4, true, true)) > 0.001f ||
             Mathf.Abs(ScadrykAudio.BlendCombatIntensity(0f, 1f, 0.425f) - 0.5f) > 0.001f ||
             Mathf.Abs(ScadrykAudio.BlendCombatIntensity(1f, 0f, 0.425f) - 0.5f) > 0.001f ||
+            Mathf.Abs(ScadrykAudio.WarningCueVolumeScale(0) - 0.8f) > 0.001f ||
+            ScadrykAudio.WarningCueVolumeScale(1) >= ScadrykAudio.WarningCueVolumeScale(0) ||
+            ScadrykAudio.WarningCueVolumeScale(4) <= 0f ||
             !audio.HasCue(laneCue) || !audio.HasCue(volleyCue) || !audio.HasCue(areaCue) ||
             !audio.HasCue(supportCue) || !audio.HasCue(ScadrykCue.FinalBossWarning) || !audio.HasCue(ScadrykCue.PlayerStrike) || !audio.HasCue(ScadrykCue.PlayerFinisher) ||
             ScadrykCue.PlayerStrike == ScadrykCue.Impact || ScadrykCue.PlayerStrike == ScadrykCue.Sword ||
@@ -1187,7 +1190,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ScadrykCue.PlayerFinisher == ScadrykCue.Sword)
         { SmokeFail("A intensidade musical não acompanha Ecos, guardiões, pausa ou recuo gradual"); yield break; }
         Debug.Log("SCADRYK_SMOKE: música escala de salas limpas a grupos e chefes e recua em pausas");
-        Debug.Log("SCADRYK_SMOKE: sinais distinguem golpe confirmado de Nara, papéis inimigos e Arauto");
+        Debug.Log("SCADRYK_SMOKE: sinais de perigo preservam os cues e atenuam avisos sobrepostos");
         if (!FocusLossRequiresPause(false, false, false, false, false, false) ||
             FocusLossRequiresPause(true, false, false, false, false, false) ||
             FocusLossRequiresPause(false, true, false, false, false, false) ||
