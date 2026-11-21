@@ -1145,6 +1145,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ScadrykEnemyHealth.AttackRecoveryDuration(false, true) <= ScadrykEnemyHealth.AttackRecoveryDuration(true, false))
         { SmokeFail("A recuperação após impacto perdeu duração ou gradação por porte do inimigo"); yield break; }
         Debug.Log("SCADRYK_SMOKE: recuperação de impacto aumenta de Eco comum a guardião e Arauto");
+        if (!ScadrykEnemyHealth.TidebreakerCancelsWindup(false, true) ||
+            ScadrykEnemyHealth.TidebreakerCancelsWindup(true, true) ||
+            ScadrykEnemyHealth.TidebreakerCancelsWindup(false, false))
+        { SmokeFail("Rompante não interrompe apenas a preparação de Ecos comuns"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: Rompante interrompe preparação de Eco comum, sem cancelar guardião ou Arauto");
         if (ScadrykActorAnimator.WindupStrength(1f, 1f, 1f) != 0f ||
             Mathf.Abs(ScadrykActorAnimator.WindupStrength(1.5f, 1f, 1f) - 0.5f) > 0.001f ||
             ScadrykActorAnimator.WindupStrength(2f, 1f, 1f) != 1f)

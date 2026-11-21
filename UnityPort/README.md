@@ -90,7 +90,7 @@ Ao limpar qualquer sala, um portal ilustrado começa a se abrir para levar Nara 
 
 Os guardiões se apresentam como **Raiz-Mor**, **Vigia do Sal** e **Vigia do Coro**; o nome permanece junto à barra de vida enquanto o guardião está visível. Ao conceder cada poder, a lembrança explica também seu uso tático: Crescente interrompe, Estouro expõe alvos e Rompante afasta Ecos. O aviso de aquisição mostra o comando atual, inclusive após remapeamento. As memórias ligam Nima ao primeiro sino, a Vigia do Sal à Grande Onda suspensa e o Vigia do Coro à decisão do Arauto de calar os sinos. Depois da lembrança do terceiro guardião, o Arauto aparece, dando a Nara tempo para escutar antes de a luta começar.
 
-Os três poderes têm funções complementares: o **Crescente** interrompe e retarda um Eco (chefes resistem por menos tempo); o **Estouro** deixa os alvos expostos por alguns segundos, aumentando em 30% o dano dos golpes seguintes; o **Rompante** empurra Ecos comuns. Uma sequência útil é Estouro para expor, Crescente para interromper e Rompante para afastar o grupo.
+Os três poderes têm funções complementares: o **Crescente** interrompe e retarda um Eco (chefes resistem por menos tempo); o **Estouro** deixa os alvos expostos por alguns segundos, aumentando em 30% o dano dos golpes seguintes; o **Rompante** empurra Ecos comuns e interrompe sua preparação, mas os guardiões resistem. Uma sequência útil é Estouro para expor, Crescente para interromper e Rompante para afastar o grupo.
 
 O ataque básico aceita um novo toque nos últimos 0,2 s antes da recarga terminar e o executa assim que fica disponível. O comando é consumido uma vez e expira se a janela passar, evitando que o golpe pareça ignorar um toque próximo do fim da animação.
 

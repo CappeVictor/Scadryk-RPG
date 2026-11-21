@@ -26,6 +26,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     internal static float SupportPulseDiameter => SupportPulseRadius * 2f;
     internal static bool SupportPulseContains(Vector2 origin, Vector2 target) =>
         Vector2.Distance(origin, target) <= SupportPulseRadius;
+    internal static bool TidebreakerCancelsWindup(bool boss, bool windingUp) => !boss && windingUp;
     [SerializeField, Min(1f)] private float maxHealth = 60f;
     private float health, nextAttackAt, windupEndsAt;
     private float attackRange = 1.2f;
@@ -556,6 +557,12 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         knockbackVelocity = direction.sqrMagnitude > 0.01f ? direction.normalized * 5.5f : Vector2.zero;
         knockbackUntil = Time.time + 0.24f;
         staggerUntil = Mathf.Max(staggerUntil, knockbackUntil + 0.25f);
+        if (!TidebreakerCancelsWindup(IsBoss, isWindup)) return;
+        ClearAttackWarnings();
+        isWindup = false;
+        windupEndsAt = 0f;
+        nextAttackAt = staggerUntil + 0.45f;
+        if (animator != null) animator.CancelWindup();
     }
 
     private void ResolveBellPulse()
