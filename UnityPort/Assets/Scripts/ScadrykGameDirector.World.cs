@@ -522,7 +522,9 @@ public sealed partial class ScadrykGameDirector
         return false;
     }
 
-    private bool ActiveRoomHasWalkableRoute(Vector2 center)
+    private bool ActiveRoomHasWalkableRoute(Vector2 center) => ActiveRoomHasWalkableRoute(center, center + Vector2.right * 8.05f);
+
+    private bool ActiveRoomHasWalkableRoute(Vector2 center, Vector2 target)
     {
         if (levelRoot == null) return false;
         const float step = 0.35f;
@@ -556,9 +558,10 @@ public sealed partial class ScadrykGameDirector
 
         int startX = Mathf.RoundToInt((-6.2f - minX) / step);
         int startY = Mathf.RoundToInt(-minY / step);
-        int exitX = Mathf.RoundToInt((8.05f - minX) / step);
-        int exitY = startY;
-        if (blocked[startX, startY] || blocked[exitX, exitY]) return false;
+        int targetX = Mathf.RoundToInt((target.x - center.x - minX) / step);
+        int targetY = Mathf.RoundToInt((target.y - center.y - minY) / step);
+        if (targetX < 0 || targetX >= columns || targetY < 0 || targetY >= rows ||
+            blocked[startX, startY] || blocked[targetX, targetY]) return false;
 
         var visited = new bool[columns, rows];
         var queue = new int[columns * rows];
@@ -570,7 +573,7 @@ public sealed partial class ScadrykGameDirector
             int current = queue[read++];
             int x = current % columns;
             int y = current / columns;
-            if (x == exitX && y == exitY) return true;
+            if (x == targetX && y == targetY) return true;
             for (int dx = -1; dx <= 1; dx++)
             for (int dy = -1; dy <= 1; dy++)
             {

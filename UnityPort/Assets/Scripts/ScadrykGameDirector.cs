@@ -1434,6 +1434,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             if (room == 3 || room == 6)
             {
                 int requiredPower = room == 3 ? 0 : 1;
+                if (worldSecret == null || !ActiveRoomHasWalkableRoute(roomCenter, worldSecret.transform.position))
+                { SmokeFail("O selo opcional da sala " + (room + 1) + " não pode ser alcançado pelo caminho livre dos colisores sólidos"); yield break; }
                 if (!SmokeRevealWorldSecret(requiredPower))
                 { SmokeFail("O selo opcional não exigiu o poder correto ou não concedeu cura na sala " + (room + 1)); yield break; }
             }
@@ -1457,6 +1459,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             { SmokeFail("O Arauto apareceu antes de Nara concluir a memória do terceiro guardião"); yield break; }
             if (room == 8 && !statusMessage.Contains("última lembrança"))
             { SmokeFail("O intervalo seguro antes do Arauto não explicou a última lembrança"); yield break; }
+            if (room == 8 && (worldSecret == null || !ActiveRoomHasWalkableRoute(roomCenter, worldSecret.transform.position)))
+            { SmokeFail("O selo opcional da arena final não pode ser alcançado pelo caminho livre dos colisores sólidos"); yield break; }
             if (room == 8 && (worldSecretHintShown || !player.HasAbility(2) ||
                 !WorldSecretHint(2).Contains("Rompante da Maré")))
             { SmokeFail("A pista do selo não foi atualizada após aprender Rompante com o guardião"); yield break; }
