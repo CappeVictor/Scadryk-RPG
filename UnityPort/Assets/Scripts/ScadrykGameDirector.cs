@@ -282,11 +282,24 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 int max = optionsTab == 0 ? 9 : optionsTab == 1 ? 15 : 11;
                 optionsSelection = Mathf.Clamp(optionsSelection - (navigation.y > 0f ? 1 : -1), 0, max);
             }
+            else if (!showTitle && !victory && !confirmNewJourney)
+            {
+                int row = overlaySelection / 2;
+                int column = overlaySelection % 2;
+                row = Mathf.Clamp(row + (navigation.y > 0f ? -1 : 1), 0, 2);
+                overlaySelection = row == 2 ? 4 : row * 2 + column;
+            }
             else overlaySelection = Mathf.Clamp(overlaySelection - (navigation.y > 0f ? 1 : -1), victory ? 1 : 0,
-                confirmNewJourney || victory ? 1 : showTitle ? 2 : 3);
+                confirmNewJourney || victory ? 1 : showTitle ? 2 : 4);
             nextGamepadNavigationAt = Time.unscaledTime + 0.2f;
         }
-        else if (Mathf.Abs(navigation.y) < 0.2f) nextGamepadNavigationAt = 0f;
+        else if (!showOptions && !showTitle && !victory && !confirmNewJourney && Time.unscaledTime >= nextGamepadNavigationAt && Mathf.Abs(navigation.x) > 0.55f)
+        {
+            int row = overlaySelection / 2;
+            if (row < 2) overlaySelection = row * 2 + (navigation.x > 0f ? 1 : 0);
+            nextGamepadNavigationAt = Time.unscaledTime + 0.2f;
+        }
+        else if (Mathf.Abs(navigation.y) < 0.2f && Mathf.Abs(navigation.x) < 0.2f) nextGamepadNavigationAt = 0f;
 
         if (showOptions && optionsSelection < 3 && Time.unscaledTime >= nextGamepadNavigationAt && Mathf.Abs(navigation.x) > 0.55f)
         {
@@ -334,7 +347,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         else if (overlaySelection == 0) isPaused = false;
         else if (overlaySelection == 1) { showWorldMap = true; isPaused = false; }
         else if (overlaySelection == 2) RequestNewGame();
-        else { showOptions = true; optionsTab = 0; optionsSelection = 0; }
+        else if (overlaySelection == 3) { showOptions = true; optionsTab = 0; optionsSelection = 0; }
+        else ReturnToTitle();
     }
 
     private void SubmitGamepadOptions()
@@ -424,6 +438,21 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             return;
         }
         StartRoomTimer();
+        ApplyPauseTimeScale();
+    }
+
+    private void ReturnToTitle()
+    {
+        if (player != null && !victory) SaveProgress(phaseIndex, roomIndex);
+        RecordRoomSession();
+        showTitle = true;
+        isPaused = false;
+        showOptions = false;
+        confirmNewJourney = false;
+        showOpeningStory = false;
+        showWorldMap = false;
+        rebindingAction = gamepadRebindAction = -1;
+        overlaySelection = 0;
         ApplyPauseTimeScale();
     }
 

@@ -362,11 +362,19 @@ public sealed partial class ScadrykGameDirector
         }
         else
         {
-            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY, buttonWidth, buttonHeight), "Continuar", 0)) isPaused = false;
-            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep, buttonWidth, buttonHeight), "Mapa da jornada", 1))
+            float gap = 8f;
+            float columnWidth = Mathf.Min((buttonWidth - gap) * 0.5f, (Screen.width - 32f - gap) * 0.5f);
+            float left = center - columnWidth - gap * 0.5f;
+            float right = center + gap * 0.5f;
+            float row0 = buttonY;
+            float row1 = buttonY + buttonStep;
+            float row2 = buttonY + buttonStep * 2f;
+            if (OverlayButton(new Rect(left, row0, columnWidth, buttonHeight), "Continuar", 0)) isPaused = false;
+            if (OverlayButton(new Rect(right, row0, columnWidth, buttonHeight), "Mapa", 1))
             { isPaused = false; showWorldMap = true; ApplyPauseTimeScale(); }
-            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep * 2f, buttonWidth, buttonHeight), "Nova jornada", 2)) RequestNewGame();
-            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep * 3f, buttonWidth, buttonHeight), "Opções e controles", 3)) { showOptions = true; optionsTab = optionsSelection = 0; }
+            if (OverlayButton(new Rect(left, row1, columnWidth, buttonHeight), "Nova jornada", 2)) RequestNewGame();
+            if (OverlayButton(new Rect(right, row1, columnWidth, buttonHeight), "Opções", 3)) { showOptions = true; optionsTab = optionsSelection = 0; }
+            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, row2, buttonWidth, buttonHeight), "Salvar e sair ao título", 4)) ReturnToTitle();
         }
         GUI.Label(new Rect(center - footerWidth * 0.5f, footerTop, footerWidth, footerHeight), "Três lugares · nove salas · memórias a libertar", centeredBodyStyle);
     }
@@ -537,8 +545,8 @@ public sealed partial class ScadrykGameDirector
         float buttonHeight = compact ? 42f : 44f;
         float buttonStep = compact ? 44f : 54f;
         float footerTop = screenHeight - (compact ? 42f : 58f);
-        float fourthButtonBottom = buttonY + buttonStep * 3f + buttonHeight;
-        return screenWidth >= 64f && messageBottom <= buttonY && fourthButtonBottom <= footerTop && footerTop + (compact ? 28f : 35f) <= screenHeight;
+        float thirdRowBottom = buttonY + buttonStep * 2f + buttonHeight;
+        return screenWidth >= 256f && messageBottom <= buttonY && thirdRowBottom <= footerTop && footerTop + (compact ? 28f : 35f) <= screenHeight;
     }
 
     private static Rect MemoryPanelRect(float screenWidth, float screenHeight, float bodyHeight)
