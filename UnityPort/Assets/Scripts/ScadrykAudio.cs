@@ -65,10 +65,17 @@ public sealed class ScadrykAudio : MonoBehaviour
         if (effects != null) effects.volume = ScadrykSettings.EffectsVolume * 0.65f;
     }
 
-    public void SetCombatIntensity(bool active)
+    public void SetCombatIntensity(float intensity)
     {
-        combatTarget = active ? 1f : 0f;
-        if (active && combatMusic != null && combatMusic.clip != null && !combatMusic.isPlaying) combatMusic.Play();
+        combatTarget = Mathf.Clamp01(intensity);
+        if (combatTarget > 0f && combatMusic != null && combatMusic.clip != null && !combatMusic.isPlaying) combatMusic.Play();
+    }
+
+    internal static float CombatIntensityFor(int activeEnemies, bool bossEncounter, bool paused)
+    {
+        if (paused || activeEnemies <= 0) return 0f;
+        if (bossEncounter) return 1f;
+        return Mathf.Lerp(0.32f, 0.78f, Mathf.Clamp01((activeEnemies - 1f) / 3f));
     }
 
     internal static float BlendCombatIntensity(float current, float target, float deltaTime) =>
