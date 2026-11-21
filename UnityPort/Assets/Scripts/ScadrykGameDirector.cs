@@ -8,6 +8,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 {
     private const int RoomsPerPhase = 3;
     private const float RoomSpacing = 23f;
+    private const float ConnectorCenterOffset = 11.35f;
     private const string OpeningMemory = "Depois que a Grande Onda cobriu a costa, os três sinos emudeceram. Nara, a Ouvinte, ainda escutava os nomes perdidos e seguiu a maré imóvel.";
     private static readonly GUIContent OpeningTitleContent = new GUIContent("OS TRÊS SINOS EMUDECERAM");
     private static readonly GUIContent OpeningMemoryContent = new GUIContent(OpeningMemory);
@@ -667,18 +668,28 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             {
                 MakeBox(parent, "West wall upper", new Vector2(x - 9.7f, 4.7f), new Vector2(0.5f, 4.3f), wall, true, 0);
                 MakeBox(parent, "West wall lower", new Vector2(x - 9.7f, -4.7f), new Vector2(0.5f, 4.3f), wall, true, 0);
+                MakeBox(parent, "West echo threshold", new Vector2(x - 9.7f, 0f), new Vector2(0.5f, 5.6f), wall, true, 0);
             }
             if (i == RoomsPerPhase - 1)
             {
+                MakeBox(parent, "East outer boundary", new Vector2(x + 9.7f, 0f), new Vector2(0.5f, 13f), wall, true, 0);
+            }
+            else
+            {
                 MakeBox(parent, "East wall upper", new Vector2(x + 9.7f, 4.7f), new Vector2(0.5f, 4.3f), wall, true, 0);
                 MakeBox(parent, "East wall lower", new Vector2(x + 9.7f, -4.7f), new Vector2(0.5f, 4.3f), wall, true, 0);
+                // Rooms advance through their portal transition. The short seal closes
+                // the doorway without narrowing the walkable route to the portal.
+                MakeBox(parent, "East echo threshold", new Vector2(x + 9.7f, 0f), new Vector2(0.5f, 5.6f), wall, true, 0);
+                MakeBox(parent, "Threshold seal sigil", new Vector2(x + 9.7f, 0f), new Vector2(0.22f, 0.78f), PhaseAccentColors[phaseIndex], false, 1);
             }
             MakeBox(parent, "Floor inlay", new Vector2(x, 0), new Vector2(0.1f, 11.8f), new Color(1f, 1f, 1f, 0.055f), false, -9);
             if (i < RoomsPerPhase - 1)
             {
-                MakeBox(parent, "Connector floor", new Vector2(x + 11.35f, 0), new Vector2(3.3f, 3.4f), floor * 1.12f, false, -9);
-                MakeBox(parent, "Connector north rail", new Vector2(x + 11.35f, 1.92f), new Vector2(3.4f, 0.28f), wall, true, 0);
-                MakeBox(parent, "Connector south rail", new Vector2(x + 11.35f, -1.92f), new Vector2(3.4f, 0.28f), wall, true, 0);
+                Vector2 connectorCenter = new Vector2(x + ConnectorCenterOffset, 0f);
+                MakeBox(parent, "Connector floor", connectorCenter, new Vector2(3.3f, 3.4f), floor * 1.12f, false, -9);
+                MakeBox(parent, "Connector north rail", connectorCenter + Vector2.up * 1.92f, new Vector2(3.4f, 0.28f), wall, true, 0);
+                MakeBox(parent, "Connector south rail", connectorCenter + Vector2.down * 1.92f, new Vector2(3.4f, 0.28f), wall, true, 0);
             }
             DrawRoomObstacles(parent, i, x);
             MakeLabelMarker(parent, new Vector2(x, 5.35f), (i + 1).ToString(), PhaseAccentColors[phaseIndex]);
@@ -1099,6 +1110,31 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 visited[nextX, nextY] = true;
                 queue[write++] = nextY * columns + nextX;
             }
+        }
+        return false;
+    }
+
+    private bool ActiveRoomHasSealedBoundaries()
+    {
+        if (levelRoot == null) return false;
+        bool westIsOuter = roomIndex == 0;
+        bool eastIsOuter = roomIndex == RoomsPerPhase - 1;
+        float westX = roomCenter.x - 9.7f;
+        float eastX = roomCenter.x + 9.7f;
+        float westHeight = westIsOuter ? 12f : 5.5f;
+        float eastHeight = eastIsOuter ? 12f : 5.5f;
+        return HasSolidBoundaryAt(westX, westHeight) && HasSolidBoundaryAt(eastX, eastHeight);
+    }
+
+    private bool HasSolidBoundaryAt(float x, float minimumHeight)
+    {
+        foreach (BoxCollider2D box in levelRoot.GetComponentsInChildren<BoxCollider2D>())
+        {
+            if (box == null || !box.enabled || box.isTrigger) continue;
+            Vector2 position = box.transform.position;
+            Vector2 size = box.bounds.size;
+            if (Mathf.Abs(position.x - x) <= 0.02f && Mathf.Abs(position.y) <= 0.02f &&
+                size.x >= 0.45f && size.y >= minimumHeight) return true;
         }
         return false;
     }
@@ -2169,9 +2205,11 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 if (!clearedRooms[previousRoom]) { SmokeFail("O mapa não marcou a sala anterior como concluída: " + previousRoom); yield break; }
             foreach (ScadrykEnemyHealth enemy in FindObjectsByType<ScadrykEnemyHealth>())
                 if (enemy != null && !enemy.IsFinalBoss) enemy.TakeDamage(99999f);
+            if (!ActiveRoomHasSealedBoundaries())
+            { SmokeFail("A sala " + (room + 1) + " não isolou seus limites de progressão"); yield break; }
             if (!ActiveRoomHasWalkableRoute(roomCenter))
             { SmokeFail("A geometria sólida ativa bloqueou a rota caminhável da sala " + (room + 1)); yield break; }
-            Debug.Log("SCADRYK_SMOKE: rota da sala " + (room + 1) + "/9 livre dos colisores sólidos do bioma");
+            Debug.Log("SCADRYK_SMOKE: sala " + (room + 1) + "/9 isolada e rota ao portal livre dos colisores sólidos do bioma");
             if (room == 8 && finalBoss != null)
             { SmokeFail("O Arauto apareceu antes de Nara concluir a memória do terceiro guardião"); yield break; }
             if (room == 8 && !statusMessage.Contains("última lembrança"))
