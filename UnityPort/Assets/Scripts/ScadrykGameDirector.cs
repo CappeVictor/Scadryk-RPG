@@ -1941,6 +1941,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             !victoryOverlay.Contains("não prende ninguém"))
         { SmokeFail("O painel de vitória precisa confirmar a escolha de Nara, o retorno dos sinos e o fim do aprisionamento"); yield break; }
         Debug.Log("SCADRYK_SMOKE: o painel de vitória seleciona o encerramento da história");
+        string savedLocation = CheckpointSummary(2, 1);
+        string clampedLocation = CheckpointSummary(-1, 99);
+        if (!savedLocation.Contains("Costa das Badaladas") || !savedLocation.Contains("Bóias") || !savedLocation.Contains("2/3") ||
+            !clampedLocation.Contains("Margens do Primeiro Eco") || !clampedLocation.Contains("3/3"))
+        { SmokeFail("O resumo do checkpoint não identifica ou limita corretamente bioma e sala salvos"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: resumo do checkpoint identifica bioma e sala e limita dados fora da faixa");
         for (int guardian = 0; guardian < GuardianNames.Length; guardian++)
             if (string.IsNullOrWhiteSpace(GuardianNames[guardian]) || !GuardianIntroductions[guardian].StartsWith(GuardianNames[guardian]) ||
                 !GuardianMemories[guardian].Contains(GuardianNames[guardian]))
@@ -2923,6 +2929,13 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         showTitle ? "Nara, a Ouvinte, segue os Ecos até a origem do silêncio." :
         "A jornada pode esperar por você.";
 
+    internal static string CheckpointSummary(int phase, int room)
+    {
+        phase = Mathf.Clamp(phase, 0, PhaseNames.Length - 1);
+        room = Mathf.Clamp(room, 0, RoomsPerPhase - 1);
+        return "Retomar: " + PhaseNames[phase] + " · " + MapRoomLabel(phase, room) + " · sala " + (room + 1) + "/" + RoomsPerPhase;
+    }
+
     private void DrawOverlay()
     {
         Rect screenRect = new Rect(0, 0, Screen.width, Screen.height);
@@ -2956,7 +2969,10 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         float footerWidth = Mathf.Min(600f, Screen.width - 32f), footerHeight = compact ? 28f : 35f;
         float footerTop = Screen.height - (compact ? 42f : 58f);
         GUI.Label(new Rect(center - titleWidth * 0.5f, top, titleWidth, titleHeight), heading, centeredTitleStyle);
-        string message = OverlayMessage(confirmNewJourney, victory, showTitle);
+        string message = showTitle && !victory && !confirmNewJourney &&
+            TryLoadCheckpoint("Scadryk.", out int savedPhase, out int savedRoom)
+                ? CheckpointSummary(savedPhase, savedRoom)
+                : OverlayMessage(confirmNewJourney, victory, showTitle);
         GUI.Label(new Rect(center - messageWidth * 0.5f, messageTop, messageWidth, messageHeight), message, centeredBodyStyle);
         if (confirmNewJourney)
         {

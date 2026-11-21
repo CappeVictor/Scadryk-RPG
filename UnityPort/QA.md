@@ -1,6 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
 - **20/11/2026 — percurso e enquadramento das salas:** reduzi a câmera ortográfica de 7,3 para 5,8 unidades e sincronizei o valor no construtor da cena, no diretor e no asset da cena inicial. Em 16:9, isso enquadra cerca de 20,6×11,6 unidades em uma arena de 23×13; pontos de entrada, saída e bordas não cabem todos juntos, incentivando avançar pelo espaço. As rotas, obstáculos e colisões permaneceram inalterados. Unity Editor 6000.6.9f1 compilou o projeto em batch mode com saída 0 e `Build Successful`; a nova build está em `Build/ScadrykDemo.exe`. Não iniciei o jogo nem executei gameplay. Revisar a leitura dos telegráficos, enquadramento em janela estreita e tempo de travessia com jogadores.
+- **20/11/2026 — contexto do checkpoint no menu:** a opção **Continuar jornada** agora mostra o bioma, o nome curto da sala e sua posição (ex.: `2/3`) que serão retomados. A mensagem usa o mesmo carregamento validado do save, limita fase/sala fora da faixa e não aparece sem checkpoint. O smoke ganhou asserções de identificação e limites. Unity Editor compilou com saída 0 e a build Windows registrou `Build Successful`; não abri o jogo nem executei o smoke. Falta revisar a quebra de linha em texto ampliado e a legibilidade em menu.
 
 ## Verificações executadas
 
