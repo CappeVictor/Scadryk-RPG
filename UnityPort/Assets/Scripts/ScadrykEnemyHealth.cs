@@ -501,6 +501,17 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         }
     }
 
+    public void ApplyBasicFinisherStagger()
+    {
+        if (dead || IsBoss) return;
+        staggerUntil = Mathf.Max(staggerUntil, Time.time + 0.24f);
+        if (!isWindup) return;
+        isWindup = false;
+        windupEndsAt = 0f;
+        nextAttackAt = staggerUntil + 0.3f;
+        if (animator != null) animator.CancelWindup();
+    }
+
     public void ApplySaltExposure()
     {
         if (!dead) exposedUntil = Mathf.Max(exposedUntil, Time.time + (IsBoss ? 3f : 5f));

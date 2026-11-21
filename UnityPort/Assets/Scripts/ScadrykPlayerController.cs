@@ -32,6 +32,8 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     private float dashEndsAt, nextDashAt, nextAttackAt, nextShockwaveAt, dashBufferedUntil, attackBufferedUntil;
     private float health = 120f;
     private float maxHealth = 120f;
+    private int lastBasicAttackStep = -1;
+    private float basicAttackComboUntil;
     private bool isDying;
     private float invulnerableUntil;
     private float rootedUntil;
@@ -42,6 +44,8 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     private ScadrykGameDirector director;
     private Sprite[] spriteFrames;
     private const float BasicAttackWindup = 0.12f;
+    private const int BasicAttackComboLength = 3;
+    internal const float BasicAttackComboWindow = 0.82f;
     internal const float BasicAttackBufferWindow = 0.2f;
     internal const float DashBufferWindow = 0.12f;
     private Vector3 lastMousePosition;
@@ -239,19 +243,46 @@ public sealed class ScadrykPlayerController : MonoBehaviour
             return;
         }
         attackBufferedUntil = 0f;
-        nextAttackAt = Time.time + attackCooldown;
+        int comboStep = NextBasicAttackStep(lastBasicAttackStep, lastBasicAttackStep >= 0 && Time.time <= basicAttackComboUntil);
+        lastBasicAttackStep = comboStep;
+        basicAttackComboUntil = Time.time + BasicAttackComboWindow;
+        float attackRangeForStep = attackRange * BasicAttackRangeScale(comboStep);
+        float attackDamageForStep = attackDamage * BasicAttackDamageScale(comboStep);
+        float windupForStep = BasicAttackWindupForStep(comboStep);
+        nextAttackAt = Time.time + attackCooldown * BasicAttackCooldownScale(comboStep);
         Vector2 direction = facing;
         ScadrykAudio.Play(ScadrykCue.Sword);
-        if (animator != null) animator.PlayAttack(direction, false);
-        StartCoroutine(ResolveBasicAttack(direction));
+        if (animator != null) animator.PlayAttack(direction, comboStep == BasicAttackComboLength - 1);
+        StartCoroutine(ResolveBasicAttack(direction, comboStep, attackDamageForStep, attackRangeForStep, windupForStep));
     }
 
-    private IEnumerator ResolveBasicAttack(Vector2 direction)
+    internal static int NextBasicAttackStep(int previousStep, bool comboActive)
     {
-        yield return new WaitForSeconds(BasicAttackWindup);
+        if (!comboActive || previousStep < 0 || previousStep >= BasicAttackComboLength) return 0;
+        return (previousStep + 1) % BasicAttackComboLength;
+    }
+
+    internal static float BasicAttackDamageScale(int step) => Mathf.Clamp(step, 0, BasicAttackComboLength - 1) == BasicAttackComboLength - 1 ? 1.5f : 1f;
+    internal static float BasicAttackRangeScale(int step) => Mathf.Clamp(step, 0, BasicAttackComboLength - 1) switch
+    {
+        0 => 0.98f,
+        1 => 1.04f,
+        _ => 1.18f
+    };
+    internal static float BasicAttackCooldownScale(int step) => Mathf.Clamp(step, 0, BasicAttackComboLength - 1) == BasicAttackComboLength - 1 ? 1.55f : 1f;
+    internal static float BasicAttackWindupForStep(int step) => Mathf.Clamp(step, 0, BasicAttackComboLength - 1) switch
+    {
+        0 => BasicAttackWindup,
+        1 => 0.14f,
+        _ => 0.2f
+    };
+
+    private IEnumerator ResolveBasicAttack(Vector2 direction, int comboStep, float damage, float range, float windup)
+    {
+        yield return new WaitForSeconds(windup);
         if (isDying || (director != null && director.IsPaused)) yield break;
-        ScadrykEffects.Slash(transform.position, direction, attackRange);
-        Vector2 footprint = ScadrykEffects.PlayerSlashFootprint(attackRange);
+        ScadrykEffects.Slash(transform.position, direction, range);
+        Vector2 footprint = ScadrykEffects.PlayerSlashFootprint(range);
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, footprint.x + footprint.y, ~0);
         bool hitEnemy = false;
         foreach (Collider2D hit in hits)
@@ -259,7 +290,8 @@ public sealed class ScadrykPlayerController : MonoBehaviour
             if (!hit.TryGetComponent<ScadrykEnemyHealth>(out var enemy)) continue;
             if (!WithinVisualFootprint(enemy.transform.position, transform.position, direction, ScadrykEffects.PlayerSlashForwardOffset, footprint, EnemyCollisionRadius(enemy))) continue;
             if (ScadrykCombatRules.WorldBlocks(transform.position, enemy.transform.position)) continue;
-            enemy.TakeDamage(attackDamage);
+            enemy.TakeDamage(damage);
+            if (comboStep == BasicAttackComboLength - 1) enemy.ApplyBasicFinisherStagger();
             hitEnemy = true;
         }
         if (hitEnemy) ScadrykAudio.Play(ScadrykCue.PlayerStrike);
@@ -417,6 +449,8 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     {
         dashEndsAt = nextDashAt = nextAttackAt = nextShockwaveAt = 0f;
         dashBufferedUntil = attackBufferedUntil = 0f;
+        lastBasicAttackStep = -1;
+        basicAttackComboUntil = 0f;
         System.Array.Clear(abilityReadyAt, 0, abilityReadyAt.Length);
     }
     public void ApplyRootSlow(float duration) => rootedUntil = Mathf.Max(rootedUntil, Time.time + duration);
@@ -426,5 +460,5 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         body.position = position;
         if (animator != null) animator.SetPortalScale(visibility);
     }
-    public void ResetForRoom(Vector2 position) { health = maxHealth; rootedUntil = 0f; dashBufferedUntil = attackBufferedUntil = 0f; terrainZones.Clear(); terrainSpeedScale = 1f; isDying = false; invulnerableUntil = Time.time + 1f; transform.position = position; BodyVelocity = Vector2.zero; if (animator != null) { animator.SetPortalScale(1f); animator.ResetPose(); } }
+    public void ResetForRoom(Vector2 position) { health = maxHealth; rootedUntil = 0f; dashBufferedUntil = attackBufferedUntil = 0f; lastBasicAttackStep = -1; basicAttackComboUntil = 0f; terrainZones.Clear(); terrainSpeedScale = 1f; isDying = false; invulnerableUntil = Time.time + 1f; transform.position = position; BodyVelocity = Vector2.zero; if (animator != null) { animator.SetPortalScale(1f); animator.ResetPose(); } }
 }

@@ -1205,12 +1205,21 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             !ScadrykPlayerController.InputBufferCanStart(1.21f, 1.3f, 1.2f) ||
             ScadrykPlayerController.InputBufferCanStart(1.31f, 1.3f, 1.2f) ||
             Mathf.Abs(ScadrykPlayerController.BasicAttackBufferWindow - 0.2f) > 0.001f ||
+            ScadrykPlayerController.NextBasicAttackStep(-1, false) != 0 ||
+            ScadrykPlayerController.NextBasicAttackStep(0, true) != 1 ||
+            ScadrykPlayerController.NextBasicAttackStep(1, true) != 2 ||
+            ScadrykPlayerController.NextBasicAttackStep(2, true) != 0 ||
+            ScadrykPlayerController.NextBasicAttackStep(1, false) != 0 ||
+            ScadrykPlayerController.BasicAttackDamageScale(2) <= ScadrykPlayerController.BasicAttackDamageScale(1) ||
+            ScadrykPlayerController.BasicAttackRangeScale(2) <= ScadrykPlayerController.BasicAttackRangeScale(1) ||
+            ScadrykPlayerController.BasicAttackCooldownScale(2) <= ScadrykPlayerController.BasicAttackCooldownScale(1) ||
+            ScadrykPlayerController.BasicAttackWindupForStep(2) <= ScadrykPlayerController.BasicAttackWindupForStep(1) ||
             ScadrykPlayerController.DashBufferCanStart(1.1f, 1.3f, 1.2f) ||
             !ScadrykPlayerController.DashBufferCanStart(1.21f, 1.3f, 1.2f) ||
             ScadrykPlayerController.DashBufferCanStart(1.31f, 1.3f, 1.2f) ||
             Mathf.Abs(ScadrykPlayerController.DashBufferWindow - 0.12f) > 0.001f)
         { SmokeFail("Os buffers curtos de ataque e esquiva iniciam fora da janela válida"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: ataque e esquiva respeitam recarga e janelas de buffer");
+        Debug.Log("SCADRYK_SMOKE: combo de três golpes e buffers de ataque/esquiva respeitam as janelas configuradas");
         if (!RebindingCanBeCancelled(-1, 2) || !RebindingCanBeCancelled(4, -1) || RebindingCanBeCancelled(-1, -1))
         { SmokeFail("Cancelar captura de controle não distingue remapeamento ativo do menu normal"); yield break; }
         Debug.Log("SCADRYK_SMOKE: Escape/Start cancela captura sem fechar opções");
