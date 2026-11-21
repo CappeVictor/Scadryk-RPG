@@ -583,6 +583,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         return "Derrotar os Ecos";
     }
 
+    internal static bool PortalCanBeEntered(bool portalExists, bool portalIsOpen) => portalExists && portalIsOpen;
+
     private string ActiveCombatObjectiveLabel() => CombatObjectiveLabel(phaseIndex, roomIndex,
         phaseGuardian != null ? phaseGuardian.name : null, finalBoss != null,
         phaseIndex == PhaseNames.Length - 1 && roomIndex == RoomsPerPhase - 1 && enemiesRemaining > 0 && phaseGuardian == null);
@@ -776,6 +778,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             return;
         }
         if (Vector2.Distance(playerPosition, exitPosition) > 1.9f) { ShowStatus("Aproxime-se da passagem para avançar.", 1.5f); return; }
+        ScadrykPortalVisual portalVisual = gateObject != null ? gateObject.GetComponent<ScadrykPortalVisual>() : null;
+        if (!PortalCanBeEntered(portalVisual != null, portalVisual != null && portalVisual.IsOpen))
+        { ShowStatus("A passagem ainda está se abrindo.", 1.5f); return; }
         ClearRoomProjectiles();
         clearedRooms[roomIndex] = true;
         if (roomIndex < RoomsPerPhase - 1) StartCoroutine(TransitionThroughPortal(phaseIndex, roomIndex + 1));
@@ -1655,6 +1660,18 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             { SmokeFail("Objetivo não abriu portal na sala " + room); yield break; }
             if (!TryGetMiniMapTarget(out Vector2 portalTarget) || Vector2.Distance(portalTarget, exitPosition) > 0.001f)
             { SmokeFail("O minimapa não marcou o portal aberto na sala " + (room + 1)); yield break; }
+            ScadrykPortalVisual activePortal = gateObject.GetComponent<ScadrykPortalVisual>();
+            if (activePortal == null || !PortalCanBeEntered(false, true) || PortalCanBeEntered(true, false))
+            { SmokeFail("A porta do portal aceitou um estado ausente ou ainda fechado"); yield break; }
+            if (!activePortal.IsOpen)
+            {
+                TryUseExit(exitPosition);
+                if (transitioning) { SmokeFail("Nara atravessou o portal antes da animação terminar"); yield break; }
+                float portalOpenDeadline = Time.time + 1.2f;
+                while (!activePortal.IsOpen && Time.time < portalOpenDeadline) yield return null;
+                if (!PortalCanBeEntered(gateObject != null && activePortal != null, activePortal != null && activePortal.IsOpen))
+                { SmokeFail("O portal não concluiu a animação de abertura"); yield break; }
+            }
             ScadrykEnemyProjectile.Launch(roomCenter + Vector2.up * 6f, Vector2.right, 0.1f, 0f);
             ScadrykEnemyProjectile smokeProjectile = FindAnyObjectByType<ScadrykEnemyProjectile>();
             if (smokeProjectile == null || !smokeProjectile.transform.IsChildOf(levelRoot.transform))
