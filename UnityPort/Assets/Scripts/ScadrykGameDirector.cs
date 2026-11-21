@@ -1286,6 +1286,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ScadrykAudio.WarningCueVolumeScale(4) <= 0f ||
             !audio.HasCue(laneCue) || !audio.HasCue(volleyCue) || !audio.HasCue(areaCue) ||
             !audio.HasCue(supportCue) || !audio.HasCue(ScadrykCue.FinalBossWarning) || !audio.HasCue(ScadrykCue.PlayerStrike) || !audio.HasCue(ScadrykCue.PlayerFinisher) ||
+            !audio.HasCue(ScadrykCue.PlayerPowerImpact) || ScadrykCue.PlayerPowerImpact == ScadrykCue.Impact ||
+            ScadrykCue.PlayerPowerImpact == ScadrykCue.Power || ScadrykCue.PlayerPowerImpact == ScadrykCue.PlayerStrike ||
             ScadrykCue.PlayerStrike == ScadrykCue.Impact || ScadrykCue.PlayerStrike == ScadrykCue.Sword ||
             ScadrykCue.PlayerFinisher == ScadrykCue.PlayerStrike || ScadrykCue.PlayerFinisher == ScadrykCue.Impact ||
             ScadrykCue.PlayerFinisher == ScadrykCue.Sword)
@@ -1326,6 +1328,19 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             Mathf.Abs(ScadrykPlayerController.DashBufferWindow - 0.12f) > 0.001f)
         { SmokeFail("Os buffers curtos de ataque e esquiva iniciam fora da janela válida"); yield break; }
         Debug.Log("SCADRYK_SMOKE: combo de três golpes e buffers de ataque/esquiva respeitam as janelas configuradas");
+        if (ScadrykPlayerController.AbilityWindupFor(0) <= 0f ||
+            ScadrykPlayerController.AbilityWindupFor(1) < ScadrykPlayerController.AbilityWindupFor(0) ||
+            ScadrykPlayerController.AbilityWindupFor(2) <= ScadrykPlayerController.AbilityWindupFor(1) ||
+            ScadrykPlayerController.AbilityRecoveryFor(0) <= ScadrykPlayerController.AbilityWindupFor(0) ||
+            ScadrykPlayerController.AbilityRecoveryFor(1) <= ScadrykPlayerController.AbilityWindupFor(1) ||
+            ScadrykPlayerController.AbilityRecoveryFor(2) <= ScadrykPlayerController.AbilityWindupFor(2) ||
+            Mathf.Abs(ScadrykActorAnimator.AbilityImpactStrength(0f, 0.3f) - 1f) > 0.001f ||
+            Mathf.Abs(ScadrykActorAnimator.AbilityImpactStrength(0.15f, 0.3f) - Mathf.Sqrt(0.5f)) > 0.001f ||
+            ScadrykActorAnimator.AbilityImpactStrength(0.3f, 0.3f) > 0.001f ||
+            !ScadrykPlayerController.AbilityFootprintContainsPoint(0, new Vector2(3f, 0f), Vector2.zero, Vector2.right) ||
+            ScadrykPlayerController.AbilityFootprintContainsPoint(0, new Vector2(3f, 0f), Vector2.zero, Vector2.up))
+        { SmokeFail("Os poderes não anunciam início, mantêm recuperação ou atingem segundo a mira fixada no começo da ação"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: poderes têm preparação e recuperação legíveis e mantêm a direção da mira durante o golpe");
         if (!RebindingCanBeCancelled(-1, 2) || !RebindingCanBeCancelled(4, -1) || RebindingCanBeCancelled(-1, -1))
         { SmokeFail("Cancelar captura de controle não distingue remapeamento ativo do menu normal"); yield break; }
         Debug.Log("SCADRYK_SMOKE: Escape/Start cancela captura sem fechar opções");
@@ -1714,7 +1729,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 useAbility.Invoke(player, new object[] { phaseIndex });
                 if (player.AbilityCooldownLeft(phaseIndex) <= 0f)
                 { SmokeFail("Poder recebido não pôde ser usado imediatamente na fase " + phaseIndex); yield break; }
-                bool tacticalEffect = phaseIndex == 0 ? testHealth.IsStaggered : phaseIndex == 1 ? testHealth.IsExposed : testHealth.IsKnockedBack;
+                yield return new WaitForSeconds(ScadrykPlayerController.AbilityWindupFor(phaseIndex) + 0.03f);
+                bool tacticalEffect = phaseIndex == 0 ? testHealth.IsStaggered : phaseIndex == 1 ? testHealth.IsExposed : (testHealth.IsKnockedBack || testHealth.IsStaggered);
                 if (testHealth.Health >= 1000f || !tacticalEffect)
                 { SmokeFail("Poder da fase " + phaseIndex + " não causou dano ou não aplicou seu efeito tático"); yield break; }
                 Debug.Log("SCADRYK_SMOKE: poder " + (phaseIndex + 1) + " causou dano e aplicou seu efeito tático");

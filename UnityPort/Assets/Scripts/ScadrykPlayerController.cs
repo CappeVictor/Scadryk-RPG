@@ -48,6 +48,18 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     internal const float BasicAttackComboWindow = 0.82f;
     internal const float BasicAttackBufferWindow = 0.2f;
     internal const float DashBufferWindow = 0.12f;
+    internal static float AbilityWindupFor(int index) => Mathf.Clamp(index, 0, 2) switch
+    {
+        0 => 0.10f,
+        1 => 0.14f,
+        _ => 0.18f
+    };
+    internal static float AbilityRecoveryFor(int index) => Mathf.Clamp(index, 0, 2) switch
+    {
+        0 => 0.24f,
+        1 => 0.30f,
+        _ => 0.36f
+    };
     private Vector3 lastMousePosition;
     private bool usingGamepadAim;
     private bool hasIndependentGamepadAim;
@@ -313,9 +325,18 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     {
         if (Time.time < nextShockwaveAt) return;
         nextShockwaveAt = Time.time + shockwaveCooldown;
+        Vector2 direction = facing;
+        if (animator != null) animator.PlayWindup(direction, 0.08f);
+        StartCoroutine(ResolveShockwave(direction));
+    }
+
+    private IEnumerator ResolveShockwave(Vector2 direction)
+    {
+        yield return new WaitForSeconds(0.08f);
+        if (isDying || (director != null && director.IsPaused)) yield break;
         if (director != null) director.TryPulseAnchor(transform.position);
         ScadrykAudio.Play(ScadrykCue.Pulse);
-        if (animator != null) animator.PlayAttack(facing, true);
+        if (animator != null) animator.PlayAttack(direction, true);
         ScadrykEffects.PlayerPulse(transform.position, shockwaveRadius);
         ShakeCamera(0.055f);
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, shockwaveRadius, ~0);
@@ -332,11 +353,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         }
         if (Time.time < abilityReadyAt[index]) return;
 
-        if (director != null)
-        {
-            director.RecordPowerUse(index);
-            director.TryRevealSecret(index, transform.position);
-        }
+        if (director != null) director.RecordPowerUse(index);
 
         float radius;
         float damage;
@@ -344,31 +361,43 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         if (index == 0)
         {
             radius = 3.6f; damage = 72f; cooldown = 7f;
-            ScadrykEffects.AbilityCrescent(transform.position, facing);
         }
         else if (index == 1)
         {
             radius = 4.25f; damage = 82f; cooldown = 10f;
-            ScadrykEffects.AbilitySaltburst(transform.position, radius * 2.1f);
         }
         else
         {
             radius = 7.6f; damage = 120f; cooldown = 14f;
-            ScadrykEffects.AbilityTidebreaker(transform.position, facing);
         }
 
         abilityReadyAt[index] = Time.time + cooldown;
         ScadrykAudio.Play(ScadrykCue.Power);
-        if (animator != null) animator.PlayAttack(facing, true);
+        Vector2 direction = facing;
+        if (animator != null) animator.PlayWindup(direction, AbilityWindupFor(index));
+        StartCoroutine(ResolveAbility(index, direction, radius, damage));
+    }
+
+    private IEnumerator ResolveAbility(int index, Vector2 direction, float radius, float damage)
+    {
+        yield return new WaitForSeconds(AbilityWindupFor(index));
+        if (isDying || (director != null && director.IsPaused)) yield break;
+        Vector2 origin = transform.position;
+        if (director != null) director.TryRevealSecret(index, origin);
+        if (index == 0) ScadrykEffects.AbilityCrescent(origin, direction);
+        else if (index == 1) ScadrykEffects.AbilitySaltburst(origin, radius * 2.1f);
+        else ScadrykEffects.AbilityTidebreaker(origin, direction);
+        ScadrykAudio.Play(ScadrykCue.PlayerPowerImpact);
+        if (animator != null) animator.PlayAbilityImpact(direction, AbilityRecoveryFor(index));
         ShakeCamera(index == 2 ? 0.12f : 0.075f);
-        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, radius, ~0);
+        Collider2D[] hits = Physics2D.OverlapCircleAll(origin, radius, ~0);
         foreach (Collider2D hit in hits)
         {
             if (!hit.TryGetComponent<ScadrykEnemyHealth>(out var enemy)) continue;
-            Vector2 toEnemy = (Vector2)enemy.transform.position - (Vector2)transform.position;
+            Vector2 toEnemy = (Vector2)enemy.transform.position - origin;
             float enemyRadius = EnemyCollisionRadius(enemy);
-            if ((index == 0 || index == 2) && !AbilityFootprintContainsPoint(index, enemy.transform.position, transform.position, enemyRadius)) continue;
-            if (AbilityPathIsBlocked(index, transform.position, enemy.transform.position)) continue;
+            if ((index == 0 || index == 2) && !AbilityFootprintContainsPoint(index, enemy.transform.position, origin, direction, enemyRadius)) continue;
+            if (AbilityPathIsBlocked(index, origin, enemy.transform.position)) continue;
             enemy.TakeDamage(damage);
             if (index == 0) enemy.ApplyCrescentControl();
             else if (index == 1) enemy.ApplySaltExposure();
@@ -394,10 +423,13 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     }
 
     internal bool AbilityFootprintContainsPoint(int index, Vector2 target, Vector2 origin, float targetRadius = 0f)
+        => AbilityFootprintContainsPoint(index, target, origin, facing, targetRadius);
+
+    internal static bool AbilityFootprintContainsPoint(int index, Vector2 target, Vector2 origin, Vector2 direction, float targetRadius = 0f)
     {
-        if (index == 0) return WithinVisualFootprint(target, origin, facing, 1.05f, new Vector2(4.1f, 2.8f), targetRadius);
+        if (index == 0) return WithinVisualFootprint(target, origin, direction, 1.05f, new Vector2(4.1f, 2.8f), targetRadius);
         if (index == 1) return Vector2.Distance(target, origin) <= 4.25f + targetRadius;
-        if (index == 2) return WithinVisualFootprint(target, origin, facing, 2.7f, new Vector2(7.4f, 4.4f), targetRadius);
+        if (index == 2) return WithinVisualFootprint(target, origin, direction, 2.7f, new Vector2(7.4f, 4.4f), targetRadius);
         return false;
     }
 

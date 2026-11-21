@@ -13,6 +13,8 @@ public sealed class ScadrykActorAnimator : MonoBehaviour
     private float attackStartedAt = -10f;
     private float attackDuration = 0.28f;
     private float attackStrength = 1f;
+    private float abilityImpactStartedAt = -10f;
+    private float abilityRecoveryDuration;
     private float windupStartedAt = -10f, windupDuration;
     private float portalScale = 1f;
     private float dashUntil, nextTrailAt, hitUntil, deathStartedAt = -1f;
@@ -35,15 +37,32 @@ public sealed class ScadrykActorAnimator : MonoBehaviour
     public void PlayAttack(Vector2 direction, bool heavy)
     {
         if (direction.sqrMagnitude > 0.01f) attackDirection = direction.normalized;
+        abilityImpactStartedAt = -10f;
         windupStartedAt = -10f;
         attackStartedAt = Time.time;
         attackDuration = heavy ? 0.38f : 0.26f;
         attackStrength = heavy ? 1.35f : 1f;
     }
 
+    public void PlayAbilityImpact(Vector2 direction, float recoveryDuration)
+    {
+        PlayAttack(direction, true);
+        attackStartedAt = -10f;
+        abilityImpactStartedAt = Time.time;
+        abilityRecoveryDuration = Mathf.Max(0.05f, recoveryDuration);
+    }
+
+    internal static float AbilityImpactStrength(float elapsed, float recoveryDuration)
+    {
+        float duration = Mathf.Max(0.05f, recoveryDuration);
+        float progress = Mathf.Clamp01(0.5f + Mathf.Max(0f, elapsed) / (2f * duration));
+        return Mathf.Sin(progress * Mathf.PI);
+    }
+
     public void PlayWindup(Vector2 direction, float duration)
     {
         if (direction.sqrMagnitude > 0.01f) attackDirection = direction.normalized;
+        abilityImpactStartedAt = -10f;
         windupStartedAt = Time.time;
         windupDuration = Mathf.Max(0.05f, duration);
         attackStartedAt = -10f;
@@ -80,6 +99,7 @@ public sealed class ScadrykActorAnimator : MonoBehaviour
     {
         deathStartedAt = -1f;
         hitUntil = dashUntil = 0f;
+        attackStartedAt = abilityImpactStartedAt = -10f;
         windupStartedAt = -10f;
         if (visualRenderer != null) visualRenderer.color = Color.white;
     }
@@ -96,7 +116,10 @@ public sealed class ScadrykActorAnimator : MonoBehaviour
         float speed = body != null ? BodyVelocity.magnitude : 0f;
         float stride = speed > 0.15f ? Mathf.Sin(Time.time * (9f + speed * 0.7f)) : 0f;
         float attack = 0f;
-        if (Time.time - attackStartedAt < attackDuration)
+        float abilityImpactElapsed = Time.time - abilityImpactStartedAt;
+        if (abilityImpactStartedAt >= 0f && abilityImpactElapsed < abilityRecoveryDuration)
+            attack = AbilityImpactStrength(abilityImpactElapsed, abilityRecoveryDuration) * attackStrength;
+        else if (Time.time - attackStartedAt < attackDuration)
             attack = Mathf.Sin(Mathf.Clamp01((Time.time - attackStartedAt) / attackDuration) * Mathf.PI) * attackStrength;
         float windup = Time.time < windupStartedAt + windupDuration
             ? WindupStrength(Time.time, windupStartedAt, windupDuration) : 0f;
