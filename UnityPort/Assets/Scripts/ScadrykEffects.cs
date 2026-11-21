@@ -150,18 +150,21 @@ public static class ScadrykEffects
         return echo;
     }
 
-    public static void Slash(Vector2 position, Vector2 direction, float length)
+    public static void Slash(Vector2 position, Vector2 direction, float length, bool finisher = false)
     {
         Vector2 footprint = PlayerSlashFootprint(length);
+        Color slashTint = finisher ? new Color(1f, 0.78f, 0.32f, 0.95f) : Color.white;
+        float lifetime = finisher ? 0.22f : 0.16f;
         Sprite slashSprite = PlayerSlashSprite;
         if (slashSprite != null)
         {
-            GameObject spriteEffect = CreateSpriteEffect(slashSprite, position + direction * PlayerSlashForwardOffset, footprint, Color.white, 0.16f, "Player sword arc", true);
+            GameObject spriteEffect = CreateSpriteEffect(slashSprite, position + direction * PlayerSlashForwardOffset, footprint, slashTint, lifetime, finisher ? "Player sword finisher arc" : "Player sword arc", true);
             spriteEffect.transform.right = direction;
-            spriteEffect.GetComponent<ScadrykTimedVisual>().SetSpin(-230f);
+            spriteEffect.GetComponent<ScadrykTimedVisual>().SetSpin(finisher ? -310f : -230f);
             return;
         }
-        GameObject go = Create(position + direction * PlayerSlashForwardOffset, new Color(1f, 0.82f, 0.42f, 0.85f), footprint.x, footprint.y, 0.13f);
+        if (!finisher) slashTint = new Color(1f, 0.82f, 0.42f, 0.85f);
+        GameObject go = Create(position + direction * PlayerSlashForwardOffset, slashTint, footprint.x, footprint.y, lifetime);
         go.transform.right = direction;
     }
 

@@ -281,7 +281,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     {
         yield return new WaitForSeconds(windup);
         if (isDying || (director != null && director.IsPaused)) yield break;
-        ScadrykEffects.Slash(transform.position, direction, range);
+        ScadrykEffects.Slash(transform.position, direction, range, comboStep == BasicAttackComboLength - 1);
         Vector2 footprint = ScadrykEffects.PlayerSlashFootprint(range);
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, footprint.x + footprint.y, ~0);
         bool hitEnemy = false;
