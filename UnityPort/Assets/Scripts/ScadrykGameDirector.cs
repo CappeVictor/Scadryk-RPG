@@ -157,6 +157,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private void Update()
     {
         ApplyPauseTimeScale();
+        ScadrykAudio audio = GetComponent<ScadrykAudio>();
+        if (audio != null) audio.SetCombatIntensity(activeEnemies.Count > 0 && !IsPaused);
         if (!showTitle && !isPaused && !showOptions && !victory && !transitioning && !showOpeningStory && !showWorldMap)
             roomActiveSeconds += Time.deltaTime;
         if (transitioning) return;
@@ -1963,10 +1965,14 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             ScadrykEnemyHealth.WarningCueFor(1, true, false, 0) != volleyCue ||
             ScadrykEnemyHealth.WarningCueFor(2, true, false, 0) != areaCue ||
             ScadrykEnemyHealth.WarningCueFor(2, true, true, 0) != ScadrykCue.FinalBossWarning ||
-            audio == null || !audio.HasCue(laneCue) || !audio.HasCue(volleyCue) || !audio.HasCue(areaCue) ||
+            audio == null || !audio.HasCombatLayer ||
+            Mathf.Abs(ScadrykAudio.BlendCombatIntensity(0f, 1f, 0.425f) - 0.5f) > 0.001f ||
+            Mathf.Abs(ScadrykAudio.BlendCombatIntensity(1f, 0f, 0.425f) - 0.5f) > 0.001f ||
+            !audio.HasCue(laneCue) || !audio.HasCue(volleyCue) || !audio.HasCue(areaCue) ||
             !audio.HasCue(supportCue) || !audio.HasCue(ScadrykCue.FinalBossWarning) || !audio.HasCue(ScadrykCue.PlayerStrike) ||
             ScadrykCue.PlayerStrike == ScadrykCue.Impact || ScadrykCue.PlayerStrike == ScadrykCue.Sword)
-        { SmokeFail("Os sinais sonoros de aviso não diferenciam papéis e guardiões"); yield break; }
+        { SmokeFail("A camada dinâmica de combate ou os sinais sonoros não atendem ao contrato"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: camada musical de combate tem entrada e saída gradual separadas dos avisos");
         Debug.Log("SCADRYK_SMOKE: sinais distinguem golpe confirmado de Nara, papéis inimigos e Arauto");
         if (!FocusLossRequiresPause(false, false, false, false, false, false) ||
             FocusLossRequiresPause(true, false, false, false, false, false) ||

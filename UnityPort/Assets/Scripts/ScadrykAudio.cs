@@ -8,14 +8,17 @@ public sealed class ScadrykAudio : MonoBehaviour
 {
     private const int SampleRate = 22050;
     private static ScadrykAudio instance;
-    private AudioSource music, transitionMusic, effects;
+    private AudioSource music, transitionMusic, combatMusic, effects;
     private Coroutine musicTransition;
-    private float musicEnvelope = 1f, transitionEnvelope;
+    private float musicEnvelope = 1f, transitionEnvelope, combatEnvelope, combatTarget;
     private const float ContextFadeDuration = 1.25f;
+    private const float CombatIntensityFadeDuration = 0.85f;
     private AudioClip[] biomeLoops;
+    private AudioClip combatLoop;
     private AudioClip[] cueClips;
     private readonly float[] nextCueAt = new float[System.Enum.GetValues(typeof(ScadrykCue)).Length];
     internal bool HasCue(ScadrykCue cue) => cueClips != null && (int)cue >= 0 && (int)cue < cueClips.Length;
+    internal bool HasCombatLayer => combatMusic != null && combatMusic.clip != null && combatMusic.clip == combatLoop;
 
     private void Awake()
     {
@@ -26,6 +29,12 @@ public sealed class ScadrykAudio : MonoBehaviour
         transitionMusic = gameObject.AddComponent<AudioSource>();
         transitionMusic.loop = true;
         transitionMusic.playOnAwake = false;
+        combatMusic = gameObject.AddComponent<AudioSource>();
+        combatMusic.loop = true;
+        combatMusic.playOnAwake = false;
+        combatMusic.spatialBlend = 0f;
+        combatLoop = MakeCombatLoop();
+        combatMusic.clip = combatLoop;
         effects = gameObject.AddComponent<AudioSource>();
         effects.playOnAwake = false;
         biomeLoops = new[] { MakeLoop("Roots remember", 110f, 1.0f), MakeLoop("Salt remembers", 146.83f, 0.72f), MakeLoop("Bells remember", 123.47f, 1.35f), MakeLoop("The silence breaks", 82.41f, 1.8f) };
@@ -43,11 +52,27 @@ public sealed class ScadrykAudio : MonoBehaviour
 
     private void Update()
     {
+        combatEnvelope = BlendCombatIntensity(combatEnvelope, combatTarget, Time.unscaledDeltaTime);
         float musicVolume = ScadrykSettings.MusicVolume * 0.34f;
         if (music != null) music.volume = musicVolume * musicEnvelope;
         if (transitionMusic != null) transitionMusic.volume = musicVolume * transitionEnvelope;
+        if (combatMusic != null)
+        {
+            combatMusic.volume = ScadrykSettings.MusicVolume * 0.11f * combatEnvelope;
+            if (combatTarget > 0f && !combatMusic.isPlaying) combatMusic.Play();
+            else if (combatTarget <= 0f && combatEnvelope <= 0.001f && combatMusic.isPlaying) combatMusic.Stop();
+        }
         if (effects != null) effects.volume = ScadrykSettings.EffectsVolume * 0.65f;
     }
+
+    public void SetCombatIntensity(bool active)
+    {
+        combatTarget = active ? 1f : 0f;
+        if (active && combatMusic != null && combatMusic.clip != null && !combatMusic.isPlaying) combatMusic.Play();
+    }
+
+    internal static float BlendCombatIntensity(float current, float target, float deltaTime) =>
+        Mathf.MoveTowards(current, target, Mathf.Max(0f, deltaTime) / CombatIntensityFadeDuration);
 
     public void SetContext(int biome, bool finalBoss)
     {
@@ -141,6 +166,29 @@ public sealed class ScadrykAudio : MonoBehaviour
             data[i] = (pad * (0.8f + 0.2f * Mathf.Sin(t * 0.8f)) + bell) * edge;
         }
         AudioClip clip = AudioClip.Create(name, count, 1, SampleRate, false);
+        clip.SetData(data, 0);
+        return clip;
+    }
+
+    private static AudioClip MakeCombatLoop()
+    {
+        const float duration = 8f;
+        int count = Mathf.RoundToInt(SampleRate * duration);
+        float[] data = new float[count];
+        for (int i = 0; i < count; i++)
+        {
+            float t = i / (float)SampleRate;
+            float beat = t % 0.5f;
+            int beatInBar = Mathf.FloorToInt(t / 0.5f) % 4;
+            float accent = beatInBar == 0 ? 1f : 0.62f;
+            float edge = Mathf.Min(1f, Mathf.Min(t, duration - t) * 8f);
+            float bass = Mathf.Sin(2f * Mathf.PI * 55f * t) * 0.055f +
+                Mathf.Sin(2f * Mathf.PI * 110f * t) * 0.025f;
+            float pulse = Mathf.Sin(2f * Mathf.PI * 82.41f * beat) * Mathf.Exp(-beat * 13f) * 0.105f * accent;
+            float chime = Mathf.Sin(2f * Mathf.PI * 293.66f * t) * Mathf.Exp(-beat * 5f) * 0.035f;
+            data[i] = (bass + pulse + chime) * edge;
+        }
+        AudioClip clip = AudioClip.Create("Scadryk combat undercurrent", count, 1, SampleRate, false);
         clip.SetData(data, 0);
         return clip;
     }
