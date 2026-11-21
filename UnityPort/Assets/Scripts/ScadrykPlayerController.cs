@@ -48,6 +48,8 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     internal const float BasicAttackComboWindow = 0.82f;
     internal const float BasicAttackBufferWindow = 0.2f;
     internal const float DashBufferWindow = 0.12f;
+    internal const float ShockwaveWindup = 0.08f;
+    internal const float ShockwaveRecovery = 0.28f;
     internal static float AbilityWindupFor(int index) => Mathf.Clamp(index, 0, 2) switch
     {
         0 => 0.10f,
@@ -326,17 +328,17 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         if (Time.time < nextShockwaveAt) return;
         nextShockwaveAt = Time.time + shockwaveCooldown;
         Vector2 direction = facing;
-        if (animator != null) animator.PlayWindup(direction, 0.08f);
+        if (animator != null) animator.PlayWindup(direction, ShockwaveWindup);
         StartCoroutine(ResolveShockwave(direction));
     }
 
     private IEnumerator ResolveShockwave(Vector2 direction)
     {
-        yield return new WaitForSeconds(0.08f);
+        yield return new WaitForSeconds(ShockwaveWindup);
         if (isDying || (director != null && director.IsPaused)) yield break;
         if (director != null) director.TryPulseAnchor(transform.position);
         ScadrykAudio.Play(ScadrykCue.Pulse);
-        if (animator != null) animator.PlayAttack(direction, true);
+        if (animator != null) animator.PlayAbilityImpact(direction, ShockwaveRecovery);
         ScadrykEffects.PlayerPulse(transform.position, shockwaveRadius);
         ShakeCamera(0.055f);
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, shockwaveRadius, ~0);

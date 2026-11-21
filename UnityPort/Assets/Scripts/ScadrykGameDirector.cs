@@ -1329,6 +1329,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         { SmokeFail("Os buffers curtos de ataque e esquiva iniciam fora da janela válida"); yield break; }
         Debug.Log("SCADRYK_SMOKE: combo de três golpes e buffers de ataque/esquiva respeitam as janelas configuradas");
         if (ScadrykPlayerController.AbilityWindupFor(0) <= 0f ||
+            ScadrykPlayerController.ShockwaveWindup <= 0f ||
+            ScadrykPlayerController.ShockwaveRecovery <= ScadrykPlayerController.ShockwaveWindup ||
             ScadrykPlayerController.AbilityWindupFor(1) < ScadrykPlayerController.AbilityWindupFor(0) ||
             ScadrykPlayerController.AbilityWindupFor(2) <= ScadrykPlayerController.AbilityWindupFor(1) ||
             ScadrykPlayerController.AbilityRecoveryFor(0) <= ScadrykPlayerController.AbilityWindupFor(0) ||
