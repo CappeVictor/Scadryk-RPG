@@ -36,6 +36,9 @@ Respostas de 1 (discordo) a 5 (concordo), com observações:
 - Eu sabia para onde ir na maior parte do tempo: `1  2  3  4  5` — nota: `____________________`
 - Consegui reconhecer os avisos antes de receber dano: `1  2  3  4  5` — nota: `____________________`
 - A esquiva e os poderes responderam como eu esperava: `1  2  3  4  5` — nota: `____________________`
+- Percebi quando o combo chegou ao terceiro corte, pelo arco dourado, animação e som: `1  2  3  4  5` — nota: `____________________`
+- Os avisos sonoros continuaram distinguíveis com música e mais de um Eco atacando: `1  2  3  4  5` — nota: `____________________`
+- Entendi quando o portal terminou de abrir e quando podia atravessá-lo: `1  2  3  4  5` — nota: `____________________`
 - As mortes pareceram evitáveis quando aconteceram: `1  2  3  4  5` — nota: `____________________`
 - Qual sala foi mais interessante e por quê? `________________________________________`
 - Qual sala foi mais confusa ou repetitiva? `________________________________________`
@@ -51,3 +54,5 @@ Respostas de 1 (discordo) a 5 (concordo), com observações:
 3. Se duas pessoas ou mais ficarem presas no mesmo objetivo, ajuste a pista ou o mapa antes de aumentar a dificuldade.
 4. Se um poder ficar sem uso por um grupo, procure a causa na sala, na recarga ou na clareza do efeito; não aumente o dano automaticamente.
 5. Registre a mudança, a build seguinte e repita a sala afetada. Não preencha esta ficha com resultados hipotéticos: os registros começam vazios até que pessoas joguem a build.
+6. Se o terceiro corte não ficar claro, ajuste contraste, som ou animação antes de alterar dano e recarga. Se os avisos simultâneos ficarem difíceis de distinguir, ajuste a mixagem e repita uma luta com vários Ecos.
+7. Se as pessoas tentarem atravessar antes do portal abrir e não entenderem a espera, reveja a mensagem de estado e a duração visual antes de alterar o bloqueio de progressão.
