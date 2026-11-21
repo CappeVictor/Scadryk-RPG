@@ -207,20 +207,23 @@ public static class ScadrykEffects
         effect.AddComponent<ScadrykEffectDrift>().Initialize(direction * 4f);
     }
 
-    public static void Voidburst(Vector2 position, float diameter, float lifetime)
+    public static GameObject Voidburst(Vector2 position, float diameter, float lifetime, bool attackWarning = false)
     {
         Sprite art = VoidburstSprite;
-        if (art == null) { Ring(position, diameter, new Color(0.96f, 0.18f, 0.54f, 0.95f), lifetime); return; }
-        CreateSpriteEffect(art, position, Vector2.one * diameter, Color.white, lifetime, "Final boss voidburst", true, true);
+        if (art == null) return Ring(position, diameter, new Color(0.96f, 0.18f, 0.54f, 0.95f), lifetime, attackWarning);
+        GameObject effect = CreateSpriteEffect(art, position, Vector2.one * diameter, Color.white, lifetime, "Final boss voidburst", true, true);
+        if (attackWarning) effect.name = "Enemy attack warning";
+        return effect;
     }
 
-    public static void TelegraphLine(Vector2 start, Vector2 end, Color color, float thickness, float lifetime)
+    public static GameObject TelegraphLine(Vector2 start, Vector2 end, Color color, float thickness, float lifetime)
     {
         Vector2 delta = end - start;
-        if (delta.sqrMagnitude < 0.01f) return;
+        if (delta.sqrMagnitude < 0.01f) return null;
         GameObject go = Create((start + end) * 0.5f, DangerWarningColor(color), delta.magnitude, DangerWarningWidth(thickness), lifetime, true);
         go.transform.right = delta.normalized;
         go.name = "Enemy attack warning";
+        return go;
     }
 
     public static void GroundLane(Vector2 center, Vector2 direction, float length, float width, Color color, float lifetime)
@@ -237,7 +240,7 @@ public static class ScadrykEffects
         go.transform.right = direction;
     }
 
-    public static void Ring(Vector2 center, float diameter, Color color, float lifetime)
+    public static GameObject Ring(Vector2 center, float diameter, Color color, float lifetime, bool attackWarning = false)
     {
         color = DangerWarningColor(color);
         Sprite waveSprite = LoadEffectSprite("AttackBellWave", 600f, ref bellWaveSprite);
@@ -245,8 +248,8 @@ public static class ScadrykEffects
         {
             Color tint = color;
             tint.a *= lifetime > 0.5f ? 0.46f : 0.98f;
-            CreateSpriteEffect(waveSprite, center, Vector2.one * diameter, tint, lifetime, "Bell echo wave", false, true);
-            return;
+            GameObject wave = CreateSpriteEffect(waveSprite, center, Vector2.one * diameter, tint, lifetime, attackWarning ? "Enemy attack warning" : "Bell echo wave", false, true);
+            return wave;
         }
         GameObject go = new GameObject("Bell pulse warning");
         go.transform.position = center;
@@ -268,6 +271,8 @@ public static class ScadrykEffects
             line.SetPosition(i, new Vector3(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius, 0f));
         }
         go.AddComponent<ScadrykTimedVisual>().Initialize(lifetime, color, false);
+        if (attackWarning) go.name = "Enemy attack warning";
+        return go;
     }
 
     private static Sprite LoadEffectSprite(string resourceName, float pixelsPerUnit, ref Sprite cache)

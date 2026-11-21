@@ -1516,6 +1516,12 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             MovePauseGridSelection(4, 1, 0) == 4;
         if (!pauseGridNavigationWorks) { SmokeFail("A navegação da grade da pausa perde a seleção nas bordas"); yield break; }
         Debug.Log("SCADRYK_SMOKE: navegação da grade da pausa mantém coluna e respeita a última linha");
+        GameObject warningProbe = new GameObject("QA enemy attack warning");
+        GameObject[] warningProbeList = { warningProbe };
+        int remainingWarnings = ScadrykEnemyHealth.ClearTrackedAttackWarnings(warningProbeList, 1);
+        if (remainingWarnings != 0 || warningProbe.activeSelf || warningProbeList[0] != null)
+        { SmokeFail("Interromper um ataque não removeu seus avisos visuais pendentes"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: interromper um golpe desativa todos os telegráficos associados");
         if (!MemoryPanelFits(400f, 360f, 120f) || !MemoryPanelFits(700f, 600f, 90f))
         { SmokeFail("O texto ampliado dos vestígios é cortado ou cobre os comandos inferiores"); yield break; }
         Debug.Log("SCADRYK_SMOKE: painel de memória cresce com o texto sem cobrir status e controles");

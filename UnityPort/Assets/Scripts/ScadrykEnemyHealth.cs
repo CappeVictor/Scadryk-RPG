@@ -21,6 +21,8 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private static readonly float[] SteeringAngles = { 0f, 35f, -35f, 70f, -70f, 110f, -110f, 145f, -145f, 180f };
     private readonly RaycastHit2D[] steeringHits = new RaycastHit2D[16];
     private readonly bool[] blockedSteeringHeadings = new bool[10];
+    private readonly GameObject[] attackWarnings = new GameObject[8];
+    private int attackWarningCount;
     internal static float SupportPulseDiameter => SupportPulseRadius * 2f;
     internal static bool SupportPulseContains(Vector2 origin, Vector2 target) =>
         Vector2.Distance(origin, target) <= SupportPulseRadius;
@@ -128,6 +130,8 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         if (health <= 0f) health = maxHealth;
         GetComponent<CircleCollider2D>().isTrigger = false;
     }
+
+    private void OnDestroy() => ClearAttackWarnings();
 
     private void Update()
     {
@@ -251,8 +255,35 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         return bestHeading;
     }
 
+    private void TrackAttackWarning(GameObject warning)
+    {
+        if (warning == null) return;
+        if (attackWarningCount < attackWarnings.Length) attackWarnings[attackWarningCount++] = warning;
+    }
+
+    private void ClearAttackWarnings()
+    {
+        attackWarningCount = ClearTrackedAttackWarnings(attackWarnings, attackWarningCount);
+    }
+
+    internal static int ClearTrackedAttackWarnings(GameObject[] warnings, int count)
+    {
+        if (warnings == null) return 0;
+        int safeCount = Mathf.Clamp(count, 0, warnings.Length);
+        for (int i = 0; i < safeCount; i++)
+        {
+            GameObject warning = warnings[i];
+            warnings[i] = null;
+            if (warning == null) continue;
+            warning.SetActive(false);
+            Destroy(warning);
+        }
+        return 0;
+    }
+
     private void BeginAttack()
     {
+        ClearAttackWarnings();
         attackTarget = player.transform.position;
         ScadrykAudio.Play(WarningCueFor(biomeIndex, IsBoss, isFinalBoss, combatRole));
         if (isFinalBoss)
@@ -270,11 +301,11 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         Color warning = biomeIndex == 0 ? new Color(0.64f, 0.86f, 0.35f, 0.85f) :
             biomeIndex == 1 ? new Color(1f, 0.78f, 0.34f, 0.85f) : new Color(0.34f, 0.9f, 1f, 0.85f);
         if (!IsBoss && combatRole == 3)
-            ScadrykEffects.Ring(origin, 5f, new Color(0.38f, 1f, 0.6f, 0.8f), windup);
+            TrackAttackWarning(ScadrykEffects.Ring(origin, 5f, new Color(0.38f, 1f, 0.6f, 0.8f), windup, true));
         else if (!IsBoss && combatRole == 2)
-            ScadrykEffects.Ring(origin, 6.4f, warning, windup);
+            TrackAttackWarning(ScadrykEffects.Ring(origin, 6.4f, warning, windup, true));
         else if (IsBoss && biomeIndex == 2)
-            ScadrykEffects.Ring(origin, 10.6f, warning, windup);
+            TrackAttackWarning(ScadrykEffects.Ring(origin, 10.6f, warning, windup, true));
         else if (IsBoss && biomeIndex == 1)
         {
             Vector2 direction = (attackTarget - origin).normalized;
@@ -282,8 +313,8 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             for (int i = -1; i <= 1; i++)
             {
                 Vector2 shardDirection = Rotate(direction, i * 0.32f);
-                ScadrykEffects.TelegraphLine(origin, origin + shardDirection * length, warning,
-                    ScadrykEnemyProjectile.HitboxDiameter(0.34f), windup);
+                TrackAttackWarning(ScadrykEffects.TelegraphLine(origin, origin + shardDirection * length, warning,
+                    ScadrykEnemyProjectile.HitboxDiameter(0.34f), windup));
             }
         }
         else
@@ -295,7 +326,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             !IsBoss && combatRole == 1 ? ScadrykEnemyProjectile.HitboxDiameter(0.34f) : IsBoss && biomeIndex == 0 ? 1.4f : ScadrykEnemyProjectile.HitboxDiameter(0.34f);
             if ((!IsBoss && combatRole == 0) || (IsBoss && biomeIndex == 0))
                 telegraphThickness = RootLaneVisualWidth(telegraphThickness, PlayerCollisionRadius(player));
-            ScadrykEffects.TelegraphLine(origin, end, warning, telegraphThickness, windup);
+            TrackAttackWarning(ScadrykEffects.TelegraphLine(origin, end, warning, telegraphThickness, windup));
         }
     }
 
@@ -315,14 +346,14 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             Vector2 direction = (attackTarget - origin).normalized;
             int halfCount = stage == 1 ? 1 : stage == 2 ? 2 : 3;
             for (int i = -halfCount; i <= halfCount; i++)
-                ScadrykEffects.TelegraphLine(origin, origin + Rotate(direction, i * FinalVolleyAngleStep) * FinalVolleyLength, warning,
-                    ScadrykEnemyProjectile.HitboxDiameter(0.58f), windup);
+                TrackAttackWarning(ScadrykEffects.TelegraphLine(origin, origin + Rotate(direction, i * FinalVolleyAngleStep) * FinalVolleyLength, warning,
+                    ScadrykEnemyProjectile.HitboxDiameter(0.58f), windup));
         }
         else if (queuedFinalPattern == 1)
         {
             float diameter = FinalStarfallVisualDiameter;
-            ScadrykEffects.Voidburst(attackTarget, diameter, windup);
-            ScadrykEffects.Ring(attackTarget, diameter, warning, windup + 0.46f);
+            TrackAttackWarning(ScadrykEffects.Voidburst(attackTarget, diameter, windup, true));
+            TrackAttackWarning(ScadrykEffects.Ring(attackTarget, diameter, warning, windup + 0.46f, true));
             if (stage > 1)
             {
                 Vector2 direction = (attackTarget - origin).normalized;
@@ -330,15 +361,15 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
                 for (int i = 0; i < count; i++)
                 {
                     Vector2 shardDirection = Rotate(direction, FinalStarfallSideProjectileAngle(stage, i));
-                    ScadrykEffects.TelegraphLine(origin, origin + shardDirection * FinalStarfallProjectileLength, warning,
-                        ScadrykEnemyProjectile.HitboxDiameter(FinalStarfallProjectileScale), windup);
+                    TrackAttackWarning(ScadrykEffects.TelegraphLine(origin, origin + shardDirection * FinalStarfallProjectileLength, warning,
+                        ScadrykEnemyProjectile.HitboxDiameter(FinalStarfallProjectileScale), windup));
                 }
             }
         }
         else
         {
-            ScadrykEffects.Ring(origin, FinalWaveOuterRadius * 2f, warning, windup);
-            ScadrykEffects.Ring(origin, FinalWaveSafeRadius * 2f, new Color(0.55f, 1f, 0.82f, 0.92f), windup);
+            TrackAttackWarning(ScadrykEffects.Ring(origin, FinalWaveOuterRadius * 2f, warning, windup, true));
+            TrackAttackWarning(ScadrykEffects.Ring(origin, FinalWaveSafeRadius * 2f, new Color(0.55f, 1f, 0.82f, 0.92f), windup, true));
         }
     }
 
@@ -494,6 +525,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         staggerUntil = Mathf.Max(staggerUntil, Time.time + (IsBoss ? 0.26f : 0.82f));
         if (isWindup)
         {
+            ClearAttackWarnings();
             isWindup = false;
             windupEndsAt = 0f;
             nextAttackAt = staggerUntil + 0.8f;
@@ -506,6 +538,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         if (dead || IsBoss) return;
         staggerUntil = Mathf.Max(staggerUntil, Time.time + 0.24f);
         if (!isWindup) return;
+        ClearAttackWarnings();
         isWindup = false;
         windupEndsAt = 0f;
         nextAttackAt = staggerUntil + 0.3f;
@@ -569,6 +602,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         if (animator != null) animator.PlayHit(player != null ? ((Vector2)transform.position - (Vector2)player.transform.position).normalized : Vector2.up);
         if (health <= 0f)
         {
+            ClearAttackWarnings();
             dead = true;
             BodyVelocity = Vector2.zero;
             GetComponent<Collider2D>().enabled = false;
