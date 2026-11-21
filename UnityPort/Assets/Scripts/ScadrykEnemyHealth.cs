@@ -217,7 +217,10 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
 
     private bool SolidAhead(Vector2 heading, float radius, float distance)
     {
-        int hitCount = Physics2D.CircleCastNonAlloc(body.position, radius * 0.92f, heading, steeringHits, distance);
+        ContactFilter2D filter = new ContactFilter2D();
+        filter.SetLayerMask(Physics2D.DefaultRaycastLayers);
+        filter.useTriggers = Physics2D.queriesHitTriggers;
+        int hitCount = Physics2D.CircleCast(body.position, radius * 0.92f, heading, filter, steeringHits, distance);
         for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
         {
             Collider2D hit = steeringHits[hitIndex].collider;

@@ -1645,7 +1645,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private static void ClearRoomProjectiles()
     {
-        foreach (ScadrykEnemyProjectile projectile in FindObjectsByType<ScadrykEnemyProjectile>(FindObjectsSortMode.None))
+        foreach (ScadrykEnemyProjectile projectile in FindObjectsByType<ScadrykEnemyProjectile>())
             if (projectile != null) Destroy(projectile.gameObject);
     }
 
@@ -2160,14 +2160,14 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             }
             if (room < RoomsPerPhase)
             {
-                ScadrykTerrainZone[] waterZones = FindObjectsByType<ScadrykTerrainZone>(FindObjectsSortMode.None);
+                ScadrykTerrainZone[] waterZones = FindObjectsByType<ScadrykTerrainZone>();
                 if (waterZones.Length == 0) { SmokeFail("Águas rasas sem zonas de terreno na sala " + (room + 1)); yield break; }
                 foreach (ScadrykTerrainZone zone in waterZones)
                     if (zone.MovementScale >= 1f) { SmokeFail("Zona de água não reduz o movimento"); yield break; }
             }
             for (int previousRoom = 0; previousRoom < roomIndex; previousRoom++)
                 if (!clearedRooms[previousRoom]) { SmokeFail("O mapa não marcou a sala anterior como concluída: " + previousRoom); yield break; }
-            foreach (ScadrykEnemyHealth enemy in FindObjectsByType<ScadrykEnemyHealth>(FindObjectsSortMode.None))
+            foreach (ScadrykEnemyHealth enemy in FindObjectsByType<ScadrykEnemyHealth>())
                 if (enemy != null && !enemy.IsFinalBoss) enemy.TakeDamage(99999f);
             if (!ActiveRoomHasWalkableRoute(roomCenter))
             { SmokeFail("A geometria sólida ativa bloqueou a rota caminhável da sala " + (room + 1)); yield break; }
@@ -2199,7 +2199,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 var resolveBossAttack = bossType.GetMethod("ResolveFinalBossAttack", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
                 if (queuedStageField == null || attackIndexField == null || attackTargetField == null || beginBossAttack == null || resolveBossAttack == null)
                 { SmokeFail("Não foi possível preparar a checagem de fase do Arauto"); yield break; }
-                foreach (ScadrykEnemyProjectile projectile in FindObjectsByType<ScadrykEnemyProjectile>(FindObjectsSortMode.None))
+                foreach (ScadrykEnemyProjectile projectile in FindObjectsByType<ScadrykEnemyProjectile>())
                     if (projectile != null) { projectile.gameObject.SetActive(false); Destroy(projectile.gameObject); }
                 ClearSmokeAttackWarnings();
                 attackIndexField.SetValue(finalBoss, 0);
@@ -2214,7 +2214,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 resolveBossAttack.Invoke(finalBoss, null);
                 int announcedVolleyCount = 0;
                 bool volleyRangeMatchesWarning = true;
-                foreach (ScadrykEnemyProjectile projectile in FindObjectsByType<ScadrykEnemyProjectile>(FindObjectsSortMode.None))
+                foreach (ScadrykEnemyProjectile projectile in FindObjectsByType<ScadrykEnemyProjectile>())
                 {
                     if (projectile == null) continue;
                     if (projectile.gameObject.name == "Arauto — remembered volley")
@@ -2378,7 +2378,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private static void ClearSmokeAttackWarnings()
     {
-        foreach (ScadrykTimedVisual visual in FindObjectsByType<ScadrykTimedVisual>(FindObjectsSortMode.None))
+        foreach (ScadrykTimedVisual visual in FindObjectsByType<ScadrykTimedVisual>())
             if (visual != null && visual.gameObject.name == "Enemy attack warning")
             { visual.gameObject.SetActive(false); Destroy(visual.gameObject); }
     }
@@ -2386,7 +2386,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private static int SmokeEffectCount(string objectName)
     {
         int count = 0;
-        foreach (ScadrykTimedVisual visual in FindObjectsByType<ScadrykTimedVisual>(FindObjectsSortMode.None))
+        foreach (ScadrykTimedVisual visual in FindObjectsByType<ScadrykTimedVisual>())
             if (visual != null && visual.gameObject.name == objectName) count++;
         return count;
     }
@@ -2457,7 +2457,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private static ScadrykEnemyProjectile FindSmokeProjectile(string projectileName)
     {
-        foreach (ScadrykEnemyProjectile projectile in FindObjectsByType<ScadrykEnemyProjectile>(FindObjectsSortMode.None))
+        foreach (ScadrykEnemyProjectile projectile in FindObjectsByType<ScadrykEnemyProjectile>())
             if (projectile != null && projectile.gameObject.name == projectileName) return projectile;
         return null;
     }
@@ -2508,7 +2508,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     {
         int count = 0;
         bool[] seenAngles = new bool[halfCount * 2 + 1];
-        foreach (ScadrykTimedVisual visual in FindObjectsByType<ScadrykTimedVisual>(FindObjectsSortMode.None))
+        foreach (ScadrykTimedVisual visual in FindObjectsByType<ScadrykTimedVisual>())
         {
             if (visual == null || !visual.gameObject.activeInHierarchy || visual.gameObject.name != "Enemy attack warning") continue;
             if (count > halfCount * 2) return false;
@@ -2531,7 +2531,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private static int SmokeProjectileCount(string projectileName)
     {
         int count = 0;
-        foreach (ScadrykEnemyProjectile projectile in FindObjectsByType<ScadrykEnemyProjectile>(FindObjectsSortMode.None))
+        foreach (ScadrykEnemyProjectile projectile in FindObjectsByType<ScadrykEnemyProjectile>())
             if (projectile != null && projectile.gameObject.activeInHierarchy && projectile.gameObject.name == projectileName) count++;
         return count;
     }
@@ -2539,7 +2539,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private static bool SmokeProjectileRangeMatches(string projectileName, float expectedRange)
     {
         int count = 0;
-        foreach (ScadrykEnemyProjectile projectile in FindObjectsByType<ScadrykEnemyProjectile>(FindObjectsSortMode.None))
+        foreach (ScadrykEnemyProjectile projectile in FindObjectsByType<ScadrykEnemyProjectile>())
         {
             if (projectile == null || !projectile.gameObject.activeInHierarchy || projectile.gameObject.name != projectileName) continue;
             count++;
@@ -2550,7 +2550,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
 
     private static void ClearSmokeProjectiles()
     {
-        foreach (ScadrykEnemyProjectile projectile in FindObjectsByType<ScadrykEnemyProjectile>(FindObjectsSortMode.None))
+        foreach (ScadrykEnemyProjectile projectile in FindObjectsByType<ScadrykEnemyProjectile>())
             if (projectile != null) { projectile.gameObject.SetActive(false); Destroy(projectile.gameObject); }
     }
 
