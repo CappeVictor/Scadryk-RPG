@@ -988,19 +988,19 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         room = Mathf.Clamp(room, 0, 2);
         if (biome == 0)
         {
-            if (room == 0) return new[] { new Vector2(-3.4f, 2.9f), new Vector2(3.1f, -2.8f), new Vector2(4.4f, 2.1f) };
-            if (room == 1) return new[] { new Vector2(-4.0f, -2.5f), new Vector2(1.8f, 3.5f), new Vector2(4.3f, -2.8f), new Vector2(-0.4f, -3.7f) };
-            return new[] { new Vector2(-4.3f, 2.8f), new Vector2(-2.2f, -3.4f), new Vector2(3.8f, 1.9f) };
+            if (room == 0) return new[] { new Vector2(-3.4f, 2.9f), new Vector2(3.1f, -2.8f), new Vector2(4.4f, 2.1f), new Vector2(-0.6f, 0.4f), new Vector2(0.6f, -0.4f) };
+            if (room == 1) return new[] { new Vector2(-4.0f, -2.5f), new Vector2(1.8f, 3.5f), new Vector2(4.3f, -2.8f), new Vector2(-0.4f, -3.7f), new Vector2(-0.8f, -0.8f), new Vector2(0.8f, 0.8f) };
+            return new[] { new Vector2(-4.3f, 2.8f), new Vector2(-2.2f, -3.4f), new Vector2(3.8f, 1.9f), new Vector2(-0.6f, 0.6f), new Vector2(0.6f, -0.6f) };
         }
         if (biome == 1)
         {
             if (room == 0) return new[] { new Vector2(-3.7f, -2.7f), new Vector2(-1.2f, 3.6f), new Vector2(4.2f, -1.9f) };
-            if (room == 1) return new[] { new Vector2(-4.1f, 0.8f), new Vector2(-1.7f, 3.7f), new Vector2(1.5f, -3.6f), new Vector2(4.4f, -0.2f) };
-            return new[] { new Vector2(-4.1f, 2.7f), new Vector2(-4.2f, -2.6f), new Vector2(4.0f, -0.5f) };
+            if (room == 1) return new[] { new Vector2(-4.1f, 0.8f), new Vector2(-1.7f, 3.7f), new Vector2(1.5f, -3.6f), new Vector2(4.4f, -0.2f), new Vector2(-0.2f, 0.3f), new Vector2(0.8f, -0.9f) };
+            return new[] { new Vector2(-4.1f, 2.7f), new Vector2(-4.2f, -2.6f), new Vector2(4.0f, -0.5f), new Vector2(-0.5f, 0.7f), new Vector2(0.5f, -0.7f) };
         }
         if (room == 0) return new[] { new Vector2(-3.9f, 2.9f), new Vector2(-0.8f, -3.5f), new Vector2(3.9f, 2.5f) };
-        if (room == 1) return new[] { new Vector2(-4.3f, 3.1f), new Vector2(-4.0f, -3.2f), new Vector2(0.2f, 2.6f), new Vector2(4.2f, -2.9f) };
-        return new[] { new Vector2(-3.8f, 2.7f), new Vector2(-3.6f, -2.8f), new Vector2(4.2f, 0.8f) };
+        if (room == 1) return new[] { new Vector2(-4.3f, 3.1f), new Vector2(-4.0f, -3.2f), new Vector2(0.2f, 2.6f), new Vector2(4.2f, -2.9f), new Vector2(-0.7f, 0.5f), new Vector2(0.7f, -0.5f) };
+        return new[] { new Vector2(-3.8f, 2.7f), new Vector2(-3.6f, -2.8f), new Vector2(4.2f, 0.8f), new Vector2(-0.6f, 0.6f), new Vector2(0.6f, -0.6f) };
     }
 
     private static bool RoomHasWalkableRoute(int biome, int room)
@@ -1155,6 +1155,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         {
             Vector2[] layout = RoomObstacleOffsets(biome, room);
             if (layout.Length < 3) return false;
+            if (EnemyCountForRoom(biome * RoomsPerPhase + room) > 0 && !RoomHasCoverCluster(biome, layout)) return false;
             foreach (Vector2 offset in layout)
                 if (Mathf.Abs(offset.x + 6.2f) < 1.25f || Mathf.Abs(offset.x - 8.05f) < 1.25f || Mathf.Abs(offset.y) > 5.2f)
                     return false;
@@ -1177,6 +1178,20 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             }
         }
         return true;
+    }
+
+    private static bool RoomHasCoverCluster(int biome, Vector2[] layout)
+    {
+        const float playerRadius = 0.42f;
+        const float routePadding = 0.12f;
+        for (int first = 0; first < layout.Length; first++)
+        for (int second = first + 1; second < layout.Length; second++)
+        {
+            float blockedRouteOverlap = ObstacleSpawnCollisionRadius(biome, layout[first], true) +
+                ObstacleSpawnCollisionRadius(biome, layout[second], true) + 2f * (playerRadius + routePadding);
+            if (Vector2.Distance(layout[first], layout[second]) < blockedRouteOverlap) return true;
+        }
+        return false;
     }
 
     private void PlaceFallenLog(Transform parent, Vector2 position, int room, int variant)
