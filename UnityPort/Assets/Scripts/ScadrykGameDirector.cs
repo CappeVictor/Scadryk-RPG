@@ -84,9 +84,9 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         "O Vigia do Coro: os sinos devolverão a dor."
     };
     private static readonly string[] GuardianMemories = {
-        "A Raiz-Mor entrega o Crescente e revela que Nima tocou o primeiro sino; seu nome ficou guardado nas raízes.",
-        "A Vigia do Sal devolve o Estouro e revela que o Arauto deteve a última onda, deixando a costa presa no instante em que perdeu suas vozes.",
-        "O Vigia do Coro entrega o Rompante e revela que o Arauto mandou calar os sinos para poupar os vivos."
+        "A Raiz-Mor entrega o Crescente e revela que Nima tocou o primeiro sino; seu nome ficou guardado nas raízes. O arco do Crescente interrompe Ecos.",
+        "A Vigia do Sal devolve o Estouro e revela que o Arauto deteve a última onda, deixando a costa presa no instante em que perdeu suas vozes. A explosão do Estouro expõe alvos a golpes seguintes.",
+        "O Vigia do Coro entrega o Rompante e revela que o Arauto mandou calar os sinos para poupar os vivos. A onda do Rompante afasta Ecos comuns."
     };
     private static readonly string[] BasinWitnessLines = {
         "Sou Nima, a voz do primeiro sino. A Raiz-Mor guardou meu nome para que o silêncio não me apagasse. Ainda lembro o Arauto chamando esse silêncio de abrigo.",
@@ -95,6 +95,12 @@ public sealed class ScadrykGameDirector : MonoBehaviour
     private static readonly string[] CoastWitnessLines = {
         "Você devolveu movimento ao sal. Agora os sinos lembram que cada voz tinha alguém esperando por ela.",
         "O Arauto chama o silêncio de abrigo. Pergunte a quem perdeu o próprio nome se isso parece paz."
+    };
+    private static string PowerAcquisitionHint(int powerIndex, string binding) => powerIndex switch
+    {
+        0 => "Crescente (" + binding + "): arco frontal interrompe Ecos.",
+        1 => "Estouro (" + binding + "): explosão circular expõe alvos.",
+        _ => "Rompante (" + binding + "): onda longa empurra Ecos."
     };
     private string statusMessage = "Derrote os ecos para abrir a passagem.";
     private float statusUntil;
@@ -1406,7 +1412,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             string[] powers = { "Crescente Verdejante", "Estouro de Sal", "Rompante da Maré" };
             int powerIndex = Mathf.Clamp(enemy.BiomeIndex, 0, powers.Length - 1);
             if (worldSecret != null && RequiredWorldSecretPower() == powerIndex) worldSecretHintShown = false;
-            acquiredPower = "Novo poder adquirido: " + powers[powerIndex] + " (" + InputBinding(powerIndex + 3) + ").";
+            acquiredPower = PowerAcquisitionHint(powerIndex, InputBinding(powerIndex + 3));
             ShowMemory(GuardianMemories[powerIndex], 7f);
         }
 
@@ -1525,7 +1531,7 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         finalBoss.ConfigureFinalBoss(frames);
         activeEnemies.Add(finalBoss);
         bossObject.AddComponent<ScadrykHealthBar>().Configure(false, true, 2.25f);
-        statusMessage = "Rompante da Maré (" + InputBinding(5) + ") aprendido! O Arauto do Vazio despertou com três ataques.";
+        statusMessage = PowerAcquisitionHint(2, InputBinding(5)) + " O Arauto desperta.";
         statusUntil = Time.time + 8f;
     }
 
@@ -1939,6 +1945,14 @@ public sealed class ScadrykGameDirector : MonoBehaviour
         if (GuardianNames[0] == GuardianNames[1] || GuardianNames[1] == GuardianNames[2] || GuardianNames[0] == GuardianNames[2])
         { SmokeFail("Os guardiões dos três biomas precisam de identidades distintas"); yield break; }
         Debug.Log("SCADRYK_SMOKE: guardiões recebem identidades e memórias próprias");
+        string[] abilityLessons = { "arco frontal", "explosão circular", "onda longa" };
+        for (int ability = 0; ability < abilityLessons.Length; ability++)
+        {
+            string lesson = PowerAcquisitionHint(ability, "TESTE");
+            if (!lesson.Contains("TESTE") || !lesson.Contains(abilityLessons[ability]) || lesson.Length > 60)
+            { SmokeFail("A apresentação do poder " + ability + " não explica seu efeito numa frase curta"); yield break; }
+        }
+        Debug.Log("SCADRYK_SMOKE: cada guardião apresenta o comando e o efeito tático do poder recebido");
         ScadrykCue laneCue = ScadrykEnemyHealth.WarningCueFor(0, false, false, 0);
         ScadrykCue volleyCue = ScadrykEnemyHealth.WarningCueFor(0, false, false, 1);
         ScadrykCue areaCue = ScadrykEnemyHealth.WarningCueFor(0, false, false, 2);
@@ -2227,8 +2241,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
                 if (!TryGetMiniMapTarget(out Vector2 bossMapTarget) ||
                     Vector2.Distance(bossMapTarget, finalBoss.transform.position) > 0.001f)
                 { SmokeFail("O minimapa não acompanhou o Arauto após a última memória"); yield break; }
-                if (string.IsNullOrEmpty(InputBinding(5)) || !statusMessage.Contains(InputBinding(5)))
-                { SmokeFail("O aviso do terceiro poder não mostrou o vínculo atual antes da luta final"); yield break; }
+                if (string.IsNullOrEmpty(InputBinding(5)) || !statusMessage.Contains(PowerAcquisitionHint(2, InputBinding(5))))
+                { SmokeFail("O aviso do terceiro poder não explicou seu efeito e vínculo antes da luta final"); yield break; }
                 var bossType = typeof(ScadrykEnemyHealth);
                 var queuedStageField = bossType.GetField("queuedFinalStage", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
                 var attackIndexField = bossType.GetField("finalAttackIndex", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
@@ -2329,6 +2343,8 @@ public sealed class ScadrykGameDirector : MonoBehaviour
             { SmokeFail("Poder não recebido após guardião da fase " + phaseIndex); yield break; }
             if (roomIndex == 2)
             {
+                if (phaseIndex < 2 && !statusMessage.Contains(PowerAcquisitionHint(phaseIndex, InputBinding(phaseIndex + 3))))
+                { SmokeFail("O aviso de aquisição não ensinou o efeito do poder da fase " + phaseIndex); yield break; }
                 Vector2 testDirection = player.Facing.sqrMagnitude > 0.01f ? player.Facing.normalized : Vector2.right;
                 float targetDistance = phaseIndex == 2 ? 5.5f : 2.75f;
                 var testTarget = new GameObject("Smoke target for newly learned power");
