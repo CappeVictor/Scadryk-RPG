@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **Protocolo de playtest (22/11/2026):** a ficha agora padroniza seis sessões (duas por nível), isolamento de saves em perfil de teste, aviso neutro de F8, observação do uso espontâneo dos poderes, resumo de conclusão/parada e uma verificação de retomada após chefe em uma sessão de cada nível. Nenhum resultado foi preenchido; não houve sessão nem gravação nesta etapa.
+
 - **Sincronização do combo (22/11/2026):** o pico visual do golpe básico agora é calculado pelo mesmo envelope temporal verificado pelo smoke. A checagem exige que o primeiro, o segundo e o finalizador atinjam perto do pico no instante configurado de dano e que a animação termine ao fim de cada recuperação. Unity 6000.6.9f1 importou e compilou em batch, código 0, sem erros ou avisos C#. O smoke não foi executado e a sensação/legibilidade do combo ainda precisa de avaliação em jogo.
 
 - **Tarefas do VS Code (22/11/2026):** a pasta `UnityPort/.vscode` agora oferece `Ctrl+Shift+B` para importar/compilar no Unity em batch e uma tarefa separada para gerar a build Windows sem iniciá-la. O README explica os dois caminhos; o JSON foi carregado pelo parser do PowerShell e o diff passou na checagem de whitespace. Não abri a cena nem iniciei o jogo.

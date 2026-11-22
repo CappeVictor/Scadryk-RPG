@@ -14,6 +14,27 @@ Use este roteiro em uma build identificada por commit. Não ensine objetivos, se
 
 Convide ao menos duas pessoas por nível de experiência (seis sessões) antes de comparar padrões. Cada pessoa deve começar sem save anterior e jogar até concluir ou decidir parar. Não combine métricas de builds diferentes como se fossem a mesma versão.
 
+## Protocolo uniforme
+
+1. Use a mesma build identificada por commit para todas as seis sessões. Se o smoke da campanha não passar nessa build, adie o estudo com jogadores até corrigir o bloqueio.
+2. Separe os saves dos participantes da conta pessoal do computador. Prefira um perfil local de Windows dedicado às sessões, pois o progresso usa `PlayerPrefs`; não apague saves preexistentes para preparar a máquina.
+3. Peça consentimento antes de anotar respostas. Registre só o código/apelido e as informações necessárias à comparação. Não grave áudio, vídeo ou tela sem autorização específica.
+4. Dê a folha de controles e diga que **F8** marca um sinal/ataque que a pessoa não conseguiu perceber com clareza; não explique salas, chefes, selos ou combinações, e não interrompa para ensinar estratégias.
+5. Observe em silêncio. Registre a sala e o contexto do golpe confuso imediatamente; se o participante usar F8, associe a linha do CSV à descrição dele sem tentar adivinhar a causa.
+6. Depois de cada guardião, observe se a pessoa experimenta o novo poder por conta própria. Registre o alvo/contexto, se usou um poder para preparar outro golpe e se percebeu o efeito anunciado. Depois da sessão, peça que descreva a função de cada poder sem sugerir a resposta.
+7. Encerre quando a campanha terminar ou quando a pessoa escolher parar. Registre sala final, tempo total, mortes, motivo de parada e se conseguiu retomar do save; não pressione para continuar após frustração.
+8. Em uma das duas sessões de cada nível, peça para salvar e sair ao título depois de derrotar um guardião e antes de cruzar o portal. Ao continuar, confirme que o poder e a passagem permanecem e que o guardião não reaparece. Deixe a outra sessão sem essa interrupção para observar o fluxo contínuo.
+
+### Resumo da sessão
+
+- Resultado: `concluiu / parou` — sala final e motivo: `____________________`
+- Tempo total e mortes: `____________________`
+- Ataques que causaram dano sem motivo reconhecido: `____________________`
+- Poder menos usado e razão observada/declarada: `____________________`
+- Primeiro uso de Crescente, Estouro e Rompante (alvo e contexto): `____________________`
+- Alguma combinação espontânea de poderes? Quais efeitos percebeu? `____________________`
+- Save/retomada e opções de acessibilidade usadas: `____________________`
+
 Se houver controle, antes da partida observe alguns segundos com os analógicos em repouso e registre qualquer movimento, mira ou navegação involuntária; anote modelo e conexão para reproduzir o caso. Durante cada sessão, peça à pessoa para abrir uma lembrança primeiro com teclado/mouse e depois, se houver controle disponível, trocar de dispositivo com o painel aberto. Observe se os comandos mostrados acompanham a troca, se a pausa permite ler sem pressão e se o botão usado para continuar não pula a fala seguinte. Registre se o cue sonoro da lembrança se distingue da trilha e se o toque ascendente de um selo é percebido sem se confundir com a lembrança que vem em seguida.
 
 ## Registro por sala
