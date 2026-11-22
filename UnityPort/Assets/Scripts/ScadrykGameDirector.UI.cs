@@ -481,8 +481,17 @@ public sealed partial class ScadrykGameDirector
             Mathf.Min(300f, panel.width * 0.76f), 38f);
         if (GUI.Button(begin, "COMEÇAR A JORNADA")) DismissOpeningStory();
         GUI.Label(new Rect(panel.x + 12f, panel.yMax - 27f, panel.width - 24f, 20f),
-            "Enter · Espaço · A · " + InputBinding(6) + " para continuar", smallStyle);
+            OpeningStoryContinueHint(sessionInputMode == "gamepad", InputBinding(6)), smallStyle);
         GUI.color = Color.white;
+    }
+
+    internal static string OpeningStoryContinueHint(bool gamepad, string interactBinding)
+    {
+        if (gamepad) return interactBinding == "A" ? "A para continuar" : "A / " + interactBinding + " para continuar";
+        string keyboardBinding = interactBinding == "Enter" || interactBinding == "Espaço"
+            ? interactBinding == "Enter" ? "Enter / Espaço" : "Espaço / Enter"
+            : interactBinding + " / Enter / Espaço";
+        return keyboardBinding + " para continuar";
     }
 
     private void DrawWorldMap()

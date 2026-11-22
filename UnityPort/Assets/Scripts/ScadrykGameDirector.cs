@@ -187,6 +187,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (transitioning) return;
         if (showOpeningStory)
         {
+            bool keyboardActivity = Input.anyKeyDown || Input.GetMouseButtonDown(0);
+            bool gamepadActivity = GamepadActivityThisFrame();
+            sessionInputMode = MemoryInputModeAfterActivity(sessionInputMode, keyboardActivity, gamepadActivity);
             if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space) || ScadrykSettings.Down(6) ||
                 ScadrykSettings.PadButtonDown(0) || ScadrykSettings.PadDown(6)) DismissOpeningStory();
             return;
@@ -201,11 +204,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (memoryModal)
         {
             bool keyboardActivity = Input.anyKeyDown || Input.mousePosition != memoryLastMousePosition;
-            bool gamepadActivity = ScadrykSettings.PadDown(0) || ScadrykSettings.PadDown(1) || ScadrykSettings.PadButtonDown(7) ||
-                ScadrykSettings.PadDown(2) ||
-                ScadrykSettings.PadDown(3) || ScadrykSettings.PadDown(4) || ScadrykSettings.PadDown(5) || ScadrykSettings.PadDown(6) ||
-                new Vector2(Input.GetAxisRaw("Scadryk Move X"), Input.GetAxisRaw("Scadryk Move Y")).sqrMagnitude > 0.09f ||
-                new Vector2(Input.GetAxisRaw("Scadryk Aim X"), Input.GetAxisRaw("Scadryk Aim Y")).sqrMagnitude > 0.09f;
+            bool gamepadActivity = GamepadActivityThisFrame();
             sessionInputMode = MemoryInputModeAfterActivity(sessionInputMode, keyboardActivity, gamepadActivity);
             memoryLastMousePosition = Input.mousePosition;
             if (MemoryDismissRequested(Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space) || ScadrykSettings.PadButtonDown(0),
@@ -277,6 +276,10 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     internal static bool MemoryDismissRequested(bool confirm, bool interact, bool cancel) => confirm || interact || cancel;
     internal static bool MemoryDismissedThisFrame(int dismissedFrame, int currentFrame) => dismissedFrame >= 0 && dismissedFrame == currentFrame;
+    private static bool GamepadActivityThisFrame() => ScadrykSettings.PadDown(0) || ScadrykSettings.PadDown(1) || ScadrykSettings.PadButtonDown(7) ||
+        ScadrykSettings.PadDown(2) || ScadrykSettings.PadDown(3) || ScadrykSettings.PadDown(4) || ScadrykSettings.PadDown(5) || ScadrykSettings.PadDown(6) ||
+        new Vector2(Input.GetAxisRaw("Scadryk Move X"), Input.GetAxisRaw("Scadryk Move Y")).sqrMagnitude > 0.09f ||
+        new Vector2(Input.GetAxisRaw("Scadryk Aim X"), Input.GetAxisRaw("Scadryk Aim Y")).sqrMagnitude > 0.09f;
     internal static string MemoryInputModeAfterActivity(string current, bool keyboardActivity, bool gamepadActivity) =>
         ResolveInputMode(ResolveInputMode(current, keyboardActivity ? "keyboard_mouse" : null), gamepadActivity ? "gamepad" : null);
     internal static string MemoryDismissHintText(bool gamepad, string interactBinding) => MemoryDismissHintText(gamepad, interactBinding, false);
@@ -556,7 +559,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         memoryUntil = 0f;
         memoryModal = false;
         memoryDismissedFrame = -1;
-        StartRoomTimer();
+        StartRoomTimer(true);
         ApplyPauseTimeScale();
     }
 
@@ -570,10 +573,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         ApplyPauseTimeScale();
     }
 
-    private void StartRoomTimer()
+    private void StartRoomTimer(bool preserveInputMode = false)
     {
+        string activeInputMode = sessionInputMode;
         roomActiveSeconds = 0f;
-        sessionInputMode = "unknown";
+        sessionInputMode = preserveInputMode ? activeInputMode : "unknown";
         roomSessionRecorded = false;
     }
 
@@ -1824,7 +1828,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             MemoryDismissHintText(true, "Y") != "A / Y / B para continuar" ||
             MemoryDismissHintText(false, "E") != "E / Enter / Espaço / Esc para continuar" ||
             MemoryDismissHintText(true, "Y", true) != "A / Y / B" ||
-            MemoryDismissHintText(false, "E", true) != "E / Enter / Esc")
+            MemoryDismissHintText(false, "E", true) != "E / Enter / Esc" ||
+            OpeningStoryContinueHint(true, "Y") != "A / Y para continuar" ||
+            OpeningStoryContinueHint(true, "A") != "A para continuar" ||
+            OpeningStoryContinueHint(false, "E") != "E / Enter / Espaço para continuar" ||
+            OpeningStoryContinueHint(false, "Enter") != "Enter / Espaço para continuar")
         { SmokeFail("As memórias não pausam com um painel legível ou não aceitam confirmação, interação e voltar"); yield break; }
         Debug.Log("SCADRYK_SMOKE: memórias modais têm comandos de saída válidos e cabem em janela compacta");
         for (int effect = 0; effect < 40; effect++)
