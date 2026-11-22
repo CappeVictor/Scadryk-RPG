@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **CI do commit `aebba63` (22/11/2026):** o Unity run 27 parou antes da build na exigência dos secrets `UNITY_LICENSE`, `UNITY_EMAIL` e `UNITY_PASSWORD`; smoke e executável Unity foram pulados. O C# run 882 passou build, smoke, publicação e verificação dos assets do projeto original da raiz; ele não compila nem valida `UnityPort`. A compilação Unity local em batch deste commit passou sem erros ou avisos C#.
+
 - **CI do commit `8207c33` (22/11/2026):** o run Unity 25 parou na etapa obrigatória de secrets `UNITY_LICENSE`, `UNITY_EMAIL` e `UNITY_PASSWORD`; build e smoke hospedados foram pulados. O run C# 880 passou build, smoke, publicação e verificação de assets do projeto raiz, mas não compila nem valida `UnityPort`. A compilação local em batch no Unity 6000.6.9f1 passou sem erros/avisos C#; não abriu cena nem iniciou o jogo.
 
 - **Telemetria das mecânicas ambientais (22/11/2026):** o CSV v8 agora mede os segundos que Nara passa nas poças do bosque e cada ressonância válida ativada com Pulso nos desafios de cristal e farol/sino. Os valores persistem em mortes e reinícios da mesma sala e reiniciam ao avançar; CSVs v7 e anteriores ficam separados. O smoke cobre filtragem por bioma/sala, exposição negativa, serialização, persistência e os pulsos válidos das salas 5 e 8; não foi executado. Unity 6000.6.9f1 compilou em batch sem erros ou avisos C#. Build, smoke, jogo e sessão de avaliação não foram iniciados.
