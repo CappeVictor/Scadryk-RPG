@@ -510,5 +510,24 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         body.position = position;
         if (animator != null) animator.SetPortalScale(visibility);
     }
-    public void ResetForRoom(Vector2 position) { health = maxHealth; rootedUntil = 0f; dashBufferedUntil = attackBufferedUntil = 0f; lastBasicAttackStep = -1; basicAttackComboUntil = 0f; terrainZones.Clear(); terrainSpeedScale = 1f; isDying = false; invulnerableUntil = Time.time + 1f; transform.position = position; BodyVelocity = Vector2.zero; if (animator != null) { animator.SetPortalScale(1f); animator.ResetPose(); } }
+    public void ResetForRoom(Vector2 position)
+    {
+        health = maxHealth;
+        rootedUntil = 0f;
+        dashBufferedUntil = attackBufferedUntil = 0f;
+        lastBasicAttackStep = -1;
+        basicAttackComboUntil = 0f;
+        terrainZones.Clear();
+        terrainSpeedScale = 1f;
+        terrainFlowVelocity = Vector2.zero;
+        isDying = false;
+        invulnerableUntil = Time.time + 1f;
+        transform.position = position;
+        BodyVelocity = Vector2.zero;
+        if (animator != null)
+        {
+            animator.SetPortalScale(1f);
+            animator.ResetPose();
+        }
+    }
 }
