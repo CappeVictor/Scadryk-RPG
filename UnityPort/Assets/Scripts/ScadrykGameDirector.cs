@@ -647,6 +647,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     internal static float ProgressHintDelay(int stage) => stage <= 0 ? 24f : 18f;
 
+    internal static bool OpeningStoryCoversRoomStatus(bool openingStoryVisible, int phase, int room) =>
+        openingStoryVisible && phase == 0 && room == 0;
+
     internal static bool ShouldAccumulateProgressHint(bool paused, int enemiesRemaining, int activated, int required,
         float statusUntil, float now) =>
         !paused && enemiesRemaining <= 0 && activated < required && now >= statusUntil;
@@ -727,8 +730,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (!preserveRoomSession) ResetRoomSessionMetrics();
         hintStage = 0;
         progressHintSeconds = 0f;
+        bool openingCoversFirstRoom = OpeningStoryCoversRoomStatus(showOpeningStory, phaseIndex, roomIndex);
         statusMessage = roomIndex == RoomsPerPhase - 1 ? GuardianIntroductions[phaseIndex] : RoomStories[phaseIndex * RoomsPerPhase + roomIndex];
-        statusUntil = Time.time + (roomIndex == RoomsPerPhase - 1 ? 8f : 6f);
+        statusUntil = Time.time + (openingCoversFirstRoom ? 0f : roomIndex == RoomsPerPhase - 1 ? 8f : 6f);
         if (finalBossAlreadyDefeated) UnlockExit();
         else if (ShouldResumeFinalGuardianInterlude(phaseIndex, roomIndex, guardianAlreadyDefeated, finalBossAlreadyDefeated))
         {
@@ -2323,7 +2327,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             OpeningStoryContinueHint(true, "Y") != "A / Y para continuar" ||
             OpeningStoryContinueHint(true, "A") != "A para continuar" ||
             OpeningStoryContinueHint(false, "E") != "E / Enter / Espaço para continuar" ||
-            OpeningStoryContinueHint(false, "Enter") != "Enter / Espaço para continuar")
+            OpeningStoryContinueHint(false, "Enter") != "Enter / Espaço para continuar" ||
+            !OpeningStoryCoversRoomStatus(true, 0, 0) || OpeningStoryCoversRoomStatus(false, 0, 0) ||
+            OpeningStoryCoversRoomStatus(true, 0, 1) || OpeningStoryCoversRoomStatus(true, 1, 0))
         { SmokeFail("Memórias, comandos de saída ou a janela opcional do Selo final falharam"); yield break; }
         Debug.Log("SCADRYK_SMOKE: memórias modais têm comandos de saída válidos e cabem em janela compacta");
         GameObject priorityWarning = ScadrykEffects.TelegraphLine(roomCenter, roomCenter + Vector2.right * 3f,
