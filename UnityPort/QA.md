@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **Runtime atual das ações Unity (22/11/2026):** o workflow agora fixa `actions/checkout` v7.0.1 e `actions/upload-artifact` v7.0.2 por SHA; ambas usam Node 24, removendo a dependência declarada de Node 20 no job Unity. Os SHAs correspondem às tags oficiais. O próximo PR run confirmará execução no runner do GitHub; build/smoke Unity ainda param no gate enquanto os três secrets não estiverem configurados.
+
 - **CI do PR #1 no commit `6fe5372` (22/11/2026):** o check `Build and smoke-test on hosted Windows` falhou no gate de licença, antes da importação Unity, pois `UNITY_LICENSE`, `UNITY_EMAIL` e `UNITY_PASSWORD` estão vazios. Build Windows, smoke da campanha e artefatos foram pulados. O check `build` passou, mas é o workflow do C# original na raiz e não valida UnityPort. Localmente, Unity 6000.6.9f1 compilou a revisão em batch; nenhum jogo foi iniciado. A próxima validação hospedada exige configurar os três secrets em **Settings > Secrets and variables > Actions**.
 
 - **Limpeza integral ao concluir a campanha (22/11/2026):** vitória e “Nova jornada” agora usam a mesma rotina para apagar derrotas de chefes, falas já vistas e Selos de Eco descobertos. Antes, vencer o Arauto limpava checkpoint e memórias, mas podia deixar os segredos opcionais invisíveis na campanha seguinte. O smoke verifica a limpeza dos quatro tipos de progresso com chaves temporárias. Unity 6000.6.9f1 importou e compilou em batch, código 0, sem erros ou avisos C#; o smoke continua sem execução.
