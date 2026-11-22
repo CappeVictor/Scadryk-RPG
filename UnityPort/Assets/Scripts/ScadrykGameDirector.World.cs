@@ -871,7 +871,7 @@ public sealed partial class ScadrykGameDirector
             enemy.AddComponent<ScadrykActorAnimator>().SetVisual(enemyVisual.transform, enemyVolumeRenderer);
             var health = enemy.AddComponent<ScadrykEnemyHealth>();
             health.Configure(boss ? 320f + phaseIndex * 80f : 72f + phaseIndex * 12f, boss ? 1.55f : 1.9f + phaseIndex * 0.1f,
-                boss, phaseIndex, frames, role, ScadrykEnemyHealth.OpeningAttackDelay(i, boss));
+                boss, phaseIndex, frames, role, ScadrykEnemyHealth.OpeningAttackDelay(i, boss, phaseIndex == 0 && roomIndex == 0));
             activeEnemies.Add(health);
             if (boss) phaseGuardian = health;
             enemy.AddComponent<ScadrykHealthBar>().Configure(false, boss, boss ? 1.45f : 1.22f);

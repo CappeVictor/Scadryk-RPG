@@ -543,7 +543,8 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     internal static int FinalStarfallSideProjectileCount(int stage) => stage == 2 ? 1 : stage == 3 ? 3 : 0;
     internal static float FinalStarfallSideProjectileAngle(int stage, int index) =>
         (index - (FinalStarfallSideProjectileCount(stage) - 1) * 0.5f) * FinalStarfallProjectileAngleStep;
-    internal static float OpeningAttackDelay(int enemyIndex, bool boss) => boss ? 1.25f : 0.3f + Mathf.Max(0, enemyIndex) * OpeningAttackSpacing;
+    internal static float OpeningAttackDelay(int enemyIndex, bool boss, bool campaignOpeningRoom = false) =>
+        boss ? 1.25f : (campaignOpeningRoom ? 2.6f : 0.3f) + Mathf.Max(0, enemyIndex) * OpeningAttackSpacing;
     internal static float ReserveOpeningAttackSlot(ref float nextAvailableAt, float requestedAt)
     {
         float scheduledAt = Mathf.Max(nextAvailableAt, requestedAt);
