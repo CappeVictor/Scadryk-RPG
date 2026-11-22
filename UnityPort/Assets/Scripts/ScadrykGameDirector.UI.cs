@@ -13,8 +13,10 @@ public sealed partial class ScadrykGameDirector
         DrawWitnessPrompt();
         if (phaseGuardian != null) DrawPhaseGuardianTitle();
         if (finalBoss != null) DrawFinalBossBar();
-        if (Time.time < statusUntil) GUI.Label(new Rect(15, Screen.height - 64, Screen.width - 30, 44), statusMessage, bodyStyle);
-        if (Time.time < memoryUntil && !transitioning)
+        bool showStatus = Time.time < statusUntil;
+        bool showMemory = Time.time < memoryUntil && !transitioning;
+        if (showStatus) GUI.Label(new Rect(15, Screen.height - 64, Screen.width - 30, 44), statusMessage, bodyStyle);
+        if (showMemory)
         {
             float width = Mathf.Max(0f, Mathf.Min(740f, Screen.width - 36f));
             float bodyHeight = Mathf.Max(62f, memoryStyle.CalcHeight(new GUIContent(memoryText), Mathf.Max(32f, width - 36f)));
@@ -23,15 +25,27 @@ public sealed partial class ScadrykGameDirector
             GUI.Label(new Rect(panel.x + 18f, panel.y + 10f, panel.width - 36f, 24f), "VESTÍGIO ESCUTADO", titleStyle);
             GUI.Label(MemoryTextRect(panel), memoryText, memoryStyle);
         }
-        string controlHint = Screen.width < 840f
-            ? "M/L3 mapa · Esc/Start pausa · " + InputBinding(0) + " atacar · " + InputBinding(1) + " esquivar"
-            : "Mover: teclas/controle  ·  Mouse/analógico mirar  ·  " + InputBinding(0) + " atacar  ·  " + InputBinding(1) + " esquivar  ·  " + InputBinding(2) + " pulso  ·  " + InputBinding(6) + " interagir  ·  M/L3 mapa  ·  Esc pausa";
-        Rect controlHintRect = new Rect(14, Screen.height - 34, Screen.width - 28, 30);
-        controlHintStyle.fontSize = smallStyle.fontSize;
-        float measuredControlHintWidth = controlHintStyle.CalcSize(new GUIContent(controlHint)).x;
-        if (measuredControlHintWidth > controlHintRect.width && measuredControlHintWidth > 0f)
-            controlHintStyle.fontSize = Mathf.Max(9, Mathf.FloorToInt(controlHintStyle.fontSize * controlHintRect.width / measuredControlHintWidth));
-        GUI.Label(controlHintRect, controlHint, controlHintStyle);
+        bool compactControlHint = Screen.width < 840f;
+        if (!showStatus && !(compactControlHint && showMemory))
+        {
+            string controlHint = compactControlHint
+                ? CompactControlHintText("teclado/LS", "mouse/RS", InputBinding(0), InputBinding(1), InputBinding(2), InputBinding(6))
+                : "Mover: teclas/controle  ·  Mouse/analógico mirar  ·  " + InputBinding(0) + " atacar  ·  " + InputBinding(1) + " esquivar  ·  " + InputBinding(2) + " pulso  ·  " + InputBinding(6) + " interagir  ·  M/L3 mapa  ·  Esc pausa";
+            controlHintStyle.fontSize = smallStyle.fontSize;
+            controlHintStyle.wordWrap = compactControlHint;
+            float hintWidth = Mathf.Max(0f, Screen.width - 28f);
+            float hintHeight = compactControlHint
+                ? controlHintStyle.CalcHeight(new GUIContent(controlHint), hintWidth)
+                : 30f;
+            Rect controlHintRect = new Rect(14f, Screen.height - hintHeight - 8f, hintWidth, hintHeight);
+            if (!compactControlHint)
+            {
+                float measuredControlHintWidth = controlHintStyle.CalcSize(new GUIContent(controlHint)).x;
+                if (measuredControlHintWidth > controlHintRect.width && measuredControlHintWidth > 0f)
+                    controlHintStyle.fontSize = Mathf.Max(9, Mathf.FloorToInt(controlHintStyle.fontSize * controlHintRect.width / measuredControlHintWidth));
+            }
+            GUI.Label(controlHintRect, controlHint, controlHintStyle);
+        }
         if (transitionFade > 0f)
         {
             GUI.color = new Color(0f, 0f, 0f, transitionFade);
@@ -580,6 +594,11 @@ public sealed partial class ScadrykGameDirector
 
     private static Rect MemoryTextRect(Rect panel) =>
         new Rect(panel.x + 18f, panel.y + 34f, panel.width - 36f, panel.height - 40f);
+
+    internal static string CompactControlHintText(string movement, string aim, string attack, string dodge, string pulse, string interact) =>
+        "Mover: " + movement + " · mirar: " + aim + "\n" +
+        attack + " atacar · " + dodge + " esquivar · " + pulse + " pulso\n" +
+        interact + " interagir · M/L3 mapa · Esc/Start pausa";
 
     private static bool MemoryPanelFits(float screenWidth, float screenHeight, float bodyHeight)
     {

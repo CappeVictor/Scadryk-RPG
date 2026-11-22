@@ -1448,6 +1448,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         string gamepadInteractHint = ProgressHint(1, 0, 0);
         string gamepadWitnessPrompt = WitnessPromptText();
         sessionInputMode = previousHintInputMode;
+        string compactControls = CompactControlHintText("teclado/LS", "mouse/RS", "F", "Space", "Q", "E");
         if (!keyboardPulseHint.Contains("(" + ScadrykSettings.KeyName(ScadrykSettings.Key(2)) + ")") ||
             !keyboardInteractHint.Contains("(" + ScadrykSettings.KeyName(ScadrykSettings.Key(6)) + ")") ||
             keyboardWitnessPrompt != ScadrykSettings.KeyName(ScadrykSettings.Key(6)) + "  ·  FALAR COM NIMA" ||
@@ -1458,8 +1459,12 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             FormatInputBinding(KeyCode.Alpha1, 4, false) != "1" ||
             FormatInputBinding(KeyCode.Keypad1, 4, false) != "Num 1" ||
             FormatInputBinding(KeyCode.Space, 4, false) != "Espaço" ||
-            FormatInputBinding(KeyCode.F, 4, true) != "LB")
-        { SmokeFail("Pistas e HUD não refletem teclas e botões remapeados do dispositivo ativo"); yield break; }
+            FormatInputBinding(KeyCode.F, 4, true) != "LB" ||
+            !compactControls.Contains("Mover: teclado/LS · mirar: mouse/RS") ||
+            !compactControls.Contains("F atacar · Space esquivar · Q pulso") ||
+            !compactControls.Contains("E interagir · M/L3 mapa · Esc/Start pausa") ||
+            compactControls.Split('\n').Length != 3)
+        { SmokeFail("Pistas e HUD não refletem os controles remapeados ou omitem ações na tela compacta"); yield break; }
         Debug.Log("SCADRYK_SMOKE: pistas dinâmicas refletem dispositivo e botões de jogo");
         bool previousPauseState = isPaused;
         float beforePauseClock = Time.time;
