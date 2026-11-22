@@ -110,6 +110,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private float statusUntil;
     private string memoryText;
     private float memoryUntil;
+    private bool memoryModal;
+    private int memoryDismissedFrame = -1;
     private float roomActiveSeconds;
     private float nextOpeningAttackSlotAt;
     private int roomDeaths;
@@ -137,7 +139,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private GUIStyle memoryStyle { get; set; }
     private float cachedTextScale { get; set; } = -1f;
 
-    public bool IsPaused => isPaused || showTitle || showOptions || victory || transitioning || showOpeningStory || showWorldMap;
+    public bool IsPaused => isPaused || showTitle || showOptions || victory || transitioning || showOpeningStory || showWorldMap || memoryModal || MemoryDismissedThisFrame(memoryDismissedFrame, Time.frameCount);
     public int PhaseIndex => phaseIndex;
     public int RoomIndex => roomIndex;
     public int EnemiesRemaining => enemiesRemaining;
@@ -195,6 +197,14 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             { showWorldMap = false; ApplyPauseTimeScale(); }
             return;
         }
+        if (memoryModal)
+        {
+            if (MemoryDismissRequested(Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space) || ScadrykSettings.PadButtonDown(0),
+                ScadrykSettings.Down(6) || ScadrykSettings.PadDown(6),
+                Input.GetKeyDown(KeyCode.Escape) || ScadrykSettings.PadButtonDown(1) || ScadrykSettings.PadButtonDown(7)))
+                DismissMemory();
+            return;
+        }
         if (!IsPaused && (Input.GetKeyDown(KeyCode.M) || ScadrykSettings.PadButtonDown(8)))
         {
             showWorldMap = true;
@@ -239,12 +249,13 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     private void ApplyPauseTimeScale()
     {
-        Time.timeScale = showTitle || isPaused || showOptions || victory || showOpeningStory || showWorldMap ? 0f : 1f;
+        Time.timeScale = showTitle || isPaused || showOptions || victory || showOpeningStory || showWorldMap || memoryModal ||
+            MemoryDismissedThisFrame(memoryDismissedFrame, Time.frameCount) ? 0f : 1f;
     }
 
     private void OnApplicationFocus(bool hasFocus)
     {
-        if (smokeRun || showOpeningStory || showWorldMap || !FocusLossRequiresPause(hasFocus, showTitle, isPaused, showOptions, victory, transitioning)) return;
+        if (smokeRun || showOpeningStory || showWorldMap || memoryModal || !FocusLossRequiresPause(hasFocus, showTitle, isPaused, showOptions, victory, transitioning)) return;
         isPaused = true;
         ApplyPauseTimeScale();
     }
@@ -254,6 +265,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     internal static bool RebindingCanBeCancelled(int keyboardAction, int gamepadAction) =>
         keyboardAction >= 0 || gamepadAction >= 0;
+
+    internal static bool MemoryDismissRequested(bool confirm, bool interact, bool cancel) => confirm || interact || cancel;
+    internal static bool MemoryDismissedThisFrame(int dismissedFrame, int currentFrame) => dismissedFrame >= 0 && dismissedFrame == currentFrame;
 
     internal static int MovePauseGridSelection(int selection, int horizontalDirection, int verticalDirection)
     {
@@ -524,7 +538,18 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         showOpeningStory = false;
         memoryText = null;
         memoryUntil = 0f;
+        memoryModal = false;
+        memoryDismissedFrame = -1;
         StartRoomTimer();
+        ApplyPauseTimeScale();
+    }
+
+    private void DismissMemory()
+    {
+        memoryText = null;
+        memoryUntil = 0f;
+        memoryModal = false;
+        memoryDismissedFrame = Time.frameCount;
         ApplyPauseTimeScale();
     }
 
@@ -1030,7 +1055,14 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     private void ShowStatus(string message, float seconds) { statusMessage = message; statusUntil = Time.time + seconds; }
 
-    private void ShowMemory(string message, float seconds) { memoryText = message; memoryUntil = Time.time + seconds; }
+    private void ShowMemory(string message, float seconds)
+    {
+        memoryText = message;
+        memoryUntil = Time.time + seconds;
+        memoryModal = !smokeRun;
+        memoryDismissedFrame = -1;
+        ApplyPauseTimeScale();
+    }
 
     public void ShowAbilityLocked(int index)
     {
@@ -1725,9 +1757,12 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (remainingWarnings != 0 || warningProbe.activeSelf || warningProbeList[0] != null)
         { SmokeFail("Interromper um ataque não removeu seus avisos visuais pendentes"); yield break; }
         Debug.Log("SCADRYK_SMOKE: interromper um golpe desativa todos os telegráficos associados");
-        if (!MemoryPanelFits(400f, 360f, 120f) || !MemoryPanelFits(700f, 600f, 90f))
-        { SmokeFail("O texto ampliado dos vestígios é cortado ou cobre os comandos inferiores"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: painel de memória cresce com o texto sem cobrir status e controles");
+        if (!MemoryPanelFits(400f, 360f, 120f) || !MemoryPanelFits(700f, 600f, 90f) ||
+            !MemoryDismissRequested(true, false, false) || !MemoryDismissRequested(false, true, false) ||
+            !MemoryDismissRequested(false, false, true) || MemoryDismissRequested(false, false, false) ||
+            !MemoryDismissedThisFrame(12, 12) || MemoryDismissedThisFrame(12, 13))
+        { SmokeFail("As memórias não pausam com um painel legível ou não aceitam confirmação, interação e voltar"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: memórias modais têm comandos de saída válidos e cabem em janela compacta");
         for (int effect = 0; effect < 40; effect++)
             ScadrykEffects.Burst(roomCenter + Vector2.up * (20f + effect), Color.clear, 0.05f);
         if (ScadrykEffects.SecondaryVisualCount > ScadrykEffects.SecondaryVisualLimit) { SmokeFail("O limite de efeitos secundários não foi respeitado"); yield break; }

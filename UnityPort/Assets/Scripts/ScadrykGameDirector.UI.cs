@@ -12,6 +12,7 @@ public sealed partial class ScadrykGameDirector
         if (showOpeningStory) { DrawOpeningStory(); return; }
         if (showWorldMap) { DrawWorldMap(); return; }
         if (showOptions) { DrawOptions(); return; }
+        if (memoryModal) { DrawMemoryModal(); return; }
         if (showTitle || isPaused || victory) { DrawOverlay(); return; }
         DrawHud(); DrawMiniMap(); DrawOffscreenTargetHint();
         DrawWitnessPrompt();
@@ -59,6 +60,25 @@ public sealed partial class ScadrykGameDirector
                 GUI.Label(new Rect(0, Screen.height / 2f - 20, Screen.width, 40), "ATRAVESSANDO O LIMIAR", centeredTitleStyle);
         }
     }
+
+    private void DrawMemoryModal()
+    {
+        GUI.color = new Color(0f, 0f, 0f, 0.68f);
+        GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
+        GUI.color = Color.white;
+        float width = Mathf.Max(0f, Mathf.Min(740f, Screen.width - 36f));
+        float bodyHeight = Mathf.Max(62f, memoryStyle.CalcHeight(new GUIContent(memoryText), Mathf.Max(32f, width - 36f)));
+        Rect panel = MemoryPanelRect(Screen.width, Screen.height, bodyHeight);
+        GUI.color = new Color(0.025f, 0.04f, 0.045f, 0.98f); GUI.DrawTexture(panel, Texture2D.whiteTexture); GUI.color = Color.white;
+        GUI.Label(new Rect(panel.x + 18f, panel.y + 10f, panel.width - 36f, 24f), "VESTÍGIO ESCUTADO", titleStyle);
+        GUI.Label(MemoryTextRect(panel), memoryText, memoryStyle);
+        smallStyle.alignment = TextAnchor.MiddleCenter;
+        GUI.Label(MemoryDismissHintRect(panel), InputBinding(6) + "  ·  Enter / Espaço  ·  Esc para continuar", smallStyle);
+        smallStyle.alignment = TextAnchor.MiddleLeft;
+    }
+
+    private static Rect MemoryDismissHintRect(Rect panel) =>
+        new Rect(panel.x + 12f, panel.yMax - 32f, panel.width - 24f, 24f);
 
     private void DrawHud()
     {
@@ -591,13 +611,13 @@ public sealed partial class ScadrykGameDirector
     private static Rect MemoryPanelRect(float screenWidth, float screenHeight, float bodyHeight)
     {
         float width = Mathf.Max(0f, Mathf.Min(740f, screenWidth - 36f));
-        float panelHeight = 40f + Mathf.Max(62f, bodyHeight);
+        float panelHeight = 82f + Mathf.Max(62f, bodyHeight);
         float y = Mathf.Max(12f, Mathf.Min(screenHeight - 180f, screenHeight - 78f - panelHeight));
         return new Rect((screenWidth - width) * 0.5f, y, width, panelHeight);
     }
 
     private static Rect MemoryTextRect(Rect panel) =>
-        new Rect(panel.x + 18f, panel.y + 34f, panel.width - 36f, panel.height - 40f);
+        new Rect(panel.x + 18f, panel.y + 34f, panel.width - 36f, panel.height - 82f);
 
     internal static string CompactControlHintText(string movement, string aim, string attack, string dodge, string pulse, string interact) =>
         "Mover: " + movement + " · mirar: " + aim + "\n" +
@@ -609,9 +629,11 @@ public sealed partial class ScadrykGameDirector
         float requiredBodyHeight = Mathf.Max(62f, bodyHeight);
         Rect panel = MemoryPanelRect(screenWidth, screenHeight, requiredBodyHeight);
         Rect text = MemoryTextRect(panel);
+        Rect hint = MemoryDismissHintRect(panel);
         return screenWidth >= 240f && screenHeight >= requiredBodyHeight + 130f &&
             panel.xMin >= 0f && panel.xMax <= screenWidth && panel.yMin >= 0f && panel.yMax <= screenHeight - 78f &&
-            text.yMin >= panel.yMin && text.yMax <= panel.yMax - 6f && text.height >= requiredBodyHeight;
+            text.yMin >= panel.yMin && text.yMax <= hint.yMin && text.height >= requiredBodyHeight &&
+            hint.yMin >= text.yMax && hint.yMax <= panel.yMax;
     }
 
     private bool OverlayButton(Rect rect, string label, int index)
