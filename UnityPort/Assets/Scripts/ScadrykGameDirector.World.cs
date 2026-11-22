@@ -768,8 +768,8 @@ public sealed partial class ScadrykGameDirector
             enemy.transform.position = position;
             enemy.transform.localScale = Vector3.one * (boss ? 1.85f : role == 0 ? 0.94f : role == 1 ? 0.78f : role == 2 ? 1.08f : 0.86f);
             string sheet = boss ? (phaseIndex == 0 ? "Bosses" : phaseIndex == 1 ? "BossesMidgame" : "BossesFinalWave") : "Enemies";
-            Sprite[] frames = LoadSheetRow(sheet, boss ? phaseIndex : i % 4, false);
-            if (phaseEnemySprites != null && phaseEnemySprites[phaseIndex] != null)
+            Sprite[] frames = LoadSheetRow(sheet, boss ? phaseIndex : EnemyArtworkRowForRole(role), false);
+            if (boss && phaseEnemySprites != null && phaseEnemySprites[phaseIndex] != null)
                 frames = new[] { phaseEnemySprites[phaseIndex], phaseEnemySprites[phaseIndex], phaseEnemySprites[phaseIndex], phaseEnemySprites[phaseIndex] };
             var enemyShadow = new GameObject("Soft ground shadow"); enemyShadow.transform.SetParent(enemy.transform, false);
             enemyShadow.transform.localPosition = new Vector3(0.09f, -0.2f, 0f); enemyShadow.transform.localScale = new Vector3(boss ? 0.92f : 0.65f, boss ? 0.52f : 0.38f, 1f);
@@ -791,6 +791,14 @@ public sealed partial class ScadrykGameDirector
             enemy.AddComponent<ScadrykHealthBar>().Configure(false, boss, boss ? 1.45f : 1.22f);
         }
     }
+
+    internal static int EnemyArtworkRowForRole(int role) => Mathf.Clamp(role, 0, 3) switch
+    {
+        0 => 0, // Hunter: hooded blade wielder.
+        1 => 1, // Ranged: bow and open stance.
+        2 => 3, // Area control: heavier armored silhouette.
+        _ => 2  // Support: lantern bearer.
+    };
 
     internal static int EnemyCountForRoom(int roomId)
     {

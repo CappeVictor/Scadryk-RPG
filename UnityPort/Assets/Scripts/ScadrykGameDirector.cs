@@ -1284,9 +1284,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Debug.Log("SCADRYK_SMOKE: escalonamento preserva intervalo mesmo se um Eco chega ao alcance atrasado");
         if (EnemyRoleForRoom(1, 0) != 0 || EnemyRoleForRoom(1, 1) != 1 || EnemyRoleForRoom(1, 2) != 2 || EnemyRoleForRoom(1, 3) != 3 ||
             EnemyRoleForRoom(4, 0) != 0 || EnemyRoleForRoom(4, 1) != 0 || EnemyRoleForRoom(4, 2) != 2 || EnemyRoleForRoom(4, 3) != 3 ||
-            EnemyRoleForRoom(7, 0) != 1 || EnemyRoleForRoom(7, 1) != 1 || EnemyRoleForRoom(7, 2) != 2 || EnemyRoleForRoom(7, 3) != 3)
+            EnemyRoleForRoom(7, 0) != 1 || EnemyRoleForRoom(7, 1) != 1 || EnemyRoleForRoom(7, 2) != 2 || EnemyRoleForRoom(7, 3) != 3 ||
+            EnemyArtworkRowForRole(0) != 0 || EnemyArtworkRowForRole(1) != 1 ||
+            EnemyArtworkRowForRole(2) != 3 || EnemyArtworkRowForRole(3) != 2)
         { SmokeFail("As composições dos encontros de quatro inimigos perderam sua identidade tática"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: equipes de bosque, sal e costa têm papéis próprios");
+        Debug.Log("SCADRYK_SMOKE: equipes de bosque, sal e costa têm papéis e silhuetas próprios");
         if (GuardianNames.Length != 3 || GuardianIntroductions.Length != 3 || GuardianMemories.Length != 3)
         { SmokeFail("Cada bioma precisa de nome, fala e memória próprios para o guardião"); yield break; }
         if (!OpeningMemory.Contains("Grande Onda") || !OpeningMemory.Contains("Nara") ||
