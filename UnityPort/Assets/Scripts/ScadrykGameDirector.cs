@@ -22,6 +22,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private static readonly Color[] PhaseAccentColors = { new Color(0.36f, 0.62f, 0.48f), new Color(0.78f, 0.59f, 0.30f), new Color(0.30f, 0.68f, 0.76f) };
     private static Sprite SquareSprite;
     private static Sprite CircleSprite;
+    private static readonly Dictionary<string, Sprite[][]> SpriteSheetRows = new Dictionary<string, Sprite[][]>();
+    private static readonly Dictionary<string, Sprite[]> WholeSpriteSheets = new Dictionary<string, Sprite[]>();
     private Sprite[] environmentSprites;
     private Sprite[] phaseGroundSprites;
     private Sprite[] phaseEnemySprites;
@@ -1072,23 +1074,36 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     private static Sprite[] LoadSheetRow(string name, int row, bool wholeSheet)
     {
-        Texture2D texture = Resources.Load<Texture2D>("ScadrykArt/" + name);
-        if (texture == null) return null;
-        int frameCount = wholeSheet ? 16 : 4;
-        var result = new Sprite[frameCount];
-        for (int frame = 0; frame < frameCount; frame++)
+        if (!SpriteSheetRows.TryGetValue(name, out Sprite[][] rows))
         {
-            int sheetRow = wholeSheet ? frame / 4 : row % 4;
-            int column = frame % 4;
-            int xMin = Mathf.RoundToInt(column * texture.width / 4f);
-            int xMax = Mathf.RoundToInt((column + 1) * texture.width / 4f);
-            int yMin = Mathf.RoundToInt(texture.height - (sheetRow + 1) * texture.height / 4f);
-            int yMax = Mathf.RoundToInt(texture.height - sheetRow * texture.height / 4f);
-            var rect = new Rect(xMin, yMin, xMax - xMin, yMax - yMin);
-            var sprite = Sprite.Create(texture, rect, new Vector2(0.5f, 0.06f), 220f);
-            sprite.name = name + "_" + (sheetRow * 4 + column).ToString("00");
-            result[frame] = sprite;
+            Texture2D texture = Resources.Load<Texture2D>("ScadrykArt/" + name);
+            if (texture == null) return null;
+            rows = new Sprite[4][];
+            for (int sheetRow = 0; sheetRow < 4; sheetRow++)
+            {
+                rows[sheetRow] = new Sprite[4];
+                for (int column = 0; column < 4; column++)
+                {
+                    int xMin = Mathf.RoundToInt(column * texture.width / 4f);
+                    int xMax = Mathf.RoundToInt((column + 1) * texture.width / 4f);
+                    int yMin = Mathf.RoundToInt(texture.height - (sheetRow + 1) * texture.height / 4f);
+                    int yMax = Mathf.RoundToInt(texture.height - sheetRow * texture.height / 4f);
+                    var rect = new Rect(xMin, yMin, xMax - xMin, yMax - yMin);
+                    var sprite = Sprite.Create(texture, rect, new Vector2(0.5f, 0.06f), 220f);
+                    sprite.name = name + "_" + (sheetRow * 4 + column).ToString("00");
+                    rows[sheetRow][column] = sprite;
+                }
+            }
+            SpriteSheetRows.Add(name, rows);
         }
+
+        if (!wholeSheet) return rows[(row % 4 + 4) % 4];
+        if (WholeSpriteSheets.TryGetValue(name, out Sprite[] cachedSheet)) return cachedSheet;
+        var result = new Sprite[16];
+        for (int sheetRow = 0; sheetRow < rows.Length; sheetRow++)
+            for (int column = 0; column < rows[sheetRow].Length; column++)
+                result[sheetRow * 4 + column] = rows[sheetRow][column];
+        WholeSpriteSheets.Add(name, result);
         return result;
     }
 
@@ -1478,6 +1493,16 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Debug.Log("SCADRYK_SMOKE: redução de tremor interrompe sacudida ativa");
         if (titleBackdropTexture == null) { SmokeFail("A arte de abertura ScadrykTitleBackdrop não foi carregada"); yield break; }
         Debug.Log("SCADRYK_SMOKE: arte original da tela inicial carregada");
+        Sprite[] firstEnemyRow = LoadSheetRow("Enemies", 0, false);
+        Sprite[] repeatedEnemyRow = LoadSheetRow("Enemies", 0, false);
+        Sprite[] otherEnemyRow = LoadSheetRow("Enemies", 1, false);
+        Sprite[] fullListenerSheet = LoadSheetRow("Listener", 0, true);
+        if (firstEnemyRow == null || !object.ReferenceEquals(firstEnemyRow, repeatedEnemyRow) ||
+            firstEnemyRow.Length != 4 || otherEnemyRow == null || object.ReferenceEquals(firstEnemyRow, otherEnemyRow) ||
+            fullListenerSheet == null || fullListenerSheet.Length != 16 ||
+            !object.ReferenceEquals(fullListenerSheet, LoadSheetRow("Listener", 3, true)))
+        { SmokeFail("As folhas de animação não reutilizaram as linhas e quadros já criados"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: sprites de animação reutilizados entre atores e salas");
         RequestNewGame(true);
         if (!confirmNewJourney) { SmokeFail("Uma jornada nova não pediu confirmação diante de progresso salvo"); yield break; }
         overlaySelection = 1;

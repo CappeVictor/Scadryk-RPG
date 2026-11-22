@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **22/11/2026 — cache dos quadros de animação:** `LoadSheetRow` criava quatro sprites novos por inimigo em cada sala, embora todos viessem da mesma folha de arte; avançar ou reiniciar salas podia acumular objetos Sprite nativos. Agora cada folha cria seus 16 quadros uma vez e compartilha linhas/folha inteira entre atores e encontros. O smoke verifica identidade das referências nas chamadas repetidas e separação entre linhas de papel. `Tools/compile-unity.ps1` passou em Unity 6000.6.9f1 sem Play Mode; o smoke não foi executado.
+
 - **22/11/2026 — conclusão e telemetria da última sala:** a checagem da transição confirmou que `TryUseExit` marca a sala final como concluída antes de gravar a sessão. Extraí essa regra para um helper comum e acrescentei ao smoke uma asserção da linha de vitória: `completed=true` e `enemies_left=0`. `Tools/compile-unity.ps1` passou em Unity 6000.6.9f1 sem Play Mode; o smoke permanece sem execução.
 
 - **22/11/2026 — dessincronizar animações dos Ecos:** as quatro animações de caminhada começavam no mesmo quadro e o movimento corporal de todos usava a mesma fase global, deixando grupos com aspecto mecânico. Cada Eco agora recebe fase própria para quadros e passo; a pose de ataque, recuperação e deslocamento continuam com a mesma velocidade e duração. O smoke contém verificações para fases diferentes. `Tools/compile-unity.ps1` passou em Unity 6000.6.9f1 sem Play Mode. A naturalidade visual ainda precisa de observação na build.
