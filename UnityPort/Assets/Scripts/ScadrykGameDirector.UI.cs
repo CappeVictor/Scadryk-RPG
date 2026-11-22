@@ -735,9 +735,14 @@ public sealed partial class ScadrykGameDirector
                 GUI.Label(new Rect(x + 15f, row, 220f, keyRowHeight), ScadrykSettings.Actions[i], bodyStyle);
                 string label = rebindingAction == i ? "Pressione uma tecla…" : ScadrykSettings.KeyName(ScadrykSettings.Key(i));
                 Rect keyButton = new Rect(x + 240f, row, width - 255f, keyRowHeight);
-                if (OptionButton(keyButton, label, i + 3)) rebindingAction = i;
+                if (OptionButton(keyButton, label, i + 3))
+                {
+                    rebindingAction = i;
+                    keyboardRebindAfterFrame = Time.frameCount;
+                }
             }
-            if (rebindingAction >= 0 && Event.current.type == EventType.KeyDown && ScadrykSettings.CanBindKey(Event.current.keyCode))
+            if (rebindingAction >= 0 && CanCaptureRebindKey(Time.frameCount, keyboardRebindAfterFrame) &&
+                Event.current.type == EventType.KeyDown && ScadrykSettings.CanBindKey(Event.current.keyCode))
             {
                 ScadrykSettings.Bind(rebindingAction, Event.current.keyCode);
                 rebindingAction = -1;
@@ -842,9 +847,14 @@ public sealed partial class ScadrykGameDirector
             float row = 44f + i * 36f;
             GUI.Label(new Rect(12f, row, labelWidth, 30f), ScadrykSettings.Actions[i], bodyStyle);
             string label = rebindingAction == i ? "Aperte…" : ScadrykSettings.KeyName(ScadrykSettings.Key(i));
-            if (OptionButton(new Rect(labelWidth + 20f, row, width - labelWidth - 32f, 30f), label, i + 3)) rebindingAction = i;
+            if (OptionButton(new Rect(labelWidth + 20f, row, width - labelWidth - 32f, 30f), label, i + 3))
+            {
+                rebindingAction = i;
+                keyboardRebindAfterFrame = Time.frameCount;
+            }
         }
-        if (rebindingAction >= 0 && Event.current.type == EventType.KeyDown && ScadrykSettings.CanBindKey(Event.current.keyCode))
+        if (rebindingAction >= 0 && CanCaptureRebindKey(Time.frameCount, keyboardRebindAfterFrame) &&
+            Event.current.type == EventType.KeyDown && ScadrykSettings.CanBindKey(Event.current.keyCode))
         {
             ScadrykSettings.Bind(rebindingAction, Event.current.keyCode);
             rebindingAction = -1;

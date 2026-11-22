@@ -40,6 +40,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private int gamepadRebindAction = -1;
     private int optionsTab, optionsSelection, overlaySelection;
     private int gamepadRebindAfterFrame;
+    private int keyboardRebindAfterFrame;
     private float nextGamepadNavigationAt;
     private float transitionFade;
     private Vector2 roomCenter, exitPosition;
@@ -276,6 +277,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     internal static bool RebindingCanBeCancelled(int keyboardAction, int gamepadAction) =>
         keyboardAction >= 0 || gamepadAction >= 0;
+    internal static bool CanCaptureRebindKey(int frame, int captureStartedFrame) => frame > captureStartedFrame;
 
     internal static bool MemoryDismissRequested(bool confirm, bool interact, bool cancel) => confirm || interact || cancel;
     internal static bool MemoryDismissedThisFrame(int dismissedFrame, int currentFrame) => dismissedFrame >= 0 && dismissedFrame == currentFrame;
@@ -463,7 +465,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         }
         else if (optionsTab == 1)
         {
-            if (optionsSelection is >= 3 and <= 13) rebindingAction = optionsSelection - 3;
+            if (optionsSelection is >= 3 and <= 13)
+            {
+                rebindingAction = optionsSelection - 3;
+                keyboardRebindAfterFrame = Time.frameCount;
+            }
             else if (optionsSelection == 14)
             {
                 ScadrykSettings.ResetKeyboardBindings();
@@ -1581,9 +1587,10 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ScadrykPlayerController.AbilityFootprintContainsPoint(0, new Vector2(3f, 0f), Vector2.zero, Vector2.up))
         { SmokeFail("Os poderes não anunciam início, mantêm recuperação ou atingem segundo a mira fixada no começo da ação"); yield break; }
         Debug.Log("SCADRYK_SMOKE: poderes têm preparação e recuperação legíveis e mantêm a direção da mira durante o golpe");
-        if (!RebindingCanBeCancelled(-1, 2) || !RebindingCanBeCancelled(4, -1) || RebindingCanBeCancelled(-1, -1))
-        { SmokeFail("Cancelar captura de controle não distingue remapeamento ativo do menu normal"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: Escape/Start cancela captura sem fechar opções");
+        if (!RebindingCanBeCancelled(-1, 2) || !RebindingCanBeCancelled(4, -1) || RebindingCanBeCancelled(-1, -1) ||
+            CanCaptureRebindKey(10, 10) || !CanCaptureRebindKey(11, 10))
+        { SmokeFail("Cancelar remapeamento ou proteger a tecla de confirmação deixou de funcionar"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: Escape/Start cancela captura e a tecla que inicia remapeamento não é capturada no mesmo frame");
         if (!ScadrykEnemyHealth.AreaPulseContains(Vector2.zero, new Vector2(3.19f, 0f)) ||
             ScadrykEnemyHealth.AreaPulseContains(Vector2.zero, new Vector2(3.21f, 0f)) ||
             Mathf.Abs(ScadrykEnemyHealth.AreaPulseDiameter - ScadrykEnemyHealth.AreaPulseRadius * 2f) > 0.001f ||
