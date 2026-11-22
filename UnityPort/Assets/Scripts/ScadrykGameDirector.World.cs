@@ -122,6 +122,8 @@ public sealed partial class ScadrykGameDirector
         if (anchor == null) return;
         roomAnchors[index] = null;
         anchorsActivated++;
+        progressHintSeconds = 0f;
+        hintStage = 0;
         ScadrykEffects.Burst(anchor.transform.position, PhaseAccentColors[phaseIndex], 1.8f);
         ScadrykAudio.Play(ScadrykCue.Portal);
         Destroy(anchor);

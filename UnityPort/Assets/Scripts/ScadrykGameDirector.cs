@@ -120,6 +120,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private int memoryDismissedFrame = -1;
     private Vector3 memoryLastMousePosition;
     private float roomActiveSeconds;
+    private float progressHintSeconds;
     private float nextOpeningAttackSlotAt;
     private int roomDeaths;
     private int unclearAttackMarks;
@@ -196,6 +197,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             phaseGuardian != null || finalBoss != null, IsPaused));
         if (!showTitle && !isPaused && !showOptions && !victory && !transitioning && !showOpeningStory && !showWorldMap)
             roomActiveSeconds += Time.deltaTime;
+        if (ShouldAccumulateProgressHint(IsPaused, enemiesRemaining, anchorsActivated, anchorsRequired, statusUntil, Time.time))
+            progressHintSeconds += Time.deltaTime;
+        else if (enemiesRemaining > 0 || anchorsActivated >= anchorsRequired) progressHintSeconds = 0f;
         if (transitioning) return;
         if (showOpeningStory)
         {
@@ -253,10 +257,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         }
         if (!IsPaused && gateObject == null && enemiesRemaining == 0 && anchorsActivated >= anchorsRequired)
             UnlockExit();
-        if (ShouldShowProgressHint(IsPaused, enemiesRemaining, anchorsActivated, anchorsRequired, roomActiveSeconds, hintStage, statusUntil, Time.time))
+        if (ShouldShowProgressHint(IsPaused, enemiesRemaining, anchorsActivated, anchorsRequired, progressHintSeconds, hintStage, statusUntil, Time.time))
         {
             ShowStatus(ProgressHint(phaseIndex * RoomsPerPhase + roomIndex, anchorsActivated, hintStage), 7f);
             hintStage++;
+            progressHintSeconds = 0f;
         }
         if (!IsPaused) TryShowWorldSecretHint();
         if (!IsPaused && Input.GetKeyDown(KeyCode.F8))
@@ -602,6 +607,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     {
         string activeInputMode = sessionInputMode;
         roomActiveSeconds = 0f;
+        progressHintSeconds = 0f;
         sessionInputMode = preserveInputMode ? activeInputMode : "unknown";
         roomSessionRecorded = false;
     }
@@ -639,10 +645,16 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         return "Pista: siga o objetivo marcado nesta sala e aproxime-se do sinal indicado.";
     }
 
+    internal static float ProgressHintDelay(int stage) => stage <= 0 ? 24f : 18f;
+
+    internal static bool ShouldAccumulateProgressHint(bool paused, int enemiesRemaining, int activated, int required,
+        float statusUntil, float now) =>
+        !paused && enemiesRemaining <= 0 && activated < required && now >= statusUntil;
+
     internal static bool ShouldShowProgressHint(bool paused, int enemiesRemaining, int activated, int required,
         float activeSeconds, int stage, float statusUntil, float now) =>
-        !paused && enemiesRemaining <= 0 && activated < required &&
-        activeSeconds > 24f + Mathf.Max(0, stage) * 18f && now >= statusUntil;
+        ShouldAccumulateProgressHint(paused, enemiesRemaining, activated, required, statusUntil, now) &&
+        activeSeconds > ProgressHintDelay(stage);
 
     private void SetupCamera()
     {
@@ -714,6 +726,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         GetComponent<ScadrykAudio>().SetContext(phaseIndex, false);
         if (!preserveRoomSession) ResetRoomSessionMetrics();
         hintStage = 0;
+        progressHintSeconds = 0f;
         statusMessage = roomIndex == RoomsPerPhase - 1 ? GuardianIntroductions[phaseIndex] : RoomStories[phaseIndex * RoomsPerPhase + roomIndex];
         statusUntil = Time.time + (roomIndex == RoomsPerPhase - 1 ? 8f : 6f);
         if (finalBossAlreadyDefeated) UnlockExit();
@@ -2182,11 +2195,17 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ProgressHint(6, 0, 0) == ProgressHint(6, 0, 1) ||
             ProgressHint(7, 0, 0) == ProgressHint(7, 0, 1) || ProgressHint(7, 0, 1) == ProgressHint(7, 0, 2) ||
             !ProgressHint(7, 1, 0).Contains("sino do recife") ||
+            Mathf.Abs(ProgressHintDelay(0) - 24f) > 0.001f || Mathf.Abs(ProgressHintDelay(1) - 18f) > 0.001f ||
+            !ShouldAccumulateProgressHint(false, 0, 0, 2, 0f, 1f) ||
+            ShouldAccumulateProgressHint(false, 0, 0, 2, 2f, 1f) ||
+            ShouldAccumulateProgressHint(false, 1, 0, 2, 0f, 1f) ||
+            ShouldAccumulateProgressHint(true, 0, 0, 2, 0f, 1f) ||
+            ShouldAccumulateProgressHint(false, 0, 2, 2, 0f, 1f) ||
             !ShouldShowProgressHint(false, 0, 0, 2, 24.1f, 0, 0f, 25f) ||
             ShouldShowProgressHint(false, 0, 0, 2, 24.1f, 0, 26f, 25f) ||
-            !ShouldShowProgressHint(false, 0, 0, 2, 31f, 0, 26f, 26f) ||
-            ShouldShowProgressHint(false, 0, 0, 2, 41.9f, 1, 0f, 50f) ||
-            !ShouldShowProgressHint(false, 0, 0, 2, 42.1f, 1, 0f, 50f) ||
+            !ShouldShowProgressHint(false, 0, 0, 2, 24.1f, 0, 26f, 26f) ||
+            ShouldShowProgressHint(false, 0, 0, 2, 17.9f, 1, 0f, 50f) ||
+            !ShouldShowProgressHint(false, 0, 0, 2, 18.1f, 1, 0f, 50f) ||
             ShouldShowProgressHint(true, 0, 0, 2, 60f, 2, 0f, 60f) ||
             ShouldShowProgressHint(false, 0, 2, 2, 60f, 2, 0f, 60f) ||
             ShouldShowProgressHint(false, 1, 0, 2, 60f, 2, 0f, 60f))
