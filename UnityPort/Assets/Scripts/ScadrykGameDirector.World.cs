@@ -8,16 +8,14 @@ public sealed partial class ScadrykGameDirector
         roomAnchors[0] = roomAnchors[1] = null;
         anchorsActivated = 0;
         int id = phaseIndex * RoomsPerPhase + roomIndex;
+        Vector2[] offsets = RoomAnchorOffsets(phaseIndex, roomIndex);
         anchorsNeedSequence = id == 7;
-        anchorsRequired = id == 1 || id == 3 || id == 6 ? 1 : id == 4 || id == 7 ? 2 : 0;
+        anchorsRequired = offsets.Length;
         anchorsNeedPulse = id == 4 || id == 7;
         if (anchorsRequired == 0) return;
         for (int i = 0; i < anchorsRequired; i++)
         {
-            Vector2 offset = id == 1 ? new Vector2(5.1f, 2.8f) : id == 3 ? new Vector2(3.8f, -2.9f) :
-                id == 6 ? new Vector2(3.8f, 1.3f) : anchorsNeedSequence ?
-                    (i == 0 ? new Vector2(-3.2f, -1.45f) : new Vector2(5.4f, 2.15f)) :
-                    i == 0 ? new Vector2(-2.2f, 1.25f) : new Vector2(4.2f, 2.65f);
+            Vector2 offset = offsets[i];
             string anchorName = anchorsNeedSequence ? (i == 0 ? "Coast beacon resonator" : "Reef bell resonator") :
                 anchorsNeedPulse ? "Resonant world object" : "Memory world object";
             var anchor = new GameObject(anchorName);
@@ -537,6 +535,41 @@ public sealed partial class ScadrykGameDirector
         if (room == 0) return new[] { new Vector2(-3.9f, 2.9f), new Vector2(-0.8f, -3.5f), new Vector2(3.9f, 2.5f) };
         if (room == 1) return new[] { new Vector2(-4.3f, 3.1f), new Vector2(-4.0f, -3.2f), new Vector2(0.2f, 2.6f), new Vector2(4.2f, -2.9f), new Vector2(-0.7f, 0.5f), new Vector2(0.7f, -0.5f) };
         return new[] { new Vector2(-3.8f, 2.7f), new Vector2(-3.6f, -2.8f), new Vector2(4.2f, 0.8f), new Vector2(-0.6f, 0.6f), new Vector2(0.6f, -0.6f) };
+    }
+
+    internal static Vector2[] RoomAnchorOffsets(int biome, int room)
+    {
+        int roomId = Mathf.Clamp(biome, 0, 2) * RoomsPerPhase + Mathf.Clamp(room, 0, RoomsPerPhase - 1);
+        switch (roomId)
+        {
+            case 1: return new[] { new Vector2(3.6f, 0.1f) };
+            case 3: return new[] { new Vector2(-1.5f, -0.5f) };
+            case 4: return new[] { new Vector2(-2.2f, 1.25f), new Vector2(4.2f, 2.65f) };
+            case 6: return new[] { new Vector2(-1.2f, 0.3f) };
+            case 7: return new[] { new Vector2(-3.6f, -0.1f), new Vector2(5.4f, 2.15f) };
+            default: return System.Array.Empty<Vector2>();
+        }
+    }
+
+    internal static bool RoomAnchorsAvoidCover()
+    {
+        for (int biome = 0; biome < 3; biome++)
+        for (int room = 0; room < RoomsPerPhase; room++)
+        {
+            Vector2[] anchors = RoomAnchorOffsets(biome, room);
+            Vector2[] obstacles = RoomObstacleOffsets(biome, room);
+            foreach (Vector2 anchor in anchors)
+            {
+                if (Mathf.Abs(anchor.x + 6.2f) < 1.5f || Mathf.Abs(anchor.x - 8.05f) < 1.5f || Mathf.Abs(anchor.y) > 5.2f)
+                    return false;
+                foreach (Vector2 obstacle in obstacles)
+                {
+                    float clearance = ObstacleSpawnCollisionRadius(biome, obstacle, true) + 0.7f + 0.18f;
+                    if (Vector2.Distance(anchor, obstacle) < clearance) return false;
+                }
+            }
+        }
+        return true;
     }
 
     private static bool RoomHasWalkableRoute(int biome, int room)

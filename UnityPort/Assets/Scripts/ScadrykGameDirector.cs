@@ -1663,6 +1663,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (!RoomObstacleLayoutsAreDistinctAndOpen())
         { SmokeFail("As nove salas repetem obstáculos, bloqueiam entrada/saída ou não têm rota caminhável até o portal"); yield break; }
         Debug.Log("SCADRYK_SMOKE: nove layouts distintos têm corredores caminháveis entre entrada e portal");
+        if (!RoomAnchorsAvoidCover())
+        { SmokeFail("Um objetivo de ressonância está oculto pela cobertura ou perto demais da entrada/saída"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: objetivos das cinco salas de sinal ficam legíveis e acessíveis fora da cobertura");
         if (!EncounterSpawnsAvoidCover())
         { SmokeFail("Um Eco ou guardião nasce dentro da cobertura ou sobre outro inimigo"); yield break; }
         Debug.Log("SCADRYK_SMOKE: surgimento dos encontros evita cobertura sólida nas nove salas");
