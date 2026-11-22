@@ -176,6 +176,7 @@ public sealed partial class ScadrykGameDirector
         worldSecretHintShown = false;
         int requiredPower = RequiredWorldSecretPower();
         if (requiredPower < 0) return;
+        if (!smokeRun && IsWorldSecretRevealed("Scadryk.", phaseIndex, roomIndex)) return;
         Vector2 spot = requiredPower == 0 ? roomCenter + new Vector2(6.8f, 4.15f) :
             requiredPower == 1 ? roomCenter + new Vector2(-7.2f, -4.1f) :
             roomCenter + new Vector2(7.2f, 4.15f);
@@ -233,6 +234,7 @@ public sealed partial class ScadrykGameDirector
         if (!smokeRun) ScadrykAudio.Play(ScadrykCue.EchoReleased);
         ScadrykEffects.Burst(spot, PhaseAccentColors[phaseIndex], 1.5f);
         ScadrykEffects.ReleaseEcho(witnessSprite != null ? witnessSprite : CircleSprite, spot, PhaseAccentColors[phaseIndex]);
+        if (!smokeRun) MarkWorldSecretRevealed("Scadryk.", phaseIndex, roomIndex);
         Destroy(worldSecret);
         worldSecret = null;
         roomSecretsRevealed = SecretRevealCountAfterSuccess(roomSecretsRevealed, smokeRun);
