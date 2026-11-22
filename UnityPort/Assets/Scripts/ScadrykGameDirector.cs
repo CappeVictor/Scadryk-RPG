@@ -1494,13 +1494,14 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (EnemyCountForRoom(0) != 1 || EnemyRoleForRoom(0, 0) != 0 ||
             EnemyCountForRoom(1) != 2 || EnemyRoleForRoom(1, 0) != 0 || EnemyRoleForRoom(1, 1) != 1 ||
             EnemyCountForRoom(4) != 4 ||
-            EnemyRoleForRoom(4, 0) != 0 || EnemyRoleForRoom(4, 1) != 0 || EnemyRoleForRoom(4, 2) != 2 || EnemyRoleForRoom(4, 3) != 3 ||
+            EnemyRoleForRoom(4, 0) != 0 || EnemyRoleForRoom(4, 1) != 1 || EnemyRoleForRoom(4, 2) != 2 || EnemyRoleForRoom(4, 3) != 3 ||
             EnemyCountForRoom(7) != 4 ||
             EnemyRoleForRoom(7, 0) != 1 || EnemyRoleForRoom(7, 1) != 1 || EnemyRoleForRoom(7, 2) != 2 || EnemyRoleForRoom(7, 3) != 3 ||
+            !GuardianAttackIsPreviewedBeforeBoss(0) || !GuardianAttackIsPreviewedBeforeBoss(1) || !GuardianAttackIsPreviewedBeforeBoss(2) ||
             EnemyArtworkRowForRole(0) != 0 || EnemyArtworkRowForRole(1) != 1 ||
             EnemyArtworkRowForRole(2) != 3 || EnemyArtworkRowForRole(3) != 2)
         { SmokeFail("As composições dos encontros de quatro inimigos perderam sua identidade tática"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: equipes de bosque, sal e costa têm papéis e silhuetas próprios");
+        Debug.Log("SCADRYK_SMOKE: equipes de bosque, sal e costa têm papéis próprios e cada chefe é anunciado por um padrão previamente ensinado");
         if (GuardianNames.Length != 3 || GuardianIntroductions.Length != 3 || GuardianMemories.Length != 3)
         { SmokeFail("Cada bioma precisa de nome, fala e memória próprios para o guardião"); yield break; }
         if (!OpeningMemory.Contains("Grande Onda") || !OpeningMemory.Contains("Nara") ||

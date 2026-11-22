@@ -893,8 +893,18 @@ public sealed partial class ScadrykGameDirector
         if (enemyIndex < 0) return 0;
         if (roomId == 0) return 0;
         if (roomId == 1) return enemyIndex == 0 ? 0 : 1;
-        if (roomId == 4) return enemyIndex switch { 0 => 0, 1 => 0, 2 => 2, _ => 3 };
+        if (roomId == 4) return enemyIndex switch { 0 => 0, 1 => 1, 2 => 2, _ => 3 };
         if (roomId == 7) return enemyIndex switch { 0 => 1, 1 => 1, 2 => 2, _ => 3 };
         return enemyIndex % 4;
+    }
+
+    internal static bool GuardianAttackIsPreviewedBeforeBoss(int biomeIndex)
+    {
+        if (biomeIndex < 0 || biomeIndex >= 3) return false;
+        int previewRoomId = biomeIndex * RoomsPerPhase + RoomsPerPhase - 2;
+        int taughtRole = biomeIndex switch { 0 => 0, 1 => 1, _ => 2 };
+        for (int enemy = 0; enemy < EnemyCountForRoom(previewRoomId); enemy++)
+            if (EnemyRoleForRoom(previewRoomId, enemy) == taughtRole) return true;
+        return false;
     }
 }
