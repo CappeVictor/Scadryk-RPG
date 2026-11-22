@@ -48,7 +48,7 @@ jobs:
           }
 
       - name: Cache Unity project import
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5, Node 24
         with:
           path: UnityPort/Library
           key: unity-library-${{ runner.os }}-6000.6.9f1-${{ hashFiles('UnityPort/Assets/**', 'UnityPort/Packages/**', 'UnityPort/ProjectSettings/**') }}
