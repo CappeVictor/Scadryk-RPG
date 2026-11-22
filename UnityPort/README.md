@@ -30,7 +30,7 @@ O VS Code é o editor de código do projeto; não é necessário instalar o Visu
 2. No Unity Hub, entre na sua conta Unity e ative uma licença Personal gratuita em **Licenses > Add license > Get a free personal license** (ou ative a licença válida da sua organização). Sem uma licença ativa, o Editor encerra em batch mode e não compila o projeto.
 3. Abra o projeto `UnityPort` no Unity Editor e confirme no Package Manager que **Visual Studio Editor** está na versão 2.0.20 ou superior. O projeto usa a versão 2.0.26 em `Packages/manifest.json`.
 4. No Unity, abra **Edit > Preferences > External Tools**, selecione **Visual Studio Code** em **External Script Editor**, ative **Generate all .csproj files** e use **Regenerate project files**.
-5. No VS Code, abra a pasta `UnityPort`. O workspace recomenda a extensão Unity e C# Dev Kit; aceite a instalação sugerida se ainda não estiverem presentes. Edite os scripts em `Assets/Scripts`; deixe o Unity Editor aberto para recompilar e conferir alterações.
+5. No VS Code, abra a pasta `UnityPort`. O workspace recomenda a extensão Unity e C# Dev Kit; aceite a instalação sugerida se ainda não estiverem presentes. Edite os scripts em `Assets/Scripts`; deixe o Unity Editor aberto para recompilar e conferir alterações. Pressione **Ctrl+Shift+B** para importar e compilar com a tarefa padrão **Scadryk: importar e compilar Unity**; use **Terminal > Run Task** e escolha **Scadryk: gerar build Windows** para produzir o executável sem iniciá-lo.
 
 Não instale o pacote Unity antigo `com.unity.ide.vscode`: ele foi descontinuado. O fluxo atual usa a extensão Unity do VS Code e o pacote **Visual Studio Editor** já declarado no projeto.
 

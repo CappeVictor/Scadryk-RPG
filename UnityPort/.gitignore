@@ -10,6 +10,7 @@
 .idea/
 .vscode/*
 !.vscode/extensions.json
+!.vscode/tasks.json
 *.csproj
 *.sln
 *.slnx
