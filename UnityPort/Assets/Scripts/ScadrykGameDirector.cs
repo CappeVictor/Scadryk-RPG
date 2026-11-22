@@ -2326,10 +2326,15 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             OpeningStoryContinueHint(false, "Enter") != "Enter / Espaço para continuar")
         { SmokeFail("Memórias, comandos de saída ou a janela opcional do Selo final falharam"); yield break; }
         Debug.Log("SCADRYK_SMOKE: memórias modais têm comandos de saída válidos e cabem em janela compacta");
+        GameObject priorityWarning = ScadrykEffects.TelegraphLine(roomCenter, roomCenter + Vector2.right * 3f,
+            new Color(1f, 0.2f, 0.2f, 1f), 0.2f, 10f);
         for (int effect = 0; effect < 40; effect++)
             ScadrykEffects.Burst(roomCenter + Vector2.up * (20f + effect), Color.clear, 0.05f);
-        if (ScadrykEffects.SecondaryVisualCount > ScadrykEffects.SecondaryVisualLimit) { SmokeFail("O limite de efeitos secundários não foi respeitado"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: efeitos secundários respeitam o limite; avisos prioritários preservados");
+        bool effectBudgetRespected = ScadrykEffects.SecondaryVisualCount <= ScadrykEffects.SecondaryVisualLimit;
+        bool warningProtected = priorityWarning != null && priorityWarning.activeInHierarchy;
+        if (priorityWarning != null) Destroy(priorityWarning);
+        if (!effectBudgetRespected || !warningProtected) { SmokeFail("O orçamento excedeu o teto ou removeu um telegráfico de perigo prioritário"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: efeitos comuns respeitam o teto e telegráficos prioritários permanecem ativos");
         for (int room = 0; room < 9; room++)
         {
             if (phaseIndex * RoomsPerPhase + roomIndex != room) { SmokeFail("Sala inesperada: " + room); yield break; }
