@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum ScadrykCue { Sword, Dash, Pulse, Power, Warning, Impact, Hurt, Portal, Victory, Memory, LaneWarning, VolleyWarning, AreaWarning, SupportWarning, FinalBossWarning, PlayerStrike, PlayerFinisher, PlayerPowerImpact, CoastalCurrent, EchoReleased }
+public enum ScadrykCue { Sword, Dash, Pulse, Power, Warning, Impact, Hurt, Portal, Victory, Memory, LaneWarning, VolleyWarning, AreaWarning, SupportWarning, FinalBossWarning, PlayerStrike, PlayerFinisher, PlayerPowerImpact, CoastalCurrent, EchoReleased, FinalVolleyWarning, FinalStarfallWarning, FinalWaveWarning }
 
 /// <summary>Original, lightweight synthesized motifs and combat signals; no external audio assets.</summary>
 public sealed class ScadrykAudio : MonoBehaviour
@@ -50,7 +50,10 @@ public sealed class ScadrykAudio : MonoBehaviour
             MakeCue("Echo area warning", 215f, 0.42f, 0.28f), MakeCue("Weaver support warning", 810f, 0.31f, 0.18f),
             MakeCue("Void herald warning", 146.83f, 0.58f, 0.34f), MakeCue("Nara strike confirmed", 880f, 0.1f, 0.24f),
             MakeCue("Nara finisher confirmed", 660f, 0.2f, 0.36f), MakeCue("Nara power impact", 760f, 0.18f, 0.42f),
-            MakeCue("Coastal cross-current", 310f, 0.32f, 0.16f), MakeEchoReleaseCue()
+            MakeCue("Coastal cross-current", 310f, 0.32f, 0.16f), MakeEchoReleaseCue(),
+            MakeWarningMotif("Herald remembered volley", new[] { 392f, 294f, 220f }, 0.12f, 0.055f, 0.26f),
+            MakeWarningMotif("Herald falling memory", new[] { 196f, 392f, 587f }, 0.16f, 0.045f, 0.24f),
+            MakeWarningMotif("Herald void wave", new[] { 110f, 110f, 165f }, 0.17f, 0.075f, 0.28f)
         };
     }
 
@@ -172,7 +175,8 @@ public sealed class ScadrykAudio : MonoBehaviour
     }
 
     private static bool IsWarningCue(ScadrykCue cue) => cue is ScadrykCue.LaneWarning or ScadrykCue.VolleyWarning or
-        ScadrykCue.AreaWarning or ScadrykCue.SupportWarning or ScadrykCue.FinalBossWarning;
+        ScadrykCue.AreaWarning or ScadrykCue.SupportWarning or ScadrykCue.FinalBossWarning or
+        ScadrykCue.FinalVolleyWarning or ScadrykCue.FinalStarfallWarning or ScadrykCue.FinalWaveWarning;
 
     private static AudioClip MakeLoop(string name, float root, float character)
     {
@@ -251,6 +255,29 @@ public sealed class ScadrykAudio : MonoBehaviour
             data[i] = tone * envelope * 0.2f;
         }
         AudioClip clip = AudioClip.Create("Liberated echo — rising bell", count, 1, SampleRate, false);
+        clip.SetData(data, 0);
+        return clip;
+    }
+
+    private static AudioClip MakeWarningMotif(string name, float[] frequencies, float noteDuration, float gap, float strength)
+    {
+        int noteCount = frequencies != null ? frequencies.Length : 0;
+        if (noteCount == 0) return MakeCue(name, 146.83f, 0.28f, strength);
+        int count = Mathf.CeilToInt(SampleRate * (noteCount * noteDuration + (noteCount - 1) * gap));
+        float[] data = new float[count];
+        float step = noteDuration + gap;
+        for (int i = 0; i < count; i++)
+        {
+            float t = i / (float)SampleRate;
+            int note = Mathf.Min(noteCount - 1, Mathf.FloorToInt(t / step));
+            float noteTime = t - note * step;
+            if (noteTime >= noteDuration) continue;
+            float envelope = Mathf.Sin(Mathf.PI * noteTime / noteDuration) * Mathf.Exp(-noteTime * 3.5f);
+            float frequency = frequencies[note];
+            data[i] = (Mathf.Sin(2f * Mathf.PI * frequency * noteTime) +
+                0.24f * Mathf.Sin(2f * Mathf.PI * frequency * 2f * noteTime)) * envelope * strength;
+        }
+        AudioClip clip = AudioClip.Create(name, count, 1, SampleRate, false);
         clip.SetData(data, 0);
         return clip;
     }

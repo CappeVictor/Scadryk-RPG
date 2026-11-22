@@ -95,7 +95,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
 
     internal static ScadrykCue WarningCueFor(int biome, bool boss, bool finalBoss, int role)
     {
-        if (finalBoss) return ScadrykCue.FinalBossWarning;
+        if (finalBoss) return FinalBossPatternWarningCue(0);
         int attackRole = boss ? biome == 0 ? 0 : biome == 1 ? 1 : 2 : Mathf.Clamp(role, 0, 3);
         return attackRole switch
         {
@@ -105,6 +105,13 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             _ => ScadrykCue.SupportWarning
         };
     }
+
+    internal static ScadrykCue FinalBossPatternWarningCue(int pattern) => Mathf.Clamp(pattern, 0, 2) switch
+    {
+        0 => ScadrykCue.FinalVolleyWarning,
+        1 => ScadrykCue.FinalStarfallWarning,
+        _ => ScadrykCue.FinalWaveWarning
+    };
 
     internal static string AttackReadabilityLabel(int biome, bool boss, bool finalBoss, int role, int finalPattern, int finalStage)
     {
@@ -354,12 +361,12 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     {
         ClearAttackWarnings();
         attackTarget = player.transform.position;
-        ScadrykAudio.Play(WarningCueFor(biomeIndex, IsBoss, isFinalBoss, combatRole));
         if (isFinalBoss)
         {
             BeginFinalBossAttack();
             return;
         }
+        ScadrykAudio.Play(WarningCueFor(biomeIndex, IsBoss, false, combatRole));
         lastAttackStartedAt = Time.time;
         float windup = IsBoss ? (biomeIndex == 0 ? 0.95f : biomeIndex == 1 ? 0.86f : 1.05f) :
             combatRole == 0 ? 0.7f : combatRole == 1 ? 0.85f : combatRole == 2 ? 0.95f : 1.1f;
@@ -405,6 +412,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         queuedFinalStage = FinalStage;
         int stage = queuedFinalStage;
         queuedFinalPattern = finalAttackIndex % (stage == 1 ? 2 : 3);
+        ScadrykAudio.Play(FinalBossPatternWarningCue(queuedFinalPattern));
         lastAttackStartedAt = Time.time;
         float windup = stage == 3 ? 1.18f : 1.35f;
         if (animator != null) animator.PlayWindup(AnnouncedAttackDirection(transform.position, attackTarget), windup);

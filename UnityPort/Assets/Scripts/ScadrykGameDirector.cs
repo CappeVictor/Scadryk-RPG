@@ -1603,7 +1603,14 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ScadrykEnemyHealth.WarningCueFor(0, true, false, 0) != laneCue ||
             ScadrykEnemyHealth.WarningCueFor(1, true, false, 0) != volleyCue ||
             ScadrykEnemyHealth.WarningCueFor(2, true, false, 0) != areaCue ||
-            ScadrykEnemyHealth.WarningCueFor(2, true, true, 0) != ScadrykCue.FinalBossWarning ||
+            ScadrykEnemyHealth.WarningCueFor(2, true, true, 0) != ScadrykCue.FinalVolleyWarning ||
+            ScadrykEnemyHealth.FinalBossPatternWarningCue(1) != ScadrykCue.FinalStarfallWarning ||
+            ScadrykEnemyHealth.FinalBossPatternWarningCue(2) != ScadrykCue.FinalWaveWarning ||
+            ScadrykEnemyHealth.FinalBossPatternWarningCue(-1) != ScadrykCue.FinalVolleyWarning ||
+            ScadrykEnemyHealth.FinalBossPatternWarningCue(9) != ScadrykCue.FinalWaveWarning ||
+            ScadrykCue.FinalVolleyWarning == ScadrykCue.FinalStarfallWarning ||
+            ScadrykCue.FinalVolleyWarning == ScadrykCue.FinalWaveWarning ||
+            ScadrykCue.FinalStarfallWarning == ScadrykCue.FinalWaveWarning ||
             audio == null || !audio.HasCombatLayer ||
             Mathf.Abs(ScadrykAudio.CombatIntensityFor(0, false, false)) > 0.001f ||
             Mathf.Abs(ScadrykAudio.CombatIntensityFor(1, false, false) - 0.32f) > 0.001f ||
@@ -1616,15 +1623,18 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ScadrykAudio.WarningCueVolumeScale(1) >= ScadrykAudio.WarningCueVolumeScale(0) ||
             ScadrykAudio.WarningCueVolumeScale(4) <= 0f ||
             !audio.HasCue(laneCue) || !audio.HasCue(volleyCue) || !audio.HasCue(areaCue) ||
-            !audio.HasCue(supportCue) || !audio.HasCue(ScadrykCue.FinalBossWarning) || !audio.HasCue(ScadrykCue.Memory) || !audio.HasCue(ScadrykCue.EchoReleased) || !audio.HasCue(ScadrykCue.PlayerStrike) || !audio.HasCue(ScadrykCue.PlayerFinisher) ||
+            !audio.HasCue(supportCue) || !audio.HasCue(ScadrykCue.FinalBossWarning) ||
+            !audio.HasCue(ScadrykCue.FinalVolleyWarning) || !audio.HasCue(ScadrykCue.FinalStarfallWarning) ||
+            !audio.HasCue(ScadrykCue.FinalWaveWarning) || !audio.HasCue(ScadrykCue.Memory) ||
+            !audio.HasCue(ScadrykCue.EchoReleased) || !audio.HasCue(ScadrykCue.PlayerStrike) || !audio.HasCue(ScadrykCue.PlayerFinisher) ||
             !audio.HasCue(ScadrykCue.PlayerPowerImpact) || !audio.HasCue(ScadrykCue.CoastalCurrent) || ScadrykCue.PlayerPowerImpact == ScadrykCue.Impact ||
             ScadrykCue.PlayerPowerImpact == ScadrykCue.Power || ScadrykCue.PlayerPowerImpact == ScadrykCue.PlayerStrike ||
             ScadrykCue.PlayerStrike == ScadrykCue.Impact || ScadrykCue.PlayerStrike == ScadrykCue.Sword ||
             ScadrykCue.PlayerFinisher == ScadrykCue.PlayerStrike || ScadrykCue.PlayerFinisher == ScadrykCue.Impact ||
             ScadrykCue.PlayerFinisher == ScadrykCue.Sword)
-        { SmokeFail("A intensidade musical não acompanha Ecos, guardiões, pausa ou recuo gradual"); yield break; }
+        { SmokeFail("Cues de perigo, música de combate ou sinais de impacto não distinguem os estados previstos"); yield break; }
         Debug.Log("SCADRYK_SMOKE: música escala de salas limpas a grupos e chefes e recua em pausas");
-        Debug.Log("SCADRYK_SMOKE: sinais de perigo preservam os cues e atenuam avisos sobrepostos");
+        Debug.Log("SCADRYK_SMOKE: cada padrão do Arauto tem cue próprio; sinais de perigo atenuam avisos sobrepostos");
         if (!FocusLossRequiresPause(false, false, false, false, false, false) ||
             FocusLossRequiresPause(true, false, false, false, false, false) ||
             FocusLossRequiresPause(false, true, false, false, false, false) ||
