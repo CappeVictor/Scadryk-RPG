@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **22/11/2026 — validação hospedada do commit `4381d77`:** a build Unity run 17 parou na verificação de `UNITY_LICENSE`, `UNITY_EMAIL` e `UNITY_PASSWORD`; a build e o smoke foram pulados. O C# run 872 passou pelo build, smoke, publicação e verificação de assets do projeto raiz, mas não inclui `UnityPort`. O Editor local 6000.6.9f1 compilou os scripts em batch sem erros/avisos C#; não abriu a cena nem executou o smoke.
+
 - **22/11/2026 — painel narrativo responsivo:** o painel de memória agora fica centralizado e reduz o título e o aviso de controles conforme a largura disponível; em telas muito estreitas, usa um comando resumido sem esconder opções de saída. Unity 6000.6.9f1 compilou em batch com código 0, sem erros/avisos C#. O smoke mede encaixe do painel e a redução de fonte/avisos curtos. Ainda falta executar o smoke hospedado e conferir o resultado visual em janelas pequenas; não abrirei o jogo no PC do usuário.
 
 - **22/11/2026 — direção de impacto dos Ecos:** a pose de impacto agora usa o mesmo alvo fixado na hora de anunciar o golpe; antes, a linha/projétil mantinha o alvo original enquanto a animação podia virar em direção à posição atual de Nara. Um helper único define essa direção e usa um vetor de segurança para o raro caso de alvo coincidente. Unity 6000.6.9f1 compilou a mudança em batch com código 0 e sem erros/avisos C#; o smoke verifica a direção normalizada e o fallback. A checagem ainda precisa de execução hospedada e leitura visual durante movimento; não vou iniciar o jogo no PC do usuário.
