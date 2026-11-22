@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **22/11/2026 — habilitar validação hospedada no PR interno:** o workflow Unity agora inicia em atualizações de PR que alterem `UnityPort` ou o próprio workflow, e continua disponível por acionamento manual. O job só roda no evento de PR quando o head pertence ao mesmo repositório; assim, builds com credenciais Unity não são executadas para branches de forks. A execução ainda não foi observada; depende de Actions habilitado e dos três secrets de licença descritos no README.
+
 - **22/11/2026 — bordas da onda do Arauto:** a onda de vazio agora usa uma única regra para aplicar dano apenas entre o anel seguro e o limite externo. O smoke verifica os dois raios e pontos imediatamente antes, sobre e depois de cada borda, além da correspondência entre diâmetros anunciados e hitboxes. `Tools/compile-unity.ps1` concluiu com código 0 e o log não indicou erros/avisos C#; não abri a cena nem executei o smoke ou o jogo.
 
 - **22/11/2026 — evidência obrigatória no smoke hospedado:** ao revisar o workflow, encontrei que a ausência do log não falhava o job se o processo retornasse código zero. Agora o passo exige que o arquivo exista e contenha o marcador final das nove salas antes de considerar o smoke aprovado; também continua exigindo código de saída zero. Revisei o fluxo estaticamente, sem disparar a build ou iniciar o executável.
