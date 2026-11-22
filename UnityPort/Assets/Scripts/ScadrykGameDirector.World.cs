@@ -92,7 +92,9 @@ public sealed partial class ScadrykGameDirector
                 ShowStatus(i > anchorsActivated ? "Primeiro ressoe o farol na entrada da costa." : "Esse sinal já respondeu. Siga até o sino do recife.", 3f);
                 return;
             }
+            int activatedBefore = anchorsActivated;
             ActivateAnchor(i);
+            if (anchorsActivated > activatedBefore) RecordResonanceActivation();
             return;
         }
     }
@@ -352,7 +354,7 @@ public sealed partial class ScadrykGameDirector
         BoxCollider2D trigger = zoneObject.AddComponent<BoxCollider2D>();
         trigger.isTrigger = true;
         trigger.size = size;
-        zoneObject.AddComponent<ScadrykTerrainZone>().Configure(0.78f, default, null, "shallow-water");
+        zoneObject.AddComponent<ScadrykTerrainZone>().Configure(0.78f, default, null, ScadrykTerrainZone.ShallowWaterKey);
     }
 
     public void ShowShallowWaterHint()

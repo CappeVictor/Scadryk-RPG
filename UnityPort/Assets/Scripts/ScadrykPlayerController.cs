@@ -158,7 +158,11 @@ public sealed class ScadrykPlayerController : MonoBehaviour
             return;
         }
         float rootScale = Time.time < rootedUntil ? 0.52f : 1f;
-        if (director != null && IsInCoastalCurrent()) director.RecordCoastalCurrentExposure(Time.fixedDeltaTime);
+        if (director != null)
+        {
+            if (IsInCoastalCurrent()) director.RecordCoastalCurrentExposure(Time.fixedDeltaTime);
+            if (IsInShallowWater()) director.RecordShallowWaterExposure(Time.fixedDeltaTime);
+        }
         Vector2 targetVelocity = ResolveTerrainTargetVelocity(moveInput, moveSpeed, terrainSpeedScale, terrainFlowVelocity, rootScale);
         BodyVelocity = Vector2.MoveTowards(BodyVelocity, targetVelocity, acceleration * Time.fixedDeltaTime);
     }
@@ -198,6 +202,13 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     {
         foreach (ScadrykTerrainZone zone in terrainZones)
             if (zone != null && zone.HintKey == ScadrykTerrainZone.CoastalCurrentKey) return true;
+        return false;
+    }
+
+    private bool IsInShallowWater()
+    {
+        foreach (ScadrykTerrainZone zone in terrainZones)
+            if (zone != null && zone.HintKey == ScadrykTerrainZone.ShallowWaterKey) return true;
         return false;
     }
 
