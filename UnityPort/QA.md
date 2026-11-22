@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **22/11/2026 — confirmação sonora de selos libertados:** ao libertar uma lembrança opcional, agora toca um motivo original de duas notas ascendentes; o painel dessa memória não toca ao mesmo tempo o cue narrativo genérico, evitando sobreposição. O smoke exige que o novo clipe esteja carregado; o áudio novo só toca no modo normal. Unity 6000.6.9f1 importou/compilou a revisão final em batch com código 0 e sem erros ou avisos C#. O jogo e o smoke não foram iniciados. Ainda falta ouvir o timbre e o volume junto da trilha e testar sua leitura sem depender da visão.
+
 - **22/11/2026 — validação hospedada do commit `a3ac901`:** o C# run 875 passou build, smoke, publicação e verificação de assets do projeto raiz, mas não inclui `UnityPort`. O Unity run 20 falhou na checagem de `UNITY_LICENSE`, `UNITY_EMAIL` e `UNITY_PASSWORD`; build e smoke Unity foram pulados. O Editor 6000.6.9f1 compilou a alteração narrativa em batch, sem erros/avisos C#; cena e smoke não foram executados.
 - **22/11/2026 — validação hospedada do commit `4381d77`:** a build Unity run 17 parou na verificação de `UNITY_LICENSE`, `UNITY_EMAIL` e `UNITY_PASSWORD`; a build e o smoke foram pulados. O C# run 872 passou pelo build, smoke, publicação e verificação de assets do projeto raiz, mas não inclui `UnityPort`. O Editor local 6000.6.9f1 compilou os scripts em batch sem erros/avisos C#; não abriu a cena nem executou o smoke.
 

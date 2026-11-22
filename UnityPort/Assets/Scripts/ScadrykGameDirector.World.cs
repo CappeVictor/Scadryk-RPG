@@ -228,13 +228,14 @@ public sealed partial class ScadrykGameDirector
         Vector2 spot = worldSecret.transform.position;
         if (power != requiredPower || player == null || !player.AbilityFootprintContainsPoint(requiredPower, spot, source) ||
             ScadrykPlayerController.AbilityPathIsBlocked(requiredPower, source, spot)) return;
+        if (!smokeRun) ScadrykAudio.Play(ScadrykCue.EchoReleased);
         ScadrykEffects.Burst(spot, PhaseAccentColors[phaseIndex], 1.5f);
         ScadrykEffects.ReleaseEcho(witnessSprite != null ? witnessSprite : CircleSprite, spot, PhaseAccentColors[phaseIndex]);
         Destroy(worldSecret);
         worldSecret = null;
         roomSecretsRevealed = SecretRevealCountAfterSuccess(roomSecretsRevealed, smokeRun);
         if (player != null) player.RestoreHealth(35f);
-        ShowMemory(WorldSecretMemory(requiredPower), 7f);
+        ShowMemory(WorldSecretMemory(requiredPower), 7f, false);
         ShowStatus("Uma memória foi libertada. Nara recuperou 35 pontos de vida.", 5f);
     }
 
