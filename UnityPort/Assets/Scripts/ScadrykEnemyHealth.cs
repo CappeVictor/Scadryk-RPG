@@ -55,6 +55,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private int queuedFinalStage;
     private int combatRole;
     private Color roleTint = Color.white;
+    private float animationPhase;
     private float staggerUntil, exposedUntil, knockbackUntil, recoveryUntil;
     private Vector2 knockbackVelocity;
 
@@ -121,6 +122,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private void Awake()
     {
         body = GetComponent<Rigidbody2D>();
+        animationPhase = Random.value;
         bodyCollider = GetComponent<CircleCollider2D>();
         body.gravityScale = 0f; body.freezeRotation = true; body.interpolation = RigidbodyInterpolation2D.Interpolate;
         Transform visual = transform.Find("Animated visual");
@@ -151,7 +153,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             bool windingUp = isWindup && windupEndsAt > Time.time;
             sprite.color = StateTint(windingUp, Time.time < exposedUntil, roleTint);
             if (!windingUp && animationFrames != null && animationFrames.Length >= 4)
-                sprite.sprite = animationFrames[BodyVelocity.sqrMagnitude > 0.05f ? Mathf.FloorToInt(Time.time * 7f) % animationFrames.Length : 0];
+                sprite.sprite = animationFrames[BodyVelocity.sqrMagnitude > 0.05f ? AnimationFrameIndex(Time.time, 7f, animationFrames.Length, animationPhase) : 0];
         }
 
         if (Time.time < knockbackUntil) { BodyVelocity = knockbackVelocity; return; }
@@ -400,6 +402,13 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         else if (biomeIndex == 0) ResolveRootThrust();
         else if (biomeIndex == 1) ResolveCrystalVolley();
         else ResolveBellPulse();
+    }
+
+    internal static int AnimationFrameIndex(float time, float framesPerSecond, int frameCount, float normalizedPhase)
+    {
+        if (frameCount <= 0) return 0;
+        float frameTime = Mathf.Max(0f, time) * Mathf.Max(0f, framesPerSecond) + Mathf.Repeat(normalizedPhase, 1f) * frameCount;
+        return Mathf.FloorToInt(frameTime) % frameCount;
     }
 
     private void ResolveFinalBossAttack()

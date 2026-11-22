@@ -18,9 +18,14 @@ public sealed class ScadrykActorAnimator : MonoBehaviour
     private float windupStartedAt = -10f, windupDuration;
     private float portalScale = 1f;
     private float dashUntil, nextTrailAt, hitUntil, deathStartedAt = -1f;
+    private float stridePhase;
     private Vector2 dashDirection;
 
-    private void Awake() => body = GetComponent<Rigidbody2D>();
+    private void Awake()
+    {
+        body = GetComponent<Rigidbody2D>();
+        stridePhase = Random.value * Mathf.PI * 2f;
+    }
 
     public void SetVisual(Transform target, SpriteRenderer extrusion = null)
     {
@@ -73,6 +78,9 @@ public sealed class ScadrykActorAnimator : MonoBehaviour
     internal static float WindupStrength(float now, float startedAt, float duration) =>
         Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((now - startedAt) / Mathf.Max(0.05f, duration)));
 
+    internal static float StrideWave(float time, float frequency, float phase) =>
+        Mathf.Sin(Mathf.Max(0f, time) * Mathf.Max(0f, frequency) + phase);
+
     public void SetPortalScale(float scale) => portalScale = Mathf.Clamp01(scale);
 
     public void PlayDash(Vector2 direction)
@@ -114,7 +122,7 @@ public sealed class ScadrykActorAnimator : MonoBehaviour
             extrusionRenderer.flipY = visualRenderer.flipY;
         }
         float speed = body != null ? BodyVelocity.magnitude : 0f;
-        float stride = speed > 0.15f ? Mathf.Sin(Time.time * (9f + speed * 0.7f)) : 0f;
+        float stride = speed > 0.15f ? StrideWave(Time.time, 9f + speed * 0.7f, stridePhase) : 0f;
         float attack = 0f;
         float abilityImpactElapsed = Time.time - abilityImpactStartedAt;
         if (abilityImpactStartedAt >= 0f && abilityImpactElapsed < abilityRecoveryDuration)

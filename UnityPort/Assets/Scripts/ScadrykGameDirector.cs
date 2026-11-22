@@ -1213,6 +1213,14 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ScadrykActorAnimator.WindupStrength(2f, 1f, 1f) != 1f)
         { SmokeFail("A preparação animada não percorre o início, meio e fim do aviso inimigo"); yield break; }
         Debug.Log("SCADRYK_SMOKE: pose de preparação acompanha o aviso até a resolução do ataque");
+        int[] staggeredFrames = new int[4];
+        for (int actor = 0; actor < staggeredFrames.Length; actor++)
+            staggeredFrames[actor] = ScadrykEnemyHealth.AnimationFrameIndex(0f, 7f, 4, actor / 4f);
+        if (staggeredFrames[0] == staggeredFrames[1] || staggeredFrames[1] == staggeredFrames[2] ||
+            staggeredFrames[2] == staggeredFrames[3] || Mathf.Abs(ScadrykActorAnimator.StrideWave(0f, 1f, 0f) -
+            ScadrykActorAnimator.StrideWave(0f, 1f, Mathf.PI * 0.5f)) < 0.5f)
+        { SmokeFail("As animações dos Ecos e seus passos ainda começam sincronizados"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: Ecos usam fases individuais para passos e quadros de movimento");
         if (!RoomGroundOrientationsAreUnique())
         { SmokeFail("As três salas repetem a mesma orientação do cenário de fundo"); yield break; }
         Debug.Log("SCADRYK_SMOKE: fundos pintados variam entre as três salas de cada bioma");
