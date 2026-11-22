@@ -553,12 +553,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ApplyPauseTimeScale();
             return;
         }
-        if (resumeFinalGuardianInterlude)
-        {
-            resumeFinalGuardianInterlude = false;
-            ShowMemory(GuardianMemories[PhaseNames.Length - 1], 7f);
-            StartCoroutine(SpawnFinalBossAfterMemory());
-        }
+        StartFinalGuardianInterlude();
         StartRoomTimer();
         ApplyPauseTimeScale();
     }
@@ -983,6 +978,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         ShouldRestoreDefeatedGuardian(phase, room, guardianDefeated) && phase == PhaseNames.Length - 1 &&
         !ShouldRestoreFinalBossDefeat(phase, room, finalBossDefeated);
 
+    internal static bool ShouldContinueFinalGuardianInterludeAfterRestart(bool wasWaiting, bool rebuiltWaiting) =>
+        wasWaiting || rebuiltWaiting;
+
     internal static string GuardianDefeatProgressKey(string keyPrefix, int guardian) =>
         keyPrefix + "GuardianDefeated." + Mathf.Clamp(guardian, 0, PhaseNames.Length - 1);
 
@@ -1126,6 +1124,14 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         SpawnFinalBoss();
     }
 
+    private void StartFinalGuardianInterlude()
+    {
+        if (!resumeFinalGuardianInterlude) return;
+        resumeFinalGuardianInterlude = false;
+        ShowMemory(GuardianMemories[PhaseNames.Length - 1], 7f);
+        StartCoroutine(SpawnFinalBossAfterMemory());
+    }
+
     private void UnlockExit()
     {
         if (gateObject != null || anchorsActivated < anchorsRequired) return;
@@ -1266,8 +1272,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     public void RestartCurrentRoom()
     {
+        bool interludeWasPending = resumeFinalGuardianInterlude;
         if (player != null) player.ResetCombatCooldowns();
         BuildPhase(phaseIndex, roomIndex, false, true);
+        resumeFinalGuardianInterlude = ShouldContinueFinalGuardianInterludeAfterRestart(interludeWasPending, resumeFinalGuardianInterlude);
+        StartFinalGuardianInterlude();
         ShowStatus("Você caiu e retornou ao começo da sala.", 2.5f);
     }
 
@@ -1609,6 +1618,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             bool finalGuardianResumeWaitsForArauto = ShouldResumeFinalGuardianInterlude(2, 2, true, false) &&
                 !ShouldResumeFinalGuardianInterlude(2, 2, false, false) &&
                 !ShouldResumeFinalGuardianInterlude(2, 2, true, true) && !ShouldResumeFinalGuardianInterlude(1, 2, true, false);
+            bool finalInterludeSurvivesDeath = ShouldContinueFinalGuardianInterludeAfterRestart(false, true) &&
+                ShouldContinueFinalGuardianInterludeAfterRestart(true, false) &&
+                !ShouldContinueFinalGuardianInterludeAfterRestart(false, false);
             ClearGuardianDefeatProgress(checkpointTestPrefix);
             bool newJourneyClearsGuardianProgress = !HasGuardianDefeatProgress(checkpointTestPrefix, 0) &&
                 !HasGuardianDefeatProgress(checkpointTestPrefix, 2);
@@ -1619,7 +1631,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ClearFinalBossDefeatProgress(checkpointTestPrefix);
             bool newJourneyClearsFinalBossProgress = !HasFinalBossDefeatProgress(checkpointTestPrefix);
             bossProgressRoundTrip = guardianStartsUndefeated && guardianDefeatsPersistIndependently &&
-                defeatedGuardianRestoresOnlyAtItsArena && finalGuardianResumeWaitsForArauto && newJourneyClearsGuardianProgress &&
+                defeatedGuardianRestoresOnlyAtItsArena && finalGuardianResumeWaitsForArauto && finalInterludeSurvivesDeath && newJourneyClearsGuardianProgress &&
                 defeatedFinalBossRestoresOnlyAtEnding && newJourneyClearsFinalBossProgress;
             witnessProgressRoundTrip = witnessStartsAtFirstLine && restoresWitnessLine && clampsWitnessLine && clearsWitnessLines;
             checkpointRoundTrip = newGameDefaults && quitCheckpointStateIsValid && campaignProgressCleanupRoundTrip && ignoresOrphanedRoom &&
