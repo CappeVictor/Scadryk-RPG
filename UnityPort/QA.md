@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **Compilação local do commit `9c1eccd` (22/11/2026):** `Tools/compile-unity.ps1` importou o projeto com Unity 6000.6.9f1 em batch, encerrou com código 0 e sem ocorrências `CS` de erro ou aviso. Nenhuma cena foi aberta, nenhum executável foi gerado e o smoke não foi iniciado.
+
 - **CI do commit `5fc170a` (22/11/2026):** o C# run 886 passou build, smoke, publicação e verificação dos assets do projeto original da raiz; ele não compila nem valida `UnityPort`. O Unity run 31 parou antes da build pela ausência de `UNITY_LICENSE`, `UNITY_EMAIL` e `UNITY_PASSWORD`; build e smoke hospedados foram pulados. Unity 6000.6.9f1 compilou `UnityPort` localmente em batch, sem erros ou avisos C#; a cena e o smoke não foram iniciados.
 
 - **CI do commit `aebba63` (22/11/2026):** o Unity run 27 parou antes da build na exigência dos secrets `UNITY_LICENSE`, `UNITY_EMAIL` e `UNITY_PASSWORD`; smoke e executável Unity foram pulados. O C# run 882 passou build, smoke, publicação e verificação dos assets do projeto original da raiz; ele não compila nem valida `UnityPort`. A compilação Unity local em batch deste commit passou sem erros ou avisos C#.
