@@ -1588,6 +1588,12 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ScadrykPlayerController.WithinVisualFootprint(new Vector2(1.5f, 1.41f), Vector2.zero, Vector2.right, 1.05f, new Vector2(4.1f, 2.8f)))
         { SmokeFail("As áreas de acerto dos poderes Crescente e Rompante divergem das dimensões dos efeitos visuais"); yield break; }
         Debug.Log("SCADRYK_SMOKE: áreas do Crescente e Rompante respeitam as dimensões anunciadas");
+        float saltburstRadius = ScadrykPlayerController.SaltburstAbilityRadius;
+        if (!ScadrykPlayerController.AbilityFootprintContainsPoint(1, new Vector2(saltburstRadius - 0.01f, 0f), Vector2.zero, Vector2.right) ||
+            ScadrykPlayerController.AbilityFootprintContainsPoint(1, new Vector2(saltburstRadius + 0.01f, 0f), Vector2.zero, Vector2.right) ||
+            Mathf.Abs(ScadrykEffects.AbilitySaltburstVisualDiameter(saltburstRadius) * 0.5f - saltburstRadius) > 0.001f)
+        { SmokeFail("O alcance e o sprite do Estouro de Sal divergem da área efetiva"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: sprite e alcance do Estouro de Sal correspondem ao raio efetivo");
         Vector2 slashFootprint = ScadrykEffects.PlayerSlashFootprint(1.45f);
         float slashTargetRadius = 0.5f;
         if (!ScadrykPlayerController.WithinVisualFootprint(new Vector2(ScadrykEffects.PlayerSlashForwardOffset + slashFootprint.x * 0.5f + slashTargetRadius - 0.01f, 0f), Vector2.zero, Vector2.right, ScadrykEffects.PlayerSlashForwardOffset, slashFootprint, slashTargetRadius) ||

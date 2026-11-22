@@ -52,6 +52,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     internal const float DashBufferWindow = 0.12f;
     internal const float ShockwaveWindup = 0.08f;
     internal const float ShockwaveRecovery = 0.28f;
+    internal const float SaltburstAbilityRadius = 4.25f;
     internal static float AbilityWindupFor(int index) => Mathf.Clamp(index, 0, 2) switch
     {
         0 => 0.10f,
@@ -401,7 +402,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         }
         else if (index == 1)
         {
-            radius = 4.25f; damage = 82f; cooldown = 10f;
+            radius = SaltburstAbilityRadius; damage = 82f; cooldown = 10f;
         }
         else
         {
@@ -422,7 +423,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         Vector2 origin = transform.position;
         if (director != null) director.TryRevealSecret(index, origin);
         if (index == 0) ScadrykEffects.AbilityCrescent(origin, direction);
-        else if (index == 1) ScadrykEffects.AbilitySaltburst(origin, radius * 2.1f);
+        else if (index == 1) ScadrykEffects.AbilitySaltburst(origin, ScadrykEffects.AbilitySaltburstVisualDiameter(radius));
         else ScadrykEffects.AbilityTidebreaker(origin, direction);
         ScadrykAudio.Play(ScadrykCue.PlayerPowerImpact);
         if (animator != null) animator.PlayAbilityImpact(direction, AbilityRecoveryFor(index));
@@ -473,7 +474,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     internal static bool AbilityFootprintContainsPoint(int index, Vector2 target, Vector2 origin, Vector2 direction, float targetRadius = 0f)
     {
         if (index == 0) return WithinVisualFootprint(target, origin, direction, 1.05f, new Vector2(4.1f, 2.8f), targetRadius);
-        if (index == 1) return Vector2.Distance(target, origin) <= 4.25f + targetRadius;
+        if (index == 1) return Vector2.Distance(target, origin) <= SaltburstAbilityRadius + targetRadius;
         if (index == 2) return WithinVisualFootprint(target, origin, direction, 2.7f, new Vector2(7.4f, 4.4f), targetRadius);
         return false;
     }

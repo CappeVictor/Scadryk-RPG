@@ -169,6 +169,7 @@ public static class ScadrykEffects
     }
 
     internal static float PlayerPulseDiameter(float hitRadius) => hitRadius * 2f;
+    internal static float AbilitySaltburstVisualDiameter(float hitRadius) => hitRadius * 2f;
 
     public static void PlayerPulse(Vector2 position, float hitRadius)
     {
