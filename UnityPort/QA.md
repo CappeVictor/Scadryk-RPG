@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **CI do commit `8207c33` (22/11/2026):** o run Unity 25 parou na etapa obrigatória de secrets `UNITY_LICENSE`, `UNITY_EMAIL` e `UNITY_PASSWORD`; build e smoke hospedados foram pulados. O run C# 880 passou build, smoke, publicação e verificação de assets do projeto raiz, mas não compila nem valida `UnityPort`. A compilação local em batch no Unity 6000.6.9f1 passou sem erros/avisos C#; não abriu cena nem iniciou o jogo.
+
 - **22/11/2026 — confirmação sonora de selos libertados:** ao libertar uma lembrança opcional, agora toca um motivo original de duas notas ascendentes; o painel dessa memória não toca ao mesmo tempo o cue narrativo genérico, evitando sobreposição. O smoke exige que o novo clipe esteja carregado; o áudio novo só toca no modo normal. Unity 6000.6.9f1 importou/compilou a revisão final em batch com código 0 e sem erros ou avisos C#. O jogo e o smoke não foram iniciados. Ainda falta ouvir o timbre e o volume junto da trilha e testar sua leitura sem depender da visão.
 
 - **22/11/2026 — validação hospedada do commit `a3ac901`:** o C# run 875 passou build, smoke, publicação e verificação de assets do projeto raiz, mas não inclui `UnityPort`. O Unity run 20 falhou na checagem de `UNITY_LICENSE`, `UNITY_EMAIL` e `UNITY_PASSWORD`; build e smoke Unity foram pulados. O Editor 6000.6.9f1 compilou a alteração narrativa em batch, sem erros/avisos C#; cena e smoke não foram executados.
