@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **Checkpoint ao encerrar o jogo (22/11/2026):** fechar o aplicativo no meio de uma sala agora grava fase/sala atuais antes de registrar a sessão. Isso cobre o encerramento normal pelo sistema; falha de energia ou encerramento forçado não pode ser garantido por `OnApplicationQuit`. A gravação mantém os guardas de vitória e modo smoke já existentes, então a campanha concluída não reaparece como retomável e ensaios não tocam o save real. Ainda precisa de teste de integração via Editor/runner Unity; não abri nem executei o jogo.
+
 - **Protocolo de playtest (22/11/2026):** a ficha agora padroniza seis sessões (duas por nível), isolamento de saves em perfil de teste, aviso neutro de F8, observação do uso espontâneo dos poderes, resumo de conclusão/parada e uma verificação de retomada após chefe em uma sessão de cada nível. Nenhum resultado foi preenchido; não houve sessão nem gravação nesta etapa.
 
 - **Sincronização do combo (22/11/2026):** o pico visual do golpe básico agora é calculado pelo mesmo envelope temporal verificado pelo smoke. A checagem exige que o primeiro, o segundo e o finalizador atinjam perto do pico no instante configurado de dano e que a animação termine ao fim de cada recuperação. Unity 6000.6.9f1 importou e compilou em batch, código 0, sem erros ou avisos C#. O smoke não foi executado e a sensação/legibilidade do combo ainda precisa de avaliação em jogo.

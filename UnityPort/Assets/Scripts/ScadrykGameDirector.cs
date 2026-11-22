@@ -955,7 +955,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private void OnApplicationQuit()
     {
         Time.timeScale = 1f;
-        if (levelRoot != null) RecordRoomSession();
+        if (levelRoot != null)
+        {
+            if (player != null && !victory) SaveProgress(phaseIndex, roomIndex);
+            RecordRoomSession();
+        }
     }
 
     private static void SaveProgress(int phase, int room)
