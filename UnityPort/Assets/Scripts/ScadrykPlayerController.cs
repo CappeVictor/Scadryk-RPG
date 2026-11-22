@@ -39,6 +39,8 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     private float rootedUntil;
     private readonly bool[] learnedAbilities = new bool[3];
     private readonly float[] abilityReadyAt = new float[3];
+    private readonly List<Collider2D> attackHits = new List<Collider2D>(16);
+    private ContactFilter2D attackHitFilter;
     private SpriteRenderer sprite;
     private ScadrykActorAnimator animator;
     private ScadrykGameDirector director;
@@ -92,6 +94,9 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         body.freezeRotation = true;
         body.interpolation = RigidbodyInterpolation2D.Interpolate;
         body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+        attackHitFilter = new ContactFilter2D();
+        attackHitFilter.SetLayerMask(~0);
+        attackHitFilter.useTriggers = Physics2D.queriesHitTriggers;
         Transform visual = transform.Find("Animated visual");
         sprite = visual != null ? visual.GetComponent<SpriteRenderer>() : GetComponentInChildren<SpriteRenderer>();
         animator = GetComponent<ScadrykActorAnimator>();
@@ -322,10 +327,12 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         if (isDying || (director != null && director.IsPaused)) yield break;
         ScadrykEffects.Slash(transform.position, direction, range, comboStep == BasicAttackComboLength - 1);
         Vector2 footprint = ScadrykEffects.PlayerSlashFootprint(range);
-        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, footprint.x + footprint.y, ~0);
+        int hitCount = CollectAttackHits(transform.position, footprint.x + footprint.y);
         bool hitEnemy = false;
-        foreach (Collider2D hit in hits)
+        for (int i = 0; i < hitCount; i++)
         {
+            Collider2D hit = attackHits[i];
+            if (hit == null) continue;
             if (!hit.TryGetComponent<ScadrykEnemyHealth>(out var enemy)) continue;
             if (!WithinVisualFootprint(enemy.transform.position, transform.position, direction, ScadrykEffects.PlayerSlashForwardOffset, footprint, EnemyCollisionRadius(enemy))) continue;
             if (ScadrykCombatRules.WorldBlocks(transform.position, enemy.transform.position)) continue;
@@ -366,9 +373,12 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         if (animator != null) animator.PlayAbilityImpact(direction, ShockwaveRecovery);
         ScadrykEffects.PlayerPulse(transform.position, shockwaveRadius);
         ShakeCamera(0.055f);
-        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, shockwaveRadius, ~0);
-        foreach (Collider2D hit in hits)
-            if (hit.TryGetComponent<ScadrykEnemyHealth>(out var enemy)) enemy.TakeDamage(shockwaveDamage);
+        int hitCount = CollectAttackHits(transform.position, shockwaveRadius);
+        for (int i = 0; i < hitCount; i++)
+        {
+            Collider2D hit = attackHits[i];
+            if (hit != null && hit.TryGetComponent<ScadrykEnemyHealth>(out var enemy)) enemy.TakeDamage(shockwaveDamage);
+        }
     }
 
     private void UseAbility(int index)
@@ -417,9 +427,11 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         ScadrykAudio.Play(ScadrykCue.PlayerPowerImpact);
         if (animator != null) animator.PlayAbilityImpact(direction, AbilityRecoveryFor(index));
         ShakeCamera(index == 2 ? 0.12f : 0.075f);
-        Collider2D[] hits = Physics2D.OverlapCircleAll(origin, radius, ~0);
-        foreach (Collider2D hit in hits)
+        int hitCount = CollectAttackHits(origin, radius);
+        for (int i = 0; i < hitCount; i++)
         {
+            Collider2D hit = attackHits[i];
+            if (hit == null) continue;
             if (!hit.TryGetComponent<ScadrykEnemyHealth>(out var enemy)) continue;
             Vector2 toEnemy = (Vector2)enemy.transform.position - origin;
             float enemyRadius = EnemyCollisionRadius(enemy);
@@ -430,6 +442,12 @@ public sealed class ScadrykPlayerController : MonoBehaviour
             else if (index == 1) enemy.ApplySaltExposure();
             else enemy.ApplyTidePush(toEnemy);
         }
+    }
+
+    private int CollectAttackHits(Vector2 origin, float radius)
+    {
+        attackHits.Clear();
+        return Physics2D.OverlapCircle(origin, radius, attackHitFilter, attackHits);
     }
 
     private static float EnemyCollisionRadius(ScadrykEnemyHealth enemy)
