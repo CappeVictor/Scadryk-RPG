@@ -1549,6 +1549,13 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Debug.Log("SCADRYK_SMOKE: equipes de bosque, sal e costa têm papéis próprios e cada chefe é anunciado por um padrão previamente ensinado");
         if (GuardianNames.Length != 3 || GuardianIntroductions.Length != 3 || GuardianMemories.Length != 3)
         { SmokeFail("Cada bioma precisa de nome, fala e memória próprios para o guardião"); yield break; }
+        float basinNimaPresence = WitnessPresenceForPhase(1), coastNimaPresence = WitnessPresenceForPhase(2);
+        if (WitnessPresenceForPhase(0) != 0f || basinNimaPresence <= 0f || coastNimaPresence <= basinNimaPresence || coastNimaPresence > 1f ||
+            WitnessScaleForPhase(2) <= WitnessScaleForPhase(1) || WitnessTintForPhase(0) != Color.clear ||
+            WitnessTintForPhase(1) == WitnessTintForPhase(2) ||
+            Mathf.Abs(WitnessTintForPhase(1).a - basinNimaPresence) > 0.001f ||
+            Mathf.Abs(WitnessTintForPhase(2).a - coastNimaPresence) > 0.001f)
+        { SmokeFail("A presença visível de Nima não cresce após libertar as lembranças dos guardiões"); yield break; }
         if (!OpeningMemory.Contains("Grande Onda") || !OpeningMemory.Contains("Nara") ||
             !GuardianMemories[0].Contains("Nima") || !BasinWitnessLines[0].Contains("primeiro sino") ||
             !BasinWitnessLines[1].StartsWith("Nara:") || !CoastWitnessLines[1].StartsWith("Nara:") ||
@@ -1557,7 +1564,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             !GuardianMemories[1].Contains("última onda") || !GuardianMemories[2].Contains("poupar os vivos") ||
             !EndingMemory.Contains("Nara escolhe lembrar") || !EndingMemory.Contains("aprisionou os mortos"))
         { SmokeFail("A história perdeu a causa da maré imóvel, a ligação de Nima ou a resolução do conflito"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: abertura, memórias de Nima e dos guardiões e resolução final formam o arco da maré");
+        Debug.Log("SCADRYK_SMOKE: abertura, falas, aparição crescente de Nima, memórias dos guardiões e resolução formam o arco da maré");
         string victoryOverlay = OverlayMessage(false, true, false);
         if (!victoryOverlay.Contains("Os sinos respondem") || !victoryOverlay.Contains("Nara escolheu lembrar") ||
             !victoryOverlay.Contains("não prende ninguém"))

@@ -46,18 +46,37 @@ public sealed partial class ScadrykGameDirector
         witnessObject.transform.SetParent(levelRoot.transform);
         witnessObject.transform.position = position;
 
+        float presence = WitnessPresenceForPhase(phaseIndex);
+        Color witnessTint = WitnessTintForPhase(phaseIndex);
         MakeDecoration(levelRoot.transform, "Nima's reflected pool", position + Vector2.down * 0.52f,
-            new Vector2(0.9f, 0.28f), new Color(PhaseAccentColors[phaseIndex].r, PhaseAccentColors[phaseIndex].g,
-                PhaseAccentColors[phaseIndex].b, 0.42f), true, 2);
+            new Vector2(0.68f + presence * 0.22f, 0.2f + presence * 0.08f),
+            new Color(witnessTint.r, witnessTint.g, witnessTint.b, 0.26f + presence * 0.2f), true, 2);
         var visual = new GameObject("Nima — Echo witness");
         visual.transform.SetParent(witnessObject.transform, false);
         var renderer = visual.AddComponent<SpriteRenderer>();
         renderer.sprite = witnessSprite != null ? witnessSprite : CircleSprite;
-        renderer.color = Color.white;
+        renderer.color = WitnessTintForPhase(phaseIndex);
         renderer.sortingOrder = 5;
-        visual.transform.localScale = Vector3.one * 0.36f;
+        visual.transform.localScale = Vector3.one * WitnessScaleForPhase(phaseIndex);
         witnessObject.AddComponent<ScadrykDepthSort>().SetBias(4);
     }
+
+    internal static float WitnessPresenceForPhase(int phase) => phase switch
+    {
+        1 => 0.68f,
+        2 => 1f,
+        _ => 0f
+    };
+
+    internal static float WitnessScaleForPhase(int phase) =>
+        Mathf.Lerp(0.3f, 0.44f, WitnessPresenceForPhase(phase));
+
+    internal static Color WitnessTintForPhase(int phase) => phase switch
+    {
+        1 => new Color(0.68f, 0.96f, 0.8f, WitnessPresenceForPhase(phase)),
+        2 => new Color(1f, 0.84f, 0.59f, WitnessPresenceForPhase(phase)),
+        _ => Color.clear
+    };
 
     public void TryInteract(Vector2 position)
     {
