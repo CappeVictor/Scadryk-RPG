@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **CI do commit `98affb1` (22/11/2026):** C# run 893 passou build, smoke, publicação e verificação de assets do projeto original na raiz; esse fluxo não compila nem valida `UnityPort`. Unity run 38 falhou antes da build porque `UNITY_LICENSE`, `UNITY_EMAIL` e `UNITY_PASSWORD` não estão configurados; build e smoke Unity foram pulados. A compilação local em batch da alteração de remapeamento passou sem erros/avisos C#; cena e smoke não foram iniciados.
+
 - **Proteção da captura de remapeamento (22/11/2026):** a confirmação usada para iniciar uma troca de tecla não pode mais ser capturada como o novo vínculo no mesmo frame. A trava foi aplicada nos layouts normal e compacto e ao iniciar a captura pelo menu de teclado; o smoke verifica o limite entre o frame de início e o seguinte, mas não foi executado. Unity 6000.6.9f1 importou/compilou a alteração em batch, código 0 e sem avisos/erros C#. Nenhuma cena, build ou smoke foi iniciada.
 
 - **Compilação local do commit `9c1eccd` (22/11/2026):** `Tools/compile-unity.ps1` importou o projeto com Unity 6000.6.9f1 em batch, encerrou com código 0 e sem ocorrências `CS` de erro ou aviso. Nenhuma cena foi aberta, nenhum executável foi gerado e o smoke não foi iniciado.
