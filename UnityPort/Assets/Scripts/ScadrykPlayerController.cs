@@ -150,9 +150,8 @@ public sealed class ScadrykPlayerController : MonoBehaviour
             BodyVelocity = dashDirection * dashSpeed;
             return;
         }
-        float effectiveSpeed = moveSpeed * terrainSpeedScale;
-        if (Time.time < rootedUntil) effectiveSpeed *= 0.52f;
-        Vector2 targetVelocity = moveInput * effectiveSpeed + terrainFlowVelocity;
+        float rootScale = Time.time < rootedUntil ? 0.52f : 1f;
+        Vector2 targetVelocity = ResolveTerrainTargetVelocity(moveInput, moveSpeed, terrainSpeedScale, terrainFlowVelocity, rootScale);
         BodyVelocity = Vector2.MoveTowards(BodyVelocity, targetVelocity, acceleration * Time.fixedDeltaTime);
     }
 
@@ -177,10 +176,13 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         {
             if (zone == null) continue;
             terrainSpeedScale = Mathf.Min(terrainSpeedScale, zone.MovementScale);
-            terrainFlowVelocity += zone.FlowVelocity;
+            terrainFlowVelocity = ScadrykTerrainZone.CombineFlow(terrainFlowVelocity, zone.FlowVelocity);
         }
-        terrainFlowVelocity = Vector2.ClampMagnitude(terrainFlowVelocity, 2.4f);
     }
+
+    internal static Vector2 ResolveTerrainTargetVelocity(Vector2 input, float speed, float terrainScale, Vector2 flow, float rootedScale = 1f) =>
+        Vector2.ClampMagnitude(input, 1f) * (Mathf.Max(0f, speed) * Mathf.Clamp(terrainScale, 0.4f, 1f) * Mathf.Clamp(rootedScale, 0f, 1f)) +
+        Vector2.ClampMagnitude(flow, ScadrykTerrainZone.MaximumFlowSpeed);
 
     private void AimAtPointer(bool keyboardMouseInput, bool gamepadInput)
     {

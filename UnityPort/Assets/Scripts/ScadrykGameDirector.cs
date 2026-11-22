@@ -1116,6 +1116,14 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private IEnumerator SmokeCampaign()
     {
         yield return null;
+        Vector2 cappedFlow = ScadrykTerrainZone.CombineFlow(Vector2.right * 1.8f, Vector2.right * 1.8f);
+        Vector2 opposingWalk = ScadrykPlayerController.ResolveTerrainTargetVelocity(Vector2.left, 6.2f, 1f, Vector2.right * 1.8f);
+        Vector2 carriedIdle = ScadrykPlayerController.ResolveTerrainTargetVelocity(Vector2.zero, 6.2f, 1f, Vector2.right * 1.8f);
+        if (Mathf.Abs(cappedFlow.magnitude - ScadrykTerrainZone.MaximumFlowSpeed) > 0.001f ||
+            opposingWalk.x >= 0f || Mathf.Abs(opposingWalk.y) > 0.001f ||
+            Mathf.Abs(carriedIdle.x - 1.8f) > 0.001f || Mathf.Abs(carriedIdle.y) > 0.001f)
+        { SmokeFail("A corrente não conserva o impulso, não limita fluxos somados ou vence a caminhada contra o fluxo"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: corrente move em repouso, permite contrafluxo e limita a velocidade somada");
         if (ScadrykSettings.CanBindKey(KeyCode.None) || ScadrykSettings.CanBindKey(KeyCode.Escape) ||
             ScadrykSettings.CanBindKey(KeyCode.F8) || ScadrykSettings.CanBindKey(KeyCode.M) || !ScadrykSettings.CanBindKey(KeyCode.F) ||
             ScadrykSettings.CanBindPadButton(7) || ScadrykSettings.CanBindPadButton(8) || !ScadrykSettings.CanBindPadButton(9))
