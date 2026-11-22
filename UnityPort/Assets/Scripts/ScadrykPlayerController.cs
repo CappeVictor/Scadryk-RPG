@@ -152,6 +152,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
             return;
         }
         float rootScale = Time.time < rootedUntil ? 0.52f : 1f;
+        if (director != null && IsInCoastalCurrent()) director.RecordCoastalCurrentExposure(Time.fixedDeltaTime);
         Vector2 targetVelocity = ResolveTerrainTargetVelocity(moveInput, moveSpeed, terrainSpeedScale, terrainFlowVelocity, rootScale);
         BodyVelocity = Vector2.MoveTowards(BodyVelocity, targetVelocity, acceleration * Time.fixedDeltaTime);
     }
@@ -161,6 +162,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         if (!other.TryGetComponent<ScadrykTerrainZone>(out var zone) || !terrainZones.Add(zone)) return;
         RefreshTerrainSpeed();
         if (director != null) director.ShowTerrainHint(zone.HintKey, zone.EntryHint);
+        if (director != null && zone.HintKey == ScadrykTerrainZone.CoastalCurrentKey) director.RecordCoastalCurrentEntry();
         if (zone.EntryCue.HasValue)
         {
             ScadrykAudio.Play(zone.EntryCue.Value);
@@ -184,6 +186,13 @@ public sealed class ScadrykPlayerController : MonoBehaviour
             terrainSpeedScale = Mathf.Min(terrainSpeedScale, zone.MovementScale);
             terrainFlowVelocity = ScadrykTerrainZone.CombineFlow(terrainFlowVelocity, zone.FlowVelocity);
         }
+    }
+
+    private bool IsInCoastalCurrent()
+    {
+        foreach (ScadrykTerrainZone zone in terrainZones)
+            if (zone != null && zone.HintKey == ScadrykTerrainZone.CoastalCurrentKey) return true;
+        return false;
     }
 
     internal static Vector2 ResolveTerrainTargetVelocity(Vector2 input, float speed, float terrainScale, Vector2 flow, float rootedScale = 1f) =>

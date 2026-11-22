@@ -15,7 +15,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private static readonly GUIContent WorldMapTitleContent = new GUIContent("MAPA DA JORNADA");
     private const string EndingMemory = "O Arauto quis ocultar a catástrofe para poupar os vivos da dor, mas o silêncio aprisionou os mortos. Nara escolhe lembrar e abre o limiar para que todos possam atravessar.";
     private const string VictoryEndingText = "Os sinos respondem. Nara escolheu lembrar; o limiar já não prende ninguém.";
-    private const string SessionCsvHeader = "session_id,utc,phase,room,seconds,deaths,unclear_attacks,crescent,salt,tide,enemies_left,completed,input_mode\n";
+    private const string SessionCsvHeader = "session_id,utc,phase,room,seconds,deaths,unclear_attacks,crescent,salt,tide,enemies_left,completed,current_entries,current_seconds,input_mode\n";
     private static readonly string[] PhaseNames = { "Margens do Primeiro Eco", "Bacia do Sal Imóvel", "Costa das Badaladas" };
     private static readonly Color[] PhaseColors = { new Color(0.11f, 0.22f, 0.20f), new Color(0.27f, 0.20f, 0.12f), new Color(0.09f, 0.17f, 0.25f) };
     private static readonly Color[] PhaseWallColors = { new Color(0.17f, 0.29f, 0.26f), new Color(0.35f, 0.27f, 0.16f), new Color(0.13f, 0.28f, 0.36f) };
@@ -113,6 +113,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private string sessionInputMode = "unknown";
     private bool roomSessionRecorded;
     private readonly int[] roomPowerUses = new int[3];
+    private int coastalCurrentEntries;
+    private float coastalCurrentSeconds;
     private GUIStyle titleStyle { get; set; }
     private GUIStyle bodyStyle { get; set; }
     private GUIStyle smallStyle { get; set; }
@@ -631,6 +633,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             sessionInputMode = "unknown";
             roomSessionRecorded = false;
             System.Array.Clear(roomPowerUses, 0, roomPowerUses.Length);
+            coastalCurrentEntries = 0;
+            coastalCurrentSeconds = 0f;
         }
         hintStage = 0;
         statusMessage = roomIndex == RoomsPerPhase - 1 ? GuardianIntroductions[phaseIndex] : RoomStories[phaseIndex * RoomsPerPhase + roomIndex];
@@ -734,6 +738,17 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (index >= 0 && index < roomPowerUses.Length) roomPowerUses[index]++;
     }
 
+    public void RecordCoastalCurrentEntry()
+    {
+        if (phaseIndex == 2 && roomIndex == 1 && !roomSessionRecorded) coastalCurrentEntries++;
+    }
+
+    public void RecordCoastalCurrentExposure(float seconds)
+    {
+        if (phaseIndex == 2 && roomIndex == 1 && !roomSessionRecorded)
+            coastalCurrentSeconds += Mathf.Max(0f, seconds);
+    }
+
     public void RecordInputMode(string mode)
     {
         if (mode == "keyboard_mouse" || mode == "gamepad") sessionInputMode = mode;
@@ -743,7 +758,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     {
         return sessionId + "," + System.DateTime.UtcNow.ToString("o") + "," + (phaseIndex + 1) + "," + (roomIndex + 1) + "," +
             Mathf.RoundToInt(Mathf.Max(0f, roomActiveSeconds)) + "," + roomDeaths + "," + unclearAttackMarks + "," + roomPowerUses[0] + "," +
-            roomPowerUses[1] + "," + roomPowerUses[2] + "," + enemiesRemaining + "," + completed.ToString().ToLowerInvariant() + "," + sessionInputMode + "\n";
+            roomPowerUses[1] + "," + roomPowerUses[2] + "," + enemiesRemaining + "," + completed.ToString().ToLowerInvariant() + "," +
+            coastalCurrentEntries + "," + Mathf.RoundToInt(Mathf.Max(0f, coastalCurrentSeconds)) + "," + sessionInputMode + "\n";
     }
 
     private void RecordRoomSession()
@@ -752,7 +768,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         roomSessionRecorded = true;
         try
         {
-            string path = Path.Combine(Application.persistentDataPath, "scadryk-sessions-v5.csv");
+            string path = Path.Combine(Application.persistentDataPath, "scadryk-sessions-v6.csv");
             if (!File.Exists(path)) File.WriteAllText(path, SessionCsvHeader);
             bool completed = roomIndex >= 0 && roomIndex < clearedRooms.Length && clearedRooms[roomIndex];
             File.AppendAllText(path, FormatSessionCsvRow(completed));
@@ -1424,21 +1440,26 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         roomActiveSeconds = 17f;
         roomDeaths = 0;
         roomPowerUses[0] = 2;
+        coastalCurrentEntries = 2;
+        coastalCurrentSeconds = 4.6f;
         RecordInputMode("gamepad");
         RecordPlayerDeath();
         if (roomDeaths != 1) { SmokeFail("A derrota não foi contabilizada no instante da morte"); yield break; }
         string[] deathCsvColumns = FormatSessionCsvRow(false).TrimEnd('\n').Split(',');
         if (!System.Guid.TryParseExact(sessionId, "N", out _) ||
-            deathCsvColumns.Length != SessionCsvHeader.TrimEnd('\n').Split(',').Length || deathCsvColumns[0] != sessionId || deathCsvColumns[5] != "1")
+            deathCsvColumns.Length != SessionCsvHeader.TrimEnd('\n').Split(',').Length || deathCsvColumns[0] != sessionId ||
+            deathCsvColumns[5] != "1" || deathCsvColumns[12] != "2" || deathCsvColumns[13] != "5")
         { SmokeFail("O CSV não registraria uma morte antes de terminar a animação"); yield break; }
         RestartCurrentRoom();
-        if (roomActiveSeconds != 17f || roomDeaths != 1 || roomPowerUses[0] != 2 || sessionInputMode != "gamepad")
-        { SmokeFail("Morte reiniciou a sala mas perdeu tempo, mortes, usos de poderes ou dispositivo da sessão"); yield break; }
+        if (roomActiveSeconds != 17f || roomDeaths != 1 || roomPowerUses[0] != 2 ||
+            coastalCurrentEntries != 2 || Mathf.Abs(coastalCurrentSeconds - 4.6f) > 0.001f || sessionInputMode != "gamepad")
+        { SmokeFail("Morte reiniciou a sala mas perdeu tempo, mortes, poderes, uso da corrente ou dispositivo da sessão"); yield break; }
         string[] csvHeaderColumns = SessionCsvHeader.TrimEnd('\n').Split(',');
         string[] csvRowColumns = FormatSessionCsvRow(true).TrimEnd('\n').Split(',');
-        if (csvRowColumns.Length != csvHeaderColumns.Length || csvRowColumns[csvRowColumns.Length - 1] != "gamepad")
+        if (csvRowColumns.Length != csvHeaderColumns.Length || csvHeaderColumns[12] != "current_entries" ||
+            csvHeaderColumns[13] != "current_seconds" || csvRowColumns[csvRowColumns.Length - 1] != "gamepad")
         { SmokeFail("A linha CSV da sessão não corresponde ao cabeçalho ou omite o dispositivo"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: telemetria preserva dados e dispositivo e serializa o CSV corretamente");
+        Debug.Log("SCADRYK_SMOKE: CSV v6 preserva uso da corrente após morte e serializa cabeçalho, valores e dispositivo");
         float laneRadius = ScadrykEnemyHealth.PlayerCollisionRadius(player);
         float laneWidth = ScadrykEnemyHealth.RootLaneVisualWidth(0.86f, laneRadius);
         if (!ScadrykEnemyHealth.RootLaneHits(new Vector2(1.5f, laneWidth * 0.5f - 0.01f), Vector2.zero, new Vector2(3.3f, 0f), 0.86f, laneRadius) ||

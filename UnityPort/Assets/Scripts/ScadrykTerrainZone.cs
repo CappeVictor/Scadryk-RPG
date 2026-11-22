@@ -4,6 +4,7 @@ using UnityEngine;
 [RequireComponent(typeof(Collider2D))]
 public sealed class ScadrykTerrainZone : MonoBehaviour
 {
+    internal const string CoastalCurrentKey = "bell-coast-current";
     internal const float MaximumFlowSpeed = 2.4f;
     [SerializeField, Range(0.4f, 1f)] private float movementScale = 0.78f;
     [SerializeField] private Vector2 flowVelocity;
