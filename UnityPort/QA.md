@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **22/11/2026 — conclusão e telemetria da última sala:** a checagem da transição confirmou que `TryUseExit` marca a sala final como concluída antes de gravar a sessão. Extraí essa regra para um helper comum e acrescentei ao smoke uma asserção da linha de vitória: `completed=true` e `enemies_left=0`. `Tools/compile-unity.ps1` passou em Unity 6000.6.9f1 sem Play Mode; o smoke permanece sem execução.
+
 - **22/11/2026 — dessincronizar animações dos Ecos:** as quatro animações de caminhada começavam no mesmo quadro e o movimento corporal de todos usava a mesma fase global, deixando grupos com aspecto mecânico. Cada Eco agora recebe fase própria para quadros e passo; a pose de ataque, recuperação e deslocamento continuam com a mesma velocidade e duração. O smoke contém verificações para fases diferentes. `Tools/compile-unity.ps1` passou em Unity 6000.6.9f1 sem Play Mode. A naturalidade visual ainda precisa de observação na build.
 
 - **22/11/2026 — silhuetas de Ecos comuns:** corrigi um override que substituía a linha de sprites do papel por uma arte de guardião em todos os inimigos, deixando as equipes difíceis de diferenciar. Caçador, Atirador, Ressonador e Tecelão agora usam as linhas de arte correspondentes ao seu papel; os três guardiões mantêm a ilustração exclusiva do bioma. O smoke verifica o mapeamento das quatro silhuetas e das composições de equipe. `Tools/compile-unity.ps1` passou em Unity 6000.6.9f1 sem Play Mode; o smoke não foi executado e a leitura em gameplay ainda requer avaliação visual.

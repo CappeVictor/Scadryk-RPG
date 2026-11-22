@@ -781,7 +781,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         {
             string path = Path.Combine(Application.persistentDataPath, "scadryk-sessions-v6.csv");
             if (!File.Exists(path)) File.WriteAllText(path, SessionCsvHeader);
-            bool completed = roomIndex >= 0 && roomIndex < clearedRooms.Length && clearedRooms[roomIndex];
+            bool completed = IsRoomMarkedComplete(clearedRooms, roomIndex);
             File.AppendAllText(path, FormatSessionCsvRow(completed));
         }
         catch (System.Exception exception) { Debug.LogWarning("Scadryk: não foi possível registrar a sessão: " + exception.Message); }
@@ -798,6 +798,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (smokeRun) return;
         WriteCheckpoint("Scadryk.", phase, room);
     }
+
+    internal static bool IsRoomMarkedComplete(bool[] cleared, int room) =>
+        cleared != null && room >= 0 && room < cleared.Length && cleared[room];
 
     internal static void WriteCheckpoint(string keyPrefix, int phase, int room)
     {
@@ -1899,6 +1902,13 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         }
         if (!victory) { SmokeFail("Portal final não encerrou a campanha"); yield break; }
         if (statusMessage != VictoryEndingText) { SmokeFail("O encerramento não confirmou o retorno das vozes e dos sinos"); yield break; }
+        string[] victoryColumns = FormatSessionCsvRow(IsRoomMarkedComplete(clearedRooms, roomIndex)).TrimEnd('\n').Split(',');
+        string[] sessionColumns = SessionCsvHeader.TrimEnd('\n').Split(',');
+        int completedColumn = System.Array.IndexOf(sessionColumns, "completed");
+        int enemiesColumn = System.Array.IndexOf(sessionColumns, "enemies_left");
+        if (completedColumn < 0 || enemiesColumn < 0 || completedColumn >= victoryColumns.Length || enemiesColumn >= victoryColumns.Length ||
+            victoryColumns[completedColumn] != "true" || victoryColumns[enemiesColumn] != "0")
+        { SmokeFail("A sessão da vitória não registrou a última sala concluída e o Arauto derrotado"); yield break; }
         Debug.Log("SCADRYK_SMOKE: SUCCESS nove salas, três poderes, Arauto e vitória");
         Application.Quit(0);
     }
