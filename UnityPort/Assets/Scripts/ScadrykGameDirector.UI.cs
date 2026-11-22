@@ -70,10 +70,22 @@ public sealed partial class ScadrykGameDirector
         float bodyHeight = Mathf.Max(62f, memoryStyle.CalcHeight(new GUIContent(memoryText), Mathf.Max(32f, width - 36f)));
         Rect panel = MemoryPanelRect(Screen.width, Screen.height, bodyHeight);
         GUI.color = new Color(0.025f, 0.04f, 0.045f, 0.98f); GUI.DrawTexture(panel, Texture2D.whiteTexture); GUI.color = Color.white;
-        GUI.Label(new Rect(panel.x + 18f, panel.y + 10f, panel.width - 36f, 24f), "VESTÍGIO ESCUTADO", titleStyle);
+        Rect titleRect = new Rect(panel.x + 18f, panel.y + 10f, panel.width - 36f, 24f);
+        int titleFontSize = titleStyle.fontSize;
+        titleStyle.fontSize = FitLabelFontSize(titleFontSize, titleStyle.CalcSize(new GUIContent("VESTÍGIO ESCUTADO")).x, titleRect.width);
+        GUI.Label(titleRect, "VESTÍGIO ESCUTADO", titleStyle);
+        titleStyle.fontSize = titleFontSize;
         GUI.Label(MemoryTextRect(panel), memoryText, memoryStyle);
         smallStyle.alignment = TextAnchor.MiddleCenter;
-        GUI.Label(MemoryDismissHintRect(panel), MemoryDismissHintText(sessionInputMode == "gamepad", InputBinding(6)), smallStyle);
+        Rect hintRect = MemoryDismissHintRect(panel);
+        int hintFontSize = smallStyle.fontSize;
+        bool gamepad = sessionInputMode == "gamepad";
+        string hint = MemoryDismissHintText(gamepad, InputBinding(6));
+        if (smallStyle.CalcSize(new GUIContent(hint)).x > hintRect.width)
+            hint = MemoryDismissHintText(gamepad, InputBinding(6), true);
+        smallStyle.fontSize = FitLabelFontSize(hintFontSize, smallStyle.CalcSize(new GUIContent(hint)).x, hintRect.width);
+        GUI.Label(hintRect, hint, smallStyle);
+        smallStyle.fontSize = hintFontSize;
         smallStyle.alignment = TextAnchor.MiddleLeft;
     }
 
@@ -612,7 +624,7 @@ public sealed partial class ScadrykGameDirector
     {
         float width = Mathf.Max(0f, Mathf.Min(740f, screenWidth - 36f));
         float panelHeight = 82f + Mathf.Max(62f, bodyHeight);
-        float y = Mathf.Max(12f, Mathf.Min(screenHeight - 180f, screenHeight - 78f - panelHeight));
+        float y = Mathf.Max(12f, (screenHeight - panelHeight) * 0.5f);
         return new Rect((screenWidth - width) * 0.5f, y, width, panelHeight);
     }
 
@@ -630,10 +642,18 @@ public sealed partial class ScadrykGameDirector
         Rect panel = MemoryPanelRect(screenWidth, screenHeight, requiredBodyHeight);
         Rect text = MemoryTextRect(panel);
         Rect hint = MemoryDismissHintRect(panel);
-        return screenWidth >= 240f && screenHeight >= requiredBodyHeight + 130f &&
-            panel.xMin >= 0f && panel.xMax <= screenWidth && panel.yMin >= 0f && panel.yMax <= screenHeight - 78f &&
+        return screenWidth >= 240f && screenHeight >= requiredBodyHeight + 106f &&
+            panel.xMin >= 0f && panel.xMax <= screenWidth && panel.yMin >= 12f && panel.yMax <= screenHeight - 12f &&
             text.yMin >= panel.yMin && text.yMax <= hint.yMin && text.height >= requiredBodyHeight &&
             hint.yMin >= text.yMax && hint.yMax <= panel.yMax;
+    }
+
+    internal static int FitLabelFontSize(int fontSize, float measuredWidth, float availableWidth, int minimum = 9)
+    {
+        int baseSize = Mathf.Max(1, fontSize);
+        int minSize = Mathf.Clamp(minimum, 1, baseSize);
+        if (measuredWidth <= 0f || measuredWidth <= availableWidth) return baseSize;
+        return Mathf.Max(minSize, Mathf.FloorToInt(baseSize * Mathf.Max(0f, availableWidth) / measuredWidth));
     }
 
     private bool OverlayButton(Rect rect, string label, int index)

@@ -279,9 +279,10 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     internal static bool MemoryDismissedThisFrame(int dismissedFrame, int currentFrame) => dismissedFrame >= 0 && dismissedFrame == currentFrame;
     internal static string MemoryInputModeAfterActivity(string current, bool keyboardActivity, bool gamepadActivity) =>
         ResolveInputMode(ResolveInputMode(current, keyboardActivity ? "keyboard_mouse" : null), gamepadActivity ? "gamepad" : null);
-    internal static string MemoryDismissHintText(bool gamepad, string interactBinding) => gamepad
-        ? "A / " + interactBinding + " / B para continuar"
-        : interactBinding + " / Enter / Espaço / Esc para continuar";
+    internal static string MemoryDismissHintText(bool gamepad, string interactBinding) => MemoryDismissHintText(gamepad, interactBinding, false);
+    internal static string MemoryDismissHintText(bool gamepad, string interactBinding, bool compact) => gamepad
+        ? compact ? "A / " + interactBinding + " / B" : "A / " + interactBinding + " / B para continuar"
+        : compact ? interactBinding + " / Enter / Esc" : interactBinding + " / Enter / Espaço / Esc para continuar";
 
     internal static int MovePauseGridSelection(int selection, int horizontalDirection, int verticalDirection)
     {
@@ -1786,8 +1787,12 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             MemoryInputModeAfterActivity("unknown", true, false) != "keyboard_mouse" ||
             MemoryInputModeAfterActivity("keyboard_mouse", false, true) != "gamepad" ||
             MemoryInputModeAfterActivity("gamepad", false, false) != "gamepad" ||
+            ScadrykGameDirector.FitLabelFontSize(24, 240f, 160f) != 16 ||
+            ScadrykGameDirector.FitLabelFontSize(24, 120f, 160f) != 24 ||
             MemoryDismissHintText(true, "Y") != "A / Y / B para continuar" ||
-            MemoryDismissHintText(false, "E") != "E / Enter / Espaço / Esc para continuar")
+            MemoryDismissHintText(false, "E") != "E / Enter / Espaço / Esc para continuar" ||
+            MemoryDismissHintText(true, "Y", true) != "A / Y / B" ||
+            MemoryDismissHintText(false, "E", true) != "E / Enter / Esc")
         { SmokeFail("As memórias não pausam com um painel legível ou não aceitam confirmação, interação e voltar"); yield break; }
         Debug.Log("SCADRYK_SMOKE: memórias modais têm comandos de saída válidos e cabem em janela compacta");
         for (int effect = 0; effect < 40; effect++)
