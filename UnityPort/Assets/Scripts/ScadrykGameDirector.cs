@@ -7,6 +7,7 @@ using UnityEngine;
 public sealed partial class ScadrykGameDirector : MonoBehaviour
 {
     private const int RoomsPerPhase = 3;
+    internal const float FinalSealPreparationWindowSeconds = 12f;
     private const float RoomSpacing = 23f;
     private const float ConnectorCenterOffset = 11.35f;
     private const string OpeningMemory = "Depois que a Grande Onda cobriu a costa, os três sinos emudeceram. Nara, a Ouvinte, ainda escutava os nomes perdidos e seguiu a maré imóvel.";
@@ -50,6 +51,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private GameObject levelRoot, gateObject, witnessObject;
     private int witnessLine;
     private bool resumeFinalGuardianInterlude;
+    private Coroutine finalBossSpawnRoutine;
     private bool smokeRestoreFinalGuardianForRestart;
     private ScadrykEnemyHealth finalBoss;
     private ScadrykEnemyHealth phaseGuardian;
@@ -823,7 +825,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 enemiesRemaining = 1;
                 ShowStatus(acquiredPower != null ? FinalGuardianInterludeHint(InputBinding(5)) :
                     "Nara escuta a última lembrança antes que algo desperte além dos sinos.", 7f);
-                StartCoroutine(SpawnFinalBossAfterMemory());
+                QueueFinalBossSpawnAfterMemory();
                 return;
             }
             statusMessage = anchorsActivated >= anchorsRequired ? "Sala limpa. Interaja com a passagem (" + InputBinding(6) + ")." :
@@ -1126,17 +1128,45 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     private IEnumerator SpawnFinalBossAfterMemory()
     {
-        while (Time.time < memoryUntil) yield return null;
-        if (player == null || victory || showTitle) yield break;
+        while (memoryModal || Time.time < memoryUntil) yield return null;
+        if (player == null || victory || showTitle)
+        {
+            finalBossSpawnRoutine = null;
+            yield break;
+        }
+        bool canOfferSealWindow = ShouldOfferFinalSealPreparation(phaseIndex, roomIndex,
+            player.HasAbility(2), worldSecret != null);
+        if (canOfferSealWindow)
+        {
+            ShowStatus("O Arauto ainda não despertou. Você tem 12 segundos para libertar o Selo de Eco a nordeste ou se preparar.",
+                FinalSealPreparationWindowSeconds);
+            float deadline = Time.time + FinalSealPreparationWindowSeconds;
+            while (Time.time < deadline && finalBoss == null && !victory && !showTitle) yield return null;
+        }
+        if (player == null || victory || showTitle || finalBoss != null)
+        {
+            finalBossSpawnRoutine = null;
+            yield break;
+        }
+        finalBossSpawnRoutine = null;
         SpawnFinalBoss();
     }
+
+    private void QueueFinalBossSpawnAfterMemory()
+    {
+        if (finalBossSpawnRoutine != null) StopCoroutine(finalBossSpawnRoutine);
+        finalBossSpawnRoutine = StartCoroutine(SpawnFinalBossAfterMemory());
+    }
+
+    internal static bool ShouldOfferFinalSealPreparation(int phase, int room, bool powerUnlocked, bool sealAvailable) =>
+        phase == PhaseNames.Length - 1 && room == RoomsPerPhase - 1 && powerUnlocked && sealAvailable;
 
     private void StartFinalGuardianInterlude()
     {
         if (!resumeFinalGuardianInterlude) return;
         resumeFinalGuardianInterlude = false;
         ShowMemory(GuardianMemories[PhaseNames.Length - 1], 7f);
-        StartCoroutine(SpawnFinalBossAfterMemory());
+        QueueFinalBossSpawnAfterMemory();
     }
 
     private void UnlockExit()
@@ -2249,11 +2279,16 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             !FinalGuardianInterludeHint("Y").Contains("Rompante da Maré (Y)") ||
             !FinalGuardianInterludeHint("Y").Contains("selo opcional espera a nordeste") ||
             !FinalGuardianInterludeHint("Y").Contains("antes que o Arauto desperte") ||
+            !ShouldOfferFinalSealPreparation(2, 2, true, true) ||
+            ShouldOfferFinalSealPreparation(2, 2, false, true) ||
+            ShouldOfferFinalSealPreparation(2, 2, true, false) ||
+            ShouldOfferFinalSealPreparation(1, 2, true, true) ||
+            FinalSealPreparationWindowSeconds < 8f ||
             OpeningStoryContinueHint(true, "Y") != "A / Y para continuar" ||
             OpeningStoryContinueHint(true, "A") != "A para continuar" ||
             OpeningStoryContinueHint(false, "E") != "E / Enter / Espaço para continuar" ||
             OpeningStoryContinueHint(false, "Enter") != "Enter / Espaço para continuar")
-        { SmokeFail("As memórias não pausam com um painel legível ou não aceitam confirmação, interação e voltar"); yield break; }
+        { SmokeFail("Memórias, comandos de saída ou a janela opcional do Selo final falharam"); yield break; }
         Debug.Log("SCADRYK_SMOKE: memórias modais têm comandos de saída válidos e cabem em janela compacta");
         for (int effect = 0; effect < 40; effect++)
             ScadrykEffects.Burst(roomCenter + Vector2.up * (20f + effect), Color.clear, 0.05f);

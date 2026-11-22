@@ -16,6 +16,8 @@ O HUD mantém a função de cada poder junto do comando e da recarga: Crescente 
 
 Os três Selos de Eco agora aprofundam a build sem adicionar telas ou equipamentos: o selo verde reduz em 20% a recarga do Crescente, o selo do sal prolonga a vulnerabilidade causada pelo Estouro e o selo das badaladas aumenta força e duração do empurrão do Rompante contra Ecos comuns. Cada melhoria permanece salva por sala, aparece como “eco” no HUD e também recupera até 35 pontos de vida. A aplicação visual e o equilíbrio ainda dependem do smoke e de sessões com jogadores.
 
+Após derrotar o terceiro guardião, a lembrança continua pausando o combate até a leitura terminar. Se o selo final ainda estiver disponível, há 12 segundos de exploração segura antes de o Arauto despertar; a janela desaparece se o selo já foi obtido e pode ser pausada no menu.
+
 O ataque básico agora encadeia três cortes dentro de uma janela curta: os dois primeiros mantêm ritmo rápido e o terceiro tem maior alcance e dano, preparação mais longa, breve interrupção de Ecos comuns, arco dourado e um som de acerto próprio. Guardiões e Arauto resistem à interrupção do finalizador. Uma troca de sala, morte ou recarga expirada reinicia a sequência. A sensação do combo ainda precisa de avaliação jogando; a compilação não mede ritmo ou leitura visual.
 
 ## Requisitos
