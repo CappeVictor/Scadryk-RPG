@@ -60,6 +60,7 @@ jobs:
 
       - name: Run complete campaign smoke on hosted runner
         shell: pwsh
+        timeout-minutes: 15
         run: |
           $smokePlayer = 'UnityPort/BuildSmoke/ScadrykSmoke.exe'
           if (-not (Test-Path $smokePlayer)) { throw "Campaign smoke player not found: $smokePlayer" }
