@@ -112,6 +112,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private float memoryUntil;
     private bool memoryModal;
     private int memoryDismissedFrame = -1;
+    private Vector3 memoryLastMousePosition;
     private float roomActiveSeconds;
     private float nextOpeningAttackSlotAt;
     private int roomDeaths;
@@ -199,6 +200,14 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         }
         if (memoryModal)
         {
+            bool keyboardActivity = Input.anyKeyDown || Input.mousePosition != memoryLastMousePosition;
+            bool gamepadActivity = ScadrykSettings.PadDown(0) || ScadrykSettings.PadDown(1) || ScadrykSettings.PadButtonDown(7) ||
+                ScadrykSettings.PadDown(2) ||
+                ScadrykSettings.PadDown(3) || ScadrykSettings.PadDown(4) || ScadrykSettings.PadDown(5) || ScadrykSettings.PadDown(6) ||
+                new Vector2(Input.GetAxisRaw("Scadryk Move X"), Input.GetAxisRaw("Scadryk Move Y")).sqrMagnitude > 0.09f ||
+                new Vector2(Input.GetAxisRaw("Scadryk Aim X"), Input.GetAxisRaw("Scadryk Aim Y")).sqrMagnitude > 0.09f;
+            sessionInputMode = MemoryInputModeAfterActivity(sessionInputMode, keyboardActivity, gamepadActivity);
+            memoryLastMousePosition = Input.mousePosition;
             if (MemoryDismissRequested(Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space) || ScadrykSettings.PadButtonDown(0),
                 ScadrykSettings.Down(6) || ScadrykSettings.PadDown(6),
                 Input.GetKeyDown(KeyCode.Escape) || ScadrykSettings.PadButtonDown(1) || ScadrykSettings.PadButtonDown(7)))
@@ -268,6 +277,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     internal static bool MemoryDismissRequested(bool confirm, bool interact, bool cancel) => confirm || interact || cancel;
     internal static bool MemoryDismissedThisFrame(int dismissedFrame, int currentFrame) => dismissedFrame >= 0 && dismissedFrame == currentFrame;
+    internal static string MemoryInputModeAfterActivity(string current, bool keyboardActivity, bool gamepadActivity) =>
+        ResolveInputMode(ResolveInputMode(current, keyboardActivity ? "keyboard_mouse" : null), gamepadActivity ? "gamepad" : null);
     internal static string MemoryDismissHintText(bool gamepad, string interactBinding) => gamepad
         ? "A / " + interactBinding + " / B para continuar"
         : interactBinding + " / Enter / Espaço / Esc para continuar";
@@ -553,6 +564,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         memoryUntil = 0f;
         memoryModal = false;
         memoryDismissedFrame = Time.frameCount;
+        memoryLastMousePosition = Input.mousePosition;
         ApplyPauseTimeScale();
     }
 
@@ -1064,6 +1076,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         memoryUntil = Time.time + seconds;
         memoryModal = !smokeRun;
         memoryDismissedFrame = -1;
+        memoryLastMousePosition = Input.mousePosition;
         if (!smokeRun) ScadrykAudio.Play(ScadrykCue.Memory);
         ApplyPauseTimeScale();
     }
@@ -1765,6 +1778,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             !MemoryDismissRequested(true, false, false) || !MemoryDismissRequested(false, true, false) ||
             !MemoryDismissRequested(false, false, true) || MemoryDismissRequested(false, false, false) ||
             !MemoryDismissedThisFrame(12, 12) || MemoryDismissedThisFrame(12, 13) ||
+            MemoryInputModeAfterActivity("unknown", true, false) != "keyboard_mouse" ||
+            MemoryInputModeAfterActivity("keyboard_mouse", false, true) != "gamepad" ||
+            MemoryInputModeAfterActivity("gamepad", false, false) != "gamepad" ||
             MemoryDismissHintText(true, "Y") != "A / Y / B para continuar" ||
             MemoryDismissHintText(false, "E") != "E / Enter / Espaço / Esc para continuar")
         { SmokeFail("As memórias não pausam com um painel legível ou não aceitam confirmação, interação e voltar"); yield break; }

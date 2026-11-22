@@ -13,6 +13,8 @@ Use este roteiro em uma build identificada por commit. Não ensine objetivos, se
 
 Convide ao menos duas pessoas por nível de experiência (seis sessões) antes de comparar padrões. Cada pessoa deve começar sem save anterior e jogar até concluir ou decidir parar. Não combine métricas de builds diferentes como se fossem a mesma versão.
 
+Durante cada sessão, peça à pessoa para abrir uma lembrança primeiro com teclado/mouse e depois, se houver controle disponível, trocar de dispositivo com o painel aberto. Observe se os comandos mostrados acompanham a troca, se a pausa permite ler sem pressão e se o botão usado para continuar não pula a fala seguinte. Registre se o cue sonoro da lembrança se distingue da trilha.
+
 ## Registro por sala
 
 Depois da sessão, filtre o CSV pelo `session_id` e copie os valores automáticos abaixo. O jogo preserva mortes e usos de poderes ao reiniciar a sala, então os valores da linha já cobrem as tentativas daquela sala na campanha. Se a pessoa repetir a campanha em outra execução, o ID muda; mantenha cada tentativa separada. Anote cada marca F8 com uma descrição do ataque e do que o jogador percebeu.
@@ -39,12 +41,15 @@ Respostas de 1 (discordo) a 5 (concordo), com observações:
 - Percebi quando o combo chegou ao terceiro corte, pelo arco dourado, animação e som: `1  2  3  4  5` — nota: `____________________`
 - Entendi a direção da corrente e escolhi quando atravessar ou evitá-la: `1  2  3  4  5` — nota: `____________________`
 - Os avisos sonoros continuaram distinguíveis com música e mais de um Eco atacando: `1  2  3  4  5` — nota: `____________________`
+- Consegui ler cada lembrança com calma; o combate parou e os comandos do painel acompanharam o dispositivo usado: `1  2  3  4  5` — nota: `____________________`
+- O sinal sonoro de abertura da lembrança ficou claro sem competir com a música: `1  2  3  4  5` — nota: `____________________`
 - Entendi quando o portal terminou de abrir e quando podia atravessá-lo: `1  2  3  4  5` — nota: `____________________`
 - As mortes pareceram evitáveis quando aconteceram: `1  2  3  4  5` — nota: `____________________`
 - Qual sala foi mais interessante e por quê? `________________________________________`
 - Qual sala foi mais confusa ou repetitiva? `________________________________________`
 - Que ataque causou dano sem você entender o motivo? `________________________________________`
 - Que poder você usou menos e por quê? `________________________________________`
+- O painel de memória mostrou um comando incorreto ou avançou uma fala sem você querer? `________________________________________`
 - O que entendeu sobre Nara, Nima e o silêncio dos sinos? `________________________________________`
 - Onde parou, se não terminou, e o que tentou fazer? `________________________________________`
 

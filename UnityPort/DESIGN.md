@@ -10,7 +10,7 @@
 
 **Riscos técnicos:** montagem das salas e interações ambientais agora ficam em `ScadrykGameDirector.World.cs`, e o desenho da interface em `ScadrykGameDirector.UI.cs`, ambas partes da mesma classe parcial. Progressão, combate e salvamentos seguem no `ScadrykGameDirector`; o HUD IMGUI usa medidas absolutas; testes automatizados usam dano artificial e não validam sensação ou dificuldade. A verificação da corrente mede entrada e exposição, mas ainda não há dados de participantes; não declarar a mecânica balanceada nem a campanha concluída antes de produzir uma build atualizada e realizar sessões de avaliação autorizadas.
 
-- **Memórias pausáveis (22/11/2026):** vestígios, segredos, guardiões e encerramento agora interrompem combate e permitem leitura sem pressão; o painel mostra comandos conforme o último dispositivo e usa o cue sintetizado `Memory`. O smoke inclui comandos e layout, mas não foi executado por falta da licença Unity hospedada; nenhum jogador confirmou a leitura ou o volume do som.
+- **Memórias pausáveis (22/11/2026):** vestígios, segredos, guardiões e encerramento agora interrompem combate e permitem leitura sem pressão; o painel mostra comandos conforme o último dispositivo e acompanha teclado/mouse ou analógicos/botões se houver troca durante a leitura. Todas as entradas usam o cue sintetizado `Memory`. O smoke inclui comandos, transição de dispositivo e layout, mas não foi executado por falta da licença Unity hospedada; nenhum jogador confirmou leitura, compatibilidade física ou volume do som.
 
 ## Inspeção de código e conteúdo (20/11/2026, branch `codex/unity-playable-phase-maps`)
 
