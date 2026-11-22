@@ -1157,6 +1157,12 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (markerAdvance <= markerStart || Mathf.Abs(markerCycle - markerStart) > 0.001f || Mathf.Abs(markerStart) > 0.001f)
         { SmokeFail("As setas da corrente não avançam para leste em um ciclo suave e repetível"); yield break; }
         Debug.Log("SCADRYK_SMOKE: espuma da corrente desliza para leste e reinicia após ciclo contínuo");
+        float sealHidden = ScadrykAmbientProp.RevealAlpha(8f, 4.2f, 0.16f);
+        float sealNearby = ScadrykAmbientProp.RevealAlpha(1f, 4.2f, 0.16f);
+        float sealContact = ScadrykAmbientProp.RevealAlpha(0f, 4.2f, 0.16f);
+        if (Mathf.Abs(sealHidden - 0.16f) > 0.001f || sealNearby <= sealHidden || Mathf.Abs(sealContact - 1f) > 0.001f)
+        { SmokeFail("O selo opcional não permanece sutil ao longe e legível ao se aproximar"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: selos do Eco surgem em intensidade conforme Nara se aproxima");
         if (ScadrykSettings.CanBindKey(KeyCode.None) || ScadrykSettings.CanBindKey(KeyCode.Escape) ||
             ScadrykSettings.CanBindKey(KeyCode.F8) || ScadrykSettings.CanBindKey(KeyCode.M) || !ScadrykSettings.CanBindKey(KeyCode.F) ||
             ScadrykSettings.CanBindPadButton(7) || ScadrykSettings.CanBindPadButton(8) || !ScadrykSettings.CanBindPadButton(9))

@@ -19,6 +19,9 @@ public sealed class ScadrykAmbientProp : MonoBehaviour
     private Vector3 baseScale;
     private Quaternion baseRotation;
     private Color baseColor;
+    private Transform revealFocus;
+    private float revealRadius;
+    private float hiddenOpacity;
     private float phase, strength;
 
     private void Awake()
@@ -37,6 +40,13 @@ public sealed class ScadrykAmbientProp : MonoBehaviour
         strength = Mathf.Max(0f, motionStrength);
     }
 
+    public void ConfigureRevealNear(Transform focus, float radius, float distantOpacity = 0.2f)
+    {
+        revealFocus = focus;
+        revealRadius = Mathf.Max(0.01f, radius);
+        hiddenOpacity = Mathf.Clamp01(distantOpacity);
+    }
+
     private void Update()
     {
         float wave = Mathf.Sin(Time.time * 1.1f + phase);
@@ -46,7 +56,11 @@ public sealed class ScadrykAmbientProp : MonoBehaviour
                 transform.localRotation = baseRotation * Quaternion.Euler(0f, 0f, wave * 2.2f * strength);
                 break;
             case ScadrykAmbientMotion.Glow:
-                if (sprite != null) sprite.color = baseColor * (0.9f + (wave + 1f) * 0.08f * strength);
+                if (sprite != null)
+                {
+                    float visibility = revealFocus == null ? 1f : RevealAlpha(Vector2.Distance(transform.position, revealFocus.position), revealRadius, hiddenOpacity);
+                    sprite.color = baseColor * visibility * (0.9f + (wave + 1f) * 0.08f * strength);
+                }
                 break;
             case ScadrykAmbientMotion.Water:
                 float ripple = 1f + wave * 0.035f * strength;
@@ -69,4 +83,11 @@ public sealed class ScadrykAmbientProp : MonoBehaviour
 
     internal static float FlowMarkerOffset(float time, float normalizedPhase, float cyclesPerSecond, float travelDistance) =>
         (Mathf.Repeat(Mathf.Max(0f, time) * Mathf.Max(0f, cyclesPerSecond) + Mathf.Repeat(normalizedPhase, 1f), 1f) - 0.5f) * Mathf.Max(0f, travelDistance);
+
+    internal static float RevealAlpha(float distance, float radius, float distantOpacity)
+    {
+        float proximity = 1f - Mathf.Clamp01(Mathf.Max(0f, distance) / Mathf.Max(0.01f, radius));
+        proximity *= proximity * (3f - 2f * proximity);
+        return Mathf.Lerp(Mathf.Clamp01(distantOpacity), 1f, proximity);
+    }
 }

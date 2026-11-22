@@ -185,8 +185,10 @@ public sealed partial class ScadrykGameDirector
         marker.color = new Color(PhaseAccentColors[phaseIndex].r, PhaseAccentColors[phaseIndex].g, PhaseAccentColors[phaseIndex].b, 0.72f);
         marker.sortingOrder = 2;
         worldSecret.transform.localScale = Vector3.one * 0.75f;
-        worldSecret.AddComponent<ScadrykAmbientProp>().Configure(ScadrykAmbientMotion.Glow, 1.2f);
-        MakeDecoration(worldSecret.transform, "Seal center", spot, new Vector2(0.2f, 0.2f), Color.white, true, 3);
+        var sealGlow = worldSecret.AddComponent<ScadrykAmbientProp>();
+        sealGlow.Configure(ScadrykAmbientMotion.Glow, 1.2f);
+        if (player != null) sealGlow.ConfigureRevealNear(player.transform, 4.2f, 0.16f);
+        MakeDecoration(worldSecret.transform, "Seal center", spot, new Vector2(0.2f, 0.2f), new Color(1f, 1f, 1f, 0.22f), true, 3);
     }
 
     private int RequiredWorldSecretPower() => phaseIndex == 1 && roomIndex == 0 ? 0 :
