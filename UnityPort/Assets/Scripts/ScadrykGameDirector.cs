@@ -1602,6 +1602,18 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ScadrykEnemyHealth.FinalStarfallHits(new Vector2(ScadrykEnemyHealth.FinalStarfallRadius + 0.01f, 0f), Vector2.zero))
         { SmokeFail("Aviso e impacto da queda de estrelas não correspondem à área de dano"); yield break; }
         Debug.Log("SCADRYK_SMOKE: raio da queda de estrelas corresponde ao dano");
+        float waveSafeRadius = ScadrykEnemyHealth.FinalWaveSafeRadius;
+        float waveOuterRadius = ScadrykEnemyHealth.FinalWaveOuterRadius;
+        if (Mathf.Abs(ScadrykEnemyHealth.FinalWaveSafeDiameter * 0.5f - waveSafeRadius) > 0.001f ||
+            Mathf.Abs(ScadrykEnemyHealth.FinalWaveOuterDiameter * 0.5f - waveOuterRadius) > 0.001f ||
+            ScadrykEnemyHealth.FinalWaveHitsAtDistance(waveSafeRadius - 0.01f) ||
+            ScadrykEnemyHealth.FinalWaveHitsAtDistance(waveSafeRadius) ||
+            !ScadrykEnemyHealth.FinalWaveHitsAtDistance(waveSafeRadius + 0.01f) ||
+            !ScadrykEnemyHealth.FinalWaveHitsAtDistance(waveOuterRadius - 0.01f) ||
+            ScadrykEnemyHealth.FinalWaveHitsAtDistance(waveOuterRadius) ||
+            ScadrykEnemyHealth.FinalWaveHitsAtDistance(waveOuterRadius + 0.01f))
+        { SmokeFail("Onda final do Arauto não preserva o anel seguro ou excede a borda externa anunciada"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: onda final do Arauto atinge só o anel entre as bordas anunciadas");
         var mapLabels = new System.Collections.Generic.HashSet<string>();
         for (int phase = 0; phase < PhaseNames.Length; phase++)
             for (int room = 0; room < RoomsPerPhase; room++)

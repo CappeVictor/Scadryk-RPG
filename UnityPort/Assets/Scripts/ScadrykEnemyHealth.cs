@@ -5,8 +5,8 @@ using System.Collections.Generic;
 [RequireComponent(typeof(Rigidbody2D), typeof(CircleCollider2D))]
 public sealed class ScadrykEnemyHealth : MonoBehaviour
 {
-    private const float FinalWaveOuterRadius = 6.7f;
-    private const float FinalWaveSafeRadius = 2.2f;
+    internal const float FinalWaveOuterRadius = 6.7f;
+    internal const float FinalWaveSafeRadius = 2.2f;
     internal const float FinalStarfallRadius = 1.75f;
     private const float FinalVolleyAngleStep = 0.19f;
     private const float FinalVolleyLength = 7.2f;
@@ -32,12 +32,16 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     internal static float AreaPulseDiameter => AreaPulseRadius * 2f;
     internal static float BellPulseDiameter => BellPulseRadius * 2f;
     internal static float SupportPulseDiameter => SupportPulseRadius * 2f;
+    internal static float FinalWaveOuterDiameter => FinalWaveOuterRadius * 2f;
+    internal static float FinalWaveSafeDiameter => FinalWaveSafeRadius * 2f;
     internal static bool AreaPulseContains(Vector2 origin, Vector2 target) =>
         Vector2.Distance(origin, target) <= AreaPulseRadius;
     internal static bool BellPulseContains(Vector2 origin, Vector2 target) =>
         Vector2.Distance(origin, target) <= BellPulseRadius;
     internal static bool SupportPulseContains(Vector2 origin, Vector2 target) =>
         Vector2.Distance(origin, target) <= SupportPulseRadius;
+    internal static bool FinalWaveHitsAtDistance(float distance) =>
+        distance > FinalWaveSafeRadius && distance < FinalWaveOuterRadius;
     internal static bool TidebreakerCancelsWindup(bool boss, bool windingUp) => !boss && windingUp;
     [SerializeField, Min(1f)] private float maxHealth = 60f;
     private float health, nextAttackAt, windupEndsAt;
@@ -458,10 +462,10 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         else
         {
             float distance = Vector2.Distance(player.transform.position, origin);
-            float diameter = FinalWaveOuterRadius * 2f;
+            float diameter = FinalWaveOuterDiameter;
             ScadrykEffects.Voidburst(origin, diameter, 0.42f);
             ScadrykEffects.Ring(origin, diameter, new Color(0.98f, 0.24f, 0.57f, 0.96f), 0.42f);
-            if (distance > FinalWaveSafeRadius && distance < FinalWaveOuterRadius) player.TakeDamage(stage == 3 ? 27f : 23f);
+            if (FinalWaveHitsAtDistance(distance)) player.TakeDamage(stage == 3 ? 27f : 23f);
         }
     }
 
