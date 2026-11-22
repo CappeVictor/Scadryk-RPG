@@ -1219,9 +1219,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Vector2 steeredHeading = ScadrykEnemyHealth.SelectSteeringHeading(Vector2.right, blockedHeadings);
         for (int i = 0; i < blockedHeadings.Length; i++) blockedHeadings[i] = true;
         Vector2 enclosedHeading = ScadrykEnemyHealth.SelectSteeringHeading(Vector2.right, blockedHeadings);
-        if (Vector2.Dot(steeredHeading, Vector2.right) < 0.8f || Vector2.Distance(enclosedHeading, Vector2.right) > 0.001f)
+        if (Vector2.Dot(steeredHeading, Vector2.right) < 0.8f || Vector2.Distance(enclosedHeading, Vector2.right) > 0.001f ||
+            ScadrykEnemyHealth.SteeringQueryIsSaturated(ScadrykEnemyHealth.SteeringHitCapacity - 1) ||
+            !ScadrykEnemyHealth.SteeringQueryIsSaturated(ScadrykEnemyHealth.SteeringHitCapacity))
         { SmokeFail("A navegação dos Ecos não contorna um bloqueio ou não mantém avanço quando todos os lados estão fechados"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: direção de contorno mantém avanço e tem fallback quando não há passagem livre");
+        Debug.Log("SCADRYK_SMOKE: direção de contorno mantém avanço, satura com segurança e tem fallback quando não há passagem livre");
         if (ScadrykEnemyHealth.AttackRecoveryDuration(false, false) <= 0f ||
             ScadrykEnemyHealth.AttackRecoveryDuration(true, false) <= ScadrykEnemyHealth.AttackRecoveryDuration(false, false) ||
             ScadrykEnemyHealth.AttackRecoveryDuration(false, true) <= ScadrykEnemyHealth.AttackRecoveryDuration(true, false))

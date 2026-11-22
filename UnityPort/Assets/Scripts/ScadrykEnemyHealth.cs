@@ -20,12 +20,13 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     internal const float BellPulseRadius = 5.3f;
     internal const float SupportPulseRadius = 2.5f;
     internal const float OpeningAttackSpacing = 0.52f;
+    internal const int SteeringHitCapacity = 32;
     internal static float AttackRecoveryDuration(bool boss, bool finalBoss) => finalBoss ? 0.42f : boss ? 0.36f : 0.24f;
     private static readonly float[] SteeringAngles = { 0f, 35f, -35f, 70f, -70f, 110f, -110f, 145f, -145f, 180f };
     private static readonly List<Collider2D> SupportPulseHits = new List<Collider2D>(16);
     private static ContactFilter2D supportPulseFilter;
     private static bool supportPulseFilterReady;
-    private readonly RaycastHit2D[] steeringHits = new RaycastHit2D[16];
+    private readonly RaycastHit2D[] steeringHits = new RaycastHit2D[SteeringHitCapacity];
     private readonly bool[] blockedSteeringHeadings = new bool[10];
     private readonly GameObject[] attackWarnings = new GameObject[8];
     private int attackWarningCount;
@@ -243,8 +244,9 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     {
         ContactFilter2D filter = new ContactFilter2D();
         filter.SetLayerMask(Physics2D.DefaultRaycastLayers);
-        filter.useTriggers = Physics2D.queriesHitTriggers;
+        filter.useTriggers = false;
         int hitCount = Physics2D.CircleCast(body.position, radius * 0.92f, heading, filter, steeringHits, distance);
+        if (SteeringQueryIsSaturated(hitCount)) return true;
         for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
         {
             Collider2D hit = steeringHits[hitIndex].collider;
@@ -254,6 +256,8 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         }
         return false;
     }
+
+    internal static bool SteeringQueryIsSaturated(int hitCount) => hitCount >= SteeringHitCapacity;
 
     internal static Vector2 SelectSteeringHeading(Vector2 desiredHeading, bool[] blocked)
     {
