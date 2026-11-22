@@ -178,7 +178,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (!smokeRun) TryLoadCheckpoint("Scadryk.", out savedPhase, out savedRoom);
         BuildPhase(savedPhase, savedRoom, true);
         for (int i = 0; i < PhaseNames.Length; i++)
-            if (i < savedPhase || (!smokeRun && HasGuardianDefeatProgress("Scadryk.", i))) player.UnlockAbility(i);
+            if (ShouldRestoreAbility(i, savedPhase, !smokeRun && HasGuardianDefeatProgress("Scadryk.", i))) player.UnlockAbility(i);
 #if DEBUG
         if (smokeRun) { showTitle = false; StartCoroutine(SmokeCampaign()); }
 #endif
@@ -970,6 +970,10 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     internal static bool IsRoomMarkedComplete(bool[] cleared, int room) =>
         cleared != null && room >= 0 && room < cleared.Length && cleared[room];
 
+    internal static bool ShouldRestoreAbility(int ability, int savedPhase, bool guardianDefeated) =>
+        ability >= 0 && ability < PhaseNames.Length && savedPhase >= 0 && savedPhase < PhaseNames.Length &&
+        (ability < savedPhase || guardianDefeated);
+
     internal static bool ShouldRestoreDefeatedGuardian(int phase, int room, bool guardianDefeated) =>
         guardianDefeated && phase >= 0 && phase < PhaseNames.Length && room == RoomsPerPhase - 1;
 
@@ -1558,7 +1562,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         string checkpointTestPrefix = "Scadryk.Smoke." + System.DateTime.UtcNow.Ticks + ".";
         bool checkpointRoundTrip = false, witnessProgressRoundTrip = false, worldSecretProgressRoundTrip = false;
         bool quitCheckpointStateIsValid = false, campaignProgressCleanupRoundTrip = false;
-        bool bossProgressRoundTrip = false;
+        bool bossProgressRoundTrip = false, powerRestoreRoundTrip = false;
         try
         {
             bool newGameDefaults = !HasCheckpoint(checkpointTestPrefix) &&
@@ -1615,6 +1619,15 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             WriteGuardianDefeatProgress(checkpointTestPrefix, 2);
             bool guardianDefeatsPersistIndependently = HasGuardianDefeatProgress(checkpointTestPrefix, 0) &&
                 HasGuardianDefeatProgress(checkpointTestPrefix, 2) && !HasGuardianDefeatProgress(checkpointTestPrefix, 1);
+            WriteGuardianDefeatProgress(checkpointTestPrefix, 1);
+            bool powersRestoreAtCheckpoint =
+                !ShouldRestoreAbility(0, 0, false) && ShouldRestoreAbility(0, 0, HasGuardianDefeatProgress(checkpointTestPrefix, 0)) &&
+                !ShouldRestoreAbility(1, 1, false) && ShouldRestoreAbility(0, 1, false) &&
+                ShouldRestoreAbility(1, 1, HasGuardianDefeatProgress(checkpointTestPrefix, 1)) &&
+                ShouldRestoreAbility(0, 2, false) && ShouldRestoreAbility(1, 2, false) &&
+                !ShouldRestoreAbility(2, 2, false) && ShouldRestoreAbility(2, 2, HasGuardianDefeatProgress(checkpointTestPrefix, 2)) &&
+                !ShouldRestoreAbility(-1, 2, true) && !ShouldRestoreAbility(3, 2, true) && !ShouldRestoreAbility(1, -1, true);
+            powerRestoreRoundTrip = powersRestoreAtCheckpoint;
             bool defeatedGuardianRestoresOnlyAtItsArena = ShouldRestoreDefeatedGuardian(0, 2, true) &&
                 !ShouldRestoreDefeatedGuardian(0, 1, true) && !ShouldRestoreDefeatedGuardian(0, 2, false);
             bool finalGuardianResumeWaitsForArauto = ShouldResumeFinalGuardianInterlude(2, 2, true, false) &&
@@ -1625,7 +1638,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 !ShouldContinueFinalGuardianInterludeAfterRestart(false, false);
             ClearGuardianDefeatProgress(checkpointTestPrefix);
             bool newJourneyClearsGuardianProgress = !HasGuardianDefeatProgress(checkpointTestPrefix, 0) &&
-                !HasGuardianDefeatProgress(checkpointTestPrefix, 2);
+                !HasGuardianDefeatProgress(checkpointTestPrefix, 1) && !HasGuardianDefeatProgress(checkpointTestPrefix, 2);
             WriteFinalBossDefeatProgress(checkpointTestPrefix);
             bool defeatedFinalBossRestoresOnlyAtEnding = HasFinalBossDefeatProgress(checkpointTestPrefix) &&
                 ShouldRestoreFinalBossDefeat(2, 2, true) && !ShouldRestoreFinalBossDefeat(2, 1, true) &&
@@ -1653,6 +1666,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Debug.Log("SCADRYK_SMOKE: checkpoint grava, retoma sem estado de título/abertura, limita e limpa chaves temporárias");
         if (!bossProgressRoundTrip) { SmokeFail("O save não preserva chefes derrotados, restaura sala segura ou limpa a jornada nova"); yield break; }
         Debug.Log("SCADRYK_SMOKE: derrota de guardiões e Arauto persiste, retoma na arena e é limpa na jornada nova");
+        if (!powerRestoreRoundTrip) { SmokeFail("Retomar um checkpoint não restaura somente os poderes já conquistados pelos guardiões"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: poderes restauram a partir do bioma e dos guardiões persistidos sem liberar poderes futuros");
         if (!witnessProgressRoundTrip) { SmokeFail("As conversas com Nima não preservam o ponto de leitura por bioma ou não reiniciam com a jornada"); yield break; }
         Debug.Log("SCADRYK_SMOKE: conversa de Nima preserva a próxima fala separada por bioma e pode ser reiniciada");
         if (!worldSecretProgressRoundTrip) { SmokeFail("Selo opcional volta após reconstruir a sala, mistura salas ou não é limpo ao iniciar nova jornada"); yield break; }
