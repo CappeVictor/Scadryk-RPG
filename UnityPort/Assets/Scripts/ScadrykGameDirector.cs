@@ -53,7 +53,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private int anchorsRequired, anchorsActivated, hintStage;
     private bool anchorsNeedPulse;
     private bool anchorsNeedSequence;
-    private bool shallowWaterHintShown;
+    private readonly HashSet<string> terrainHintsShown = new HashSet<string>();
     private bool smokeProjectileCoverPassed;
     private readonly bool[] clearedRooms = new bool[RoomsPerPhase];
     private readonly List<ScadrykEnemyHealth> activeEnemies = new List<ScadrykEnemyHealth>();

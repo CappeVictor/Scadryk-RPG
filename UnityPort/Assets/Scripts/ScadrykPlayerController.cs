@@ -67,6 +67,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     private bool hasIndependentGamepadAim;
     private readonly HashSet<ScadrykTerrainZone> terrainZones = new HashSet<ScadrykTerrainZone>();
     private float terrainSpeedScale = 1f;
+    private Vector2 terrainFlowVelocity;
 
     public Vector2 Facing => facing;
     public float Health => health;
@@ -151,14 +152,15 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         }
         float effectiveSpeed = moveSpeed * terrainSpeedScale;
         if (Time.time < rootedUntil) effectiveSpeed *= 0.52f;
-        BodyVelocity = Vector2.MoveTowards(BodyVelocity, moveInput * effectiveSpeed, acceleration * Time.fixedDeltaTime);
+        Vector2 targetVelocity = moveInput * effectiveSpeed + terrainFlowVelocity;
+        BodyVelocity = Vector2.MoveTowards(BodyVelocity, targetVelocity, acceleration * Time.fixedDeltaTime);
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (!other.TryGetComponent<ScadrykTerrainZone>(out var zone) || !terrainZones.Add(zone)) return;
         RefreshTerrainSpeed();
-        if (director != null) director.ShowShallowWaterHint();
+        if (director != null) director.ShowTerrainHint(zone.HintKey, zone.EntryHint);
     }
 
     private void OnTriggerExit2D(Collider2D other)
@@ -170,8 +172,14 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     private void RefreshTerrainSpeed()
     {
         terrainSpeedScale = 1f;
+        terrainFlowVelocity = Vector2.zero;
         foreach (ScadrykTerrainZone zone in terrainZones)
-            if (zone != null) terrainSpeedScale = Mathf.Min(terrainSpeedScale, zone.MovementScale);
+        {
+            if (zone == null) continue;
+            terrainSpeedScale = Mathf.Min(terrainSpeedScale, zone.MovementScale);
+            terrainFlowVelocity += zone.FlowVelocity;
+        }
+        terrainFlowVelocity = Vector2.ClampMagnitude(terrainFlowVelocity, 2.4f);
     }
 
     private void AimAtPointer(bool keyboardMouseInput, bool gamepadInput)

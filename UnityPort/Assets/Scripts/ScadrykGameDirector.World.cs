@@ -325,6 +325,7 @@ public sealed partial class ScadrykGameDirector
                 MakeDecoration(parent, "Bell buoy lamp", new Vector2(x + buoy * 7.15f, 0), new Vector2(0.72f, 0.72f), new Color(0.78f, 0.61f, 0.30f, 0.82f), true, -7);
                 MakeDecoration(parent, "Bell buoy glow", new Vector2(x + buoy * 7.15f, 0), new Vector2(1.55f, 1.55f), new Color(0.24f, 0.72f, 0.78f, 0.16f), true, -8);
             }
+            if (room == 1) DrawCoastalCurrent(parent, x);
             DrawRune(parent, new Vector2(x + (room - 1) * 1.25f, 4.25f), 1.75f, glow);
         }
 
@@ -348,14 +349,45 @@ public sealed partial class ScadrykGameDirector
         BoxCollider2D trigger = zoneObject.AddComponent<BoxCollider2D>();
         trigger.isTrigger = true;
         trigger.size = size;
-        zoneObject.AddComponent<ScadrykTerrainZone>().Configure(0.78f);
+        zoneObject.AddComponent<ScadrykTerrainZone>().Configure(0.78f, default, null, "shallow-water");
     }
 
     public void ShowShallowWaterHint()
     {
-        if (shallowWaterHintShown) return;
-        shallowWaterHintShown = true;
-        ShowStatus("A água rasa reduz seu passo. A esquiva mantém o impulso.", 4f);
+        ShowTerrainHint("shallow-water", "A água rasa reduz seu passo. A esquiva mantém o impulso.");
+    }
+
+    public void ShowTerrainHint(string key, string hint)
+    {
+        if (!terrainHintsShown.Add(string.IsNullOrWhiteSpace(key) ? "terrain" : key)) return;
+        ShowStatus(string.IsNullOrWhiteSpace(hint) ? "A água rasa reduz seu passo. A esquiva mantém o impulso." : hint, 4f);
+    }
+
+    private static void DrawCoastalCurrent(Transform parent, float roomX)
+    {
+        Vector2 center = new Vector2(roomX + 1.0f, -2.4f);
+        MakeDecoration(parent, "Bell coast cross-current", center, new Vector2(4.0f, 1.6f),
+            new Color(0.12f, 0.55f, 0.67f, 0.20f), false, -8);
+
+        // Repeated chevrons make the current direction legible before Nara enters it.
+        for (int arrow = 0; arrow < 4; arrow++)
+        {
+            Vector2 head = center + new Vector2(-1.55f + arrow * 1.02f, 0f);
+            Color foam = new Color(0.50f, 0.86f, 0.88f, 0.62f);
+            MakeDecoration(parent, "Current arrow upper foam", head + new Vector2(-0.16f, 0.20f),
+                new Vector2(0.60f, 0.075f), foam, false, -7, -32f);
+            MakeDecoration(parent, "Current arrow lower foam", head + new Vector2(-0.16f, -0.20f),
+                new Vector2(0.60f, 0.075f), foam, false, -7, 32f);
+        }
+
+        var zoneObject = new GameObject("Bell coast cross-current · pushes east");
+        zoneObject.transform.SetParent(parent);
+        zoneObject.transform.position = center;
+        BoxCollider2D trigger = zoneObject.AddComponent<BoxCollider2D>();
+        trigger.isTrigger = true;
+        trigger.size = new Vector2(4.0f, 1.6f);
+        zoneObject.AddComponent<ScadrykTerrainZone>().Configure(1f, new Vector2(1.8f, 0f),
+            "A corrente do recife empurra para leste. Atravesse com a esquiva ou avance contra o fluxo.", "bell-coast-current");
     }
 
     private void DrawPhaseProps(Transform parent, int room, float x)
