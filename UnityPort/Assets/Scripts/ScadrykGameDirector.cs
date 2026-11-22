@@ -268,6 +268,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     internal static bool MemoryDismissRequested(bool confirm, bool interact, bool cancel) => confirm || interact || cancel;
     internal static bool MemoryDismissedThisFrame(int dismissedFrame, int currentFrame) => dismissedFrame >= 0 && dismissedFrame == currentFrame;
+    internal static string MemoryDismissHintText(bool gamepad, string interactBinding) => gamepad
+        ? "A / " + interactBinding + " / B para continuar"
+        : interactBinding + " / Enter / Espaço / Esc para continuar";
 
     internal static int MovePauseGridSelection(int selection, int horizontalDirection, int verticalDirection)
     {
@@ -1761,7 +1764,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (!MemoryPanelFits(400f, 360f, 120f) || !MemoryPanelFits(700f, 600f, 90f) ||
             !MemoryDismissRequested(true, false, false) || !MemoryDismissRequested(false, true, false) ||
             !MemoryDismissRequested(false, false, true) || MemoryDismissRequested(false, false, false) ||
-            !MemoryDismissedThisFrame(12, 12) || MemoryDismissedThisFrame(12, 13))
+            !MemoryDismissedThisFrame(12, 12) || MemoryDismissedThisFrame(12, 13) ||
+            MemoryDismissHintText(true, "Y") != "A / Y / B para continuar" ||
+            MemoryDismissHintText(false, "E") != "E / Enter / Espaço / Esc para continuar")
         { SmokeFail("As memórias não pausam com um painel legível ou não aceitam confirmação, interação e voltar"); yield break; }
         Debug.Log("SCADRYK_SMOKE: memórias modais têm comandos de saída válidos e cabem em janela compacta");
         for (int effect = 0; effect < 40; effect++)

@@ -73,7 +73,7 @@ public sealed partial class ScadrykGameDirector
         GUI.Label(new Rect(panel.x + 18f, panel.y + 10f, panel.width - 36f, 24f), "VESTÍGIO ESCUTADO", titleStyle);
         GUI.Label(MemoryTextRect(panel), memoryText, memoryStyle);
         smallStyle.alignment = TextAnchor.MiddleCenter;
-        GUI.Label(MemoryDismissHintRect(panel), InputBinding(6) + "  ·  Enter / Espaço  ·  Esc para continuar", smallStyle);
+        GUI.Label(MemoryDismissHintRect(panel), MemoryDismissHintText(sessionInputMode == "gamepad", InputBinding(6)), smallStyle);
         smallStyle.alignment = TextAnchor.MiddleLeft;
     }
 
