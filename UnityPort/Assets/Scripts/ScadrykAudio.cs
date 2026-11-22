@@ -14,6 +14,7 @@ public sealed class ScadrykAudio : MonoBehaviour
     private float musicEnvelope = 1f, transitionEnvelope, combatEnvelope, combatTarget;
     private const float ContextFadeDuration = 1.25f;
     private const float CombatIntensityFadeDuration = 0.85f;
+    internal const int MaxConcurrentWarningCues = 4;
     private readonly List<float> activeWarningCueEndsAt = new List<float>(5);
     private AudioClip[] biomeLoops;
     private AudioClip combatLoop;
@@ -90,6 +91,7 @@ public sealed class ScadrykAudio : MonoBehaviour
         Mathf.MoveTowards(current, target, Mathf.Max(0f, deltaTime) / CombatIntensityFadeDuration);
 
     internal static float WarningCueVolumeScale(int overlappingWarnings) => 0.8f / Mathf.Max(1, overlappingWarnings + 1);
+    internal static bool CanPlayWarningCue(int overlappingWarnings) => overlappingWarnings < MaxConcurrentWarningCues;
 
     public void SetContext(int biome, bool finalBoss)
     {
@@ -168,6 +170,7 @@ public sealed class ScadrykAudio : MonoBehaviour
             for (int active = instance.activeWarningCueEndsAt.Count - 1; active >= 0; active--)
                 if (instance.activeWarningCueEndsAt[active] <= now) instance.activeWarningCueEndsAt.RemoveAt(active);
             int overlappingWarnings = instance.activeWarningCueEndsAt.Count;
+            if (!CanPlayWarningCue(overlappingWarnings)) return;
             volumeScale = WarningCueVolumeScale(overlappingWarnings);
             instance.activeWarningCueEndsAt.Add(now + instance.cueClips[index].length);
         }

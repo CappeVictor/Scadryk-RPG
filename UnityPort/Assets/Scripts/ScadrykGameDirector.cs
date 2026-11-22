@@ -1842,6 +1842,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             Mathf.Abs(ScadrykAudio.WarningCueVolumeScale(0) - 0.8f) > 0.001f ||
             ScadrykAudio.WarningCueVolumeScale(1) >= ScadrykAudio.WarningCueVolumeScale(0) ||
             ScadrykAudio.WarningCueVolumeScale(4) <= 0f ||
+            ScadrykAudio.MaxConcurrentWarningCues != 4 ||
+            !ScadrykAudio.CanPlayWarningCue(ScadrykAudio.MaxConcurrentWarningCues - 1) ||
+            ScadrykAudio.CanPlayWarningCue(ScadrykAudio.MaxConcurrentWarningCues) ||
             !audio.HasCue(laneCue) || !audio.HasCue(volleyCue) || !audio.HasCue(areaCue) ||
             !audio.HasCue(supportCue) || !audio.HasCue(ScadrykCue.FinalBossWarning) ||
             !audio.HasCue(ScadrykCue.FinalVolleyWarning) || !audio.HasCue(ScadrykCue.FinalStarfallWarning) ||
@@ -1857,7 +1860,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ScadrykCue.PlayerFinisher == ScadrykCue.Sword)
         { SmokeFail("Cues de perigo, música de combate ou sinais de impacto não distinguem os estados previstos"); yield break; }
         Debug.Log("SCADRYK_SMOKE: música escala de salas limpas a grupos e chefes e recua em pausas");
-        Debug.Log("SCADRYK_SMOKE: cada padrão do Arauto tem cue próprio; sinais de perigo atenuam avisos sobrepostos");
+        Debug.Log("SCADRYK_SMOKE: cada padrão do Arauto tem cue próprio; avisos sobrepostos perdem volume e têm teto de quatro vozes");
         if (!FocusLossRequiresPause(false, false, false, false, false, false) ||
             FocusLossRequiresPause(true, false, false, false, false, false) ||
             FocusLossRequiresPause(false, true, false, false, false, false) ||
