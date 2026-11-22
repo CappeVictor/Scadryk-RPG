@@ -1246,9 +1246,13 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Color warningTint = ScadrykEnemyHealth.StateTint(true, false, Color.white);
         Color exposedTint = ScadrykEnemyHealth.StateTint(false, true, Color.white);
         Color interruptedExposeTint = ScadrykEnemyHealth.StateTint(true, true, Color.white);
-        if (warningTint == exposedTint || warningTint != interruptedExposeTint)
-        { SmokeFail("O aviso de ataque se confunde com a vulnerabilidade ou perde prioridade durante a exposição"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: aviso âmbar e vulnerabilidade azul são distintos; aviso permanece prioritário");
+        float warningEarlyAlpha = ScadrykTimedVisual.DangerWarningAlpha(0.05f);
+        float warningMidAlpha = ScadrykTimedVisual.DangerWarningAlpha(0.35f);
+        float warningImpactAlpha = ScadrykTimedVisual.DangerWarningAlpha(0.95f);
+        if (warningTint == exposedTint || warningTint != interruptedExposeTint ||
+            warningEarlyAlpha <= 0f || warningMidAlpha <= warningEarlyAlpha || warningImpactAlpha <= warningMidAlpha)
+        { SmokeFail("Aviso e vulnerabilidade se confundem ou o telegráfico perde destaque perto do impacto"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: aviso âmbar permanece visível e ganha destaque até o impacto; vulnerabilidade azul é distinta");
         yield return SmokeProjectileCover();
         if (!smokeProjectileCoverPassed) { SmokeFail("Projéteis em movimento não param na cobertura sólida ou atravessam o gatilho de teste"); yield break; }
         Debug.Log("SCADRYK_SMOKE: projétil respeita cobertura, atravessa gatilho e é limpo no fim do encontro");

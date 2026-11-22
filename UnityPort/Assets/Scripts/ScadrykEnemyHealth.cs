@@ -262,6 +262,8 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private void TrackAttackWarning(GameObject warning)
     {
         if (warning == null) return;
+        ScadrykTimedVisual timedWarning = warning.GetComponent<ScadrykTimedVisual>();
+        if (timedWarning != null) timedWarning.MarkDangerWarning();
         if (attackWarningCount < attackWarnings.Length) attackWarnings[attackWarningCount++] = warning;
     }
 
