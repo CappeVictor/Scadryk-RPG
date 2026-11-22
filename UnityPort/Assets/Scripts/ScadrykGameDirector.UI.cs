@@ -45,8 +45,11 @@ public sealed partial class ScadrykGameDirector
     private void DrawHud()
     {
         float extra = ScadrykSettings.TextScale - 1f;
-        float textWidth = 300f + extra * 130f, trackWidth = 275f + extra * 120f;
-        GUI.color = new Color(0.035f, 0.05f, 0.06f, 0.92f); GUI.Box(new Rect(14, 14, 325f + extra * 130f, 190f + extra * 86f), GUIContent.none); GUI.color = Color.white;
+        string objective = ActiveObjectiveText();
+        Rect panel = HudPanelRect(Screen.width, Screen.height, ScadrykSettings.TextScale);
+        float textWidth = Mathf.Max(0f, panel.width - 28f);
+        float trackWidth = Mathf.Min(275f + extra * 120f, textWidth);
+        GUI.color = new Color(0.035f, 0.05f, 0.06f, 0.92f); GUI.Box(panel, GUIContent.none); GUI.color = Color.white;
         GUI.Label(new Rect(28, 22, textWidth, 25f + extra * 15f), PhaseNames[phaseIndex] + "  ·  Fase " + (phaseIndex + 1) + "/3", titleStyle);
         GUI.Label(new Rect(28, 51f + extra * 8f, textWidth, 23f + extra * 12f), roomNames[phaseIndex][roomIndex] + "  ·  Sala " + (roomIndex + 1) + "/3", bodyStyle);
         GUI.color = new Color(0.18f, 0.19f, 0.2f); GUI.DrawTexture(new Rect(28, 82f + extra * 18f, trackWidth, 12), Texture2D.whiteTexture);
@@ -61,8 +64,9 @@ public sealed partial class ScadrykGameDirector
             GUI.Label(new Rect(28, 116f + extra * 37f + i * (15f + extra * 9f), textWidth, 16f + extra * 9f), InputBinding(i + 3) + "  " + abilities[i] + "  ·  " + state, smallStyle);
         }
         GUI.color = Color.white;
-        string objective = ActiveObjectiveText();
-        GUI.Label(new Rect(28, 164f + extra * 64f, textWidth, 28f + extra * 10f), "Objetivo: " + objective, smallStyle);
+        float objectiveY = 164f + extra * 64f;
+        float objectiveHeight = Mathf.Max(0f, panel.yMax - objectiveY - 10f);
+        GUI.Label(new Rect(28, objectiveY, textWidth, objectiveHeight), "Objetivo: " + objective, hudObjectiveStyle);
     }
 
     private void DrawWitnessPrompt()
@@ -120,6 +124,8 @@ public sealed partial class ScadrykGameDirector
         float extra = ScadrykSettings.TextScale - 1f;
         float width = 286f + extra * 120f;
         Rect panel = MiniMapPanelRect(Screen.width, Screen.height, ScadrykSettings.TextScale);
+        Rect hud = HudPanelRect(Screen.width, Screen.height, ScadrykSettings.TextScale);
+        if (!MiniMapPanelFits(panel, hud, Screen.width, Screen.height)) return;
         GUI.color = new Color(0.035f, 0.05f, 0.06f, 0.9f); GUI.Box(panel, GUIContent.none); GUI.color = Color.white;
         GUI.Label(new Rect(panel.x + 13, panel.y + 8, width - 26f, 21f + extra * 8f), "MAPA · " + PhaseNames[phaseIndex], smallStyle);
         float mapX = panel.x + 15, mapY = panel.y + 43 + extra * 5f, roomW = 75f + extra * 30f, roomH = 57f + extra * 10f, gap = 8;
@@ -277,17 +283,32 @@ public sealed partial class ScadrykGameDirector
         float extra = Mathf.Clamp(textScale, 1f, 1.5f) - 1f;
         float width = 286f + extra * 120f;
         float height = 126f + extra * 24f;
-        float hudWidth = 325f + extra * 130f;
-        float hudHeight = 190f + extra * 86f;
+        Rect hud = HudPanelRect(screenWidth, screenHeight, textScale);
         float x = screenWidth - width - 16f;
         float y = 14f;
-        if (x < 14f + hudWidth + 16f)
+        if (x < hud.xMax + 16f)
         {
-            y = 14f + hudHeight + 8f;
+            y = hud.yMax + 8f;
             if (y + height > screenHeight - 8f) y = Mathf.Max(8f, screenHeight - height - 8f);
         }
         return new Rect(x, y, width, height);
     }
+
+    private static Rect HudPanelRect(float screenWidth, float screenHeight, float textScale)
+    {
+        float extra = Mathf.Clamp(textScale, 1f, 1.5f) - 1f;
+        float preferredWidth = 325f + extra * 130f;
+        float width = Mathf.Min(preferredWidth, Mathf.Max(0f, screenWidth - 28f));
+        return new Rect(14f, 14f, width, 190f + extra * 86f);
+    }
+
+    private static bool MiniMapPanelFits(Rect panel, Rect hud, float screenWidth, float screenHeight) =>
+        panel.width > 0f && panel.height > 0f && panel.xMin >= 8f && panel.yMin >= 8f &&
+        panel.xMax <= screenWidth - 8f && panel.yMax <= screenHeight - 8f && !panel.Overlaps(hud);
+
+    private static bool HudPanelFits(Rect panel, float screenWidth, float screenHeight) =>
+        panel.width > 0f && panel.height > 0f && panel.xMin >= 8f && panel.yMin >= 8f &&
+        panel.xMax <= screenWidth - 8f && panel.yMax <= screenHeight - 8f;
 
     private static string MapRoomLabel(int phase, int room) => MapRoomLabels[phase][room];
     private static string Cooldown(float value) => value <= 0.02f ? "pronto" : value.ToString("0.0") + "s";
@@ -711,6 +732,7 @@ public sealed partial class ScadrykGameDirector
         titleStyle = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(17f * scale), fontStyle = FontStyle.Bold, normal = { textColor = new Color(0.91f, 0.81f, 0.57f) }, alignment = TextAnchor.MiddleLeft };
         bodyStyle = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(14f * scale), normal = { textColor = new Color(0.88f, 0.89f, 0.83f) }, alignment = TextAnchor.MiddleLeft };
         smallStyle = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(11f * scale), normal = { textColor = new Color(0.72f, 0.76f, 0.72f) }, alignment = TextAnchor.MiddleLeft };
+        hudObjectiveStyle = new GUIStyle(smallStyle) { wordWrap = true, alignment = TextAnchor.UpperLeft };
         centeredTitleStyle = new GUIStyle(titleStyle) { alignment = TextAnchor.MiddleCenter, fontSize = Mathf.RoundToInt(25f * scale) };
         openingTitleStyle = new GUIStyle(centeredTitleStyle);
         centeredBodyStyle = new GUIStyle(bodyStyle) { alignment = TextAnchor.MiddleCenter, wordWrap = true, fontSize = Mathf.RoundToInt(16f * scale) };

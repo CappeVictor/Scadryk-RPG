@@ -120,6 +120,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private GUIStyle titleStyle { get; set; }
     private GUIStyle bodyStyle { get; set; }
     private GUIStyle smallStyle { get; set; }
+    private GUIStyle hudObjectiveStyle { get; set; }
     private GUIStyle openingTitleStyle { get; set; }
     private GUIStyle openingBodyStyle { get; set; }
     private GUIStyle offscreenTargetStyle { get; set; }
@@ -1614,13 +1615,16 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             !ProgressHint(7, 1, 0).Contains("sino do recife"))
         { SmokeFail("As pistas graduais de exploração não diferenciam as salas e etapas"); yield break; }
         Debug.Log("SCADRYK_SMOKE: pistas graduais específicas e ordem da costa verificadas");
-        Rect narrowHud = new Rect(14f, 14f, 325f + 0.5f * 130f, 190f + 0.5f * 86f);
+        Rect compactHud = HudPanelRect(400f, 360f, 1.5f);
+        Rect compactMap = MiniMapPanelRect(400f, 360f, 1.5f);
+        Rect narrowHud = HudPanelRect(700f, 600f, 1.5f);
         Rect narrowMap = MiniMapPanelRect(700f, 600f, 1.5f);
         Rect narrowLegend = MiniMapLegendRect(narrowMap, 1.5f);
-        if (narrowHud.Overlaps(narrowMap) || narrowMap.xMin < 0f || narrowMap.yMin < 0f || narrowMap.xMax > 700f || narrowMap.yMax > 600f ||
+        if (!HudPanelFits(compactHud, 400f, 360f) || MiniMapPanelFits(compactMap, compactHud, 400f, 360f) ||
+            !HudPanelFits(narrowHud, 700f, 600f) || !MiniMapPanelFits(narrowMap, narrowHud, 700f, 600f) ||
             narrowLegend.yMin < narrowMap.yMin || narrowLegend.yMax > narrowMap.yMax)
-        { SmokeFail("Minimapa sobrepõe o HUD ou sai da janela estreita com texto ampliado"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: minimapa e legenda cabem em janela estreita");
+        { SmokeFail("HUD sai da tela ou minimapa invade conteúdo numa janela compacta com texto ampliado"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: HUD cabe em 400x360 e minimapa só aparece quando há espaço, com texto ampliado");
         if (!OptionsLayoutFits(600f) || !OptionsResetRowFits(400f))
         { SmokeFail("O menu de opções corta as teclas remapeáveis ou os controles de retorno a 600px de altura"); yield break; }
         Debug.Log("SCADRYK_SMOKE: menu de opções e restauração de comandos cabem em janela compacta");
