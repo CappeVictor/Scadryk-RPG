@@ -1151,6 +1151,12 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             Mathf.Abs(carriedIdle.x - 1.8f) > 0.001f || Mathf.Abs(carriedIdle.y) > 0.001f)
         { SmokeFail("A corrente não conserva o impulso, não limita fluxos somados ou vence a caminhada contra o fluxo"); yield break; }
         Debug.Log("SCADRYK_SMOKE: corrente move em repouso, permite contrafluxo e limita a velocidade somada");
+        float markerStart = ScadrykAmbientProp.FlowMarkerOffset(0f, 0.5f, 1f, 0.34f);
+        float markerAdvance = ScadrykAmbientProp.FlowMarkerOffset(0.25f, 0.5f, 1f, 0.34f);
+        float markerCycle = ScadrykAmbientProp.FlowMarkerOffset(1f, 0.5f, 1f, 0.34f);
+        if (markerAdvance <= markerStart || Mathf.Abs(markerCycle - markerStart) > 0.001f || Mathf.Abs(markerStart) > 0.001f)
+        { SmokeFail("As setas da corrente não avançam para leste em um ciclo suave e repetível"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: espuma da corrente desliza para leste e reinicia após ciclo contínuo");
         if (ScadrykSettings.CanBindKey(KeyCode.None) || ScadrykSettings.CanBindKey(KeyCode.Escape) ||
             ScadrykSettings.CanBindKey(KeyCode.F8) || ScadrykSettings.CanBindKey(KeyCode.M) || !ScadrykSettings.CanBindKey(KeyCode.F) ||
             ScadrykSettings.CanBindPadButton(7) || ScadrykSettings.CanBindPadButton(8) || !ScadrykSettings.CanBindPadButton(9))

@@ -6,7 +6,8 @@ public enum ScadrykAmbientMotion
     Sway,
     Glow,
     Water,
-    Flicker
+    Flicker,
+    Flow
 }
 
 /// <summary>Small looping motion for trees, crystals, pools and lanterns.</summary>
@@ -14,6 +15,7 @@ public sealed class ScadrykAmbientProp : MonoBehaviour
 {
     private ScadrykAmbientMotion motion;
     private SpriteRenderer sprite;
+    private Vector3 basePosition;
     private Vector3 baseScale;
     private Quaternion baseRotation;
     private Color baseColor;
@@ -22,6 +24,7 @@ public sealed class ScadrykAmbientProp : MonoBehaviour
     private void Awake()
     {
         sprite = GetComponent<SpriteRenderer>();
+        basePosition = transform.localPosition;
         baseScale = transform.localScale;
         baseRotation = transform.localRotation;
         if (sprite != null) baseColor = sprite.color;
@@ -57,6 +60,13 @@ public sealed class ScadrykAmbientProp : MonoBehaviour
                     sprite.color = baseColor * Mathf.Lerp(1f, flicker, Mathf.Clamp01(strength));
                 }
                 break;
+            case ScadrykAmbientMotion.Flow:
+                float normalizedPhase = phase / (Mathf.PI * 2f);
+                transform.localPosition = basePosition + Vector3.right * FlowMarkerOffset(Time.time, normalizedPhase, 0.55f, 0.34f * Mathf.Clamp01(strength));
+                break;
         }
     }
+
+    internal static float FlowMarkerOffset(float time, float normalizedPhase, float cyclesPerSecond, float travelDistance) =>
+        (Mathf.Repeat(Mathf.Max(0f, time) * Mathf.Max(0f, cyclesPerSecond) + Mathf.Repeat(normalizedPhase, 1f), 1f) - 0.5f) * Mathf.Max(0f, travelDistance);
 }

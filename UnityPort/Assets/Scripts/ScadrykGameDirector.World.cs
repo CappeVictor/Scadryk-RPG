@@ -374,10 +374,12 @@ public sealed partial class ScadrykGameDirector
         {
             Vector2 head = center + new Vector2(-1.55f + arrow * 1.02f, 0f);
             Color foam = new Color(0.50f, 0.86f, 0.88f, 0.62f);
-            MakeDecoration(parent, "Current arrow upper foam", head + new Vector2(-0.16f, 0.20f),
-                new Vector2(0.60f, 0.075f), foam, false, -7, -32f);
-            MakeDecoration(parent, "Current arrow lower foam", head + new Vector2(-0.16f, -0.20f),
-                new Vector2(0.60f, 0.075f), foam, false, -7, 32f);
+            var arrowMarker = new GameObject("Current arrow drifting east");
+            arrowMarker.transform.SetParent(parent);
+            arrowMarker.transform.position = head;
+            arrowMarker.AddComponent<ScadrykAmbientProp>().Configure(ScadrykAmbientMotion.Flow, 0.58f);
+            MakeCurrentFoamStroke(arrowMarker.transform, "Upper foam", new Vector2(-0.16f, 0.20f), foam, -32f);
+            MakeCurrentFoamStroke(arrowMarker.transform, "Lower foam", new Vector2(-0.16f, -0.20f), foam, 32f);
         }
 
         var zoneObject = new GameObject("Bell coast cross-current · pushes east");
@@ -388,6 +390,19 @@ public sealed partial class ScadrykGameDirector
         trigger.size = new Vector2(4.0f, 1.6f);
         zoneObject.AddComponent<ScadrykTerrainZone>().Configure(1f, new Vector2(1.8f, 0f),
             "A corrente do recife empurra para leste. Atravesse com a esquiva ou avance contra o fluxo.", ScadrykTerrainZone.CoastalCurrentKey, ScadrykCue.CoastalCurrent);
+    }
+
+    private static void MakeCurrentFoamStroke(Transform parent, string name, Vector2 localPosition, Color color, float rotation)
+    {
+        var stroke = new GameObject(name);
+        stroke.transform.SetParent(parent, false);
+        stroke.transform.localPosition = localPosition;
+        stroke.transform.localScale = new Vector3(0.60f, 0.075f, 1f);
+        stroke.transform.localRotation = Quaternion.Euler(0f, 0f, rotation);
+        var renderer = stroke.AddComponent<SpriteRenderer>();
+        renderer.sprite = SquareSprite;
+        renderer.color = color;
+        renderer.sortingOrder = -7;
     }
 
     private void DrawPhaseProps(Transform parent, int room, float x)
