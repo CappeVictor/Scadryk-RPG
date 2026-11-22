@@ -10,6 +10,8 @@ Registro de builds, teste de progressão e roteiro de avaliação com jogadores:
 
 Quando cues de perigo se sobrepõem, cada novo aviso reduz o volume relativo conforme a quantidade de sinais ativos; nenhum cue é descartado. Os telegráficos visuais permanecem individualizados, com alto contraste opcional. A clareza da mixagem ainda precisa de avaliação em jogo.
 
+Os três ataques do Arauto também têm motivos de aviso próprios: notas descendentes antecipam a salva, notas ascendentes anunciam a queda de memória e pulsos graves identificam a onda de vazio. O som geral de chegada do Arauto continua separado; os motivos são sintetizados no código, sem arquivos de áudio externos. A distinção e o equilíbrio com a trilha ainda precisam ser ouvidos em jogo.
+
 O HUD mantém a função de cada poder junto do comando e da recarga: Crescente interrompe Ecos comuns, Estouro expõe alvos para golpes seguintes e Rompante afasta Ecos comuns. Os guardiões e o Arauto resistem a esses controles de grupo; a dica de aquisição também lembra que os poderes revelam selos opcionais.
 
 O ataque básico agora encadeia três cortes dentro de uma janela curta: os dois primeiros mantêm ritmo rápido e o terceiro tem maior alcance e dano, preparação mais longa, breve interrupção de Ecos comuns, arco dourado e um som de acerto próprio. Guardiões e Arauto resistem à interrupção do finalizador. Uma troca de sala, morte ou recarga expirada reinicia a sequência. A sensação do combo ainda precisa de avaliação jogando; a compilação não mede ritmo ou leitura visual.
