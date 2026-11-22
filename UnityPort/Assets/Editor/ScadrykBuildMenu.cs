@@ -6,6 +6,12 @@ using UnityEngine;
 
 public static class ScadrykBuildMenu
 {
+    public static void BuildWindowsAndCampaignSmoke()
+    {
+        BuildWindowsDemo();
+        BuildCampaignSmokeTest();
+    }
+
     [MenuItem("Scadryk/Build Windows demo")]
     public static void BuildWindowsDemo()
     {

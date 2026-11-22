@@ -41,6 +41,12 @@ Para criar um executável Windows, escolha **Scadryk > Build Windows demo**. O b
 
 Para importar e compilar os scripts sem gerar ou abrir o jogo, execute no PowerShell `.\Tools\compile-unity.ps1`. Esse passo não requer Windows Build Support. O script procura o Editor `6000.6.9f1` no destino configurado `C:\Outros Arquivos\Unity\Editors` e depois no caminho padrão do Unity Hub; para outro local, informe `-UnityEditorPath 'C:\caminho\para\Unity.exe'`.
 
+### Build e smoke remotos no GitHub Actions
+
+O workflow manual `.github/workflows/unity-build.yml` cria um executável Windows e executa o smoke das nove salas em um runner Windows hospedado pelo GitHub. Ele não inicia o jogo neste computador e não roda automaticamente em cada push. Para usá-lo, configure os secrets `UNITY_LICENSE`, `UNITY_EMAIL` e `UNITY_PASSWORD` em **Settings > Secrets and variables > Actions** no repositório; o primeiro contém o arquivo de licença Unity Personal `.ulf`. Não cole esses valores no chat, README ou código. O workflow passa esses secrets à ação comunitária de terceiros GameCI para autenticar e compilar. Execute-o somente se aceitar esse fluxo de credenciais; a ação não é publicada pela Unity. Depois, em **Actions > Build Unity campaign > Run workflow**, escolha a branch. O artefato `scadryk-unity-windows-<commit>` contém a build jogável; o log do smoke fica em um artefato separado por 14 dias.
+
+O smoke verifica a campanha por automação interna da build Development e encerra quando as nove salas, os três poderes, o Arauto e o registro de vitória passam. Isso não substitui avaliação visual/sonora nem partidas com jogadores. Sem os secrets, o workflow para antes de chamar GameCI.
+
 Para gerar o executável Windows sem abrir a cena em Play Mode, execute `.\Tools\build-windows.ps1` na pasta `UnityPort`. Esse segundo passo requer o módulo Windows Build Support; procura o Editor nos mesmos caminhos e confirma se `Build/ScadrykDemo.exe` foi gerado. Ambos gravam logs em `%TEMP%`; nenhum inicia o executável. A compilação não substitui a avaliação manual da campanha.
 
 Para jogar a build gerada no Windows, abra `Build/ScadrykDemo.exe`. Mantenha os arquivos e pastas auxiliares da pasta `Build` juntos do `.exe`; não copie só o executável para outro local. A build atual ainda precisa de uma sessão de avaliação de gameplay.

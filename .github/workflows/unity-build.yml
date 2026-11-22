@@ -1,0 +1,92 @@
+name: Build Unity campaign
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: unity-campaign-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-smoke:
+    name: Build and smoke-test on hosted Windows
+    runs-on: windows-2022
+    timeout-minutes: 90
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Require Unity Personal license secrets
+        shell: pwsh
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        run: |
+          $missing = @()
+          foreach ($name in @('UNITY_LICENSE', 'UNITY_EMAIL', 'UNITY_PASSWORD')) {
+            if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
+              $missing += $name
+            }
+          }
+          if ($missing.Count -gt 0) {
+            throw "Configure the required Unity Actions secrets in repository Settings > Secrets and variables > Actions: $($missing -join ', ')"
+          }
+
+      - name: Cache Unity project import
+        uses: actions/cache@v4
+        with:
+          path: UnityPort/Library
+          key: unity-library-${{ runner.os }}-6000.6.9f1-${{ hashFiles('UnityPort/Assets/**', 'UnityPort/Packages/**', 'UnityPort/ProjectSettings/**') }}
+          restore-keys: |
+            unity-library-${{ runner.os }}-6000.6.9f1-
+
+      - name: Build playable Windows demo and campaign smoke player
+        uses: game-ci/unity-builder@v6
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: UnityPort
+          unityVersion: auto
+          targetPlatform: StandaloneWindows64
+          buildMethod: ScadrykBuildMenu.BuildWindowsAndCampaignSmoke
+
+      - name: Run complete campaign smoke on hosted runner
+        shell: pwsh
+        run: |
+          $smokePlayer = 'UnityPort/BuildSmoke/ScadrykSmoke.exe'
+          if (-not (Test-Path $smokePlayer)) { throw "Campaign smoke player not found: $smokePlayer" }
+          $logPath = Join-Path $env:RUNNER_TEMP 'ScadrykCampaignSmoke.log'
+          & $smokePlayer -batchmode -nographics -scadryk-smoke -logFile $logPath
+          $smokeExitCode = $LASTEXITCODE
+          if (Test-Path $logPath) {
+            Get-Content $logPath -Tail 100
+            if (-not (Select-String -Path $logPath -SimpleMatch 'SCADRYK_SMOKE: SUCCESS nove salas, três poderes, Arauto e vitória' -Quiet)) {
+              throw 'Campaign smoke did not record its success marker.'
+            }
+          }
+          if ($smokeExitCode -ne 0) { throw "Campaign smoke failed with exit code $smokeExitCode" }
+
+      - name: Upload playable Windows build
+        uses: actions/upload-artifact@v4
+        with:
+          name: scadryk-unity-windows-${{ github.sha }}
+          path: UnityPort/Build/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Preserve smoke log when available
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scadryk-unity-campaign-smoke-${{ github.sha }}
+          path: ${{ runner.temp }}/ScadrykCampaignSmoke.log
+          if-no-files-found: ignore
+          retention-days: 14
