@@ -1626,6 +1626,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             !audio.HasCue(supportCue) || !audio.HasCue(ScadrykCue.FinalBossWarning) ||
             !audio.HasCue(ScadrykCue.FinalVolleyWarning) || !audio.HasCue(ScadrykCue.FinalStarfallWarning) ||
             !audio.HasCue(ScadrykCue.FinalWaveWarning) || !audio.HasCue(ScadrykCue.Memory) ||
+            audio.CueClipName(ScadrykCue.FinalVolleyWarning) != "Herald remembered volley" ||
+            audio.CueClipName(ScadrykCue.FinalStarfallWarning) != "Herald falling memory" ||
+            audio.CueClipName(ScadrykCue.FinalWaveWarning) != "Herald void wave" ||
             !audio.HasCue(ScadrykCue.EchoReleased) || !audio.HasCue(ScadrykCue.PlayerStrike) || !audio.HasCue(ScadrykCue.PlayerFinisher) ||
             !audio.HasCue(ScadrykCue.PlayerPowerImpact) || !audio.HasCue(ScadrykCue.CoastalCurrent) || ScadrykCue.PlayerPowerImpact == ScadrykCue.Impact ||
             ScadrykCue.PlayerPowerImpact == ScadrykCue.Power || ScadrykCue.PlayerPowerImpact == ScadrykCue.PlayerStrike ||

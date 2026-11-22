@@ -20,6 +20,7 @@ public sealed class ScadrykAudio : MonoBehaviour
     private AudioClip[] cueClips;
     private readonly float[] nextCueAt = new float[System.Enum.GetValues(typeof(ScadrykCue)).Length];
     internal bool HasCue(ScadrykCue cue) => cueClips != null && (int)cue >= 0 && (int)cue < cueClips.Length;
+    internal string CueClipName(ScadrykCue cue) => HasCue(cue) && cueClips[(int)cue] != null ? cueClips[(int)cue].name : string.Empty;
     internal bool HasCombatLayer => combatMusic != null && combatMusic.clip != null && combatMusic.clip == combatLoop;
 
     private void Awake()
