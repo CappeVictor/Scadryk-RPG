@@ -37,7 +37,7 @@ Não instale o pacote Unity antigo `com.unity.ide.vscode`: ele foi descontinuado
 3. Abra `Assets/Scenes/ScadrykDemo.unity` e pressione **Play** no Editor.
 4. Comece pelo menu. Limpe os Ecos e conclua o objetivo indicado em cada sala; quando o portal surgir, espere a animação de abertura terminar, aproxime-se e use o comando de interação mostrado na tela (padrão **E** no teclado ou **Y** no controle). Complete as nove salas para concluir os três biomas e enfrentar o Arauto.
 
-Para criar um executável Windows, escolha **Scadryk > Build Windows demo**. O build aparece em `Build/ScadrykDemo.exe` dentro do projeto Unity. A build mais recente foi gerada com o Editor 6000.6.9f1; ela não foi iniciada nesta etapa.
+Para criar um executável Windows, escolha **Scadryk > Build Windows demo**. O build aparece em `Build/ScadrykDemo.exe` dentro do projeto Unity. As mudanças mais recentes ainda não estão no executável existente. A geração atual foi bloqueada pelo Code Integrity/App Control: a política corporativa deste Windows rejeita `Bee.Stevedore.Program.dll` do Editor por não cumprir o nível de assinatura exigido (evento 3077). O script indica o bloqueio e o log; um administrador precisa aprovar o componente oficial de acordo com a política local. Não desative o Controle de Aplicativos. A build antiga não foi iniciada nesta etapa.
 
 Para importar e compilar os scripts sem gerar ou abrir o jogo, execute no PowerShell `.\Tools\compile-unity.ps1`. Esse passo não requer Windows Build Support. O script procura o Editor `6000.6.9f1` no destino configurado `C:\Outros Arquivos\Unity\Editors` e depois no caminho padrão do Unity Hub; para outro local, informe `-UnityEditorPath 'C:\caminho\para\Unity.exe'`.
 

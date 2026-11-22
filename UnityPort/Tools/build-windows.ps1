@@ -33,6 +33,10 @@ $licenseError = Select-String -LiteralPath $logPath -Pattern 'No valid Unity Edi
 if ($licenseError) {
     throw "Unity não tem uma licença ativa. Entre no Unity Hub e ative uma licença Personal ou válida. Consulte: $logPath"
 }
+$codeIntegrityBlock = Select-String -LiteralPath $logPath -Pattern 'did not meet the Enterprise signing level requirements|violated code integrity policy|0x800711C7' -ErrorAction SilentlyContinue
+if ($codeIntegrityBlock) {
+    throw "A política Code Integrity/App Control do Windows bloqueou um componente do Unity durante a build. Peça ao administrador para aprovar o componente oficial dentro da política vigente; não desative a proteção. Consulte o log: $logPath (evento Code Integrity 3077)."
+}
 if ($unityProcess.ExitCode -ne 0) {
     throw "Build do Unity falhou (código $($unityProcess.ExitCode)). Consulte o log: $logPath"
 }
