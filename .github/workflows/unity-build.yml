@@ -23,7 +23,7 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - name: Checkout project
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           lfs: true
 
@@ -45,7 +45,7 @@ jobs:
           }
 
       - name: Cache Unity project import
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: UnityPort/Library
           key: unity-library-${{ runner.os }}-6000.6.9f1-${{ hashFiles('UnityPort/Assets/**', 'UnityPort/Packages/**', 'UnityPort/ProjectSettings/**') }}
@@ -53,7 +53,7 @@ jobs:
             unity-library-${{ runner.os }}-6000.6.9f1-
 
       - name: Build playable Windows demo and campaign smoke player
-        uses: game-ci/unity-builder@v6
+        uses: game-ci/unity-builder@eb1b9fba120c6e62c9fb7a7a81d6c107ce004c45 # v6
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
@@ -83,7 +83,7 @@ jobs:
           if ($smokeExitCode -ne 0) { throw "Campaign smoke failed with exit code $smokeExitCode" }
 
       - name: Upload playable Windows build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: scadryk-unity-windows-${{ github.sha }}
           path: UnityPort/Build/
@@ -92,7 +92,7 @@ jobs:
 
       - name: Preserve smoke log when available
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: scadryk-unity-campaign-smoke-${{ github.sha }}
           path: ${{ runner.temp }}/ScadrykCampaignSmoke.log
