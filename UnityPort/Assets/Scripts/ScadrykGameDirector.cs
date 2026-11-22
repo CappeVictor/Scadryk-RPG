@@ -919,6 +919,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     internal static bool IsWorldSecretRevealed(string keyPrefix, int phase, int room) =>
         PlayerPrefs.GetInt(WorldSecretProgressKey(keyPrefix, phase, room), 0) == 1;
 
+    internal static bool ShouldBuildWorldSecret(bool smokeMode, bool alreadyRevealed) =>
+        smokeMode || !alreadyRevealed;
+
     internal static void MarkWorldSecretRevealed(string keyPrefix, int phase, int room)
     {
         PlayerPrefs.SetInt(WorldSecretProgressKey(keyPrefix, phase, room), 1);
@@ -1437,11 +1440,15 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             bool clearsWitnessLines = ReadWitnessProgress(checkpointTestPrefix, 1) == 0 && ReadWitnessProgress(checkpointTestPrefix, 2) == 0;
             bool secretStartsHidden = !IsWorldSecretRevealed(checkpointTestPrefix, 1, 0);
             MarkWorldSecretRevealed(checkpointTestPrefix, 1, 0);
-            bool secretSurvivesRoomRebuild = IsWorldSecretRevealed(checkpointTestPrefix, 1, 0);
+            bool secretSurvivesRoomRebuild = IsWorldSecretRevealed(checkpointTestPrefix, 1, 0) &&
+                !ShouldBuildWorldSecret(false, IsWorldSecretRevealed(checkpointTestPrefix, 1, 0));
+            bool smokeCanRebuildSecret = ShouldBuildWorldSecret(true, IsWorldSecretRevealed(checkpointTestPrefix, 1, 0));
             bool secretsAreRoomSpecific = !IsWorldSecretRevealed(checkpointTestPrefix, 2, 0);
             ClearWorldSecretProgress(checkpointTestPrefix);
             bool newJourneyClearsSecrets = !IsWorldSecretRevealed(checkpointTestPrefix, 1, 0);
-            worldSecretProgressRoundTrip = secretStartsHidden && secretSurvivesRoomRebuild && secretsAreRoomSpecific && newJourneyClearsSecrets;
+            bool freshJourneyRevealsUnfoundSecret = ShouldBuildWorldSecret(false, IsWorldSecretRevealed(checkpointTestPrefix, 1, 0));
+            worldSecretProgressRoundTrip = secretStartsHidden && secretSurvivesRoomRebuild && smokeCanRebuildSecret &&
+                secretsAreRoomSpecific && newJourneyClearsSecrets && freshJourneyRevealsUnfoundSecret;
             witnessProgressRoundTrip = witnessStartsAtFirstLine && restoresWitnessLine && clampsWitnessLine && clearsWitnessLines;
             checkpointRoundTrip = newGameDefaults && ignoresOrphanedRoom && ignoresOrphanedPhase && restoresLastPortal && clampsInvalidData;
         }
