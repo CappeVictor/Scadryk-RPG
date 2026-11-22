@@ -955,12 +955,17 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private void OnApplicationQuit()
     {
         Time.timeScale = 1f;
-        if (levelRoot != null)
+        if (levelRoot != null && !showTitle && !showOpeningStory)
         {
-            if (player != null && !victory) SaveProgress(phaseIndex, roomIndex);
+            if (ShouldSaveCheckpointOnQuit(player != null, victory, showTitle, showOpeningStory, smokeRun))
+                SaveProgress(phaseIndex, roomIndex);
             RecordRoomSession();
         }
     }
+
+    internal static bool ShouldSaveCheckpointOnQuit(bool hasPlayer, bool hasVictory, bool titleVisible,
+        bool openingStoryVisible, bool smokeMode) =>
+        hasPlayer && !hasVictory && !titleVisible && !openingStoryVisible && !smokeMode;
 
     private static void SaveProgress(int phase, int room)
     {
@@ -1538,11 +1543,18 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Debug.Log("SCADRYK_SMOKE: padrões de teclado e controle são independentes e preservam preferências");
         string checkpointTestPrefix = "Scadryk.Smoke." + System.DateTime.UtcNow.Ticks + ".";
         bool checkpointRoundTrip = false, witnessProgressRoundTrip = false, worldSecretProgressRoundTrip = false;
+        bool quitCheckpointStateIsValid = false;
         bool bossProgressRoundTrip = false;
         try
         {
             bool newGameDefaults = !HasCheckpoint(checkpointTestPrefix) &&
                 !TryLoadCheckpoint(checkpointTestPrefix, out int defaultPhase, out int defaultRoom) && defaultPhase == 0 && defaultRoom == 0;
+            quitCheckpointStateIsValid = ShouldSaveCheckpointOnQuit(true, false, false, false, false) &&
+                !ShouldSaveCheckpointOnQuit(false, false, false, false, false) &&
+                !ShouldSaveCheckpointOnQuit(true, true, false, false, false) &&
+                !ShouldSaveCheckpointOnQuit(true, false, true, false, false) &&
+                !ShouldSaveCheckpointOnQuit(true, false, false, true, false) &&
+                !ShouldSaveCheckpointOnQuit(true, false, false, false, true);
             PlayerPrefs.SetInt(checkpointTestPrefix + "Room", 2);
             bool ignoresOrphanedRoom = !HasCheckpoint(checkpointTestPrefix) &&
                 !TryLoadCheckpoint(checkpointTestPrefix, out int orphanPhase, out int orphanRoom) && orphanPhase == 0 && orphanRoom == 0;
@@ -1599,7 +1611,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 defeatedGuardianRestoresOnlyAtItsArena && finalGuardianResumeWaitsForArauto && newJourneyClearsGuardianProgress &&
                 defeatedFinalBossRestoresOnlyAtEnding && newJourneyClearsFinalBossProgress;
             witnessProgressRoundTrip = witnessStartsAtFirstLine && restoresWitnessLine && clampsWitnessLine && clearsWitnessLines;
-            checkpointRoundTrip = newGameDefaults && ignoresOrphanedRoom && ignoresOrphanedPhase && restoresLastPortal && clampsInvalidData;
+            checkpointRoundTrip = newGameDefaults && quitCheckpointStateIsValid && ignoresOrphanedRoom &&
+                ignoresOrphanedPhase && restoresLastPortal && clampsInvalidData;
         }
         finally
         {
@@ -1612,7 +1625,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             PlayerPrefs.Save();
         }
         if (!checkpointRoundTrip) { SmokeFail("Checkpoint parcial não foi ignorado, ou o portal não foi restaurado/limitado"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: checkpoint grava, carrega, limita e limpa chaves temporárias");
+        Debug.Log("SCADRYK_SMOKE: checkpoint grava, retoma sem estado de título/abertura, limita e limpa chaves temporárias");
         if (!bossProgressRoundTrip) { SmokeFail("O save não preserva chefes derrotados, restaura sala segura ou limpa a jornada nova"); yield break; }
         Debug.Log("SCADRYK_SMOKE: derrota de guardiões e Arauto persiste, retoma na arena e é limpa na jornada nova");
         if (!witnessProgressRoundTrip) { SmokeFail("As conversas com Nima não preservam o ponto de leitura por bioma ou não reiniciam com a jornada"); yield break; }

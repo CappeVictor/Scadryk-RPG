@@ -1,6 +1,6 @@
 # Scadryk — plano e registro de qualidade
 
-- **Checkpoint ao encerrar o jogo (22/11/2026):** fechar o aplicativo no meio de uma sala agora grava fase/sala atuais antes de registrar a sessão. Isso cobre o encerramento normal pelo sistema; falha de energia ou encerramento forçado não pode ser garantido por `OnApplicationQuit`. A gravação mantém os guardas de vitória e modo smoke já existentes, então a campanha concluída não reaparece como retomável e ensaios não tocam o save real. Ainda precisa de teste de integração via Editor/runner Unity; não abri nem executei o jogo.
+- **Checkpoint ao encerrar o jogo (22/11/2026):** fechar o aplicativo durante a jornada grava fase/sala atuais antes de registrar a sessão. A regra exclui título, abertura, vitória, ausência de Nara e modo smoke; assim, só abrir o menu ou sair durante a introdução não cria um checkpoint fictício nem registra uma sala jogada. Isso cobre o encerramento normal pelo sistema; falha de energia ou encerramento forçado não pode ser garantido por `OnApplicationQuit`. O smoke inclui casos para cada estado, mas ainda precisa ser executado no runner Unity; não abri nem executei o jogo.
 
 - **Protocolo de playtest (22/11/2026):** a ficha agora padroniza seis sessões (duas por nível), isolamento de saves em perfil de teste, aviso neutro de F8, observação do uso espontâneo dos poderes, resumo de conclusão/parada e uma verificação de retomada após chefe em uma sessão de cada nível. Nenhum resultado foi preenchido; não houve sessão nem gravação nesta etapa.
 
