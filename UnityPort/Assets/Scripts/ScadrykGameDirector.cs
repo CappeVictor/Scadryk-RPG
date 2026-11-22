@@ -103,9 +103,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     };
     private static string PowerAcquisitionHint(int powerIndex, string binding) => powerIndex switch
     {
-        0 => "Crescente (" + binding + "): arco frontal interrompe Ecos.",
-        1 => "Estouro (" + binding + "): explosão circular expõe alvos.",
-        _ => "Rompante (" + binding + "): onda longa empurra Ecos."
+        0 => "Crescente (" + binding + "): arco frontal interrompe; revela selos.",
+        1 => "Estouro (" + binding + "): explosão circular expõe; revela selos.",
+        _ => "Rompante (" + binding + "): onda longa afasta; revela selos."
     };
     private string statusMessage = "Derrote os ecos para abrir a passagem.";
     private float statusUntil;
@@ -1535,10 +1535,10 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         for (int ability = 0; ability < abilityLessons.Length; ability++)
         {
             string lesson = PowerAcquisitionHint(ability, "TESTE");
-            if (!lesson.Contains("TESTE") || !lesson.Contains(abilityLessons[ability]) || lesson.Length > 60)
-            { SmokeFail("A apresentação do poder " + ability + " não explica seu efeito numa frase curta"); yield break; }
+            if (!lesson.Contains("TESTE") || !lesson.Contains(abilityLessons[ability]) || !lesson.Contains("revela selos") || lesson.Length > 60)
+            { SmokeFail("A apresentação do poder " + ability + " não explica os usos de combate e exploração numa frase curta"); yield break; }
         }
-        Debug.Log("SCADRYK_SMOKE: cada guardião apresenta o comando e o efeito tático do poder recebido");
+        Debug.Log("SCADRYK_SMOKE: cada guardião apresenta comando, efeito tático e uso dos selos do poder recebido");
         ScadrykCue laneCue = ScadrykEnemyHealth.WarningCueFor(0, false, false, 0);
         ScadrykCue volleyCue = ScadrykEnemyHealth.WarningCueFor(0, false, false, 1);
         ScadrykCue areaCue = ScadrykEnemyHealth.WarningCueFor(0, false, false, 2);
