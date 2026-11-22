@@ -1,6 +1,6 @@
 # Ficha de sessão de teste — Scadryk
 
-Use este roteiro em uma build identificada por commit. Não ensine objetivos, segredos ou estratégias durante a primeira tentativa; apresente apenas os controles. Peça autorização antes de registrar comentários e use um apelido ou código, sem dados pessoais. O jogo grava duração, mortes, ataques difíceis de perceber, usos de poderes e uso da corrente costeira por sala em `scadryk-sessions-v6.csv` dentro de `Application.persistentDataPath`. O mesmo `session_id` agrupa as salas gravadas em uma execução; ele também aparece no log como `SCADRYK_SESSION`.
+Use este roteiro em uma build identificada por commit. Não ensine objetivos, segredos ou estratégias durante a primeira tentativa; apresente apenas os controles. Peça autorização antes de registrar comentários e use um apelido ou código, sem dados pessoais. O jogo grava duração, mortes, ataques difíceis de perceber, usos de poderes, uso da corrente costeira e selos opcionais revelados por sala em `scadryk-sessions-v7.csv` dentro de `Application.persistentDataPath`. O mesmo `session_id` agrupa as salas gravadas em uma execução; ele também aparece no log como `SCADRYK_SESSION`.
 
 ## Participante e build
 
@@ -19,23 +19,24 @@ Durante cada sessão, peça à pessoa para abrir uma lembrança primeiro com tec
 
 Depois da sessão, filtre o CSV pelo `session_id` e copie os valores automáticos abaixo. O jogo preserva mortes e usos de poderes ao reiniciar a sala, então os valores da linha já cobrem as tentativas daquela sala na campanha. Se a pessoa repetir a campanha em outra execução, o ID muda; mantenha cada tentativa separada. Anote cada marca F8 com uma descrição do ataque e do que o jogador percebeu.
 
-| Fase / sala | Segundos ativos | Mortes | F8 / sinais pouco claros | Crescente | Estouro | Rompante | Entradas na corrente | Segundos na corrente | Objetivo compreendido sem ajuda? | Comentário curto |
+| Fase / sala | Segundos ativos | Mortes | F8 / sinais pouco claros | Crescente | Estouro | Rompante | Entradas na corrente | Segundos na corrente | Selos revelados | Objetivo compreendido sem ajuda? | Comentário curto |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
-| Bosque alagado 1 | | | | | | | | |
-| Bosque alagado 2 | | | | | | | | |
-| Bosque alagado 3 / guardião | | | | | | | | |
-| Bacia de sal 1 | | | | | | | | |
-| Bacia de sal 2 | | | | | | | | |
-| Bacia de sal 3 / guardião | | | | | | | | |
-| Costa das badaladas 1 | | | | | | | | |
-| Costa das badaladas 2 | | | | | | | | |
-| Costa das badaladas 3 / guardião e Arauto | | | | | | | | |
+| Bosque alagado 1 |  |  |  |  |  |  |  |  |  |  |  |
+| Bosque alagado 2 |  |  |  |  |  |  |  |  |  |  |  |
+| Bosque alagado 3 / guardião |  |  |  |  |  |  |  |  |  |  |  |
+| Bacia de sal 1 |  |  |  |  |  |  |  |  |  |  |  |
+| Bacia de sal 2 |  |  |  |  |  |  |  |  |  |  |  |
+| Bacia de sal 3 / guardião |  |  |  |  |  |  |  |  |  |  |  |
+| Costa das badaladas 1 |  |  |  |  |  |  |  |  |  |  |  |
+| Costa das badaladas 2 |  |  |  |  |  |  |  |  |  |  |  |
+| Costa das badaladas 3 / guardião e Arauto |  |  |  |  |  |  |  |  |  |  |  |
 
 ## Perguntas após a sessão
 
 Respostas de 1 (discordo) a 5 (concordo), com observações:
 
 - Eu sabia para onde ir na maior parte do tempo: `1  2  3  4  5` — nota: `____________________`
+- Encontrei ao menos um selo opcional sem receber instruções do observador: `1  2  3  4  5` — qual pista levou até ele? `____________________`
 - Consegui reconhecer os avisos antes de receber dano: `1  2  3  4  5` — nota: `____________________`
 - A esquiva e os poderes responderam como eu esperava: `1  2  3  4  5` — nota: `____________________`
 - Percebi quando o combo chegou ao terceiro corte, pelo arco dourado, animação e som: `1  2  3  4  5` — nota: `____________________`

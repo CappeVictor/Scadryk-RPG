@@ -232,6 +232,7 @@ public sealed partial class ScadrykGameDirector
         ScadrykEffects.ReleaseEcho(witnessSprite != null ? witnessSprite : CircleSprite, spot, PhaseAccentColors[phaseIndex]);
         Destroy(worldSecret);
         worldSecret = null;
+        roomSecretsRevealed = SecretRevealCountAfterSuccess(roomSecretsRevealed, smokeRun);
         if (player != null) player.RestoreHealth(35f);
         ShowMemory(WorldSecretMemory(requiredPower), 7f);
         ShowStatus("Uma memória foi libertada. Nara recuperou 35 pontos de vida.", 5f);
