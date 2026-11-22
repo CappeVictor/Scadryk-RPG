@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **Funções dos poderes no HUD (22/11/2026):** Crescente, Estouro e Rompante agora mantêm visível um resumo do papel tático junto do comando e da recarga; a verificação da campanha confere os três rótulos e um índice inválido. O Unity 6000.6.9f1 importou e compilou o commit `4e8ab4a` em batch, código 0, sem erros ou avisos C#. O log temporário foi removido e os metadados reescritos pelo Editor foram restaurados. Não abri a cena, não executei o smoke nem o jogo. Ainda falta confirmar legibilidade no HUD em movimento e avaliar se os rótulos ajudam jogadores a escolher poderes.
+
 - **Zona morta do controle (22/11/2026):** a configuração do Input Manager usa `0.19` para movimento e `0.20` para mira; o manual Unity define `Dead` como o limiar abaixo do qual a entrada analógica é tratada como nula. Isso é configuração estática, não prova sobre drift de controles físicos; a ficha de teste agora registra modelo, conexão e movimento involuntário com os analógicos soltos.
 
 - **CI do commit `98affb1` (22/11/2026):** C# run 893 passou build, smoke, publicação e verificação de assets do projeto original na raiz; esse fluxo não compila nem valida `UnityPort`. Unity run 38 falhou antes da build porque `UNITY_LICENSE`, `UNITY_EMAIL` e `UNITY_PASSWORD` não estão configurados; build e smoke Unity foram pulados. A compilação local em batch da alteração de remapeamento passou sem erros/avisos C#; cena e smoke não foram iniciados.
