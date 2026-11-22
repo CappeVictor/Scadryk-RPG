@@ -2,7 +2,19 @@ name: Validate C# game
 
 on:
   push:
+    paths:
+      - '*.cs'
+      - 'Assets/**'
+      - 'Tests/**'
+      - 'Scadryk.csproj'
+      - '.github/workflows/validate.yml'
   pull_request:
+    paths:
+      - '*.cs'
+      - 'Assets/**'
+      - 'Tests/**'
+      - 'Scadryk.csproj'
+      - '.github/workflows/validate.yml'
 
 jobs:
   build:
