@@ -110,7 +110,7 @@ Os obstáculos sólidos também funcionam como **cobertura**: estilhaços inimig
 
 No bosque alagado, as poças rasas reduzem a velocidade de caminhada para 78%, mas não causam dano. A esquiva mantém o impulso normal, permitindo atravessá-las rapidamente quando houver perigo. Na primeira entrada na água, uma mensagem explica esse efeito.
 
-Na Fileira das Bóias, uma faixa de corrente atravessa a sala e empurra Nara para leste sem causar dano. As setas de espuma antecipam a direção; é possível contornar a faixa, avançar contra o fluxo ou usar a esquiva para cruzá-la. A dica da corrente é independente da dica das poças, então ambas continuam disponíveis na campanha.
+Na Fileira das Bóias, uma faixa de corrente atravessa a sala e empurra Nara para leste sem causar dano. As setas de espuma antecipam a direção; é possível contornar a faixa, avançar contra o fluxo ou usar a esquiva para cruzá-la. Um cue sintetizado e discreto acompanha a entrada na corrente. A dica e o áudio da corrente são independentes dos sinais das poças, então ambos continuam disponíveis na campanha.
 
 Para manter os sinais de combate legíveis, a tela limita efeitos visuais secundários a 24 de cada vez. Avisos de ataques e áreas perigosas têm prioridade e não são descartados por esse limite.
 

@@ -160,6 +160,11 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         if (!other.TryGetComponent<ScadrykTerrainZone>(out var zone) || !terrainZones.Add(zone)) return;
         RefreshTerrainSpeed();
         if (director != null) director.ShowTerrainHint(zone.HintKey, zone.EntryHint);
+        if (zone.EntryCue.HasValue)
+        {
+            ScadrykAudio.Play(zone.EntryCue.Value);
+            zone.ConsumeEntryCue();
+        }
     }
 
     private void OnTriggerExit2D(Collider2D other)

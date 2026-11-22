@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum ScadrykCue { Sword, Dash, Pulse, Power, Warning, Impact, Hurt, Portal, Victory, Memory, LaneWarning, VolleyWarning, AreaWarning, SupportWarning, FinalBossWarning, PlayerStrike, PlayerFinisher, PlayerPowerImpact }
+public enum ScadrykCue { Sword, Dash, Pulse, Power, Warning, Impact, Hurt, Portal, Victory, Memory, LaneWarning, VolleyWarning, AreaWarning, SupportWarning, FinalBossWarning, PlayerStrike, PlayerFinisher, PlayerPowerImpact, CoastalCurrent }
 
 /// <summary>Original, lightweight synthesized motifs and combat signals; no external audio assets.</summary>
 public sealed class ScadrykAudio : MonoBehaviour
@@ -49,7 +49,8 @@ public sealed class ScadrykAudio : MonoBehaviour
             MakeCue("Root lane warning", 112f, 0.34f, 0.3f), MakeCue("Crystal volley warning", 690f, 0.22f, 0.22f),
             MakeCue("Echo area warning", 215f, 0.42f, 0.28f), MakeCue("Weaver support warning", 810f, 0.31f, 0.18f),
             MakeCue("Void herald warning", 146.83f, 0.58f, 0.34f), MakeCue("Nara strike confirmed", 880f, 0.1f, 0.24f),
-            MakeCue("Nara finisher confirmed", 660f, 0.2f, 0.36f), MakeCue("Nara power impact", 760f, 0.18f, 0.42f)
+            MakeCue("Nara finisher confirmed", 660f, 0.2f, 0.36f), MakeCue("Nara power impact", 760f, 0.18f, 0.42f),
+            MakeCue("Coastal cross-current", 310f, 0.32f, 0.16f)
         };
     }
 

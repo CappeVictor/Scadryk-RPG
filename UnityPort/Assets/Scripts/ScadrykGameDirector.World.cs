@@ -387,7 +387,7 @@ public sealed partial class ScadrykGameDirector
         trigger.isTrigger = true;
         trigger.size = new Vector2(4.0f, 1.6f);
         zoneObject.AddComponent<ScadrykTerrainZone>().Configure(1f, new Vector2(1.8f, 0f),
-            "A corrente do recife empurra para leste. Atravesse com a esquiva ou avance contra o fluxo.", "bell-coast-current");
+            "A corrente do recife empurra para leste. Atravesse com a esquiva ou avance contra o fluxo.", "bell-coast-current", ScadrykCue.CoastalCurrent);
     }
 
     private void DrawPhaseProps(Transform parent, int room, float x)
