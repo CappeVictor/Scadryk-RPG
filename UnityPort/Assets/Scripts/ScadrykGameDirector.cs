@@ -129,6 +129,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private int resonanceActivations;
     private GUIStyle titleStyle { get; set; }
     private GUIStyle bodyStyle { get; set; }
+    private GUIStyle statusStyle { get; set; }
     private GUIStyle smallStyle { get; set; }
     private GUIStyle hudObjectiveStyle { get; set; }
     private GUIStyle openingTitleStyle { get; set; }
@@ -1924,11 +1925,15 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Rect narrowHud = HudPanelRect(700f, 600f, 1.5f);
         Rect narrowMap = MiniMapPanelRect(700f, 600f, 1.5f);
         Rect narrowLegend = MiniMapLegendRect(narrowMap, 1.5f);
+        Rect shortStatus = StatusLabelRect(400f, 360f, 24f);
+        Rect wrappedStatus = StatusLabelRect(400f, 360f, 72f);
         if (!HudPanelFits(compactHud, 400f, 360f) || MiniMapPanelFits(compactMap, compactHud, 400f, 360f) ||
             !HudPanelFits(narrowHud, 700f, 600f) || !MiniMapPanelFits(narrowMap, narrowHud, 700f, 600f) ||
-            narrowLegend.yMin < narrowMap.yMin || narrowLegend.yMax > narrowMap.yMax)
-        { SmokeFail("HUD sai da tela ou minimapa invade conteúdo numa janela compacta com texto ampliado"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: HUD cabe em 400x360 e minimapa só aparece quando há espaço, com texto ampliado");
+            narrowLegend.yMin < narrowMap.yMin || narrowLegend.yMax > narrowMap.yMax ||
+            wrappedStatus.height <= shortStatus.height || wrappedStatus.xMin < 0f || wrappedStatus.xMax > 400f ||
+            wrappedStatus.yMin < 0f || wrappedStatus.yMax > 360f)
+        { SmokeFail("HUD, minimapa ou aviso de status sai da tela numa janela compacta com texto ampliado"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: HUD e avisos com quebra de linha cabem em 400x360 com texto ampliado");
         if (!OptionsLayoutFits(600f) || !OptionsResetRowFits(400f))
         { SmokeFail("O menu de opções corta as teclas remapeáveis ou os controles de retorno a 600px de altura"); yield break; }
         Debug.Log("SCADRYK_SMOKE: menu de opções e restauração de comandos cabem em janela compacta");

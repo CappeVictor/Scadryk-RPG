@@ -20,7 +20,16 @@ public sealed partial class ScadrykGameDirector
         if (finalBoss != null) DrawFinalBossBar();
         bool showStatus = Time.time < statusUntil;
         bool showMemory = Time.time < memoryUntil && !transitioning;
-        if (showStatus) GUI.Label(new Rect(15, Screen.height - 64, Screen.width - 30, 44), statusMessage, bodyStyle);
+        if (showStatus)
+        {
+            float statusWidth = Mathf.Max(0f, Screen.width - 30f);
+            float statusTextHeight = statusStyle.CalcHeight(new GUIContent(statusMessage), Mathf.Max(32f, statusWidth - 20f));
+            Rect statusRect = StatusLabelRect(Screen.width, Screen.height, statusTextHeight);
+            GUI.color = new Color(0.025f, 0.04f, 0.045f, 0.88f);
+            GUI.DrawTexture(statusRect, Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            GUI.Label(new Rect(statusRect.x + 10f, statusRect.y + 4f, statusRect.width - 20f, statusRect.height - 8f), statusMessage, statusStyle);
+        }
         if (showMemory)
         {
             float width = Mathf.Max(0f, Mathf.Min(740f, Screen.width - 36f));
@@ -91,6 +100,14 @@ public sealed partial class ScadrykGameDirector
 
     private static Rect MemoryDismissHintRect(Rect panel) =>
         new Rect(panel.x + 12f, panel.yMax - 32f, panel.width - 24f, 24f);
+
+    internal static Rect StatusLabelRect(float screenWidth, float screenHeight, float measuredTextHeight)
+    {
+        float width = Mathf.Max(0f, screenWidth - 30f);
+        float availableHeight = Mathf.Max(0f, screenHeight - 16f);
+        float height = Mathf.Min(availableHeight, Mathf.Max(44f, Mathf.Max(0f, measuredTextHeight) + 12f));
+        return new Rect(15f, Mathf.Max(8f, screenHeight - height - 8f), width, height);
+    }
 
     private void DrawHud()
     {
@@ -975,6 +992,7 @@ public sealed partial class ScadrykGameDirector
         GUI.skin.toggle.fontSize = Mathf.RoundToInt(14f * scale);
         titleStyle = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(17f * scale), fontStyle = FontStyle.Bold, normal = { textColor = new Color(0.91f, 0.81f, 0.57f) }, alignment = TextAnchor.MiddleLeft };
         bodyStyle = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(14f * scale), normal = { textColor = new Color(0.88f, 0.89f, 0.83f) }, alignment = TextAnchor.MiddleLeft };
+        statusStyle = new GUIStyle(bodyStyle) { wordWrap = true, alignment = TextAnchor.MiddleCenter };
         smallStyle = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(11f * scale), normal = { textColor = new Color(0.72f, 0.76f, 0.72f) }, alignment = TextAnchor.MiddleLeft };
         hudObjectiveStyle = new GUIStyle(smallStyle) { wordWrap = true, alignment = TextAnchor.UpperLeft };
         centeredTitleStyle = new GUIStyle(titleStyle) { alignment = TextAnchor.MiddleCenter, fontSize = Mathf.RoundToInt(25f * scale) };
