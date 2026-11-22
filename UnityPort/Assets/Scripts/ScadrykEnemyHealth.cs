@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 /// <summary>Biome-themed enemies with readable attacks; player damage comes from announced attacks, never contact alone.</summary>
 [RequireComponent(typeof(Rigidbody2D), typeof(CircleCollider2D))]
@@ -21,6 +22,9 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     internal const float OpeningAttackSpacing = 0.52f;
     internal static float AttackRecoveryDuration(bool boss, bool finalBoss) => finalBoss ? 0.42f : boss ? 0.36f : 0.24f;
     private static readonly float[] SteeringAngles = { 0f, 35f, -35f, 70f, -70f, 110f, -110f, 145f, -145f, 180f };
+    private static readonly List<Collider2D> SupportPulseHits = new List<Collider2D>(16);
+    private static ContactFilter2D supportPulseFilter;
+    private static bool supportPulseFilterReady;
     private readonly RaycastHit2D[] steeringHits = new RaycastHit2D[16];
     private readonly bool[] blockedSteeringHeadings = new bool[10];
     private readonly GameObject[] attackWarnings = new GameObject[8];
@@ -531,10 +535,22 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private void ResolveSupportPulse()
     {
         ScadrykEffects.Ring(transform.position, SupportPulseDiameter, new Color(0.38f, 1f, 0.6f), 0.35f);
-        Collider2D[] nearby = Physics2D.OverlapCircleAll(transform.position, SupportPulseRadius);
-        foreach (Collider2D hit in nearby)
+        if (!supportPulseFilterReady)
+        {
+            supportPulseFilter = new ContactFilter2D();
+            supportPulseFilter.SetLayerMask(~0);
+            supportPulseFilter.useTriggers = Physics2D.queriesHitTriggers;
+            supportPulseFilterReady = true;
+        }
+        SupportPulseHits.Clear();
+        int hitCount = Physics2D.OverlapCircle(transform.position, SupportPulseRadius, supportPulseFilter, SupportPulseHits);
+        for (int i = 0; i < hitCount; i++)
+        {
+            Collider2D hit = SupportPulseHits[i];
+            if (hit == null) continue;
             if (hit.TryGetComponent<ScadrykEnemyHealth>(out var ally) && ally != this && !ally.dead &&
                 SupportPulseContains(transform.position, ally.transform.position)) ally.Heal(15f);
+        }
     }
 
     private void Heal(float amount) { health = Mathf.Min(maxHealth, health + amount); }
