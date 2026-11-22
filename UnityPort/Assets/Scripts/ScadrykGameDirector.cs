@@ -2239,6 +2239,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             if (!ActiveRoomHasWalkableRoute(roomCenter))
             { SmokeFail("A geometria sólida ativa bloqueou a rota caminhável da sala " + (room + 1)); yield break; }
             Debug.Log("SCADRYK_SMOKE: sala " + (room + 1) + "/9 isolada e rota ao portal livre dos colisores sólidos do bioma");
+            for (int anchorIndex = 0; anchorIndex < roomAnchors.Length; anchorIndex++)
+            {
+                if (roomAnchors[anchorIndex] != null && !ActiveRoomHasWalkableRoute(roomCenter, roomAnchors[anchorIndex].transform.position))
+                { SmokeFail("O sinal de ressonância " + (anchorIndex + 1) + " da sala " + (room + 1) + " está isolado pela geometria sólida"); yield break; }
+            }
             if (room == 8 && finalBoss != null)
             { SmokeFail("O Arauto apareceu antes de Nara concluir a memória do terceiro guardião"); yield break; }
             if (room == 8 && !statusMessage.Contains("última lembrança"))
