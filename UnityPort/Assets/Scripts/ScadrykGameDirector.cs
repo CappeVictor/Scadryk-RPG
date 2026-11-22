@@ -50,6 +50,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private GameObject levelRoot, gateObject, witnessObject;
     private int witnessLine;
     private bool resumeFinalGuardianInterlude;
+    private bool smokeRestoreFinalGuardianForRestart;
     private ScadrykEnemyHealth finalBoss;
     private ScadrykEnemyHealth phaseGuardian;
     private GameObject worldSecret;
@@ -695,8 +696,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         else player.ResetForRoom(roomCenter + Vector2.left * 6.2f);
         BuildWorldSecret();
         follow.SetTarget(player.transform);
-        bool guardianAlreadyDefeated = !smokeRun && ShouldRestoreDefeatedGuardian(phaseIndex, roomIndex,
-            HasGuardianDefeatProgress("Scadryk.", phaseIndex));
+        bool guardianAlreadyDefeated = smokeRun
+            ? smokeRestoreFinalGuardianForRestart && phaseIndex == PhaseNames.Length - 1 && roomIndex == RoomsPerPhase - 1
+            : ShouldRestoreDefeatedGuardian(phaseIndex, roomIndex, HasGuardianDefeatProgress("Scadryk.", phaseIndex));
         bool finalBossAlreadyDefeated = !smokeRun && ShouldRestoreFinalBossDefeat(phaseIndex, roomIndex,
             HasFinalBossDefeatProgress("Scadryk."));
         if (guardianAlreadyDefeated || finalBossAlreadyDefeated) enemiesRemaining = 0;
@@ -2258,6 +2260,21 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 { SmokeFail("O minimapa não acompanhou o Arauto após a última memória"); yield break; }
                 if (string.IsNullOrEmpty(InputBinding(5)) || !statusMessage.Contains(PowerAcquisitionHint(2, InputBinding(5))))
                 { SmokeFail("O aviso do terceiro poder não explicou seu efeito e vínculo antes da luta final"); yield break; }
+                smokeRestoreFinalGuardianForRestart = true;
+                player.TakeDamage(player.MaxHealth + 1f);
+                float deathRestartDeadline = Time.time + 3f;
+                while (player.Health <= 0f && Time.time < deathRestartDeadline) yield return null;
+                smokeRestoreFinalGuardianForRestart = false;
+                if (player.Health <= 0f || finalBoss != null || resumeFinalGuardianInterlude || enemiesRemaining != 1 ||
+                    memoryText != GuardianMemories[PhaseNames.Length - 1] || memoryUntil <= Time.time)
+                { SmokeFail("Morrer diante do Arauto não retomou a última lembrança com a arena reconstruída e o chefe aguardando"); yield break; }
+                float resumedBossDeadline = Time.time + 8f;
+                while (finalBoss == null && Time.time < resumedBossDeadline) yield return null;
+                if (finalBoss == null || enemiesRemaining != 1 || phaseGuardian != null)
+                { SmokeFail("O Arauto não reapareceu após a lembrança reaberta na retomada por morte"); yield break; }
+                if (!TryGetMiniMapTarget(out bossMapTarget) || Vector2.Distance(bossMapTarget, finalBoss.transform.position) > 0.001f)
+                { SmokeFail("O minimapa não voltou a apontar para o Arauto após morrer na arena final"); yield break; }
+                Debug.Log("SCADRYK_SMOKE: morte na arena final reconstrói a espera, relê a lembrança e desperta o Arauto novamente");
                 var bossType = typeof(ScadrykEnemyHealth);
                 var queuedStageField = bossType.GetField("queuedFinalStage", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
                 var attackIndexField = bossType.GetField("finalAttackIndex", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
