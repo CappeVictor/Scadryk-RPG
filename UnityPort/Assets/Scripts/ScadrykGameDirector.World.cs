@@ -379,9 +379,9 @@ public sealed partial class ScadrykGameDirector
             var arrowMarker = new GameObject("Current arrow drifting east");
             arrowMarker.transform.SetParent(parent);
             arrowMarker.transform.position = head;
-            arrowMarker.AddComponent<ScadrykAmbientProp>().Configure(ScadrykAmbientMotion.Flow, 0.58f);
             MakeCurrentFoamStroke(arrowMarker.transform, "Upper foam", new Vector2(-0.16f, 0.20f), foam, -32f);
             MakeCurrentFoamStroke(arrowMarker.transform, "Lower foam", new Vector2(-0.16f, -0.20f), foam, 32f);
+            arrowMarker.AddComponent<ScadrykAmbientProp>().ConfigureFlow(0.58f, arrow / 4f);
         }
 
         var zoneObject = new GameObject("Bell coast cross-current · pushes east");

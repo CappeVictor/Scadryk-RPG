@@ -40,6 +40,12 @@ public sealed class ScadrykAmbientProp : MonoBehaviour
         strength = Mathf.Max(0f, motionStrength);
     }
 
+    public void ConfigureFlow(float motionStrength, float normalizedPhase)
+    {
+        Configure(ScadrykAmbientMotion.Flow, motionStrength);
+        phase = Mathf.Repeat(normalizedPhase, 1f) * Mathf.PI * 2f;
+    }
+
     public void ConfigureRevealNear(Transform focus, float radius, float distantOpacity = 0.2f)
     {
         revealFocus = focus;

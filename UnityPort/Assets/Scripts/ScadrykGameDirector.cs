@@ -1154,9 +1154,20 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         float markerStart = ScadrykAmbientProp.FlowMarkerOffset(0f, 0.5f, 1f, 0.34f);
         float markerAdvance = ScadrykAmbientProp.FlowMarkerOffset(0.25f, 0.5f, 1f, 0.34f);
         float markerCycle = ScadrykAmbientProp.FlowMarkerOffset(1f, 0.5f, 1f, 0.34f);
-        if (markerAdvance <= markerStart || Mathf.Abs(markerCycle - markerStart) > 0.001f || Mathf.Abs(markerStart) > 0.001f)
-        { SmokeFail("As setas da corrente não avançam para leste em um ciclo suave e repetível"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: espuma da corrente desliza para leste e reinicia após ciclo contínuo");
+        float[] markerSpacing = new float[4];
+        for (int marker = 0; marker < markerSpacing.Length; marker++)
+            markerSpacing[marker] = ScadrykAmbientProp.FlowMarkerOffset(0f, marker / 4f, 1f, 0.34f);
+        System.Array.Sort(markerSpacing);
+        bool evenlySpaced = true;
+        for (int marker = 0; marker < markerSpacing.Length; marker++)
+        {
+            float next = marker + 1 < markerSpacing.Length ? markerSpacing[marker + 1] : markerSpacing[0] + 0.34f;
+            if (Mathf.Abs((next - markerSpacing[marker]) - 0.085f) > 0.001f) evenlySpaced = false;
+        }
+        if (markerAdvance <= markerStart || Mathf.Abs(markerCycle - markerStart) > 0.001f ||
+            Mathf.Abs(markerStart) > 0.001f || !evenlySpaced)
+        { SmokeFail("As setas da corrente não avançam a leste, fecham o ciclo ou mantêm espaçamento regular"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: espuma da corrente avança em ciclo regular e mantém setas uniformemente espaçadas");
         float sealHidden = ScadrykAmbientProp.RevealAlpha(8f, 4.2f, 0.16f);
         float sealNearby = ScadrykAmbientProp.RevealAlpha(1f, 4.2f, 0.16f);
         float sealContact = ScadrykAmbientProp.RevealAlpha(0f, 4.2f, 0.16f);
