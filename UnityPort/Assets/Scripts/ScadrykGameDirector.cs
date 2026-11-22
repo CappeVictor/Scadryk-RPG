@@ -253,7 +253,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         }
         if (!IsPaused && gateObject == null && enemiesRemaining == 0 && anchorsActivated >= anchorsRequired)
             UnlockExit();
-        if (ShouldShowProgressHint(IsPaused, anchorsActivated, anchorsRequired, roomActiveSeconds, hintStage, statusUntil, Time.time))
+        if (ShouldShowProgressHint(IsPaused, enemiesRemaining, anchorsActivated, anchorsRequired, roomActiveSeconds, hintStage, statusUntil, Time.time))
         {
             ShowStatus(ProgressHint(phaseIndex * RoomsPerPhase + roomIndex, anchorsActivated, hintStage), 7f);
             hintStage++;
@@ -639,9 +639,10 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         return "Pista: siga o objetivo marcado nesta sala e aproxime-se do sinal indicado.";
     }
 
-    internal static bool ShouldShowProgressHint(bool paused, int activated, int required, float activeSeconds,
-        int stage, float statusUntil, float now) =>
-        !paused && activated < required && activeSeconds > 24f + Mathf.Max(0, stage) * 18f && now >= statusUntil;
+    internal static bool ShouldShowProgressHint(bool paused, int enemiesRemaining, int activated, int required,
+        float activeSeconds, int stage, float statusUntil, float now) =>
+        !paused && enemiesRemaining <= 0 && activated < required &&
+        activeSeconds > 24f + Mathf.Max(0, stage) * 18f && now >= statusUntil;
 
     private void SetupCamera()
     {
@@ -2181,15 +2182,16 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ProgressHint(6, 0, 0) == ProgressHint(6, 0, 1) ||
             ProgressHint(7, 0, 0) == ProgressHint(7, 0, 1) || ProgressHint(7, 0, 1) == ProgressHint(7, 0, 2) ||
             !ProgressHint(7, 1, 0).Contains("sino do recife") ||
-            !ShouldShowProgressHint(false, 0, 2, 24.1f, 0, 0f, 1f) ||
-            ShouldShowProgressHint(false, 0, 2, 24.1f, 0, 2f, 1f) ||
-            !ShouldShowProgressHint(false, 0, 2, 31f, 0, 2f, 2f) ||
-            ShouldShowProgressHint(false, 0, 2, 41.9f, 1, 0f, 50f) ||
-            !ShouldShowProgressHint(false, 0, 2, 42.1f, 1, 0f, 50f) ||
-            ShouldShowProgressHint(true, 0, 2, 60f, 2, 0f, 60f) ||
-            ShouldShowProgressHint(false, 2, 2, 60f, 2, 0f, 60f))
+            !ShouldShowProgressHint(false, 0, 0, 2, 24.1f, 0, 0f, 25f) ||
+            ShouldShowProgressHint(false, 0, 0, 2, 24.1f, 0, 26f, 25f) ||
+            !ShouldShowProgressHint(false, 0, 0, 2, 31f, 0, 26f, 26f) ||
+            ShouldShowProgressHint(false, 0, 0, 2, 41.9f, 1, 0f, 50f) ||
+            !ShouldShowProgressHint(false, 0, 0, 2, 42.1f, 1, 0f, 50f) ||
+            ShouldShowProgressHint(true, 0, 0, 2, 60f, 2, 0f, 60f) ||
+            ShouldShowProgressHint(false, 0, 2, 2, 60f, 2, 0f, 60f) ||
+            ShouldShowProgressHint(false, 1, 0, 2, 60f, 2, 0f, 60f))
         { SmokeFail("As pistas graduais de exploração não diferenciam as salas e etapas"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: pistas graduais específicas respeitam progresso, pausa e mensagens ativas");
+        Debug.Log("SCADRYK_SMOKE: pistas graduais específicas esperam o combate, progresso e mensagens ativas");
         Rect compactHud = HudPanelRect(400f, 360f, 1.5f);
         Rect compactMap = MiniMapPanelRect(400f, 360f, 1.5f);
         Rect narrowHud = HudPanelRect(700f, 600f, 1.5f);
