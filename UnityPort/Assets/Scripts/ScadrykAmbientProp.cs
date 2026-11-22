@@ -47,6 +47,8 @@ public sealed class ScadrykAmbientProp : MonoBehaviour
         hiddenOpacity = Mathf.Clamp01(distantOpacity);
     }
 
+    internal bool RevealsFor(Transform focus) => focus != null && revealFocus == focus;
+
     private void Update()
     {
         float wave = Mathf.Sin(Time.time * 1.1f + phase);
