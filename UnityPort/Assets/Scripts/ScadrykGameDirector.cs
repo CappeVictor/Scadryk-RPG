@@ -1320,8 +1320,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             Mathf.Abs(followingLateAttack - lateOpeningAttack - ScadrykEnemyHealth.OpeningAttackSpacing) > 0.001f)
         { SmokeFail("O escalonador não mantém intervalo entre avisos quando Ecos chegam ao alcance depois"); yield break; }
         Debug.Log("SCADRYK_SMOKE: escalonamento preserva intervalo mesmo se um Eco chega ao alcance atrasado");
-        if (EnemyRoleForRoom(1, 0) != 0 || EnemyRoleForRoom(1, 1) != 1 || EnemyRoleForRoom(1, 2) != 2 || EnemyRoleForRoom(1, 3) != 3 ||
+        if (EnemyCountForRoom(0) != 1 || EnemyRoleForRoom(0, 0) != 0 ||
+            EnemyCountForRoom(1) != 2 || EnemyRoleForRoom(1, 0) != 0 || EnemyRoleForRoom(1, 1) != 1 ||
+            EnemyCountForRoom(4) != 4 ||
             EnemyRoleForRoom(4, 0) != 0 || EnemyRoleForRoom(4, 1) != 0 || EnemyRoleForRoom(4, 2) != 2 || EnemyRoleForRoom(4, 3) != 3 ||
+            EnemyCountForRoom(7) != 4 ||
             EnemyRoleForRoom(7, 0) != 1 || EnemyRoleForRoom(7, 1) != 1 || EnemyRoleForRoom(7, 2) != 2 || EnemyRoleForRoom(7, 3) != 3 ||
             EnemyArtworkRowForRole(0) != 0 || EnemyArtworkRowForRole(1) != 1 ||
             EnemyArtworkRowForRole(2) != 3 || EnemyArtworkRowForRole(3) != 2)

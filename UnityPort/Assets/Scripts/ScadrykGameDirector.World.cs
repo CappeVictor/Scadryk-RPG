@@ -805,6 +805,8 @@ public sealed partial class ScadrykGameDirector
         int room = Mathf.Abs(roomId) % RoomsPerPhase;
         if (room == RoomsPerPhase - 1) return 1;
         if (roomId == 3 || roomId == 6) return 0;
+        if (roomId == 0) return 1;
+        if (roomId == 1) return 2;
         return room == 1 ? 4 : 3;
     }
 
@@ -884,6 +886,8 @@ public sealed partial class ScadrykGameDirector
     internal static int EnemyRoleForRoom(int roomId, int enemyIndex)
     {
         if (enemyIndex < 0) return 0;
+        if (roomId == 0) return 0;
+        if (roomId == 1) return enemyIndex == 0 ? 0 : 1;
         if (roomId == 4) return enemyIndex switch { 0 => 0, 1 => 0, 2 => 2, _ => 3 };
         if (roomId == 7) return enemyIndex switch { 0 => 1, 1 => 1, 2 => 2, _ => 3 };
         return enemyIndex % 4;
