@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **Limpeza integral ao concluir a campanha (22/11/2026):** vitória e “Nova jornada” agora usam a mesma rotina para apagar derrotas de chefes, falas já vistas e Selos de Eco descobertos. Antes, vencer o Arauto limpava checkpoint e memórias, mas podia deixar os segredos opcionais invisíveis na campanha seguinte. O smoke verifica a limpeza dos quatro tipos de progresso com chaves temporárias. Unity 6000.6.9f1 importou e compilou em batch, código 0, sem erros ou avisos C#; o smoke continua sem execução.
+
 - **Checkpoint ao encerrar o jogo (22/11/2026):** fechar o aplicativo durante a jornada grava fase/sala atuais antes de registrar a sessão. A regra exclui título, abertura, vitória, ausência de Nara e modo smoke; assim, só abrir o menu ou sair durante a introdução não cria um checkpoint fictício nem registra uma sala jogada. Isso cobre o encerramento normal pelo sistema; falha de energia ou encerramento forçado não pode ser garantido por `OnApplicationQuit`. O smoke inclui casos para cada estado, mas ainda precisa ser executado no runner Unity; não abri nem executei o jogo.
 
 - **Protocolo de playtest (22/11/2026):** a ficha agora padroniza seis sessões (duas por nível), isolamento de saves em perfil de teste, aviso neutro de F8, observação do uso espontâneo dos poderes, resumo de conclusão/parada e uma verificação de retomada após chefe em uma sessão de cada nível. Nenhum resultado foi preenchido; não houve sessão nem gravação nesta etapa.

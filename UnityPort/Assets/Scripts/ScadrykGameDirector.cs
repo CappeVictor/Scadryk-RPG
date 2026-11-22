@@ -514,10 +514,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         ApplyPauseTimeScale();
         PlayerPrefs.DeleteKey("Scadryk.Phase");
         PlayerPrefs.DeleteKey("Scadryk.Room");
-        ClearGuardianDefeatProgress("Scadryk.");
-        ClearFinalBossDefeatProgress("Scadryk.");
-        ClearWitnessProgress("Scadryk.");
-        ClearWorldSecretProgress("Scadryk.");
+        ClearCampaignProgress("Scadryk.");
         PlayerPrefs.Save();
         if (player != null) player.ResetAbilities();
         if (player != null) player.ResetCombatCooldowns();
@@ -1054,6 +1051,14 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             PlayerPrefs.DeleteKey(WorldSecretProgressKey(keyPrefix, phase, room));
     }
 
+    internal static void ClearCampaignProgress(string keyPrefix)
+    {
+        ClearGuardianDefeatProgress(keyPrefix);
+        ClearFinalBossDefeatProgress(keyPrefix);
+        ClearWitnessProgress(keyPrefix);
+        ClearWorldSecretProgress(keyPrefix);
+    }
+
     internal static int ReadWitnessProgress(string keyPrefix, int phase) =>
         Mathf.Max(0, PlayerPrefs.GetInt(WitnessProgressKey(keyPrefix, phase), 0));
 
@@ -1240,9 +1245,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         {
             PlayerPrefs.DeleteKey("Scadryk.Phase");
             PlayerPrefs.DeleteKey("Scadryk.Room");
-            ClearGuardianDefeatProgress("Scadryk.");
-            ClearFinalBossDefeatProgress("Scadryk.");
-            ClearWitnessProgress("Scadryk.");
+            ClearCampaignProgress("Scadryk.");
             PlayerPrefs.Save();
         }
         statusMessage = VictoryEndingText;
@@ -1543,7 +1546,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Debug.Log("SCADRYK_SMOKE: padrões de teclado e controle são independentes e preservam preferências");
         string checkpointTestPrefix = "Scadryk.Smoke." + System.DateTime.UtcNow.Ticks + ".";
         bool checkpointRoundTrip = false, witnessProgressRoundTrip = false, worldSecretProgressRoundTrip = false;
-        bool quitCheckpointStateIsValid = false;
+        bool quitCheckpointStateIsValid = false, campaignProgressCleanupRoundTrip = false;
         bool bossProgressRoundTrip = false;
         try
         {
@@ -1555,6 +1558,14 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 !ShouldSaveCheckpointOnQuit(true, false, true, false, false) &&
                 !ShouldSaveCheckpointOnQuit(true, false, false, true, false) &&
                 !ShouldSaveCheckpointOnQuit(true, false, false, false, true);
+            WriteGuardianDefeatProgress(checkpointTestPrefix, 0);
+            WriteFinalBossDefeatProgress(checkpointTestPrefix);
+            WriteWitnessProgress(checkpointTestPrefix, 1, 2);
+            MarkWorldSecretRevealed(checkpointTestPrefix, 2, 1);
+            ClearCampaignProgress(checkpointTestPrefix);
+            campaignProgressCleanupRoundTrip = !HasGuardianDefeatProgress(checkpointTestPrefix, 0) &&
+                !HasFinalBossDefeatProgress(checkpointTestPrefix) && ReadWitnessProgress(checkpointTestPrefix, 1) == 0 &&
+                !IsWorldSecretRevealed(checkpointTestPrefix, 2, 1);
             PlayerPrefs.SetInt(checkpointTestPrefix + "Room", 2);
             bool ignoresOrphanedRoom = !HasCheckpoint(checkpointTestPrefix) &&
                 !TryLoadCheckpoint(checkpointTestPrefix, out int orphanPhase, out int orphanRoom) && orphanPhase == 0 && orphanRoom == 0;
@@ -1611,7 +1622,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 defeatedGuardianRestoresOnlyAtItsArena && finalGuardianResumeWaitsForArauto && newJourneyClearsGuardianProgress &&
                 defeatedFinalBossRestoresOnlyAtEnding && newJourneyClearsFinalBossProgress;
             witnessProgressRoundTrip = witnessStartsAtFirstLine && restoresWitnessLine && clampsWitnessLine && clearsWitnessLines;
-            checkpointRoundTrip = newGameDefaults && quitCheckpointStateIsValid && ignoresOrphanedRoom &&
+            checkpointRoundTrip = newGameDefaults && quitCheckpointStateIsValid && campaignProgressCleanupRoundTrip && ignoresOrphanedRoom &&
                 ignoresOrphanedPhase && restoresLastPortal && clampsInvalidData;
         }
         finally
