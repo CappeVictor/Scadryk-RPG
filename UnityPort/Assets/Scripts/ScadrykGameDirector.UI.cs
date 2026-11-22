@@ -109,6 +109,13 @@ public sealed partial class ScadrykGameDirector
         return new Rect(15f, Mathf.Max(8f, screenHeight - height - 8f), width, height);
     }
 
+    internal static string AbilityHudLabel(int index, string binding, string state)
+    {
+        string[] labels = { "Crescente · interrompe", "Estouro · expõe", "Rompante · afasta" };
+        if (index < 0 || index >= labels.Length) return string.Empty;
+        return binding + "  " + labels[index] + "  ·  " + state;
+    }
+
     private void DrawHud()
     {
         float extra = ScadrykSettings.TextScale - 1f;
@@ -122,13 +129,12 @@ public sealed partial class ScadrykGameDirector
         GUI.color = new Color(0.18f, 0.19f, 0.2f); GUI.DrawTexture(new Rect(28, 82f + extra * 18f, trackWidth, 12), Texture2D.whiteTexture);
         GUI.color = new Color(0.79f, 0.25f, 0.22f); GUI.DrawTexture(new Rect(28, 82f + extra * 18f, trackWidth * (player != null ? player.Health / player.MaxHealth : 1f), 12), Texture2D.whiteTexture); GUI.color = Color.white;
         GUI.Label(new Rect(28, 98f + extra * 23f, textWidth, 19f + extra * 10f), "Ecos: " + enemiesRemaining + "    Esquiva: " + Cooldown(player != null ? player.DashCooldownLeft : 0) + "    Pulso: " + Cooldown(player != null ? player.ShockwaveCooldownLeft : 0), smallStyle);
-        string[] abilities = { "Crescente Verdejante", "Estouro de Sal", "Rompante da Maré" };
-        for (int i = 0; i < abilities.Length; i++)
+        for (int i = 0; i < 3; i++)
         {
             bool learned = player != null && player.HasAbility(i);
             string state = !learned ? "bloqueado" : player.AbilityCooldownLeft(i) <= 0.02f ? "pronto" : Cooldown(player.AbilityCooldownLeft(i));
             GUI.color = learned ? new Color(0.72f, 0.9f, 0.79f) : new Color(0.48f, 0.53f, 0.51f);
-            GUI.Label(new Rect(28, 116f + extra * 37f + i * (15f + extra * 9f), textWidth, 16f + extra * 9f), InputBinding(i + 3) + "  " + abilities[i] + "  ·  " + state, smallStyle);
+            GUI.Label(new Rect(28, 116f + extra * 37f + i * (15f + extra * 9f), textWidth, 16f + extra * 9f), AbilityHudLabel(i, InputBinding(i + 3), state), smallStyle);
         }
         GUI.color = Color.white;
         float objectiveY = 164f + extra * 64f;

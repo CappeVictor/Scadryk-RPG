@@ -1927,13 +1927,17 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Rect narrowLegend = MiniMapLegendRect(narrowMap, 1.5f);
         Rect shortStatus = StatusLabelRect(400f, 360f, 24f);
         Rect wrappedStatus = StatusLabelRect(400f, 360f, 72f);
-        if (!HudPanelFits(compactHud, 400f, 360f) || MiniMapPanelFits(compactMap, compactHud, 400f, 360f) ||
+        if (AbilityHudLabel(0, "Q", "pronto") != "Q  Crescente · interrompe  ·  pronto" ||
+            AbilityHudLabel(1, "E", "4.2s") != "E  Estouro · expõe  ·  4.2s" ||
+            AbilityHudLabel(2, "R", "pronto") != "R  Rompante · afasta  ·  pronto" ||
+            !string.IsNullOrEmpty(AbilityHudLabel(3, "X", "pronto")) ||
+            !HudPanelFits(compactHud, 400f, 360f) || MiniMapPanelFits(compactMap, compactHud, 400f, 360f) ||
             !HudPanelFits(narrowHud, 700f, 600f) || !MiniMapPanelFits(narrowMap, narrowHud, 700f, 600f) ||
             narrowLegend.yMin < narrowMap.yMin || narrowLegend.yMax > narrowMap.yMax ||
             wrappedStatus.height <= shortStatus.height || wrappedStatus.xMin < 0f || wrappedStatus.xMax > 400f ||
             wrappedStatus.yMin < 0f || wrappedStatus.yMax > 360f)
         { SmokeFail("HUD, minimapa ou aviso de status sai da tela numa janela compacta com texto ampliado"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: HUD e avisos com quebra de linha cabem em 400x360 com texto ampliado");
+        Debug.Log("SCADRYK_SMOKE: HUD mostra a função tática dos três poderes e cabe em 400x360 com texto ampliado");
         if (!OptionsLayoutFits(600f) || !OptionsResetRowFits(400f))
         { SmokeFail("O menu de opções corta as teclas remapeáveis ou os controles de retorno a 600px de altura"); yield break; }
         Debug.Log("SCADRYK_SMOKE: menu de opções e restauração de comandos cabem em janela compacta");
