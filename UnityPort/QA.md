@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **Controles visíveis desde a primeira sala (22/11/2026, código `aa4aa08`):** na jornada nova, a abertura narrativa substitui a mensagem ambiental repetida da primeira sala. Assim que a pessoa começa, o HUD mostra os comandos em vez de ocultá-los sob texto de status enquanto o grupo já inicia os ataques. O smoke testa em quais fases/salas a abertura cobre esse status. Unity 6000.6.9f1 compilou em batch, código 0, sem erros ou avisos; a cena e o smoke não foram executados.
+
 - **Avisos de perigo protegidos pelo orçamento visual (22/11/2026, código `c0806e4`):** o smoke agora sobrecarrega o orçamento de efeitos comuns enquanto mantém um telegráfico de ataque prioritário ativo; verifica os dois resultados na mesma cena. Unity 6000.6.9f1 importou/compilou em batch, código 0, sem erros ou avisos C#. A cena e o smoke não foram executados.
 
 - **Temporização pós-combate das dicas (22/11/2026, código `61978b9`):** a espera não inclui luta nem mensagens temporárias, a contagem congela na pausa e reinicia ao ativar cada sinal. A primeira pista aparece após 24 segundos sem progresso; as seguintes após 18 segundos. Smoke cobre os limites e as condições de acúmulo/exibição; não foi executado. Unity 6000.6.9f1 compilou em batch, código 0, sem erros ou avisos C#. Nenhuma cena ou executável foi aberto.
