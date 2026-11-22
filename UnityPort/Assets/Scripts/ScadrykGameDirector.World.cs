@@ -67,7 +67,6 @@ public sealed partial class ScadrykGameDirector
             string[] lines = phaseIndex == 1 ? BasinWitnessLines : CoastWitnessLines;
             ShowMemory(lines[witnessLine % lines.Length], 8f);
             witnessLine++;
-            ScadrykAudio.Play(ScadrykCue.Memory);
             return;
         }
         for (int i = 0; i < anchorsRequired; i++)
@@ -230,7 +229,6 @@ public sealed partial class ScadrykGameDirector
             ScadrykPlayerController.AbilityPathIsBlocked(requiredPower, source, spot)) return;
         ScadrykEffects.Burst(spot, PhaseAccentColors[phaseIndex], 1.5f);
         ScadrykEffects.ReleaseEcho(witnessSprite != null ? witnessSprite : CircleSprite, spot, PhaseAccentColors[phaseIndex]);
-        ScadrykAudio.Play(ScadrykCue.Memory);
         Destroy(worldSecret);
         worldSecret = null;
         if (player != null) player.RestoreHealth(35f);

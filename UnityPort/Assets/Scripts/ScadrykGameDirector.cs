@@ -1061,6 +1061,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         memoryUntil = Time.time + seconds;
         memoryModal = !smokeRun;
         memoryDismissedFrame = -1;
+        if (!smokeRun) ScadrykAudio.Play(ScadrykCue.Memory);
         ApplyPauseTimeScale();
     }
 
@@ -1421,7 +1422,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ScadrykAudio.WarningCueVolumeScale(1) >= ScadrykAudio.WarningCueVolumeScale(0) ||
             ScadrykAudio.WarningCueVolumeScale(4) <= 0f ||
             !audio.HasCue(laneCue) || !audio.HasCue(volleyCue) || !audio.HasCue(areaCue) ||
-            !audio.HasCue(supportCue) || !audio.HasCue(ScadrykCue.FinalBossWarning) || !audio.HasCue(ScadrykCue.PlayerStrike) || !audio.HasCue(ScadrykCue.PlayerFinisher) ||
+            !audio.HasCue(supportCue) || !audio.HasCue(ScadrykCue.FinalBossWarning) || !audio.HasCue(ScadrykCue.Memory) || !audio.HasCue(ScadrykCue.PlayerStrike) || !audio.HasCue(ScadrykCue.PlayerFinisher) ||
             !audio.HasCue(ScadrykCue.PlayerPowerImpact) || !audio.HasCue(ScadrykCue.CoastalCurrent) || ScadrykCue.PlayerPowerImpact == ScadrykCue.Impact ||
             ScadrykCue.PlayerPowerImpact == ScadrykCue.Power || ScadrykCue.PlayerPowerImpact == ScadrykCue.PlayerStrike ||
             ScadrykCue.PlayerStrike == ScadrykCue.Impact || ScadrykCue.PlayerStrike == ScadrykCue.Sword ||
