@@ -1384,6 +1384,16 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ScadrykActorAnimator.WindupStrength(2f, 1f, 1f) != 1f)
         { SmokeFail("A preparação animada não percorre o início, meio e fim do aviso inimigo"); yield break; }
         Debug.Log("SCADRYK_SMOKE: pose de preparação acompanha o aviso até a resolução do ataque");
+        Vector2 dashUp = ScadrykActorAnimator.DashVisualOffset(Vector2.up, 0.5f);
+        Vector2 dashDown = ScadrykActorAnimator.DashVisualOffset(Vector2.down, 0.5f);
+        Vector2 dashLeft = ScadrykActorAnimator.DashVisualOffset(Vector2.left, 0.5f);
+        Vector2 dashRight = ScadrykActorAnimator.DashVisualOffset(Vector2.right, 0.5f);
+        if (dashUp.y <= 0f || dashDown.y >= 0f || dashLeft.x >= 0f || dashRight.x <= 0f ||
+            ScadrykActorAnimator.DashVisualOffset(Vector2.zero, 1f) != Vector2.zero ||
+            Vector2.Distance(dashUp, Vector2.up * (ScadrykActorAnimator.DashVisualLungeDistance * 0.5f)) > 0.001f ||
+            Vector2.Distance(ScadrykActorAnimator.DashVisualOffset(Vector2.up, 2f), Vector2.up * ScadrykActorAnimator.DashVisualLungeDistance) > 0.001f)
+        { SmokeFail("A silhueta da esquiva precisa indicar as quatro direções e limitar seu avanço visual"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: silhueta da esquiva avança na direção escolhida nos quatro sentidos");
         int[] staggeredFrames = new int[4];
         for (int actor = 0; actor < staggeredFrames.Length; actor++)
             staggeredFrames[actor] = ScadrykEnemyHealth.AnimationFrameIndex(0f, 7f, 4, actor / 4f);

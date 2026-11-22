@@ -3,6 +3,7 @@ using UnityEngine;
 /// <summary>Small readable squash, bob and lunge animation for top-down actors.</summary>
 public sealed class ScadrykActorAnimator : MonoBehaviour
 {
+    internal const float DashVisualLungeDistance = 0.14f;
     private Rigidbody2D body;
     private Transform visual;
     private SpriteRenderer visualRenderer;
@@ -81,6 +82,10 @@ public sealed class ScadrykActorAnimator : MonoBehaviour
     internal static float StrideWave(float time, float frequency, float phase) =>
         Mathf.Sin(Mathf.Max(0f, time) * Mathf.Max(0f, frequency) + phase);
 
+    internal static Vector2 DashVisualOffset(Vector2 direction, float strength) => direction.sqrMagnitude > 0.001f
+        ? direction.normalized * (Mathf.Clamp01(strength) * DashVisualLungeDistance)
+        : Vector2.zero;
+
     public void SetPortalScale(float scale) => portalScale = Mathf.Clamp01(scale);
 
     public void PlayDash(Vector2 direction)
@@ -133,6 +138,7 @@ public sealed class ScadrykActorAnimator : MonoBehaviour
             ? WindupStrength(Time.time, windupStartedAt, windupDuration) : 0f;
 
         float dash = Mathf.Clamp01((dashUntil - Time.time) / 0.2f);
+        Vector2 dashOffset = DashVisualOffset(dashDirection, dash);
         float hit = Mathf.Clamp01((hitUntil - Time.time) / 0.24f);
         float death = deathStartedAt < 0f ? 0f : Mathf.Clamp01((Time.time - deathStartedAt) / 0.72f);
         if (dash > 0f && Time.time >= nextTrailAt && visualRenderer != null)
@@ -141,6 +147,7 @@ public sealed class ScadrykActorAnimator : MonoBehaviour
             nextTrailAt = Time.time + 0.09f;
         }
         visual.localPosition = basePosition + Vector3.up * (Mathf.Abs(stride) * 0.085f - death * 0.22f) +
+            (Vector3)dashOffset +
             (Vector3)(attackDirection * (attack * 0.18f - windup * 0.12f - hit * 0.13f));
         visual.localRotation = Quaternion.Euler(0f, 0f, stride * 2.2f + attack * -8f + windup * 4f + dash * -13f * dashDirection.x + death * 82f);
         visual.localScale = new Vector3(
