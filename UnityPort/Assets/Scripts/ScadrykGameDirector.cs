@@ -625,20 +625,22 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         follow.SetTarget(player.transform);
         SpawnRoomEnemies();
         GetComponent<ScadrykAudio>().SetContext(phaseIndex, false);
-        if (!preserveRoomSession)
-        {
-            roomActiveSeconds = 0f;
-            roomDeaths = 0;
-            unclearAttackMarks = 0;
-            sessionInputMode = "unknown";
-            roomSessionRecorded = false;
-            System.Array.Clear(roomPowerUses, 0, roomPowerUses.Length);
-            coastalCurrentEntries = 0;
-            coastalCurrentSeconds = 0f;
-        }
+        if (!preserveRoomSession) ResetRoomSessionMetrics();
         hintStage = 0;
         statusMessage = roomIndex == RoomsPerPhase - 1 ? GuardianIntroductions[phaseIndex] : RoomStories[phaseIndex * RoomsPerPhase + roomIndex];
         statusUntil = Time.time + (roomIndex == RoomsPerPhase - 1 ? 8f : 6f);
+    }
+
+    private void ResetRoomSessionMetrics()
+    {
+        roomActiveSeconds = 0f;
+        roomDeaths = 0;
+        unclearAttackMarks = 0;
+        sessionInputMode = "unknown";
+        roomSessionRecorded = false;
+        System.Array.Clear(roomPowerUses, 0, roomPowerUses.Length);
+        coastalCurrentEntries = 0;
+        coastalCurrentSeconds = 0f;
     }
     internal static string ObjectiveText(int phase, int room, int enemiesLeft, int anchorsDone, int anchorsNeeded,
         bool anchorsNeedPulse, bool anchorsNeedSequence, bool portalOpen, string combatLabel, string interactBinding, string pulseBinding)
@@ -1460,6 +1462,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             csvHeaderColumns[13] != "current_seconds" || csvRowColumns[csvRowColumns.Length - 1] != "gamepad")
         { SmokeFail("A linha CSV da sessão não corresponde ao cabeçalho ou omite o dispositivo"); yield break; }
         Debug.Log("SCADRYK_SMOKE: CSV v6 preserva uso da corrente após morte e serializa cabeçalho, valores e dispositivo");
+        ResetRoomSessionMetrics();
+        if (roomActiveSeconds != 0f || roomDeaths != 0 || unclearAttackMarks != 0 || sessionInputMode != "unknown" ||
+            roomPowerUses[0] != 0 || coastalCurrentEntries != 0 || coastalCurrentSeconds != 0f)
+        { SmokeFail("O início de uma nova sala manteve métricas da sala anterior"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: métricas de uso da corrente são por sala e reiniciam na nova tentativa");
         float laneRadius = ScadrykEnemyHealth.PlayerCollisionRadius(player);
         float laneWidth = ScadrykEnemyHealth.RootLaneVisualWidth(0.86f, laneRadius);
         if (!ScadrykEnemyHealth.RootLaneHits(new Vector2(1.5f, laneWidth * 0.5f - 0.01f), Vector2.zero, new Vector2(3.3f, 0f), 0.86f, laneRadius) ||
