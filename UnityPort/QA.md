@@ -1,6 +1,6 @@
 # Scadryk — plano e registro de qualidade
 
-- **Runtime atual das ações Unity (22/11/2026):** o workflow agora fixa `actions/checkout` v7.0.1 e `actions/upload-artifact` v7.0.2 por SHA; ambas usam Node 24, removendo a dependência declarada de Node 20 no job Unity. Os SHAs correspondem às tags oficiais. O próximo PR run confirmará execução no runner do GitHub; build/smoke Unity ainda param no gate enquanto os três secrets não estiverem configurados.
+- **CI após atualização das ações (PR #1, commit `16b2bb1`, 22/11/2026):** o runner Windows resolveu e executou `checkout` v7.0.1 e `upload-artifact` v7.0.2 por SHA; o log não mostra os avisos anteriores de Node 20. A checagem Unity ainda terminou no gate de licença antes da importação porque `UNITY_LICENSE`, `UNITY_EMAIL` e `UNITY_PASSWORD` estão vazios. Nenhuma build ou smoke do UnityPort foi realizada. O check `build` do projeto C# raiz estava em andamento quando conferi; ele não valida este port.
 
 - **CI do PR #1 no commit `6fe5372` (22/11/2026):** o check `Build and smoke-test on hosted Windows` falhou no gate de licença, antes da importação Unity, pois `UNITY_LICENSE`, `UNITY_EMAIL` e `UNITY_PASSWORD` estão vazios. Build Windows, smoke da campanha e artefatos foram pulados. O check `build` passou, mas é o workflow do C# original na raiz e não valida UnityPort. Localmente, Unity 6000.6.9f1 compilou a revisão em batch; nenhum jogo foi iniciado. A próxima validação hospedada exige configurar os três secrets em **Settings > Secrets and variables > Actions**.
 
