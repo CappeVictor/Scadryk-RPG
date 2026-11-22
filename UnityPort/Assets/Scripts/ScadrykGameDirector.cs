@@ -742,14 +742,23 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     public void RecordCoastalCurrentEntry()
     {
-        if (phaseIndex == 2 && roomIndex == 1 && !roomSessionRecorded) coastalCurrentEntries++;
+        if (!roomSessionRecorded)
+            coastalCurrentEntries = AddCoastalCurrentEntry(coastalCurrentEntries, phaseIndex, roomIndex);
     }
 
     public void RecordCoastalCurrentExposure(float seconds)
     {
-        if (phaseIndex == 2 && roomIndex == 1 && !roomSessionRecorded)
-            coastalCurrentSeconds += Mathf.Max(0f, seconds);
+        if (!roomSessionRecorded)
+            coastalCurrentSeconds = AddCoastalCurrentExposure(coastalCurrentSeconds, phaseIndex, roomIndex, seconds);
     }
+
+    internal static bool IsCoastalCurrentMetricsRoom(int phase, int room) => phase == 2 && room == 1;
+
+    internal static int AddCoastalCurrentEntry(int currentEntries, int phase, int room) =>
+        IsCoastalCurrentMetricsRoom(phase, room) ? currentEntries + 1 : currentEntries;
+
+    internal static float AddCoastalCurrentExposure(float currentSeconds, int phase, int room, float seconds) =>
+        IsCoastalCurrentMetricsRoom(phase, room) ? currentSeconds + Mathf.Max(0f, seconds) : currentSeconds;
 
     public void RecordInputMode(string mode)
     {
@@ -1442,8 +1451,14 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         roomActiveSeconds = 17f;
         roomDeaths = 0;
         roomPowerUses[0] = 2;
-        coastalCurrentEntries = 2;
-        coastalCurrentSeconds = 4.6f;
+        if (!IsCoastalCurrentMetricsRoom(2, 1) || IsCoastalCurrentMetricsRoom(1, 1) || IsCoastalCurrentMetricsRoom(2, 2) ||
+            AddCoastalCurrentEntry(4, 1, 1) != 4 || AddCoastalCurrentExposure(3f, 2, 0, 0.8f) != 3f ||
+            Mathf.Abs(AddCoastalCurrentExposure(0f, 2, 1, -0.2f)) > 0.001f)
+        { SmokeFail("A telemetria da corrente contou uma sala errada ou exposição negativa"); yield break; }
+        coastalCurrentEntries = AddCoastalCurrentEntry(AddCoastalCurrentEntry(0, 2, 1), 2, 1);
+        coastalCurrentSeconds = AddCoastalCurrentExposure(AddCoastalCurrentExposure(0f, 2, 1, 2.1f), 2, 1, 2.5f);
+        if (coastalCurrentEntries != 2 || Mathf.Abs(coastalCurrentSeconds - 4.6f) > 0.001f)
+        { SmokeFail("A telemetria não somou entradas e segundos ativos da corrente"); yield break; }
         RecordInputMode("gamepad");
         RecordPlayerDeath();
         if (roomDeaths != 1) { SmokeFail("A derrota não foi contabilizada no instante da morte"); yield break; }
