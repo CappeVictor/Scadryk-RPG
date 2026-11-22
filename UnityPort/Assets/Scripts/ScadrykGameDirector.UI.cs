@@ -392,11 +392,15 @@ public sealed partial class ScadrykGameDirector
         showTitle ? "Nara, a Ouvinte, segue os Ecos até a origem do silêncio." :
         "A jornada pode esperar por você.";
 
-    internal static string CheckpointSummary(int phase, int room)
+    internal static string CheckpointSummary(int phase, int room, bool guardianDefeated = false, bool finalBossDefeated = false)
     {
         phase = Mathf.Clamp(phase, 0, PhaseNames.Length - 1);
         room = Mathf.Clamp(room, 0, RoomsPerPhase - 1);
-        return "Retomar: " + PhaseNames[phase] + " · " + MapRoomLabel(phase, room) + " · sala " + (room + 1) + "/" + RoomsPerPhase;
+        string location = "Retomar: " + PhaseNames[phase] + " · " + MapRoomLabel(phase, room) + " · sala " + (room + 1) + "/" + RoomsPerPhase;
+        if (ShouldRestoreFinalBossDefeat(phase, room, finalBossDefeated)) return location + " · portal colossal aberto";
+        if (ShouldRestoreDefeatedGuardian(phase, room, guardianDefeated))
+            return location + (phase == PhaseNames.Length - 1 ? " · último guardião vencido; Arauto aguarda" : " · guardião vencido; portal aberto");
+        return location;
     }
 
     private void DrawOverlay()
@@ -434,7 +438,8 @@ public sealed partial class ScadrykGameDirector
         GUI.Label(new Rect(center - titleWidth * 0.5f, top, titleWidth, titleHeight), heading, centeredTitleStyle);
         string message = showTitle && !victory && !confirmNewJourney &&
             TryLoadCheckpoint("Scadryk.", out int savedPhase, out int savedRoom)
-                ? CheckpointSummary(savedPhase, savedRoom)
+                ? CheckpointSummary(savedPhase, savedRoom,
+                    HasGuardianDefeatProgress("Scadryk.", savedPhase), HasFinalBossDefeatProgress("Scadryk."))
                 : OverlayMessage(confirmNewJourney, victory, showTitle);
         GUI.Label(new Rect(center - messageWidth * 0.5f, messageTop, messageWidth, messageHeight), message, centeredBodyStyle);
         if (confirmNewJourney)

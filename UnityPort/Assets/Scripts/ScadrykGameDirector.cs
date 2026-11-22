@@ -49,6 +49,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private ScadrykCameraFollow follow;
     private GameObject levelRoot, gateObject, witnessObject;
     private int witnessLine;
+    private bool resumeFinalGuardianInterlude;
     private ScadrykEnemyHealth finalBoss;
     private ScadrykEnemyHealth phaseGuardian;
     private GameObject worldSecret;
@@ -175,7 +176,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         int savedPhase = 0, savedRoom = 0;
         if (!smokeRun) TryLoadCheckpoint("Scadryk.", out savedPhase, out savedRoom);
         BuildPhase(savedPhase, savedRoom, true);
-        for (int i = 0; i < savedPhase; i++) player.UnlockAbility(i);
+        for (int i = 0; i < PhaseNames.Length; i++)
+            if (i < savedPhase || (!smokeRun && HasGuardianDefeatProgress("Scadryk.", i))) player.UnlockAbility(i);
 #if DEBUG
         if (smokeRun) { showTitle = false; StartCoroutine(SmokeCampaign()); }
 #endif
@@ -503,6 +505,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     private void StartNewGame()
     {
+        resumeFinalGuardianInterlude = false;
         confirmNewJourney = false;
         showOptions = false;
         isPaused = false;
@@ -511,6 +514,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         ApplyPauseTimeScale();
         PlayerPrefs.DeleteKey("Scadryk.Phase");
         PlayerPrefs.DeleteKey("Scadryk.Room");
+        ClearGuardianDefeatProgress("Scadryk.");
+        ClearFinalBossDefeatProgress("Scadryk.");
         ClearWitnessProgress("Scadryk.");
         ClearWorldSecretProgress("Scadryk.");
         PlayerPrefs.Save();
@@ -550,6 +555,12 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             showOpeningStory = true;
             ApplyPauseTimeScale();
             return;
+        }
+        if (resumeFinalGuardianInterlude)
+        {
+            resumeFinalGuardianInterlude = false;
+            ShowMemory(GuardianMemories[PhaseNames.Length - 1], 7f);
+            StartCoroutine(SpawnFinalBossAfterMemory());
         }
         StartRoomTimer();
         ApplyPauseTimeScale();
@@ -692,12 +703,25 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         else player.ResetForRoom(roomCenter + Vector2.left * 6.2f);
         BuildWorldSecret();
         follow.SetTarget(player.transform);
-        SpawnRoomEnemies();
+        bool guardianAlreadyDefeated = !smokeRun && ShouldRestoreDefeatedGuardian(phaseIndex, roomIndex,
+            HasGuardianDefeatProgress("Scadryk.", phaseIndex));
+        bool finalBossAlreadyDefeated = !smokeRun && ShouldRestoreFinalBossDefeat(phaseIndex, roomIndex,
+            HasFinalBossDefeatProgress("Scadryk."));
+        if (guardianAlreadyDefeated || finalBossAlreadyDefeated) enemiesRemaining = 0;
+        else SpawnRoomEnemies();
         GetComponent<ScadrykAudio>().SetContext(phaseIndex, false);
         if (!preserveRoomSession) ResetRoomSessionMetrics();
         hintStage = 0;
         statusMessage = roomIndex == RoomsPerPhase - 1 ? GuardianIntroductions[phaseIndex] : RoomStories[phaseIndex * RoomsPerPhase + roomIndex];
         statusUntil = Time.time + (roomIndex == RoomsPerPhase - 1 ? 8f : 6f);
+        if (finalBossAlreadyDefeated) UnlockExit();
+        else if (ShouldResumeFinalGuardianInterlude(phaseIndex, roomIndex, guardianAlreadyDefeated, finalBossAlreadyDefeated))
+        {
+            resumeFinalGuardianInterlude = true;
+            enemiesRemaining = 1;
+            statusMessage = "O último guardião já foi vencido. A lembrança aguarda Nara.";
+        }
+        else if (guardianAlreadyDefeated) UnlockExit();
     }
 
     private void ResetRoomSessionMetrics()
@@ -772,6 +796,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (enemy == phaseGuardian) phaseGuardian = null;
         if (enemy.IsFinalBoss)
         {
+            if (!smokeRun) WriteFinalBossDefeatProgress("Scadryk.");
             ClearRoomProjectiles();
             finalBoss = null;
             enemiesRemaining = Mathf.Max(0, enemiesRemaining - 1);
@@ -785,6 +810,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (enemy.IsBoss && player != null)
         {
             player.UnlockAbility(enemy.BiomeIndex);
+            if (!smokeRun) WriteGuardianDefeatProgress("Scadryk.", enemy.BiomeIndex);
             string[] powers = { "Crescente Verdejante", "Estouro de Sal", "Rompante da Maré" };
             int powerIndex = Mathf.Clamp(enemy.BiomeIndex, 0, powers.Length - 1);
             if (worldSecret != null && RequiredWorldSecretPower() == powerIndex) worldSecretHintShown = false;
@@ -940,6 +966,48 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     internal static bool IsRoomMarkedComplete(bool[] cleared, int room) =>
         cleared != null && room >= 0 && room < cleared.Length && cleared[room];
+
+    internal static bool ShouldRestoreDefeatedGuardian(int phase, int room, bool guardianDefeated) =>
+        guardianDefeated && phase >= 0 && phase < PhaseNames.Length && room == RoomsPerPhase - 1;
+
+    internal static bool ShouldRestoreFinalBossDefeat(int phase, int room, bool finalBossDefeated) =>
+        finalBossDefeated && phase == PhaseNames.Length - 1 && room == RoomsPerPhase - 1;
+
+    internal static bool ShouldResumeFinalGuardianInterlude(int phase, int room, bool guardianDefeated, bool finalBossDefeated) =>
+        ShouldRestoreDefeatedGuardian(phase, room, guardianDefeated) && phase == PhaseNames.Length - 1 &&
+        !ShouldRestoreFinalBossDefeat(phase, room, finalBossDefeated);
+
+    internal static string GuardianDefeatProgressKey(string keyPrefix, int guardian) =>
+        keyPrefix + "GuardianDefeated." + Mathf.Clamp(guardian, 0, PhaseNames.Length - 1);
+
+    internal static bool HasGuardianDefeatProgress(string keyPrefix, int guardian) =>
+        PlayerPrefs.GetInt(GuardianDefeatProgressKey(keyPrefix, guardian), 0) == 1;
+
+    internal static void WriteGuardianDefeatProgress(string keyPrefix, int guardian)
+    {
+        PlayerPrefs.SetInt(GuardianDefeatProgressKey(keyPrefix, guardian), 1);
+        PlayerPrefs.Save();
+    }
+
+    internal static void ClearGuardianDefeatProgress(string keyPrefix)
+    {
+        for (int guardian = 0; guardian < PhaseNames.Length; guardian++)
+            PlayerPrefs.DeleteKey(GuardianDefeatProgressKey(keyPrefix, guardian));
+    }
+
+    internal static string FinalBossDefeatProgressKey(string keyPrefix) => keyPrefix + "FinalBossDefeated";
+
+    internal static bool HasFinalBossDefeatProgress(string keyPrefix) =>
+        PlayerPrefs.GetInt(FinalBossDefeatProgressKey(keyPrefix), 0) == 1;
+
+    internal static void WriteFinalBossDefeatProgress(string keyPrefix)
+    {
+        PlayerPrefs.SetInt(FinalBossDefeatProgressKey(keyPrefix), 1);
+        PlayerPrefs.Save();
+    }
+
+    internal static void ClearFinalBossDefeatProgress(string keyPrefix) =>
+        PlayerPrefs.DeleteKey(FinalBossDefeatProgressKey(keyPrefix));
 
     internal static void WriteCheckpoint(string keyPrefix, int phase, int room)
     {
@@ -1163,6 +1231,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         {
             PlayerPrefs.DeleteKey("Scadryk.Phase");
             PlayerPrefs.DeleteKey("Scadryk.Room");
+            ClearGuardianDefeatProgress("Scadryk.");
+            ClearFinalBossDefeatProgress("Scadryk.");
             ClearWitnessProgress("Scadryk.");
             PlayerPrefs.Save();
         }
@@ -1464,6 +1534,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Debug.Log("SCADRYK_SMOKE: padrões de teclado e controle são independentes e preservam preferências");
         string checkpointTestPrefix = "Scadryk.Smoke." + System.DateTime.UtcNow.Ticks + ".";
         bool checkpointRoundTrip = false, witnessProgressRoundTrip = false, worldSecretProgressRoundTrip = false;
+        bool bossProgressRoundTrip = false;
         try
         {
             bool newGameDefaults = !HasCheckpoint(checkpointTestPrefix) &&
@@ -1501,6 +1572,28 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             bool freshJourneyRevealsUnfoundSecret = ShouldBuildWorldSecret(false, IsWorldSecretRevealed(checkpointTestPrefix, 1, 0));
             worldSecretProgressRoundTrip = secretStartsHidden && secretSurvivesRoomRebuild && smokeCanRebuildSecret &&
                 secretsAreRoomSpecific && newJourneyClearsSecrets && freshJourneyRevealsUnfoundSecret;
+            bool guardianStartsUndefeated = !HasGuardianDefeatProgress(checkpointTestPrefix, 0);
+            WriteGuardianDefeatProgress(checkpointTestPrefix, 0);
+            WriteGuardianDefeatProgress(checkpointTestPrefix, 2);
+            bool guardianDefeatsPersistIndependently = HasGuardianDefeatProgress(checkpointTestPrefix, 0) &&
+                HasGuardianDefeatProgress(checkpointTestPrefix, 2) && !HasGuardianDefeatProgress(checkpointTestPrefix, 1);
+            bool defeatedGuardianRestoresOnlyAtItsArena = ShouldRestoreDefeatedGuardian(0, 2, true) &&
+                !ShouldRestoreDefeatedGuardian(0, 1, true) && !ShouldRestoreDefeatedGuardian(0, 2, false);
+            bool finalGuardianResumeWaitsForArauto = ShouldResumeFinalGuardianInterlude(2, 2, true, false) &&
+                !ShouldResumeFinalGuardianInterlude(2, 2, false, false) &&
+                !ShouldResumeFinalGuardianInterlude(2, 2, true, true) && !ShouldResumeFinalGuardianInterlude(1, 2, true, false);
+            ClearGuardianDefeatProgress(checkpointTestPrefix);
+            bool newJourneyClearsGuardianProgress = !HasGuardianDefeatProgress(checkpointTestPrefix, 0) &&
+                !HasGuardianDefeatProgress(checkpointTestPrefix, 2);
+            WriteFinalBossDefeatProgress(checkpointTestPrefix);
+            bool defeatedFinalBossRestoresOnlyAtEnding = HasFinalBossDefeatProgress(checkpointTestPrefix) &&
+                ShouldRestoreFinalBossDefeat(2, 2, true) && !ShouldRestoreFinalBossDefeat(2, 1, true) &&
+                !ShouldRestoreFinalBossDefeat(1, 2, true);
+            ClearFinalBossDefeatProgress(checkpointTestPrefix);
+            bool newJourneyClearsFinalBossProgress = !HasFinalBossDefeatProgress(checkpointTestPrefix);
+            bossProgressRoundTrip = guardianStartsUndefeated && guardianDefeatsPersistIndependently &&
+                defeatedGuardianRestoresOnlyAtItsArena && finalGuardianResumeWaitsForArauto && newJourneyClearsGuardianProgress &&
+                defeatedFinalBossRestoresOnlyAtEnding && newJourneyClearsFinalBossProgress;
             witnessProgressRoundTrip = witnessStartsAtFirstLine && restoresWitnessLine && clampsWitnessLine && clearsWitnessLines;
             checkpointRoundTrip = newGameDefaults && ignoresOrphanedRoom && ignoresOrphanedPhase && restoresLastPortal && clampsInvalidData;
         }
@@ -1508,12 +1601,16 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         {
             PlayerPrefs.DeleteKey(checkpointTestPrefix + "Phase");
             PlayerPrefs.DeleteKey(checkpointTestPrefix + "Room");
+            ClearGuardianDefeatProgress(checkpointTestPrefix);
+            ClearFinalBossDefeatProgress(checkpointTestPrefix);
             ClearWitnessProgress(checkpointTestPrefix);
             ClearWorldSecretProgress(checkpointTestPrefix);
             PlayerPrefs.Save();
         }
         if (!checkpointRoundTrip) { SmokeFail("Checkpoint parcial não foi ignorado, ou o portal não foi restaurado/limitado"); yield break; }
         Debug.Log("SCADRYK_SMOKE: checkpoint grava, carrega, limita e limpa chaves temporárias");
+        if (!bossProgressRoundTrip) { SmokeFail("O save não preserva chefes derrotados, restaura sala segura ou limpa a jornada nova"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: derrota de guardiões e Arauto persiste, retoma na arena e é limpa na jornada nova");
         if (!witnessProgressRoundTrip) { SmokeFail("As conversas com Nima não preservam o ponto de leitura por bioma ou não reiniciam com a jornada"); yield break; }
         Debug.Log("SCADRYK_SMOKE: conversa de Nima preserva a próxima fala separada por bioma e pode ser reiniciada");
         if (!worldSecretProgressRoundTrip) { SmokeFail("Selo opcional volta após reconstruir a sala, mistura salas ou não é limpo ao iniciar nova jornada"); yield break; }
@@ -1579,8 +1676,12 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Debug.Log("SCADRYK_SMOKE: o painel de vitória seleciona o encerramento da história");
         string savedLocation = CheckpointSummary(2, 1);
         string clampedLocation = CheckpointSummary(-1, 99);
+        string defeatedGuardianLocation = CheckpointSummary(2, 2, true);
+        string defeatedArautoLocation = CheckpointSummary(2, 2, true, true);
         if (!savedLocation.Contains("Costa das Badaladas") || !savedLocation.Contains("Bóias") || !savedLocation.Contains("2/3") ||
-            !clampedLocation.Contains("Margens do Primeiro Eco") || !clampedLocation.Contains("3/3"))
+            !clampedLocation.Contains("Margens do Primeiro Eco") || !clampedLocation.Contains("3/3") ||
+            !defeatedGuardianLocation.Contains("último guardião vencido") || !defeatedGuardianLocation.Contains("Arauto aguarda") ||
+            !defeatedArautoLocation.Contains("portal colossal aberto"))
         { SmokeFail("O resumo do checkpoint não identifica ou limita corretamente bioma e sala salvos"); yield break; }
         Debug.Log("SCADRYK_SMOKE: resumo do checkpoint identifica bioma e sala e limita dados fora da faixa");
         for (int guardian = 0; guardian < GuardianNames.Length; guardian++)
