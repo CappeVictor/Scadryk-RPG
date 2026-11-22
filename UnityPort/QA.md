@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **Temporização pós-combate das dicas (22/11/2026, código `61978b9`):** a espera não inclui luta nem mensagens temporárias, a contagem congela na pausa e reinicia ao ativar cada sinal. A primeira pista aparece após 24 segundos sem progresso; as seguintes após 18 segundos. Smoke cobre os limites e as condições de acúmulo/exibição; não foi executado. Unity 6000.6.9f1 compilou em batch, código 0, sem erros ou avisos C#. Nenhuma cena ou executável foi aberto.
+
 - **Dicas só após limpar a sala (22/11/2026, código `374ec76`):** as pistas de ressonância e vestígios agora aguardam que os Ecos da sala sejam derrotados, além de respeitar a pausa, o progresso nos sinais e mensagens temporárias. O smoke confere esses casos e os limites temporais de cada etapa; ainda não foi executado. Unity 6000.6.9f1 importou/compilou em batch, código 0, sem erros nem avisos C#. Nenhuma cena, Play Mode ou executável foi aberto.
 
 - **Dicas não interrompem mensagens ativas (22/11/2026, código `e23b6fa`):** pistas graduais de salas com sinais e vestígios pendentes agora esperam uma mensagem temporária de história, poder ou evento terminar antes de aparecer. Smoke cobre a chegada ao primeiro e segundo limites, espera por status ativo, pausa e objetivo já concluído. Unity 6000.6.9f1 importou/compilou os scripts em batch, código 0, sem erros nem avisos C#. Smoke ainda não executado; nenhuma cena, Play Mode ou executável foi aberto.
