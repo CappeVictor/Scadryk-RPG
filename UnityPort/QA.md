@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **22/11/2026 — evidência obrigatória no smoke hospedado:** ao revisar o workflow, encontrei que a ausência do log não falhava o job se o processo retornasse código zero. Agora o passo exige que o arquivo exista e contenha o marcador final das nove salas antes de considerar o smoke aprovado; também continua exigindo código de saída zero. Revisei o fluxo estaticamente, sem disparar a build ou iniciar o executável.
+
 - **22/11/2026 — alternância de dispositivo na telemetria:** a gravação de entrada agora passa por uma regra única: teclado/mouse e controle substituem o último modo detectado, enquanto candidatos desconhecidos ou nulos preservam o valor atual. O smoke cobre a alternância nos dois sentidos e a rejeição de modos inválidos, reforçando a coluna `input_mode` usada para comparar sessões. `Tools/compile-unity.ps1` concluiu com código 0; o log não contém erros/avisos C# nem falha de compilação. Não abri a cena, não rodei o smoke nem iniciei o jogo.
 
 - **22/11/2026 — CI da branch no GitHub:** a execução 824 terminou com sucesso para o projeto .NET da raiz: compilação, smoke do protótipo original, publicação Windows e checagem de assets. O `.csproj` exclui `UnityPort/Assets/**/*.cs`, então essa execução não valida o port Unity. O Unity continuou apenas com a compilação local em batch; o build e o smoke Unity seguem pendentes, sem abrir o jogo.

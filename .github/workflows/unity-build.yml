@@ -67,11 +67,12 @@ jobs:
           $logPath = Join-Path $env:RUNNER_TEMP 'ScadrykCampaignSmoke.log'
           & $smokePlayer -batchmode -nographics -scadryk-smoke -logFile $logPath
           $smokeExitCode = $LASTEXITCODE
-          if (Test-Path $logPath) {
-            Get-Content $logPath -Tail 100
-            if (-not (Select-String -Path $logPath -SimpleMatch 'SCADRYK_SMOKE: SUCCESS nove salas, três poderes, Arauto e vitória' -Quiet)) {
-              throw 'Campaign smoke did not record its success marker.'
-            }
+          if (-not (Test-Path $logPath -PathType Leaf)) {
+            throw 'Campaign smoke did not create its log; success cannot be verified.'
+          }
+          Get-Content $logPath -Tail 100
+          if (-not (Select-String -Path $logPath -SimpleMatch 'SCADRYK_SMOKE: SUCCESS nove salas, três poderes, Arauto e vitória' -Quiet)) {
+            throw 'Campaign smoke did not record its success marker.'
           }
           if ($smokeExitCode -ne 0) { throw "Campaign smoke failed with exit code $smokeExitCode" }
 
