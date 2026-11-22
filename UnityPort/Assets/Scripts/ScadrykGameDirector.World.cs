@@ -211,8 +211,34 @@ public sealed partial class ScadrykGameDirector
         MakeDecoration(worldSecret.transform, "Seal center", spot, new Vector2(0.2f, 0.2f), new Color(1f, 1f, 1f, 0.22f), true, 3);
     }
 
-    private int RequiredWorldSecretPower() => phaseIndex == 1 && roomIndex == 0 ? 0 :
-        phaseIndex == 2 && roomIndex == 0 ? 1 : phaseIndex == 2 && roomIndex == 2 ? 2 : -1;
+    private int RequiredWorldSecretPower() => PowerGrantedBySecretAt(phaseIndex, roomIndex);
+
+    internal static int PowerGrantedBySecretAt(int phase, int room) =>
+        phase == 1 && room == 0 ? 0 : phase == 2 && room == 0 ? 1 : phase == 2 && room == 2 ? 2 : -1;
+
+    internal static string PowerEchoRewardText(int power) => power switch
+    {
+        0 => "Crescente: recarga 20% mais rápido.",
+        1 => "Estouro: a vulnerabilidade dura mais.",
+        2 => "Rompante: Ecos comuns são arremessados com mais força.",
+        _ => string.Empty
+    };
+
+    internal static void RestorePowerEchoes(string keyPrefix, ScadrykPlayerController target)
+    {
+        if (target == null) return;
+        for (int power = 0; power < 3; power++)
+            if (ShouldRestorePowerEcho(keyPrefix, power)) target.UnlockPowerEcho(power);
+    }
+
+    internal static bool ShouldRestorePowerEcho(string keyPrefix, int power)
+    {
+        if (power < 0 || power >= 3) return false;
+        for (int phase = 0; phase < 3; phase++)
+        for (int room = 0; room < 3; room++)
+            if (PowerGrantedBySecretAt(phase, room) == power && IsWorldSecretRevealed(keyPrefix, phase, room)) return true;
+        return false;
+    }
 
     private static string WorldSecretMemory(int power) => power switch
     {
@@ -252,12 +278,13 @@ public sealed partial class ScadrykGameDirector
         ScadrykEffects.Burst(spot, PhaseAccentColors[phaseIndex], 1.5f);
         ScadrykEffects.ReleaseEcho(witnessSprite != null ? witnessSprite : CircleSprite, spot, PhaseAccentColors[phaseIndex]);
         if (!smokeRun) MarkWorldSecretRevealed("Scadryk.", phaseIndex, roomIndex);
+        if (player != null) player.UnlockPowerEcho(requiredPower);
         Destroy(worldSecret);
         worldSecret = null;
         roomSecretsRevealed = SecretRevealCountAfterSuccess(roomSecretsRevealed, smokeRun);
         if (player != null) player.RestoreHealth(35f);
         ShowMemory(WorldSecretMemory(requiredPower), 7f, false);
-        ShowStatus("Uma memória foi libertada. Nara recuperou 35 pontos de vida.", 5f);
+        ShowStatus("Eco sintonizado — " + PowerEchoRewardText(requiredPower) + " Nara recuperou 35 pontos de vida.", 6f);
     }
 
     private void PlacePhaseGround(Transform parent, float x, int room)

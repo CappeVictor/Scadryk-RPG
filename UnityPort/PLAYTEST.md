@@ -33,6 +33,7 @@ Convide ao menos duas pessoas por nível de experiência (seis sessões) antes d
 - Poder menos usado e razão observada/declarada: `____________________`
 - Primeiro uso de Crescente, Estouro e Rompante (alvo e contexto): `____________________`
 - Alguma combinação espontânea de poderes? Quais efeitos percebeu? `____________________`
+- Encontrou algum Selo de Eco? Qual melhoria percebeu e como ela mudou seu uso do poder? `____________________`
 - Save/retomada e opções de acessibilidade usadas: `____________________`
 
 Se houver controle, antes da partida observe alguns segundos com os analógicos em repouso e registre qualquer movimento, mira ou navegação involuntária; anote modelo e conexão para reproduzir o caso. Durante cada sessão, peça à pessoa para abrir uma lembrança primeiro com teclado/mouse e depois, se houver controle disponível, trocar de dispositivo com o painel aberto. Observe se os comandos mostrados acompanham a troca, se a pausa permite ler sem pressão e se o botão usado para continuar não pula a fala seguinte. Registre se o cue sonoro da lembrança se distingue da trilha e se o toque ascendente de um selo é percebido sem se confundir com a lembrança que vem em seguida.

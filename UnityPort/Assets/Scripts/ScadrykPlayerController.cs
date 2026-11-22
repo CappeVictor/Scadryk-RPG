@@ -38,6 +38,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     private float invulnerableUntil;
     private float rootedUntil;
     private readonly bool[] learnedAbilities = new bool[3];
+    private readonly bool[] powerEchoes = new bool[3];
     private readonly float[] abilityReadyAt = new float[3];
     private readonly List<Collider2D> attackHits = new List<Collider2D>(16);
     private ContactFilter2D attackHitFilter;
@@ -87,6 +88,21 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         if (index < 0 || index >= learnedAbilities.Length) return;
         learnedAbilities[index] = true;
     }
+
+    public void UnlockPowerEcho(int index)
+    {
+        if (index < 0 || index >= powerEchoes.Length) return;
+        powerEchoes[index] = true;
+    }
+
+    public bool HasPowerEcho(int index) => index >= 0 && index < powerEchoes.Length && powerEchoes[index];
+
+    internal static float AbilityCooldownFor(int index, bool echo) => Mathf.Clamp(index, 0, 2) switch
+    {
+        0 => echo ? 5.6f : 7f,
+        1 => 10f,
+        _ => 14f
+    };
 
     private void Awake()
     {
@@ -409,18 +425,18 @@ public sealed class ScadrykPlayerController : MonoBehaviour
 
         float radius;
         float damage;
-        float cooldown;
+        float cooldown = AbilityCooldownFor(index, HasPowerEcho(index));
         if (index == 0)
         {
-            radius = 3.6f; damage = 72f; cooldown = 7f;
+            radius = 3.6f; damage = 72f;
         }
         else if (index == 1)
         {
-            radius = SaltburstAbilityRadius; damage = 82f; cooldown = 10f;
+            radius = SaltburstAbilityRadius; damage = 82f;
         }
         else
         {
-            radius = 7.6f; damage = 120f; cooldown = 14f;
+            radius = 7.6f; damage = 120f;
         }
 
         abilityReadyAt[index] = Time.time + cooldown;
@@ -454,8 +470,8 @@ public sealed class ScadrykPlayerController : MonoBehaviour
             if (AbilityPathIsBlocked(index, origin, enemy.transform.position)) continue;
             enemy.TakeDamage(damage);
             if (index == 0) enemy.ApplyCrescentControl();
-            else if (index == 1) enemy.ApplySaltExposure();
-            else enemy.ApplyTidePush(toEnemy);
+            else if (index == 1) enemy.ApplySaltExposure(HasPowerEcho(index));
+            else enemy.ApplyTidePush(toEnemy, HasPowerEcho(index));
         }
     }
 

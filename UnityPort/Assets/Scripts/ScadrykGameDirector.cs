@@ -179,6 +179,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         BuildPhase(savedPhase, savedRoom, true);
         for (int i = 0; i < PhaseNames.Length; i++)
             if (ShouldRestoreAbility(i, savedPhase, !smokeRun && HasGuardianDefeatProgress("Scadryk.", i))) player.UnlockAbility(i);
+        if (!smokeRun) RestorePowerEchoes("Scadryk.", player);
 #if DEBUG
         if (smokeRun) { showTitle = false; StartCoroutine(SmokeCampaign()); }
 #endif
@@ -1562,7 +1563,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         string checkpointTestPrefix = "Scadryk.Smoke." + System.DateTime.UtcNow.Ticks + ".";
         bool checkpointRoundTrip = false, witnessProgressRoundTrip = false, worldSecretProgressRoundTrip = false;
         bool quitCheckpointStateIsValid = false, campaignProgressCleanupRoundTrip = false;
-        bool bossProgressRoundTrip = false, powerRestoreRoundTrip = false;
+        bool bossProgressRoundTrip = false, powerRestoreRoundTrip = false, powerEchoProgressRoundTrip = false;
         try
         {
             bool newGameDefaults = !HasCheckpoint(checkpointTestPrefix) &&
@@ -1614,6 +1615,17 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             bool freshJourneyRevealsUnfoundSecret = ShouldBuildWorldSecret(false, IsWorldSecretRevealed(checkpointTestPrefix, 1, 0));
             worldSecretProgressRoundTrip = secretStartsHidden && secretSurvivesRoomRebuild && smokeCanRebuildSecret &&
                 secretsAreRoomSpecific && newJourneyClearsSecrets && freshJourneyRevealsUnfoundSecret;
+            MarkWorldSecretRevealed(checkpointTestPrefix, 1, 0);
+            MarkWorldSecretRevealed(checkpointTestPrefix, 2, 0);
+            MarkWorldSecretRevealed(checkpointTestPrefix, 2, 2);
+            powerEchoProgressRoundTrip = ShouldRestorePowerEcho(checkpointTestPrefix, 0) &&
+                ShouldRestorePowerEcho(checkpointTestPrefix, 1) && ShouldRestorePowerEcho(checkpointTestPrefix, 2) &&
+                !ShouldRestorePowerEcho(checkpointTestPrefix, -1) && !ShouldRestorePowerEcho(checkpointTestPrefix, 3) &&
+                PowerGrantedBySecretAt(1, 0) == 0 && PowerGrantedBySecretAt(2, 0) == 1 &&
+                PowerGrantedBySecretAt(2, 2) == 2 && PowerGrantedBySecretAt(0, 0) == -1;
+            ClearWorldSecretProgress(checkpointTestPrefix);
+            powerEchoProgressRoundTrip &= !ShouldRestorePowerEcho(checkpointTestPrefix, 0) &&
+                !ShouldRestorePowerEcho(checkpointTestPrefix, 1) && !ShouldRestorePowerEcho(checkpointTestPrefix, 2);
             bool guardianStartsUndefeated = !HasGuardianDefeatProgress(checkpointTestPrefix, 0);
             WriteGuardianDefeatProgress(checkpointTestPrefix, 0);
             WriteGuardianDefeatProgress(checkpointTestPrefix, 2);
@@ -1672,6 +1684,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Debug.Log("SCADRYK_SMOKE: conversa de Nima preserva a próxima fala separada por bioma e pode ser reiniciada");
         if (!worldSecretProgressRoundTrip) { SmokeFail("Selo opcional volta após reconstruir a sala, mistura salas ou não é limpo ao iniciar nova jornada"); yield break; }
         Debug.Log("SCADRYK_SMOKE: selos opcionais persistem por sala, sobrevivem à reconstrução e são limpos na nova jornada");
+        if (!powerEchoProgressRoundTrip) { SmokeFail("Melhorias de poder dos Ecos não acompanham corretamente os selos no save ou na nova jornada"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: os três selos salvam melhorias distintas e a jornada nova as remove");
         if (!SmokeCoverBlocksOnlyWhenSolid())
         { SmokeFail("Cobertura não bloqueia poderes direcionais ou gatilhos bloqueiam poderes circulares"); yield break; }
         Debug.Log("SCADRYK_SMOKE: cobertura interrompe golpes direcionais, não o Estouro circular, e gatilhos não bloqueiam");
@@ -1855,6 +1869,14 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         { SmokeFail("Os buffers curtos de ataque e esquiva iniciam fora da janela válida"); yield break; }
         Debug.Log("SCADRYK_SMOKE: combo de três golpes e buffers de ataque/esquiva respeitam as janelas configuradas");
         if (ScadrykPlayerController.AbilityWindupFor(0) <= 0f ||
+            Mathf.Abs(ScadrykPlayerController.AbilityCooldownFor(0, true) - 5.6f) > 0.001f ||
+            ScadrykPlayerController.AbilityCooldownFor(0, true) >= ScadrykPlayerController.AbilityCooldownFor(0, false) ||
+            ScadrykPlayerController.AbilityCooldownFor(1, true) != ScadrykPlayerController.AbilityCooldownFor(1, false) ||
+            ScadrykPlayerController.AbilityCooldownFor(2, true) != ScadrykPlayerController.AbilityCooldownFor(2, false) ||
+            ScadrykEnemyHealth.SaltExposureDuration(false, true) <= ScadrykEnemyHealth.SaltExposureDuration(false, false) ||
+            ScadrykEnemyHealth.SaltExposureDuration(true, true) <= ScadrykEnemyHealth.SaltExposureDuration(true, false) ||
+            ScadrykEnemyHealth.TidePushStrength(true) <= ScadrykEnemyHealth.TidePushStrength(false) ||
+            ScadrykEnemyHealth.TidePushDuration(true) <= ScadrykEnemyHealth.TidePushDuration(false) ||
             ScadrykPlayerController.ShockwaveWindup <= 0f ||
             ScadrykPlayerController.ShockwaveRecovery <= ScadrykPlayerController.ShockwaveWindup ||
             ScadrykPlayerController.AbilityWindupFor(1) < ScadrykPlayerController.AbilityWindupFor(0) ||
@@ -1874,7 +1896,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             !ScadrykPlayerController.AbilityFootprintContainsPoint(0, new Vector2(3f, 0f), Vector2.zero, Vector2.right) ||
             ScadrykPlayerController.AbilityFootprintContainsPoint(0, new Vector2(3f, 0f), Vector2.zero, Vector2.up))
         { SmokeFail("Os poderes não anunciam início, mantêm recuperação ou atingem segundo a mira fixada no começo da ação"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: poderes têm preparação e recuperação legíveis e mantêm a direção da mira durante o golpe");
+        Debug.Log("SCADRYK_SMOKE: poderes têm preparação/recuperação, mira fixa e aprimoramentos opcionais distintos");
         if (!RebindingCanBeCancelled(-1, 2) || !RebindingCanBeCancelled(4, -1) || RebindingCanBeCancelled(-1, -1) ||
             CanCaptureRebindKey(10, 10) || !CanCaptureRebindKey(11, 10))
         { SmokeFail("Cancelar remapeamento ou proteger a tecla de confirmação deixou de funcionar"); yield break; }
@@ -2131,6 +2153,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Rect shortStatus = StatusLabelRect(400f, 360f, 24f);
         Rect wrappedStatus = StatusLabelRect(400f, 360f, 72f);
         if (AbilityHudLabel(0, "Q", "pronto") != "Q  Crescente · interrompe  ·  pronto" ||
+            AbilityHudLabel(0, "Q", "pronto", true) != "Q  Crescente · interrompe  ·  pronto  ·  eco" ||
             AbilityHudLabel(1, "E", "4.2s") != "E  Estouro · expõe  ·  4.2s" ||
             AbilityHudLabel(2, "R", "pronto") != "R  Rompante · afasta  ·  pronto" ||
             !string.IsNullOrEmpty(AbilityHudLabel(3, "X", "pronto")) ||
@@ -2666,13 +2689,14 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         TryRevealSecret(requiredPower, invalidSource);
         bool rejectedInvalidUses = worldSecret != null && Mathf.Abs(player.Health - (player.MaxHealth - 35f)) <= 0.01f;
         if (rejectedInvalidUses) TryRevealSecret(requiredPower, validSource);
-        bool grantedReward = worldSecret == null && Mathf.Abs(player.Health - player.MaxHealth) <= 0.01f;
+        bool grantedReward = worldSecret == null && Mathf.Abs(player.Health - player.MaxHealth) <= 0.01f &&
+            player.HasPowerEcho(requiredPower) && statusMessage.Contains(PowerEchoRewardText(requiredPower));
         bool echoVisualShown = SmokeEffectCount("Liberated echo memory") > echoCountBeforeReveal;
         bool echoStoryShown = memoryText == WorldSecretMemory(requiredPower);
         playerHealthField.SetValue(player, originalHealth);
         playerFacingField.SetValue(player, originalFacing);
         if (!rejectedInvalidUses || !grantedReward || !echoVisualShown || !echoStoryShown) return false;
-        Debug.Log("SCADRYK_SMOKE: selo opcional exige o poder correto e restaura vida (poder " + (requiredPower + 1) + ")");
+        Debug.Log("SCADRYK_SMOKE: selo exige o poder certo, restaura vida e concede melhoria tática salva (poder " + (requiredPower + 1) + ")");
         return true;
     }
 

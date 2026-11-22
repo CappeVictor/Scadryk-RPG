@@ -116,6 +116,12 @@ public sealed partial class ScadrykGameDirector
         return binding + "  " + labels[index] + "  ·  " + state;
     }
 
+    internal static string AbilityHudLabel(int index, string binding, string state, bool hasEcho)
+    {
+        string label = AbilityHudLabel(index, binding, state);
+        return hasEcho && label.Length > 0 ? label + "  ·  eco" : label;
+    }
+
     private void DrawHud()
     {
         float extra = ScadrykSettings.TextScale - 1f;
@@ -134,7 +140,8 @@ public sealed partial class ScadrykGameDirector
             bool learned = player != null && player.HasAbility(i);
             string state = !learned ? "bloqueado" : player.AbilityCooldownLeft(i) <= 0.02f ? "pronto" : Cooldown(player.AbilityCooldownLeft(i));
             GUI.color = learned ? new Color(0.72f, 0.9f, 0.79f) : new Color(0.48f, 0.53f, 0.51f);
-            GUI.Label(new Rect(28, 116f + extra * 37f + i * (15f + extra * 9f), textWidth, 16f + extra * 9f), AbilityHudLabel(i, InputBinding(i + 3), state), smallStyle);
+            GUI.Label(new Rect(28, 116f + extra * 37f + i * (15f + extra * 9f), textWidth, 16f + extra * 9f),
+                AbilityHudLabel(i, InputBinding(i + 3), state, player != null && player.HasPowerEcho(i)), smallStyle);
         }
         GUI.color = Color.white;
         float objectiveY = 164f + extra * 64f;

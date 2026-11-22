@@ -22,6 +22,9 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     internal const float OpeningAttackSpacing = 0.52f;
     internal const int SteeringHitCapacity = 32;
     internal static float AttackRecoveryDuration(bool boss, bool finalBoss) => finalBoss ? 0.42f : boss ? 0.36f : 0.24f;
+    internal static float SaltExposureDuration(bool boss, bool echo) => boss ? (echo ? 4f : 3f) : (echo ? 7f : 5f);
+    internal static float TidePushStrength(bool echo) => echo ? 7.2f : 5.5f;
+    internal static float TidePushDuration(bool echo) => echo ? 0.31f : 0.24f;
     private static readonly float[] SteeringAngles = { 0f, 35f, -35f, 70f, -70f, 110f, -110f, 145f, -145f, 180f };
     private static readonly List<Collider2D> SupportPulseHits = new List<Collider2D>(16);
     private static ContactFilter2D supportPulseFilter;
@@ -642,16 +645,16 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         if (animator != null) animator.CancelWindup();
     }
 
-    public void ApplySaltExposure()
+    public void ApplySaltExposure(bool echo = false)
     {
-        if (!dead) exposedUntil = Mathf.Max(exposedUntil, Time.time + (IsBoss ? 3f : 5f));
+        if (!dead) exposedUntil = Mathf.Max(exposedUntil, Time.time + SaltExposureDuration(IsBoss, echo));
     }
 
-    public void ApplyTidePush(Vector2 direction)
+    public void ApplyTidePush(Vector2 direction, bool echo = false)
     {
         if (dead || IsBoss) return;
-        knockbackVelocity = direction.sqrMagnitude > 0.01f ? direction.normalized * 5.5f : Vector2.zero;
-        knockbackUntil = Time.time + 0.24f;
+        knockbackVelocity = direction.sqrMagnitude > 0.01f ? direction.normalized * TidePushStrength(echo) : Vector2.zero;
+        knockbackUntil = Time.time + TidePushDuration(echo);
         staggerUntil = Mathf.Max(staggerUntil, knockbackUntil + 0.25f);
         if (!TidebreakerCancelsWindup(IsBoss, isWindup)) return;
         ClearAttackWarnings();

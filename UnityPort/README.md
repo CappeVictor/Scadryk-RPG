@@ -14,6 +14,8 @@ Os três ataques do Arauto também têm motivos de aviso próprios: notas descen
 
 O HUD mantém a função de cada poder junto do comando e da recarga: Crescente interrompe Ecos comuns, Estouro expõe alvos para golpes seguintes e Rompante afasta Ecos comuns. Os guardiões e o Arauto resistem a esses controles de grupo; a dica de aquisição também lembra que os poderes revelam selos opcionais.
 
+Os três Selos de Eco agora aprofundam a build sem adicionar telas ou equipamentos: o selo verde reduz em 20% a recarga do Crescente, o selo do sal prolonga a vulnerabilidade causada pelo Estouro e o selo das badaladas aumenta força e duração do empurrão do Rompante contra Ecos comuns. Cada melhoria permanece salva por sala, aparece como “eco” no HUD e também recupera até 35 pontos de vida. A aplicação visual e o equilíbrio ainda dependem do smoke e de sessões com jogadores.
+
 O ataque básico agora encadeia três cortes dentro de uma janela curta: os dois primeiros mantêm ritmo rápido e o terceiro tem maior alcance e dano, preparação mais longa, breve interrupção de Ecos comuns, arco dourado e um som de acerto próprio. Guardiões e Arauto resistem à interrupção do finalizador. Uma troca de sala, morte ou recarga expirada reinicia a sequência. A sensação do combo ainda precisa de avaliação jogando; a compilação não mede ritmo ou leitura visual.
 
 ## Requisitos
