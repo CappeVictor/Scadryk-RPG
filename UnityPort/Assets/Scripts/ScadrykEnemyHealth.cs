@@ -41,6 +41,11 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         Vector2.Distance(origin, target) <= BellPulseRadius;
     internal static bool SupportPulseContains(Vector2 origin, Vector2 target) =>
         Vector2.Distance(origin, target) <= SupportPulseRadius;
+    internal static Vector2 AnnouncedAttackDirection(Vector2 origin, Vector2 announcedTarget)
+    {
+        Vector2 direction = announcedTarget - origin;
+        return direction.sqrMagnitude > 0.001f ? direction.normalized : Vector2.up;
+    }
     internal static bool FinalWaveHitsAtDistance(float distance) =>
         distance > FinalWaveSafeRadius && distance < FinalWaveOuterRadius;
     internal static bool TidebreakerCancelsWindup(bool boss, bool windingUp) => !boss && windingUp;
@@ -319,7 +324,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         }
         float windup = IsBoss ? (biomeIndex == 0 ? 0.95f : biomeIndex == 1 ? 0.86f : 1.05f) :
             combatRole == 0 ? 0.7f : combatRole == 1 ? 0.85f : combatRole == 2 ? 0.95f : 1.1f;
-        if (animator != null) animator.PlayWindup((attackTarget - (Vector2)transform.position).normalized, windup);
+        if (animator != null) animator.PlayWindup(AnnouncedAttackDirection(transform.position, attackTarget), windup);
         isWindup = true;
         windupEndsAt = Time.time + windup;
         Vector2 origin = transform.position;
@@ -362,7 +367,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         int stage = queuedFinalStage;
         queuedFinalPattern = finalAttackIndex % (stage == 1 ? 2 : 3);
         float windup = stage == 3 ? 1.18f : 1.35f;
-        if (animator != null) animator.PlayWindup((attackTarget - (Vector2)transform.position).normalized, windup);
+        if (animator != null) animator.PlayWindup(AnnouncedAttackDirection(transform.position, attackTarget), windup);
         isWindup = true;
         windupEndsAt = Time.time + windup;
         Vector2 origin = transform.position;
@@ -405,7 +410,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         ScadrykAudio.Play(ScadrykCue.Impact);
         windupEndsAt = 0f;
         nextAttackAt = Time.time + (IsBoss ? 2.3f : 2.6f);
-        if (animator != null && player != null) animator.PlayAttack(((Vector2)player.transform.position - (Vector2)transform.position).normalized, IsBoss);
+        if (animator != null) animator.PlayAttack(AnnouncedAttackDirection(transform.position, attackTarget), IsBoss);
         recoveryUntil = Time.time + AttackRecoveryDuration(IsBoss, isFinalBoss);
         if (player == null) return;
 

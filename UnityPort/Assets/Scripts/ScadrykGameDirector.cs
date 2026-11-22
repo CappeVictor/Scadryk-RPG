@@ -1634,6 +1634,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ScadrykEnemyHealth.RootLaneHits(new Vector2(1.5f, laneWidth * 0.5f + 0.01f), Vector2.zero, new Vector2(3.3f, 0f), 0.86f, laneRadius))
         { SmokeFail("A borda de dano do golpe de raízes não corresponde à largura anunciada"); yield break; }
         Debug.Log("SCADRYK_SMOKE: largura do aviso de raízes corresponde à área de dano");
+        Vector2 telegraphDirection = ScadrykEnemyHealth.AnnouncedAttackDirection(new Vector2(1f, 1f), new Vector2(4f, 5f));
+        if ((telegraphDirection - new Vector2(0.6f, 0.8f)).sqrMagnitude > 0.001f ||
+            (ScadrykEnemyHealth.AnnouncedAttackDirection(Vector2.one, Vector2.one) - Vector2.up).sqrMagnitude > 0.001f)
+        { SmokeFail("A pose de impacto não segue a mira anunciada ou não resolve a direção nula"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: pose de impacto aponta para a mesma posição anunciada no telegráfico");
         if (!ScadrykPlayerController.WithinVisualFootprint(new Vector2(3.09f, 0f), Vector2.zero, Vector2.right, 1.05f, new Vector2(4.1f, 2.8f)) ||
             ScadrykPlayerController.WithinVisualFootprint(new Vector2(3.11f, 0f), Vector2.zero, Vector2.right, 1.05f, new Vector2(4.1f, 2.8f)) ||
             !ScadrykPlayerController.WithinVisualFootprint(new Vector2(6.39f, 0f), Vector2.zero, Vector2.right, 2.7f, new Vector2(7.4f, 4.4f)) ||
