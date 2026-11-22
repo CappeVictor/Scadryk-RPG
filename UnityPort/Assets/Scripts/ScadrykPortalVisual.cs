@@ -14,6 +14,7 @@ public sealed class ScadrykPortalVisual : MonoBehaviour
 
     public bool IsOpen { get; private set; }
     public bool IsClosed => closing && Time.time - startedAt >= CloseDuration;
+    public float Diameter { get; private set; }
 
     public static GameObject Spawn(Transform parent, Vector2 position, Sprite sprite, Color accent, float diameter)
     {
@@ -27,13 +28,14 @@ public sealed class ScadrykPortalVisual : MonoBehaviour
 
     private void Initialize(Sprite sprite, Color accent, float diameter)
     {
+        Diameter = Mathf.Max(0f, diameter);
         if (sprite == null) return;
         var frame = gameObject.AddComponent<SpriteRenderer>();
         frame.sprite = sprite;
         frame.sortingOrder = 14;
         frame.color = Color.Lerp(Color.white, accent, accent.r > 0.9f && accent.g < 0.75f ? 0.62f : 0.22f);
         float baseDiameter = sprite.bounds.size.x;
-        float scale = diameter / Mathf.Max(0.01f, baseDiameter);
+        float scale = Diameter / Mathf.Max(0.01f, baseDiameter);
         fullScale = Vector3.one * scale;
         transform.localScale = fullScale * 0.04f;
 

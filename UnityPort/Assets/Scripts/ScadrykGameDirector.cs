@@ -748,6 +748,13 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     internal static bool PortalCanBeEntered(bool portalExists, bool portalIsOpen) => portalExists && portalIsOpen;
 
+    internal static float PortalDiameterFor(int phase, int room)
+    {
+        if (phase == PhaseNames.Length - 1 && room == RoomsPerPhase - 1) return 8.5f;
+        if (room == RoomsPerPhase - 1) return 3.8f;
+        return 3.15f;
+    }
+
     private string ActiveCombatObjectiveLabel() => CombatObjectiveLabel(phaseIndex, roomIndex,
         phaseGuardian != null ? phaseGuardian.name : null, finalBoss != null,
         phaseIndex == PhaseNames.Length - 1 && roomIndex == RoomsPerPhase - 1 && enemiesRemaining > 0 && phaseGuardian == null);
@@ -1044,7 +1051,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         bool finalPortal = phaseIndex == PhaseNames.Length - 1 && roomIndex == RoomsPerPhase - 1;
         bool phasePortal = roomIndex == RoomsPerPhase - 1;
         Color portalColor = finalPortal ? new Color(0.8f, 0.26f, 1f) : PhaseAccentColors[phaseIndex];
-        float portalSize = finalPortal ? 8.5f : phasePortal ? 3.8f : 3.15f;
+        float portalSize = PortalDiameterFor(phaseIndex, roomIndex);
         gateObject = ScadrykPortalVisual.Spawn(levelRoot.transform, exitPosition, portalSprite, portalColor, portalSize);
         ScadrykAudio.Play(ScadrykCue.Portal);
         statusMessage = finalPortal
@@ -1925,6 +1932,15 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             !MiniMapPortalLabelFits(new Rect(0f, 0f, 90f, 67f), 1.5f))
         { SmokeFail("O marcador do portal sai do cartão da sala no minimapa"); yield break; }
         Debug.Log("SCADRYK_SMOKE: marcador PORTAL cabe no minimapa com texto padrão e ampliado");
+        float ordinaryPortalDiameter = PortalDiameterFor(0, 0);
+        float guardianPortalDiameter = PortalDiameterFor(0, RoomsPerPhase - 1);
+        float endingPortalDiameter = PortalDiameterFor(PhaseNames.Length - 1, RoomsPerPhase - 1);
+        if (Mathf.Abs(ordinaryPortalDiameter - 3.15f) > 0.001f ||
+            Mathf.Abs(guardianPortalDiameter - 3.8f) > 0.001f ||
+            Mathf.Abs(endingPortalDiameter - 8.5f) > 0.001f ||
+            endingPortalDiameter < guardianPortalDiameter * 2f || endingPortalDiameter < ordinaryPortalDiameter * 2f)
+        { SmokeFail("O portal final não se destaca dos portais das salas e dos guardiões"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: portal do encerramento tem diâmetro colossal, mais que o dobro das outras passagens");
         Rect markerCell = new Rect(0f, 0f, 75f, 57f), largeMarkerCell = new Rect(0f, 0f, 90f, 67f);
         if (!MiniMapPositionMarkerFits(markerCell, new Vector2(-100f, -100f), 1f) ||
             !MiniMapPositionMarkerFits(markerCell, new Vector2(100f, 100f), 1f) ||
@@ -2193,10 +2209,13 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 ClearSmokeAttackWarnings();
                 Debug.Log("SCADRYK_SMOKE: três projéteis da queda de estrelas anunciados na fase 3");
                 finalBoss.TakeDamage(99999f);
-                if (finalBoss != null || gateObject == null || !statusMessage.Contains("portal colossal") ||
+                ScadrykPortalVisual endingPortal = gateObject != null ? gateObject.GetComponent<ScadrykPortalVisual>() : null;
+                if (finalBoss != null || endingPortal == null ||
+                    Mathf.Abs(endingPortal.Diameter - PortalDiameterFor(phaseIndex, roomIndex)) > 0.001f ||
+                    !statusMessage.Contains("portal colossal") ||
                     FindAnyObjectByType<ScadrykEnemyProjectile>() != null)
-                { SmokeFail("Derrotar o Arauto não abriu o portal final ou deixou projéteis ativos"); yield break; }
-                Debug.Log("SCADRYK_SMOKE: derrota do Arauto limpa projéteis e abre o portal colossal");
+                { SmokeFail("Derrotar o Arauto não abriu o portal colossal esperado ou deixou projéteis ativos"); yield break; }
+                Debug.Log("SCADRYK_SMOKE: derrota do Arauto limpa projéteis e abre portal de 8,5 unidades");
             }
             if (roomIndex == 2 && (player == null || !player.HasAbility(phaseIndex)))
             { SmokeFail("Poder não recebido após guardião da fase " + phaseIndex); yield break; }
