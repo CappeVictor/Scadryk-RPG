@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **Dicas só após limpar a sala (22/11/2026, código `374ec76`):** as pistas de ressonância e vestígios agora aguardam que os Ecos da sala sejam derrotados, além de respeitar a pausa, o progresso nos sinais e mensagens temporárias. O smoke confere esses casos e os limites temporais de cada etapa; ainda não foi executado. Unity 6000.6.9f1 importou/compilou em batch, código 0, sem erros nem avisos C#. Nenhuma cena, Play Mode ou executável foi aberto.
+
 - **Dicas não interrompem mensagens ativas (22/11/2026, código `e23b6fa`):** pistas graduais de salas com sinais e vestígios pendentes agora esperam uma mensagem temporária de história, poder ou evento terminar antes de aparecer. Smoke cobre a chegada ao primeiro e segundo limites, espera por status ativo, pausa e objetivo já concluído. Unity 6000.6.9f1 importou/compilou os scripts em batch, código 0, sem erros nem avisos C#. Smoke ainda não executado; nenhuma cena, Play Mode ou executável foi aberto.
 
 - **Teto de avisos sonoros simultâneos (22/11/2026, código `6f9be66`):** o sistema agora reduz o volume conforme avisos concorrentes começam e recusa novas vozes de aviso quando já há quatro tocando. O smoke verifica os limites de admissão (3 aceita, 4 recusa) e mantém os cues visuais ativos; a mixagem não foi ouvida, e a campanha smoke não foi executada. Unity 6000.6.9f1 importou/compilou os scripts em batch, código 0, sem erros nem avisos C#. Nenhuma cena, Play Mode ou executável foi aberto.
