@@ -491,6 +491,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         ApplyPauseTimeScale();
         PlayerPrefs.DeleteKey("Scadryk.Phase");
         PlayerPrefs.DeleteKey("Scadryk.Room");
+        ClearWitnessProgress("Scadryk.");
         PlayerPrefs.Save();
         if (player != null) player.ResetAbilities();
         if (player != null) player.ResetCombatCooldowns();
@@ -861,6 +862,24 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     internal static bool HasCheckpoint(string keyPrefix) =>
         PlayerPrefs.HasKey(keyPrefix + "Phase") && PlayerPrefs.HasKey(keyPrefix + "Room");
 
+    internal static string WitnessProgressKey(string keyPrefix, int phase) =>
+        keyPrefix + "Witness." + Mathf.Clamp(phase, 0, PhaseNames.Length - 1);
+
+    internal static int ReadWitnessProgress(string keyPrefix, int phase) =>
+        Mathf.Max(0, PlayerPrefs.GetInt(WitnessProgressKey(keyPrefix, phase), 0));
+
+    internal static void WriteWitnessProgress(string keyPrefix, int phase, int nextLine)
+    {
+        PlayerPrefs.SetInt(WitnessProgressKey(keyPrefix, phase), Mathf.Max(0, nextLine));
+        PlayerPrefs.Save();
+    }
+
+    internal static void ClearWitnessProgress(string keyPrefix)
+    {
+        for (int phase = 0; phase < PhaseNames.Length; phase++)
+            PlayerPrefs.DeleteKey(WitnessProgressKey(keyPrefix, phase));
+    }
+
     internal static bool TryLoadCheckpoint(string keyPrefix, out int phase, out int room)
     {
         if (!HasCheckpoint(keyPrefix))
@@ -1032,6 +1051,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         {
             PlayerPrefs.DeleteKey("Scadryk.Phase");
             PlayerPrefs.DeleteKey("Scadryk.Room");
+            ClearWitnessProgress("Scadryk.");
             PlayerPrefs.Save();
         }
         statusMessage = VictoryEndingText;
@@ -1316,7 +1336,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (!SmokeBindingResetIsolation()) { SmokeFail("Restaurar controles alterou outro dispositivo ou preferências"); yield break; }
         Debug.Log("SCADRYK_SMOKE: padrões de teclado e controle são independentes e preservam preferências");
         string checkpointTestPrefix = "Scadryk.Smoke." + System.DateTime.UtcNow.Ticks + ".";
-        bool checkpointRoundTrip = false;
+        bool checkpointRoundTrip = false, witnessProgressRoundTrip = false;
         try
         {
             bool newGameDefaults = !HasCheckpoint(checkpointTestPrefix) &&
@@ -1335,16 +1355,28 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             WriteCheckpoint(checkpointTestPrefix, 99, -4);
             bool clampsInvalidData = TryLoadCheckpoint(checkpointTestPrefix, out int clampedPhase, out int clampedRoom) &&
                 clampedPhase == PhaseNames.Length - 1 && clampedRoom == 0;
+            bool witnessStartsAtFirstLine = ReadWitnessProgress(checkpointTestPrefix, 1) == 0;
+            WriteWitnessProgress(checkpointTestPrefix, 1, 2);
+            WriteWitnessProgress(checkpointTestPrefix, 2, 1);
+            bool restoresWitnessLine = ReadWitnessProgress(checkpointTestPrefix, 1) == 2 && ReadWitnessProgress(checkpointTestPrefix, 2) == 1;
+            WriteWitnessProgress(checkpointTestPrefix, 1, -5);
+            bool clampsWitnessLine = ReadWitnessProgress(checkpointTestPrefix, 1) == 0;
+            ClearWitnessProgress(checkpointTestPrefix);
+            bool clearsWitnessLines = ReadWitnessProgress(checkpointTestPrefix, 1) == 0 && ReadWitnessProgress(checkpointTestPrefix, 2) == 0;
+            witnessProgressRoundTrip = witnessStartsAtFirstLine && restoresWitnessLine && clampsWitnessLine && clearsWitnessLines;
             checkpointRoundTrip = newGameDefaults && ignoresOrphanedRoom && ignoresOrphanedPhase && restoresLastPortal && clampsInvalidData;
         }
         finally
         {
             PlayerPrefs.DeleteKey(checkpointTestPrefix + "Phase");
             PlayerPrefs.DeleteKey(checkpointTestPrefix + "Room");
+            ClearWitnessProgress(checkpointTestPrefix);
             PlayerPrefs.Save();
         }
         if (!checkpointRoundTrip) { SmokeFail("Checkpoint parcial não foi ignorado, ou o portal não foi restaurado/limitado"); yield break; }
         Debug.Log("SCADRYK_SMOKE: checkpoint grava, carrega, limita e limpa chaves temporárias");
+        if (!witnessProgressRoundTrip) { SmokeFail("As conversas com Nima não preservam o ponto de leitura por bioma ou não reiniciam com a jornada"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: conversa de Nima preserva a próxima fala separada por bioma e pode ser reiniciada");
         if (!SmokeCoverBlocksOnlyWhenSolid())
         { SmokeFail("Cobertura não bloqueia poderes direcionais ou gatilhos bloqueiam poderes circulares"); yield break; }
         Debug.Log("SCADRYK_SMOKE: cobertura interrompe golpes direcionais, não o Estouro circular, e gatilhos não bloqueiam");

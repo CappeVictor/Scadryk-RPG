@@ -37,7 +37,7 @@ public sealed partial class ScadrykGameDirector
     private void BuildWitness()
     {
         witnessObject = null;
-        witnessLine = 0;
+        witnessLine = smokeRun ? 0 : ReadWitnessProgress("Scadryk.", phaseIndex);
         // Nima returns in the two quiet arrival rooms after the first and second guardians.
         if (roomIndex != 0 || phaseIndex == 0) return;
 
@@ -67,6 +67,7 @@ public sealed partial class ScadrykGameDirector
             string[] lines = phaseIndex == 1 ? BasinWitnessLines : CoastWitnessLines;
             ShowMemory(lines[witnessLine % lines.Length], 8f);
             witnessLine++;
+            if (!smokeRun) WriteWitnessProgress("Scadryk.", phaseIndex, witnessLine);
             return;
         }
         for (int i = 0; i < anchorsRequired; i++)
