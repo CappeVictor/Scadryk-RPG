@@ -767,8 +767,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     public void RecordInputMode(string mode)
     {
-        if (mode == "keyboard_mouse" || mode == "gamepad") sessionInputMode = mode;
+        sessionInputMode = ResolveInputMode(sessionInputMode, mode);
     }
+
+    internal static string ResolveInputMode(string current, string candidate) =>
+        candidate == "keyboard_mouse" || candidate == "gamepad" ? candidate : current;
 
     private string FormatSessionCsvRow(bool completed)
     {
@@ -1403,6 +1406,13 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             Vector2.Distance(ScadrykPlayerController.ResolveGamepadFacing(Vector2.up, Vector2.left, Vector2.right, true), Vector2.left) > 0.001f)
         { SmokeFail("A mira do controle não conserva direção nem prioriza o analógico direito"); yield break; }
         Debug.Log("SCADRYK_SMOKE: mira do controle preserva o twin-stick e tem fallback de movimento");
+        if (ResolveInputMode("unknown", "keyboard_mouse") != "keyboard_mouse" ||
+            ResolveInputMode("keyboard_mouse", "gamepad") != "gamepad" ||
+            ResolveInputMode("gamepad", "keyboard_mouse") != "keyboard_mouse" ||
+            ResolveInputMode("keyboard_mouse", "touch") != "keyboard_mouse" ||
+            ResolveInputMode("unknown", null) != "unknown")
+        { SmokeFail("A telemetria não acompanha trocas reais de dispositivo ou aceita modos inválidos"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: telemetria alterna teclado/controle e ignora modos inválidos");
         if (ScadrykPlayerController.InputBufferCanStart(1.1f, 1.3f, 1.2f) ||
             !ScadrykPlayerController.InputBufferCanStart(1.21f, 1.3f, 1.2f) ||
             ScadrykPlayerController.InputBufferCanStart(1.31f, 1.3f, 1.2f) ||
