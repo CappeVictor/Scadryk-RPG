@@ -1335,6 +1335,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (!OpeningMemory.Contains("Grande Onda") || !OpeningMemory.Contains("Nara") ||
             !GuardianMemories[0].Contains("Nima") || !BasinWitnessLines[0].Contains("primeiro sino") ||
             !BasinWitnessLines[1].StartsWith("Nara:") || !CoastWitnessLines[1].StartsWith("Nara:") ||
+            BasinWitnessLines.Length != 3 || !BasinWitnessLines[2].Contains("cristais") ||
+            CoastWitnessLines.Length != 3 || !CoastWitnessLines[0].Contains("sal") || !CoastWitnessLines[2].Contains("Arauto") ||
             !GuardianMemories[1].Contains("última onda") || !GuardianMemories[2].Contains("poupar os vivos") ||
             !EndingMemory.Contains("Nara escolhe lembrar") || !EndingMemory.Contains("aprisionou os mortos"))
         { SmokeFail("A história perdeu a causa da maré imóvel, a ligação de Nima ou a resolução do conflito"); yield break; }
@@ -1929,10 +1931,14 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             if (room == 3 || room == 6)
             {
                 if (witnessObject == null) { SmokeFail("Nima não apareceu na sala tranquila " + room); yield break; }
-                string expectedMemory = room == 3 ? BasinWitnessLines[0] : CoastWitnessLines[0];
-                TryInteract((Vector2)witnessObject.transform.position);
-                if (memoryText != expectedMemory) { SmokeFail("Nima não respondeu à interação na sala " + room); yield break; }
-                Debug.Log("SCADRYK_SMOKE: Nima respondeu na sala " + (room + 1) + "/9");
+                string[] witnessLines = room == 3 ? BasinWitnessLines : CoastWitnessLines;
+                for (int line = 0; line < witnessLines.Length; line++)
+                {
+                    TryInteract((Vector2)witnessObject.transform.position);
+                    if (memoryText != witnessLines[line])
+                    { SmokeFail("A conversa de Nima perdeu a fala " + (line + 1) + " na sala " + room); yield break; }
+                }
+                Debug.Log("SCADRYK_SMOKE: as três falas de Nima avançam em ordem na sala " + (room + 1) + "/9");
             }
             GameObject nextAnchor = null;
             for (int i = 0; i < anchorsRequired; i++)
