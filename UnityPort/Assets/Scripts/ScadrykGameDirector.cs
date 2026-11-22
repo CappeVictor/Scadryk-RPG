@@ -1277,6 +1277,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private IEnumerator SmokeCampaign()
     {
         yield return null;
+        if (!ScadrykPlayerController.CanMeasureTerrainExposure(false, false) ||
+            ScadrykPlayerController.CanMeasureTerrainExposure(true, false) ||
+            ScadrykPlayerController.CanMeasureTerrainExposure(false, true))
+        { SmokeFail("A exposição ambiental ignora pausa ou continua sendo contada após a derrota"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: telemetria ambiental continua ativa no jogo e para na pausa ou na derrota");
         Vector2 cappedFlow = ScadrykTerrainZone.CombineFlow(Vector2.right * 1.8f, Vector2.right * 1.8f);
         Vector2 opposingWalk = ScadrykPlayerController.ResolveTerrainTargetVelocity(Vector2.left, 6.2f, 1f, Vector2.right * 1.8f);
         Vector2 carriedIdle = ScadrykPlayerController.ResolveTerrainTargetVelocity(Vector2.zero, 6.2f, 1f, Vector2.right * 1.8f);

@@ -151,18 +151,19 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     private void FixedUpdate()
     {
         if (terrainZones.RemoveWhere(zone => zone == null) > 0) RefreshTerrainSpeed();
-        if (isDying || (director != null && director.IsPaused)) { BodyVelocity = Vector2.zero; return; }
+        bool paused = director != null && director.IsPaused;
+        if (!CanMeasureTerrainExposure(isDying, paused)) { BodyVelocity = Vector2.zero; return; }
+        if (director != null)
+        {
+            if (IsInCoastalCurrent()) director.RecordCoastalCurrentExposure(Time.fixedDeltaTime);
+            if (IsInShallowWater()) director.RecordShallowWaterExposure(Time.fixedDeltaTime);
+        }
         if (Time.time < dashEndsAt)
         {
             BodyVelocity = dashDirection * dashSpeed;
             return;
         }
         float rootScale = Time.time < rootedUntil ? 0.52f : 1f;
-        if (director != null)
-        {
-            if (IsInCoastalCurrent()) director.RecordCoastalCurrentExposure(Time.fixedDeltaTime);
-            if (IsInShallowWater()) director.RecordShallowWaterExposure(Time.fixedDeltaTime);
-        }
         Vector2 targetVelocity = ResolveTerrainTargetVelocity(moveInput, moveSpeed, terrainSpeedScale, terrainFlowVelocity, rootScale);
         BodyVelocity = Vector2.MoveTowards(BodyVelocity, targetVelocity, acceleration * Time.fixedDeltaTime);
     }
@@ -215,6 +216,8 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     internal static Vector2 ResolveTerrainTargetVelocity(Vector2 input, float speed, float terrainScale, Vector2 flow, float rootedScale = 1f) =>
         Vector2.ClampMagnitude(input, 1f) * (Mathf.Max(0f, speed) * Mathf.Clamp(terrainScale, 0.4f, 1f) * Mathf.Clamp(rootedScale, 0f, 1f)) +
         Vector2.ClampMagnitude(flow, ScadrykTerrainZone.MaximumFlowSpeed);
+
+    internal static bool CanMeasureTerrainExposure(bool isDying, bool isPaused) => !isDying && !isPaused;
 
     private void AimAtPointer(bool keyboardMouseInput, bool gamepadInput)
     {
