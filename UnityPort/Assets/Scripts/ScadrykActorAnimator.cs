@@ -58,6 +58,12 @@ public sealed class ScadrykActorAnimator : MonoBehaviour
         abilityRecoveryDuration = Mathf.Max(0.05f, recoveryDuration);
     }
 
+    internal static float AttackImpactStrength(float elapsed, float duration, float strength = 1f)
+    {
+        if (elapsed < 0f || duration <= 0f || elapsed >= duration) return 0f;
+        return Mathf.Sin(Mathf.Clamp01(elapsed / duration) * Mathf.PI) * Mathf.Max(0f, strength);
+    }
+
     internal static float AbilityImpactStrength(float elapsed, float recoveryDuration)
     {
         float duration = Mathf.Max(0.05f, recoveryDuration);
@@ -133,7 +139,7 @@ public sealed class ScadrykActorAnimator : MonoBehaviour
         if (abilityImpactStartedAt >= 0f && abilityImpactElapsed < abilityRecoveryDuration)
             attack = AbilityImpactStrength(abilityImpactElapsed, abilityRecoveryDuration) * attackStrength;
         else if (Time.time - attackStartedAt < attackDuration)
-            attack = Mathf.Sin(Mathf.Clamp01((Time.time - attackStartedAt) / attackDuration) * Mathf.PI) * attackStrength;
+            attack = AttackImpactStrength(Time.time - attackStartedAt, attackDuration, attackStrength);
         float windup = Time.time < windupStartedAt + windupDuration
             ? WindupStrength(Time.time, windupStartedAt, windupDuration) : 0f;
 

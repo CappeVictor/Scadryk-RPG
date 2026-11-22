@@ -1802,6 +1802,12 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ScadrykPlayerController.AbilityRecoveryFor(0) <= ScadrykPlayerController.AbilityWindupFor(0) ||
             ScadrykPlayerController.AbilityRecoveryFor(1) <= ScadrykPlayerController.AbilityWindupFor(1) ||
             ScadrykPlayerController.AbilityRecoveryFor(2) <= ScadrykPlayerController.AbilityWindupFor(2) ||
+            ScadrykActorAnimator.AttackImpactStrength(0f, 0.26f) > 0.001f ||
+            ScadrykActorAnimator.AttackImpactStrength(ScadrykPlayerController.BasicAttackWindupForStep(0), 0.26f) < 0.95f ||
+            ScadrykActorAnimator.AttackImpactStrength(ScadrykPlayerController.BasicAttackWindupForStep(1), 0.26f) < 0.95f ||
+            ScadrykActorAnimator.AttackImpactStrength(ScadrykPlayerController.BasicAttackWindupForStep(2), 0.38f) < 0.95f ||
+            ScadrykActorAnimator.AttackImpactStrength(0.26f, 0.26f) > 0.001f ||
+            ScadrykActorAnimator.AttackImpactStrength(0.38f, 0.38f) > 0.001f ||
             Mathf.Abs(ScadrykActorAnimator.AbilityImpactStrength(0f, 0.3f) - 1f) > 0.001f ||
             Mathf.Abs(ScadrykActorAnimator.AbilityImpactStrength(0.15f, 0.3f) - Mathf.Sqrt(0.5f)) > 0.001f ||
             ScadrykActorAnimator.AbilityImpactStrength(0.3f, 0.3f) > 0.001f ||
