@@ -286,6 +286,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     internal static string MemoryDismissHintText(bool gamepad, string interactBinding, bool compact) => gamepad
         ? compact ? "A / " + interactBinding + " / B" : "A / " + interactBinding + " / B para continuar"
         : compact ? interactBinding + " / Enter / Esc" : interactBinding + " / Enter / Espaço / Esc para continuar";
+    internal static string FinalGuardianInterludeHint(string powerBinding) =>
+        "Rompante da Maré (" + powerBinding + ") foi aprendido. Um selo opcional espera a nordeste; liberte-o antes que o Arauto desperte.";
 
     internal static int MovePauseGridSelection(int selection, int horizontalDirection, int verticalDirection)
     {
@@ -772,7 +774,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             {
                 if (player != null) player.RestoreHealth(player.MaxHealth);
                 enemiesRemaining = 1;
-                ShowStatus("Nara escuta a última lembrança antes que algo desperte além dos sinos.", 7f);
+                ShowStatus(acquiredPower != null ? FinalGuardianInterludeHint(InputBinding(5)) :
+                    "Nara escuta a última lembrança antes que algo desperte além dos sinos.", 7f);
                 StartCoroutine(SpawnFinalBossAfterMemory());
                 return;
             }
@@ -1829,6 +1832,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             MemoryDismissHintText(false, "E") != "E / Enter / Espaço / Esc para continuar" ||
             MemoryDismissHintText(true, "Y", true) != "A / Y / B" ||
             MemoryDismissHintText(false, "E", true) != "E / Enter / Esc" ||
+            !FinalGuardianInterludeHint("Y").Contains("Rompante da Maré (Y)") ||
+            !FinalGuardianInterludeHint("Y").Contains("selo opcional espera a nordeste") ||
+            !FinalGuardianInterludeHint("Y").Contains("antes que o Arauto desperte") ||
             OpeningStoryContinueHint(true, "Y") != "A / Y para continuar" ||
             OpeningStoryContinueHint(true, "A") != "A para continuar" ||
             OpeningStoryContinueHint(false, "E") != "E / Enter / Espaço para continuar" ||
