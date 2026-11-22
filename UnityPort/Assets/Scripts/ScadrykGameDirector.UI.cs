@@ -109,7 +109,7 @@ public sealed partial class ScadrykGameDirector
         GUI.color = new Color(0.78f, 0.19f, 0.62f, 0.95f); GUI.DrawTexture(new Rect(panel.x, panel.y, panel.width, 2f), Texture2D.whiteTexture);
         GUI.color = new Color(0.94f, 0.63f, 0.31f, 0.9f); GUI.DrawTexture(new Rect(panel.x, panel.yMax - 2f, panel.width, 2f), Texture2D.whiteTexture);
         GUI.color = Color.white;
-        GUI.Label(new Rect(panel.x + 10f, panel.y + 3f, panel.width - 20f, 20f), "O ARAUTO DO VAZIO  ·  FASE " + finalBoss.FinalStage + "/3", finalBossLabelStyle);
+        GUI.Label(new Rect(panel.x + 10f, panel.y + 3f, panel.width - 20f, 20f), "O ARAUTO DO VAZIO  ·  FASE " + finalBoss.DisplayStage + "/3", finalBossLabelStyle);
         Rect track = new Rect(panel.x + 12f, panel.y + 31f, panel.width - 24f, 15f);
         GUI.color = new Color(0.17f, 0.06f, 0.15f, 1f); GUI.DrawTexture(track, Texture2D.whiteTexture);
         GUI.color = new Color(0.91f, 0.22f, 0.58f, 1f); GUI.DrawTexture(new Rect(track.x, track.y, track.width * finalBoss.Health01, track.height), Texture2D.whiteTexture);

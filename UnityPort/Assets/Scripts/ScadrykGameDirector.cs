@@ -1749,7 +1749,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 int announcedStage = (int)queuedStageField.GetValue(finalBoss);
                 finalBoss.TakeDamage(400f);
                 float volleyWidth = ScadrykEnemyProjectile.HitboxDiameter(0.58f);
-                if (announcedStage != 1 || finalBoss.FinalStage != 2 || !SmokeAttackWarningsMatch((Vector2)finalBoss.transform.position, volleyForward, 7.2f, volleyWidth, 0.19f, 1))
+                if (announcedStage != 1 || finalBoss.FinalStage != 2 || finalBoss.DisplayStage != 1 ||
+                    !SmokeAttackWarningsMatch((Vector2)finalBoss.transform.position, volleyForward, 7.2f, volleyWidth, 0.19f, 1))
                 { SmokeFail("O teste não cruzou o limiar de fase durante o aviso do Arauto"); yield break; }
                 resolveBossAttack.Invoke(finalBoss, null);
                 int announcedVolleyCount = 0;
@@ -1767,6 +1768,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 }
                 if (announcedVolleyCount != 3 || !volleyRangeMatchesWarning)
                 { SmokeFail("A salva do Arauto mudou de fase ou seu alcance excedeu o aviso"); yield break; }
+                if (finalBoss.DisplayStage != 2)
+                { SmokeFail("A barra do Arauto não avançou após resolver a salva anunciada na fase anterior"); yield break; }
                 Debug.Log("SCADRYK_SMOKE: salva do Arauto manteve fase e alcance dentro do aviso");
 
                 attackTargetField.SetValue(finalBoss, (Vector2)player.transform.position);

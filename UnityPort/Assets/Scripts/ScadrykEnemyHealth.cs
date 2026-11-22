@@ -67,6 +67,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     public bool IsExposed => !dead && Time.time < exposedUntil;
     public bool IsKnockedBack => !dead && Time.time < knockbackUntil;
     public int FinalStage => !isFinalBoss ? 0 : Health01 > 0.7f ? 1 : Health01 > 0.35f ? 2 : 3;
+    public int DisplayStage => !isFinalBoss ? 0 : isWindup ? queuedFinalStage : FinalStage;
     public int BiomeIndex => biomeIndex;
 
     internal static ScadrykCue WarningCueFor(int biome, bool boss, bool finalBoss, int role)
