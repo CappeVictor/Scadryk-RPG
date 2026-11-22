@@ -51,6 +51,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     internal static bool TidebreakerCancelsWindup(bool boss, bool windingUp) => !boss && windingUp;
     [SerializeField, Min(1f)] private float maxHealth = 60f;
     private float health, nextAttackAt, windupEndsAt;
+    private float lastAttackStartedAt = -10f;
     private float attackRange = 1.2f;
     private Rigidbody2D body;
     private CircleCollider2D bodyCollider;
@@ -103,6 +104,43 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             2 => ScadrykCue.AreaWarning,
             _ => ScadrykCue.SupportWarning
         };
+    }
+
+    internal static string AttackReadabilityLabel(int biome, bool boss, bool finalBoss, int role, int finalPattern, int finalStage)
+    {
+        if (finalBoss)
+        {
+            string pattern = finalPattern switch
+            {
+                0 => "salva de Ecos",
+                1 => "queda de memória",
+                _ => "onda de vazio"
+            };
+            return "Arauto fase " + Mathf.Clamp(finalStage, 1, 3) + " — " + pattern;
+        }
+        if (boss) return biome switch
+        {
+            0 => "Raiz-Mor — avanço de raízes",
+            1 => "Vigia do Sal — salva de estilhaços",
+            _ => "Vigia do Coro — pulso de sino"
+        };
+        string biomeName = biome switch { 0 => "Bosque", 1 => "Bacia de sal", _ => "Costa" };
+        string attackName = Mathf.Clamp(role, 0, 3) switch
+        {
+            0 => "investida",
+            1 => "projétil",
+            2 => "pulso de área",
+            _ => "pulso de apoio"
+        };
+        return biomeName + " — Eco " + attackName;
+    }
+
+    internal bool TryGetRecentAttackLabel(float now, out string label)
+    {
+        label = null;
+        if (dead || (!isWindup && now - lastAttackStartedAt > 2.5f)) return false;
+        label = AttackReadabilityLabel(biomeIndex, IsBoss, isFinalBoss, combatRole, queuedFinalPattern, queuedFinalStage);
+        return !string.IsNullOrEmpty(label);
     }
 
     internal static Color StateTint(bool windingUp, bool exposed, Color roleTint) =>
@@ -322,6 +360,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             BeginFinalBossAttack();
             return;
         }
+        lastAttackStartedAt = Time.time;
         float windup = IsBoss ? (biomeIndex == 0 ? 0.95f : biomeIndex == 1 ? 0.86f : 1.05f) :
             combatRole == 0 ? 0.7f : combatRole == 1 ? 0.85f : combatRole == 2 ? 0.95f : 1.1f;
         if (animator != null) animator.PlayWindup(AnnouncedAttackDirection(transform.position, attackTarget), windup);
@@ -366,6 +405,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         queuedFinalStage = FinalStage;
         int stage = queuedFinalStage;
         queuedFinalPattern = finalAttackIndex % (stage == 1 ? 2 : 3);
+        lastAttackStartedAt = Time.time;
         float windup = stage == 3 ? 1.18f : 1.35f;
         if (animator != null) animator.PlayWindup(AnnouncedAttackDirection(transform.position, attackTarget), windup);
         isWindup = true;

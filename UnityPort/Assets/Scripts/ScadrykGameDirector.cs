@@ -16,6 +16,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private const string EndingMemory = "O Arauto quis ocultar a catástrofe para poupar os vivos da dor, mas o silêncio aprisionou os mortos. Nara escolhe lembrar e abre o limiar para que todos possam atravessar.";
     private const string VictoryEndingText = "Os sinos respondem. Nara escolheu lembrar; o limiar já não prende ninguém.";
     private const string SessionCsvHeader = "session_id,utc,phase,room,seconds,deaths,unclear_attacks,crescent,salt,tide,enemies_left,completed,current_entries,current_seconds,input_mode,seals_revealed,shallow_water_seconds,resonance_activations\n";
+    private const string AttackClarityCsvHeader = "session_id,utc,phase,room,attack_patterns\n";
     private static readonly string[] PhaseNames = { "Margens do Primeiro Eco", "Bacia do Sal Imóvel", "Costa das Badaladas" };
     private static readonly Color[] PhaseColors = { new Color(0.11f, 0.22f, 0.20f), new Color(0.27f, 0.20f, 0.12f), new Color(0.09f, 0.17f, 0.25f) };
     private static readonly Color[] PhaseWallColors = { new Color(0.17f, 0.29f, 0.26f), new Color(0.35f, 0.27f, 0.16f), new Color(0.13f, 0.28f, 0.36f) };
@@ -254,7 +255,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (!IsPaused && Input.GetKeyDown(KeyCode.F8))
         {
             unclearAttackMarks++;
-            ShowStatus("Ataque difícil de perceber registrado nesta sala.", 3f);
+            string attackPatterns = RecentAttackReadabilityLabels();
+            RecordAttackClarityEvent(attackPatterns);
+            ShowStatus(attackPatterns == "não identificado"
+                ? "Ataque difícil registrado; nenhum padrão recente pôde ser identificado."
+                : "Ataque difícil registrado: " + attackPatterns, 4f);
         }
         ApplyPauseTimeScale();
     }
@@ -883,6 +888,35 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         }
         catch (System.Exception exception) { Debug.LogWarning("Scadryk: não foi possível registrar a sessão: " + exception.Message); }
     }
+
+    private string RecentAttackReadabilityLabels()
+    {
+        var labels = new List<string>();
+        foreach (ScadrykEnemyHealth enemy in FindObjectsByType<ScadrykEnemyHealth>())
+        {
+            if (enemy == null || !enemy.TryGetRecentAttackLabel(Time.time, out string label) || labels.Contains(label)) continue;
+            labels.Add(label);
+        }
+        if (labels.Count == 0) return "não identificado";
+        labels.Sort(System.StringComparer.Ordinal);
+        return string.Join(" | ", labels.ToArray());
+    }
+
+    private void RecordAttackClarityEvent(string patterns)
+    {
+        if (smokeRun) return;
+        try
+        {
+            string path = Path.Combine(Application.persistentDataPath, "scadryk-attack-clarity-v1.csv");
+            if (!File.Exists(path)) File.WriteAllText(path, AttackClarityCsvHeader);
+            File.AppendAllText(path, FormatAttackClarityEventCsvRow(sessionId, System.DateTime.UtcNow.ToString("o"),
+                phaseIndex + 1, roomIndex + 1, patterns));
+        }
+        catch (System.Exception exception) { Debug.LogWarning("Scadryk: não foi possível registrar o padrão do ataque: " + exception.Message); }
+    }
+
+    internal static string FormatAttackClarityEventCsvRow(string id, string utc, int phase, int room, string patterns) =>
+        id + "," + utc + "," + phase + "," + room + "," + (string.IsNullOrWhiteSpace(patterns) ? "não identificado" : patterns) + "\n";
 
     private void OnApplicationQuit()
     {
@@ -1549,6 +1583,16 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             { SmokeFail("A apresentação do poder " + ability + " não explica os usos de combate e exploração numa frase curta"); yield break; }
         }
         Debug.Log("SCADRYK_SMOKE: cada guardião apresenta comando, efeito tático e uso dos selos do poder recebido");
+        string commonPattern = ScadrykEnemyHealth.AttackReadabilityLabel(1, false, false, 2, 0, 0);
+        string saltGuardianPattern = ScadrykEnemyHealth.AttackReadabilityLabel(1, true, false, 0, 0, 0);
+        string finalPattern = ScadrykEnemyHealth.AttackReadabilityLabel(2, true, true, 0, 2, 3);
+        string clarityRow = FormatAttackClarityEventCsvRow("session", "2026-11-22T00:00:00Z", 3, 2, finalPattern).TrimEnd('\n');
+        if (!commonPattern.Contains("pulso de área") || !saltGuardianPattern.Contains("Vigia do Sal") ||
+            !saltGuardianPattern.Contains("salva de estilhaços") || !finalPattern.Contains("Arauto fase 3") ||
+            !finalPattern.Contains("onda de vazio") || clarityRow.Split(',').Length != 5 ||
+            !clarityRow.EndsWith(finalPattern))
+        { SmokeFail("O registro de legibilidade não identifica papéis, guardiões, fases do Arauto ou campos do CSV"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: registros F8 identificam padrão recente e serializam fase, sala e ataque");
         ScadrykCue laneCue = ScadrykEnemyHealth.WarningCueFor(0, false, false, 0);
         ScadrykCue volleyCue = ScadrykEnemyHealth.WarningCueFor(0, false, false, 1);
         ScadrykCue areaCue = ScadrykEnemyHealth.WarningCueFor(0, false, false, 2);
