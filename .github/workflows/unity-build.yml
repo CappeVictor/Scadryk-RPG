@@ -4,7 +4,10 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - 'UnityPort/**'
+      - 'UnityPort/Assets/**'
+      - 'UnityPort/Packages/**'
+      - 'UnityPort/ProjectSettings/**'
+      - 'UnityPort/Tools/**'
       - '.github/workflows/unity-build.yml'
   workflow_dispatch:
 
