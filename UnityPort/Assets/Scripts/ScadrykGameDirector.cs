@@ -1646,6 +1646,18 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (!OptionsLayoutFits(600f) || !OptionsResetRowFits(400f))
         { SmokeFail("O menu de opções corta as teclas remapeáveis ou os controles de retorno a 600px de altura"); yield break; }
         Debug.Log("SCADRYK_SMOKE: menu de opções e restauração de comandos cabem em janela compacta");
+        float shortOptionsViewport = CompactOptionsViewportHeight(360f);
+        Rect lastCompactKey = CompactOptionsSelectionRect(1, 13);
+        Rect lastCompactPad = CompactOptionsSelectionRect(2, 9);
+        float keyListScroll = ScrollOptionItemIntoView(0f, shortOptionsViewport, lastCompactKey.y, lastCompactKey.height, CompactOptionsContentHeight(1));
+        float padListScroll = ScrollOptionItemIntoView(0f, shortOptionsViewport, lastCompactPad.y, lastCompactPad.height, CompactOptionsContentHeight(2));
+        if (!CompactOptionsLayoutFits(400f, 360f) || keyListScroll <= 0f || padListScroll <= 0f ||
+            lastCompactKey.y + lastCompactKey.height > keyListScroll + shortOptionsViewport + 0.001f ||
+            lastCompactPad.y + lastCompactPad.height > padListScroll + shortOptionsViewport + 0.001f ||
+            keyListScroll > CompactOptionsContentHeight(1) - shortOptionsViewport ||
+            padListScroll > CompactOptionsContentHeight(2) - shortOptionsViewport)
+        { SmokeFail("As opções roláveis não mantêm as últimas ações de teclado/controle visíveis em 400x360"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: opções roláveis preservam a última ação em 400x360");
         if (!SoundOptionsLayoutFits(600f))
         { SmokeFail("O controle de alto contraste ou as instruções de avisos saem do menu em janela baixa"); yield break; }
         bool oldHighContrast = ScadrykSettings.HighContrastWarnings;

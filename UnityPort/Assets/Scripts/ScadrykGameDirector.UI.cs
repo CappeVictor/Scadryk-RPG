@@ -2,6 +2,10 @@ using UnityEngine;
 
 public sealed partial class ScadrykGameDirector
 {
+    private Vector2 compactOptionsScroll;
+    private int lastCompactOptionsTab = -1;
+    private int lastCompactOptionsSelection = -1;
+
     private void OnGUI()
     {
         EnsureStyles();
@@ -640,6 +644,11 @@ public sealed partial class ScadrykGameDirector
         if (OptionButton(new Rect(x + 15f, y + 48f, tabWidth, 38f), "Som", 0)) { optionsTab = 0; optionsSelection = 0; }
         if (OptionButton(new Rect(x + 23f + tabWidth, y + 48f, tabWidth, 38f), "Teclas", 1)) { optionsTab = 1; optionsSelection = 1; }
         if (OptionButton(new Rect(x + 31f + tabWidth * 2f, y + 48f, tabWidth, 38f), "Controle", 2)) { optionsTab = 2; optionsSelection = 2; }
+        if (Screen.height < 600f)
+        {
+            DrawCompactOptionsContent(x, y, width);
+            return;
+        }
         if (optionsTab == 0)
         {
             if (optionsSelection == 3) DrawSelection(new Rect(x + 10f, y + 116f, width - 20f, 48f));
@@ -703,6 +712,161 @@ public sealed partial class ScadrykGameDirector
         }
         if (OptionButton(new Rect(x + (width - 180f) * 0.5f, y + backOffset, 180f, 42f), "Voltar", optionsTab == 0 ? 9 : optionsTab == 1 ? 15 : 11)) { showOptions = false; rebindingAction = gamepadRebindAction = -1; }
         GUI.Label(new Rect(x, y + footerOffset, width, 28f), "Controle: analógico navega · A confirma · B volta · Start pausa · L3 mapa.", smallStyle);
+    }
+
+    private void DrawCompactOptionsContent(float x, float y, float width)
+    {
+        const float backHeight = 42f;
+        const float footerHeight = 28f;
+        float backY = Screen.height - 78f;
+        float viewportY = y + 94f;
+        float viewportHeight = Mathf.Max(76f, backY - viewportY - 8f);
+        float viewportWidth = Mathf.Max(120f, width - 16f);
+        float contentHeight = CompactOptionsContentHeight(optionsTab);
+        if (lastCompactOptionsTab != optionsTab || lastCompactOptionsSelection != optionsSelection)
+        {
+            Rect selected = CompactOptionsSelectionRect(optionsTab, optionsSelection);
+            compactOptionsScroll.y = ScrollOptionItemIntoView(compactOptionsScroll.y, viewportHeight,
+                selected.y, selected.height, contentHeight);
+            lastCompactOptionsTab = optionsTab;
+            lastCompactOptionsSelection = optionsSelection;
+        }
+        compactOptionsScroll.x = 0f;
+
+        Rect viewport = new Rect(x + 8f, viewportY, viewportWidth, viewportHeight);
+        Rect content = new Rect(0f, 0f, viewportWidth, contentHeight);
+        compactOptionsScroll = GUI.BeginScrollView(viewport, compactOptionsScroll, content);
+        if (optionsTab == 0) DrawCompactSoundOptions(viewportWidth);
+        else if (optionsTab == 1) DrawCompactKeyboardOptions(viewportWidth);
+        else DrawCompactGamepadOptions(viewportWidth);
+        GUI.EndScrollView();
+
+        float backWidth = Mathf.Min(180f, width - 24f);
+        Rect back = new Rect(x + (width - backWidth) * 0.5f, backY, backWidth, backHeight);
+        int backSelection = optionsTab == 0 ? 9 : optionsTab == 1 ? 15 : 11;
+        if (OptionButton(back, "Voltar", backSelection)) { showOptions = false; rebindingAction = gamepadRebindAction = -1; }
+        GUI.Label(new Rect(x + 4f, Screen.height - footerHeight - 2f, width - 8f, footerHeight),
+            "Analógico: navegar · A: confirmar · B: voltar", smallStyle);
+    }
+
+    private void DrawCompactSoundOptions(float width)
+    {
+        const float left = 12f;
+        float labelWidth = Mathf.Clamp(width * 0.42f, 88f, 146f);
+        float sliderX = left + labelWidth + 10f;
+        float sliderWidth = Mathf.Max(48f, width - sliderX - 16f);
+        DrawCompactOptionSelection(3, 10f, 48f, width);
+        GUI.Label(new Rect(left, 16f, labelWidth, 28f), "Música", bodyStyle);
+        ScadrykSettings.MusicVolume = GUI.HorizontalSlider(new Rect(sliderX, 18f, sliderWidth, 24f), ScadrykSettings.MusicVolume, 0f, 1f);
+        DrawCompactOptionSelection(4, 62f, 48f, width);
+        GUI.Label(new Rect(left, 68f, labelWidth, 28f), "Efeitos", bodyStyle);
+        ScadrykSettings.EffectsVolume = GUI.HorizontalSlider(new Rect(sliderX, 70f, sliderWidth, 24f), ScadrykSettings.EffectsVolume, 0f, 1f);
+        DrawCompactOptionSelection(5, 114f, 48f, width);
+        GUI.Label(new Rect(left, 120f, labelWidth, 28f), "Escala do texto", bodyStyle);
+        float textScale = GUI.HorizontalSlider(new Rect(sliderX, 122f, sliderWidth, 24f), ScadrykSettings.TextScale, 1f, 1.5f);
+        if (Mathf.Abs(textScale - ScadrykSettings.TextScale) > 0.01f) { ScadrykSettings.TextScale = textScale; titleStyle = null; }
+
+        DrawCompactOptionSelection(6, 176f, 40f, width);
+        ScadrykSettings.ReduceFlash = GUI.Toggle(new Rect(left, 179f, width - 24f, 34f), ScadrykSettings.ReduceFlash, "Reduzir flashes de dano");
+        DrawCompactOptionSelection(7, 220f, 40f, width);
+        ScadrykSettings.ReduceShake = GUI.Toggle(new Rect(left, 223f, width - 24f, 34f), ScadrykSettings.ReduceShake, "Desligar tremor de câmera");
+        DrawCompactOptionSelection(8, 264f, 40f, width);
+        ScadrykSettings.HighContrastWarnings = GUI.Toggle(new Rect(left, 267f, width - 24f, 34f), ScadrykSettings.HighContrastWarnings, "Alto contraste nos avisos");
+        GUI.Label(new Rect(left, 310f, width - 24f, 78f),
+            "Avisos continuam visíveis sem efeitos sonoros. F8 marca um sinal difícil de ler durante QA.", memoryStyle);
+    }
+
+    private void DrawCompactKeyboardOptions(float width)
+    {
+        GUI.Label(new Rect(12f, 5f, width - 150f, 32f), "Selecione uma ação para trocar a tecla.", smallStyle);
+        if (OptionButton(new Rect(width - 142f, 3f, 130f, 34f), "Padrões", 14))
+        {
+            ScadrykSettings.ResetKeyboardBindings();
+            rebindingAction = -1;
+            ShowStatus("Teclas padrão restauradas.", 2f);
+        }
+        float labelWidth = Mathf.Clamp(width * 0.38f, 95f, 138f);
+        for (int i = 0; i < ScadrykSettings.Actions.Length; i++)
+        {
+            float row = 44f + i * 36f;
+            GUI.Label(new Rect(12f, row, labelWidth, 30f), ScadrykSettings.Actions[i], bodyStyle);
+            string label = rebindingAction == i ? "Aperte…" : ScadrykSettings.KeyName(ScadrykSettings.Key(i));
+            if (OptionButton(new Rect(labelWidth + 20f, row, width - labelWidth - 32f, 30f), label, i + 3)) rebindingAction = i;
+        }
+        if (rebindingAction >= 0 && Event.current.type == EventType.KeyDown && ScadrykSettings.CanBindKey(Event.current.keyCode))
+        {
+            ScadrykSettings.Bind(rebindingAction, Event.current.keyCode);
+            rebindingAction = -1;
+            Event.current.Use();
+        }
+    }
+
+    private void DrawCompactGamepadOptions(float width)
+    {
+        GUI.Label(new Rect(12f, 5f, width - 150f, 32f), "Selecione a ação e pressione o botão.", smallStyle);
+        if (OptionButton(new Rect(width - 142f, 3f, 130f, 34f), "Padrões", 10))
+        {
+            ScadrykSettings.ResetGamepadBindings();
+            gamepadRebindAction = -1;
+            ShowStatus("Controle padrão restaurado.", 2f);
+        }
+        float labelWidth = Mathf.Clamp(width * 0.38f, 95f, 138f);
+        for (int i = 0; i < 7; i++)
+        {
+            float row = 44f + i * 40f;
+            GUI.Label(new Rect(12f, row, labelWidth, 32f), ScadrykSettings.Actions[i], bodyStyle);
+            string label = gamepadRebindAction == i ? "Aperte…" : ScadrykSettings.PadButtonName(ScadrykSettings.PadButton(i));
+            if (OptionButton(new Rect(labelWidth + 20f, row, width - labelWidth - 32f, 32f), label, i + 3))
+            { gamepadRebindAction = i; gamepadRebindAfterFrame = Time.frameCount; }
+        }
+    }
+
+    private void DrawCompactOptionSelection(int selection, float top, float height, float width)
+    {
+        if (optionsSelection == selection) DrawSelection(new Rect(4f, top, width - 8f, height));
+    }
+
+    internal static float CompactOptionsContentHeight(int tab) => tab == 0 ? 390f : tab == 1 ? 474f : 324f;
+
+    internal static Rect CompactOptionsSelectionRect(int tab, int selection)
+    {
+        if (tab == 0 && selection is >= 3 and <= 8)
+        {
+            float[] tops = { 10f, 62f, 114f, 176f, 220f, 264f };
+            int index = selection - 3;
+            return new Rect(0f, tops[index], 1f, index < 3 ? 48f : 40f);
+        }
+        if (tab == 1)
+        {
+            if (selection == 14) return new Rect(0f, 3f, 1f, 34f);
+            if (selection is >= 3 and <= 13) return new Rect(0f, 44f + (selection - 3) * 36f, 1f, 30f);
+        }
+        if (tab == 2)
+        {
+            if (selection == 10) return new Rect(0f, 3f, 1f, 34f);
+            if (selection is >= 3 and <= 9) return new Rect(0f, 44f + (selection - 3) * 40f, 1f, 32f);
+        }
+        return new Rect(0f, 0f, 1f, 1f);
+    }
+
+    internal static float ScrollOptionItemIntoView(float current, float viewportHeight, float itemTop, float itemHeight, float contentHeight)
+    {
+        if (itemTop < current) current = itemTop;
+        else if (itemTop + itemHeight > current + viewportHeight) current = itemTop + itemHeight - viewportHeight;
+        return Mathf.Clamp(current, 0f, Mathf.Max(0f, contentHeight - viewportHeight));
+    }
+
+    internal static float CompactOptionsViewportHeight(float screenHeight) =>
+        Mathf.Max(76f, screenHeight - 78f - 8f - 94f - 8f);
+
+    internal static bool CompactOptionsLayoutFits(float screenWidth, float screenHeight)
+    {
+        float width = Mathf.Min(620f, screenWidth - 36f);
+        float backY = screenHeight - 78f;
+        float footerY = screenHeight - 30f;
+        float viewportHeight = CompactOptionsViewportHeight(screenHeight);
+        return width >= 240f && viewportHeight >= 76f && backY + 42f <= footerY && footerY + 28f <= screenHeight &&
+            CompactOptionsContentHeight(1) > viewportHeight;
     }
 
     private static bool OptionsLayoutFits(float screenHeight)
