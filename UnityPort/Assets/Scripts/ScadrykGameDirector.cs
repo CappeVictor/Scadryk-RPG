@@ -1437,11 +1437,17 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (!RebindingCanBeCancelled(-1, 2) || !RebindingCanBeCancelled(4, -1) || RebindingCanBeCancelled(-1, -1))
         { SmokeFail("Cancelar captura de controle não distingue remapeamento ativo do menu normal"); yield break; }
         Debug.Log("SCADRYK_SMOKE: Escape/Start cancela captura sem fechar opções");
-        if (!ScadrykEnemyHealth.SupportPulseContains(Vector2.zero, new Vector2(2.49f, 0f)) ||
+        if (!ScadrykEnemyHealth.AreaPulseContains(Vector2.zero, new Vector2(3.19f, 0f)) ||
+            ScadrykEnemyHealth.AreaPulseContains(Vector2.zero, new Vector2(3.21f, 0f)) ||
+            Mathf.Abs(ScadrykEnemyHealth.AreaPulseDiameter - ScadrykEnemyHealth.AreaPulseRadius * 2f) > 0.001f ||
+            !ScadrykEnemyHealth.BellPulseContains(Vector2.zero, new Vector2(5.29f, 0f)) ||
+            ScadrykEnemyHealth.BellPulseContains(Vector2.zero, new Vector2(5.31f, 0f)) ||
+            Mathf.Abs(ScadrykEnemyHealth.BellPulseDiameter - ScadrykEnemyHealth.BellPulseRadius * 2f) > 0.001f ||
+            !ScadrykEnemyHealth.SupportPulseContains(Vector2.zero, new Vector2(2.49f, 0f)) ||
             ScadrykEnemyHealth.SupportPulseContains(Vector2.zero, new Vector2(2.51f, 0f)) ||
             Mathf.Abs(ScadrykEnemyHealth.SupportPulseDiameter - ScadrykEnemyHealth.SupportPulseRadius * 2f) > 0.001f)
-        { SmokeFail("A cura do Tecelão ultrapassa o círculo verde anunciado"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: cura do Tecelão respeita o limite do círculo anunciado");
+        { SmokeFail("Uma área circular de dano ou cura diverge do raio e do diâmetro anunciados"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: áreas de ataque e cura respeitam os círculos anunciados");
         string previousHintInputMode = sessionInputMode;
         sessionInputMode = "keyboard_mouse";
         string keyboardPulseHint = ProgressHint(4, 0, 0);

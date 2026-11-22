@@ -15,6 +15,8 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private const float FinalStarfallProjectileScale = 0.48f;
     private const float FinalStarfallProjectileLength = 10f;
     private const float FinalStarfallProjectileSpeed = 5.4f;
+    internal const float AreaPulseRadius = 3.2f;
+    internal const float BellPulseRadius = 5.3f;
     internal const float SupportPulseRadius = 2.5f;
     internal const float OpeningAttackSpacing = 0.52f;
     internal static float AttackRecoveryDuration(bool boss, bool finalBoss) => finalBoss ? 0.42f : boss ? 0.36f : 0.24f;
@@ -23,7 +25,13 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private readonly bool[] blockedSteeringHeadings = new bool[10];
     private readonly GameObject[] attackWarnings = new GameObject[8];
     private int attackWarningCount;
+    internal static float AreaPulseDiameter => AreaPulseRadius * 2f;
+    internal static float BellPulseDiameter => BellPulseRadius * 2f;
     internal static float SupportPulseDiameter => SupportPulseRadius * 2f;
+    internal static bool AreaPulseContains(Vector2 origin, Vector2 target) =>
+        Vector2.Distance(origin, target) <= AreaPulseRadius;
+    internal static bool BellPulseContains(Vector2 origin, Vector2 target) =>
+        Vector2.Distance(origin, target) <= BellPulseRadius;
     internal static bool SupportPulseContains(Vector2 origin, Vector2 target) =>
         Vector2.Distance(origin, target) <= SupportPulseRadius;
     internal static bool TidebreakerCancelsWindup(bool boss, bool windingUp) => !boss && windingUp;
@@ -307,11 +315,11 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         Color warning = biomeIndex == 0 ? new Color(0.64f, 0.86f, 0.35f, 0.85f) :
             biomeIndex == 1 ? new Color(1f, 0.78f, 0.34f, 0.85f) : new Color(0.34f, 0.9f, 1f, 0.85f);
         if (!IsBoss && combatRole == 3)
-            TrackAttackWarning(ScadrykEffects.Ring(origin, 5f, new Color(0.38f, 1f, 0.6f, 0.8f), windup, true));
+            TrackAttackWarning(ScadrykEffects.Ring(origin, SupportPulseDiameter, new Color(0.38f, 1f, 0.6f, 0.8f), windup, true));
         else if (!IsBoss && combatRole == 2)
-            TrackAttackWarning(ScadrykEffects.Ring(origin, 6.4f, warning, windup, true));
+            TrackAttackWarning(ScadrykEffects.Ring(origin, AreaPulseDiameter, warning, windup, true));
         else if (IsBoss && biomeIndex == 2)
-            TrackAttackWarning(ScadrykEffects.Ring(origin, 10.6f, warning, windup, true));
+            TrackAttackWarning(ScadrykEffects.Ring(origin, BellPulseDiameter, warning, windup, true));
         else if (IsBoss && biomeIndex == 1)
         {
             Vector2 direction = (attackTarget - origin).normalized;
@@ -515,10 +523,9 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
 
     private void ResolveAreaPulse()
     {
-        const float radius = 3.2f;
         Color color = biomeIndex == 0 ? new Color(0.55f, 0.85f, 0.38f) : biomeIndex == 1 ? new Color(1f, 0.72f, 0.35f) : new Color(0.35f, 0.88f, 1f);
-        ScadrykEffects.Ring(transform.position, radius * 2f, color, 0.32f);
-        if (Vector2.Distance(player.transform.position, transform.position) <= radius) player.TakeDamage(12f);
+        ScadrykEffects.Ring(transform.position, AreaPulseDiameter, color, 0.32f);
+        if (AreaPulseContains(transform.position, player.transform.position)) player.TakeDamage(12f);
     }
 
     private void ResolveSupportPulse()
@@ -579,10 +586,11 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
 
     private void ResolveBellPulse()
     {
-        float radius = IsBoss ? 5.3f : 3.65f;
+        float radius = IsBoss ? BellPulseRadius : 3.65f;
         ScadrykEffects.Ring(transform.position, radius * 2f, new Color(0.34f, 0.9f, 1f, 0.96f), 0.32f);
         ScadrykEffects.Burst(transform.position, new Color(0.24f, 0.72f, 0.94f, 0.24f), radius * 1.5f);
-        if (Vector2.Distance(player.transform.position, transform.position) <= radius)
+        if (IsBoss ? BellPulseContains(transform.position, player.transform.position) :
+            Vector2.Distance(player.transform.position, transform.position) <= radius)
             player.TakeDamage(IsBoss ? 21f : 12f);
     }
 
