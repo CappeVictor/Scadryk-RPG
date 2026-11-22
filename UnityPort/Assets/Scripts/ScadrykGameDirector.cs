@@ -2153,6 +2153,28 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (Mathf.Abs(standardWarningWidth - 1f) > 0.001f || Mathf.Abs(highContrastWarningWidth - 1.4f) > 0.001f || !highContrastBrightensSignal)
         { SmokeFail("A opção de alto contraste não amplia e clareia os avisos de perigo"); yield break; }
         Debug.Log("SCADRYK_SMOKE: alto contraste clareia e amplia os avisos de perigo");
+        float savedEffectsVolume = ScadrykSettings.EffectsVolume;
+        bool savedWarningContrast = ScadrykSettings.HighContrastWarnings;
+        GameObject mutedWarningProbe = null;
+        bool warningVisibleWithoutSound = false;
+        try
+        {
+            ScadrykSettings.EffectsVolume = 0f;
+            ScadrykSettings.HighContrastWarnings = true;
+            mutedWarningProbe = ScadrykEffects.TelegraphLine(Vector2.zero, Vector2.right * 3f, new Color(0.2f, 0.4f, 0.8f, 0.6f), 0.1f, 1f);
+            SpriteRenderer warningRenderer = mutedWarningProbe != null ? mutedWarningProbe.GetComponent<SpriteRenderer>() : null;
+            warningVisibleWithoutSound = warningRenderer != null && warningRenderer.sprite != null &&
+                warningRenderer.color.a >= 0.98f && Mathf.Abs(mutedWarningProbe.transform.localScale.y - 0.14f) < 0.001f;
+        }
+        finally
+        {
+            if (mutedWarningProbe != null) Destroy(mutedWarningProbe);
+            ScadrykSettings.EffectsVolume = savedEffectsVolume;
+            ScadrykSettings.HighContrastWarnings = savedWarningContrast;
+        }
+        if (!warningVisibleWithoutSound)
+        { SmokeFail("Um aviso visual de perigo ficou ausente ou fraco com o volume de efeitos zerado"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: aviso de perigo real continua visível em alto contraste com efeitos silenciados; preferências restauradas");
         if (ScadrykEffects.FlashAlphaScale(true) >= 1f || ScadrykEffects.FlashDiameterScale(true) >= 1f ||
             ScadrykEffects.FlashExpansionScale(1f, true) >= ScadrykEffects.FlashExpansionScale(1f, false) ||
             ScadrykEffects.DeathBurstMoteCount(true, true) >= ScadrykEffects.DeathBurstMoteCount(true, false))
