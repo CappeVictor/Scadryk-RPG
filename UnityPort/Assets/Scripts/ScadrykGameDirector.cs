@@ -92,10 +92,12 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     };
     private static readonly string[] BasinWitnessLines = {
         "Sou Nima, a voz do primeiro sino. A Raiz-Mor guardou meu nome para que o silêncio não me apagasse. Ainda lembro o Arauto chamando esse silêncio de abrigo.",
+        "Nara: Também tenho medo do que a lembrança traz. Mas não vou pedir que vocês desapareçam.",
         "O sal ainda segura a onda no instante em que ela partiu. Faça os cristais responderem; a água precisa voltar a seguir."
     };
     private static readonly string[] CoastWitnessLines = {
         "Você devolveu movimento ao sal. Agora os sinos lembram que cada voz tinha alguém esperando por ela.",
+        "Nara: Posso lembrar e seguir em frente. Vou abrir a passagem para que ninguém fique preso.",
         "O Arauto chama o silêncio de abrigo. Pergunte a quem perdeu o próprio nome se isso parece paz."
     };
     private static string PowerAcquisitionHint(int powerIndex, string binding) => powerIndex switch
@@ -1324,6 +1326,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         { SmokeFail("Cada bioma precisa de nome, fala e memória próprios para o guardião"); yield break; }
         if (!OpeningMemory.Contains("Grande Onda") || !OpeningMemory.Contains("Nara") ||
             !GuardianMemories[0].Contains("Nima") || !BasinWitnessLines[0].Contains("primeiro sino") ||
+            !BasinWitnessLines[1].StartsWith("Nara:") || !CoastWitnessLines[1].StartsWith("Nara:") ||
             !GuardianMemories[1].Contains("última onda") || !GuardianMemories[2].Contains("poupar os vivos") ||
             !EndingMemory.Contains("Nara escolhe lembrar") || !EndingMemory.Contains("aprisionou os mortos"))
         { SmokeFail("A história perdeu a causa da maré imóvel, a ligação de Nima ou a resolução do conflito"); yield break; }
