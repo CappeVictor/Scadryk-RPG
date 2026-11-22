@@ -144,6 +144,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (terrainZones.RemoveWhere(zone => zone == null) > 0) RefreshTerrainSpeed();
         if (isDying || (director != null && director.IsPaused)) { BodyVelocity = Vector2.zero; return; }
         if (Time.time < dashEndsAt)
         {
