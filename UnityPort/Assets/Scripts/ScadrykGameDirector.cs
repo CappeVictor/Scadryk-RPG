@@ -2351,6 +2351,14 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             if (room == 8 && (worldSecretHintShown || !player.HasAbility(2) ||
                 !WorldSecretHint(2).Contains("Rompante da Maré")))
             { SmokeFail("A pista do selo não foi atualizada após aprender Rompante com o guardião"); yield break; }
+            if (room == 8)
+            {
+                float finalSealWindowDeadline = Time.time + 9f;
+                while (!statusMessage.Contains("Você tem 12 segundos") && Time.time < finalSealWindowDeadline) yield return null;
+                if (finalBoss != null || worldSecret == null || !statusMessage.Contains("Você tem 12 segundos"))
+                { SmokeFail("O Arauto despertou antes da janela segura para alcançar o selo final"); yield break; }
+                Debug.Log("SCADRYK_SMOKE: selo final permanece alcançável durante a janela segura antes do Arauto");
+            }
             if (room == 8 && !SmokeRevealWorldSecret(2))
             { SmokeFail("O selo opcional da costa não exigiu Rompante ou não concedeu cura após o guardião"); yield break; }
             if (room == 8)
