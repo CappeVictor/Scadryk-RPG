@@ -1141,7 +1141,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ShowStatus("O Arauto ainda não despertou. Você tem 12 segundos para libertar o Selo de Eco a nordeste ou se preparar.",
                 FinalSealPreparationWindowSeconds);
             float deadline = Time.time + FinalSealPreparationWindowSeconds;
-            while (Time.time < deadline && finalBoss == null && !victory && !showTitle) yield return null;
+            while (Time.time < deadline && worldSecret != null && finalBoss == null && !victory && !showTitle) yield return null;
+            while ((memoryModal || Time.time < memoryUntil) && finalBoss == null && !victory && !showTitle) yield return null;
         }
         if (player == null || victory || showTitle || finalBoss != null)
         {
@@ -2363,6 +2364,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             { SmokeFail("O selo opcional da costa não exigiu Rompante ou não concedeu cura após o guardião"); yield break; }
             if (room == 8)
             {
+                if (finalBoss != null || memoryUntil <= Time.time || memoryText != WorldSecretMemory(2))
+                { SmokeFail("O Arauto surgiu antes da lembrança do Selo final terminar"); yield break; }
                 float finalBossSpawnDeadline = Time.time + 8f;
                 while (finalBoss == null && Time.time < finalBossSpawnDeadline) yield return null;
                 if (finalBoss == null) { SmokeFail("Arauto não surgiu após o terceiro guardião"); yield break; }
