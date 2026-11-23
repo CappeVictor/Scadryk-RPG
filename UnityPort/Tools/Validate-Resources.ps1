@@ -43,18 +43,18 @@ if ($missing.Count -gt 0) {
     throw "Missing Unity Resources assets:`n$($missing -join "`n")"
 }
 
-$cpuReadable = @(
-    foreach ($name in ($resourceNames | Sort-Object)) {
-        $metaPath = Join-Path $artRoot ($name + '.png.meta')
-        if (-not (Test-Path -LiteralPath $metaPath -PathType Leaf)) {
+$invalidTextureImports = @(
+    foreach ($asset in Get-ChildItem -LiteralPath $artRoot -Filter '*.png' -File) {
+        $metaPath = $asset.FullName + '.meta'
+        if (-not (Test-Path -LiteralPath $metaPath -PathType Leaf) -or
+            -not (Select-String -LiteralPath $metaPath -Pattern '^  isReadable: 0\s*$' -Quiet)) {
             $metaPath
-            continue
         }
-        if (Select-String -LiteralPath $metaPath -Pattern '^  isReadable: 1\s*$' -Quiet) { $metaPath }
     }
 )
-if ($cpuReadable.Count -gt 0) {
-    throw "Unity art textures must not keep a CPU-readable copy; set isReadable to 0:`n$($cpuReadable -join "`n")"
+if ($invalidTextureImports.Count -gt 0) {
+    throw "Every PNG in Resources/ScadrykArt needs metadata with isReadable: 0:`n$($invalidTextureImports -join "`n")"
 }
 
-Write-Host "Validated $($resourceNames.Count) referenced Unity textures and their GPU-only import settings."
+$artCount = @(Get-ChildItem -LiteralPath $artRoot -Filter '*.png' -File).Count
+Write-Host "Validated $($resourceNames.Count) script resource references and all $artCount GPU-only art texture imports."

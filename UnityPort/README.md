@@ -33,7 +33,7 @@ As três salas centrais agora oferecem um desvio explorável próprio para cada 
 - Unity Editor `6000.6.9f1` (ver `ProjectSettings/ProjectVersion.txt`) e o módulo Windows Build Support para gerar o executável Windows.
 - Para builds Windows com backend IL2CPP, o Unity também exige Visual Studio C++ Build Tools e Windows SDK 10.0.19041 ou superior. São ferramentas de compilação; o código continua sendo editado no VS Code, sem precisar abrir o IDE Visual Studio.
 - O projeto usa Input Manager (Old), já configurado em Project Settings. Artes de cenário e inimigos estão em `Assets/Resources/ScadrykArt/`.
-- As folhas de arte são importadas sem cópia legível pela CPU: o jogo apenas as desenha e fatia por UV, então manter pixels duplicados em RAM não é necessário. `Tools/Validate-Resources.ps1` confere essa configuração para cada textura referenciada.
+- As folhas de arte são importadas sem cópia legível pela CPU: o jogo apenas as desenha e fatia por UV, então manter pixels duplicados em RAM não é necessário. `Tools/Validate-Resources.ps1` confere a existência dos recursos citados nos scripts e essa configuração em todos os PNGs de arte.
 
 ## Programar em C# com VS Code
 
