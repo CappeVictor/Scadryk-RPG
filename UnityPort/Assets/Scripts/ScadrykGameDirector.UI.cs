@@ -295,14 +295,14 @@ public sealed partial class ScadrykGameDirector
         if (!MiniMapPanelFits(panel, hud, Screen.width, Screen.height)) return;
         GUI.color = new Color(0.035f, 0.05f, 0.06f, 0.9f); GUI.Box(panel, GUIContent.none); GUI.color = Color.white;
         string[] mapBiomeNames = { "Bosque", "Sal", "Costa" };
-        GUI.Label(new Rect(panel.x + 13, panel.y + 8, width - 26f, 21f + extra * 8f), "MAPA · " + mapBiomeNames[phaseIndex] + " · ↑/↓ ROTA · ◇ SELO", smallStyle);
+        GUI.Label(new Rect(panel.x + 13, panel.y + 8, width - 26f, 21f + extra * 8f), "MAPA · " + mapBiomeNames[phaseIndex] + " · ↑/↓ · ◇/◆ SELO", smallStyle);
         float mapX = panel.x + 15, mapY = panel.y + 43 + extra * 5f, roomW = 75f + extra * 30f, roomH = 57f + extra * 10f, gap = 8;
         for (int i = 0; i < RoomsPerPhase; i++)
         {
             Rect cell = new Rect(mapX + i * (roomW + gap), mapY, roomW, roomH);
             GUI.color = MiniMapRoomColor(i == roomIndex, clearedRooms[i]);
             GUI.Box(cell, GUIContent.none); GUI.color = new Color(0.75f, 0.74f, 0.67f);
-            GUI.Label(new Rect(cell.x + 3, cell.y + 2, roomW - 6, 18), (i + 1) + ". " + MapRoomRouteLabel(phaseIndex, i), smallStyle);
+            GUI.Label(new Rect(cell.x + 3, cell.y + 2, roomW - 6, 18), (i + 1) + ". " + MapRoomRouteLabel(phaseIndex, i, IsWorldSecretRevealed("Scadryk.", phaseIndex, i)), smallStyle);
             if (i == roomIndex && gateObject != null)
             {
                 GUI.color = PhaseAccentColors[phaseIndex];
@@ -479,8 +479,10 @@ public sealed partial class ScadrykGameDirector
         panel.xMax <= screenWidth - 8f && panel.yMax <= screenHeight - 8f;
 
     private static string MapRoomLabel(int phase, int room) => MapRoomLabels[phase][room];
-    internal static string MapRoomRouteLabel(int phase, int room) =>
-        TryGetSideRoute(phase, room, out int side, out _, out _) ? MapRoomLabel(phase, room) + (side > 0 ? " ↑" : " ↓") + (PowerGrantedBySecretAt(phase, room) >= 0 ? " ◇" : string.Empty) : MapRoomLabel(phase, room);
+    internal static string MapRoomRouteLabel(int phase, int room) => MapRoomRouteLabel(phase, room, false);
+    internal static string MapRoomRouteLabel(int phase, int room, bool secretFound) =>
+        TryGetSideRoute(phase, room, out int side, out _, out _) ? MapRoomLabel(phase, room) + (side > 0 ? " ↑" : " ↓") +
+            (PowerGrantedBySecretAt(phase, room) >= 0 ? (secretFound ? " ◆" : " ◇") : string.Empty) : MapRoomLabel(phase, room);
     private static string Cooldown(float value) => value <= 0.02f ? "pronto" : value.ToString("0.0") + "s";
 
     internal static string OverlayMessage(bool confirmNewJourney, bool victory, bool showTitle) =>
@@ -657,7 +659,7 @@ public sealed partial class ScadrykGameDirector
         GUI.Label(new Rect(panel.center.x - titleWidth * 0.5f, panel.y + 4f, titleWidth, 40f), WorldMapTitleContent, openingTitleStyle);
         worldMapInstructionStyle.fontSize = Mathf.Min(smallStyle.fontSize, 12);
         GUI.Label(new Rect(panel.x + 16f, panel.y + 45f, panel.width - 32f, 17f),
-            "TRÊS BIOMAS · NOVE SALAS · ↑/↓ DESVIO · ◇ SELO OPCIONAL", worldMapInstructionStyle);
+            "TRÊS BIOMAS · NOVE SALAS · ↑/↓ DESVIO · ◇ PENDENTE · ◆ LIBERADO", worldMapInstructionStyle);
         if (GUI.Button(new Rect(panel.xMax - 92f, panel.y + 14f, 76f, 28f), "FECHAR")) CloseWorldMap();
 
         float rowHeight = WorldMapRowHeight(panel.height);
@@ -681,7 +683,7 @@ public sealed partial class ScadrykGameDirector
                 GUI.DrawTexture(new Rect(card.x, card.y, card.width, 2f), Texture2D.whiteTexture);
                 GUI.color = Color.white;
                 GUI.Label(new Rect(card.x + 3f, card.y + 3f, card.width - 6f, card.height * 0.5f),
-                    (room + 1) + ". " + MapRoomRouteLabel(phase, room), worldMapRoomStyle);
+                    (room + 1) + ". " + MapRoomRouteLabel(phase, room, IsWorldSecretRevealed("Scadryk.", phase, room)), worldMapRoomStyle);
                 string stateLabel = state == 1 ? "VOCÊ ESTÁ AQUI" : state == 2 ? "CONCLUÍDA" : "ADIANTE";
                 GUI.color = state == 1 ? new Color(0.55f, 1f, 0.94f) : state == 2 ? new Color(0.62f, 0.9f, 0.68f) : new Color(0.7f, 0.73f, 0.71f);
                 GUI.Label(new Rect(card.x + 2f, card.yMax - 18f, card.width - 4f, 15f), stateLabel, worldMapStateStyle);

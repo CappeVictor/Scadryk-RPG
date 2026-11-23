@@ -20,7 +20,7 @@ Após derrotar o terceiro guardião, a lembrança continua pausando o combate at
 
 O ataque básico agora encadeia três cortes dentro de uma janela curta: os dois primeiros mantêm ritmo rápido e o terceiro tem maior alcance e dano, preparação mais longa, breve interrupção de Ecos comuns, arco dourado e um som de acerto próprio. Guardiões e Arauto resistem à interrupção do finalizador. Uma troca de sala, morte ou recarga expirada reinicia a sequência. A sensação do combo ainda precisa de avaliação jogando; a compilação não mede ritmo ou leitura visual.
 
-As três salas centrais agora oferecem um desvio explorável próprio para cada bioma: uma passagem de raízes ao norte no bosque, uma prateleira de sal ao sul e uma vereda de bóias ao norte na costa. Os desvios ligam duas aberturas e retornam à sala, dando uma rota alternativa durante a travessia e o combate; a rota principal ao portal continua aberta. A prateleira de sal esconde o Eco que fortalece Crescente, e a vereda de bóias guarda o Eco de Estouro. O mapa marca a direção do desvio com ↑/↓ e o selo opcional com ◇; cada memória só pode ser libertada com o poder correspondente.
+As três salas centrais agora oferecem um desvio explorável próprio para cada bioma: uma passagem de raízes ao norte no bosque, uma prateleira de sal ao sul e uma vereda de bóias ao norte na costa. Os desvios ligam duas aberturas e retornam à sala, dando uma rota alternativa durante a travessia e o combate; a rota principal ao portal continua aberta. A prateleira de sal esconde o Eco que fortalece Crescente, e a vereda de bóias guarda o Eco de Estouro. O mapa marca a direção do desvio com ↑/↓, selo opcional pendente com ◇ e memória já liberada com ◆; cada memória só pode ser libertada com o poder correspondente.
 
 ## Requisitos
 

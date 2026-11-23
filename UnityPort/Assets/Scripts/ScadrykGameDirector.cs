@@ -2294,9 +2294,13 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Vector2 saltRouteSeal = WorldSecretPosition(Vector2.zero, 1, 1, 0);
         Vector2 coastRouteSeal = WorldSecretPosition(Vector2.zero, 2, 1, 1);
         if (Vector2.Distance(saltRouteSeal, new Vector2(0f, -9.3f)) > 0.001f ||
-            Vector2.Distance(coastRouteSeal, new Vector2(0f, 9.3f)) > 0.001f)
+            Vector2.Distance(coastRouteSeal, new Vector2(0f, 9.3f)) > 0.001f ||
+            !MapRoomRouteLabel(1, 1, false).EndsWith(" ◇", System.StringComparison.Ordinal) ||
+            !MapRoomRouteLabel(1, 1, true).EndsWith(" ◆", System.StringComparison.Ordinal) ||
+            !MapRoomRouteLabel(2, 1, true).EndsWith(" ◆", System.StringComparison.Ordinal) ||
+            MapRoomRouteLabel(0, 1, true).EndsWith(" ◆", System.StringComparison.Ordinal))
         { SmokeFail("Os selos opcionais não estão posicionados dentro dos desvios que os anunciam"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: mapa orienta os desvios e identifica os dois selos de rota lateral");
+        Debug.Log("SCADRYK_SMOKE: mapa orienta os desvios e distingue selos pendentes dos já liberados");
         bool[] mapCleared = { true, false, false };
         if (WorldMapRoomStatus(0, 2, 1, 1, mapCleared) != 2 ||
             WorldMapRoomStatus(1, 0, 1, 1, mapCleared) != 2 ||
