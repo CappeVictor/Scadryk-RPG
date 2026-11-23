@@ -17,6 +17,10 @@ public sealed partial class ScadrykGameDirector
     private string cachedControlHintMeasureText;
     private readonly GUIContent memoryHintMeasureContent = new GUIContent();
     private string cachedMemoryHintMeasureText;
+    private readonly GUIContent threatCaptionFirstContent = new GUIContent();
+    private string cachedThreatCaptionFirstLabel;
+    private readonly GUIContent threatCaptionSecondContent = new GUIContent();
+    private string cachedThreatCaptionSecondLabel;
 
     private static void RefreshMeasureContent(GUIContent content, ref string cachedText, string text)
     {
@@ -24,6 +28,13 @@ public sealed partial class ScadrykGameDirector
         if (cachedText == text) return;
         content.text = text;
         cachedText = text;
+    }
+
+    private static void RefreshThreatCaptionContent(GUIContent content, ref string cachedLabel, string label)
+    {
+        if (cachedLabel == label) return;
+        content.text = string.IsNullOrEmpty(label) ? string.Empty : "PREPARANDO: " + label;
+        cachedLabel = label;
     }
 
     private void OpenMemoryJournal()
@@ -130,6 +141,9 @@ public sealed partial class ScadrykGameDirector
         }
         if (first == null) return;
 
+        RefreshThreatCaptionContent(threatCaptionFirstContent, ref cachedThreatCaptionFirstLabel, first);
+        RefreshThreatCaptionContent(threatCaptionSecondContent, ref cachedThreatCaptionSecondLabel, second);
+
         int captionCount = second == null ? 1 : 2;
         Rect panel = ThreatCaptionPanelRect(Screen.width, Screen.height, ScadrykSettings.TextScale, captionCount);
         GUI.color = new Color(0.035f, 0.025f, 0.035f, 0.9f);
@@ -141,9 +155,9 @@ public sealed partial class ScadrykGameDirector
         float rowHeight = (panel.height - 6f) / captionCount;
         int oldSize = centeredBodyStyle.fontSize;
         centeredBodyStyle.fontSize = ThreatCaptionFontSize(ScadrykSettings.TextScale, rowHeight);
-        GUI.Label(new Rect(panel.x + 8f, panel.y + 3f, panel.width - 16f, rowHeight), "PREPARANDO: " + first, centeredBodyStyle);
+        GUI.Label(new Rect(panel.x + 8f, panel.y + 3f, panel.width - 16f, rowHeight), threatCaptionFirstContent, centeredBodyStyle);
         if (second != null)
-            GUI.Label(new Rect(panel.x + 8f, panel.y + 3f + rowHeight, panel.width - 16f, rowHeight), "PREPARANDO: " + second, centeredBodyStyle);
+            GUI.Label(new Rect(panel.x + 8f, panel.y + 3f + rowHeight, panel.width - 16f, rowHeight), threatCaptionSecondContent, centeredBodyStyle);
         centeredBodyStyle.fontSize = oldSize;
     }
 

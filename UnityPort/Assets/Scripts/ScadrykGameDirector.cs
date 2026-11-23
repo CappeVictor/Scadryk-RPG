@@ -2720,6 +2720,13 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Rect narrowLegend = MiniMapLegendRect(narrowMap, 1.5f);
         Rect shortStatus = StatusLabelRect(400f, 360f, 24f);
         Rect wrappedStatus = StatusLabelRect(400f, 360f, 72f);
+        var threatCaptionContent = new GUIContent();
+        string cachedThreatCaptionLabel = null;
+        RefreshThreatCaptionContent(threatCaptionContent, ref cachedThreatCaptionLabel, "Arauto fase 3 — onda de vazio");
+        string firstThreatCaptionText = threatCaptionContent.text;
+        RefreshThreatCaptionContent(threatCaptionContent, ref cachedThreatCaptionLabel, "Arauto fase 3 — onda de vazio");
+        bool unchangedCaptionReusesText = object.ReferenceEquals(firstThreatCaptionText, threatCaptionContent.text);
+        RefreshThreatCaptionContent(threatCaptionContent, ref cachedThreatCaptionLabel, "Bosque — Eco avanço de raízes");
         if (AbilityHudLabel(0, "Q", "pronto") != "Q  Crescente · interrompe  ·  pronto" ||
             AbilityHudLabel(0, "Q", "pronto", true) != "Q  Crescente · interrompe  ·  pronto  ·  eco" ||
             AbilityHudLabel(1, "E", "4.2s") != "E  Estouro · expõe  ·  4.2s" ||
@@ -2735,6 +2742,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             compactThreatCaption.xMin < 28f || compactThreatCaption.yMin < 196f ||
             compactThreatCaption.yMax > compactHud.yMax - 10f || compactThreatCaption.xMax > compactHud.xMax - 8f ||
             ThreatCaptionFontSize(1.5f, (compactThreatCaption.height - 6f) * 0.5f) > 14 ||
+            !unchangedCaptionReusesText || threatCaptionContent.text != "PREPARANDO: Bosque — Eco avanço de raízes" ||
             narrowLegend.yMin < narrowMap.yMin || narrowLegend.yMax > narrowMap.yMax ||
             wrappedStatus.height <= shortStatus.height || wrappedStatus.xMin < 0f || wrappedStatus.xMax > 400f ||
             wrappedStatus.yMin < 0f || wrappedStatus.yMax > 360f)
