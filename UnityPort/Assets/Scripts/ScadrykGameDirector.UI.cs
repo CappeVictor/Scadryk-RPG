@@ -5,11 +5,14 @@ public sealed partial class ScadrykGameDirector
     private Vector2 compactOptionsScroll;
     private int lastCompactOptionsTab = -1;
     private int lastCompactOptionsSelection = -1;
+    private Vector2 memoryJournalScroll;
+    private float nextMemoryJournalNavigationAt;
 
     private void OnGUI()
     {
         EnsureStyles();
         if (showOpeningStory) { DrawOpeningStory(); return; }
+        if (showMemoryJournal) { DrawMemoryJournal(); return; }
         if (showWorldMap) { DrawWorldMap(); return; }
         if (showOptions) { DrawOptions(); return; }
         if (memoryModal) { DrawMemoryModal(); return; }
@@ -68,6 +71,78 @@ public sealed partial class ScadrykGameDirector
             if (transitioning && transitionFade > 0.35f)
                 GUI.Label(new Rect(0, Screen.height / 2f - 20, Screen.width, 40), "ATRAVESSANDO O LIMIAR", centeredTitleStyle);
         }
+    }
+
+    private void DrawMemoryJournal()
+    {
+        GUI.color = new Color(0f, 0f, 0f, 0.76f);
+        GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
+        GUI.color = Color.white;
+        Rect panel = StoryJournalPanelRect(Screen.width, Screen.height);
+        GUI.color = new Color(0.025f, 0.04f, 0.045f, 0.98f);
+        GUI.DrawTexture(panel, Texture2D.whiteTexture);
+        GUI.color = new Color(0.74f, 0.63f, 0.34f, 1f);
+        GUI.DrawTexture(new Rect(panel.x, panel.y, panel.width, 3f), Texture2D.whiteTexture);
+        GUI.color = Color.white;
+
+        string[] entries = ReadStoryJournal("Scadryk.");
+        GUI.Label(new Rect(panel.x + 18f, panel.y + 10f, panel.width - 36f, 30f), "CADERNO DE MEMÓRIAS", titleStyle);
+        GUI.Label(new Rect(panel.x + 18f, panel.y + 39f, panel.width - 36f, 22f),
+            entries.Length + (entries.Length == 1 ? " lembrança recuperada" : " lembranças recuperadas"), smallStyle);
+
+        Rect viewport = StoryJournalViewportRect(panel);
+        if (entries.Length == 0)
+        {
+            smallStyle.alignment = TextAnchor.MiddleCenter;
+            GUI.Label(viewport, "As lembranças surgirão aqui quando Nara encontrar os Ecos.", memoryStyle);
+            smallStyle.alignment = TextAnchor.MiddleLeft;
+        }
+        float textWidth = Mathf.Max(40f, viewport.width - 30f);
+        float contentHeight = 8f;
+        float[] cardHeights = new float[entries.Length];
+        for (int i = 0; i < entries.Length; i++)
+        {
+            cardHeights[i] = Mathf.Max(52f, memoryStyle.CalcHeight(new GUIContent(entries[i]), textWidth) + 22f);
+            contentHeight += cardHeights[i] + 10f;
+        }
+        contentHeight = Mathf.Max(contentHeight, viewport.height);
+        Rect content = new Rect(0f, 0f, viewport.width - 18f, contentHeight);
+        memoryJournalScroll = GUI.BeginScrollView(viewport, memoryJournalScroll, content);
+        float y = 8f;
+        for (int i = 0; i < entries.Length; i++)
+        {
+            Rect card = new Rect(2f, y, content.width - 4f, cardHeights[i]);
+            GUI.color = new Color(0.055f, 0.08f, 0.085f, 0.96f);
+            GUI.DrawTexture(card, Texture2D.whiteTexture);
+            GUI.color = new Color(0.74f, 0.63f, 0.34f, 0.72f);
+            GUI.DrawTexture(new Rect(card.x, card.y, 2f, card.height), Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            GUI.Label(new Rect(card.x + 12f, card.y + 8f, card.width - 24f, card.height - 16f), entries[i], memoryStyle);
+            y += card.height + 10f;
+        }
+        GUI.EndScrollView();
+        smallStyle.alignment = TextAnchor.MiddleCenter;
+        GUI.Label(new Rect(panel.x + 14f, panel.yMax - 31f, panel.width - 28f, 22f),
+            "Esc / Start / B voltar · setas, analógico ou roda para ler", smallStyle);
+        smallStyle.alignment = TextAnchor.MiddleLeft;
+    }
+
+    internal static Rect StoryJournalPanelRect(float screenWidth, float screenHeight)
+    {
+        float width = Mathf.Max(0f, Mathf.Min(860f, screenWidth - 32f));
+        float height = Mathf.Max(0f, Mathf.Min(760f, screenHeight - 32f));
+        return new Rect((screenWidth - width) * 0.5f, (screenHeight - height) * 0.5f, width, height);
+    }
+
+    internal static Rect StoryJournalViewportRect(Rect panel) =>
+        new Rect(panel.x + 16f, panel.y + 66f, panel.width - 32f, panel.height - 111f);
+
+    internal static bool StoryJournalLayoutFits(float screenWidth, float screenHeight)
+    {
+        Rect panel = StoryJournalPanelRect(screenWidth, screenHeight);
+        Rect viewport = StoryJournalViewportRect(panel);
+        return screenWidth >= 220f && screenHeight >= 160f && panel.width >= 188f && panel.height >= 128f &&
+            viewport.width >= 156f && viewport.height >= 45f && panel.y >= 0f && panel.yMax <= screenHeight;
     }
 
     private void DrawMemoryModal()
@@ -465,6 +540,8 @@ public sealed partial class ScadrykGameDirector
         else if (victory)
         {
             if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY, buttonWidth, buttonHeight), "Nova jornada", 1)) StartNewGame();
+            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep, buttonWidth, buttonHeight), "Caderno de memórias", 2))
+            { showMemoryJournal = true; memoryJournalScroll = Vector2.zero; }
         }
         else
         {
@@ -475,12 +552,14 @@ public sealed partial class ScadrykGameDirector
             float row0 = buttonY;
             float row1 = buttonY + buttonStep;
             float row2 = buttonY + buttonStep * 2f;
+
             if (OverlayButton(new Rect(left, row0, columnWidth, buttonHeight), "Continuar", 0)) isPaused = false;
             if (OverlayButton(new Rect(right, row0, columnWidth, buttonHeight), "Mapa", 1))
             { isPaused = false; showWorldMap = true; ApplyPauseTimeScale(); }
             if (OverlayButton(new Rect(left, row1, columnWidth, buttonHeight), "Nova jornada", 2)) RequestNewGame();
             if (OverlayButton(new Rect(right, row1, columnWidth, buttonHeight), "Opções", 3)) { showOptions = true; optionsTab = optionsSelection = 0; }
-            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, row2, buttonWidth, buttonHeight), "Salvar e sair ao título", 4)) ReturnToTitle();
+            if (OverlayButton(new Rect(left, row2, columnWidth, buttonHeight), "Memórias", 4)) { showMemoryJournal = true; memoryJournalScroll = Vector2.zero; }
+            if (OverlayButton(new Rect(right, row2, columnWidth, buttonHeight), "Salvar e sair", 5)) ReturnToTitle();
         }
         GUI.Label(new Rect(center - footerWidth * 0.5f, footerTop, footerWidth, footerHeight), "Três lugares · nove salas · memórias a libertar", centeredBodyStyle);
     }

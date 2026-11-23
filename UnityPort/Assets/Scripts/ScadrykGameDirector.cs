@@ -18,6 +18,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private const string VictoryEndingText = "Os sinos respondem. Nara escolheu lembrar; o limiar já não prende ninguém.";
     private const string SessionCsvHeader = "session_id,utc,phase,room,seconds,deaths,unclear_attacks,crescent,salt,tide,enemies_left,completed,current_entries,current_seconds,input_mode,seals_revealed,shallow_water_seconds,resonance_activations\n";
     private const string AttackClarityCsvHeader = "session_id,utc,phase,room,attack_patterns\n";
+    private const string StoryJournalKeySuffix = "StoryJournal.v1";
+    [System.Serializable]
+    private sealed class StoryJournalData { public List<string> entries = new List<string>(); }
     private static readonly string[] PhaseNames = { "Margens do Primeiro Eco", "Bacia do Sal Imóvel", "Costa das Badaladas" };
     private static readonly Color[] PhaseColors = { new Color(0.11f, 0.22f, 0.20f), new Color(0.27f, 0.20f, 0.12f), new Color(0.09f, 0.17f, 0.25f) };
     private static readonly Color[] PhaseWallColors = { new Color(0.17f, 0.29f, 0.26f), new Color(0.35f, 0.27f, 0.16f), new Color(0.13f, 0.28f, 0.36f) };
@@ -36,7 +39,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     private int phaseIndex, roomIndex, enemiesRemaining;
     private static bool smokeRun;
-    private bool isPaused, victory, transitioning, showTitle = true, showOptions, confirmNewJourney, showOpeningStory, showWorldMap;
+    private bool isPaused, victory, transitioning, showTitle = true, showOptions, confirmNewJourney, showOpeningStory, showWorldMap, showMemoryJournal;
     private string sessionId;
     private int rebindingAction = -1;
     private int gamepadRebindAction = -1;
@@ -151,7 +154,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private GUIStyle memoryStyle { get; set; }
     private float cachedTextScale { get; set; } = -1f;
 
-    public bool IsPaused => isPaused || showTitle || showOptions || victory || transitioning || showOpeningStory || showWorldMap || memoryModal || MemoryDismissedThisFrame(memoryDismissedFrame, Time.frameCount);
+    public bool IsPaused => isPaused || showTitle || showOptions || victory || transitioning || showOpeningStory || showWorldMap || showMemoryJournal || memoryModal || MemoryDismissedThisFrame(memoryDismissedFrame, Time.frameCount);
     public int PhaseIndex => phaseIndex;
     public int RoomIndex => roomIndex;
     public int EnemiesRemaining => enemiesRemaining;
@@ -208,6 +211,27 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             sessionInputMode = MemoryInputModeAfterActivity(sessionInputMode, keyboardActivity, gamepadActivity);
             if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space) || ScadrykSettings.Down(6) ||
                 ScadrykSettings.PadButtonDown(0) || ScadrykSettings.PadDown(6)) DismissOpeningStory();
+            return;
+        }
+        if (showMemoryJournal)
+        {
+            bool closeJournal = Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.Return) ||
+                ScadrykSettings.PadButtonDown(1) || ScadrykSettings.PadButtonDown(7);
+            if (closeJournal)
+            {
+                showMemoryJournal = false;
+                ApplyPauseTimeScale();
+                return;
+            }
+            float navigationY = ScadrykSettings.ReadGamepadStick("Scadryk Move X", "Scadryk Move Y").y;
+            bool scrollUp = Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W) || navigationY > 0.45f;
+            bool scrollDown = Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.S) || navigationY < -0.45f;
+            if (Time.unscaledTime >= nextMemoryJournalNavigationAt && (scrollUp || scrollDown))
+            {
+                memoryJournalScroll.y = Mathf.Max(0f, memoryJournalScroll.y + (scrollDown ? 72f : -72f));
+                nextMemoryJournalNavigationAt = Time.unscaledTime + 0.18f;
+            }
+            if (Mathf.Abs(navigationY) < 0.2f) nextMemoryJournalNavigationAt = 0f;
             return;
         }
         if (showWorldMap)
@@ -278,7 +302,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     private void ApplyPauseTimeScale()
     {
-        Time.timeScale = showTitle || isPaused || showOptions || victory || showOpeningStory || showWorldMap || memoryModal ||
+        Time.timeScale = showTitle || isPaused || showOptions || victory || showOpeningStory || showWorldMap || showMemoryJournal || memoryModal ||
             MemoryDismissedThisFrame(memoryDismissedFrame, Time.frameCount) ? 0f : 1f;
     }
 
@@ -313,11 +337,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     internal static int MovePauseGridSelection(int selection, int horizontalDirection, int verticalDirection)
     {
-        int row = Mathf.Clamp(selection, 0, 4) / 2;
-        int column = Mathf.Clamp(selection, 0, 4) % 2;
+        int row = Mathf.Clamp(selection, 0, 5) / 2;
+        int column = Mathf.Clamp(selection, 0, 5) % 2;
         if (verticalDirection != 0) row = Mathf.Clamp(row + System.Math.Sign(verticalDirection), 0, 2);
-        if (horizontalDirection != 0 && row < 2) column = horizontalDirection > 0 ? 1 : 0;
-        return row == 2 ? 4 : row * 2 + column;
+        if (horizontalDirection != 0) column = horizontalDirection > 0 ? 1 : 0;
+        return row * 2 + column;
     }
 
     private void UpdateKeyboardMenus()
@@ -366,7 +390,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         }
         else if (up || down)
         {
-            int max = confirmNewJourney || victory ? 1 : showTitle ? 2 : 0;
+            int max = confirmNewJourney ? 1 : victory ? 2 : showTitle ? 2 : 0;
             overlaySelection = Mathf.Clamp(overlaySelection + (down ? 1 : -1), victory ? 1 : 0, max);
         }
 
@@ -412,7 +436,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 overlaySelection = MovePauseGridSelection(overlaySelection, 0, navigation.y > 0f ? -1 : 1);
             }
             else overlaySelection = Mathf.Clamp(overlaySelection - (navigation.y > 0f ? 1 : -1), victory ? 1 : 0,
-                confirmNewJourney || victory ? 1 : showTitle ? 2 : 4);
+                confirmNewJourney ? 1 : victory ? 2 : showTitle ? 2 : 4);
             nextGamepadNavigationAt = Time.unscaledTime + 0.2f;
         }
         else if (!showOptions && !showTitle && !victory && !confirmNewJourney && Time.unscaledTime >= nextGamepadNavigationAt && Mathf.Abs(navigation.x) > 0.55f)
@@ -452,7 +476,12 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     private void SubmitGamepadOverlay()
     {
-        if (victory) { StartNewGame(); return; }
+        if (victory)
+        {
+            if (overlaySelection == 2) { showMemoryJournal = true; memoryJournalScroll = Vector2.zero; }
+            else StartNewGame();
+            return;
+        }
         if (confirmNewJourney)
         {
             confirmNewJourney = false;
@@ -470,6 +499,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         else if (overlaySelection == 1) { showWorldMap = true; isPaused = false; }
         else if (overlaySelection == 2) RequestNewGame();
         else if (overlaySelection == 3) { showOptions = true; optionsTab = 0; optionsSelection = 0; }
+        else if (overlaySelection == 4) { showMemoryJournal = true; memoryJournalScroll = Vector2.zero; }
+        else if (overlaySelection == 5) ReturnToTitle();
         else ReturnToTitle();
     }
 
@@ -522,11 +553,13 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         showOptions = false;
         isPaused = false;
         showWorldMap = false;
+        showMemoryJournal = false;
         showOpeningStory = true;
         ApplyPauseTimeScale();
         PlayerPrefs.DeleteKey("Scadryk.Phase");
         PlayerPrefs.DeleteKey("Scadryk.Room");
         ClearCampaignProgress("Scadryk.");
+        ClearStoryJournal("Scadryk.");
         PlayerPrefs.Save();
         if (player != null) player.ResetAbilities();
         if (player != null) player.ResetCombatCooldowns();
@@ -580,6 +613,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         confirmNewJourney = false;
         showOpeningStory = false;
         showWorldMap = false;
+        showMemoryJournal = false;
         rebindingAction = gamepadRebindAction = -1;
         overlaySelection = 0;
         ApplyPauseTimeScale();
@@ -588,6 +622,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private void DismissOpeningStory()
     {
         showOpeningStory = false;
+        if (!smokeRun) RecordStoryJournalEntry("Scadryk.", OpeningMemory);
         memoryText = null;
         memoryUntil = 0f;
         memoryModal = false;
@@ -1091,6 +1126,37 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         ClearWorldSecretProgress(keyPrefix);
     }
 
+    internal static string StoryJournalProgressKey(string keyPrefix) => keyPrefix + StoryJournalKeySuffix;
+
+    internal static string[] ReadStoryJournal(string keyPrefix)
+    {
+        string key = StoryJournalProgressKey(keyPrefix);
+        if (!PlayerPrefs.HasKey(key)) return new string[0];
+        try
+        {
+            StoryJournalData data = JsonUtility.FromJson<StoryJournalData>(PlayerPrefs.GetString(key));
+            if (data == null || data.entries == null) return new string[0];
+            var entries = new List<string>(data.entries.Count);
+            foreach (string entry in data.entries)
+                if (!string.IsNullOrWhiteSpace(entry) && !entries.Contains(entry)) entries.Add(entry);
+            return entries.ToArray();
+        }
+        catch (System.Exception) { return new string[0]; }
+    }
+
+    internal static bool RecordStoryJournalEntry(string keyPrefix, string entry)
+    {
+        if (string.IsNullOrWhiteSpace(entry)) return false;
+        var entries = new List<string>(ReadStoryJournal(keyPrefix));
+        if (entries.Contains(entry)) return false;
+        entries.Add(entry);
+        PlayerPrefs.SetString(StoryJournalProgressKey(keyPrefix), JsonUtility.ToJson(new StoryJournalData { entries = entries }));
+        PlayerPrefs.Save();
+        return true;
+    }
+
+    internal static void ClearStoryJournal(string keyPrefix) => PlayerPrefs.DeleteKey(StoryJournalProgressKey(keyPrefix));
+
     internal static int ReadWitnessProgress(string keyPrefix, int phase) =>
         Mathf.Max(0, PlayerPrefs.GetInt(WitnessProgressKey(keyPrefix, phase), 0));
 
@@ -1364,7 +1430,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         memoryModal = !smokeRun;
         memoryDismissedFrame = -1;
         memoryLastMousePosition = Input.mousePosition;
-        if (!smokeRun && playCue) ScadrykAudio.Play(ScadrykCue.Memory);
+        if (!smokeRun)
+        {
+            RecordStoryJournalEntry("Scadryk.", message);
+            if (playCue) ScadrykAudio.Play(ScadrykCue.Memory);
+        }
         ApplyPauseTimeScale();
     }
 
@@ -1618,6 +1688,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Debug.Log("SCADRYK_SMOKE: padrões de teclado e controle são independentes e preservam preferências");
         string checkpointTestPrefix = "Scadryk.Smoke." + System.DateTime.UtcNow.Ticks + ".";
         bool checkpointRoundTrip = false, witnessProgressRoundTrip = false, worldSecretProgressRoundTrip = false;
+        bool storyJournalRoundTrip = false;
         bool quitCheckpointStateIsValid = false, campaignProgressCleanupRoundTrip = false;
         bool bossProgressRoundTrip = false, powerRestoreRoundTrip = false, powerEchoProgressRoundTrip = false;
         try
@@ -1638,6 +1709,14 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             campaignProgressCleanupRoundTrip = !HasGuardianDefeatProgress(checkpointTestPrefix, 0) &&
                 !HasFinalBossDefeatProgress(checkpointTestPrefix) && ReadWitnessProgress(checkpointTestPrefix, 1) == 0 &&
                 !IsWorldSecretRevealed(checkpointTestPrefix, 2, 1);
+            RecordStoryJournalEntry(checkpointTestPrefix, "Primeira lembrança.");
+            RecordStoryJournalEntry(checkpointTestPrefix, "Primeira lembrança.");
+            RecordStoryJournalEntry(checkpointTestPrefix, "A costa voltou a cantar.");
+            string[] journalEntries = ReadStoryJournal(checkpointTestPrefix);
+            storyJournalRoundTrip = journalEntries.Length == 2 && journalEntries[0] == "Primeira lembrança." &&
+                journalEntries[1] == "A costa voltou a cantar.";
+            ClearStoryJournal(checkpointTestPrefix);
+            storyJournalRoundTrip &= ReadStoryJournal(checkpointTestPrefix).Length == 0;
             PlayerPrefs.SetInt(checkpointTestPrefix + "Room", 2);
             bool ignoresOrphanedRoom = !HasCheckpoint(checkpointTestPrefix) &&
                 !TryLoadCheckpoint(checkpointTestPrefix, out int orphanPhase, out int orphanRoom) && orphanPhase == 0 && orphanRoom == 0;
@@ -1728,8 +1807,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ClearFinalBossDefeatProgress(checkpointTestPrefix);
             ClearWitnessProgress(checkpointTestPrefix);
             ClearWorldSecretProgress(checkpointTestPrefix);
+            ClearStoryJournal(checkpointTestPrefix);
             PlayerPrefs.Save();
         }
+        if (!storyJournalRoundTrip) { SmokeFail("O caderno não preserva lembranças únicas ou não limpa os dados temporários"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: caderno persiste lembranças únicas em ordem e reinicia com nova jornada");
         if (!checkpointRoundTrip) { SmokeFail("Checkpoint parcial não foi ignorado, ou o portal não foi restaurado/limitado"); yield break; }
         Debug.Log("SCADRYK_SMOKE: checkpoint grava, retoma sem estado de título/abertura, limita e limpa chaves temporárias");
         if (!bossProgressRoundTrip) { SmokeFail("O save não preserva chefes derrotados, restaura sala segura ou limpa a jornada nova"); yield break; }
@@ -2316,11 +2398,15 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         { SmokeFail("O menu inicial ou o menu de pausa com acesso ao mapa escapam de uma janela compacta"); yield break; }
         Debug.Log("SCADRYK_SMOKE: menus inicial e de pausa cabem em janela 400×360");
         bool pauseGridNavigationWorks = MovePauseGridSelection(0, 0, 1) == 2 &&
-            MovePauseGridSelection(3, 0, 1) == 4 && MovePauseGridSelection(4, 0, -1) == 2 &&
-            MovePauseGridSelection(0, 1, 0) == 1 && MovePauseGridSelection(1, -1, 0) == 0 &&
-            MovePauseGridSelection(4, 1, 0) == 4;
+            MovePauseGridSelection(3, 0, 1) == 5 && MovePauseGridSelection(4, 0, -1) == 2 &&
+            MovePauseGridSelection(5, 0, -1) == 3 && MovePauseGridSelection(0, 1, 0) == 1 &&
+            MovePauseGridSelection(1, -1, 0) == 0 && MovePauseGridSelection(4, 1, 0) == 5 &&
+            MovePauseGridSelection(5, -1, 0) == 4;
         if (!pauseGridNavigationWorks) { SmokeFail("A navegação da grade da pausa perde a seleção nas bordas"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: navegação da grade da pausa mantém coluna e respeita a última linha");
+        Debug.Log("SCADRYK_SMOKE: grade de seis opções da pausa mantém coluna e respeita as bordas");
+        if (!StoryJournalLayoutFits(400f, 360f) || !StoryJournalLayoutFits(700f, 600f))
+        { SmokeFail("O caderno de memórias não cabe em janela compacta"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: caderno de memórias cabe em janela compacta e padrão");
         GameObject warningProbe = new GameObject("QA enemy attack warning");
         GameObject[] warningProbeList = { warningProbe };
         int remainingWarnings = ScadrykEnemyHealth.ClearTrackedAttackWarnings(warningProbeList, 1);
