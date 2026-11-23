@@ -18,6 +18,9 @@ public static class ScadrykBuildMenu
         string projectRoot = Directory.GetParent(Application.dataPath).FullName;
         string outputDirectory = Path.Combine(projectRoot, "Build");
         Directory.CreateDirectory(outputDirectory);
+        string sourceCommit = ReadGitOutput(projectRoot, "rev-parse --short=12 HEAD");
+        string sourceStatus = ReadGitOutput(projectRoot,
+            "status --porcelain --untracked-files=all -- . :!Assets/Resources/ScadrykArt/ScadrykTitleBackdrop.png.meta");
 
         var options = new BuildPlayerOptions
         {
@@ -30,19 +33,18 @@ public static class ScadrykBuildMenu
         BuildReport report = BuildPipeline.BuildPlayer(options);
         if (report.summary.result != BuildResult.Succeeded)
             throw new System.Exception("Falha ao gerar o executável Windows do Scadryk: " + report.summary.result);
-        WriteBuildInfo(projectRoot, outputDirectory);
+        WriteBuildInfo(outputDirectory, sourceCommit, sourceStatus);
         if (!Application.isBatchMode) EditorUtility.DisplayDialog("Scadryk", "Executável criado em Build/ScadrykDemo.exe", "OK");
     }
 
-    private static void WriteBuildInfo(string projectRoot, string outputDirectory)
+    private static string ReadGitOutput(string projectRoot, string arguments)
     {
-        string commit = "desconhecido";
         try
         {
             var startInfo = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = "git",
-                Arguments = "-C \"" + projectRoot.Replace("\"", "\\\"") + "\" rev-parse --short=12 HEAD",
+                Arguments = "-C \"" + projectRoot.Replace("\"", "\\\"") + "\" " + arguments,
                 WorkingDirectory = projectRoot,
                 UseShellExecute = false,
                 CreateNoWindow = true,
@@ -53,24 +55,34 @@ public static class ScadrykBuildMenu
             {
                 if (process != null)
                 {
-                    string output = process.StandardOutput.ReadToEnd().Trim();
+                    string output = process.StandardOutput.ReadToEnd().TrimEnd('\r', '\n');
                     process.StandardError.ReadToEnd();
                     process.WaitForExit();
-                    if (process.ExitCode == 0 && !string.IsNullOrEmpty(output)) commit = output;
+                    return process.ExitCode == 0 ? output : null;
                 }
             }
         }
-        catch (System.Exception exception)
+        catch (System.Exception)
         {
-            Debug.LogWarning("Scadryk: commit não identificado para a build: " + exception.Message);
         }
+        return null;
+    }
 
+    private static void WriteBuildInfo(string outputDirectory, string sourceCommit, string sourceStatus)
+    {
+        bool sourceStatusKnown = sourceStatus != null;
+        int changedPathCount = sourceStatusKnown && !string.IsNullOrWhiteSpace(sourceStatus)
+            ? sourceStatus.Split(new[] { '\r', '\n' }, System.StringSplitOptions.RemoveEmptyEntries).Length
+            : 0;
+        string sourceTree = !sourceStatusKnown ? "unavailable" : changedPathCount == 0 ? "clean" : "modified";
         string editorVersion = Application.unityVersion;
         string buildUtc = System.DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", System.Globalization.CultureInfo.InvariantCulture);
         string[] lines =
         {
             "Scadryk — UnityPort Windows build",
-            "Commit: " + commit,
+            "Commit: " + (string.IsNullOrWhiteSpace(sourceCommit) ? "unknown" : sourceCommit.Trim()),
+            "Source tree: " + sourceTree,
+            "Changed paths before build: " + (sourceStatusKnown ? changedPathCount.ToString(System.Globalization.CultureInfo.InvariantCulture) : "unknown"),
             "Unity Editor: " + editorVersion,
             "Build UTC: " + buildUtc
         };

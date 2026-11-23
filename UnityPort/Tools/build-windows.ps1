@@ -67,10 +67,20 @@ if (-not (Test-Path -LiteralPath $buildInfoPath -PathType Leaf)) {
 }
 $buildInfoLines = Get-Content -LiteralPath $buildInfoPath
 $buildInfoCommitLine = $buildInfoLines | Where-Object { $_.StartsWith('Commit: ', [System.StringComparison]::Ordinal) } | Select-Object -First 1
+$buildInfoSourceLine = $buildInfoLines | Where-Object { $_.StartsWith('Source tree: ', [System.StringComparison]::Ordinal) } | Select-Object -First 1
+$buildInfoChangedLine = $buildInfoLines | Where-Object { $_.StartsWith('Changed paths before build: ', [System.StringComparison]::Ordinal) } | Select-Object -First 1
 $buildInfoEditorLine = $buildInfoLines | Where-Object { $_.StartsWith('Unity Editor: ', [System.StringComparison]::Ordinal) } | Select-Object -First 1
 $buildInfoUtcLine = $buildInfoLines | Where-Object { $_ -match '^Build UTC: \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$' } | Select-Object -First 1
-if (-not $buildInfoCommitLine -or -not $buildInfoEditorLine -or -not $buildInfoUtcLine) {
+if (-not $buildInfoCommitLine -or -not $buildInfoSourceLine -or -not $buildInfoChangedLine -or
+    -not $buildInfoEditorLine -or -not $buildInfoUtcLine -or
+    $buildInfoChangedLine -notmatch '^Changed paths before build: (unknown|\d+)$' -or
+    $buildInfoSourceLine -notin @('Source tree: clean', 'Source tree: modified', 'Source tree: unavailable')) {
     throw "A identificação da build está incompleta: $buildInfoPath"
+}
+$changedPathCountText = ($buildInfoChangedLine -split ':', 2)[1].Trim()
+if (($buildInfoSourceLine -eq 'Source tree: clean' -and $changedPathCountText -ne '0') -or
+    ($buildInfoSourceLine -eq 'Source tree: modified' -and $changedPathCountText -notmatch '^\d*[1-9]\d*$')) {
+    throw "O estado da árvore-fonte não corresponde à contagem registrada: $buildInfoPath"
 }
 
 $repositoryRoot = Split-Path -Parent $projectRoot
