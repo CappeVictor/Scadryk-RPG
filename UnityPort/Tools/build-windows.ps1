@@ -45,6 +45,22 @@ if (-not (Test-Path -LiteralPath $outputPath -PathType Leaf)) {
     throw "O Unity terminou sem gerar o executável esperado. Consulte o log: $logPath"
 }
 
+$buildSuccess = Select-String -LiteralPath $logPath -Pattern 'Build Finished, Result: Success\.' -Quiet -ErrorAction SilentlyContinue
+if (-not $buildSuccess) {
+    throw "O Unity encerrou sem registrar um BuildReport bem-sucedido. A existência de um executável antigo não confirma uma build nova. Consulte o log: $logPath"
+}
+
+$dataPath = Join-Path $projectRoot 'Build/ScadrykDemo_Data'
+$requiredPayloadFiles = @(
+    (Join-Path $dataPath 'Managed/Assembly-CSharp.dll'),
+    (Join-Path $dataPath 'boot.config'),
+    (Join-Path $dataPath 'globalgamemanagers')
+)
+$missingPayload = $requiredPayloadFiles | Where-Object { -not (Test-Path -LiteralPath $_ -PathType Leaf) }
+if ($missingPayload) {
+    throw "A build foi confirmada, mas o payload está incompleto: $($missingPayload -join ', '). Consulte o log: $logPath"
+}
+
 Write-Host "Build compilada. O jogo não foi iniciado."
 Write-Host "Executável: $outputPath"
 Write-Host "Log: $logPath"
