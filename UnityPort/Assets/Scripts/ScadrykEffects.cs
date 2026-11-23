@@ -28,6 +28,7 @@ public static class ScadrykEffects
     internal static Vector2 PlayerSlashFootprint(float length) => new Vector2(length * 1.65f, length * 0.88f);
     internal static float FlashAlphaScale(bool reduceFlash) => reduceFlash ? 0.48f : 1f;
     internal static float FlashDiameterScale(bool reduceFlash) => reduceFlash ? 0.8f : 1f;
+    internal static bool ShouldReduceEffectFlash(bool reduceFlash, bool dangerWarning) => reduceFlash && !dangerWarning;
     internal static float DashAfterimageInterval(bool reduceFlash) => reduceFlash ? 0.18f : 0.09f;
     internal static float AfterimageLifetime(bool reduceFlash) => reduceFlash ? 0.13f : 0.23f;
     internal static Color ApplyReducedFlash(Color color, bool reduceFlash) { if (reduceFlash) color.a *= FlashAlphaScale(true); return color; }
@@ -42,6 +43,7 @@ public static class ScadrykEffects
         highContrast.a = Mathf.Max(color.a, 0.98f);
         return highContrast;
     }
+    internal static Color DangerWarningTint(Color color, bool dangerWarning) => dangerWarning ? DangerWarningColor(color) : color;
     public static Sprite WhiteSprite
     {
         get
@@ -217,7 +219,7 @@ public static class ScadrykEffects
     {
         Sprite art = VoidburstSprite;
         if (art == null) return Ring(position, diameter, new Color(0.96f, 0.18f, 0.54f, 0.95f), lifetime, attackWarning);
-        GameObject effect = CreateSpriteEffect(art, position, Vector2.one * diameter, Color.white, lifetime, "Final boss voidburst", true, true);
+        GameObject effect = CreateSpriteEffect(art, position, Vector2.one * diameter, Color.white, lifetime, "Final boss voidburst", true, true, attackWarning);
         if (attackWarning) effect.name = "Enemy attack warning";
         return effect;
     }
@@ -240,7 +242,7 @@ public static class ScadrykEffects
             CreateGroundLaneFallback(center, direction, length, width, color, lifetime);
             return;
         }
-        GameObject go = CreateSpriteEffect(attackSprite, center, new Vector2(length, width), Color.white, lifetime, "Root thorn attack", true, true);
+        GameObject go = CreateSpriteEffect(attackSprite, center, new Vector2(length, width), Color.white, lifetime, "Root thorn attack", true, true, true);
         go.transform.right = direction;
     }
 
@@ -259,9 +261,10 @@ public static class ScadrykEffects
         Sprite waveSprite = LoadEffectSprite("AttackBellWave", 600f, ref bellWaveSprite);
         if (waveSprite != null)
         {
-            Color tint = DangerWarningColor(color);
+            Color tint = DangerWarningTint(color, attackWarning);
             tint.a *= lifetime > 0.5f ? 0.46f : 0.98f;
-            GameObject wave = CreateSpriteEffect(waveSprite, center, Vector2.one * diameter, tint, lifetime, attackWarning ? "Enemy attack warning" : "Bell echo wave", false, true);
+            GameObject wave = CreateSpriteEffect(waveSprite, center, Vector2.one * diameter, tint, lifetime,
+                attackWarning ? "Enemy attack warning" : "Bell echo wave", false, true, attackWarning);
             return wave;
         }
         return CreateRingFallback(center, diameter, color, lifetime, attackWarning);
@@ -288,7 +291,8 @@ public static class ScadrykEffects
 
     internal static GameObject CreateRingFallback(Vector2 center, float diameter, Color color, float lifetime, bool attackWarning)
     {
-        color = DangerWarningColor(color);
+        color = ApplyReducedFlash(color, ShouldReduceEffectFlash(ScadrykSettings.ReduceFlash, attackWarning));
+        color = DangerWarningTint(color, attackWarning);
         GameObject go = new GameObject(attackWarning ? "Enemy attack warning" : "Bell echo wave");
         go.transform.position = center;
         var line = go.AddComponent<LineRenderer>();
@@ -323,9 +327,10 @@ public static class ScadrykEffects
         return cache;
     }
 
-    private static GameObject CreateSpriteEffect(Sprite sprite, Vector2 position, Vector2 size, Color color, float lifetime, string objectName, bool expand = false, bool protectFromBudget = false)
+    private static GameObject CreateSpriteEffect(Sprite sprite, Vector2 position, Vector2 size, Color color, float lifetime,
+        string objectName, bool expand = false, bool protectFromBudget = false, bool dangerWarning = false)
     {
-        bool reduceFlash = ScadrykSettings.ReduceFlash && !protectFromBudget;
+        bool reduceFlash = ShouldReduceEffectFlash(ScadrykSettings.ReduceFlash, dangerWarning);
         color = ApplyReducedFlash(color, reduceFlash);
         if (reduceFlash) size *= FlashDiameterScale(true);
         var go = new GameObject(objectName);

@@ -2460,13 +2460,19 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (!SoundOptionsLayoutFits(600f))
         { SmokeFail("O controle de alto contraste ou as instruções de avisos saem do menu em janela baixa"); yield break; }
         bool oldHighContrast = ScadrykSettings.HighContrastWarnings;
+        Color testWarning = new Color(0.2f, 0.4f, 0.8f, 0.6f);
         ScadrykSettings.HighContrastWarnings = false;
         float standardWarningWidth = ScadrykEffects.DangerWarningWidth(1f);
+        Color standardDangerTint = ScadrykEffects.DangerWarningTint(testWarning, true);
+        Color standardAmbientTint = ScadrykEffects.DangerWarningTint(testWarning, false);
         ScadrykSettings.HighContrastWarnings = true;
         float highContrastWarningWidth = ScadrykEffects.DangerWarningWidth(1f);
-        bool highContrastBrightensSignal = ScadrykEffects.DangerWarningColor(new Color(0.2f, 0.4f, 0.8f, 0.6f)).r > 0.2f;
+        Color highContrastDangerTint = ScadrykEffects.DangerWarningTint(testWarning, true);
+        Color highContrastAmbientTint = ScadrykEffects.DangerWarningTint(testWarning, false);
+        bool highContrastBrightensSignal = highContrastDangerTint.r > testWarning.r && highContrastAmbientTint == standardAmbientTint;
         ScadrykSettings.HighContrastWarnings = oldHighContrast;
-        if (Mathf.Abs(standardWarningWidth - 1f) > 0.001f || Mathf.Abs(highContrastWarningWidth - 1.4f) > 0.001f || !highContrastBrightensSignal)
+        if (Mathf.Abs(standardWarningWidth - 1f) > 0.001f || Mathf.Abs(highContrastWarningWidth - 1.4f) > 0.001f ||
+            standardDangerTint != testWarning || standardAmbientTint != testWarning || !highContrastBrightensSignal)
         { SmokeFail("A opção de alto contraste não amplia e clareia os avisos de perigo"); yield break; }
         Debug.Log("SCADRYK_SMOKE: alto contraste clareia e amplia os avisos de perigo");
         float savedEffectsVolume = ScadrykSettings.EffectsVolume;
@@ -2497,8 +2503,10 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ScadrykEffects.FlashExpansionScale(1f, true) >= ScadrykEffects.FlashExpansionScale(1f, false) ||
             ScadrykEffects.DeathBurstMoteCount(true, true) >= ScadrykEffects.DeathBurstMoteCount(true, false) ||
             ScadrykEffects.DashAfterimageInterval(true) <= ScadrykEffects.DashAfterimageInterval(false) ||
-            ScadrykEffects.AfterimageLifetime(true) >= ScadrykEffects.AfterimageLifetime(false))
-        { SmokeFail("Reduzir flashes ainda deixa explosões, expansões, rastros ou partículas de derrota sem atenuação"); yield break; }
+            ScadrykEffects.AfterimageLifetime(true) >= ScadrykEffects.AfterimageLifetime(false) ||
+            !ScadrykEffects.ShouldReduceEffectFlash(true, false) || ScadrykEffects.ShouldReduceEffectFlash(true, true) ||
+            ScadrykEffects.ShouldReduceEffectFlash(false, false))
+        { SmokeFail("Reduzir flashes ainda deixa efeitos comuns sem atenuação ou enfraquece avisos de perigo"); yield break; }
         Debug.Log("SCADRYK_SMOKE: reduzir flashes atenua impactos e rastros sem remover a leitura de perigo");
         bool settingsSaveIsThrottled = !ScadrykSettings.ShouldFlushDeferredSave(true, 2f, 2.45f) &&
             ScadrykSettings.ShouldFlushDeferredSave(true, 2.45f, 2.45f) &&
