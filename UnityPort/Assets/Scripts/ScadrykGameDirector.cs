@@ -2786,11 +2786,18 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             SpriteRenderer warningRenderer = mutedWarningProbe != null ? mutedWarningProbe.GetComponent<SpriteRenderer>() : null;
             warningVisibleWithoutSound = warningRenderer != null && warningRenderer.sprite != null &&
                 warningRenderer.color.a >= 0.98f && Mathf.Abs(mutedWarningProbe.transform.localScale.y - 0.14f) < 0.001f;
-            spriteWarningProbe = ScadrykEffects.Voidburst(Vector2.zero, 2f, 1f, true);
+            ScadrykSettings.HighContrastWarnings = false;
+            spriteWarningProbe = ScadrykEffects.CreateSpriteEffect(ScadrykEffects.WhiteSprite, Vector2.zero,
+                Vector2.one, new Color(0.2f, 0.4f, 0.8f, 0.6f), 1f, "Smoke sprite attack warning", false, true, true);
             SpriteRenderer spriteWarningRenderer = spriteWarningProbe != null ? spriteWarningProbe.GetComponent<SpriteRenderer>() : null;
             ScadrykTimedVisual spriteWarningVisual = spriteWarningProbe != null ? spriteWarningProbe.GetComponent<ScadrykTimedVisual>() : null;
+            Color spriteWarningBeforeContrast = spriteWarningRenderer != null ? spriteWarningRenderer.color : Color.clear;
+            ScadrykSettings.HighContrastWarnings = true;
+            if (spriteWarningVisual != null) spriteWarningVisual.RefreshDangerWarningColor(0f);
+            Color spriteWarningAfterContrast = spriteWarningRenderer != null ? spriteWarningRenderer.color : Color.clear;
             spriteWarningRemainsLegible = spriteWarningRenderer != null && spriteWarningRenderer.sprite != null &&
-                spriteWarningVisual != null && spriteWarningVisual.IsDangerWarning && spriteWarningRenderer.color.a >= 0.98f;
+                spriteWarningVisual != null && spriteWarningVisual.IsDangerWarning &&
+                spriteWarningAfterContrast.r > spriteWarningBeforeContrast.r && spriteWarningAfterContrast.a > spriteWarningBeforeContrast.a;
         }
         finally
         {
@@ -2802,7 +2809,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         }
         if (!warningVisibleWithoutSound || !spriteWarningRemainsLegible)
         { SmokeFail("Um aviso de perigo visual sumiu, piscou ou ficou fraco com áudio silenciado, alto contraste e redução de flashes"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: avisos desenhados e por sprites permanecem legíveis com efeitos silenciados, alto contraste e flashes reduzidos; preferências restauradas");
+        Debug.Log("SCADRYK_SMOKE: avisos em linha persistem sem áudio, e um aviso sprite ativo se adapta ao alto contraste com flashes reduzidos; preferências restauradas");
         Color reducedFlashColor = ScadrykEffects.ApplyReducedFlash(Color.white, true);
         Color normalFlashColor = ScadrykEffects.ApplyReducedFlash(Color.white, false);
         if (reducedFlashColor.a >= normalFlashColor.a || ScadrykEffects.FlashAlphaScale(true) >= 1f || ScadrykEffects.FlashDiameterScale(true) >= 1f ||

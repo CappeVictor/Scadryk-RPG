@@ -29,7 +29,37 @@ public sealed class ScadrykTimedVisual : MonoBehaviour
         initialScale = transform.localScale;
     }
     public void SetSpin(float degreesPerSecond) => spinDegreesPerSecond = degreesPerSecond;
-    internal void MarkDangerWarning() => dangerWarning = true;
+    internal void MarkDangerWarning(Color baseColor)
+    {
+        dangerWarning = true;
+        initialColor = baseColor;
+        Color warningColor = ScadrykEffects.DangerWarningColor(initialColor);
+        if (spriteRenderer != null) spriteRenderer.color = warningColor;
+        if (lineRenderer != null)
+        {
+            lineRenderer.startColor = warningColor;
+            lineRenderer.endColor = warningColor;
+        }
+    }
+
+    internal void MarkDangerWarning()
+    {
+        if (dangerWarning) return;
+        MarkDangerWarning(initialColor);
+    }
+
+    internal void RefreshDangerWarningColor(float progress)
+    {
+        if (!dangerWarning) return;
+        Color warningColor = ScadrykEffects.DangerWarningColor(initialColor);
+        warningColor.a *= DangerWarningAlpha(progress);
+        if (spriteRenderer != null) spriteRenderer.color = warningColor;
+        if (lineRenderer != null)
+        {
+            lineRenderer.startColor = warningColor;
+            lineRenderer.endColor = warningColor;
+        }
+    }
 
     internal static float DangerWarningAlpha(float progress) =>
         Mathf.Lerp(0.78f, 1f, Mathf.SmoothStep(0.08f, 0.72f, Mathf.Clamp01(progress)));
@@ -38,19 +68,15 @@ public sealed class ScadrykTimedVisual : MonoBehaviour
     {
         age += Time.deltaTime;
         float progress = Mathf.Clamp01(age / Mathf.Max(0.01f, lifetime));
-        if (spriteRenderer != null)
+        if (dangerWarning)
+        {
+            RefreshDangerWarningColor(progress);
+        }
+        else if (spriteRenderer != null)
         {
             var c = initialColor;
-            c.a *= dangerWarning ? DangerWarningAlpha(progress) : 1f - Mathf.SmoothStep(0.45f, 1f, progress);
+            c.a *= 1f - Mathf.SmoothStep(0.45f, 1f, progress);
             spriteRenderer.color = c;
-        }
-        LineRenderer line = dangerWarning ? lineRenderer : null;
-        if (line != null)
-        {
-            Color warningColor = initialColor;
-            warningColor.a *= DangerWarningAlpha(progress);
-            line.startColor = warningColor;
-            line.endColor = warningColor;
         }
         if (expanding) transform.localScale = initialScale * ScadrykEffects.FlashExpansionScale(progress, ScadrykSettings.ReduceFlash);
         if (spinDegreesPerSecond != 0f) transform.Rotate(0f, 0f, spinDegreesPerSecond * Time.deltaTime);

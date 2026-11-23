@@ -294,7 +294,6 @@ public static class ScadrykEffects
     internal static GameObject CreateRingFallback(Vector2 center, float diameter, Color color, float lifetime, bool attackWarning)
     {
         color = ApplyReducedFlash(color, ShouldReduceEffectFlash(ScadrykSettings.ReduceFlash, attackWarning));
-        color = DangerWarningTint(color, attackWarning);
         GameObject go = new GameObject(attackWarning ? "Enemy attack warning" : "Bell echo wave");
         go.transform.position = center;
         var line = go.AddComponent<LineRenderer>();
@@ -316,7 +315,7 @@ public static class ScadrykEffects
         }
         ScadrykTimedVisual timedVisual = go.AddComponent<ScadrykTimedVisual>();
         timedVisual.Initialize(lifetime, color, false);
-        if (attackWarning) timedVisual.MarkDangerWarning();
+        if (attackWarning) timedVisual.MarkDangerWarning(color);
         return go;
     }
 
@@ -329,12 +328,11 @@ public static class ScadrykEffects
         return cache;
     }
 
-    private static GameObject CreateSpriteEffect(Sprite sprite, Vector2 position, Vector2 size, Color color, float lifetime,
+    internal static GameObject CreateSpriteEffect(Sprite sprite, Vector2 position, Vector2 size, Color color, float lifetime,
         string objectName, bool expand = false, bool protectFromBudget = false, bool dangerWarning = false)
     {
         bool reduceFlash = ShouldReduceEffectFlash(ScadrykSettings.ReduceFlash, dangerWarning);
         color = ApplyReducedFlash(color, reduceFlash);
-        color = DangerWarningTint(color, dangerWarning);
         var go = new GameObject(objectName);
         go.transform.position = position;
         Vector2 spriteSize = sprite.bounds.size;
@@ -345,7 +343,7 @@ public static class ScadrykEffects
         renderer.sortingOrder = 22;
         ScadrykTimedVisual timedVisual = go.AddComponent<ScadrykTimedVisual>();
         timedVisual.Initialize(lifetime, color, expand);
-        if (dangerWarning) timedVisual.MarkDangerWarning();
+        if (dangerWarning) timedVisual.MarkDangerWarning(color);
         if (!protectFromBudget) RegisterSecondary(go);
         return go;
     }
@@ -353,7 +351,6 @@ public static class ScadrykEffects
     private static GameObject Create(Vector2 position, Color color, float width, float height, float life,
         bool protectFromBudget = false, bool dangerWarning = false)
     {
-        color = DangerWarningTint(color, dangerWarning);
         var go = new GameObject("Combat effect");
         go.transform.position = position;
         go.transform.localScale = new Vector3(width, height, 1f);
@@ -363,7 +360,7 @@ public static class ScadrykEffects
         renderer.sortingOrder = 20;
         ScadrykTimedVisual timedVisual = go.AddComponent<ScadrykTimedVisual>();
         timedVisual.Initialize(life, color, false);
-        if (dangerWarning) timedVisual.MarkDangerWarning();
+        if (dangerWarning) timedVisual.MarkDangerWarning(color);
         if (!protectFromBudget) RegisterSecondary(go);
         return go;
     }
