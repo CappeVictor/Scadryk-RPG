@@ -571,7 +571,7 @@ public sealed partial class ScadrykGameDirector
 
     private static string MapRoomLabel(int phase, int room) => MapRoomLabels[phase][room];
     internal static string MiniMapHeaderText(string biomeName) =>
-        "MAPA · " + biomeName + " · ↑/↓ ROTA · ◇ PEND. · ◆ FEITO";
+        "MAPA · " + biomeName + " · ↑/↓ DESVIO · ◇ PEND. · ◆ FEITO";
     internal static int FitMiniMapHeaderFontSize(int baseFontSize, float requiredWidth, float availableWidth) =>
         requiredWidth <= availableWidth || requiredWidth <= 0f
             ? Mathf.Max(9, baseFontSize)

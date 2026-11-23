@@ -2516,7 +2516,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Debug.Log("SCADRYK_SMOKE: minimapa diferencia as nove salas");
         string minimapHeader = MiniMapHeaderText("Bosque");
         int compactMapHeaderSize = FitMiniMapHeaderFontSize(14, 500f, 260f);
-        if (!minimapHeader.Contains("↑/↓ ROTA") || !minimapHeader.Contains("◇ PEND.") ||
+        if (!minimapHeader.Contains("↑/↓ DESVIO") || !minimapHeader.Contains("◇ PEND.") ||
             !minimapHeader.Contains("◆ FEITO") || compactMapHeaderSize < 9 || compactMapHeaderSize >= 14)
         { SmokeFail("O minimapa não explica o significado dos desvios e dos estados do selo em espaço compacto"); yield break; }
         Debug.Log("SCADRYK_SMOKE: cabeçalho do minimapa explica desvios e selos pendentes/liberados");
