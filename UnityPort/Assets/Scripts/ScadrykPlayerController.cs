@@ -316,7 +316,17 @@ public sealed class ScadrykPlayerController : MonoBehaviour
             int column = moveInput.sqrMagnitude > 0.02f ? Mathf.FloorToInt(Time.time * 8f) % 4 : 0;
             sprite.sprite = spriteFrames[row * 4 + column];
         }
-        sprite.color = Time.time < invulnerableUntil && (ScadrykSettings.ReduceFlash || Mathf.FloorToInt(Time.time * 18f) % 2 != 0) ? new Color(0.45f, 0.85f, 1f) : Time.time < rootedUntil ? new Color(0.72f, 0.92f, 0.56f) : Color.white;
+        bool invulnerableTint = Time.time < invulnerableUntil && (ScadrykSettings.ReduceFlash || Mathf.FloorToInt(Time.time * 18f) % 2 != 0);
+        sprite.color = StatusTint(invulnerableTint, Time.time < rootedUntil, Time.time < saltCrustUntil, Time.time < impactKnockbackUntil);
+    }
+
+    internal static Color StatusTint(bool invulnerable, bool rooted, bool saltCrusted, bool knockedBack)
+    {
+        if (invulnerable) return new Color(0.45f, 0.85f, 1f);
+        if (rooted) return new Color(0.72f, 0.92f, 0.56f);
+        if (saltCrusted) return new Color(1f, 0.82f, 0.46f);
+        if (knockedBack) return new Color(0.42f, 0.88f, 0.94f);
+        return Color.white;
     }
 
     internal static bool InputBufferCanStart(float now, float bufferedUntil, float cooldownEndsAt) =>

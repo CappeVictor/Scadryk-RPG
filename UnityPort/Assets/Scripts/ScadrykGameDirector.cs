@@ -2252,6 +2252,12 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ScadrykEnemyHealth.SupportPulseWouldHeal(10f, 0f, 0f))
         { SmokeFail("A área, o raio anunciado ou o efeito de controle do pulso diverge do bioma"); yield break; }
         Debug.Log("SCADRYK_SMOKE: pulsos de bosque, sal e costa conferem raio e efeito regional");
+        if (ScadrykPlayerController.StatusTint(false, true, false, false) == ScadrykPlayerController.StatusTint(false, false, true, false) ||
+            ScadrykPlayerController.StatusTint(false, false, true, false) == ScadrykPlayerController.StatusTint(false, false, false, true) ||
+            ScadrykPlayerController.StatusTint(true, true, true, true) != ScadrykPlayerController.StatusTint(true, false, false, false) ||
+            ScadrykPlayerController.StatusTint(false, false, false, false) != Color.white)
+        { SmokeFail("A cor de Nara não distingue enraizamento, crosta de sal e empurrão, ou não prioriza invulnerabilidade"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: Nara sinaliza visualmente cada controle regional e mantém prioridade da invulnerabilidade");
         string previousHintInputMode = sessionInputMode;
         sessionInputMode = "keyboard_mouse";
         string keyboardPulseHint = ProgressHint(4, 0, 0);
