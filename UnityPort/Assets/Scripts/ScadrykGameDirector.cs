@@ -8,6 +8,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 {
     private const int RoomsPerPhase = 3;
     internal const float FinalSealPreparationWindowSeconds = 12f;
+    internal const float NimaDepartureDuration = 0.64f;
     private const float RoomSpacing = 23f;
     private const float RoomHalfHeight = 8.5f;
     private const float RoomHeight = RoomHalfHeight * 2f;
@@ -59,6 +60,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private GameObject levelRoot, gateObject, witnessObject;
     private GameObject bossStagePulse;
     private int witnessLine;
+    private bool nimaFarewellCompleted;
     private bool resumeFinalGuardianInterlude;
     private Coroutine finalBossSpawnRoutine;
     private bool smokeRestoreFinalGuardianForRestart;
@@ -1478,6 +1480,15 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         ScadrykPortalVisual exitPortal = gateObject != null ? gateObject.GetComponent<ScadrykPortalVisual>() : null;
         Vector2 start = player.transform.position;
         Vector2 target = exitPosition;
+        Vector2 nimaStart = target + new Vector2(-1.55f, 1.05f);
+        var nimaObject = new GameObject("Nima crosses the restored threshold");
+        if (levelRoot != null) nimaObject.transform.SetParent(levelRoot.transform, true);
+        nimaObject.transform.position = nimaStart;
+        nimaObject.transform.localScale = Vector3.one * WitnessScaleForPhase(2);
+        var nimaRenderer = nimaObject.AddComponent<SpriteRenderer>();
+        nimaRenderer.sprite = witnessSprite != null ? witnessSprite : CircleSprite;
+        nimaRenderer.color = WitnessTintForPhase(2);
+        nimaRenderer.sortingOrder = 16;
         float elapsed = 0f;
         const float duration = 0.82f;
         while (elapsed < duration)
@@ -1486,9 +1497,17 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             float t = Mathf.Clamp01(elapsed / duration);
             float eased = t * t * (3f - 2f * t);
             player.SetPortalTransitPose(Vector2.Lerp(start, target, eased), 1f - eased * 0.97f);
+            float nimaProgress = NimaDepartureProgress(elapsed);
+            nimaObject.transform.position = NimaDeparturePosition(nimaStart, target, nimaProgress);
+            nimaObject.transform.localScale = Vector3.one * NimaDepartureScale(nimaProgress);
+            Color nimaTint = WitnessTintForPhase(2);
+            nimaTint.a *= NimaDepartureAlpha(nimaProgress);
+            nimaRenderer.color = nimaTint;
             if (elapsed >= duration * 0.4f && exitPortal != null) exitPortal.BeginClose();
             yield return null;
         }
+        Destroy(nimaObject);
+        nimaFarewellCompleted = true;
         yield return FadeScreen(1f, 0.45f);
         RecordRoomSession();
         transitioning = false;
@@ -1504,6 +1523,18 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         }
         statusMessage = VictoryEndingText;
     }
+
+    internal static float NimaDepartureProgress(float elapsed) =>
+        Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / NimaDepartureDuration));
+
+    internal static Vector2 NimaDeparturePosition(Vector2 start, Vector2 target, float progress) =>
+        Vector2.Lerp(start, target, Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(progress)));
+
+    internal static float NimaDepartureScale(float progress) =>
+        WitnessScaleForPhase(2) * Mathf.Lerp(1f, 0.12f, Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(progress)));
+
+    internal static float NimaDepartureAlpha(float progress) =>
+        1f - Mathf.SmoothStep(0.38f, 1f, Mathf.Clamp01(progress));
 
     private IEnumerator FadeScreen(float targetAlpha, float duration)
     {
@@ -2056,6 +2087,13 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             !GuardianMemories[1].Contains("última onda") || !GuardianMemories[2].Contains("poupar os vivos") ||
             !EndingMemory.Contains("Nara escolhe lembrar") || !EndingMemory.Contains("aprisionou os mortos"))
         { SmokeFail("A história perdeu a causa da maré imóvel, a ligação de Nima ou a resolução do conflito"); yield break; }
+        Vector2 nimaStart = new Vector2(2f, 1f), nimaPortal = new Vector2(8f, 0f);
+        if (NimaDepartureProgress(0f) != 0f || NimaDepartureProgress(NimaDepartureDuration) != 1f ||
+            NimaDeparturePosition(nimaStart, nimaPortal, 0f) != nimaStart ||
+            Vector2.Distance(NimaDeparturePosition(nimaStart, nimaPortal, 1f), nimaPortal) > 0.001f ||
+            NimaDepartureScale(1f) <= 0f || NimaDepartureScale(1f) >= WitnessScaleForPhase(2) ||
+            NimaDepartureAlpha(0f) != 1f || NimaDepartureAlpha(1f) != 0f)
+        { SmokeFail("A travessia de Nima não chega ao portal, encolhe ou desaparece com a temporização esperada"); yield break; }
         var roomStoryJournalEntries = new HashSet<string>();
         for (int phase = 0; phase < PhaseNames.Length; phase++)
         for (int room = 0; room < RoomsPerPhase; room++)
@@ -3199,6 +3237,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             Debug.Log("SCADRYK_SMOKE: sala " + (room + 1) + "/9 concluída");
         }
         if (!victory) { SmokeFail("Portal final não encerrou a campanha"); yield break; }
+        if (!nimaFarewellCompleted) { SmokeFail("Nima não atravessou visualmente o portal final antes de Nara"); yield break; }
         if (statusMessage != VictoryEndingText) { SmokeFail("O encerramento não confirmou o retorno das vozes e dos sinos"); yield break; }
         if (overlaySelection != 0) { SmokeFail("A tela final não selecionou a primeira opção ao abrir"); yield break; }
         string[] victoryColumns = FormatSessionCsvRow(IsRoomMarkedComplete(clearedRooms, roomIndex)).TrimEnd('\n').Split(',');
