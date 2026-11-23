@@ -2281,6 +2281,15 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 if (!mapLabels.Add(MapRoomLabel(phase, room))) { SmokeFail("O minimapa repete o nome de uma das nove salas"); yield break; }
         if (mapLabels.Count != PhaseNames.Length * RoomsPerPhase) { SmokeFail("O minimapa não identifica as nove salas"); yield break; }
         Debug.Log("SCADRYK_SMOKE: minimapa diferencia as nove salas");
+        string[] routeMarkers = { " ↑", " ↓", " ↓" };
+        for (int biome = 0; biome < PhaseNames.Length; biome++)
+        {
+            if (!MapRoomRouteLabel(biome, 1).EndsWith(routeMarkers[biome], System.StringComparison.Ordinal) ||
+                MapRoomRouteLabel(biome, 0) != MapRoomLabel(biome, 0) ||
+                MapRoomRouteLabel(biome, 2) != MapRoomLabel(biome, 2))
+            { SmokeFail("O mapa não sinaliza a direção correta do desvio de cada bioma"); yield break; }
+        }
+        Debug.Log("SCADRYK_SMOKE: mapa orienta os três desvios sem marcar salas sem rota lateral");
         bool[] mapCleared = { true, false, false };
         if (WorldMapRoomStatus(0, 2, 1, 1, mapCleared) != 2 ||
             WorldMapRoomStatus(1, 0, 1, 1, mapCleared) != 2 ||
