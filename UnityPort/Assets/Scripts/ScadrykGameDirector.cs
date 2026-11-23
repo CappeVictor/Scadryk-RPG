@@ -326,8 +326,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private void OnApplicationFocus(bool hasFocus)
     {
         if (!hasFocus) ScadrykSettings.FlushPendingSave();
-        if (!hasFocus && FocusLossRequiresPause(hasFocus, showTitle, isPaused, showOptions, victory, transitioning) &&
-            ShouldSaveCheckpointOnQuit(player != null, victory, showTitle, showOpeningStory, smokeRun))
+        if (ShouldSaveCheckpointOnFocusLoss(hasFocus, player != null, victory, showTitle, isPaused, showOptions,
+            showOpeningStory, transitioning, smokeRun))
             SaveProgress(phaseIndex, roomIndex);
         if (smokeRun || showOpeningStory || showWorldMap || memoryModal || !FocusLossRequiresPause(hasFocus, showTitle, isPaused, showOptions, victory, transitioning)) return;
         isPaused = true;
@@ -336,6 +336,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     internal static bool FocusLossRequiresPause(bool hasFocus, bool title, bool paused, bool options, bool won, bool portalTransition) =>
         !hasFocus && !title && !paused && !options && !won && !portalTransition;
+
+    internal static bool ShouldSaveCheckpointOnFocusLoss(bool hasFocus, bool hasPlayer, bool hasVictory,
+        bool titleVisible, bool paused, bool optionsVisible, bool openingStoryVisible, bool transitioning, bool smokeMode) =>
+        FocusLossRequiresPause(hasFocus, titleVisible, paused, optionsVisible, hasVictory, transitioning) &&
+        ShouldSaveCheckpointOnQuit(hasPlayer, hasVictory, titleVisible, openingStoryVisible, smokeMode);
 
     internal static bool RebindingCanBeCancelled(int keyboardAction, int gamepadAction) =>
         keyboardAction >= 0 || gamepadAction >= 0;
@@ -1085,15 +1090,18 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     private void OnApplicationPause(bool paused)
     {
-        if (!paused) return;
-        ScadrykSettings.FlushPendingSave();
-        if (ShouldSaveCheckpointOnQuit(player != null, victory, showTitle, showOpeningStory, smokeRun))
+        if (paused) ScadrykSettings.FlushPendingSave();
+        if (ShouldSaveCheckpointOnApplicationPause(paused, player != null, victory, showTitle, showOpeningStory, smokeRun))
             SaveProgress(phaseIndex, roomIndex);
     }
 
     internal static bool ShouldSaveCheckpointOnQuit(bool hasPlayer, bool hasVictory, bool titleVisible,
         bool openingStoryVisible, bool smokeMode) =>
         hasPlayer && !hasVictory && !titleVisible && !openingStoryVisible && !smokeMode;
+
+    internal static bool ShouldSaveCheckpointOnApplicationPause(bool appPaused, bool hasPlayer,
+        bool hasVictory, bool titleVisible, bool openingStoryVisible, bool smokeMode) =>
+        appPaused && ShouldSaveCheckpointOnQuit(hasPlayer, hasVictory, titleVisible, openingStoryVisible, smokeMode);
 
     private static void SaveProgress(int phase, int room)
     {
@@ -1893,7 +1901,15 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 !ShouldSaveCheckpointOnQuit(true, true, false, false, false) &&
                 !ShouldSaveCheckpointOnQuit(true, false, true, false, false) &&
                 !ShouldSaveCheckpointOnQuit(true, false, false, true, false) &&
-                !ShouldSaveCheckpointOnQuit(true, false, false, false, true);
+                !ShouldSaveCheckpointOnQuit(true, false, false, false, true) &&
+                ShouldSaveCheckpointOnFocusLoss(false, true, false, false, false, false, false, false, false) &&
+                !ShouldSaveCheckpointOnFocusLoss(true, true, false, false, false, false, false, false, false) &&
+                !ShouldSaveCheckpointOnFocusLoss(false, true, false, false, true, false, false, false, false) &&
+                !ShouldSaveCheckpointOnFocusLoss(false, true, false, false, false, true, false, false, false) &&
+                ShouldSaveCheckpointOnApplicationPause(true, true, false, false, false, false) &&
+                !ShouldSaveCheckpointOnApplicationPause(false, true, false, false, false, false) &&
+                !ShouldSaveCheckpointOnApplicationPause(true, false, false, false, false, false) &&
+                !ShouldSaveCheckpointOnApplicationPause(true, true, true, false, false, false);
             WriteGuardianDefeatProgress(checkpointTestPrefix, 0);
             WriteFinalBossDefeatProgress(checkpointTestPrefix);
             WriteWitnessProgress(checkpointTestPrefix, 1, 2);
