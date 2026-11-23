@@ -47,6 +47,8 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         Vector2.Distance(origin, target) <= BellPulseRadius;
     internal static bool SupportPulseContains(Vector2 origin, Vector2 target) =>
         Vector2.Distance(origin, target) <= SupportPulseRadius;
+    internal static bool SupportPulseWouldHeal(float allyHealth, float allyMaxHealth, float distance) =>
+        allyMaxHealth > 0f && allyHealth < allyMaxHealth - 0.01f && distance <= SupportPulseRadius;
     internal static Vector2 AnnouncedAttackDirection(Vector2 origin, Vector2 announcedTarget)
     {
         Vector2 direction = announcedTarget - origin;
@@ -381,6 +383,11 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
 
     private void BeginAttack()
     {
+        if (!IsBoss && combatRole == 3 && !HasInjuredSupportTarget())
+        {
+            nextAttackAt = Time.time + 0.4f;
+            return;
+        }
         ClearAttackWarnings();
         attackTarget = player.transform.position;
         if (isFinalBoss)
@@ -654,8 +661,29 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             Collider2D hit = SupportPulseHits[i];
             if (hit == null) continue;
             if (hit.TryGetComponent<ScadrykEnemyHealth>(out var ally) && ally != this && !ally.dead &&
-                SupportPulseContains(transform.position, ally.transform.position)) ally.Heal(15f);
+                SupportPulseWouldHeal(ally.health, ally.maxHealth, Vector2.Distance(transform.position, ally.transform.position))) ally.Heal(15f);
         }
+    }
+
+    private bool HasInjuredSupportTarget()
+    {
+        if (!supportPulseFilterReady)
+        {
+            supportPulseFilter = new ContactFilter2D();
+            supportPulseFilter.SetLayerMask(~0);
+            supportPulseFilter.useTriggers = Physics2D.queriesHitTriggers;
+            supportPulseFilterReady = true;
+        }
+        SupportPulseHits.Clear();
+        int hitCount = Physics2D.OverlapCircle(transform.position, SupportPulseRadius, supportPulseFilter, SupportPulseHits);
+        for (int i = 0; i < hitCount; i++)
+        {
+            Collider2D hit = SupportPulseHits[i];
+            if (hit == null || !hit.TryGetComponent<ScadrykEnemyHealth>(out var ally) || ally == this || ally.dead) continue;
+            float distance = Vector2.Distance(transform.position, ally.transform.position);
+            if (SupportPulseWouldHeal(ally.health, ally.maxHealth, distance)) return true;
+        }
+        return false;
     }
 
     private void Heal(float amount) { health = Mathf.Min(maxHealth, health + amount); }

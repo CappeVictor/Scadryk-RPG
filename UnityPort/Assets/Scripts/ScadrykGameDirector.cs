@@ -2216,7 +2216,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             Mathf.Abs(ScadrykEnemyHealth.BellPulseDiameter - ScadrykEnemyHealth.BellPulseRadius * 2f) > 0.001f ||
             !ScadrykEnemyHealth.SupportPulseContains(Vector2.zero, new Vector2(2.49f, 0f)) ||
             ScadrykEnemyHealth.SupportPulseContains(Vector2.zero, new Vector2(2.51f, 0f)) ||
-            Mathf.Abs(ScadrykEnemyHealth.SupportPulseDiameter - ScadrykEnemyHealth.SupportPulseRadius * 2f) > 0.001f)
+            Mathf.Abs(ScadrykEnemyHealth.SupportPulseDiameter - ScadrykEnemyHealth.SupportPulseRadius * 2f) > 0.001f ||
+            !ScadrykEnemyHealth.SupportPulseWouldHeal(85f, 100f, ScadrykEnemyHealth.SupportPulseRadius) ||
+            ScadrykEnemyHealth.SupportPulseWouldHeal(100f, 100f, 0f) ||
+            ScadrykEnemyHealth.SupportPulseWouldHeal(85f, 100f, ScadrykEnemyHealth.SupportPulseRadius + 0.01f) ||
+            ScadrykEnemyHealth.SupportPulseWouldHeal(10f, 0f, 0f))
         { SmokeFail("Uma área circular de dano ou cura diverge do raio e do diâmetro anunciados"); yield break; }
         Debug.Log("SCADRYK_SMOKE: áreas de ataque e cura respeitam os círculos anunciados");
         string previousHintInputMode = sessionInputMode;
