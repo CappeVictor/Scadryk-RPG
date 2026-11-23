@@ -786,7 +786,7 @@ public sealed partial class ScadrykGameDirector
         }
         else if (optionsTab == 2)
         {
-            GUI.Label(new Rect(x + 15f, y + 99f, width - 185f, 31f), "Selecione ação e botão.", smallStyle);
+            GUI.Label(new Rect(x + 15f, y + 99f, width - 185f, 31f), "Botões e zona morta do analógico.", smallStyle);
             if (OptionButton(new Rect(x + width - 155f, y + 95f, 140f, 32f), "Padrões", 10))
             {
                 ScadrykSettings.ResetGamepadBindings();
@@ -800,8 +800,12 @@ public sealed partial class ScadrykGameDirector
                 string label = gamepadRebindAction == i ? "Pressione um botão…" : ScadrykSettings.PadButtonName(ScadrykSettings.PadButton(i));
                 if (OptionButton(new Rect(x + 240f, row, width - 255f, padRowHeight), label, i + 3)) { gamepadRebindAction = i; gamepadRebindAfterFrame = Time.frameCount; }
             }
+            if (optionsSelection == 11) DrawSelection(new Rect(x + 10f, y + 438f, width - 20f, 46f));
+            GUI.Label(new Rect(x + 15f, y + 445f, 210f, 30f), "Zona morta: " + Mathf.RoundToInt(ScadrykSettings.GamepadDeadzone * 100f) + "%", bodyStyle);
+            ScadrykSettings.GamepadDeadzone = GUI.HorizontalSlider(new Rect(x + 240f, y + 450f, width - 255f, 24f),
+                ScadrykSettings.GamepadDeadzone, ScadrykSettings.MinimumGamepadDeadzone, ScadrykSettings.MaximumGamepadDeadzone);
         }
-        if (OptionButton(new Rect(x + (width - 180f) * 0.5f, y + backOffset, 180f, 42f), "Voltar", optionsTab == 0 ? 9 : optionsTab == 1 ? 15 : 11)) { showOptions = false; rebindingAction = gamepadRebindAction = -1; }
+        if (OptionButton(new Rect(x + (width - 180f) * 0.5f, y + backOffset, 180f, 42f), "Voltar", optionsTab == 0 ? 9 : optionsTab == 1 ? 15 : 12)) { showOptions = false; rebindingAction = gamepadRebindAction = -1; }
         GUI.Label(new Rect(x, y + footerOffset, width, 28f), "Controle: analógico navega · A confirma · B volta · Start pausa · L3 mapa.", smallStyle);
     }
 
@@ -834,7 +838,7 @@ public sealed partial class ScadrykGameDirector
 
         float backWidth = Mathf.Min(180f, width - 24f);
         Rect back = new Rect(x + (width - backWidth) * 0.5f, backY, backWidth, backHeight);
-        int backSelection = optionsTab == 0 ? 9 : optionsTab == 1 ? 15 : 11;
+        int backSelection = optionsTab == 0 ? 9 : optionsTab == 1 ? 15 : 12;
         if (OptionButton(back, "Voltar", backSelection)) { showOptions = false; rebindingAction = gamepadRebindAction = -1; }
         GUI.Label(new Rect(x + 4f, Screen.height - footerHeight - 2f, width - 8f, footerHeight),
             "Analógico: navegar · A: confirmar · B: voltar", smallStyle);
@@ -915,6 +919,10 @@ public sealed partial class ScadrykGameDirector
             if (OptionButton(new Rect(labelWidth + 20f, row, width - labelWidth - 32f, 32f), label, i + 3))
             { gamepadRebindAction = i; gamepadRebindAfterFrame = Time.frameCount; }
         }
+        DrawCompactOptionSelection(11, 328f, 42f, width);
+        GUI.Label(new Rect(12f, 334f, labelWidth, 28f), "Zona morta: " + Mathf.RoundToInt(ScadrykSettings.GamepadDeadzone * 100f) + "%", bodyStyle);
+        ScadrykSettings.GamepadDeadzone = GUI.HorizontalSlider(new Rect(labelWidth + 20f, 338f, width - labelWidth - 32f, 24f),
+            ScadrykSettings.GamepadDeadzone, ScadrykSettings.MinimumGamepadDeadzone, ScadrykSettings.MaximumGamepadDeadzone);
     }
 
     private void DrawCompactOptionSelection(int selection, float top, float height, float width)
@@ -922,7 +930,7 @@ public sealed partial class ScadrykGameDirector
         if (optionsSelection == selection) DrawSelection(new Rect(4f, top, width - 8f, height));
     }
 
-    internal static float CompactOptionsContentHeight(int tab) => tab == 0 ? 390f : tab == 1 ? 474f : 324f;
+    internal static float CompactOptionsContentHeight(int tab) => tab == 0 ? 390f : tab == 1 ? 474f : 382f;
 
     internal static Rect CompactOptionsSelectionRect(int tab, int selection)
     {
@@ -941,6 +949,7 @@ public sealed partial class ScadrykGameDirector
         {
             if (selection == 10) return new Rect(0f, 3f, 1f, 34f);
             if (selection is >= 3 and <= 9) return new Rect(0f, 44f + (selection - 3) * 40f, 1f, 32f);
+            if (selection == 11) return new Rect(0f, 328f, 1f, 42f);
         }
         return new Rect(0f, 0f, 1f, 1f);
     }

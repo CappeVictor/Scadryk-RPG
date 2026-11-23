@@ -300,8 +300,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     internal static bool MemoryDismissedThisFrame(int dismissedFrame, int currentFrame) => dismissedFrame >= 0 && dismissedFrame == currentFrame;
     private static bool GamepadActivityThisFrame() => ScadrykSettings.PadDown(0) || ScadrykSettings.PadDown(1) || ScadrykSettings.PadButtonDown(7) ||
         ScadrykSettings.PadDown(2) || ScadrykSettings.PadDown(3) || ScadrykSettings.PadDown(4) || ScadrykSettings.PadDown(5) || ScadrykSettings.PadDown(6) ||
-        new Vector2(Input.GetAxisRaw("Scadryk Move X"), Input.GetAxisRaw("Scadryk Move Y")).sqrMagnitude > 0.09f ||
-        new Vector2(Input.GetAxisRaw("Scadryk Aim X"), Input.GetAxisRaw("Scadryk Aim Y")).sqrMagnitude > 0.09f;
+        ScadrykSettings.ReadGamepadStick("Scadryk Move X", "Scadryk Move Y").sqrMagnitude > 0.09f ||
+        ScadrykSettings.ReadGamepadStick("Scadryk Aim X", "Scadryk Aim Y").sqrMagnitude > 0.09f;
     internal static string MemoryInputModeAfterActivity(string current, bool keyboardActivity, bool gamepadActivity) =>
         ResolveInputMode(ResolveInputMode(current, keyboardActivity ? "keyboard_mouse" : null), gamepadActivity ? "gamepad" : null);
     internal static string MemoryDismissHintText(bool gamepad, string interactBinding) => MemoryDismissHintText(gamepad, interactBinding, false);
@@ -342,9 +342,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 else if (optionsSelection == 4) ScadrykSettings.EffectsVolume += step;
                 else if (optionsSelection == 5) { ScadrykSettings.TextScale += step; titleStyle = null; }
             }
+            else if (optionsTab == 2 && optionsSelection == 11 && (left || right))
+                ScadrykSettings.GamepadDeadzone += right ? 0.02f : -0.02f;
             if (up || down)
             {
-                int max = optionsTab == 0 ? 9 : optionsTab == 1 ? 15 : 11;
+                int max = optionsTab == 0 ? 9 : optionsTab == 1 ? 15 : 12;
                 optionsSelection = Mathf.Clamp(optionsSelection + (down ? 1 : -1), 0, max);
             }
             if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Space))
@@ -397,12 +399,12 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             return;
         }
 
-        Vector2 navigation = new Vector2(Input.GetAxisRaw("Scadryk Move X"), Input.GetAxisRaw("Scadryk Move Y"));
+        Vector2 navigation = ScadrykSettings.ReadGamepadStick("Scadryk Move X", "Scadryk Move Y");
         if (Time.unscaledTime >= nextGamepadNavigationAt && Mathf.Abs(navigation.y) > 0.55f)
         {
             if (showOptions)
             {
-                int max = optionsTab == 0 ? 9 : optionsTab == 1 ? 15 : 11;
+                int max = optionsTab == 0 ? 9 : optionsTab == 1 ? 15 : 12;
                 optionsSelection = Mathf.Clamp(optionsSelection - (navigation.y > 0f ? 1 : -1), 0, max);
             }
             else if (!showTitle && !victory && !confirmNewJourney)
@@ -426,12 +428,13 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             optionsSelection = optionsTab;
             nextGamepadNavigationAt = Time.unscaledTime + 0.2f;
         }
-        else if (showOptions && optionsTab == 0 && Time.unscaledTime >= nextGamepadNavigationAt && Mathf.Abs(navigation.x) > 0.55f)
+        else if (showOptions && (optionsTab == 0 || optionsTab == 2) && Time.unscaledTime >= nextGamepadNavigationAt && Mathf.Abs(navigation.x) > 0.55f)
         {
             float step = navigation.x > 0f ? 0.05f : -0.05f;
             if (optionsSelection == 3) ScadrykSettings.MusicVolume += step;
             else if (optionsSelection == 4) ScadrykSettings.EffectsVolume += step;
             else if (optionsSelection == 5) { ScadrykSettings.TextScale += step; titleStyle = null; }
+            else if (optionsTab == 2 && optionsSelection == 11) ScadrykSettings.GamepadDeadzone += navigation.x > 0f ? 0.02f : -0.02f;
             nextGamepadNavigationAt = Time.unscaledTime + 0.16f;
         }
 
@@ -508,7 +511,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 gamepadRebindAction = -1;
                 ShowStatus("Controle padrão restaurado.", 2f);
             }
-            else if (optionsSelection == 11) showOptions = false;
+            else if (optionsSelection == 12) showOptions = false;
         }
     }
 
@@ -1899,6 +1902,14 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             Vector2.Distance(ScadrykPlayerController.ResolveGamepadFacing(Vector2.up, Vector2.left, Vector2.right, true), Vector2.left) > 0.001f)
         { SmokeFail("A mira do controle não conserva direção nem prioriza o analógico direito"); yield break; }
         Debug.Log("SCADRYK_SMOKE: mira do controle preserva o twin-stick e tem fallback de movimento");
+        Vector2 stickDrift = ScadrykSettings.ApplyRadialDeadzone(new Vector2(0.12f, 0.03f), 0.19f);
+        Vector2 intentionalDiagonal = ScadrykSettings.ApplyRadialDeadzone(new Vector2(0.15f, 0.15f), 0.19f);
+        Vector2 intentionalAim = ScadrykSettings.ApplyRadialDeadzone(new Vector2(-0.4f, 0.3f), 0.19f);
+        if (stickDrift != Vector2.zero || intentionalDiagonal == Vector2.zero || intentionalAim != new Vector2(-0.4f, 0.3f) ||
+            ScadrykSettings.DefaultGamepadDeadzone < ScadrykSettings.MinimumGamepadDeadzone ||
+            ScadrykSettings.DefaultGamepadDeadzone > ScadrykSettings.MaximumGamepadDeadzone)
+        { SmokeFail("A zona morta radial não filtra drift ou remove comandos diagonais intencionais"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: zona morta radial filtra drift e preserva movimento diagonal e mira");
         if (ResolveInputMode("unknown", "keyboard_mouse") != "keyboard_mouse" ||
             ResolveInputMode("keyboard_mouse", "gamepad") != "gamepad" ||
             ResolveInputMode("gamepad", "keyboard_mouse") != "keyboard_mouse" ||
@@ -2241,15 +2252,19 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         float shortOptionsViewport = CompactOptionsViewportHeight(360f);
         Rect lastCompactKey = CompactOptionsSelectionRect(1, 13);
         Rect lastCompactPad = CompactOptionsSelectionRect(2, 9);
+        Rect compactPadDeadzone = CompactOptionsSelectionRect(2, 11);
         float keyListScroll = ScrollOptionItemIntoView(0f, shortOptionsViewport, lastCompactKey.y, lastCompactKey.height, CompactOptionsContentHeight(1));
         float padListScroll = ScrollOptionItemIntoView(0f, shortOptionsViewport, lastCompactPad.y, lastCompactPad.height, CompactOptionsContentHeight(2));
+        float padDeadzoneScroll = ScrollOptionItemIntoView(0f, shortOptionsViewport, compactPadDeadzone.y, compactPadDeadzone.height, CompactOptionsContentHeight(2));
         if (!CompactOptionsLayoutFits(400f, 360f) || keyListScroll <= 0f || padListScroll <= 0f ||
             lastCompactKey.y + lastCompactKey.height > keyListScroll + shortOptionsViewport + 0.001f ||
             lastCompactPad.y + lastCompactPad.height > padListScroll + shortOptionsViewport + 0.001f ||
+            compactPadDeadzone.y + compactPadDeadzone.height > padDeadzoneScroll + shortOptionsViewport + 0.001f ||
             keyListScroll > CompactOptionsContentHeight(1) - shortOptionsViewport ||
-            padListScroll > CompactOptionsContentHeight(2) - shortOptionsViewport)
-        { SmokeFail("As opções roláveis não mantêm as últimas ações de teclado/controle visíveis em 400x360"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: opções roláveis preservam a última ação em 400x360");
+            padListScroll > CompactOptionsContentHeight(2) - shortOptionsViewport ||
+            padDeadzoneScroll > CompactOptionsContentHeight(2) - shortOptionsViewport)
+        { SmokeFail("As opções roláveis não mantêm as últimas ações ou a zona morta visíveis em 400x360"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: opções roláveis preservam remapeamento e zona morta em 400x360");
         if (!SoundOptionsLayoutFits(600f))
         { SmokeFail("O controle de alto contraste ou as instruções de avisos saem do menu em janela baixa"); yield break; }
         bool oldHighContrast = ScadrykSettings.HighContrastWarnings;

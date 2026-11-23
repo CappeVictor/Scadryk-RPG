@@ -3,6 +3,9 @@ using UnityEngine;
 /// <summary>Small, persistent settings shared by the front end, input and audio.</summary>
 public static class ScadrykSettings
 {
+    internal const float DefaultGamepadDeadzone = 0.19f;
+    internal const float MinimumGamepadDeadzone = 0.08f;
+    internal const float MaximumGamepadDeadzone = 0.4f;
     public static readonly string[] Actions = { "Atacar", "Esquivar", "Pulso", "Crescente", "Estouro", "Rompante", "Interagir", "Cima", "Baixo", "Esquerda", "Direita" };
     private static readonly KeyCode[] Defaults = { KeyCode.Space, KeyCode.LeftShift, KeyCode.Q, KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3, KeyCode.E, KeyCode.W, KeyCode.S, KeyCode.A, KeyCode.D };
     private static readonly int[] PadDefaults = { 0, 1, 2, 4, 5, 6, 3 };
@@ -59,6 +62,13 @@ public static class ScadrykSettings
     internal static bool CanBindPadButton(int button) => button >= 0 && button < PadButtons.Length && button != 7 && button != 8;
     public static int PadButton(int action) => PadButton(action, "Scadryk.Pad.");
     internal static int PadButton(int action, string prefix) => PlayerPrefs.GetInt(prefix + action, PadDefaults[action]);
+    internal static Vector2 ReadGamepadStick(string horizontalAxis, string verticalAxis) =>
+        ApplyRadialDeadzone(new Vector2(Input.GetAxisRaw(horizontalAxis), Input.GetAxisRaw(verticalAxis)), GamepadDeadzone);
+    internal static Vector2 ApplyRadialDeadzone(Vector2 stick, float deadzone)
+    {
+        float threshold = Mathf.Clamp(deadzone, 0f, 0.95f);
+        return stick.sqrMagnitude <= threshold * threshold ? Vector2.zero : stick;
+    }
     public static bool PadDown(int action) => action >= 0 && action < PadDefaults.Length && PadButtonDown(PadButton(action));
     public static bool PadButtonDown(int button) => button >= 0 && button < PadButtons.Length && Input.GetKeyDown(PadButtons[button]);
     public static string PadButtonName(int button) => button switch
@@ -141,6 +151,17 @@ public static class ScadrykSettings
     {
         get => PlayerPrefs.GetFloat("Scadryk.Effects", 0.65f);
         set { if (Mathf.Abs(EffectsVolume - value) < 0.001f) return; PlayerPrefs.SetFloat("Scadryk.Effects", Mathf.Clamp01(value)); PlayerPrefs.Save(); }
+    }
+    public static float GamepadDeadzone
+    {
+        get => Mathf.Clamp(PlayerPrefs.GetFloat("Scadryk.GamepadDeadzone", DefaultGamepadDeadzone), MinimumGamepadDeadzone, MaximumGamepadDeadzone);
+        set
+        {
+            float clamped = Mathf.Clamp(value, MinimumGamepadDeadzone, MaximumGamepadDeadzone);
+            if (Mathf.Abs(GamepadDeadzone - clamped) < 0.001f) return;
+            PlayerPrefs.SetFloat("Scadryk.GamepadDeadzone", clamped);
+            PlayerPrefs.Save();
+        }
     }
     public static float TextScale
     {

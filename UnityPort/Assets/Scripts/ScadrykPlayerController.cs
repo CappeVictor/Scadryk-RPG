@@ -131,7 +131,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
 
         Vector2 keyboard = new Vector2((ScadrykSettings.Held(10) ? 1f : 0f) - (ScadrykSettings.Held(9) ? 1f : 0f),
             (ScadrykSettings.Held(7) ? 1f : 0f) - (ScadrykSettings.Held(8) ? 1f : 0f));
-        Vector2 stick = new Vector2(Input.GetAxisRaw("Scadryk Move X"), Input.GetAxisRaw("Scadryk Move Y"));
+        Vector2 stick = ScadrykSettings.ReadGamepadStick("Scadryk Move X", "Scadryk Move Y");
         moveInput = Vector2.ClampMagnitude(keyboard + stick, 1f);
         bool keyboardAttack = ScadrykSettings.Down(0), gamepadAttack = ScadrykSettings.PadDown(0);
         bool keyboardDash = ScadrykSettings.Down(1), gamepadDash = ScadrykSettings.PadDown(1);
@@ -242,7 +242,8 @@ public sealed class ScadrykPlayerController : MonoBehaviour
             keyboardMouseInput = true;
             lastMousePosition = Input.mousePosition;
         }
-        Vector2 stick = new Vector2(Input.GetAxisRaw("Scadryk Aim X"), -Input.GetAxisRaw("Scadryk Aim Y"));
+        Vector2 stick = ScadrykSettings.ReadGamepadStick("Scadryk Aim X", "Scadryk Aim Y");
+        stick.y = -stick.y;
         if (stick.sqrMagnitude > 0.09f)
         {
             hasIndependentGamepadAim = true;
@@ -256,7 +257,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         if (usingGamepadAim)
         {
             facing = ResolveGamepadFacing(facing, Vector2.zero,
-                new Vector2(Input.GetAxisRaw("Scadryk Move X"), Input.GetAxisRaw("Scadryk Move Y")), hasIndependentGamepadAim);
+                ScadrykSettings.ReadGamepadStick("Scadryk Move X", "Scadryk Move Y"), hasIndependentGamepadAim);
             return;
         }
         if (keyboardMouseInput && director != null) director.RecordInputMode("keyboard_mouse");
