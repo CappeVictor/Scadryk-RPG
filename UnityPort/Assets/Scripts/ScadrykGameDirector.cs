@@ -1265,8 +1265,10 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         {
             try
             {
-                CheckpointData record = JsonUtility.FromJson<CheckpointData>(PlayerPrefs.GetString(recordKey));
-                if (record != null && record.version == 1)
+                const int missingField = int.MinValue;
+                var record = new CheckpointData { version = missingField, phase = missingField, room = missingField };
+                JsonUtility.FromJsonOverwrite(PlayerPrefs.GetString(recordKey), record);
+                if (record.version == 1 && record.phase != missingField && record.room != missingField)
                 {
                     phase = Mathf.Clamp(record.phase, 0, PhaseNames.Length - 1);
                     room = Mathf.Clamp(record.room, 0, RoomsPerPhase - 1);
@@ -1844,6 +1846,10 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             bool restoresLastPortal = HasCheckpoint(checkpointTestPrefix) &&
                 TryLoadCheckpoint(checkpointTestPrefix, out int savedPhase, out int savedRoom) && savedPhase == 2 && savedRoom == 2 &&
                 PlayerPrefs.HasKey(CheckpointProgressKey(checkpointTestPrefix));
+            PlayerPrefs.SetString(CheckpointProgressKey(checkpointTestPrefix), "{\"version\":1,\"phase\":0}");
+            bool partialCheckpointUsesRecoveryPair = TryLoadCheckpoint(checkpointTestPrefix, out int partialPhase, out int partialRoom) &&
+                partialPhase == 2 && partialRoom == 2;
+            WriteCheckpoint(checkpointTestPrefix, 2, 2);
             PlayerPrefs.SetString(CheckpointProgressKey(checkpointTestPrefix), "{damaged checkpoint");
             bool damagedCheckpointUsesRecoveryPair = TryLoadCheckpoint(checkpointTestPrefix, out int recoveredPhase, out int recoveredRoom) &&
                 recoveredPhase == 2 && recoveredRoom == 2;
@@ -1926,7 +1932,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 defeatedFinalBossRestoresOnlyAtEnding && newJourneyClearsFinalBossProgress;
             witnessProgressRoundTrip = witnessStartsAtFirstLine && restoresWitnessLine && clampsWitnessLine && clearsWitnessLines;
             checkpointRoundTrip = newGameDefaults && quitCheckpointStateIsValid && campaignProgressCleanupRoundTrip && ignoresOrphanedRoom &&
-                ignoresOrphanedPhase && restoresLegacyCheckpoint && restoresLastPortal && damagedCheckpointUsesRecoveryPair && clampsInvalidData;
+                ignoresOrphanedPhase && restoresLegacyCheckpoint && restoresLastPortal && partialCheckpointUsesRecoveryPair &&
+                damagedCheckpointUsesRecoveryPair && clampsInvalidData;
         }
         finally
         {
