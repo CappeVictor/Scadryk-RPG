@@ -23,6 +23,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private const string StoryJournalKeySuffix = "StoryJournal.v1";
     [System.Serializable]
     private sealed class StoryJournalData { public List<string> entries = new List<string>(); }
+    private const string CheckpointKeySuffix = "Checkpoint.v1";
+    [System.Serializable]
+    private sealed class CheckpointData { public int version; public int phase; public int room; }
     private static readonly string[] PhaseNames = { "Margens do Primeiro Eco", "Bacia do Sal Imóvel", "Costa das Badaladas" };
     private static readonly Color[] PhaseColors = { new Color(0.11f, 0.22f, 0.20f), new Color(0.27f, 0.20f, 0.12f), new Color(0.09f, 0.17f, 0.25f) };
     private static readonly Color[] PhaseWallColors = { new Color(0.17f, 0.29f, 0.26f), new Color(0.35f, 0.27f, 0.16f), new Color(0.13f, 0.28f, 0.36f) };
@@ -589,8 +592,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         showMemoryJournal = false;
         showOpeningStory = true;
         ApplyPauseTimeScale();
-        PlayerPrefs.DeleteKey("Scadryk.Phase");
-        PlayerPrefs.DeleteKey("Scadryk.Room");
+        ClearCheckpoint("Scadryk.");
         ClearCampaignProgress("Scadryk.");
         ClearStoryJournal("Scadryk.");
         PlayerPrefs.Save();
@@ -1137,13 +1139,26 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     internal static void WriteCheckpoint(string keyPrefix, int phase, int room)
     {
-        PlayerPrefs.SetInt(keyPrefix + "Phase", Mathf.Clamp(phase, 0, PhaseNames.Length - 1));
-        PlayerPrefs.SetInt(keyPrefix + "Room", Mathf.Clamp(room, 0, RoomsPerPhase - 1));
+        int safePhase = Mathf.Clamp(phase, 0, PhaseNames.Length - 1);
+        int safeRoom = Mathf.Clamp(room, 0, RoomsPerPhase - 1);
+        PlayerPrefs.SetString(CheckpointProgressKey(keyPrefix), JsonUtility.ToJson(new CheckpointData
+        { version = 1, phase = safePhase, room = safeRoom }));
+        // Keep the old scalar pair as a recovery path for damaged or older checkpoint records.
+        PlayerPrefs.SetInt(keyPrefix + "Phase", safePhase);
+        PlayerPrefs.SetInt(keyPrefix + "Room", safeRoom);
         PlayerPrefs.Save();
     }
 
-    internal static bool HasCheckpoint(string keyPrefix) =>
-        PlayerPrefs.HasKey(keyPrefix + "Phase") && PlayerPrefs.HasKey(keyPrefix + "Room");
+    internal static string CheckpointProgressKey(string keyPrefix) => keyPrefix + CheckpointKeySuffix;
+
+    internal static void ClearCheckpoint(string keyPrefix)
+    {
+        PlayerPrefs.DeleteKey(CheckpointProgressKey(keyPrefix));
+        PlayerPrefs.DeleteKey(keyPrefix + "Phase");
+        PlayerPrefs.DeleteKey(keyPrefix + "Room");
+    }
+
+    internal static bool HasCheckpoint(string keyPrefix) => TryLoadCheckpoint(keyPrefix, out _, out _);
 
     internal static string WitnessProgressKey(string keyPrefix, int phase) =>
         keyPrefix + "Witness." + Mathf.Clamp(phase, 0, PhaseNames.Length - 1);
@@ -1245,15 +1260,26 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     internal static bool TryLoadCheckpoint(string keyPrefix, out int phase, out int room)
     {
-        if (!HasCheckpoint(keyPrefix))
+        string recordKey = CheckpointProgressKey(keyPrefix);
+        if (PlayerPrefs.HasKey(recordKey))
         {
-            phase = 0;
-            room = 0;
-            return false;
+            try
+            {
+                CheckpointData record = JsonUtility.FromJson<CheckpointData>(PlayerPrefs.GetString(recordKey));
+                if (record != null && record.version == 1)
+                {
+                    phase = Mathf.Clamp(record.phase, 0, PhaseNames.Length - 1);
+                    room = Mathf.Clamp(record.room, 0, RoomsPerPhase - 1);
+                    return true;
+                }
+            }
+            catch (System.Exception) { }
         }
-        phase = Mathf.Clamp(PlayerPrefs.GetInt(keyPrefix + "Phase", 0), 0, PhaseNames.Length - 1);
-        room = Mathf.Clamp(PlayerPrefs.GetInt(keyPrefix + "Room", 0), 0, RoomsPerPhase - 1);
-        return true;
+
+        bool hasLegacyPair = PlayerPrefs.HasKey(keyPrefix + "Phase") && PlayerPrefs.HasKey(keyPrefix + "Room");
+        phase = hasLegacyPair ? Mathf.Clamp(PlayerPrefs.GetInt(keyPrefix + "Phase", 0), 0, PhaseNames.Length - 1) : 0;
+        room = hasLegacyPair ? Mathf.Clamp(PlayerPrefs.GetInt(keyPrefix + "Room", 0), 0, RoomsPerPhase - 1) : 0;
+        return hasLegacyPair;
     }
 
     private void SpawnFinalBoss()
@@ -1450,8 +1476,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         ScadrykAudio.Play(ScadrykCue.Victory);
         if (!smokeRun)
         {
-            PlayerPrefs.DeleteKey("Scadryk.Phase");
-            PlayerPrefs.DeleteKey("Scadryk.Room");
+            ClearCheckpoint("Scadryk.");
             ClearCampaignProgress("Scadryk.");
             PlayerPrefs.Save();
         }
@@ -1778,6 +1803,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         bool bossProgressRoundTrip = false, powerRestoreRoundTrip = false, powerEchoProgressRoundTrip = false;
         try
         {
+            ClearCheckpoint(checkpointTestPrefix);
             bool newGameDefaults = !HasCheckpoint(checkpointTestPrefix) &&
                 !TryLoadCheckpoint(checkpointTestPrefix, out int defaultPhase, out int defaultRoom) && defaultPhase == 0 && defaultRoom == 0;
             quitCheckpointStateIsValid = ShouldSaveCheckpointOnQuit(true, false, false, false, false) &&
@@ -1805,14 +1831,22 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             PlayerPrefs.SetInt(checkpointTestPrefix + "Room", 2);
             bool ignoresOrphanedRoom = !HasCheckpoint(checkpointTestPrefix) &&
                 !TryLoadCheckpoint(checkpointTestPrefix, out int orphanPhase, out int orphanRoom) && orphanPhase == 0 && orphanRoom == 0;
-            PlayerPrefs.DeleteKey(checkpointTestPrefix + "Room");
+            ClearCheckpoint(checkpointTestPrefix);
             PlayerPrefs.SetInt(checkpointTestPrefix + "Phase", 2);
             bool ignoresOrphanedPhase = !HasCheckpoint(checkpointTestPrefix) &&
                 !TryLoadCheckpoint(checkpointTestPrefix, out int orphanedPhase, out int orphanedRoom) && orphanedPhase == 0 && orphanedRoom == 0;
-            PlayerPrefs.DeleteKey(checkpointTestPrefix + "Phase");
+            ClearCheckpoint(checkpointTestPrefix);
+            PlayerPrefs.SetInt(checkpointTestPrefix + "Phase", 1);
+            PlayerPrefs.SetInt(checkpointTestPrefix + "Room", 2);
+            bool restoresLegacyCheckpoint = TryLoadCheckpoint(checkpointTestPrefix, out int legacyPhase, out int legacyRoom) &&
+                legacyPhase == 1 && legacyRoom == 2;
             WriteCheckpoint(checkpointTestPrefix, 2, 2);
             bool restoresLastPortal = HasCheckpoint(checkpointTestPrefix) &&
-                TryLoadCheckpoint(checkpointTestPrefix, out int savedPhase, out int savedRoom) && savedPhase == 2 && savedRoom == 2;
+                TryLoadCheckpoint(checkpointTestPrefix, out int savedPhase, out int savedRoom) && savedPhase == 2 && savedRoom == 2 &&
+                PlayerPrefs.HasKey(CheckpointProgressKey(checkpointTestPrefix));
+            PlayerPrefs.SetString(CheckpointProgressKey(checkpointTestPrefix), "{damaged checkpoint");
+            bool damagedCheckpointUsesRecoveryPair = TryLoadCheckpoint(checkpointTestPrefix, out int recoveredPhase, out int recoveredRoom) &&
+                recoveredPhase == 2 && recoveredRoom == 2;
             WriteCheckpoint(checkpointTestPrefix, 99, -4);
             bool clampsInvalidData = TryLoadCheckpoint(checkpointTestPrefix, out int clampedPhase, out int clampedRoom) &&
                 clampedPhase == PhaseNames.Length - 1 && clampedRoom == 0;
@@ -1892,12 +1926,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 defeatedFinalBossRestoresOnlyAtEnding && newJourneyClearsFinalBossProgress;
             witnessProgressRoundTrip = witnessStartsAtFirstLine && restoresWitnessLine && clampsWitnessLine && clearsWitnessLines;
             checkpointRoundTrip = newGameDefaults && quitCheckpointStateIsValid && campaignProgressCleanupRoundTrip && ignoresOrphanedRoom &&
-                ignoresOrphanedPhase && restoresLastPortal && clampsInvalidData;
+                ignoresOrphanedPhase && restoresLegacyCheckpoint && restoresLastPortal && damagedCheckpointUsesRecoveryPair && clampsInvalidData;
         }
         finally
         {
-            PlayerPrefs.DeleteKey(checkpointTestPrefix + "Phase");
-            PlayerPrefs.DeleteKey(checkpointTestPrefix + "Room");
+            ClearCheckpoint(checkpointTestPrefix);
             ClearGuardianDefeatProgress(checkpointTestPrefix);
             ClearFinalBossDefeatProgress(checkpointTestPrefix);
             ClearWitnessProgress(checkpointTestPrefix);
@@ -1908,7 +1941,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (!storyJournalRoundTrip) { SmokeFail("O caderno não preserva lembranças únicas ou não limpa os dados temporários"); yield break; }
         Debug.Log("SCADRYK_SMOKE: caderno persiste lembranças únicas em ordem e reinicia com nova jornada");
         if (!checkpointRoundTrip) { SmokeFail("Checkpoint parcial não foi ignorado, ou o portal não foi restaurado/limitado"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: checkpoint grava, retoma sem estado de título/abertura, limita e limpa chaves temporárias");
+        Debug.Log("SCADRYK_SMOKE: checkpoint versionado grava, recupera versão antiga/danificada, retoma e limpa chaves temporárias");
         if (!bossProgressRoundTrip) { SmokeFail("O save não preserva chefes derrotados, restaura sala segura ou limpa a jornada nova"); yield break; }
         Debug.Log("SCADRYK_SMOKE: derrota de guardiões e Arauto persiste, retoma na arena e é limpa na jornada nova");
         if (!powerRestoreRoundTrip) { SmokeFail("Retomar um checkpoint não restaura somente os poderes já conquistados pelos guardiões"); yield break; }
