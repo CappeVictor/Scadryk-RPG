@@ -2799,11 +2799,15 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Color highContrastDangerTint = ScadrykEffects.DangerWarningTint(testWarning, true);
         Color highContrastAmbientTint = ScadrykEffects.DangerWarningTint(testWarning, false);
         bool highContrastBrightensSignal = highContrastDangerTint.r > testWarning.r && highContrastAmbientTint == standardAmbientTint;
+        Vector3 expandedWarningHighContrastScale = ScadrykTimedVisual.DangerWarningVisualScale(Vector3.one, 1.2f, true, true);
+        Vector3 expandedWarningStandardScale = ScadrykTimedVisual.DangerWarningVisualScale(Vector3.one, 1.2f, false, true);
         ScadrykSettings.HighContrastWarnings = oldHighContrast;
         if (Mathf.Abs(standardWarningWidth - 1f) > 0.001f || Mathf.Abs(highContrastWarningWidth - 1.4f) > 0.001f ||
-            standardDangerTint != testWarning || standardAmbientTint != testWarning || !highContrastBrightensSignal)
+            standardDangerTint != testWarning || standardAmbientTint != testWarning || !highContrastBrightensSignal ||
+            Mathf.Abs(expandedWarningHighContrastScale.y - 1.68f) > 0.001f || Mathf.Abs(expandedWarningHighContrastScale.x - 1.2f) > 0.001f ||
+            Mathf.Abs(expandedWarningStandardScale.y - 1.2f) > 0.001f)
         { SmokeFail("A opção de alto contraste não amplia e clareia os avisos de perigo"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: alto contraste clareia e amplia os avisos de perigo");
+        Debug.Log("SCADRYK_SMOKE: alto contraste clareia e amplia avisos lineares, em sprite e em expansão");
         float savedEffectsVolume = ScadrykSettings.EffectsVolume;
         bool savedWarningContrast = ScadrykSettings.HighContrastWarnings;
         bool savedReduceFlash = ScadrykSettings.ReduceFlash;

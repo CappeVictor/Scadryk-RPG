@@ -87,6 +87,13 @@ public sealed class ScadrykTimedVisual : MonoBehaviour
     internal static float DangerWarningAlpha(float progress) =>
         Mathf.Lerp(0.78f, 1f, Mathf.SmoothStep(0.08f, 0.72f, Mathf.Clamp01(progress)));
 
+    internal static Vector3 DangerWarningVisualScale(Vector3 baseScale, float expansionScale, bool highContrast, bool widenShape)
+    {
+        float widthScale = highContrast && widenShape ? 1.4f : 1f;
+        return new Vector3(baseScale.x * expansionScale, baseScale.y * expansionScale * widthScale,
+            baseScale.z * expansionScale);
+    }
+
     private void Update()
     {
         age += Time.deltaTime;
@@ -101,7 +108,13 @@ public sealed class ScadrykTimedVisual : MonoBehaviour
             c.a *= 1f - Mathf.SmoothStep(0.45f, 1f, progress);
             spriteRenderer.color = c;
         }
-        if (expanding) transform.localScale = initialScale * ScadrykEffects.FlashExpansionScale(progress, ScadrykSettings.ReduceFlash);
+        if (expanding)
+        {
+            float expansionScale = ScadrykEffects.FlashExpansionScale(progress, ScadrykSettings.ReduceFlash);
+            transform.localScale = dangerWarning
+                ? DangerWarningVisualScale(initialScale, expansionScale, ScadrykSettings.HighContrastWarnings, widenDangerWarning)
+                : initialScale * expansionScale;
+        }
         if (spinDegreesPerSecond != 0f) transform.Rotate(0f, 0f, spinDegreesPerSecond * Time.deltaTime);
         if (age >= lifetime) Destroy(gameObject);
     }
