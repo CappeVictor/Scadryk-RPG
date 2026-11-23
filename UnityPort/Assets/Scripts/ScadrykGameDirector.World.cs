@@ -479,6 +479,13 @@ public sealed partial class ScadrykGameDirector
                     MakeDecoration(parent, "Reed", new Vector2(rx, y - side * 0.6f), new Vector2(0.12f, 0.88f), glow, false, -8, -18f + reed * 16f);
                 }
             }
+            for (int bank = -1; bank <= 1; bank += 2)
+            {
+                Vector2 outerPool = ForestOuterPoolPosition(new Vector2(x, 0f), bank);
+                MakeDecoration(parent, "Outer tide pool", outerPool, new Vector2(2.8f, 0.9f),
+                    new Color(0.06f, 0.28f, 0.29f, 0.42f), true, -9);
+                MakeShallowWaterZone(parent, outerPool, new Vector2(2.8f, 0.9f));
+            }
             DrawRune(parent, new Vector2(x + (room - 1) * 1.15f, 4.1f), 1.8f, dim);
         }
         else if (phaseIndex == 1)
@@ -546,6 +553,9 @@ public sealed partial class ScadrykGameDirector
         trigger.size = size;
         zoneObject.AddComponent<ScadrykTerrainZone>().Configure(0.78f, default, null, ScadrykTerrainZone.ShallowWaterKey);
     }
+
+    internal static Vector2 ForestOuterPoolPosition(Vector2 roomCenter, int bank) =>
+        roomCenter + new Vector2(-6.8f, Mathf.Clamp(bank, -1, 1) * (RoomHalfHeight - 1.35f));
 
     private static void DrawSaltCrosswind(Transform parent, float roomX)
     {

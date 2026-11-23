@@ -2724,6 +2724,20 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 if (waterZones.Length == 0) { SmokeFail("Águas rasas sem zonas de terreno na sala " + (room + 1)); yield break; }
                 foreach (ScadrykTerrainZone zone in waterZones)
                     if (zone.MovementScale >= 1f) { SmokeFail("Zona de água não reduz o movimento"); yield break; }
+                if (phaseIndex == 0)
+                {
+                    Vector2 northPool = ForestOuterPoolPosition(roomCenter, 1);
+                    Vector2 southPool = ForestOuterPoolPosition(roomCenter, -1);
+                    bool northBankWet = false, southBankWet = false;
+                    foreach (ScadrykTerrainZone zone in waterZones)
+                    {
+                        if (zone.HintKey != ScadrykTerrainZone.ShallowWaterKey) continue;
+                        if (Vector2.Distance((Vector2)zone.transform.position, northPool) < 0.05f) northBankWet = true;
+                        if (Vector2.Distance((Vector2)zone.transform.position, southPool) < 0.05f) southBankWet = true;
+                    }
+                    if (!northBankWet || !southBankWet)
+                    { SmokeFail("As duas margens ampliadas do bosque perderam suas travessias de água rasa"); yield break; }
+                }
             }
             for (int previousRoom = 0; previousRoom < roomIndex; previousRoom++)
                 if (!clearedRooms[previousRoom]) { SmokeFail("O mapa não marcou a sala anterior como concluída: " + previousRoom); yield break; }

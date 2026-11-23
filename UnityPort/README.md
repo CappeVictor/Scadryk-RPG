@@ -110,6 +110,8 @@ A tabela mostra os comandos padrão; ataque, esquiva, Pulso, poderes, interaçã
 
 ## Progressão e mapa
 
+No Bosque Alagado, as margens norte e sul têm poças opcionais que reduzem a velocidade; há espaço para contorná-las.
+
 O mapa da jornada conecta as três salas principais de cada bioma. Trechos concluídos ficam verdes, a rota até a sala atual fica ciano, próximos encontros aparecem como adiante e biomas ainda inacessíveis ficam marcados como selados. Setas nos nomes das salas indicam desvios e símbolos mostram o estado dos selos opcionais.
 
 As fases jogáveis incluídas são **Margens do Primeiro Eco**, **Bacia do Sal Imóvel** e **Costa das Badaladas**. Cada uma tem três salas, caminhos laterais, coberturas e um guardião na última sala. Os limiares entre salas ficam selados para que Nara não entre em uma área antes de o encontro dela começar; o portal aberto após concluir o objetivo é o caminho de progressão. O mapa mostra a posição de Nara e identifica as salas atuais, concluídas e adiante por cores com legenda; quando a saída abre, o cartão da sala atual também exibe **PORTAL**. O progresso das salas anteriores é reconstruído ao continuar de um portal salvo. Em janelas estreitas, o mapa fica abaixo do painel de fase e vida, com a legenda incluída na área reservada. A cada sala limpa, Nara recupera um pouco de vida. Ao zerar a vida, ela retorna ao início da sala atual com vida cheia, poderes aprendidos preservados e todas as recargas de combate prontas. O ataque básico combina sinal de preparação, golpe visível e uma confirmação sonora aguda quando acerta; ataques dos Ecos sustentam uma pose de preparação durante o aviso, seguida de impacto e recuperação.
