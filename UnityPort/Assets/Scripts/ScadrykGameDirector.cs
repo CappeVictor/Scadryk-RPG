@@ -2400,10 +2400,10 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             WorldMapRoomStatus(1, 0, 1, 1, mapCleared) != 2 ||
             WorldMapRoomStatus(1, 1, 1, 1, mapCleared) != 1 ||
             WorldMapRoomStatus(1, 2, 1, 1, mapCleared) != 0 ||
-            WorldMapRoomStatus(2, 0, 1, 1, mapCleared) != 0 ||
+            WorldMapRoomStatus(2, 0, 1, 1, mapCleared) != 3 ||
             !WorldMapLayoutFits(400f, 360f) || !WorldMapLayoutFits(700f, 600f))
         { SmokeFail("O mapa geral perde estados de progresso ou sai da janela compacta"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: mapa geral marca bioma anterior, salas concluídas, atual e futuras em duas resoluções");
+        Debug.Log("SCADRYK_SMOKE: mapa separa bioma selado, sala adiante, atual e já concluída em duas resoluções");
         if (OffscreenTargetArrow(new Vector2(0.5f, 0.5f)) != null ||
             OffscreenTargetArrow(new Vector2(1.2f, 0.5f)) != "→" ||
             OffscreenTargetArrow(new Vector2(-0.2f, 0.5f)) != "←" ||

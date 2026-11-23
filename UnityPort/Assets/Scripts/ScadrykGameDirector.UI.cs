@@ -751,8 +751,13 @@ public sealed partial class ScadrykGameDirector
             openingTitleStyle.fontSize = Mathf.Max(12, Mathf.FloorToInt(openingTitleStyle.fontSize * titleWidth / measuredTitleWidth));
         GUI.Label(new Rect(panel.center.x - titleWidth * 0.5f, panel.y + 4f, titleWidth, 40f), WorldMapTitleContent, openingTitleStyle);
         worldMapInstructionStyle.fontSize = Mathf.Min(smallStyle.fontSize, 12);
+        string mapLegend = "TRÊS BIOMAS · NOVE SALAS · ↑/↓ DESVIO · ◇ PENDENTE · ◆ LIBERADO · SELADO = BLOQUEADO";
+        float legendWidth = panel.width - 32f;
+        float measuredLegendWidth = worldMapInstructionStyle.CalcSize(new GUIContent(mapLegend)).x;
+        if (measuredLegendWidth > legendWidth && measuredLegendWidth > 0f)
+            worldMapInstructionStyle.fontSize = Mathf.Max(9, Mathf.FloorToInt(worldMapInstructionStyle.fontSize * legendWidth / measuredLegendWidth));
         GUI.Label(new Rect(panel.x + 16f, panel.y + 45f, panel.width - 32f, 17f),
-            "TRÊS BIOMAS · NOVE SALAS · ↑/↓ DESVIO · ◇ PENDENTE · ◆ LIBERADO", worldMapInstructionStyle);
+            mapLegend, worldMapInstructionStyle);
         if (GUI.Button(new Rect(panel.xMax - 92f, panel.y + 14f, 76f, 28f), "FECHAR")) CloseWorldMap();
 
         float rowHeight = WorldMapRowHeight(panel.height);
@@ -777,8 +782,9 @@ public sealed partial class ScadrykGameDirector
                 GUI.color = Color.white;
                 GUI.Label(new Rect(card.x + 3f, card.y + 3f, card.width - 6f, card.height * 0.5f),
                     (room + 1) + ". " + MapRoomRouteLabel(phase, room, IsWorldSecretRevealed("Scadryk.", phase, room)), worldMapRoomStyle);
-                string stateLabel = state == 1 ? "VOCÊ ESTÁ AQUI" : state == 2 ? "CONCLUÍDA" : "ADIANTE";
-                GUI.color = state == 1 ? new Color(0.55f, 1f, 0.94f) : state == 2 ? new Color(0.62f, 0.9f, 0.68f) : new Color(0.7f, 0.73f, 0.71f);
+                string stateLabel = state == 1 ? "VOCÊ ESTÁ AQUI" : state == 2 ? "CONCLUÍDA" : state == 3 ? "SELADO" : "ADIANTE";
+                GUI.color = state == 1 ? new Color(0.55f, 1f, 0.94f) : state == 2 ? new Color(0.62f, 0.9f, 0.68f) :
+                    state == 3 ? new Color(0.68f, 0.52f, 0.36f) : new Color(0.7f, 0.73f, 0.71f);
                 GUI.Label(new Rect(card.x + 2f, card.yMax - 18f, card.width - 4f, 15f), stateLabel, worldMapStateStyle);
                 GUI.color = Color.white;
             }
@@ -815,7 +821,7 @@ public sealed partial class ScadrykGameDirector
     internal static int WorldMapRoomStatus(int phase, int room, int currentPhase, int currentRoom, bool[] currentPhaseCleared)
     {
         if (phase < currentPhase) return 2;
-        if (phase > currentPhase) return 0;
+        if (phase > currentPhase) return 3;
         if (room == currentRoom) return 1;
         return currentPhaseCleared != null && room >= 0 && room < currentPhaseCleared.Length && currentPhaseCleared[room] ? 2 : 0;
     }
