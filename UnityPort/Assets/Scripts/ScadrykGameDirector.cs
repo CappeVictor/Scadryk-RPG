@@ -1940,12 +1940,18 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (GuardianNames.Length != 3 || GuardianIntroductions.Length != 3 || GuardianMemories.Length != 3)
         { SmokeFail("Cada bioma precisa de nome, fala e memória próprios para o guardião"); yield break; }
         float basinNimaPresence = WitnessPresenceForPhase(1), coastNimaPresence = WitnessPresenceForPhase(2);
+        float basinNimaAfterMemories = WitnessPresenceForConversation(1, 3);
         if (WitnessPresenceForPhase(0) != 0f || basinNimaPresence <= 0f || coastNimaPresence <= basinNimaPresence || coastNimaPresence > 1f ||
             WitnessScaleForPhase(2) <= WitnessScaleForPhase(1) || WitnessTintForPhase(0) != Color.clear ||
             WitnessTintForPhase(1) == WitnessTintForPhase(2) ||
             Mathf.Abs(WitnessTintForPhase(1).a - basinNimaPresence) > 0.001f ||
-            Mathf.Abs(WitnessTintForPhase(2).a - coastNimaPresence) > 0.001f)
-        { SmokeFail("A presença visível de Nima não cresce após libertar as lembranças dos guardiões"); yield break; }
+            Mathf.Abs(WitnessTintForPhase(2).a - coastNimaPresence) > 0.001f ||
+            basinNimaAfterMemories <= basinNimaPresence || basinNimaAfterMemories > coastNimaPresence ||
+            Mathf.Abs(WitnessPresenceForConversation(1, 99) - basinNimaAfterMemories) > 0.001f ||
+            Mathf.Abs(WitnessPresenceForConversation(2, 3) - coastNimaPresence) > 0.001f ||
+            Mathf.Abs(WitnessTintForConversation(1, 3).a - basinNimaAfterMemories) > 0.001f ||
+            WitnessScaleForConversation(1, 3) <= WitnessScaleForConversation(1, 0))
+        { SmokeFail("A presença visível de Nima não cresce com as conversas salvas sem ultrapassar a forma restaurada na costa"); yield break; }
         if (!OpeningMemory.Contains("Grande Onda") || !OpeningMemory.Contains("Nara") ||
             !GuardianMemories[0].Contains("Nima") || !BasinWitnessLines[0].Contains("primeiro sino") ||
             !BasinWitnessLines[1].StartsWith("Nara:") || !CoastWitnessLines[1].StartsWith("Nara:") ||

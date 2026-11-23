@@ -3,6 +3,10 @@ using UnityEngine;
 
 public sealed partial class ScadrykGameDirector
 {
+    private SpriteRenderer witnessRenderer;
+    private SpriteRenderer witnessReflectionRenderer;
+    private Transform witnessVisualTransform;
+
     private void BuildRoomAnchors()
     {
         roomAnchors[0] = roomAnchors[1] = null;
@@ -35,6 +39,8 @@ public sealed partial class ScadrykGameDirector
     private void BuildWitness()
     {
         witnessObject = null;
+        witnessRenderer = witnessReflectionRenderer = null;
+        witnessVisualTransform = null;
         witnessLine = smokeRun ? 0 : ReadWitnessProgress("Scadryk.", phaseIndex);
         // Nima returns in the two quiet arrival rooms after the first and second guardians.
         if (roomIndex != 0 || phaseIndex == 0) return;
@@ -44,18 +50,20 @@ public sealed partial class ScadrykGameDirector
         witnessObject.transform.SetParent(levelRoot.transform);
         witnessObject.transform.position = position;
 
-        float presence = WitnessPresenceForPhase(phaseIndex);
-        Color witnessTint = WitnessTintForPhase(phaseIndex);
-        MakeDecoration(levelRoot.transform, "Nima's reflected pool", position + Vector2.down * 0.52f,
+        float presence = WitnessPresenceForConversation(phaseIndex, witnessLine);
+        Color witnessTint = WitnessTintForConversation(phaseIndex, witnessLine);
+        GameObject reflection = MakeDecoration(levelRoot.transform, "Nima's reflected pool", position + Vector2.down * 0.52f,
             new Vector2(0.68f + presence * 0.22f, 0.2f + presence * 0.08f),
             new Color(witnessTint.r, witnessTint.g, witnessTint.b, 0.26f + presence * 0.2f), true, 2);
+        witnessReflectionRenderer = reflection.GetComponent<SpriteRenderer>();
         var visual = new GameObject("Nima — Echo witness");
         visual.transform.SetParent(witnessObject.transform, false);
-        var renderer = visual.AddComponent<SpriteRenderer>();
-        renderer.sprite = witnessSprite != null ? witnessSprite : CircleSprite;
-        renderer.color = WitnessTintForPhase(phaseIndex);
-        renderer.sortingOrder = 5;
-        visual.transform.localScale = Vector3.one * WitnessScaleForPhase(phaseIndex);
+        witnessRenderer = visual.AddComponent<SpriteRenderer>();
+        witnessRenderer.sprite = witnessSprite != null ? witnessSprite : CircleSprite;
+        witnessRenderer.color = witnessTint;
+        witnessRenderer.sortingOrder = 5;
+        witnessVisualTransform = visual.transform;
+        witnessVisualTransform.localScale = Vector3.one * WitnessScaleForConversation(phaseIndex, witnessLine);
         witnessObject.AddComponent<ScadrykDepthSort>().SetBias(4);
     }
 
@@ -76,6 +84,32 @@ public sealed partial class ScadrykGameDirector
         _ => Color.clear
     };
 
+    internal static float WitnessPresenceForConversation(int phase, int memoriesShared) =>
+        phase == 1 ? Mathf.Min(0.95f, WitnessPresenceForPhase(phase) + Mathf.Clamp(memoriesShared, 0, 3) * 0.09f) : WitnessPresenceForPhase(phase);
+
+    internal static float WitnessScaleForConversation(int phase, int memoriesShared) =>
+        Mathf.Lerp(0.3f, 0.44f, WitnessPresenceForConversation(phase, memoriesShared));
+
+    internal static Color WitnessTintForConversation(int phase, int memoriesShared)
+    {
+        Color tint = WitnessTintForPhase(phase);
+        tint.a = WitnessPresenceForConversation(phase, memoriesShared);
+        return tint;
+    }
+
+    private void ApplyWitnessConversationGrowth()
+    {
+        float presence = WitnessPresenceForConversation(phaseIndex, witnessLine);
+        if (witnessRenderer != null) witnessRenderer.color = WitnessTintForConversation(phaseIndex, witnessLine);
+        if (witnessVisualTransform != null) witnessVisualTransform.localScale = Vector3.one * WitnessScaleForConversation(phaseIndex, witnessLine);
+        if (witnessReflectionRenderer != null)
+        {
+            Color tint = WitnessTintForConversation(phaseIndex, witnessLine);
+            witnessReflectionRenderer.color = new Color(tint.r, tint.g, tint.b, 0.26f + presence * 0.2f);
+            witnessReflectionRenderer.transform.localScale = new Vector3(0.68f + presence * 0.22f, 0.2f + presence * 0.08f, 1f);
+        }
+    }
+
     public void TryInteract(Vector2 position)
     {
         if (IsPaused) return;
@@ -85,6 +119,7 @@ public sealed partial class ScadrykGameDirector
             ShowMemory(lines[witnessLine % lines.Length], 8f);
             witnessLine++;
             if (!smokeRun) WriteWitnessProgress("Scadryk.", phaseIndex, witnessLine);
+            ApplyWitnessConversationGrowth();
             return;
         }
         for (int i = 0; i < anchorsRequired; i++)
@@ -956,7 +991,7 @@ public sealed partial class ScadrykGameDirector
         collider.size = new Vector2(2.75f, 0.72f);
     }
 
-    private static void MakeDecoration(Transform parent, string name, Vector2 position, Vector2 size, Color color, bool circle, int order, float rotation = 0f)
+    private static GameObject MakeDecoration(Transform parent, string name, Vector2 position, Vector2 size, Color color, bool circle, int order, float rotation = 0f)
     {
         var go = new GameObject(name);
         go.transform.SetParent(parent);
@@ -967,6 +1002,7 @@ public sealed partial class ScadrykGameDirector
         renderer.sprite = circle ? CircleSprite : SquareSprite;
         renderer.color = color;
         renderer.sortingOrder = order;
+        return go;
     }
 
     private void SpawnRoomEnemies()
