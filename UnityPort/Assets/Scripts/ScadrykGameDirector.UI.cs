@@ -294,7 +294,8 @@ public sealed partial class ScadrykGameDirector
         Rect hud = HudPanelRect(Screen.width, Screen.height, ScadrykSettings.TextScale);
         if (!MiniMapPanelFits(panel, hud, Screen.width, Screen.height)) return;
         GUI.color = new Color(0.035f, 0.05f, 0.06f, 0.9f); GUI.Box(panel, GUIContent.none); GUI.color = Color.white;
-        GUI.Label(new Rect(panel.x + 13, panel.y + 8, width - 26f, 21f + extra * 8f), "MAPA · " + PhaseNames[phaseIndex] + " · ↑/↓ DESVIO", smallStyle);
+        string[] mapBiomeNames = { "Bosque", "Sal", "Costa" };
+        GUI.Label(new Rect(panel.x + 13, panel.y + 8, width - 26f, 21f + extra * 8f), "MAPA · " + mapBiomeNames[phaseIndex] + " · ↑/↓ ROTA · ◇ SELO", smallStyle);
         float mapX = panel.x + 15, mapY = panel.y + 43 + extra * 5f, roomW = 75f + extra * 30f, roomH = 57f + extra * 10f, gap = 8;
         for (int i = 0; i < RoomsPerPhase; i++)
         {
@@ -479,7 +480,7 @@ public sealed partial class ScadrykGameDirector
 
     private static string MapRoomLabel(int phase, int room) => MapRoomLabels[phase][room];
     internal static string MapRoomRouteLabel(int phase, int room) =>
-        TryGetSideRoute(phase, room, out int side, out _, out _) ? MapRoomLabel(phase, room) + (side > 0 ? " ↑" : " ↓") : MapRoomLabel(phase, room);
+        TryGetSideRoute(phase, room, out int side, out _, out _) ? MapRoomLabel(phase, room) + (side > 0 ? " ↑" : " ↓") + (PowerGrantedBySecretAt(phase, room) >= 0 ? " ◇" : string.Empty) : MapRoomLabel(phase, room);
     private static string Cooldown(float value) => value <= 0.02f ? "pronto" : value.ToString("0.0") + "s";
 
     internal static string OverlayMessage(bool confirmNewJourney, bool victory, bool showTitle) =>
@@ -656,7 +657,7 @@ public sealed partial class ScadrykGameDirector
         GUI.Label(new Rect(panel.center.x - titleWidth * 0.5f, panel.y + 4f, titleWidth, 40f), WorldMapTitleContent, openingTitleStyle);
         worldMapInstructionStyle.fontSize = Mathf.Min(smallStyle.fontSize, 12);
         GUI.Label(new Rect(panel.x + 16f, panel.y + 45f, panel.width - 32f, 17f),
-            "TRÊS BIOMAS · NOVE SALAS · ↑/↓ INDICA DESVIO LATERAL", worldMapInstructionStyle);
+            "TRÊS BIOMAS · NOVE SALAS · ↑/↓ DESVIO · ◇ SELO OPCIONAL", worldMapInstructionStyle);
         if (GUI.Button(new Rect(panel.xMax - 92f, panel.y + 14f, 76f, 28f), "FECHAR")) CloseWorldMap();
 
         float rowHeight = WorldMapRowHeight(panel.height);

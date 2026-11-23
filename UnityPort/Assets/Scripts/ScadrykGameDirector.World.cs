@@ -295,9 +295,7 @@ public sealed partial class ScadrykGameDirector
         int requiredPower = RequiredWorldSecretPower();
         if (requiredPower < 0) return;
         if (!ShouldBuildWorldSecret(smokeRun, IsWorldSecretRevealed("Scadryk.", phaseIndex, roomIndex))) return;
-        Vector2 spot = requiredPower == 0 ? roomCenter + new Vector2(6.8f, 4.15f) :
-            requiredPower == 1 ? roomCenter + new Vector2(-7.2f, -4.1f) :
-            roomCenter + new Vector2(7.2f, 4.15f);
+        Vector2 spot = WorldSecretPosition(roomCenter, phaseIndex, roomIndex, requiredPower);
         worldSecret = new GameObject("Hidden echo seal — power " + (requiredPower + 1));
         worldSecret.transform.SetParent(levelRoot.transform);
         worldSecret.transform.position = spot;
@@ -315,7 +313,14 @@ public sealed partial class ScadrykGameDirector
     private int RequiredWorldSecretPower() => PowerGrantedBySecretAt(phaseIndex, roomIndex);
 
     internal static int PowerGrantedBySecretAt(int phase, int room) =>
-        phase == 1 && room == 0 ? 0 : phase == 2 && room == 0 ? 1 : phase == 2 && room == 2 ? 2 : -1;
+        phase == 1 && room == 1 ? 0 : phase == 2 && room == 1 ? 1 : phase == 2 && room == 2 ? 2 : -1;
+
+    internal static Vector2 WorldSecretPosition(Vector2 center, int phase, int room, int power)
+    {
+        if (TryGetSideRoute(phase, room, out int side, out _, out _))
+            return center + Vector2.up * (side * 9.3f);
+        return center + (power == 1 ? new Vector2(-7.2f, -4.1f) : new Vector2(7.2f, 4.15f));
+    }
 
     internal static string PowerEchoRewardText(int power) => power switch
     {

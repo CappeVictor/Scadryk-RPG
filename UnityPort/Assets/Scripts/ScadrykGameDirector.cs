@@ -85,8 +85,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     };
     private static readonly string[] RoomStories = {
         "A água conserva vozes que Nara pensava perdidas.", "A comporta espera uma Ouvinte; raízes sobre a água cruzam o bosque.", "O guardião prende nas raízes o primeiro sino.",
-        "A bacia está imóvel, mas o sal ainda se recorda da maré.", "Dois cristais guardam a rota; uma prateleira de sal contorna a bacia.", "O zelador do sal protege uma lembrança que não é sua.",
-        "Na costa, as badaladas cessaram antes da última onda.", "Farol primeiro, sino depois. A vereda das bóias cruza a costa.", "O Arauto reuniu os três silêncios para esconder a verdade."
+        "A bacia está imóvel, mas o sal ainda se recorda da maré.", "Dois cristais guardam a rota; a prateleira de sal esconde uma lembrança.", "O zelador do sal protege uma lembrança que não é sua.",
+        "Na costa, as badaladas cessaram antes da última onda.", "Farol primeiro, sino depois. A vereda das bóias guarda um Eco antigo.", "O Arauto reuniu os três silêncios para esconder a verdade."
     };
     private static readonly string[] GuardianNames = { "A Raiz-Mor", "A Vigia do Sal", "O Vigia do Coro" };
     private static readonly string[] GuardianIntroductions = {
@@ -1759,24 +1759,24 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             bool clampsWitnessLine = ReadWitnessProgress(checkpointTestPrefix, 1) == 0;
             ClearWitnessProgress(checkpointTestPrefix);
             bool clearsWitnessLines = ReadWitnessProgress(checkpointTestPrefix, 1) == 0 && ReadWitnessProgress(checkpointTestPrefix, 2) == 0;
-            bool secretStartsHidden = !IsWorldSecretRevealed(checkpointTestPrefix, 1, 0);
-            MarkWorldSecretRevealed(checkpointTestPrefix, 1, 0);
-            bool secretSurvivesRoomRebuild = IsWorldSecretRevealed(checkpointTestPrefix, 1, 0) &&
-                !ShouldBuildWorldSecret(false, IsWorldSecretRevealed(checkpointTestPrefix, 1, 0));
-            bool smokeCanRebuildSecret = ShouldBuildWorldSecret(true, IsWorldSecretRevealed(checkpointTestPrefix, 1, 0));
-            bool secretsAreRoomSpecific = !IsWorldSecretRevealed(checkpointTestPrefix, 2, 0);
+            bool secretStartsHidden = !IsWorldSecretRevealed(checkpointTestPrefix, 1, 1);
+            MarkWorldSecretRevealed(checkpointTestPrefix, 1, 1);
+            bool secretSurvivesRoomRebuild = IsWorldSecretRevealed(checkpointTestPrefix, 1, 1) &&
+                !ShouldBuildWorldSecret(false, IsWorldSecretRevealed(checkpointTestPrefix, 1, 1));
+            bool smokeCanRebuildSecret = ShouldBuildWorldSecret(true, IsWorldSecretRevealed(checkpointTestPrefix, 1, 1));
+            bool secretsAreRoomSpecific = !IsWorldSecretRevealed(checkpointTestPrefix, 2, 1);
             ClearWorldSecretProgress(checkpointTestPrefix);
-            bool newJourneyClearsSecrets = !IsWorldSecretRevealed(checkpointTestPrefix, 1, 0);
-            bool freshJourneyRevealsUnfoundSecret = ShouldBuildWorldSecret(false, IsWorldSecretRevealed(checkpointTestPrefix, 1, 0));
+            bool newJourneyClearsSecrets = !IsWorldSecretRevealed(checkpointTestPrefix, 1, 1);
+            bool freshJourneyRevealsUnfoundSecret = ShouldBuildWorldSecret(false, IsWorldSecretRevealed(checkpointTestPrefix, 1, 1));
             worldSecretProgressRoundTrip = secretStartsHidden && secretSurvivesRoomRebuild && smokeCanRebuildSecret &&
                 secretsAreRoomSpecific && newJourneyClearsSecrets && freshJourneyRevealsUnfoundSecret;
-            MarkWorldSecretRevealed(checkpointTestPrefix, 1, 0);
-            MarkWorldSecretRevealed(checkpointTestPrefix, 2, 0);
+            MarkWorldSecretRevealed(checkpointTestPrefix, 1, 1);
+            MarkWorldSecretRevealed(checkpointTestPrefix, 2, 1);
             MarkWorldSecretRevealed(checkpointTestPrefix, 2, 2);
             powerEchoProgressRoundTrip = ShouldRestorePowerEcho(checkpointTestPrefix, 0) &&
                 ShouldRestorePowerEcho(checkpointTestPrefix, 1) && ShouldRestorePowerEcho(checkpointTestPrefix, 2) &&
                 !ShouldRestorePowerEcho(checkpointTestPrefix, -1) && !ShouldRestorePowerEcho(checkpointTestPrefix, 3) &&
-                PowerGrantedBySecretAt(1, 0) == 0 && PowerGrantedBySecretAt(2, 0) == 1 &&
+                PowerGrantedBySecretAt(1, 1) == 0 && PowerGrantedBySecretAt(2, 1) == 1 &&
                 PowerGrantedBySecretAt(2, 2) == 2 && PowerGrantedBySecretAt(0, 0) == -1;
             ClearWorldSecretProgress(checkpointTestPrefix);
             powerEchoProgressRoundTrip &= !ShouldRestorePowerEcho(checkpointTestPrefix, 0) &&
@@ -2281,15 +2281,22 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 if (!mapLabels.Add(MapRoomLabel(phase, room))) { SmokeFail("O minimapa repete o nome de uma das nove salas"); yield break; }
         if (mapLabels.Count != PhaseNames.Length * RoomsPerPhase) { SmokeFail("O minimapa não identifica as nove salas"); yield break; }
         Debug.Log("SCADRYK_SMOKE: minimapa diferencia as nove salas");
-        string[] routeMarkers = { " ↑", " ↓", " ↓" };
+        string[] routeMarkers = { " ↑", " ↓ ◇", " ↑ ◇" };
         for (int biome = 0; biome < PhaseNames.Length; biome++)
         {
             if (!MapRoomRouteLabel(biome, 1).EndsWith(routeMarkers[biome], System.StringComparison.Ordinal) ||
                 MapRoomRouteLabel(biome, 0) != MapRoomLabel(biome, 0) ||
-                MapRoomRouteLabel(biome, 2) != MapRoomLabel(biome, 2))
+                MapRoomRouteLabel(biome, 2) != MapRoomLabel(biome, 2) ||
+                (biome > 0 && PowerGrantedBySecretAt(biome, 0) != -1) ||
+                PowerGrantedBySecretAt(biome, 1) != (biome == 1 ? 0 : biome == 2 ? 1 : -1))
             { SmokeFail("O mapa não sinaliza a direção correta do desvio de cada bioma"); yield break; }
         }
-        Debug.Log("SCADRYK_SMOKE: mapa orienta os três desvios sem marcar salas sem rota lateral");
+        Vector2 saltRouteSeal = WorldSecretPosition(Vector2.zero, 1, 1, 0);
+        Vector2 coastRouteSeal = WorldSecretPosition(Vector2.zero, 2, 1, 1);
+        if (Vector2.Distance(saltRouteSeal, new Vector2(0f, -9.3f)) > 0.001f ||
+            Vector2.Distance(coastRouteSeal, new Vector2(0f, 9.3f)) > 0.001f)
+        { SmokeFail("Os selos opcionais não estão posicionados dentro dos desvios que os anunciam"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: mapa orienta os desvios e identifica os dois selos de rota lateral");
         bool[] mapCleared = { true, false, false };
         if (WorldMapRoomStatus(0, 2, 1, 1, mapCleared) != 2 ||
             WorldMapRoomStatus(1, 0, 1, 1, mapCleared) != 2 ||
@@ -2545,16 +2552,20 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 { SmokeFail("A pista do selo da arena final presume Rompante antes de derrotar o guardião"); yield break; }
                 worldSecretHintShown = true;
             }
-            if (room == 3 || room == 6)
+            if (room == 4 || room == 7)
             {
-                int requiredPower = room == 3 ? 0 : 1;
-                if (worldSecret == null || !ActiveRoomHasWalkableRoute(roomCenter, worldSecret.transform.position))
-                { SmokeFail("O selo opcional da sala " + (room + 1) + " não pode ser alcançado pelo caminho livre dos colisores sólidos"); yield break; }
+                int requiredPower = room == 4 ? 0 : 1;
+                Vector2 expectedSealPosition = WorldSecretPosition(roomCenter, phaseIndex, roomIndex, requiredPower);
+                if (worldSecret == null || !player.HasAbility(requiredPower) ||
+                    PowerGrantedBySecretAt(phaseIndex, roomIndex) != requiredPower ||
+                    Vector2.Distance(worldSecret.transform.position, expectedSealPosition) > 0.01f ||
+                    !ActiveRoomHasWalkableRoute(roomCenter, worldSecret.transform.position))
+                { SmokeFail("O selo opcional da sala " + (room + 1) + " não está no desvio alcançável com o poder conquistado"); yield break; }
                 ScadrykAmbientProp sealVisual = worldSecret.GetComponent<ScadrykAmbientProp>();
                 if (sealVisual == null || !sealVisual.RevealsFor(player.transform))
                 { SmokeFail("O selo opcional não vinculou sua revelação ao jogador na sala " + (room + 1)); yield break; }
                 if (!SmokeRevealWorldSecret(requiredPower))
-                { SmokeFail("O selo opcional não exigiu o poder correto ou não concedeu cura na sala " + (room + 1)); yield break; }
+                { SmokeFail("O selo do desvio não exigiu o poder correto ou não concedeu cura na sala " + (room + 1)); yield break; }
             }
             if (room < RoomsPerPhase)
             {
