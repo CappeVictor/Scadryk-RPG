@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum ScadrykCue { Sword, Dash, Pulse, Power, Warning, Impact, Hurt, Portal, Victory, Memory, LaneWarning, VolleyWarning, AreaWarning, SupportWarning, FinalBossWarning, PlayerStrike, PlayerFinisher, PlayerPowerImpact, CoastalCurrent, EchoReleased, FinalVolleyWarning, FinalStarfallWarning, FinalWaveWarning, SaltCrosswind }
+public enum ScadrykCue { Sword, Dash, Pulse, Power, Warning, Impact, Hurt, Portal, Victory, Memory, LaneWarning, VolleyWarning, AreaWarning, SupportWarning, FinalBossWarning, PlayerStrike, PlayerFinisher, PlayerPowerImpact, CoastalCurrent, EchoReleased, FinalVolleyWarning, FinalStarfallWarning, FinalWaveWarning, SaltCrosswind, NimaFarewell }
 
 /// <summary>Original, lightweight synthesized motifs and combat signals; no external audio assets.</summary>
 public sealed class ScadrykAudio : MonoBehaviour
@@ -58,7 +58,7 @@ public sealed class ScadrykAudio : MonoBehaviour
             MakeWarningMotif("Herald remembered volley", new[] { 392f, 294f, 220f }, 0.12f, 0.055f, 0.26f),
             MakeWarningMotif("Herald falling memory", new[] { 196f, 392f, 587f }, 0.16f, 0.045f, 0.24f),
             MakeWarningMotif("Herald void wave", new[] { 110f, 110f, 165f }, 0.17f, 0.075f, 0.28f),
-            MakeCue("Salt grains in the crosswind", 238f, 0.42f, 0.13f)
+            MakeCue("Salt grains in the crosswind", 238f, 0.42f, 0.13f), MakeNimaFarewellCue()
         };
     }
 
@@ -270,6 +270,30 @@ public sealed class ScadrykAudio : MonoBehaviour
             data[i] = tone * envelope * 0.2f;
         }
         AudioClip clip = AudioClip.Create("Liberated echo — rising bell", count, 1, SampleRate, false);
+        clip.SetData(data, 0);
+        return clip;
+    }
+
+    private static AudioClip MakeNimaFarewellCue()
+    {
+        const float noteDuration = 0.24f;
+        const float gap = 0.055f;
+        float[] notes = { 659.25f, 523.25f, 392f };
+        int count = Mathf.CeilToInt(SampleRate * (notes.Length * noteDuration + (notes.Length - 1) * gap));
+        float[] data = new float[count];
+        float step = noteDuration + gap;
+        for (int i = 0; i < count; i++)
+        {
+            float t = i / (float)SampleRate;
+            int note = Mathf.Min(notes.Length - 1, Mathf.FloorToInt(t / step));
+            float noteTime = t - note * step;
+            if (noteTime >= noteDuration) continue;
+            float envelope = Mathf.Sin(Mathf.PI * noteTime / noteDuration) * Mathf.Exp(-noteTime * 2.8f);
+            float tone = Mathf.Sin(2f * Mathf.PI * notes[note] * noteTime) +
+                0.18f * Mathf.Sin(2f * Mathf.PI * notes[note] * 2f * noteTime);
+            data[i] = tone * envelope * 0.16f;
+        }
+        AudioClip clip = AudioClip.Create("Nima — the last crossing", count, 1, SampleRate, false);
         clip.SetData(data, 0);
         return clip;
     }

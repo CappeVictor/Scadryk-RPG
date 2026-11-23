@@ -4,6 +4,8 @@
 
 **Desempenho de combate:** efeitos temporários mantêm referências aos renderizadores após a criação; as rotinas de desvio dos Ecos e de linha de visão usam consultas de componente sem exceção para filtrar atores. São reduções de trabalho repetido na CPU, sem promessa de queda perceptível de RAM ou FPS; o ganho precisa de profiling em gameplay.
 
+**Áudio do encerramento:** Nima tem um motivo original descendente de três notas no instante em que entra no portal, separado do motivo ascendente dos Selos. A atribuição do cue é coberta pelo smoke; mixagem e audibilidade continuam sem avaliação no jogo.
+
 **Leitura do desfecho:** a vitória mostra Nima atravessando antes de Nara: ela se aproxima do portal, diminui e desaparece durante a entrada. O texto final mede as quebras de linha e reduz o corpo da mensagem se a janela não comportar a fonte ampliada; abaixo de 400 px, os três botões ficam compactos. O smoke verifica temporização e geometria em 400×360, 700×600 e 1280×720; inspeção visual e leitura real ainda pendentes.
 
 **Ritmo do encerramento (22/11/2026):** após a lembrança do terceiro guardião, a pausa modal agora precisa ser encerrada antes que a progressão continue. Se o selo da costa ainda estiver presente, o Arauto espera 12 segundos de tempo ativo para a pessoa alcançar e libertar a melhoria opcional; a contagem para durante menu e leitura. Carregar ou morrer reabre a lembrança e agenda um único surgimento do Arauto, evitando duplicação de corrotinas. O Unity compilou a mudança em batch; a oportunidade real e o ritmo ainda aguardam a build e avaliação humana.

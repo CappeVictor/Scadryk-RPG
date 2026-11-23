@@ -1489,6 +1489,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         nimaRenderer.sprite = witnessSprite != null ? witnessSprite : CircleSprite;
         nimaRenderer.color = WitnessTintForPhase(2);
         nimaRenderer.sortingOrder = 16;
+        if (!smokeRun) ScadrykAudio.Play(ScadrykCue.NimaFarewell);
         float elapsed = 0f;
         const float duration = 0.82f;
         while (elapsed < duration)
@@ -2213,6 +2214,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             !audio.HasCue(ScadrykCue.EchoReleased) || !audio.HasCue(ScadrykCue.PlayerStrike) || !audio.HasCue(ScadrykCue.PlayerFinisher) ||
             !audio.HasCue(ScadrykCue.PlayerPowerImpact) || !audio.HasCue(ScadrykCue.CoastalCurrent) ||
             !audio.HasCue(ScadrykCue.SaltCrosswind) || audio.CueClipName(ScadrykCue.SaltCrosswind) != "Salt grains in the crosswind" ||
+            !audio.HasCue(ScadrykCue.NimaFarewell) || audio.CueClipName(ScadrykCue.NimaFarewell) != "Nima — the last crossing" ||
+            ScadrykCue.NimaFarewell == ScadrykCue.EchoReleased ||
             ScadrykCue.SaltCrosswind == ScadrykCue.CoastalCurrent || ScadrykCue.PlayerPowerImpact == ScadrykCue.Impact ||
             ScadrykCue.PlayerPowerImpact == ScadrykCue.Power || ScadrykCue.PlayerPowerImpact == ScadrykCue.PlayerStrike ||
             ScadrykCue.PlayerStrike == ScadrykCue.Impact || ScadrykCue.PlayerStrike == ScadrykCue.Sword ||
