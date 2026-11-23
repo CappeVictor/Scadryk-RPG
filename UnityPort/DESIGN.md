@@ -4,6 +4,8 @@
 
 **Desempenho de combate:** efeitos temporários mantêm referências aos renderizadores após a criação; as rotinas de desvio dos Ecos e de linha de visão usam consultas de componente sem exceção para filtrar atores. São reduções de trabalho repetido na CPU, sem promessa de queda perceptível de RAM ou FPS; o ganho precisa de profiling em gameplay.
 
+**Memória das texturas:** as artes de `Resources/ScadrykArt` não usam leitura de pixels pela CPU. O importador desativa a cópia CPU-readable e o validador de recursos protege a configuração; o total economizado depende das dimensões/import settings finais e ainda não foi medido por profiler.
+
 **Áudio do encerramento:** Nima tem um motivo original descendente de três notas no instante em que entra no portal, separado do motivo ascendente dos Selos. A atribuição do cue é coberta pelo smoke; mixagem e audibilidade continuam sem avaliação no jogo.
 
 **Leitura do desfecho:** a vitória mostra Nima atravessando antes de Nara: ela se aproxima do portal, diminui e desaparece durante a entrada. O texto final mede as quebras de linha e reduz o corpo da mensagem se a janela não comportar a fonte ampliada; abaixo de 400 px, os três botões ficam compactos. O smoke verifica temporização e geometria em 400×360, 700×600 e 1280×720; inspeção visual e leitura real ainda pendentes.

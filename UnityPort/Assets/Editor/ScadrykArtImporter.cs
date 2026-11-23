@@ -2,7 +2,7 @@
 using UnityEditor;
 using UnityEngine;
 
-/// <summary>Prepares Scadryk source art so runtime can slice its sprite sheets safely.</summary>
+/// <summary>Prepares Scadryk source art for GPU-only runtime sprite slicing.</summary>
 public sealed class ScadrykArtImporter : AssetPostprocessor
 {
     private void OnPreprocessTexture()
@@ -10,7 +10,9 @@ public sealed class ScadrykArtImporter : AssetPostprocessor
         if (!assetPath.Contains("/Resources/ScadrykArt/")) return;
         var importer = (TextureImporter)assetImporter;
         importer.textureType = TextureImporterType.Default;
-        importer.isReadable = true;
+        // Runtime uses Sprite.Create/GUI.DrawTexture only; no code reads texture pixels on the CPU.
+        // Discard the CPU-side copy after import to lower player memory use.
+        importer.isReadable = false;
         importer.filterMode = FilterMode.Bilinear;
         importer.wrapMode = TextureWrapMode.Clamp;
         importer.textureCompression = TextureImporterCompression.Compressed;

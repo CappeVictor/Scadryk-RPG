@@ -43,4 +43,18 @@ if ($missing.Count -gt 0) {
     throw "Missing Unity Resources assets:`n$($missing -join "`n")"
 }
 
-Write-Host "Validated $($resourceNames.Count) Unity resource textures referenced by Assets/Scripts."
+$cpuReadable = @(
+    foreach ($name in ($resourceNames | Sort-Object)) {
+        $metaPath = Join-Path $artRoot ($name + '.png.meta')
+        if (-not (Test-Path -LiteralPath $metaPath -PathType Leaf)) {
+            $metaPath
+            continue
+        }
+        if (Select-String -LiteralPath $metaPath -Pattern '^  isReadable: 1\s*$' -Quiet) { $metaPath }
+    }
+)
+if ($cpuReadable.Count -gt 0) {
+    throw "Unity art textures must not keep a CPU-readable copy; set isReadable to 0:`n$($cpuReadable -join "`n")"
+}
+
+Write-Host "Validated $($resourceNames.Count) referenced Unity textures and their GPU-only import settings."
