@@ -87,6 +87,10 @@ public static class ScadrykEffects
     private static Sprite PlayerSlashSprite => LoadEffectSprite("AttackPlayerSlash", 600f, ref playerSlashSprite);
     private static Sprite PlayerPulseSprite => LoadEffectSprite("AttackPlayerPulse", 600f, ref playerPulseSprite);
 
+    internal static bool RequiredCombatArtIsLoaded => RootThrustSprite != null && SaltShardSprite != null &&
+        BellPulseSprite != null && PlayerSlashSprite != null && PlayerPulseSprite != null &&
+        VerdantCrescentSprite != null && SaltburstSprite != null && TidebreakerSprite != null && VoidburstSprite != null;
+
     private static void RegisterSecondary(GameObject effect)
     {
         ScadrykTimedVisual visual = effect.GetComponent<ScadrykTimedVisual>();

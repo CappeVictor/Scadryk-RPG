@@ -1620,6 +1620,14 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         return result;
     }
 
+    private static bool HasAllSprites(Sprite[] sprites, int expectedCount)
+    {
+        if (sprites == null || sprites.Length != expectedCount) return false;
+        for (int i = 0; i < sprites.Length; i++)
+            if (sprites[i] == null) return false;
+        return true;
+    }
+
     private static Sprite LoadSingleSprite(string name, float pixelsPerUnit)
     {
         Texture2D texture = Resources.Load<Texture2D>("ScadrykArt/" + name);
@@ -2326,6 +2334,16 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Debug.Log("SCADRYK_SMOKE: redução de tremor interrompe sacudida ativa");
         if (titleBackdropTexture == null) { SmokeFail("A arte de abertura ScadrykTitleBackdrop não foi carregada"); yield break; }
         Debug.Log("SCADRYK_SMOKE: arte original da tela inicial carregada");
+        bool worldArtLoaded = HasAllSprites(environmentSprites, 16) && HasAllSprites(phaseGroundSprites, 3) &&
+            HasAllSprites(phaseEnemySprites, 3) && fallenWillowLogSprite != null && portalSprite != null && witnessSprite != null;
+        bool enemyArtLoaded = HasAllSprites(LoadSheetRow("Enemies", 0, false), 4) &&
+            HasAllSprites(LoadSheetRow("Enemies", 1, false), 4) && HasAllSprites(LoadSheetRow("Enemies", 2, false), 4) &&
+            HasAllSprites(LoadSheetRow("Enemies", 3, false), 4) && HasAllSprites(LoadSheetRow("Listener", 0, true), 16) &&
+            HasAllSprites(LoadSheetRow("Bosses", 0, false), 4) && HasAllSprites(LoadSheetRow("BossesMidgame", 1, false), 4) &&
+            HasAllSprites(LoadSheetRow("BossesFinalWave", 2, false), 4) && HasAllSprites(LoadSheetRow("BossesEndgame", 0, false), 4);
+        if (!worldArtLoaded || !enemyArtLoaded || !ScadrykEffects.RequiredCombatArtIsLoaded)
+        { SmokeFail("Uma arte obrigatória de bioma, personagem, guardião ou combate não carregou"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: cenários, personagens, guardiões e efeitos de combate obrigatórios carregados");
         Sprite[] firstEnemyRow = LoadSheetRow("Enemies", 0, false);
         Sprite[] repeatedEnemyRow = LoadSheetRow("Enemies", 0, false);
         Sprite[] otherEnemyRow = LoadSheetRow("Enemies", 1, false);
