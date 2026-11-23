@@ -232,7 +232,7 @@ public static class ScadrykEffects
     {
         Vector2 delta = end - start;
         if (delta.sqrMagnitude < 0.01f) return null;
-        GameObject go = Create((start + end) * 0.5f, color, delta.magnitude, DangerWarningWidth(thickness), lifetime, true, true);
+        GameObject go = Create((start + end) * 0.5f, color, delta.magnitude, thickness, lifetime, true, true);
         go.transform.right = delta.normalized;
         go.name = "Enemy attack warning";
         return go;
@@ -252,7 +252,7 @@ public static class ScadrykEffects
 
     internal static GameObject CreateGroundLaneFallback(Vector2 center, Vector2 direction, float length, float width, Color color, float lifetime)
     {
-        GameObject fallback = Create(center, color, length, DangerWarningWidth(width), lifetime, true, true);
+        GameObject fallback = Create(center, color, length, width, lifetime, true, true);
         fallback.transform.right = direction;
         fallback.name = "Enemy attack warning";
         return fallback;
@@ -300,8 +300,8 @@ public static class ScadrykEffects
         line.useWorldSpace = false;
         line.loop = true;
         line.positionCount = 40;
-        line.startWidth = DangerWarningWidth(0.075f);
-        line.endWidth = DangerWarningWidth(0.075f);
+        line.startWidth = 0.075f;
+        line.endWidth = 0.075f;
         line.startColor = color;
         line.endColor = color;
         line.sortingOrder = 22;
@@ -360,7 +360,7 @@ public static class ScadrykEffects
         renderer.sortingOrder = 20;
         ScadrykTimedVisual timedVisual = go.AddComponent<ScadrykTimedVisual>();
         timedVisual.Initialize(life, color, false);
-        if (dangerWarning) timedVisual.MarkDangerWarning(color);
+        if (dangerWarning) timedVisual.MarkDangerWarning(color, true);
         if (!protectFromBudget) RegisterSecondary(go);
         return go;
     }

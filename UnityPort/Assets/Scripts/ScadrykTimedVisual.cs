@@ -8,6 +8,8 @@ public sealed class ScadrykTimedVisual : MonoBehaviour
     private Color initialColor;
     private bool expanding;
     private bool dangerWarning;
+    private bool widenDangerWarning;
+    private float baseDangerWarningLineStartWidth, baseDangerWarningLineEndWidth;
     private float spinDegreesPerSecond;
     private Vector3 initialScale;
     internal bool IsDangerWarning => dangerWarning;
@@ -29,10 +31,16 @@ public sealed class ScadrykTimedVisual : MonoBehaviour
         initialScale = transform.localScale;
     }
     public void SetSpin(float degreesPerSecond) => spinDegreesPerSecond = degreesPerSecond;
-    internal void MarkDangerWarning(Color baseColor)
+    internal void MarkDangerWarning(Color baseColor, bool widenShape = false)
     {
         dangerWarning = true;
+        widenDangerWarning = widenShape || lineRenderer != null;
         initialColor = baseColor;
+        if (lineRenderer != null)
+        {
+            baseDangerWarningLineStartWidth = lineRenderer.startWidth;
+            baseDangerWarningLineEndWidth = lineRenderer.endWidth;
+        }
         Color warningColor = ScadrykEffects.DangerWarningColor(initialColor);
         if (spriteRenderer != null) spriteRenderer.color = warningColor;
         if (lineRenderer != null)
@@ -40,6 +48,7 @@ public sealed class ScadrykTimedVisual : MonoBehaviour
             lineRenderer.startColor = warningColor;
             lineRenderer.endColor = warningColor;
         }
+        RefreshDangerWarningGeometry();
     }
 
     internal void MarkDangerWarning()
@@ -58,6 +67,20 @@ public sealed class ScadrykTimedVisual : MonoBehaviour
         {
             lineRenderer.startColor = warningColor;
             lineRenderer.endColor = warningColor;
+        }
+        RefreshDangerWarningGeometry();
+    }
+
+    private void RefreshDangerWarningGeometry()
+    {
+        if (!widenDangerWarning) return;
+        float widthScale = ScadrykSettings.HighContrastWarnings ? 1.4f : 1f;
+        if (spriteRenderer != null)
+            transform.localScale = new Vector3(initialScale.x, initialScale.y * widthScale, initialScale.z);
+        if (lineRenderer != null)
+        {
+            lineRenderer.startWidth = baseDangerWarningLineStartWidth * widthScale;
+            lineRenderer.endWidth = baseDangerWarningLineEndWidth * widthScale;
         }
     }
 

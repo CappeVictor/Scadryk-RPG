@@ -2780,10 +2780,13 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         try
         {
             ScadrykSettings.EffectsVolume = 0f;
-            ScadrykSettings.HighContrastWarnings = true;
+            ScadrykSettings.HighContrastWarnings = false;
             ScadrykSettings.ReduceFlash = true;
             mutedWarningProbe = ScadrykEffects.TelegraphLine(Vector2.zero, Vector2.right * 3f, new Color(0.2f, 0.4f, 0.8f, 0.6f), 0.1f, 1f);
             SpriteRenderer warningRenderer = mutedWarningProbe != null ? mutedWarningProbe.GetComponent<SpriteRenderer>() : null;
+            ScadrykTimedVisual lineWarningVisual = mutedWarningProbe != null ? mutedWarningProbe.GetComponent<ScadrykTimedVisual>() : null;
+            ScadrykSettings.HighContrastWarnings = true;
+            if (lineWarningVisual != null) lineWarningVisual.RefreshDangerWarningColor(1f);
             warningVisibleWithoutSound = warningRenderer != null && warningRenderer.sprite != null &&
                 warningRenderer.color.a >= 0.98f && Mathf.Abs(mutedWarningProbe.transform.localScale.y - 0.14f) < 0.001f;
             ScadrykSettings.HighContrastWarnings = false;
@@ -2809,7 +2812,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         }
         if (!warningVisibleWithoutSound || !spriteWarningRemainsLegible)
         { SmokeFail("Um aviso de perigo visual sumiu, piscou ou ficou fraco com áudio silenciado, alto contraste e redução de flashes"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: avisos em linha persistem sem áudio, e um aviso sprite ativo se adapta ao alto contraste com flashes reduzidos; preferências restauradas");
+        Debug.Log("SCADRYK_SMOKE: avisos lineares e sprite ativos ampliam/clareiam ao mudar alto contraste, mesmo sem áudio e com flashes reduzidos; preferências restauradas");
         Color reducedFlashColor = ScadrykEffects.ApplyReducedFlash(Color.white, true);
         Color normalFlashColor = ScadrykEffects.ApplyReducedFlash(Color.white, false);
         if (reducedFlashColor.a >= normalFlashColor.a || ScadrykEffects.FlashAlphaScale(true) >= 1f || ScadrykEffects.FlashDiameterScale(true) >= 1f ||

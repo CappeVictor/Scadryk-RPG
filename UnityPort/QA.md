@@ -1,6 +1,6 @@
 # Scadryk — plano e registro de qualidade
 
-- **Alto contraste em avisos já ativos (23/11/2026):** ao mudar a opção no menu de pausa, telegráficos existentes agora reaplicam o tom de contraste em cada atualização visual, em vez de reter a cor capturada ao nascer. O smoke acrescenta um caso que cria um aviso sprite sem contraste, altera a preferência e confirma a cor adaptada; ele não foi executado. Unity 6000.6.9f1 gerou a build Windows sem erros ou avisos C#; a leitura visual em jogo permanece pendente.
+- **Alto contraste em avisos já ativos (23/11/2026):** ao mudar a opção no menu de pausa, avisos lineares ativos reaplicam cor e largura, enquanto telegráficos em sprite reaplicam o tom sem deformar a arte. O smoke acrescenta casos para linha e sprite criados sem contraste, depois atualizados com a opção ligada; ele não foi executado. Unity 6000.6.9f1 gerou a build Windows sem erros ou avisos C#; a leitura visual em jogo permanece pendente.
 
 - **Checkpoint ao suspender ou perder foco (23/11/2026):** além de salvar ao sair, a campanha agora grava a sala atual quando o app perde foco durante jogo ativo ou recebe suspensão do sistema; telas de título, abertura, vitória e smoke continuam excluídas. O smoke confere agora os gates dos callbacks de foco e suspensão, além das condições gerais de saída; o smoke e a persistência acionada pelos callbacks não foram executados. Unity 6000.6.9f1 gerou a build Windows com sucesso e sem erros ou avisos C#; fechar/reabrir e suspender ainda aguardam validação manual.
 
