@@ -2728,10 +2728,12 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (!windowedSizesFit) { SmokeFail("A janela não cabe no monitor ou distorce a proporção da imagem"); yield break; }
         Debug.Log("SCADRYK_SMOKE: janela ajustada mantém a proporção em monitor 1080p, notebook e tela menor");
         if (!OverlayLayoutFits(400f, 360f) || !OverlayLayoutFits(1280f, 520f) || !OverlayLayoutFits(1280f, 720f) ||
+            !VictoryOverlayLayoutFits(400f, 360f, 112f) || !VictoryOverlayLayoutFits(700f, 600f, 62f) ||
+            !VictoryOverlayLayoutFits(1280f, 720f, 62f) ||
             !PauseMapOverlayLayoutFits(400f, 360f) || !PauseMapOverlayLayoutFits(1280f, 520f) ||
             !PauseMapOverlayLayoutFits(1280f, 720f))
-        { SmokeFail("O menu inicial ou o menu de pausa com acesso ao mapa escapam de uma janela compacta"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: menu inicial e pausa cabem em 400×360, 1280×520 e 1280×720");
+        { SmokeFail("Um menu ou o desfecho de vitória não cabem com texto ampliado em janela compacta"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: menus e desfecho cabem em 400×360, 700×600 e 1280×720 com texto ampliado");
         if (TitleMenuMaximumSelection(false) != 3 || TitleMenuOptionsSelection(false) != 1 || TitleMenuJournalSelection(false) != 2 ||
             TitleMenuQuitSelection(false) != 3 || TitleMenuMaximumSelection(true) != 4 || TitleMenuOptionsSelection(true) != 2 ||
             TitleMenuJournalSelection(true) != 3 || TitleMenuQuitSelection(true) != 4)

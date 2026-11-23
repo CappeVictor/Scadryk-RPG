@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **Layout do encerramento em telas compactas (23/11/2026):** a mensagem final agora mede a altura real com quebra de linha e reduz apenas a fonte do desfecho se o espaço entre título, botões e rodapé não comportar o texto ampliado. A tela de vitória usa três botões compactos abaixo de 400 px de altura; o smoke exige espaço para texto de 112 px em 400×360 e confere janelas 700×600/1280×720. Unity 6000.6.9f1 compilou em batch e `Tools/build-windows.ps1` gerou `Build/ScadrykDemo.exe` com sucesso. Não iniciei o jogo nem executei o smoke.
+
 - **Desfecho de Nima (23/11/2026):** a mensagem final agora fecha o arco iniciado no primeiro sino: Nima atravessa o portal levando seu nome, enquanto Nara escolhe lembrar e desfaz o aprisionamento. O smoke verifica os quatro elementos na mensagem da vitória; a avaliação emocional e de leitura em telas estreitas ainda depende do jogo/jogadores. Unity 6000.6.9f1 compilou em batch e `Tools/build-windows.ps1` gerou `Build/ScadrykDemo.exe` com sucesso. Não iniciei o jogo nem executei o smoke.
 
 - **Consultas de colisão no combate (23/11/2026):** a busca por obstáculos dos Ecos e a linha de visão agora usam `TryGetComponent` para ignorar atores atingidos pelas consultas físicas, sem as chamadas `GetComponent` repetidas em cada colisão. Mantém as mesmas regras de bloqueio. Unity 6000.6.9f1 compilou em batch e `Tools/build-windows.ps1` gerou `Build/ScadrykDemo.exe` com sucesso; não iniciei o jogo nem rodei o smoke. O ganho em CPU ainda requer profiling em gameplay.

@@ -588,6 +588,37 @@ public sealed partial class ScadrykGameDirector
         showTitle ? "Nara, a Ouvinte, segue os Ecos até a origem do silêncio." :
         "A jornada pode esperar por você.";
 
+    internal static float VictoryOverlayTextSpace(float screenHeight)
+    {
+        bool compact = screenHeight < 520f;
+        bool denseVictoryMenu = screenHeight < 400f;
+        float top = compact ? 18f : screenHeight * 0.29f;
+        float messageTop = top + (compact ? 42f : 48f);
+        float footerTop = screenHeight - (compact ? 42f : 58f);
+        float buttonHeight = compact ? denseVictoryMenu ? 30f : 40f : 44f;
+        float buttonStep = compact ? denseVictoryMenu ? 32f : 48f : 54f;
+        float footerGap = compact ? 8f : 12f;
+        return Mathf.Max(0f, footerTop - messageTop - footerGap - buttonStep * 2f - buttonHeight);
+    }
+
+    internal static bool VictoryOverlayLayoutFits(float screenWidth, float screenHeight, float preferredTextHeight)
+    {
+        bool compact = screenHeight < 520f;
+        bool denseVictoryMenu = screenHeight < 400f;
+        float top = compact ? 18f : screenHeight * 0.29f;
+        float messageTop = top + (compact ? 42f : 48f);
+        float footerTop = screenHeight - (compact ? 42f : 58f);
+        float footerHeight = compact ? 28f : 35f;
+        float buttonHeight = compact ? denseVictoryMenu ? 30f : 40f : 44f;
+        float buttonStep = compact ? denseVictoryMenu ? 32f : 48f : 54f;
+        float defaultButtonY = top + (compact ? denseVictoryMenu ? 130f : 136f : 132f);
+        float footerGap = compact ? 8f : 12f;
+        float messageHeight = Mathf.Max(compact ? 86f : 62f, preferredTextHeight);
+        float buttonY = Mathf.Max(defaultButtonY, messageTop + messageHeight + footerGap);
+        return screenWidth >= 64f && preferredTextHeight <= VictoryOverlayTextSpace(screenHeight) &&
+            buttonY + buttonStep * 2f + buttonHeight <= footerTop && footerTop + footerHeight <= screenHeight;
+    }
+
     internal static string CheckpointSummary(int phase, int room, bool guardianDefeated = false, bool finalBossDefeated = false)
     {
         phase = Mathf.Clamp(phase, 0, PhaseNames.Length - 1);
@@ -621,28 +652,43 @@ public sealed partial class ScadrykGameDirector
         bool pauseMapMenu = !showTitle && !victory && !confirmNewJourney;
         bool ultraCompactTitleMenu = showTitle && !victory && !confirmNewJourney && Screen.height < 400f;
         bool densePauseMenu = pauseMapMenu && Screen.height < 570f;
+        bool denseVictoryMenu = victory && Screen.height < 400f;
         float top = compact ? 18f : Screen.height * 0.29f;
         float titleWidth = Mathf.Min(600f, Screen.width - 32f);
         float messageWidth = Mathf.Min(680f, Screen.width - 32f);
         float buttonWidth = Mathf.Min(230f, Screen.width - 32f);
         float titleHeight = compact ? 42f : 52f;
         float messageTop = top + (compact ? 42f : 48f);
-        float messageHeight = compact ? (pauseMapMenu ? 68f : ultraCompactTitleMenu ? 66f : 86f) : 62f;
-        bool compactTitleMenu = showTitle && !victory && !confirmNewJourney;
-        bool compressedTitleMenu = compactTitleMenu && Screen.height < 600f;
-        bool denseTitleMenu = compressedTitleMenu;
-        float buttonY = top + (compact ? (pauseMapMenu ? 118f : denseTitleMenu ? 130f : 136f) : densePauseMenu || denseTitleMenu ? 120f : 132f);
-        float buttonHeight = compact ? (pauseMapMenu ? densePauseMenu ? 30f : 42f : denseTitleMenu ? 30f : 40f) : densePauseMenu || denseTitleMenu ? 30f : 44f;
-        float buttonStep = compact ? (pauseMapMenu ? densePauseMenu ? 32f : 44f : denseTitleMenu ? 32f : 48f) : densePauseMenu || denseTitleMenu ? 32f : 54f;
-        float footerWidth = Mathf.Min(600f, Screen.width - 32f), footerHeight = compact ? 28f : 35f;
-        float footerTop = Screen.height - (compact ? 42f : 58f);
-        GUI.Label(new Rect(center - titleWidth * 0.5f, top, titleWidth, titleHeight), heading, centeredTitleStyle);
         string message = showTitle && !victory && !confirmNewJourney &&
             TryLoadCheckpoint("Scadryk.", out int savedPhase, out int savedRoom)
                 ? CheckpointSummary(savedPhase, savedRoom,
                     HasGuardianDefeatProgress("Scadryk.", savedPhase), HasFinalBossDefeatProgress("Scadryk."))
                 : OverlayMessage(confirmNewJourney, victory, showTitle);
+        float messageHeight = compact ? (pauseMapMenu ? 68f : ultraCompactTitleMenu ? 66f : 86f) : 62f;
+        bool compactTitleMenu = showTitle && !victory && !confirmNewJourney;
+        bool compressedTitleMenu = compactTitleMenu && Screen.height < 600f;
+        bool denseTitleMenu = compressedTitleMenu;
+        float buttonY = top + (compact ? (pauseMapMenu ? 118f : denseTitleMenu || denseVictoryMenu ? 130f : 136f) : densePauseMenu || denseTitleMenu ? 120f : 132f);
+        float buttonHeight = compact ? (pauseMapMenu ? densePauseMenu ? 30f : 42f : denseTitleMenu || denseVictoryMenu ? 30f : 40f) : densePauseMenu || denseTitleMenu ? 30f : 44f;
+        float buttonStep = compact ? (pauseMapMenu ? densePauseMenu ? 32f : 44f : denseTitleMenu || denseVictoryMenu ? 32f : 48f) : densePauseMenu || denseTitleMenu ? 32f : 54f;
+        float footerWidth = Mathf.Min(600f, Screen.width - 32f), footerHeight = compact ? 28f : 35f;
+        float footerTop = Screen.height - (compact ? 42f : 58f);
+        int originalMessageFontSize = centeredBodyStyle.fontSize;
+        if (victory)
+        {
+            float maxTextHeight = VictoryOverlayTextSpace(Screen.height);
+            float preferredTextHeight = centeredBodyStyle.CalcHeight(new GUIContent(message), messageWidth);
+            while (preferredTextHeight > maxTextHeight && centeredBodyStyle.fontSize > 12)
+            {
+                centeredBodyStyle.fontSize--;
+                preferredTextHeight = centeredBodyStyle.CalcHeight(new GUIContent(message), messageWidth);
+            }
+            messageHeight = Mathf.Min(maxTextHeight, Mathf.Max(messageHeight, preferredTextHeight));
+            buttonY = Mathf.Max(buttonY, messageTop + messageHeight + (compact ? 8f : 12f));
+        }
+        GUI.Label(new Rect(center - titleWidth * 0.5f, top, titleWidth, titleHeight), heading, centeredTitleStyle);
         GUI.Label(new Rect(center - messageWidth * 0.5f, messageTop, messageWidth, messageHeight), message, centeredBodyStyle);
+        if (victory) centeredBodyStyle.fontSize = originalMessageFontSize;
         if (confirmNewJourney)
         {
             if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY, buttonWidth, buttonHeight), "Apagar e começar", 0)) StartNewGame();
