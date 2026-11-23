@@ -9,7 +9,8 @@ Use este roteiro em uma build identificada por commit. Não ensine objetivos, se
 - Familiaridade com jogos de ação top-down/ARPG: `____________________`
 - Build/commit: `____________________`
 - Data, `session_id` do CSV/log e dispositivo de entrada: `____________________`
-- Se usou controle: modelo, conexão (USB/Bluetooth) e se os analógicos ficaram parados sem mover Nara, mirar ou navegar menus: `____________________`
+- Se usou controle: modelo, conexão (USB/Bluetooth), zona morta exibida nas opções (`8–40%`) e se cada analógico ficou parado sem mover Nara, mirar ou navegar menus: `____________________`
+- Controle: drift percebido, mira/movimento imprecisos ou resposta atrasada; anote em qual analógico e em que situação: `____________________`
 - Observador: `____________________`
 
 Convide ao menos duas pessoas por nível de experiência (seis sessões) antes de comparar padrões. Cada pessoa deve começar sem save anterior e jogar até concluir ou decidir parar. Não combine métricas de builds diferentes como se fossem a mesma versão.
@@ -37,7 +38,7 @@ Convide ao menos duas pessoas por nível de experiência (seis sessões) antes d
 - Depois do terceiro guardião, percebeu tempo suficiente para explorar o selo final antes do Arauto? `____________________`
 - Save/retomada e opções de acessibilidade usadas: `____________________`
 
-Se houver controle, antes da partida observe alguns segundos com os analógicos em repouso e registre qualquer movimento, mira ou navegação involuntária; anote modelo e conexão para reproduzir o caso. Durante cada sessão, peça à pessoa para abrir uma lembrança primeiro com teclado/mouse e depois, se houver controle disponível, trocar de dispositivo com o painel aberto. Observe se os comandos mostrados acompanham a troca, se a pausa permite ler sem pressão e se o botão usado para continuar não pula a fala seguinte. Registre se o cue sonoro da lembrança se distingue da trilha e se o toque ascendente de um selo é percebido sem se confundir com a lembrança que vem em seguida.
+Se houver controle, antes da partida observe alguns segundos com os dois analógicos em repouso e registre qualquer movimento, mira ou navegação involuntária; anote o percentual atual, modelo e conexão para reproduzir o caso. Não altere a zona morta antes de registrar essa observação. Se aparecer drift ou a mira/movimento parecerem lentos, peça à pessoa para ajustar a zona morta nas opções e anote os percentuais antes e depois, além do efeito percebido. Durante cada sessão, peça à pessoa para abrir uma lembrança primeiro com teclado/mouse e depois, se houver controle disponível, trocar de dispositivo com o painel aberto. Observe se os comandos mostrados acompanham a troca, se a pausa permite ler sem pressão e se o botão usado para continuar não pula a fala seguinte. Registre se o cue sonoro da lembrança se distingue da trilha e se o toque ascendente de um selo é percebido sem se confundir com a lembrança que vem em seguida.
 
 ## Registro por sala
 
