@@ -5,11 +5,16 @@ using UnityEngine;
 public sealed class ScadrykEnemyProjectile : MonoBehaviour
 {
     private const float ColliderRadius = 0.45f;
+    internal const int ProjectilePoolCapacity = 24;
+    private static readonly System.Collections.Generic.List<ScadrykEnemyProjectile> Pool =
+        new System.Collections.Generic.List<ScadrykEnemyProjectile>(ProjectilePoolCapacity);
     internal const float ForestHitSlowDuration = 0.42f;
     internal const float SaltHitSlowDuration = 0.62f;
     internal const float CoastalHitKnockbackSpeed = 2.4f;
     internal const float CoastalHitKnockbackDuration = 0.12f;
     private Rigidbody2D body;
+    private CircleCollider2D hitbox;
+    private SpriteRenderer spriteRenderer;
     private float damage;
     private float expiresAt;
     private float travelDistanceLimit;
@@ -25,27 +30,53 @@ public sealed class ScadrykEnemyProjectile : MonoBehaviour
     private Vector2 BodyVelocity { set => body.velocity = value; }
 #endif
 
-    public static void Launch(Vector2 position, Vector2 direction, float speed, float damage, Sprite projectileSprite = null, Color? tint = null, float size = 0.34f, string projectileName = "Salt crystal shard", float travelDistance = -1f, int hitEffectBiome = -1, Transform roomRoot = null)
+    public static ScadrykEnemyProjectile Launch(Vector2 position, Vector2 direction, float speed, float damage, Sprite projectileSprite = null, Color? tint = null, float size = 0.34f, string projectileName = "Salt crystal shard", float travelDistance = -1f, int hitEffectBiome = -1, Transform roomRoot = null)
     {
-        var shard = new GameObject(projectileName);
-        if (roomRoot != null)
-            shard.transform.SetParent(roomRoot, true);
+        ScadrykEnemyProjectile projectile = Acquire(roomRoot, projectileName);
+        GameObject shard = projectile.gameObject;
         shard.transform.position = position;
         shard.transform.localScale = Vector3.one * size;
-        var renderer = shard.AddComponent<SpriteRenderer>();
-        renderer.sprite = projectileSprite != null ? projectileSprite : ScadrykEffects.SaltShardSprite ?? ScadrykEffects.WhiteSprite;
-        renderer.color = tint ?? Color.white;
-        renderer.sortingOrder = 8;
+        projectile.spriteRenderer.sprite = projectileSprite != null ? projectileSprite : ScadrykEffects.SaltShardSprite ?? ScadrykEffects.WhiteSprite;
+        projectile.spriteRenderer.color = tint ?? Color.white;
+        projectile.spriteRenderer.sortingOrder = 8;
         shard.transform.up = direction;
-        var collider = shard.AddComponent<CircleCollider2D>();
-        collider.radius = ColliderRadius;
-        collider.isTrigger = true;
-        var body = shard.AddComponent<Rigidbody2D>();
-        body.gravityScale = 0f;
-        body.bodyType = RigidbodyType2D.Kinematic;
-        body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
-        var projectile = shard.AddComponent<ScadrykEnemyProjectile>();
+        projectile.hitbox.radius = ColliderRadius;
+        projectile.hitbox.isTrigger = true;
+        projectile.body.gravityScale = 0f;
+        projectile.body.bodyType = RigidbodyType2D.Kinematic;
+        projectile.body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
         projectile.Configure(direction, speed, damage, travelDistance, hitEffectBiome);
+        return projectile;
+    }
+
+    private static ScadrykEnemyProjectile Acquire(Transform roomRoot, string projectileName)
+    {
+        ScadrykEnemyProjectile projectile = null;
+        while (Pool.Count > 0 && projectile == null)
+        {
+            int last = Pool.Count - 1;
+            projectile = Pool[last];
+            Pool.RemoveAt(last);
+        }
+
+        if (projectile == null)
+        {
+            var shard = new GameObject(projectileName);
+            projectile = shard.AddComponent<ScadrykEnemyProjectile>();
+            projectile.body = shard.GetComponent<Rigidbody2D>();
+            projectile.hitbox = shard.GetComponent<CircleCollider2D>();
+            projectile.spriteRenderer = shard.AddComponent<SpriteRenderer>();
+        }
+        else
+        {
+            projectile.transform.SetParent(roomRoot, true);
+            projectile.gameObject.name = projectileName;
+            projectile.gameObject.SetActive(true);
+        }
+
+        if (projectile.transform.parent != roomRoot)
+            projectile.transform.SetParent(roomRoot, true);
+        return projectile;
     }
 
     private void Configure(Vector2 direction, float speed, float hitDamage, float travelDistance, int effectBiome)
@@ -61,7 +92,19 @@ public sealed class ScadrykEnemyProjectile : MonoBehaviour
 
     private void Update()
     {
-        if (Time.time >= expiresAt) Destroy(gameObject);
+        if (Time.time >= expiresAt) ReturnToPool();
+    }
+
+    private void ReturnToPool()
+    {
+        if (!gameObject.activeSelf) return;
+        BodyVelocity = Vector2.zero;
+        if (Pool.Count < ProjectilePoolCapacity)
+        {
+            gameObject.SetActive(false);
+            Pool.Add(this);
+        }
+        else Destroy(gameObject);
     }
 
     private void OnTriggerEnter2D(Collider2D other)
@@ -74,7 +117,7 @@ public sealed class ScadrykEnemyProjectile : MonoBehaviour
             ScadrykEffects.Burst(transform.position, ImpactColor(hitEffectBiome), 0.72f);
         }
         else if (other.isTrigger) return;
-        Destroy(gameObject);
+        ReturnToPool();
     }
 
     internal static Color ImpactColor(int biome)

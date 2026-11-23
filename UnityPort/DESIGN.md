@@ -160,3 +160,5 @@ As referências de outros jogos orientam clareza, descoberta e ritmo. Não repro
 Na primeira sala da jornada, o Caçador aguarda 2,6 s antes de iniciar seu primeiro aviso de golpe, além do tempo de windup visível. Isso dá ao jogador uma janela curta para fechar a abertura, ler a dica de controles e observar a arena. Os demais encontros conservam o escalonamento padrão; ajustar após sessões de jogo, não por estimativa isolada.
 
 **Persistência de opções (23/11/2026):** sliders não forçam gravação síncrona em cada atualização de interface; preferências são agrupadas e descarregadas periodicamente, ao perder foco e ao fechar. O smoke verifica a cadência do flush. Build local passou; teste de interação e smoke continuam pendentes.
+
+**Reuso de projéteis (23/11/2026):** projéteis inimigos e do Arauto reutilizam até 24 instâncias por vez, reduzindo GameObject e componentes criados durante salvas repetidas. Colisões e expiração devolvem instâncias ao pool; a raiz da sala continua responsável pela limpeza quando muda a sala. O smoke verifica reutilização após colisão, mas não foi executado; a economia de CPU/memória ainda precisa ser medida no Profiler.

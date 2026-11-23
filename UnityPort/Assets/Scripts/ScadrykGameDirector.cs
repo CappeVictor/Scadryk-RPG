@@ -3486,21 +3486,22 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             cover.transform.position = wallPosition;
             cover.AddComponent<BoxCollider2D>().size = new Vector2(0.35f, 1f);
             Physics2D.SyncTransforms();
-            ScadrykEnemyProjectile.Launch(origin, Vector2.right, 25f, 0f, size: 0.34f, projectileName: projectileName, travelDistance: 10f, roomRoot: ActiveRoomRoot);
+            ScadrykEnemyProjectile solidProjectile = ScadrykEnemyProjectile.Launch(origin, Vector2.right, 25f, 0f, size: 0.34f, projectileName: projectileName, travelDistance: 10f, roomRoot: ActiveRoomRoot);
             for (int step = 0; step < 12 && FindSmokeProjectile(projectileName) != null; step++) yield return new WaitForFixedUpdate();
             bool solidStopsProjectile = FindSmokeProjectile(projectileName) == null;
 
             cover.GetComponent<BoxCollider2D>().isTrigger = true;
             Physics2D.SyncTransforms();
-            ScadrykEnemyProjectile.Launch(origin, Vector2.right, 25f, 0f, size: 0.34f, projectileName: projectileName, travelDistance: 10f, roomRoot: ActiveRoomRoot);
+            ScadrykEnemyProjectile triggerProjectile = ScadrykEnemyProjectile.Launch(origin, Vector2.right, 25f, 0f, size: 0.34f, projectileName: projectileName, travelDistance: 10f, roomRoot: ActiveRoomRoot);
             for (int step = 0; step < 4; step++) yield return new WaitForFixedUpdate();
             bool triggerAllowsProjectile = FindSmokeProjectile(projectileName) != null;
+            bool impactReusedProjectile = solidProjectile != null && solidProjectile == triggerProjectile;
             ScadrykEnemyProjectile cleanupProbe = FindSmokeProjectile(projectileName);
             ClearRoomProjectiles();
             bool deactivatedImmediately = cleanupProbe != null && !cleanupProbe.gameObject.activeSelf;
             yield return null;
             bool destroyedByCleanup = FindSmokeProjectile(projectileName) == null;
-            smokeProjectileCoverPassed = solidStopsProjectile && triggerAllowsProjectile && deactivatedImmediately && destroyedByCleanup;
+            smokeProjectileCoverPassed = solidStopsProjectile && triggerAllowsProjectile && impactReusedProjectile && deactivatedImmediately && destroyedByCleanup;
         }
         finally
         {
