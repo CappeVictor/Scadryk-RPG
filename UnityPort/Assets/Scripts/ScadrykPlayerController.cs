@@ -51,6 +51,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     internal const float BasicAttackComboWindow = 0.82f;
     internal const float BasicAttackBufferWindow = 0.2f;
     internal const float DashBufferWindow = 0.12f;
+    internal const float DashPostInvulnerabilityGrace = 0.08f;
     internal const float ShockwaveWindup = 0.08f;
     internal const float ShockwaveRecovery = 0.28f;
     internal const float SaltburstAbilityRadius = 4.25f;
@@ -299,6 +300,8 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         bufferedUntil > now && now >= cooldownEndsAt;
     internal static bool DashBufferCanStart(float now, float bufferedUntil, float cooldownEndsAt) =>
         InputBufferCanStart(now, bufferedUntil, cooldownEndsAt);
+    internal static float DashInvulnerabilityUntil(float currentUntil, float dashEndsAt, float graceDuration) =>
+        Mathf.Max(currentUntil, dashEndsAt + Mathf.Max(0f, graceDuration));
 
     private void TryStartBufferedDash()
     {
@@ -381,7 +384,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         dashDirection = moveInput.sqrMagnitude > 0.01f ? moveInput : facing;
         dashEndsAt = Time.time + dashDuration;
         nextDashAt = Time.time + dashCooldown;
-        invulnerableUntil = dashEndsAt + 0.08f;
+        invulnerableUntil = DashInvulnerabilityUntil(invulnerableUntil, dashEndsAt, DashPostInvulnerabilityGrace);
         ScadrykAudio.Play(ScadrykCue.Dash);
         if (animator != null) animator.PlayDash(dashDirection);
         ScadrykEffects.Burst(transform.position, new Color(0.55f, 0.85f, 1f, 0.75f), 0.75f);

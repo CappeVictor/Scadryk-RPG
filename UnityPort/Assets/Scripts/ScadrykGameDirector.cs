@@ -2078,9 +2078,13 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ScadrykPlayerController.DashBufferCanStart(1.1f, 1.3f, 1.2f) ||
             !ScadrykPlayerController.DashBufferCanStart(1.21f, 1.3f, 1.2f) ||
             ScadrykPlayerController.DashBufferCanStart(1.31f, 1.3f, 1.2f) ||
+            Mathf.Abs(ScadrykPlayerController.DashInvulnerabilityUntil(1.62f, 1.4f,
+                ScadrykPlayerController.DashPostInvulnerabilityGrace) - 1.62f) > 0.001f ||
+            Mathf.Abs(ScadrykPlayerController.DashInvulnerabilityUntil(1.2f, 1.4f,
+                ScadrykPlayerController.DashPostInvulnerabilityGrace) - 1.48f) > 0.001f ||
             Mathf.Abs(ScadrykPlayerController.DashBufferWindow - 0.12f) > 0.001f)
-        { SmokeFail("Os buffers curtos de ataque e esquiva iniciam fora da janela válida"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: combo de três golpes e buffers de ataque/esquiva respeitam as janelas configuradas");
+        { SmokeFail("Buffers, proteção de invulnerabilidade do dash ou combo perderam suas janelas válidas"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: combo e buffers respeitam a cadência; dash preserva invulnerabilidade existente");
         if (ScadrykPlayerController.AbilityWindupFor(0) <= 0f ||
             Mathf.Abs(ScadrykPlayerController.AbilityCooldownFor(0, true) - 5.6f) > 0.001f ||
             ScadrykPlayerController.AbilityCooldownFor(0, true) >= ScadrykPlayerController.AbilityCooldownFor(0, false) ||
