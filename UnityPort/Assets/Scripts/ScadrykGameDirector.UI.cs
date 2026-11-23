@@ -775,6 +775,13 @@ public sealed partial class ScadrykGameDirector
             {
                 int state = WorldMapRoomStatus(phase, room, phaseIndex, roomIndex, clearedRooms);
                 Rect card = new Rect(contentX + room * (cardWidth + cardGap), rowY + 19f, cardWidth, rowHeight - 21f);
+                if (room < RoomsPerPhase - 1)
+                {
+                    int nextState = WorldMapRoomStatus(phase, room + 1, phaseIndex, roomIndex, clearedRooms);
+                    GUI.color = state == 2 ? new Color(0.42f, 0.78f, 0.53f, 0.95f) :
+                        nextState == 1 ? new Color(0.45f, 0.95f, 0.9f, 0.95f) : new Color(0.32f, 0.38f, 0.37f, 0.9f);
+                    GUI.DrawTexture(new Rect(card.xMax, card.center.y - 1.5f, cardGap, 3f), Texture2D.whiteTexture);
+                }
                 GUI.color = WorldMapRoomColor(state);
                 GUI.DrawTexture(card, Texture2D.whiteTexture);
                 GUI.color = state == 1 ? new Color(0.45f, 0.95f, 0.9f) : state == 2 ? new Color(0.42f, 0.78f, 0.53f) : new Color(0.45f, 0.49f, 0.48f);
