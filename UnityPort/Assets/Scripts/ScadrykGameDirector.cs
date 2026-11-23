@@ -390,7 +390,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         }
         else if (up || down)
         {
-            int max = confirmNewJourney ? 1 : victory ? 2 : showTitle ? 2 : 0;
+            int max = confirmNewJourney ? 1 : victory ? 2 : showTitle ? 3 : 0;
             overlaySelection = Mathf.Clamp(overlaySelection + (down ? 1 : -1), victory ? 1 : 0, max);
         }
 
@@ -436,7 +436,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 overlaySelection = MovePauseGridSelection(overlaySelection, 0, navigation.y > 0f ? -1 : 1);
             }
             else overlaySelection = Mathf.Clamp(overlaySelection - (navigation.y > 0f ? 1 : -1), victory ? 1 : 0,
-                confirmNewJourney ? 1 : victory ? 2 : showTitle ? 2 : 4);
+                confirmNewJourney ? 1 : victory ? 2 : showTitle ? 3 : 4);
             nextGamepadNavigationAt = Time.unscaledTime + 0.2f;
         }
         else if (!showOptions && !showTitle && !victory && !confirmNewJourney && Time.unscaledTime >= nextGamepadNavigationAt && Mathf.Abs(navigation.x) > 0.55f)
@@ -494,7 +494,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             BeginJourney();
         }
         else if (showTitle && overlaySelection == 1) RequestNewGame();
-        else if (showTitle) { showOptions = true; optionsTab = 0; optionsSelection = 0; }
+        else if (showTitle && overlaySelection == 2) { showOptions = true; optionsTab = 0; optionsSelection = 0; }
+        else if (showTitle && overlaySelection == 3) OpenMemoryJournal();
         else if (overlaySelection == 0) isPaused = false;
         else if (overlaySelection == 1) { showWorldMap = true; isPaused = false; }
         else if (overlaySelection == 2) RequestNewGame();
@@ -2394,9 +2395,10 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ScadrykEffects.DeathBurstMoteCount(true, true) >= ScadrykEffects.DeathBurstMoteCount(true, false))
         { SmokeFail("Reduzir flashes não atenua explosões, expansões ou partículas de derrota"); yield break; }
         Debug.Log("SCADRYK_SMOKE: reduzir flashes atenua explosões e expansões sem remover a leitura de perigo");
-        if (!OverlayLayoutFits(400f, 360f) || !PauseMapOverlayLayoutFits(400f, 360f))
+        if (!OverlayLayoutFits(400f, 360f) || !OverlayLayoutFits(1280f, 520f) || !OverlayLayoutFits(1280f, 720f) ||
+            !PauseMapOverlayLayoutFits(400f, 360f))
         { SmokeFail("O menu inicial ou o menu de pausa com acesso ao mapa escapam de uma janela compacta"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: menus inicial e de pausa cabem em janela 400×360");
+        Debug.Log("SCADRYK_SMOKE: menu inicial cabe em 400×360, 1280×520 e 1280×720; menu de pausa cabe em 400×360");
         bool pauseGridNavigationWorks = MovePauseGridSelection(0, 0, 1) == 2 &&
             MovePauseGridSelection(3, 0, 1) == 5 && MovePauseGridSelection(4, 0, -1) == 2 &&
             MovePauseGridSelection(5, 0, -1) == 3 && MovePauseGridSelection(0, 1, 0) == 1 &&
