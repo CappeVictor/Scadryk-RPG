@@ -314,6 +314,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     private void OnApplicationFocus(bool hasFocus)
     {
+        if (!hasFocus) ScadrykSettings.FlushPendingSave();
         if (smokeRun || showOpeningStory || showWorldMap || memoryModal || !FocusLossRequiresPause(hasFocus, showTitle, isPaused, showOptions, victory, transitioning)) return;
         isPaused = true;
         ApplyPauseTimeScale();
