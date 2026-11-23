@@ -9,6 +9,22 @@ public sealed partial class ScadrykGameDirector
     private float nextMemoryJournalNavigationAt;
     private string[] memoryJournalEntries;
     private bool memoryJournalLoaded;
+    private readonly GUIContent statusMeasureContent = new GUIContent();
+    private string cachedStatusMeasureText;
+    private readonly GUIContent memoryMeasureContent = new GUIContent();
+    private string cachedMemoryMeasureText;
+    private readonly GUIContent controlHintMeasureContent = new GUIContent();
+    private string cachedControlHintMeasureText;
+    private readonly GUIContent memoryHintMeasureContent = new GUIContent();
+    private string cachedMemoryHintMeasureText;
+
+    private static void RefreshMeasureContent(GUIContent content, ref string cachedText, string text)
+    {
+        text = text ?? string.Empty;
+        if (cachedText == text) return;
+        content.text = text;
+        cachedText = text;
+    }
 
     private void OpenMemoryJournal()
     {
@@ -37,7 +53,8 @@ public sealed partial class ScadrykGameDirector
         if (showStatus)
         {
             float statusWidth = Mathf.Max(0f, Screen.width - 30f);
-            float statusTextHeight = statusStyle.CalcHeight(new GUIContent(statusMessage), Mathf.Max(32f, statusWidth - 20f));
+            RefreshMeasureContent(statusMeasureContent, ref cachedStatusMeasureText, statusMessage);
+            float statusTextHeight = statusStyle.CalcHeight(statusMeasureContent, Mathf.Max(32f, statusWidth - 20f));
             Rect statusRect = StatusLabelRect(Screen.width, Screen.height, statusTextHeight);
             GUI.color = new Color(0.025f, 0.04f, 0.045f, 0.88f);
             GUI.DrawTexture(statusRect, Texture2D.whiteTexture);
@@ -47,7 +64,8 @@ public sealed partial class ScadrykGameDirector
         if (showMemory)
         {
             float width = Mathf.Max(0f, Mathf.Min(740f, Screen.width - 36f));
-            float bodyHeight = Mathf.Max(62f, memoryStyle.CalcHeight(new GUIContent(memoryText), Mathf.Max(32f, width - 36f)));
+            RefreshMeasureContent(memoryMeasureContent, ref cachedMemoryMeasureText, memoryText);
+            float bodyHeight = Mathf.Max(62f, memoryStyle.CalcHeight(memoryMeasureContent, Mathf.Max(32f, width - 36f)));
             Rect panel = MemoryPanelRect(Screen.width, Screen.height, bodyHeight);
             GUI.color = new Color(0.025f, 0.04f, 0.045f, 0.94f); GUI.DrawTexture(panel, Texture2D.whiteTexture); GUI.color = Color.white;
             GUI.Label(new Rect(panel.x + 18f, panel.y + 10f, panel.width - 36f, 24f), "VESTÍGIO ESCUTADO", titleStyle);
@@ -59,16 +77,17 @@ public sealed partial class ScadrykGameDirector
             string controlHint = compactControlHint
                 ? CompactControlHintText("teclado/LS", "mouse/RS", InputBinding(0), InputBinding(1), InputBinding(2), InputBinding(6))
                 : "Mover: teclas/controle  ·  Mouse/analógico mirar  ·  " + InputBinding(0) + " atacar  ·  " + InputBinding(1) + " esquivar  ·  " + InputBinding(2) + " pulso  ·  " + InputBinding(6) + " interagir  ·  M/L3 mapa  ·  Esc pausa";
+            RefreshMeasureContent(controlHintMeasureContent, ref cachedControlHintMeasureText, controlHint);
             controlHintStyle.fontSize = smallStyle.fontSize;
             controlHintStyle.wordWrap = compactControlHint;
             float hintWidth = Mathf.Max(0f, Screen.width - 28f);
             float hintHeight = compactControlHint
-                ? controlHintStyle.CalcHeight(new GUIContent(controlHint), hintWidth)
+                ? controlHintStyle.CalcHeight(controlHintMeasureContent, hintWidth)
                 : 30f;
             Rect controlHintRect = new Rect(14f, Screen.height - hintHeight - 8f, hintWidth, hintHeight);
             if (!compactControlHint)
             {
-                float measuredControlHintWidth = controlHintStyle.CalcSize(new GUIContent(controlHint)).x;
+                float measuredControlHintWidth = controlHintStyle.CalcSize(controlHintMeasureContent).x;
                 if (measuredControlHintWidth > controlHintRect.width && measuredControlHintWidth > 0f)
                     controlHintStyle.fontSize = Mathf.Max(9, Mathf.FloorToInt(controlHintStyle.fontSize * controlHintRect.width / measuredControlHintWidth));
             }
@@ -250,7 +269,8 @@ public sealed partial class ScadrykGameDirector
         GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
         GUI.color = Color.white;
         float width = Mathf.Max(0f, Mathf.Min(740f, Screen.width - 36f));
-        float bodyHeight = Mathf.Max(62f, memoryStyle.CalcHeight(new GUIContent(memoryText), Mathf.Max(32f, width - 36f)));
+        RefreshMeasureContent(memoryMeasureContent, ref cachedMemoryMeasureText, memoryText);
+        float bodyHeight = Mathf.Max(62f, memoryStyle.CalcHeight(memoryMeasureContent, Mathf.Max(32f, width - 36f)));
         Rect panel = MemoryPanelRect(Screen.width, Screen.height, bodyHeight);
         GUI.color = new Color(0.025f, 0.04f, 0.045f, 0.98f); GUI.DrawTexture(panel, Texture2D.whiteTexture); GUI.color = Color.white;
         Rect titleRect = new Rect(panel.x + 18f, panel.y + 10f, panel.width - 36f, 24f);
@@ -264,9 +284,13 @@ public sealed partial class ScadrykGameDirector
         int hintFontSize = smallStyle.fontSize;
         bool gamepad = sessionInputMode == "gamepad";
         string hint = MemoryDismissHintText(gamepad, InputBinding(6));
-        if (smallStyle.CalcSize(new GUIContent(hint)).x > hintRect.width)
+        RefreshMeasureContent(memoryHintMeasureContent, ref cachedMemoryHintMeasureText, hint);
+        if (smallStyle.CalcSize(memoryHintMeasureContent).x > hintRect.width)
+        {
             hint = MemoryDismissHintText(gamepad, InputBinding(6), true);
-        smallStyle.fontSize = FitLabelFontSize(hintFontSize, smallStyle.CalcSize(new GUIContent(hint)).x, hintRect.width);
+            RefreshMeasureContent(memoryHintMeasureContent, ref cachedMemoryHintMeasureText, hint);
+        }
+        smallStyle.fontSize = FitLabelFontSize(hintFontSize, smallStyle.CalcSize(memoryHintMeasureContent).x, hintRect.width);
         GUI.Label(hintRect, hint, smallStyle);
         smallStyle.fontSize = hintFontSize;
         smallStyle.alignment = TextAnchor.MiddleLeft;

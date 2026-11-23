@@ -2,7 +2,7 @@
 
 ## Revisão de estado (23/11/2026; branch `codex/unity-playable-phase-maps`)
 
-**Desempenho de combate:** efeitos temporários mantêm referências aos renderizadores após a criação; as rotinas de desvio dos Ecos e de linha de visão usam consultas de componente sem exceção para filtrar atores. São reduções de trabalho repetido na CPU, sem promessa de queda perceptível de RAM ou FPS; o ganho precisa de profiling em gameplay.
+**Desempenho de combate:** efeitos temporários mantêm referências aos renderizadores após a criação; as rotinas de desvio dos Ecos e de linha de visão usam consultas de componente sem exceção para filtrar atores. O HUD reutiliza conteúdos medidos durante as chamadas repetidas de `OnGUI`, em vez de criar objetos de medição a cada evento. São reduções de trabalho/alocação na CPU, sem promessa de queda perceptível de RAM ou FPS; o ganho precisa de profiling em gameplay.
 
 **Memória das texturas:** as artes de `Resources/ScadrykArt` não usam leitura de pixels pela CPU. O importador desativa a cópia CPU-readable e o validador de recursos protege a configuração; o total economizado depende das dimensões/import settings finais e ainda não foi medido por profiler.
 
