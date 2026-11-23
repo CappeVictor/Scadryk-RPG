@@ -332,7 +332,6 @@ public static class ScadrykEffects
     {
         bool reduceFlash = ShouldReduceEffectFlash(ScadrykSettings.ReduceFlash, dangerWarning);
         color = ApplyReducedFlash(color, reduceFlash);
-        if (reduceFlash) size *= FlashDiameterScale(true);
         var go = new GameObject(objectName);
         go.transform.position = position;
         Vector2 spriteSize = sprite.bounds.size;
