@@ -29,6 +29,8 @@ public static class ScadrykEffects
     internal static float FlashAlphaScale(bool reduceFlash) => reduceFlash ? 0.48f : 1f;
     internal static float FlashDiameterScale(bool reduceFlash) => reduceFlash ? 0.8f : 1f;
     internal static bool ShouldReduceEffectFlash(bool reduceFlash, bool dangerWarning) => reduceFlash && !dangerWarning;
+    internal static Color EffectFlashColor(Color color, bool reduceFlash, bool dangerWarning) =>
+        ApplyReducedFlash(color, ShouldReduceEffectFlash(reduceFlash, dangerWarning));
     internal static float DashAfterimageInterval(bool reduceFlash) => reduceFlash ? 0.18f : 0.09f;
     internal static float AfterimageLifetime(bool reduceFlash) => reduceFlash ? 0.13f : 0.23f;
     internal static Color ApplyReducedFlash(Color color, bool reduceFlash) { if (reduceFlash) color.a *= FlashAlphaScale(true); return color; }
@@ -175,6 +177,7 @@ public static class ScadrykEffects
             return;
         }
         if (!finisher) slashTint = new Color(1f, 0.82f, 0.42f, 0.85f);
+        slashTint = EffectFlashColor(slashTint, ScadrykSettings.ReduceFlash, false);
         GameObject go = Create(position + direction * PlayerSlashForwardOffset, slashTint, footprint.x, footprint.y, lifetime);
         go.transform.right = direction;
     }
@@ -331,8 +334,7 @@ public static class ScadrykEffects
     internal static GameObject CreateSpriteEffect(Sprite sprite, Vector2 position, Vector2 size, Color color, float lifetime,
         string objectName, bool expand = false, bool protectFromBudget = false, bool dangerWarning = false)
     {
-        bool reduceFlash = ShouldReduceEffectFlash(ScadrykSettings.ReduceFlash, dangerWarning);
-        color = ApplyReducedFlash(color, reduceFlash);
+        color = EffectFlashColor(color, ScadrykSettings.ReduceFlash, dangerWarning);
         var go = new GameObject(objectName);
         go.transform.position = position;
         Vector2 spriteSize = sprite.bounds.size;

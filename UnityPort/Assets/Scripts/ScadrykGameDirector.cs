@@ -2871,7 +2871,10 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Debug.Log("SCADRYK_SMOKE: avisos lineares e sprite mantêm borda escura, ampliam/clareiam ao mudar alto contraste, mesmo sem áudio e com flashes reduzidos; preferências restauradas");
         Color reducedFlashColor = ScadrykEffects.ApplyReducedFlash(Color.white, true);
         Color normalFlashColor = ScadrykEffects.ApplyReducedFlash(Color.white, false);
-        if (reducedFlashColor.a >= normalFlashColor.a || ScadrykEffects.FlashAlphaScale(true) >= 1f || ScadrykEffects.FlashDiameterScale(true) >= 1f ||
+        Color reducedFallbackSlash = ScadrykEffects.EffectFlashColor(Color.white, true, false);
+        Color preservedWarningColor = ScadrykEffects.EffectFlashColor(Color.white, true, true);
+        if (reducedFlashColor.a >= normalFlashColor.a || reducedFallbackSlash.a >= normalFlashColor.a ||
+            preservedWarningColor.a < normalFlashColor.a || ScadrykEffects.FlashAlphaScale(true) >= 1f || ScadrykEffects.FlashDiameterScale(true) >= 1f ||
             ScadrykEffects.FlashExpansionScale(1f, true) >= ScadrykEffects.FlashExpansionScale(1f, false) ||
             ScadrykEffects.DeathBurstMoteCount(true, true) >= ScadrykEffects.DeathBurstMoteCount(true, false) ||
             ScadrykEffects.DashAfterimageInterval(true) <= ScadrykEffects.DashAfterimageInterval(false) ||
