@@ -38,6 +38,9 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     private bool isDying;
     private float invulnerableUntil;
     private float rootedUntil;
+    private float saltCrustUntil;
+    private float impactKnockbackUntil;
+    private Vector2 impactKnockbackVelocity;
     private readonly bool[] learnedAbilities = new bool[3];
     private readonly bool[] powerEchoes = new bool[3];
     private readonly float[] abilityReadyAt = new float[3];
@@ -58,6 +61,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     internal const float ShockwaveWindup = 0.08f;
     internal const float ShockwaveRecovery = 0.28f;
     internal const float SaltburstAbilityRadius = 4.25f;
+    internal const float SaltCrustSlowScale = 0.74f;
     internal static float AbilityWindupFor(int index) => Mathf.Clamp(index, 0, 2) switch
     {
         0 => 0.10f,
@@ -186,7 +190,12 @@ public sealed class ScadrykPlayerController : MonoBehaviour
             BodyVelocity = dashDirection * dashSpeed;
             return;
         }
-        float rootScale = Time.time < rootedUntil ? 0.52f : 1f;
+        if (Time.time < impactKnockbackUntil)
+        {
+            BodyVelocity = impactKnockbackVelocity;
+            return;
+        }
+        float rootScale = Time.time < rootedUntil ? 0.52f : Time.time < saltCrustUntil ? SaltCrustSlowScale : 1f;
         Vector2 targetVelocity = ResolveTerrainTargetVelocity(moveInput, moveSpeed, terrainSpeedScale, terrainFlowVelocity, rootScale);
         BodyVelocity = Vector2.MoveTowards(BodyVelocity, targetVelocity, acceleration * Time.fixedDeltaTime);
     }
@@ -546,9 +555,9 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     internal static bool AbilityPathIsBlocked(int index, Vector2 origin, Vector2 target) =>
         (index == 0 || index == 2) && ScadrykCombatRules.WorldBlocks(origin, target);
 
-    public void TakeDamage(float amount)
+    public bool TakeDamage(float amount)
     {
-        if (isDying || Time.time < invulnerableUntil || (director != null && director.IsPaused)) return;
+        if (isDying || Time.time < invulnerableUntil || (director != null && director.IsPaused)) return false;
         health -= Mathf.Max(0f, amount);
         ScadrykAudio.Play(ScadrykCue.Hurt);
         invulnerableUntil = Time.time + 0.62f;
@@ -564,6 +573,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
             if (animator != null) animator.PlayDeath();
             StartCoroutine(RespawnAfterDeath());
         }
+        return true;
     }
 
     private IEnumerator RespawnAfterDeath()
@@ -600,6 +610,19 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         aimLockedUntil = 0f;
     }
     public void ApplyRootSlow(float duration) => rootedUntil = Mathf.Max(rootedUntil, Time.time + duration);
+    public void ApplySaltCrustSlow(float duration) => saltCrustUntil = Mathf.Max(saltCrustUntil, Time.time + duration);
+    internal static Vector2 KnockbackVelocityFrom(Vector2 target, Vector2 source, float strength)
+    {
+        Vector2 away = target - source;
+        if (away.sqrMagnitude < 0.001f) away = Vector2.up;
+        return away.normalized * Mathf.Max(0f, strength);
+    }
+    public void ApplyImpactKnockback(Vector2 source, float strength, float duration)
+    {
+        if (isDying || (director != null && director.IsPaused)) return;
+        impactKnockbackVelocity = KnockbackVelocityFrom(transform.position, source, strength);
+        impactKnockbackUntil = Mathf.Max(impactKnockbackUntil, Time.time + Mathf.Max(0f, duration));
+    }
     public void SetPortalTransitPose(Vector2 position, float visibility)
     {
         BodyVelocity = Vector2.zero;
@@ -610,6 +633,8 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     {
         health = maxHealth;
         rootedUntil = 0f;
+        saltCrustUntil = impactKnockbackUntil = 0f;
+        impactKnockbackVelocity = Vector2.zero;
         dashBufferedUntil = attackBufferedUntil = 0f;
         lastBasicAttackStep = -1;
         basicAttackComboUntil = 0f;

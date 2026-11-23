@@ -2053,7 +2053,10 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         string saltGuardianPattern = ScadrykEnemyHealth.AttackReadabilityLabel(1, true, false, 0, 0, 0);
         string finalPattern = ScadrykEnemyHealth.AttackReadabilityLabel(2, true, true, 0, 2, 3);
         string clarityRow = FormatAttackClarityEventCsvRow("session", "2026-11-22T00:00:00Z", 3, 2, finalPattern).TrimEnd('\n');
-        if (!commonPattern.Contains("pulso de área") || !saltGuardianPattern.Contains("Vigia do Sal") ||
+        if (!commonPattern.Contains("pulso de sal") ||
+            ScadrykEnemyHealth.AreaPulseLabelForBiome(0) == ScadrykEnemyHealth.AreaPulseLabelForBiome(1) ||
+            ScadrykEnemyHealth.AreaPulseLabelForBiome(1) == ScadrykEnemyHealth.AreaPulseLabelForBiome(2) ||
+            !saltGuardianPattern.Contains("Vigia do Sal") ||
             !saltGuardianPattern.Contains("salva de estilhaços") || !finalPattern.Contains("Arauto fase 3") ||
             !finalPattern.Contains("onda de vazio") || clarityRow.Split(',').Length != 5 ||
             !clarityRow.EndsWith(finalPattern))
@@ -2211,6 +2214,15 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (!ScadrykEnemyHealth.AreaPulseContains(Vector2.zero, new Vector2(3.19f, 0f)) ||
             ScadrykEnemyHealth.AreaPulseContains(Vector2.zero, new Vector2(3.21f, 0f)) ||
             Mathf.Abs(ScadrykEnemyHealth.AreaPulseDiameter - ScadrykEnemyHealth.AreaPulseRadius * 2f) > 0.001f ||
+            Mathf.Abs(ScadrykEnemyHealth.AreaPulseRadiusForBiome(0) - 3.2f) > 0.001f ||
+            Mathf.Abs(ScadrykEnemyHealth.AreaPulseRadiusForBiome(1) - ScadrykEnemyHealth.SaltPulseRadius) > 0.001f ||
+            Mathf.Abs(ScadrykEnemyHealth.AreaPulseRadiusForBiome(2) - ScadrykEnemyHealth.CoastalPulseRadius) > 0.001f ||
+            ScadrykEnemyHealth.AreaPulseContains(Vector2.zero, new Vector2(3.64f, 0f), 1) == false ||
+            ScadrykEnemyHealth.AreaPulseContains(Vector2.zero, new Vector2(3.66f, 0f), 1) ||
+            Mathf.Abs(ScadrykPlayerController.SaltCrustSlowScale - 0.74f) > 0.001f ||
+            ScadrykEnemyHealth.SaltPulseSlowDuration <= 0f || ScadrykEnemyHealth.ForestPulseRootDuration <= 0f ||
+            ScadrykEnemyHealth.CoastalPulseKnockbackSpeed <= 0f || ScadrykEnemyHealth.CoastalPulseKnockbackDuration <= 0f ||
+            Vector2.Distance(ScadrykPlayerController.KnockbackVelocityFrom(Vector2.right, Vector2.zero, 4.2f), new Vector2(4.2f, 0f)) > 0.001f ||
             !ScadrykEnemyHealth.BellPulseContains(Vector2.zero, new Vector2(5.29f, 0f)) ||
             ScadrykEnemyHealth.BellPulseContains(Vector2.zero, new Vector2(5.31f, 0f)) ||
             Mathf.Abs(ScadrykEnemyHealth.BellPulseDiameter - ScadrykEnemyHealth.BellPulseRadius * 2f) > 0.001f ||
@@ -2221,8 +2233,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ScadrykEnemyHealth.SupportPulseWouldHeal(100f, 100f, 0f) ||
             ScadrykEnemyHealth.SupportPulseWouldHeal(85f, 100f, ScadrykEnemyHealth.SupportPulseRadius + 0.01f) ||
             ScadrykEnemyHealth.SupportPulseWouldHeal(10f, 0f, 0f))
-        { SmokeFail("Uma área circular de dano ou cura diverge do raio e do diâmetro anunciados"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: áreas de ataque e cura respeitam os círculos anunciados");
+        { SmokeFail("A área, o raio anunciado ou o efeito de controle do pulso diverge do bioma"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: pulsos de bosque, sal e costa conferem raio e efeito regional");
         string previousHintInputMode = sessionInputMode;
         sessionInputMode = "keyboard_mouse";
         string keyboardPulseHint = ProgressHint(4, 0, 0);

@@ -19,6 +19,8 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     internal const float FinalStageBreatherDuration = 0.9f;
     internal const float FinalStageAttackDelay = 3.1f;
     internal const float AreaPulseRadius = 3.2f;
+    internal const float SaltPulseRadius = 3.65f;
+    internal const float CoastalPulseRadius = 2.8f;
     internal const float BellPulseRadius = 5.3f;
     internal const float SupportPulseRadius = 2.5f;
     internal static float SupportPulseInnerDiameter => SupportPulseRadius * 0.9f;
@@ -43,6 +45,25 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     internal static float FinalWaveSafeDiameter => FinalWaveSafeRadius * 2f;
     internal static bool AreaPulseContains(Vector2 origin, Vector2 target) =>
         Vector2.Distance(origin, target) <= AreaPulseRadius;
+    internal static float AreaPulseRadiusForBiome(int biome) => Mathf.Clamp(biome, 0, 2) switch
+    {
+        0 => AreaPulseRadius,
+        1 => SaltPulseRadius,
+        _ => CoastalPulseRadius
+    };
+    internal static float AreaPulseDiameterForBiome(int biome) => AreaPulseRadiusForBiome(biome) * 2f;
+    internal static string AreaPulseLabelForBiome(int biome) => Mathf.Clamp(biome, 0, 2) switch
+    {
+        0 => "pulso de raízes",
+        1 => "pulso de sal",
+        _ => "onda do recife"
+    };
+    internal static bool AreaPulseContains(Vector2 origin, Vector2 target, int biome) =>
+        Vector2.Distance(origin, target) <= AreaPulseRadiusForBiome(biome);
+    internal static float CoastalPulseKnockbackSpeed => 4.2f;
+    internal static float CoastalPulseKnockbackDuration => 0.18f;
+    internal static float SaltPulseSlowDuration => 0.9f;
+    internal static float ForestPulseRootDuration => 0.65f;
     internal static bool BellPulseContains(Vector2 origin, Vector2 target) =>
         Vector2.Distance(origin, target) <= BellPulseRadius;
     internal static bool SupportPulseContains(Vector2 origin, Vector2 target) =>
@@ -146,7 +167,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         {
             0 => "investida",
             1 => "projétil",
-            2 => "pulso de área",
+            2 => AreaPulseLabelForBiome(biome),
             _ => "pulso de apoio"
         };
         return biomeName + " — Eco " + attackName;
@@ -452,7 +473,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
                 TrackAttackWarning(signal);
         }
         else if (!IsBoss && combatRole == 2)
-            TrackAttackWarning(ScadrykEffects.Ring(origin, AreaPulseDiameter, warning, windup, true));
+            TrackAttackWarning(ScadrykEffects.Ring(origin, AreaPulseDiameterForBiome(biomeIndex), warning, windup, true));
         else if (IsBoss && biomeIndex == 2)
             TrackAttackWarning(ScadrykEffects.Ring(origin, BellPulseDiameter, warning, windup, true));
         else if (IsBoss && biomeIndex == 1)
@@ -651,8 +672,8 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         if (RootLaneHits(player.transform.position, start, end, width, PlayerCollisionRadius(player)) &&
             !ScadrykCombatRules.WorldBlocks(start, player.transform.position))
         {
-            player.TakeDamage(IsBoss ? 21f : 13f);
-            if (biomeIndex == 0) player.ApplyRootSlow(IsBoss ? 1.55f : 0.65f);
+            bool hit = player.TakeDamage(IsBoss ? 21f : 13f);
+            if (hit && biomeIndex == 0) player.ApplyRootSlow(IsBoss ? 1.55f : ForestPulseRootDuration);
         }
     }
 
@@ -680,8 +701,12 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private void ResolveAreaPulse()
     {
         Color color = biomeIndex == 0 ? new Color(0.55f, 0.85f, 0.38f) : biomeIndex == 1 ? new Color(1f, 0.72f, 0.35f) : new Color(0.35f, 0.88f, 1f);
-        ScadrykEffects.Ring(transform.position, AreaPulseDiameter, color, 0.32f);
-        if (AreaPulseContains(transform.position, player.transform.position)) player.TakeDamage(12f);
+        Vector2 origin = transform.position;
+        ScadrykEffects.Ring(origin, AreaPulseDiameterForBiome(biomeIndex), color, 0.32f);
+        if (!AreaPulseContains(origin, player.transform.position, biomeIndex) || !player.TakeDamage(12f)) return;
+        if (biomeIndex == 0) player.ApplyRootSlow(ForestPulseRootDuration);
+        else if (biomeIndex == 1) player.ApplySaltCrustSlow(SaltPulseSlowDuration);
+        else player.ApplyImpactKnockback(origin, CoastalPulseKnockbackSpeed, CoastalPulseKnockbackDuration);
     }
 
     private void ResolveSupportPulse()
