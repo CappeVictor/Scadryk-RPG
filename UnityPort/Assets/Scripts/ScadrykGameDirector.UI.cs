@@ -21,6 +21,9 @@ public sealed partial class ScadrykGameDirector
     private string cachedThreatCaptionFirstLabel;
     private readonly GUIContent threatCaptionSecondContent = new GUIContent();
     private string cachedThreatCaptionSecondLabel;
+    private readonly GUIContent exposureCaptionContent = new GUIContent();
+    private string cachedExposureCaptionLabel;
+    private int cachedExposureCount = -1;
 
     private static void RefreshMeasureContent(GUIContent content, ref string cachedText, string text)
     {
@@ -35,6 +38,12 @@ public sealed partial class ScadrykGameDirector
         if (cachedLabel == label) return;
         content.text = string.IsNullOrEmpty(label) ? string.Empty : "PREPARANDO: " + label;
         cachedLabel = label;
+    }
+
+    private static string ExposureCaption(int count)
+    {
+        if (count <= 0) return string.Empty;
+        return "ESTOURO ATIVO · " + count + (count == 1 ? " ECO EXPOSTO · +30% DANO" : " ECOS EXPOSTOS · +30% DANO");
     }
 
     private void OpenMemoryJournal()
@@ -118,12 +127,15 @@ public sealed partial class ScadrykGameDirector
     {
         string first = null;
         string second = null;
+        int exposedCount = 0;
         float firstImpact = float.PositiveInfinity;
         float secondImpact = float.PositiveInfinity;
         for (int i = 0; i < activeEnemies.Count; i++)
         {
             ScadrykEnemyHealth enemy = activeEnemies[i];
-            if (enemy == null || !enemy.TryGetWindupAttackLabel(out string label, out float secondsUntilImpact)) continue;
+            if (enemy == null) continue;
+            if (enemy.IsExposed) exposedCount++;
+            if (!enemy.TryGetWindupAttackLabel(out string label, out float secondsUntilImpact)) continue;
             if (label == first) { firstImpact = Mathf.Min(firstImpact, secondsUntilImpact); continue; }
             if (label == second) { secondImpact = Mathf.Min(secondImpact, secondsUntilImpact); continue; }
             if (secondsUntilImpact < firstImpact)
@@ -139,12 +151,22 @@ public sealed partial class ScadrykGameDirector
                 secondImpact = secondsUntilImpact;
             }
         }
-        if (first == null) return;
+        if (cachedExposureCount != exposedCount)
+        {
+            cachedExposureCount = exposedCount;
+            cachedExposureCaptionLabel = ExposureCaption(exposedCount);
+            exposureCaptionContent.text = cachedExposureCaptionLabel;
+        }
+        bool showExposure = exposedCount > 0 && second == null;
+        if (first == null && !showExposure) return;
+        if (first == null)
+            exposureCaptionContent.text = cachedExposureCaptionLabel;
+        else
+            RefreshThreatCaptionContent(threatCaptionFirstContent, ref cachedThreatCaptionFirstLabel, first);
+        if (second != null)
+            RefreshThreatCaptionContent(threatCaptionSecondContent, ref cachedThreatCaptionSecondLabel, second);
 
-        RefreshThreatCaptionContent(threatCaptionFirstContent, ref cachedThreatCaptionFirstLabel, first);
-        RefreshThreatCaptionContent(threatCaptionSecondContent, ref cachedThreatCaptionSecondLabel, second);
-
-        int captionCount = second == null ? 1 : 2;
+        int captionCount = (first != null && (second != null || showExposure)) ? 2 : 1;
         Rect panel = ThreatCaptionPanelRect(Screen.width, Screen.height, ScadrykSettings.TextScale, captionCount);
         GUI.color = new Color(0.035f, 0.025f, 0.035f, 0.9f);
         GUI.DrawTexture(panel, Texture2D.whiteTexture);
@@ -155,9 +177,13 @@ public sealed partial class ScadrykGameDirector
         float rowHeight = (panel.height - 6f) / captionCount;
         int oldSize = centeredBodyStyle.fontSize;
         centeredBodyStyle.fontSize = ThreatCaptionFontSize(ScadrykSettings.TextScale, rowHeight);
-        GUI.Label(new Rect(panel.x + 8f, panel.y + 3f, panel.width - 16f, rowHeight), threatCaptionFirstContent, centeredBodyStyle);
-        if (second != null)
-            GUI.Label(new Rect(panel.x + 8f, panel.y + 3f + rowHeight, panel.width - 16f, rowHeight), threatCaptionSecondContent, centeredBodyStyle);
+        GUIContent firstContent = first == null ? exposureCaptionContent : threatCaptionFirstContent;
+        GUI.Label(new Rect(panel.x + 8f, panel.y + 3f, panel.width - 16f, rowHeight), firstContent, centeredBodyStyle);
+        if (captionCount == 2)
+        {
+            GUIContent secondContent = second == null ? exposureCaptionContent : threatCaptionSecondContent;
+            GUI.Label(new Rect(panel.x + 8f, panel.y + 3f + rowHeight, panel.width - 16f, rowHeight), secondContent, centeredBodyStyle);
+        }
         centeredBodyStyle.fontSize = oldSize;
     }
 

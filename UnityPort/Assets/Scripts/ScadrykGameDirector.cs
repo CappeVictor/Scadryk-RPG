@@ -2749,6 +2749,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         RefreshThreatCaptionContent(threatCaptionContent, ref cachedThreatCaptionLabel, "Arauto fase 3 — onda de vazio");
         bool unchangedCaptionReusesText = object.ReferenceEquals(firstThreatCaptionText, threatCaptionContent.text);
         RefreshThreatCaptionContent(threatCaptionContent, ref cachedThreatCaptionLabel, "Bosque — Eco avanço de raízes");
+        string singleExposureCaption = ExposureCaption(1);
+        string groupExposureCaption = ExposureCaption(3);
         if (AbilityHudLabel(0, "Q", "pronto") != "Q  Crescente · interrompe  ·  pronto" ||
             AbilityHudLabel(0, "Q", "pronto", true) != "Q  Crescente · interrompe  ·  pronto  ·  eco" ||
             AbilityHudLabel(1, "E", "4.2s") != "E  Estouro · expõe  ·  4.2s" ||
@@ -2765,6 +2767,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             compactThreatCaption.yMax > compactHud.yMax - 10f || compactThreatCaption.xMax > compactHud.xMax - 8f ||
             ThreatCaptionFontSize(1.5f, (compactThreatCaption.height - 6f) * 0.5f) > 14 ||
             !unchangedCaptionReusesText || threatCaptionContent.text != "PREPARANDO: Bosque — Eco avanço de raízes" ||
+            !string.IsNullOrEmpty(ExposureCaption(0)) || singleExposureCaption != "ESTOURO ATIVO · 1 ECO EXPOSTO · +30% DANO" ||
+            groupExposureCaption != "ESTOURO ATIVO · 3 ECOS EXPOSTOS · +30% DANO" ||
             narrowLegend.yMin < narrowMap.yMin || narrowLegend.yMax > narrowMap.yMax ||
             wrappedStatus.height <= shortStatus.height || wrappedStatus.xMin < 0f || wrappedStatus.xMax > 400f ||
             wrappedStatus.yMin < 0f || wrappedStatus.yMax > 360f)
