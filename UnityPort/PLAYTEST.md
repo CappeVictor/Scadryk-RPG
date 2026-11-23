@@ -46,6 +46,8 @@ Depois da sessão, filtre os dois CSVs pelo `session_id` e copie os valores auto
 
 Para consolidar os registros no Windows, abra PowerShell na pasta do projeto e use `.\UnityPort\Tools\Summarize-Playtests.ps1 -SessionsPath "CAMINHO\scadryk-sessions-v8.csv" -AttackClarityPath "CAMINHO\scadryk-attack-clarity-v1.csv"`. Acrescente `-SessionId "ID_DA_SESSAO"` para filtrar uma tentativa ou `-OutputPath ".\playtest-summary.csv"` para salvar as métricas por sala; sem esses parâmetros, o script mostra todas as sessões e mantém cada `session_id` separado.
 
+Após a sessão, registre as respostas de 1 a 5 numa linha de `PLAYTEST-RATINGS.csv`, identificada pelo `session_id` e nível `iniciante`, `intermediária` ou `experiente`; deixe sem nota as perguntas não respondidas. Não acrescente nome, email ou outros dados pessoais. Passe também `-RatingsPath .\UnityPort\PLAYTEST-RATINGS.csv` ao resumo para calcular médias separadas por nível; cada sessão aceita uma única ficha.
+
 | Fase / sala | Segundos ativos | Mortes | F8 / sinais pouco claros | Crescente | Estouro | Rompante | Entradas na corrente | Segundos na corrente | Segundos na água | Ressonâncias por Pulso | Selos revelados | Objetivo compreendido sem ajuda? | Comentário curto |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
 | Bosque alagado 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |

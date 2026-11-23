@@ -4,6 +4,7 @@ param(
     [string]$SessionsPath,
 
     [string]$AttackClarityPath,
+    [string]$RatingsPath,
     [string]$SessionId,
     [string]$OutputPath
 )
@@ -51,6 +52,48 @@ if (-not [string]::IsNullOrWhiteSpace($AttackClarityPath)) {
             throw "CSV de clareza inválido. Colunas ausentes: $($missingAttackColumns -join ', ')"
         }
     }
+}
+
+$ratingColumns = @(
+    'objectives', 'optional_secret', 'attack_readability', 'controls', 'power_use',
+    'combo_readability', 'environmental_mechanics', 'audio_mix', 'memory_readability',
+    'memory_audio', 'secret_audio', 'portal_readability', 'death_fairness'
+)
+$ratingDetails = @()
+if (-not [string]::IsNullOrWhiteSpace($RatingsPath)) {
+    if (-not (Test-Path -LiteralPath $RatingsPath -PathType Leaf)) {
+        throw "CSV de avaliações não encontrado: $RatingsPath"
+    }
+    $requiredRatingColumns = @('session_id', 'experience') + $ratingColumns
+    $ratingHeaderLine = Get-Content -LiteralPath $RatingsPath -TotalCount 1
+    $ratingHeader = $ratingHeaderLine.TrimStart([char]0xFEFF).Split(',')
+    $missingRatingColumns = @($requiredRatingColumns | Where-Object { $_ -notin $ratingHeader })
+    if ($missingRatingColumns.Count -gt 0) {
+        throw "Cabeçalho de avaliações inválido. Colunas ausentes: $($missingRatingColumns -join ', ')"
+    }
+
+    $sessionIds = @($sessions | ForEach-Object { $_.session_id } | Select-Object -Unique)
+    $allowedExperience = @('iniciante', 'intermediária', 'experiente')
+    $ratingRows = @(Import-Csv -LiteralPath $RatingsPath | Where-Object { $_.session_id -in $sessionIds })
+    foreach ($duplicate in ($ratingRows | Group-Object session_id | Where-Object { $_.Count -gt 1 })) {
+        throw "Mais de uma ficha de avaliação foi informada para a sessão '$($duplicate.Name)'."
+    }
+
+    $ratingDetails = @(foreach ($row in $ratingRows) {
+        if ($row.experience -notin $allowedExperience) {
+            throw "Nível inválido na sessão '$($row.session_id)'. Use iniciante, intermediária ou experiente."
+        }
+        $detail = [ordered]@{ session_id = $row.session_id; experience = $row.experience }
+        foreach ($column in $ratingColumns) {
+            $value = 0
+            if ([string]::IsNullOrWhiteSpace($row.$column)) { $detail[$column] = $null; continue }
+            if (-not [int]::TryParse($row.$column, [ref]$value) -or $value -lt 1 -or $value -gt 5) {
+                throw "A nota '$column' da sessão '$($row.session_id)' precisa ser de 1 a 5 ou ficar vazia."
+            }
+            $detail[$column] = $value
+        }
+        [pscustomobject]$detail
+    })
 }
 
 $details = foreach ($row in $sessions) {
@@ -115,6 +158,20 @@ $details | Sort-Object session_id, phase, room |
     Format-Table session_id, location, seconds, deaths, unclear_attacks, attack_marks,
         crescent, salt, tide, completed, input_mode -AutoSize |
     Out-String | Write-Output
+
+if ($ratingDetails.Count -gt 0) {
+    $ratingSummary = foreach ($group in ($ratingDetails | Group-Object experience)) {
+        $items = @($group.Group)
+        $summary = [ordered]@{ experience = $group.Name; participants = $items.Count }
+        foreach ($column in $ratingColumns) {
+            $values = @($items | ForEach-Object { $_.$column } | Where-Object { $null -ne $_ })
+            $summary[$column] = if ($values.Count -gt 0) { [math]::Round((($values | Measure-Object -Average).Average), 2) } else { $null }
+        }
+        [pscustomobject]$summary
+    }
+    Write-Output 'Médias das avaliações por experiência (escala de 1 a 5)'
+    $ratingSummary | Sort-Object experience | Format-Table -AutoSize | Out-String | Write-Output
+}
 
 if (-not [string]::IsNullOrWhiteSpace($OutputPath)) {
     $resolvedOutputPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputPath)
