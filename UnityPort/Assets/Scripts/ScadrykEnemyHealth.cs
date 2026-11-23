@@ -165,7 +165,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         string biomeName = biome switch { 0 => "Bosque", 1 => "Bacia de sal", _ => "Costa" };
         string attackName = Mathf.Clamp(role, 0, 3) switch
         {
-            0 => "investida",
+            0 => biome switch { 0 => "avanço de raízes", 1 => "estocada de sal", _ => "investida do recife" },
             1 => ScadrykEnemyProjectile.LabelForBiome(biome),
             2 => AreaPulseLabelForBiome(biome),
             _ => "pulso de apoio"
@@ -668,12 +668,21 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         float width = IsBoss ? 1.4f : 0.86f;
         Vector2 end = start + direction * length;
         float warnedWidth = RootLaneVisualWidth(width, PlayerCollisionRadius(player));
-        ScadrykEffects.GroundLane((start + end) * 0.5f, direction, length, warnedWidth, new Color(0.42f, 0.72f, 0.28f, 0.95f), 0.3f);
+        Color laneColor = biomeIndex == 0 ? new Color(0.42f, 0.72f, 0.28f, 0.95f) :
+            biomeIndex == 1 ? new Color(0.94f, 0.69f, 0.31f, 0.95f) : new Color(0.3f, 0.78f, 0.88f, 0.95f);
+        Sprite laneSprite = biomeIndex == 0 ? ScadrykEffects.RootThrustSprite :
+            biomeIndex == 1 ? ScadrykEffects.SaltShardSprite : ScadrykEffects.TidebreakerSprite;
+        ScadrykEffects.GroundLane((start + end) * 0.5f, direction, length, warnedWidth, laneColor, 0.3f, laneSprite);
         if (RootLaneHits(player.transform.position, start, end, width, PlayerCollisionRadius(player)) &&
             !ScadrykCombatRules.WorldBlocks(start, player.transform.position))
         {
             bool hit = player.TakeDamage(IsBoss ? 21f : 13f);
-            if (hit && biomeIndex == 0) player.ApplyRootSlow(IsBoss ? 1.55f : ForestPulseRootDuration);
+            if (hit)
+            {
+                if (biomeIndex == 0) player.ApplyRootSlow(IsBoss ? 1.55f : ForestPulseRootDuration);
+                else if (biomeIndex == 1) player.ApplySaltCrustSlow(0.48f);
+                else player.ApplyImpactKnockback(start, 2.4f, 0.12f);
+            }
         }
     }
 

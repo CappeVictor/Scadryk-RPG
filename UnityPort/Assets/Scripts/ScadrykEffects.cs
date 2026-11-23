@@ -234,15 +234,15 @@ public static class ScadrykEffects
         return go;
     }
 
-    public static void GroundLane(Vector2 center, Vector2 direction, float length, float width, Color color, float lifetime)
+    public static void GroundLane(Vector2 center, Vector2 direction, float length, float width, Color color, float lifetime, Sprite regionalSprite = null)
     {
-        Sprite attackSprite = LoadEffectSprite("AttackRootThorns", 300f, ref rootThornSprite);
+        Sprite attackSprite = regionalSprite != null ? regionalSprite : LoadEffectSprite("AttackRootThorns", 300f, ref rootThornSprite);
         if (attackSprite == null)
         {
             CreateGroundLaneFallback(center, direction, length, width, color, lifetime);
             return;
         }
-        GameObject go = CreateSpriteEffect(attackSprite, center, new Vector2(length, width), Color.white, lifetime, "Root thorn attack", true, true, true);
+        GameObject go = CreateSpriteEffect(attackSprite, center, new Vector2(length, width), color, lifetime, "Regional enemy thrust", true, true, true);
         go.transform.right = direction;
     }
 

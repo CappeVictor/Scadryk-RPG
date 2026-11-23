@@ -2053,6 +2053,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         string forestVolleyPattern = ScadrykEnemyHealth.AttackReadabilityLabel(0, false, false, 1, 0, 0);
         string saltVolleyPattern = ScadrykEnemyHealth.AttackReadabilityLabel(1, false, false, 1, 0, 0);
         string coastalVolleyPattern = ScadrykEnemyHealth.AttackReadabilityLabel(2, false, false, 1, 0, 0);
+        string forestThrustPattern = ScadrykEnemyHealth.AttackReadabilityLabel(0, false, false, 0, 0, 0);
+        string saltThrustPattern = ScadrykEnemyHealth.AttackReadabilityLabel(1, false, false, 0, 0, 0);
+        string coastalThrustPattern = ScadrykEnemyHealth.AttackReadabilityLabel(2, false, false, 0, 0, 0);
         string saltGuardianPattern = ScadrykEnemyHealth.AttackReadabilityLabel(1, true, false, 0, 0, 0);
         string finalPattern = ScadrykEnemyHealth.AttackReadabilityLabel(2, true, true, 0, 2, 3);
         string clarityRow = FormatAttackClarityEventCsvRow("session", "2026-11-22T00:00:00Z", 3, 2, finalPattern).TrimEnd('\n');
@@ -2061,6 +2064,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ScadrykEnemyHealth.AreaPulseLabelForBiome(1) == ScadrykEnemyHealth.AreaPulseLabelForBiome(2) ||
             !forestVolleyPattern.Contains("espinho lançado") || !saltVolleyPattern.Contains("estilhaço de sal") ||
             !coastalVolleyPattern.Contains("fragmento de sino") || forestVolleyPattern == saltVolleyPattern ||
+            !forestThrustPattern.Contains("avanço de raízes") || !saltThrustPattern.Contains("estocada de sal") ||
+            !coastalThrustPattern.Contains("investida do recife") || forestThrustPattern == saltThrustPattern ||
+            saltThrustPattern == coastalThrustPattern ||
             saltVolleyPattern == coastalVolleyPattern ||
             ScadrykEnemyProjectile.ImpactColor(0) == ScadrykEnemyProjectile.ImpactColor(1) ||
             ScadrykEnemyProjectile.ImpactColor(1) == ScadrykEnemyProjectile.ImpactColor(2) ||
