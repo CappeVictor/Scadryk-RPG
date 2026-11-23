@@ -180,6 +180,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         titleBackdropTexture = Resources.Load<Texture2D>("ScadrykArt/ScadrykTitleBackdrop");
         SetupCamera();
         gameObject.AddComponent<ScadrykAudio>();
+        if (!smokeRun) MigrateLegacyWorldSecretProgress("Scadryk.");
         int savedPhase = 0, savedRoom = 0;
         if (!smokeRun) TryLoadCheckpoint("Scadryk.", out savedPhase, out savedRoom);
         BuildPhase(savedPhase, savedRoom, true);
@@ -1121,6 +1122,24 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     internal static bool IsWorldSecretRevealed(string keyPrefix, int phase, int room) =>
         PlayerPrefs.GetInt(WorldSecretProgressKey(keyPrefix, phase, room), 0) == 1;
 
+    internal static bool MigrateLegacyWorldSecretProgress(string keyPrefix)
+    {
+        bool migrated = MigrateLegacyWorldSecret(keyPrefix, 1, 0, 1, 1);
+        migrated |= MigrateLegacyWorldSecret(keyPrefix, 2, 0, 2, 1);
+        if (migrated) PlayerPrefs.Save();
+        return migrated;
+    }
+
+    private static bool MigrateLegacyWorldSecret(string keyPrefix, int oldPhase, int oldRoom, int newPhase, int newRoom)
+    {
+        string oldKey = WorldSecretProgressKey(keyPrefix, oldPhase, oldRoom);
+        if (!PlayerPrefs.HasKey(oldKey)) return false;
+        if (PlayerPrefs.GetInt(oldKey, 0) == 1)
+            PlayerPrefs.SetInt(WorldSecretProgressKey(keyPrefix, newPhase, newRoom), 1);
+        PlayerPrefs.DeleteKey(oldKey);
+        return true;
+    }
+
     internal static bool ShouldBuildWorldSecret(bool smokeMode, bool alreadyRevealed) =>
         smokeMode || !alreadyRevealed;
 
@@ -1770,6 +1789,16 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             bool freshJourneyRevealsUnfoundSecret = ShouldBuildWorldSecret(false, IsWorldSecretRevealed(checkpointTestPrefix, 1, 1));
             worldSecretProgressRoundTrip = secretStartsHidden && secretSurvivesRoomRebuild && smokeCanRebuildSecret &&
                 secretsAreRoomSpecific && newJourneyClearsSecrets && freshJourneyRevealsUnfoundSecret;
+            MarkWorldSecretRevealed(checkpointTestPrefix, 1, 0);
+            MarkWorldSecretRevealed(checkpointTestPrefix, 2, 0);
+            bool legacySecretLocationsMigrated = MigrateLegacyWorldSecretProgress(checkpointTestPrefix) &&
+                !IsWorldSecretRevealed(checkpointTestPrefix, 1, 0) &&
+                !IsWorldSecretRevealed(checkpointTestPrefix, 2, 0) &&
+                IsWorldSecretRevealed(checkpointTestPrefix, 1, 1) &&
+                IsWorldSecretRevealed(checkpointTestPrefix, 2, 1) &&
+                ShouldRestorePowerEcho(checkpointTestPrefix, 0) && ShouldRestorePowerEcho(checkpointTestPrefix, 1);
+            ClearWorldSecretProgress(checkpointTestPrefix);
+            worldSecretProgressRoundTrip &= legacySecretLocationsMigrated;
             MarkWorldSecretRevealed(checkpointTestPrefix, 1, 1);
             MarkWorldSecretRevealed(checkpointTestPrefix, 2, 1);
             MarkWorldSecretRevealed(checkpointTestPrefix, 2, 2);
@@ -1840,8 +1869,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Debug.Log("SCADRYK_SMOKE: poderes restauram a partir do bioma e dos guardiões persistidos sem liberar poderes futuros");
         if (!witnessProgressRoundTrip) { SmokeFail("As conversas com Nima não preservam o ponto de leitura por bioma ou não reiniciam com a jornada"); yield break; }
         Debug.Log("SCADRYK_SMOKE: conversa de Nima preserva a próxima fala separada por bioma e pode ser reiniciada");
-        if (!worldSecretProgressRoundTrip) { SmokeFail("Selo opcional volta após reconstruir a sala, mistura salas ou não é limpo ao iniciar nova jornada"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: selos opcionais persistem por sala, sobrevivem à reconstrução e são limpos na nova jornada");
+        if (!worldSecretProgressRoundTrip) { SmokeFail("Selo opcional falha ao retomar, migrar save antigo, isolar sala ou limpar nova jornada"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: selos persistem, migram locais antigos, isolam salas e limpam em nova jornada");
         if (!powerEchoProgressRoundTrip) { SmokeFail("Melhorias de poder dos Ecos não acompanham corretamente os selos no save ou na nova jornada"); yield break; }
         Debug.Log("SCADRYK_SMOKE: os três selos salvam melhorias distintas e a jornada nova as remove");
         if (!SmokeCoverBlocksOnlyWhenSolid())
