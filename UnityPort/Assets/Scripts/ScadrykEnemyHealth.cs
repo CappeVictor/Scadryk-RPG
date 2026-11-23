@@ -616,7 +616,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             Color color = stage == 1 ? new Color(0.66f, 1f, 0.52f) : stage == 2 ? new Color(1f, 0.84f, 0.5f) : new Color(1f, 0.72f, 0.92f);
             for (int i = -halfCount; i <= halfCount; i++)
                 ScadrykEnemyProjectile.Launch(origin + direction * FinalVolleySpawnOffset, Rotate(direction, i * FinalVolleyAngleStep), FinalVolleySpeed, 14f + stage, shot, color, 0.58f, "Arauto — remembered volley",
-                    Mathf.Max(0f, FinalVolleyLength - FinalVolleySpawnOffset - ScadrykEnemyProjectile.HitboxRadius(0.58f)));
+                    Mathf.Max(0f, FinalVolleyLength - FinalVolleySpawnOffset - ScadrykEnemyProjectile.HitboxRadius(0.58f)), roomRoot: director != null ? director.ActiveRoomRoot : null);
             ScadrykEffects.Voidburst(origin + direction * 1.1f, 2.3f, 0.26f);
         }
         else if (pattern == 1)
@@ -628,7 +628,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
                 for (int i = 0; i < FinalStarfallSideProjectileCount(stage); i++)
                     ScadrykEnemyProjectile.Launch(origin, Rotate(direction, FinalStarfallSideProjectileAngle(stage, i)), FinalStarfallProjectileSpeed, 14f,
                         stage == 2 ? ScadrykEffects.SaltShardSprite : ScadrykEffects.VoidburstSprite, new Color(1f, 0.7f, 0.8f), FinalStarfallProjectileScale, "Arauto — falling memory",
-                        FinalStarfallProjectileLength - ScadrykEnemyProjectile.HitboxRadius(FinalStarfallProjectileScale));
+                        FinalStarfallProjectileLength - ScadrykEnemyProjectile.HitboxRadius(FinalStarfallProjectileScale), roomRoot: director != null ? director.ActiveRoomRoot : null);
         }
         else
         {
@@ -716,7 +716,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
                 biomeIndex == 0 ? ScadrykEffects.RootThrustSprite : biomeIndex == 2 ? ScadrykEffects.BellPulseSprite : ScadrykEffects.SaltShardSprite,
                 size: 0.34f, projectileName: "Salt crystal shard",
                 travelDistance: Mathf.Max(0f, travelDistance - 0.55f - ScadrykEnemyProjectile.HitboxRadius(0.34f)),
-                hitEffectBiome: biomeIndex);
+                hitEffectBiome: biomeIndex, roomRoot: director != null ? director.ActiveRoomRoot : null);
         }
     }
 

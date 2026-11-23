@@ -3360,7 +3360,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 if (!PortalCanBeEntered(gateObject != null && activePortal != null, activePortal != null && activePortal.IsOpen))
                 { SmokeFail("O portal não concluiu a animação de abertura"); yield break; }
             }
-            ScadrykEnemyProjectile.Launch(roomCenter + Vector2.up * 6f, Vector2.right, 0.1f, 0f);
+            ScadrykEnemyProjectile.Launch(roomCenter + Vector2.up * 6f, Vector2.right, 0.1f, 0f, roomRoot: ActiveRoomRoot);
             ScadrykEnemyProjectile smokeProjectile = FindAnyObjectByType<ScadrykEnemyProjectile>();
             if (smokeProjectile == null || !smokeProjectile.transform.IsChildOf(levelRoot.transform))
             { SmokeFail("Projétil de inimigo não foi associado à sala " + room); yield break; }
@@ -3486,13 +3486,13 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             cover.transform.position = wallPosition;
             cover.AddComponent<BoxCollider2D>().size = new Vector2(0.35f, 1f);
             Physics2D.SyncTransforms();
-            ScadrykEnemyProjectile.Launch(origin, Vector2.right, 25f, 0f, size: 0.34f, projectileName: projectileName, travelDistance: 10f);
+            ScadrykEnemyProjectile.Launch(origin, Vector2.right, 25f, 0f, size: 0.34f, projectileName: projectileName, travelDistance: 10f, roomRoot: ActiveRoomRoot);
             for (int step = 0; step < 12 && FindSmokeProjectile(projectileName) != null; step++) yield return new WaitForFixedUpdate();
             bool solidStopsProjectile = FindSmokeProjectile(projectileName) == null;
 
             cover.GetComponent<BoxCollider2D>().isTrigger = true;
             Physics2D.SyncTransforms();
-            ScadrykEnemyProjectile.Launch(origin, Vector2.right, 25f, 0f, size: 0.34f, projectileName: projectileName, travelDistance: 10f);
+            ScadrykEnemyProjectile.Launch(origin, Vector2.right, 25f, 0f, size: 0.34f, projectileName: projectileName, travelDistance: 10f, roomRoot: ActiveRoomRoot);
             for (int step = 0; step < 4; step++) yield return new WaitForFixedUpdate();
             bool triggerAllowsProjectile = FindSmokeProjectile(projectileName) != null;
             ScadrykEnemyProjectile cleanupProbe = FindSmokeProjectile(projectileName);
