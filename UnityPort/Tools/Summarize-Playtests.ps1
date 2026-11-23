@@ -60,7 +60,12 @@ if (-not [string]::IsNullOrWhiteSpace($AttackClarityPath)) {
 $ratingColumns = @(
     'objectives', 'optional_secret', 'attack_readability', 'controls', 'power_use',
     'combo_readability', 'environmental_mechanics', 'audio_mix', 'memory_readability',
-    'memory_audio', 'secret_audio', 'portal_readability', 'death_fairness'
+    'memory_audio', 'secret_audio', 'portal_readability', 'death_fairness', 'accessibility_options',
+    'reduced_flashes', 'reduced_shake', 'high_contrast_warnings', 'text_scaling', 'visual_warnings_without_audio'
+)
+$accessibilityRatingColumns = @(
+    'accessibility_options', 'reduced_flashes', 'reduced_shake', 'high_contrast_warnings',
+    'text_scaling', 'visual_warnings_without_audio'
 )
 $ratingDetails = @()
 if (-not [string]::IsNullOrWhiteSpace($RatingsPath)) {
@@ -193,6 +198,9 @@ if (-not [string]::IsNullOrWhiteSpace($RatingsPath)) {
         }
         Write-Output 'Médias das avaliações por experiência (escala de 1 a 5; interpretar junto da cobertura)'
         $ratingSummary | Format-Table -AutoSize | Out-String | Write-Output
+        Write-Output 'Médias de acessibilidade por experiência (campos não usados ficam vazios)'
+        $ratingSummary | Select-Object -Property (@('experience', 'participants') + $accessibilityRatingColumns) |
+            Format-Table -AutoSize -Wrap | Out-String -Width 180 | Write-Output
     }
 }
 

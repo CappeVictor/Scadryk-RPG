@@ -46,7 +46,7 @@ Depois da sessão, filtre os dois CSVs pelo `session_id` e copie os valores auto
 
 Para consolidar os registros no Windows, abra PowerShell na pasta do projeto e use `.\UnityPort\Tools\Summarize-Playtests.ps1 -SessionsPath "CAMINHO\scadryk-sessions-v9.csv" -AttackClarityPath "CAMINHO\scadryk-attack-clarity-v1.csv"`. Acrescente `-SessionId "ID_DA_SESSAO"` para filtrar uma tentativa ou `-OutputPath ".\playtest-summary.csv"` para salvar as métricas por sala; sem esses parâmetros, o script mostra todas as sessões e mantém cada `session_id` separado. CSVs v8 antigos também podem ser resumidos; a nova exposição à corrente de sal fica zerada neles.
 
-Após a sessão, registre as respostas de 1 a 5 numa linha de `PLAYTEST-RATINGS.csv`, identificada pelo `session_id` e nível `iniciante`, `intermediária` ou `experiente`; deixe sem nota as perguntas não respondidas. Não acrescente nome, email ou outros dados pessoais. Passe também `-RatingsPath .\UnityPort\PLAYTEST-RATINGS.csv` ao resumo para calcular médias separadas por nível; cada sessão aceita uma única ficha. O relatório mostra quantas respostas há em cada nível e quantas faltam para a meta de duas, e avisa quando uma amostra ainda é pequena demais para comparar médias.
+Após a sessão, registre as respostas de 1 a 5 numa linha de `PLAYTEST-RATINGS.csv`, identificada pelo `session_id` e nível `iniciante`, `intermediária` ou `experiente`; deixe sem nota as perguntas não respondidas. Os campos sobre redução de flashes/tremor e alto contraste só devem ser preenchidos se a pessoa realmente usou essas opções; não peça a ninguém para ativá-las se isso causar desconforto. Para testar a alternativa visual sem som, combine com a pessoa e silencie efeitos numa pausa segura depois da primeira tentativa, então observe uma sala de combate sem alterar a build. Não acrescente nome, email ou outros dados pessoais. Passe também `-RatingsPath .\UnityPort\PLAYTEST-RATINGS.csv` ao resumo para calcular médias separadas por nível; cada sessão aceita uma única ficha. O relatório mostra quantas respostas há em cada nível e quantas faltam para a meta de duas, e avisa quando uma amostra ainda é pequena demais para comparar médias.
 
 Para validar o leitor sem usar dados de participantes, rode `.\UnityPort\Tools\Test-Summarize-Playtests.ps1` no PowerShell. O comando gera e remove fixtures temporários e verifica CSVs v9 e v8, cobertura parcial, ausência de respostas, fichas duplicadas e notas fora da escala. O workflow C# da raiz também executa essa checagem quando os scripts mudam; ela valida o relatório e sua compatibilidade histórica, mas não substitui o build/smoke do Unity.
 
@@ -67,6 +67,12 @@ Para validar o leitor sem usar dados de participantes, rode `.\UnityPort\Tools\T
 Respostas de 1 (discordo) a 5 (concordo), com observações:
 
 - Eu sabia para onde ir na maior parte do tempo: `1  2  3  4  5` — nota: `____________________`
+- Encontrei e entendi as opções de acessibilidade sem ajuda: `1  2  3  4  5` — quais foram usadas? `____________________`
+- Com “Reduzir flashes” ativo, os efeitos ficaram confortáveis e continuaram fáceis de ler: `1  2  3  4  5` — deixe em branco se não usou.
+- Com “Reduzir tremor” ativo, o movimento da câmera ficou confortável: `1  2  3  4  5` — deixe em branco se não usou.
+- O alto contraste tornou os avisos mais fáceis de distinguir: `1  2  3  4  5` — deixe em branco se não usou.
+- O ajuste de escala de texto tornou as instruções e lembranças mais legíveis: `1  2  3  4  5` — deixe em branco se não alterou a escala.
+- Mesmo com efeitos sonoros no volume zero, os sinais visuais deixaram os ataques perigosos claros: `1  2  3  4  5`.
 - Encontrei ao menos um selo opcional sem receber instruções do observador: `1  2  3  4  5` — qual pista levou até ele? `____________________`
 - Consegui reconhecer os avisos antes de receber dano: `1  2  3  4  5` — nota: `____________________`
 - A esquiva e os poderes responderam como eu esperava: `1  2  3  4  5` — nota: `____________________`

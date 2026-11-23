@@ -27,11 +27,11 @@ try {
     )
     [IO.File]::WriteAllText((Join-Path $fixtureRoot 'sessions.csv'), ($sessionHeader + "`n" + ($sessionRows -join "`n") + "`n"), [Text.UTF8Encoding]::new($false))
 
-    $ratingHeader = 'session_id,experience,objectives,optional_secret,attack_readability,controls,power_use,combo_readability,environmental_mechanics,audio_mix,memory_readability,memory_audio,secret_audio,portal_readability,death_fairness'
+    $ratingHeader = 'session_id,experience,objectives,optional_secret,attack_readability,controls,power_use,combo_readability,environmental_mechanics,audio_mix,memory_readability,memory_audio,secret_audio,portal_readability,death_fairness,accessibility_options,reduced_flashes,reduced_shake,high_contrast_warnings,text_scaling,visual_warnings_without_audio'
     $ratingRows = @(
-        'beginner,iniciante,4,4,4,4,4,4,4,4,4,4,4,4,4',
-        'intermediate1,intermediária,4,4,4,4,4,4,4,4,4,4,4,4,4',
-        'intermediate2,intermediária,4,4,4,4,4,4,4,4,4,4,4,4,4'
+        'beginner,iniciante,4,4,4,4,4,4,4,4,4,4,4,4,4,4,3,4,5,4,5',
+        'intermediate1,intermediária,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4',
+        'intermediate2,intermediária,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4'
     )
     $ratingsPath = Join-Path $fixtureRoot 'ratings.csv'
     [IO.File]::WriteAllText($ratingsPath, ($ratingHeader + "`n" + ($ratingRows -join "`n") + "`n"), [Text.UTF8Encoding]::new($false))
@@ -39,6 +39,7 @@ try {
 
     $partial = Invoke-Summary 'ratings.csv'
     Assert-Condition ($partial.Output.Contains('Cobertura das avaliações')) 'A tabela de cobertura não foi impressa.'
+    Assert-Condition ($partial.Output.Contains('accessibility_options') -and $partial.Output.Contains('reduced_flashes')) 'As avaliações de acessibilidade não foram incluídas nas médias.'
     Assert-Condition (($partial.Warnings.Count -eq 2) -and (($partial.Warnings -join "`n") -match "iniciante.*faltam 1") -and (($partial.Warnings -join "`n") -match "experiente.*faltam 2")) 'As lacunas das amostras parciais não foram avisadas corretamente.'
     $v9SummaryPath = Join-Path $fixtureRoot 'v9-summary.csv'
     & $summaryScript -SessionsPath (Join-Path $fixtureRoot 'sessions.csv') -OutputPath $v9SummaryPath | Out-Null
@@ -62,7 +63,7 @@ try {
     catch { $duplicateRejected = $_.Exception.Message -match 'Mais de uma ficha' }
     Assert-Condition $duplicateRejected 'Fichas duplicadas para a mesma sessão não foram rejeitadas.'
 
-    $invalidRow = 'beginner,iniciante,9,4,4,4,4,4,4,4,4,4,4,4,4'
+    $invalidRow = 'beginner,iniciante,9,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4'
     [IO.File]::WriteAllText($ratingsPath, ($ratingHeader + "`n" + $invalidRow + "`n"), [Text.UTF8Encoding]::new($false))
     $invalidRatingRejected = $false
     try { & $summaryScript -SessionsPath (Join-Path $fixtureRoot 'sessions.csv') -RatingsPath $ratingsPath *> $null }
