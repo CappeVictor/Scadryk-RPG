@@ -2049,6 +2049,10 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             Mathf.Abs(ScadrykAudio.CombatIntensityFor(4, true, true)) > 0.001f ||
             Mathf.Abs(ScadrykAudio.BlendCombatIntensity(0f, 1f, 0.425f) - 0.5f) > 0.001f ||
             Mathf.Abs(ScadrykAudio.BlendCombatIntensity(1f, 0f, 0.425f) - 0.5f) > 0.001f ||
+            Mathf.Abs(ScadrykAudio.WarningMusicDuckLevel - 0.62f) > 0.001f ||
+            Mathf.Abs(ScadrykAudio.BlendWarningMusicEnvelope(1f, true, 0.12f) - 0.62f) > 0.001f ||
+            Mathf.Abs(ScadrykAudio.BlendWarningMusicEnvelope(0.62f, false, 0.12f) - 0.87f) > 0.001f ||
+            Mathf.Abs(ScadrykAudio.BlendWarningMusicEnvelope(0.62f, false, 0.48f) - 1f) > 0.001f ||
             Mathf.Abs(ScadrykAudio.WarningCueVolumeScale(0) - 0.8f) > 0.001f ||
             ScadrykAudio.WarningCueVolumeScale(1) >= ScadrykAudio.WarningCueVolumeScale(0) ||
             ScadrykAudio.WarningCueVolumeScale(4) <= 0f ||
@@ -2071,7 +2075,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ScadrykCue.PlayerFinisher == ScadrykCue.PlayerStrike || ScadrykCue.PlayerFinisher == ScadrykCue.Impact ||
             ScadrykCue.PlayerFinisher == ScadrykCue.Sword)
         { SmokeFail("Cues de perigo, música de combate ou sinais de impacto não distinguem os estados previstos"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: música escala de salas limpas a grupos e chefes e recua em pausas");
+        Debug.Log("SCADRYK_SMOKE: música escala em combate, recua em pausa e abre espaço para avisos de perigo");
         Debug.Log("SCADRYK_SMOKE: cada padrão do Arauto tem cue próprio; avisos sobrepostos perdem volume e têm teto de quatro vozes");
         if (!FocusLossRequiresPause(false, false, false, false, false, false) ||
             FocusLossRequiresPause(true, false, false, false, false, false) ||

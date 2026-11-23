@@ -12,8 +12,10 @@ public sealed class ScadrykAudio : MonoBehaviour
     private AudioSource music, transitionMusic, combatMusic, effects;
     private Coroutine musicTransition;
     private float musicEnvelope = 1f, transitionEnvelope, combatEnvelope, combatTarget;
+    private float warningMusicEnvelope = 1f, warningMusicDuckUntil;
     private const float ContextFadeDuration = 1.25f;
     private const float CombatIntensityFadeDuration = 0.85f;
+    internal const float WarningMusicDuckLevel = 0.62f;
     internal const int MaxConcurrentWarningCues = 4;
     private readonly List<float> activeWarningCueEndsAt = new List<float>(5);
     private AudioClip[] biomeLoops;
@@ -63,12 +65,14 @@ public sealed class ScadrykAudio : MonoBehaviour
     private void Update()
     {
         combatEnvelope = BlendCombatIntensity(combatEnvelope, combatTarget, Time.unscaledDeltaTime);
+        warningMusicEnvelope = BlendWarningMusicEnvelope(warningMusicEnvelope,
+            Time.unscaledTime < warningMusicDuckUntil, Time.unscaledDeltaTime);
         float musicVolume = ScadrykSettings.MusicVolume * 0.34f;
-        if (music != null) music.volume = musicVolume * musicEnvelope;
-        if (transitionMusic != null) transitionMusic.volume = musicVolume * transitionEnvelope;
+        if (music != null) music.volume = musicVolume * musicEnvelope * warningMusicEnvelope;
+        if (transitionMusic != null) transitionMusic.volume = musicVolume * transitionEnvelope * warningMusicEnvelope;
         if (combatMusic != null)
         {
-            combatMusic.volume = ScadrykSettings.MusicVolume * 0.11f * combatEnvelope;
+            combatMusic.volume = ScadrykSettings.MusicVolume * 0.11f * combatEnvelope * warningMusicEnvelope;
             if (combatTarget > 0f && !combatMusic.isPlaying) combatMusic.Play();
             else if (combatTarget <= 0f && combatEnvelope <= 0.001f && combatMusic.isPlaying) combatMusic.Stop();
         }
@@ -90,6 +94,10 @@ public sealed class ScadrykAudio : MonoBehaviour
 
     internal static float BlendCombatIntensity(float current, float target, float deltaTime) =>
         Mathf.MoveTowards(current, target, Mathf.Max(0f, deltaTime) / CombatIntensityFadeDuration);
+
+    internal static float BlendWarningMusicEnvelope(float current, bool warningActive, float deltaTime) =>
+        Mathf.MoveTowards(current, warningActive ? WarningMusicDuckLevel : 1f,
+            Mathf.Max(0f, deltaTime) / (warningActive ? 0.12f : 0.48f));
 
     internal static float WarningCueVolumeScale(int overlappingWarnings) => 0.8f / Mathf.Max(1, overlappingWarnings + 1);
     internal static bool CanPlayWarningCue(int overlappingWarnings) => overlappingWarnings < MaxConcurrentWarningCues;
@@ -174,6 +182,8 @@ public sealed class ScadrykAudio : MonoBehaviour
             if (!CanPlayWarningCue(overlappingWarnings)) return;
             volumeScale = WarningCueVolumeScale(overlappingWarnings);
             instance.activeWarningCueEndsAt.Add(now + instance.cueClips[index].length);
+            instance.warningMusicDuckUntil = Mathf.Max(instance.warningMusicDuckUntil,
+                now + instance.cueClips[index].length + 0.12f);
         }
         instance.nextCueAt[index] = Time.unscaledTime + (cue == ScadrykCue.Warning || cue == ScadrykCue.Impact || IsWarningCue(cue) ? 0.13f : 0.04f);
         instance.effects.PlayOneShot(instance.cueClips[index], volumeScale);
