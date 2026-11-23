@@ -326,6 +326,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private void OnApplicationFocus(bool hasFocus)
     {
         if (!hasFocus) ScadrykSettings.FlushPendingSave();
+        if (!hasFocus && FocusLossRequiresPause(hasFocus, showTitle, isPaused, showOptions, victory, transitioning) &&
+            ShouldSaveCheckpointOnQuit(player != null, victory, showTitle, showOpeningStory, smokeRun))
+            SaveProgress(phaseIndex, roomIndex);
         if (smokeRun || showOpeningStory || showWorldMap || memoryModal || !FocusLossRequiresPause(hasFocus, showTitle, isPaused, showOptions, victory, transitioning)) return;
         isPaused = true;
         ApplyPauseTimeScale();
@@ -1082,7 +1085,10 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     private void OnApplicationPause(bool paused)
     {
-        if (paused) ScadrykSettings.FlushPendingSave();
+        if (!paused) return;
+        ScadrykSettings.FlushPendingSave();
+        if (ShouldSaveCheckpointOnQuit(player != null, victory, showTitle, showOpeningStory, smokeRun))
+            SaveProgress(phaseIndex, roomIndex);
     }
 
     internal static bool ShouldSaveCheckpointOnQuit(bool hasPlayer, bool hasVictory, bool titleVisible,
