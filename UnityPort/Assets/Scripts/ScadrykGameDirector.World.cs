@@ -436,18 +436,27 @@ public sealed partial class ScadrykGameDirector
 
     private void PlacePhaseGround(Transform parent, float x, int room)
     {
-        if (phaseGroundSprites == null || phaseGroundSprites[phaseIndex] == null) return;
+        Sprite groundSprite = GroundSpriteForRoom(phaseIndex, room, x, phaseGroundSprites, saltCrosswindGroundSprite);
+        if (groundSprite == null) return;
         var ground = new GameObject("Painted top-down biome — " + PhaseNames[phaseIndex]);
         ground.transform.SetParent(parent);
         ground.transform.position = new Vector3(x, 0f, 0f);
         var renderer = ground.AddComponent<SpriteRenderer>();
-        renderer.sprite = phaseGroundSprites[phaseIndex];
+        renderer.sprite = groundSprite;
         renderer.sortingOrder = -8;
         renderer.flipX = GroundFlipX(room);
         renderer.flipY = GroundFlipY(room);
         Vector2 size = renderer.sprite.bounds.size;
         // Extend the painted ground through the portal corridor so the camera never reveals void strips.
         ground.transform.localScale = new Vector3((RoomSpacing + 0.2f) / size.x, RoomHeight / size.y, 1f);
+    }
+
+    internal static Sprite GroundSpriteForRoom(int biome, int room, float roomX, Sprite[] biomeGrounds, Sprite saltCrosswindGround)
+    {
+        if (biomeGrounds == null || biome < 0 || biome >= biomeGrounds.Length) return null;
+        if (biome == 1 && room == 1 && Mathf.Abs(roomX - RoomSpacing) < 0.01f && saltCrosswindGround != null)
+            return saltCrosswindGround;
+        return biomeGrounds[biome];
     }
 
     private static bool GroundFlipX(int room) => room == 1;
