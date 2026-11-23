@@ -19,6 +19,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  validate-resource-files:
+    name: Validate Unity resource files without Editor license
+    runs-on: windows-2022
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Check script resource references
+        shell: pwsh
+        run: ./UnityPort/Tools/Validate-Resources.ps1
+
   build-and-smoke:
     name: Build and smoke-test on hosted Windows
     runs-on: windows-2022
