@@ -67,7 +67,11 @@ public static class ScadrykSettings
     internal static Vector2 ApplyRadialDeadzone(Vector2 stick, float deadzone)
     {
         float threshold = Mathf.Clamp(deadzone, 0f, 0.95f);
-        return stick.sqrMagnitude <= threshold * threshold ? Vector2.zero : stick;
+        float magnitude = stick.magnitude;
+        if (magnitude <= threshold) return Vector2.zero;
+
+        float remappedMagnitude = Mathf.Clamp01((magnitude - threshold) / (1f - threshold));
+        return stick * (remappedMagnitude / magnitude);
     }
     public static bool PadDown(int action) => action >= 0 && action < PadDefaults.Length && PadButtonDown(PadButton(action));
     public static bool PadButtonDown(int button) => button >= 0 && button < PadButtons.Length && Input.GetKeyDown(PadButtons[button]);

@@ -1905,11 +1905,15 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Vector2 stickDrift = ScadrykSettings.ApplyRadialDeadzone(new Vector2(0.12f, 0.03f), 0.19f);
         Vector2 intentionalDiagonal = ScadrykSettings.ApplyRadialDeadzone(new Vector2(0.15f, 0.15f), 0.19f);
         Vector2 intentionalAim = ScadrykSettings.ApplyRadialDeadzone(new Vector2(-0.4f, 0.3f), 0.19f);
-        if (stickDrift != Vector2.zero || intentionalDiagonal == Vector2.zero || intentionalAim != new Vector2(-0.4f, 0.3f) ||
+        Vector2 fullStick = ScadrykSettings.ApplyRadialDeadzone(Vector2.right, 0.19f);
+        Vector2 halfwayStick = ScadrykSettings.ApplyRadialDeadzone(Vector2.right * 0.595f, 0.19f);
+        if (stickDrift != Vector2.zero || intentionalDiagonal == Vector2.zero || intentionalAim == Vector2.zero ||
+            Mathf.Abs(intentionalAim.magnitude - ((0.5f - 0.19f) / 0.81f)) > 0.001f ||
+            Mathf.Abs(fullStick.magnitude - 1f) > 0.001f || Mathf.Abs(halfwayStick.magnitude - 0.5f) > 0.001f ||
             ScadrykSettings.DefaultGamepadDeadzone < ScadrykSettings.MinimumGamepadDeadzone ||
             ScadrykSettings.DefaultGamepadDeadzone > ScadrykSettings.MaximumGamepadDeadzone)
-        { SmokeFail("A zona morta radial não filtra drift ou remove comandos diagonais intencionais"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: zona morta radial filtra drift e preserva movimento diagonal e mira");
+        { SmokeFail("A zona morta radial não filtra drift, preserva diagonal/mira ou remapeia progressivamente a faixa útil"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: zona morta radial filtra drift e remapeia progressivamente a faixa útil mantendo direção");
         if (ResolveInputMode("unknown", "keyboard_mouse") != "keyboard_mouse" ||
             ResolveInputMode("keyboard_mouse", "gamepad") != "gamepad" ||
             ResolveInputMode("gamepad", "keyboard_mouse") != "keyboard_mouse" ||
