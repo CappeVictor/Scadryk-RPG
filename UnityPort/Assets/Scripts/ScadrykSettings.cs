@@ -73,6 +73,12 @@ public static class ScadrykSettings
         float remappedMagnitude = Mathf.Clamp01((magnitude - threshold) / (1f - threshold));
         return stick * (remappedMagnitude / magnitude);
     }
+    internal static string GamepadStickReadout(Vector2 raw, float deadzone)
+    {
+        int rawPercent = Mathf.RoundToInt(Mathf.Clamp01(raw.magnitude) * 100f);
+        int usefulPercent = Mathf.RoundToInt(ApplyRadialDeadzone(raw, deadzone).magnitude * 100f);
+        return string.Format("{0:00}→{1:00}%", rawPercent, usefulPercent);
+    }
     public static bool PadDown(int action) => action >= 0 && action < PadDefaults.Length && PadButtonDown(PadButton(action));
     public static bool PadButtonDown(int button) => button >= 0 && button < PadButtons.Length && Input.GetKeyDown(PadButtons[button]);
     public static string PadButtonName(int button) => button switch

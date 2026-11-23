@@ -14,4 +14,6 @@ Este documento compara princípios observáveis sem copiar conteúdo. Uma build 
 
 **Atualização de controle (23/11/2026):** a zona morta radial de 8–40% agora remapeia linearmente a faixa útil de zero à força máxima, preservando direção e diagonais. Unity batch e build Windows passaram; ainda falta avaliar drift, precisão e sensação de resposta em controles físicos.
 
+**Calibração acessível (23/11/2026):** a aba de controle agora compara ao vivo a magnitude bruta e útil dos analógicos para movimento e mira; o painel também rola até ficar visível em janelas compactas. Compilação e build Windows passaram; o smoke da geometria e a verificação visual e com controle físico ainda estão pendentes.
+
 **Regra:** registrar evidências na [QA.md](QA.md), atualizar esta tabela após cada etapa e não declarar paridade sem sessões externas comparáveis.

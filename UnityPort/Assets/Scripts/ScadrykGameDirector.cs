@@ -1907,9 +1907,12 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Vector2 intentionalAim = ScadrykSettings.ApplyRadialDeadzone(new Vector2(-0.4f, 0.3f), 0.19f);
         Vector2 fullStick = ScadrykSettings.ApplyRadialDeadzone(Vector2.right, 0.19f);
         Vector2 halfwayStick = ScadrykSettings.ApplyRadialDeadzone(Vector2.right * 0.595f, 0.19f);
+        string driftReadout = ScadrykSettings.GamepadStickReadout(new Vector2(0.12f, 0.03f), 0.19f);
+        string movingReadout = ScadrykSettings.GamepadStickReadout(Vector2.right * 0.595f, 0.19f);
         if (stickDrift != Vector2.zero || intentionalDiagonal == Vector2.zero || intentionalAim == Vector2.zero ||
             Mathf.Abs(intentionalAim.magnitude - ((0.5f - 0.19f) / 0.81f)) > 0.001f ||
             Mathf.Abs(fullStick.magnitude - 1f) > 0.001f || Mathf.Abs(halfwayStick.magnitude - 0.5f) > 0.001f ||
+            driftReadout != "12→00%" || movingReadout != "60→50%" ||
             ScadrykSettings.DefaultGamepadDeadzone < ScadrykSettings.MinimumGamepadDeadzone ||
             ScadrykSettings.DefaultGamepadDeadzone > ScadrykSettings.MaximumGamepadDeadzone)
         { SmokeFail("A zona morta radial não filtra drift, preserva diagonal/mira ou remapeia progressivamente a faixa útil"); yield break; }
@@ -2264,6 +2267,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             lastCompactKey.y + lastCompactKey.height > keyListScroll + shortOptionsViewport + 0.001f ||
             lastCompactPad.y + lastCompactPad.height > padListScroll + shortOptionsViewport + 0.001f ||
             compactPadDeadzone.y + compactPadDeadzone.height > padDeadzoneScroll + shortOptionsViewport + 0.001f ||
+            Mathf.Abs(compactPadDeadzone.height - 108f) > 0.001f ||
             keyListScroll > CompactOptionsContentHeight(1) - shortOptionsViewport ||
             padListScroll > CompactOptionsContentHeight(2) - shortOptionsViewport ||
             padDeadzoneScroll > CompactOptionsContentHeight(2) - shortOptionsViewport)

@@ -800,10 +800,11 @@ public sealed partial class ScadrykGameDirector
                 string label = gamepadRebindAction == i ? "Pressione um botão…" : ScadrykSettings.PadButtonName(ScadrykSettings.PadButton(i));
                 if (OptionButton(new Rect(x + 240f, row, width - 255f, padRowHeight), label, i + 3)) { gamepadRebindAction = i; gamepadRebindAfterFrame = Time.frameCount; }
             }
-            if (optionsSelection == 11) DrawSelection(new Rect(x + 10f, y + 438f, width - 20f, 46f));
             GUI.Label(new Rect(x + 15f, y + 445f, 210f, 30f), "Zona morta: " + Mathf.RoundToInt(ScadrykSettings.GamepadDeadzone * 100f) + "%", bodyStyle);
             ScadrykSettings.GamepadDeadzone = GUI.HorizontalSlider(new Rect(x + 240f, y + 450f, width - 255f, 24f),
                 ScadrykSettings.GamepadDeadzone, ScadrykSettings.MinimumGamepadDeadzone, ScadrykSettings.MaximumGamepadDeadzone);
+            if (optionsSelection == 11) DrawSelection(new Rect(x + 10f, y + 438f, width - 20f, 72f));
+            GUI.Label(new Rect(x + 15f, y + 480f, width - 30f, 46f), GamepadAnalogReadout(false), smallStyle);
         }
         if (OptionButton(new Rect(x + (width - 180f) * 0.5f, y + backOffset, 180f, 42f), "Voltar", optionsTab == 0 ? 9 : optionsTab == 1 ? 15 : 12)) { showOptions = false; rebindingAction = gamepadRebindAction = -1; }
         GUI.Label(new Rect(x, y + footerOffset, width, 28f), "Controle: analógico navega · A confirma · B volta · Start pausa · L3 mapa.", smallStyle);
@@ -919,10 +920,22 @@ public sealed partial class ScadrykGameDirector
             if (OptionButton(new Rect(labelWidth + 20f, row, width - labelWidth - 32f, 32f), label, i + 3))
             { gamepadRebindAction = i; gamepadRebindAfterFrame = Time.frameCount; }
         }
-        DrawCompactOptionSelection(11, 328f, 42f, width);
+        DrawCompactOptionSelection(11, 328f, 108f, width);
         GUI.Label(new Rect(12f, 334f, labelWidth, 28f), "Zona morta: " + Mathf.RoundToInt(ScadrykSettings.GamepadDeadzone * 100f) + "%", bodyStyle);
         ScadrykSettings.GamepadDeadzone = GUI.HorizontalSlider(new Rect(labelWidth + 20f, 338f, width - labelWidth - 32f, 24f),
             ScadrykSettings.GamepadDeadzone, ScadrykSettings.MinimumGamepadDeadzone, ScadrykSettings.MaximumGamepadDeadzone);
+        GUI.Label(new Rect(12f, 372f, width - 24f, 62f), GamepadAnalogReadout(true), smallStyle);
+    }
+
+    private static string GamepadAnalogReadout(bool compact)
+    {
+        float deadzone = ScadrykSettings.GamepadDeadzone;
+        Vector2 movement = new Vector2(Input.GetAxisRaw("Scadryk Move X"), Input.GetAxisRaw("Scadryk Move Y"));
+        Vector2 aim = new Vector2(Input.GetAxisRaw("Scadryk Aim X"), Input.GetAxisRaw("Scadryk Aim Y"));
+        string movementText = "Mover " + ScadrykSettings.GamepadStickReadout(movement, deadzone);
+        string aimText = "Mirar " + ScadrykSettings.GamepadStickReadout(aim, deadzone);
+        return compact ? "Bruto → útil\n" + movementText + "\n" + aimText :
+            "Analógicos bruto → útil\n" + movementText + " · " + aimText;
     }
 
     private void DrawCompactOptionSelection(int selection, float top, float height, float width)
@@ -930,7 +943,7 @@ public sealed partial class ScadrykGameDirector
         if (optionsSelection == selection) DrawSelection(new Rect(4f, top, width - 8f, height));
     }
 
-    internal static float CompactOptionsContentHeight(int tab) => tab == 0 ? 390f : tab == 1 ? 474f : 382f;
+    internal static float CompactOptionsContentHeight(int tab) => tab == 0 ? 390f : tab == 1 ? 474f : 436f;
 
     internal static Rect CompactOptionsSelectionRect(int tab, int selection)
     {
@@ -949,7 +962,7 @@ public sealed partial class ScadrykGameDirector
         {
             if (selection == 10) return new Rect(0f, 3f, 1f, 34f);
             if (selection is >= 3 and <= 9) return new Rect(0f, 44f + (selection - 3) * 40f, 1f, 32f);
-            if (selection == 11) return new Rect(0f, 328f, 1f, 42f);
+            if (selection == 11) return new Rect(0f, 328f, 1f, 108f);
         }
         return new Rect(0f, 0f, 1f, 1f);
     }
