@@ -382,7 +382,11 @@ public sealed partial class ScadrykGameDirector
         if (!MiniMapPanelFits(panel, hud, Screen.width, Screen.height)) return;
         GUI.color = new Color(0.035f, 0.05f, 0.06f, 0.9f); GUI.Box(panel, GUIContent.none); GUI.color = Color.white;
         string[] mapBiomeNames = { "Bosque", "Sal", "Costa" };
-        GUI.Label(new Rect(panel.x + 13, panel.y + 8, width - 26f, 21f + extra * 8f), "MAPA · " + mapBiomeNames[phaseIndex] + " · ↑/↓ · ◇/◆ SELO", smallStyle);
+        string mapHeader = MiniMapHeaderText(mapBiomeNames[phaseIndex]);
+        int baseHeaderFontSize = smallStyle.fontSize;
+        smallStyle.fontSize = FitMiniMapHeaderFontSize(baseHeaderFontSize, smallStyle.CalcSize(new GUIContent(mapHeader)).x, width - 26f);
+        GUI.Label(new Rect(panel.x + 13, panel.y + 8, width - 26f, 21f + extra * 8f), mapHeader, smallStyle);
+        smallStyle.fontSize = baseHeaderFontSize;
         float mapX = panel.x + 15, mapY = panel.y + 43 + extra * 5f, roomW = 75f + extra * 30f, roomH = 57f + extra * 10f, gap = 8;
         for (int i = 0; i < RoomsPerPhase; i++)
         {
@@ -566,6 +570,12 @@ public sealed partial class ScadrykGameDirector
         panel.xMax <= screenWidth - 8f && panel.yMax <= screenHeight - 8f;
 
     private static string MapRoomLabel(int phase, int room) => MapRoomLabels[phase][room];
+    internal static string MiniMapHeaderText(string biomeName) =>
+        "MAPA · " + biomeName + " · ↑/↓ ROTA · ◇ PEND. · ◆ FEITO";
+    internal static int FitMiniMapHeaderFontSize(int baseFontSize, float requiredWidth, float availableWidth) =>
+        requiredWidth <= availableWidth || requiredWidth <= 0f
+            ? Mathf.Max(9, baseFontSize)
+            : Mathf.Clamp(Mathf.FloorToInt(baseFontSize * availableWidth / requiredWidth), 9, Mathf.Max(9, baseFontSize));
     internal static string MapRoomRouteLabel(int phase, int room) => MapRoomRouteLabel(phase, room, false);
     internal static string MapRoomRouteLabel(int phase, int room, bool secretFound) =>
         TryGetSideRoute(phase, room, out int side, out _, out _) ? MapRoomLabel(phase, room) + (side > 0 ? " ↑" : " ↓") +

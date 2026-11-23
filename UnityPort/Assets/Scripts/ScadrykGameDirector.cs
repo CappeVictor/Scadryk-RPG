@@ -2514,6 +2514,12 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 if (!mapLabels.Add(MapRoomLabel(phase, room))) { SmokeFail("O minimapa repete o nome de uma das nove salas"); yield break; }
         if (mapLabels.Count != PhaseNames.Length * RoomsPerPhase) { SmokeFail("O minimapa não identifica as nove salas"); yield break; }
         Debug.Log("SCADRYK_SMOKE: minimapa diferencia as nove salas");
+        string minimapHeader = MiniMapHeaderText("Bosque");
+        int compactMapHeaderSize = FitMiniMapHeaderFontSize(14, 500f, 260f);
+        if (!minimapHeader.Contains("↑/↓ ROTA") || !minimapHeader.Contains("◇ PEND.") ||
+            !minimapHeader.Contains("◆ FEITO") || compactMapHeaderSize < 9 || compactMapHeaderSize >= 14)
+        { SmokeFail("O minimapa não explica o significado dos desvios e dos estados do selo em espaço compacto"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: cabeçalho do minimapa explica desvios e selos pendentes/liberados");
         string[] routeMarkers = { " ↑", " ↓ ◇", " ↑ ◇" };
         for (int biome = 0; biome < PhaseNames.Length; biome++)
         {

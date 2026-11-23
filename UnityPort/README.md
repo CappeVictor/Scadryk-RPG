@@ -112,7 +112,7 @@ A tabela mostra os comandos padrão; ataque, esquiva, Pulso, poderes, interaçã
 
 No Bosque Alagado, as margens norte e sul têm poças opcionais que reduzem a velocidade; há espaço para contorná-las. As poças oscilam suavemente para sugerir água em movimento sem competir com os avisos de combate.
 
-O mapa da jornada conecta as três salas principais de cada bioma. Trechos concluídos ficam verdes, a rota até a sala atual fica ciano, próximos encontros aparecem como adiante e biomas ainda inacessíveis ficam marcados como selados. Setas nos nomes das salas indicam desvios e símbolos mostram o estado dos selos opcionais.
+O mapa da jornada conecta as três salas principais de cada bioma. Trechos concluídos ficam verdes, a rota até a sala atual fica ciano, próximos encontros aparecem como adiante e biomas ainda inacessíveis ficam marcados como selados. Setas nos nomes das salas indicam desvios; no minimapa, **◇ PEND.** indica selo ainda não obtido e **◆ FEITO**, selo liberado. O mapa completo também explica esses símbolos.
 
 Se Nara tentar interagir com um sinal que responde ao Pulso, o lembrete agora identifica o cristal, o farol ou o sino e reforça a ordem correta da costa.
 
