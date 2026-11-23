@@ -3069,6 +3069,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private bool SmokeCoverBlocksOnlyWhenSolid()
     {
         var cover = new GameObject("Smoke-only cover probe");
+        var distantCover = new GameObject("Smoke-only second cover probe");
         try
         {
             Vector2 origin = roomCenter + Vector2.up * 25f + Vector2.left * 2f;
@@ -3076,25 +3077,38 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             cover.transform.position = roomCenter + Vector2.up * 25f;
             BoxCollider2D collider = cover.AddComponent<BoxCollider2D>();
             collider.size = new Vector2(0.35f, 1f);
+            distantCover.transform.position = roomCenter + Vector2.up * 25f + Vector2.right * 0.8f;
+            distantCover.AddComponent<BoxCollider2D>().size = new Vector2(0.35f, 1f);
             Physics2D.SyncTransforms();
             bool blocksWhenSolid = ScadrykCombatRules.WorldBlocks(origin, target);
+            Vector2 clippedWarning = ScadrykCombatRules.ClipWarningLineEnd(origin, target, 0.34f);
+            bool warningStopsBeforeNearestCover = clippedWarning.x < -0.34f && clippedWarning.x > -0.36f &&
+                Mathf.Abs(clippedWarning.y - origin.y) < 0.001f;
             bool coverStopsDirectionalPowers = ScadrykPlayerController.AbilityPathIsBlocked(0, origin, target) &&
                 !ScadrykPlayerController.AbilityPathIsBlocked(1, origin, target) &&
                 ScadrykPlayerController.AbilityPathIsBlocked(2, origin, target);
+            distantCover.GetComponent<BoxCollider2D>().enabled = false;
             collider.isTrigger = true;
             Physics2D.SyncTransforms();
             bool ignoresTrigger = !ScadrykCombatRules.WorldBlocks(origin, target);
+            Vector2 triggerOnlyWarning = ScadrykCombatRules.ClipWarningLineEnd(origin, target, 0.34f);
+            bool warningIgnoresTrigger = (triggerOnlyWarning - target).sqrMagnitude < 0.001f;
             bool powersIgnoreTrigger = !ScadrykPlayerController.AbilityPathIsBlocked(0, origin, target) &&
                 !ScadrykPlayerController.AbilityPathIsBlocked(1, origin, target) &&
                 !ScadrykPlayerController.AbilityPathIsBlocked(2, origin, target);
+            distantCover.GetComponent<BoxCollider2D>().enabled = false;
             collider.enabled = false;
             Physics2D.SyncTransforms();
             bool openLineRemainsClear = !ScadrykCombatRules.WorldBlocks(origin, target);
-            return blocksWhenSolid && coverStopsDirectionalPowers && ignoresTrigger && powersIgnoreTrigger && openLineRemainsClear;
+            Vector2 clearWarning = ScadrykCombatRules.ClipWarningLineEnd(origin, target, 0.34f);
+            bool clearWarningKeepsFullLength = (clearWarning - target).sqrMagnitude < 0.001f;
+            return blocksWhenSolid && warningStopsBeforeNearestCover && coverStopsDirectionalPowers &&
+                ignoresTrigger && warningIgnoresTrigger && powersIgnoreTrigger && openLineRemainsClear && clearWarningKeepsFullLength;
         }
         finally
         {
             Destroy(cover);
+            Destroy(distantCover);
             Physics2D.SyncTransforms();
         }
     }
