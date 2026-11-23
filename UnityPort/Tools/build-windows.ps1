@@ -61,6 +61,27 @@ if ($missingPayload) {
     throw "A build foi confirmada, mas o payload está incompleto: $($missingPayload -join ', '). Consulte o log: $logPath"
 }
 
+$repositoryRoot = Split-Path -Parent $projectRoot
+$buildCommit = 'desconhecido'
+$gitCommand = Get-Command git -ErrorAction SilentlyContinue
+if ($gitCommand) {
+    $candidateCommit = & $gitCommand.Source -C $repositoryRoot rev-parse --short=12 HEAD 2>$null
+    if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($candidateCommit)) {
+        $buildCommit = $candidateCommit.Trim()
+    }
+}
+$editorVersionLine = Select-String -LiteralPath (Join-Path $projectRoot 'ProjectSettings/ProjectVersion.txt') -Pattern '^m_EditorVersion:' -ErrorAction SilentlyContinue | Select-Object -First 1
+$editorVersion = if ($editorVersionLine) { ($editorVersionLine.Line -split ':', 2)[1].Trim() } else { 'desconhecida' }
+$buildInfoPath = Join-Path $projectRoot 'Build/SCADRYK_BUILD_INFO.txt'
+$buildInfo = @(
+    'Scadryk — UnityPort Windows build',
+    "Commit: $buildCommit",
+    "Unity Editor: $editorVersion",
+    "Build UTC: $([DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ'))"
+)
+[System.IO.File]::WriteAllLines($buildInfoPath, $buildInfo, [System.Text.UTF8Encoding]::new($false))
+
 Write-Host "Build compilada. O jogo não foi iniciado."
 Write-Host "Executável: $outputPath"
+Write-Host "Identificação: $buildInfoPath"
 Write-Host "Log: $logPath"
