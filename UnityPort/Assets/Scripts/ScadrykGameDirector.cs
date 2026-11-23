@@ -9,6 +9,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private const int RoomsPerPhase = 3;
     internal const float FinalSealPreparationWindowSeconds = 12f;
     private const float RoomSpacing = 23f;
+    private const float RoomHalfHeight = 8.5f;
+    private const float RoomHeight = RoomHalfHeight * 2f;
     private const float ConnectorCenterOffset = 11.35f;
     private const string OpeningMemory = "Depois que a Grande Onda cobriu a costa, os três sinos emudeceram. Nara, a Ouvinte, ainda escutava os nomes perdidos e seguiu a maré imóvel.";
     private static readonly GUIContent OpeningTitleContent = new GUIContent("OS TRÊS SINOS EMUDECERAM");
@@ -1921,8 +1923,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         { SmokeFail("Cobertura não bloqueia poderes direcionais ou gatilhos bloqueiam poderes circulares"); yield break; }
         Debug.Log("SCADRYK_SMOKE: cobertura interrompe golpes direcionais, não o Estouro circular, e gatilhos não bloqueiam");
         if (!RoomObstacleLayoutsAreDistinctAndOpen())
-        { SmokeFail("As nove salas repetem obstáculos, bloqueiam entrada/saída ou não têm rota caminhável até o portal"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: nove layouts distintos têm corredores caminháveis entre entrada e portal");
+        { SmokeFail("As nove salas repetem obstáculos, não preenchem as margens ampliadas, bloqueiam entrada/saída ou não têm rota até o portal"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: nove arenas ampliadas mantêm obstáculos nas margens, layouts distintos e rota ao portal");
         if (!SideRoutesAreDistinctAndNavigable())
         { SmokeFail("Os desvios laterais dos três biomas não conectam as duas aberturas ou não deixam largura segura"); yield break; }
         Debug.Log("SCADRYK_SMOKE: bosque, sal e costa têm desvios alternativos com aberturas e largura transitáveis");

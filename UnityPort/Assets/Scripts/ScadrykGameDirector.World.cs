@@ -187,31 +187,33 @@ public sealed partial class ScadrykGameDirector
             float x = i * RoomSpacing;
             Color roomFloor = floor * (i == 1 ? 1.08f : 0.96f);
             bool hasSideRoute = TryGetSideRoute(phaseIndex, i, out int routeSide, out float routeEntry, out float routeExit);
-            MakeBox(parent, "Room floor " + (i + 1), new Vector2(x, 0), new Vector2(RoomSpacing + 0.2f, 13f), roomFloor, false, -10);
+            MakeBox(parent, "Room floor " + (i + 1), new Vector2(x, 0), new Vector2(RoomSpacing + 0.2f, RoomHeight), roomFloor, false, -10);
             PlacePhaseGround(parent, x, i);
             DrawRoomScenery(parent, i, x, roomFloor);
             if (hasSideRoute) DrawRoomSideRoute(parent, x, floor, wall, routeSide, routeEntry, routeExit);
             if (!hasSideRoute || routeSide < 0)
-                MakeBox(parent, "North wall", new Vector2(x, 6.6f), new Vector2(19.5f, 0.5f), wall, true, 0);
-            else DrawSideRouteWall(parent, x, 6.6f, wall, routeEntry, routeExit);
+                MakeBox(parent, "North wall", new Vector2(x, RoomHalfHeight + 0.1f), new Vector2(19.5f, 0.5f), wall, true, 0);
+            else DrawSideRouteWall(parent, x, RoomHalfHeight + 0.1f, wall, routeEntry, routeExit);
             if (!hasSideRoute || routeSide > 0)
-                MakeBox(parent, "South wall", new Vector2(x, -6.6f), new Vector2(19.5f, 0.5f), wall, true, 0);
-            else DrawSideRouteWall(parent, x, -6.6f, wall, routeEntry, routeExit);
-            if (i == 0) MakeBox(parent, "West outer wall", new Vector2(x - 9.7f, 0), new Vector2(0.5f, 13f), wall, true, 0);
+                MakeBox(parent, "South wall", new Vector2(x, -RoomHalfHeight - 0.1f), new Vector2(19.5f, 0.5f), wall, true, 0);
+            else DrawSideRouteWall(parent, x, -RoomHalfHeight - 0.1f, wall, routeEntry, routeExit);
+            float sideWallCenterY = (RoomHalfHeight + 2.8f) * 0.5f;
+            float sideWallHeight = RoomHalfHeight - 2.8f;
+            if (i == 0) MakeBox(parent, "West outer wall", new Vector2(x - 9.7f, 0), new Vector2(0.5f, RoomHeight), wall, true, 0);
             else
             {
-                MakeBox(parent, "West wall upper", new Vector2(x - 9.7f, 4.7f), new Vector2(0.5f, 4.3f), wall, true, 0);
-                MakeBox(parent, "West wall lower", new Vector2(x - 9.7f, -4.7f), new Vector2(0.5f, 4.3f), wall, true, 0);
+                MakeBox(parent, "West wall upper", new Vector2(x - 9.7f, sideWallCenterY), new Vector2(0.5f, sideWallHeight), wall, true, 0);
+                MakeBox(parent, "West wall lower", new Vector2(x - 9.7f, -sideWallCenterY), new Vector2(0.5f, sideWallHeight), wall, true, 0);
                 MakeBox(parent, "West echo threshold", new Vector2(x - 9.7f, 0f), new Vector2(0.5f, 5.6f), wall, true, 0);
             }
             if (i == RoomsPerPhase - 1)
             {
-                MakeBox(parent, "East outer boundary", new Vector2(x + 9.7f, 0f), new Vector2(0.5f, 13f), wall, true, 0);
+                MakeBox(parent, "East outer boundary", new Vector2(x + 9.7f, 0f), new Vector2(0.5f, RoomHeight), wall, true, 0);
             }
             else
             {
-                MakeBox(parent, "East wall upper", new Vector2(x + 9.7f, 4.7f), new Vector2(0.5f, 4.3f), wall, true, 0);
-                MakeBox(parent, "East wall lower", new Vector2(x + 9.7f, -4.7f), new Vector2(0.5f, 4.3f), wall, true, 0);
+                MakeBox(parent, "East wall upper", new Vector2(x + 9.7f, sideWallCenterY), new Vector2(0.5f, sideWallHeight), wall, true, 0);
+                MakeBox(parent, "East wall lower", new Vector2(x + 9.7f, -sideWallCenterY), new Vector2(0.5f, sideWallHeight), wall, true, 0);
                 // Rooms advance through their portal transition. The short seal closes
                 // the doorway without narrowing the walkable route to the portal.
                 MakeBox(parent, "East echo threshold", new Vector2(x + 9.7f, 0f), new Vector2(0.5f, 5.6f), wall, true, 0);
@@ -255,7 +257,7 @@ public sealed partial class ScadrykGameDirector
         const float routeDepth = 5.4f;
         float minimumX = Mathf.Min(entry, exit) - routeEndExtension;
         float maximumX = Mathf.Max(entry, exit) + routeEndExtension;
-        float centerY = side * (6.6f + routeDepth * 0.5f);
+        float centerY = side * (RoomHalfHeight + routeDepth * 0.5f);
         float width = maximumX - minimumX;
         Vector2 center = new Vector2(roomX + (minimumX + maximumX) * 0.5f, centerY);
         string routeName = phaseIndex switch
@@ -283,10 +285,10 @@ public sealed partial class ScadrykGameDirector
                 new Color(accent.r, accent.g, accent.b, 0.38f), phaseIndex == 1, -8,
                 phaseIndex == 0 ? -12f : phaseIndex == 2 ? 5f : 0f);
         }
-        MakeDecoration(parent, routeName + " entry glow", new Vector2(roomX + entry, side * 6.95f),
+        MakeDecoration(parent, routeName + " entry glow", new Vector2(roomX + entry, side * (RoomHalfHeight + 0.45f)),
             new Vector2(0.72f, 0.72f), new Color(PhaseAccentColors[phaseIndex].r, PhaseAccentColors[phaseIndex].g,
                 PhaseAccentColors[phaseIndex].b, 0.2f), true, -8);
-        MakeDecoration(parent, routeName + " exit glow", new Vector2(roomX + exit, side * 6.95f),
+        MakeDecoration(parent, routeName + " exit glow", new Vector2(roomX + exit, side * (RoomHalfHeight + 0.45f)),
             new Vector2(0.72f, 0.72f), new Color(PhaseAccentColors[phaseIndex].r, PhaseAccentColors[phaseIndex].g,
                 PhaseAccentColors[phaseIndex].b, 0.2f), true, -8);
     }
@@ -441,7 +443,7 @@ public sealed partial class ScadrykGameDirector
         renderer.flipY = GroundFlipY(room);
         Vector2 size = renderer.sprite.bounds.size;
         // Extend the painted ground through the portal corridor so the camera never reveals void strips.
-        ground.transform.localScale = new Vector3((RoomSpacing + 0.2f) / size.x, 13f / size.y, 1f);
+        ground.transform.localScale = new Vector3((RoomSpacing + 0.2f) / size.x, RoomHeight / size.y, 1f);
     }
 
     private static bool GroundFlipX(int room) => room == 1;
@@ -722,19 +724,19 @@ public sealed partial class ScadrykGameDirector
         room = Mathf.Clamp(room, 0, 2);
         if (biome == 0)
         {
-            if (room == 0) return new[] { new Vector2(-3.4f, 2.9f), new Vector2(3.1f, -2.8f), new Vector2(4.4f, 2.1f), new Vector2(-0.6f, 0.4f), new Vector2(0.6f, -0.4f) };
-            if (room == 1) return new[] { new Vector2(-4.0f, -2.5f), new Vector2(1.8f, 3.5f), new Vector2(4.3f, -2.8f), new Vector2(-0.4f, -3.7f), new Vector2(-0.8f, -0.8f), new Vector2(0.8f, 0.8f) };
-            return new[] { new Vector2(-4.3f, 2.8f), new Vector2(-2.2f, -3.4f), new Vector2(3.8f, 1.9f), new Vector2(-0.6f, 0.6f), new Vector2(0.6f, -0.6f) };
+            if (room == 0) return new[] { new Vector2(-3.4f, 2.9f), new Vector2(3.1f, -2.8f), new Vector2(4.4f, 2.1f), new Vector2(-0.6f, 0.4f), new Vector2(0.6f, -0.4f), new Vector2(-2.6f, 6.8f), new Vector2(2.7f, -6.8f) };
+            if (room == 1) return new[] { new Vector2(-4.0f, -2.5f), new Vector2(1.8f, 3.5f), new Vector2(4.3f, -2.8f), new Vector2(-0.4f, -3.7f), new Vector2(-0.8f, -0.8f), new Vector2(0.8f, 0.8f), new Vector2(-2.4f, 6.9f), new Vector2(2.9f, -6.7f) };
+            return new[] { new Vector2(-4.3f, 2.8f), new Vector2(-2.2f, -3.4f), new Vector2(3.8f, 1.9f), new Vector2(-0.6f, 0.6f), new Vector2(0.6f, -0.6f), new Vector2(-3.0f, -6.8f), new Vector2(3.2f, 6.8f) };
         }
         if (biome == 1)
         {
-            if (room == 0) return new[] { new Vector2(-3.7f, -2.7f), new Vector2(-1.2f, 3.6f), new Vector2(4.2f, -1.9f) };
-            if (room == 1) return new[] { new Vector2(-4.1f, 0.8f), new Vector2(-1.7f, 3.7f), new Vector2(1.5f, -3.6f), new Vector2(4.4f, -0.2f), new Vector2(-0.2f, 0.3f), new Vector2(0.8f, -0.9f) };
-            return new[] { new Vector2(-4.1f, 2.7f), new Vector2(-4.2f, -2.6f), new Vector2(4.0f, -0.5f), new Vector2(-0.5f, 0.7f), new Vector2(0.5f, -0.7f) };
+            if (room == 0) return new[] { new Vector2(-3.7f, -2.7f), new Vector2(-1.2f, 3.6f), new Vector2(4.2f, -1.9f), new Vector2(-2.2f, 6.8f), new Vector2(2.5f, -6.9f) };
+            if (room == 1) return new[] { new Vector2(-4.1f, 0.8f), new Vector2(-1.7f, 3.7f), new Vector2(1.5f, -3.6f), new Vector2(4.4f, -0.2f), new Vector2(-0.2f, 0.3f), new Vector2(0.8f, -0.9f), new Vector2(-2.8f, -6.8f), new Vector2(2.7f, 6.9f) };
+            return new[] { new Vector2(-4.1f, 2.7f), new Vector2(-4.2f, -2.6f), new Vector2(4.0f, -0.5f), new Vector2(-0.5f, 0.7f), new Vector2(0.5f, -0.7f), new Vector2(-3.1f, 6.7f), new Vector2(3.0f, -6.8f) };
         }
-        if (room == 0) return new[] { new Vector2(-3.9f, 2.9f), new Vector2(-0.8f, -3.5f), new Vector2(3.9f, 2.5f) };
-        if (room == 1) return new[] { new Vector2(-4.3f, 3.1f), new Vector2(-4.0f, -3.2f), new Vector2(0.2f, 2.6f), new Vector2(4.2f, -2.9f), new Vector2(-0.7f, 0.5f), new Vector2(0.7f, -0.5f) };
-        return new[] { new Vector2(-3.8f, 2.7f), new Vector2(-3.6f, -2.8f), new Vector2(4.2f, 0.8f), new Vector2(-0.6f, 0.6f), new Vector2(0.6f, -0.6f) };
+        if (room == 0) return new[] { new Vector2(-3.9f, 2.9f), new Vector2(-0.8f, -3.5f), new Vector2(3.9f, 2.5f), new Vector2(-2.9f, -6.8f), new Vector2(3.0f, 6.8f) };
+        if (room == 1) return new[] { new Vector2(-4.3f, 3.1f), new Vector2(-4.0f, -3.2f), new Vector2(0.2f, 2.6f), new Vector2(4.2f, -2.9f), new Vector2(-0.7f, 0.5f), new Vector2(0.7f, -0.5f), new Vector2(-2.2f, 6.9f), new Vector2(2.6f, -6.7f) };
+        return new[] { new Vector2(-3.8f, 2.7f), new Vector2(-3.6f, -2.8f), new Vector2(4.2f, 0.8f), new Vector2(-0.6f, 0.6f), new Vector2(0.6f, -0.6f), new Vector2(-3.2f, -6.8f), new Vector2(3.1f, 6.7f) };
     }
 
     internal static Vector2[] RoomAnchorOffsets(int biome, int room)
@@ -778,8 +780,8 @@ public sealed partial class ScadrykGameDirector
         const float playerRadius = 0.42f;
         float minX = -9.7f + 0.25f + playerRadius;
         float maxX = 9.7f - 0.25f - playerRadius;
-        float minY = -6.6f + 0.25f + playerRadius;
-        float maxY = 6.6f - 0.25f - playerRadius;
+        float minY = -RoomHalfHeight + 0.25f + playerRadius;
+        float maxY = RoomHalfHeight - 0.25f - playerRadius;
         int columns = Mathf.FloorToInt((maxX - minX) / step) + 1;
         int rows = Mathf.FloorToInt((maxY - minY) / step) + 1;
         var blocked = new bool[columns, rows];
@@ -841,8 +843,10 @@ public sealed partial class ScadrykGameDirector
         const float playerRadius = 0.42f;
         float minX = -9.7f + 0.25f + playerRadius;
         float maxX = 9.7f - 0.25f - playerRadius;
-        float minY = -12.4f + 0.25f + playerRadius;
-        float maxY = 12.4f - 0.25f - playerRadius;
+        float sideRouteDepth = 5.4f;
+        float activeExtentY = RoomHalfHeight + sideRouteDepth + 0.5f;
+        float minY = -activeExtentY + 0.25f + playerRadius;
+        float maxY = activeExtentY - 0.25f - playerRadius;
         int columns = Mathf.FloorToInt((maxX - minX) / step) + 1;
         int rows = Mathf.FloorToInt((maxY - minY) / step) + 1;
         var solids = new System.Collections.Generic.List<Collider2D>();
@@ -932,9 +936,15 @@ public sealed partial class ScadrykGameDirector
             Vector2[] layout = RoomObstacleOffsets(biome, room);
             if (layout.Length < 3) return false;
             if (EnemyCountForRoom(biome * RoomsPerPhase + room) > 0 && !RoomHasCoverCluster(biome, layout)) return false;
+            int outerLandmarkCount = 0;
             foreach (Vector2 offset in layout)
-                if (Mathf.Abs(offset.x + 6.2f) < 1.25f || Mathf.Abs(offset.x - 8.05f) < 1.25f || Mathf.Abs(offset.y) > 5.2f)
+            {
+                if (Vector2.Distance(offset, new Vector2(-6.2f, 0f)) < 1.25f ||
+                    Vector2.Distance(offset, new Vector2(8.05f, 0f)) < 1.25f || Mathf.Abs(offset.y) > RoomHalfHeight - 1f)
                     return false;
+                if (Mathf.Abs(offset.y) >= RoomHalfHeight - 3f) outerLandmarkCount++;
+            }
+            if (outerLandmarkCount < 2) return false;
             if (!RoomHasWalkableRoute(biome, room)) return false;
 
             for (int priorBiome = 0; priorBiome <= biome; priorBiome++)
