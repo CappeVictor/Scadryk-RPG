@@ -1674,6 +1674,15 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ScadrykSettings.CanBindPadButton(7) || ScadrykSettings.CanBindPadButton(8) || !ScadrykSettings.CanBindPadButton(9))
         { SmokeFail("Remapeamento permite tecla/botão reservado ou rejeita um vínculo normal"); yield break; }
         Debug.Log("SCADRYK_SMOKE: Esc, F8, M, Start e L3 reservados; vínculos normais disponíveis");
+        int[] keyboardConflict = { 32, 304, 113, 101 };
+        int[] gamepadConflict = { 0, 1, 2, 4, 5, 6, 3 };
+        if (!ScadrykSettings.SwapConflictingBinding(keyboardConflict, 2, 32) ||
+            keyboardConflict[0] != 113 || keyboardConflict[2] != 32 || !ScadrykSettings.BindingValuesAreUnique(keyboardConflict) ||
+            !ScadrykSettings.SwapConflictingBinding(gamepadConflict, 4, 0) ||
+            gamepadConflict[0] != 5 || gamepadConflict[4] != 0 || !ScadrykSettings.BindingValuesAreUnique(gamepadConflict) ||
+            ScadrykSettings.SwapConflictingBinding(gamepadConflict, 9, 1))
+        { SmokeFail("Remapear uma tecla/botão ocupado deve trocar o vínculo sem duplicatas e rejeitar índices inválidos"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: remapeamento de teclado e controle troca conflitos sem duplicar comandos");
         if (!ObjectiveText(0, 0, 3, 0, 0, false, false, false, "Derrotar os Ecos", "E", "Q").Contains("3 restantes") ||
             !ObjectiveText(0, 0, 1, 0, 0, false, false, false, "Derrotar os Ecos", "E", "Q").Contains("1 restante") ||
             !ObjectiveText(1, 1, 0, 1, 2, true, false, false, "Derrotar os Ecos", "E", "Q").Contains("1/2") ||

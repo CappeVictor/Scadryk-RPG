@@ -119,21 +119,40 @@ public static class ScadrykSettings
     public static void Bind(int action, KeyCode key)
     {
         if (action < 0 || action >= Defaults.Length || !CanBindKey(key)) return;
-        KeyCode oldKey = Key(action);
-        for (int i = 0; i < Defaults.Length; i++)
-            if (i != action && Key(i) == key) PlayerPrefs.SetInt("Scadryk.Key." + i, (int)oldKey);
-        PlayerPrefs.SetInt("Scadryk.Key." + action, (int)key);
+        var bindings = new int[Defaults.Length];
+        for (int i = 0; i < bindings.Length; i++) bindings[i] = (int)Key(i);
+        SwapConflictingBinding(bindings, action, (int)key);
+        for (int i = 0; i < bindings.Length; i++) PlayerPrefs.SetInt("Scadryk.Key." + i, bindings[i]);
         PlayerPrefs.Save();
     }
 
     public static void BindPad(int action, int button)
     {
         if (action < 0 || action >= PadDefaults.Length || !CanBindPadButton(button)) return;
-        int oldButton = PadButton(action);
-        for (int i = 0; i < PadDefaults.Length; i++)
-            if (i != action && PadButton(i) == button) PlayerPrefs.SetInt("Scadryk.Pad." + i, oldButton);
-        PlayerPrefs.SetInt("Scadryk.Pad." + action, button);
+        var bindings = new int[PadDefaults.Length];
+        for (int i = 0; i < bindings.Length; i++) bindings[i] = PadButton(i);
+        SwapConflictingBinding(bindings, action, button);
+        for (int i = 0; i < bindings.Length; i++) PlayerPrefs.SetInt("Scadryk.Pad." + i, bindings[i]);
         PlayerPrefs.Save();
+    }
+
+    internal static bool SwapConflictingBinding(int[] bindings, int action, int newBinding)
+    {
+        if (bindings == null || action < 0 || action >= bindings.Length) return false;
+        int oldBinding = bindings[action];
+        for (int i = 0; i < bindings.Length; i++)
+            if (i != action && bindings[i] == newBinding) bindings[i] = oldBinding;
+        bindings[action] = newBinding;
+        return true;
+    }
+
+    internal static bool BindingValuesAreUnique(int[] bindings)
+    {
+        if (bindings == null) return false;
+        for (int i = 0; i < bindings.Length; i++)
+        for (int other = i + 1; other < bindings.Length; other++)
+            if (bindings[i] == bindings[other]) return false;
+        return true;
     }
 
     internal static void ClearReservedBindings(string keyPrefix, string padPrefix)
