@@ -668,11 +668,14 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         float width = IsBoss ? 1.4f : 0.86f;
         Vector2 end = start + direction * length;
         float warnedWidth = RootLaneVisualWidth(width, PlayerCollisionRadius(player));
+        end = ScadrykCombatRules.ClipWarningLineEnd(start, end, warnedWidth);
+        float visibleLength = Vector2.Distance(start, end);
         Color laneColor = biomeIndex == 0 ? new Color(0.42f, 0.72f, 0.28f, 0.95f) :
             biomeIndex == 1 ? new Color(0.94f, 0.69f, 0.31f, 0.95f) : new Color(0.3f, 0.78f, 0.88f, 0.95f);
         Sprite laneSprite = biomeIndex == 0 ? ScadrykEffects.RootThrustSprite :
             biomeIndex == 1 ? ScadrykEffects.SaltShardSprite : ScadrykEffects.TidebreakerSprite;
-        ScadrykEffects.GroundLane((start + end) * 0.5f, direction, length, warnedWidth, laneColor, 0.3f, laneSprite);
+        if (visibleLength > 0.05f)
+            ScadrykEffects.GroundLane((start + end) * 0.5f, direction, visibleLength, warnedWidth, laneColor, 0.3f, laneSprite);
         if (RootLaneHits(player.transform.position, start, end, width, PlayerCollisionRadius(player)) &&
             !ScadrykCombatRules.WorldBlocks(start, player.transform.position))
         {

@@ -3194,6 +3194,10 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             Vector2 clippedWarning = ScadrykCombatRules.ClipWarningLineEnd(origin, target, 0.34f);
             bool warningStopsBeforeNearestCover = clippedWarning.x < -0.34f && clippedWarning.x > -0.36f &&
                 Mathf.Abs(clippedWarning.y - origin.y) < 0.001f;
+            Vector2 clippedThrust = ScadrykCombatRules.ClipWarningLineEnd(origin, target,
+                ScadrykEnemyHealth.RootLaneVisualWidth(0.86f, 0.28f));
+            bool thrustVisualAndHitLaneStopAtCover = !ScadrykEnemyHealth.RootLaneHits(target, origin, clippedThrust, 0.86f, 0.28f) &&
+                ScadrykEnemyHealth.RootLaneHits(origin + Vector2.right * 0.5f, origin, clippedThrust, 0.86f, 0.28f);
             bool coverStopsDirectionalPowers = ScadrykPlayerController.AbilityPathIsBlocked(0, origin, target) &&
                 !ScadrykPlayerController.AbilityPathIsBlocked(1, origin, target) &&
                 ScadrykPlayerController.AbilityPathIsBlocked(2, origin, target);
@@ -3212,7 +3216,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             bool openLineRemainsClear = !ScadrykCombatRules.WorldBlocks(origin, target);
             Vector2 clearWarning = ScadrykCombatRules.ClipWarningLineEnd(origin, target, 0.34f);
             bool clearWarningKeepsFullLength = (clearWarning - target).sqrMagnitude < 0.001f;
-            return blocksWhenSolid && warningStopsBeforeNearestCover && coverStopsDirectionalPowers &&
+            return blocksWhenSolid && warningStopsBeforeNearestCover && thrustVisualAndHitLaneStopAtCover && coverStopsDirectionalPowers &&
                 ignoresTrigger && warningIgnoresTrigger && powersIgnoreTrigger && openLineRemainsClear && clearWarningKeepsFullLength;
         }
         finally
