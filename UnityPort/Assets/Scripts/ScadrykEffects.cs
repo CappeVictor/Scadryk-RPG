@@ -251,23 +251,28 @@ public static class ScadrykEffects
 
     public static GameObject Ring(Vector2 center, float diameter, Color color, float lifetime, bool attackWarning = false)
     {
-        color = DangerWarningColor(color);
         Sprite waveSprite = LoadEffectSprite("AttackBellWave", 600f, ref bellWaveSprite);
         if (waveSprite != null)
         {
-            Color tint = color;
+            Color tint = DangerWarningColor(color);
             tint.a *= lifetime > 0.5f ? 0.46f : 0.98f;
             GameObject wave = CreateSpriteEffect(waveSprite, center, Vector2.one * diameter, tint, lifetime, attackWarning ? "Enemy attack warning" : "Bell echo wave", false, true);
             return wave;
         }
-        GameObject go = new GameObject("Bell pulse warning");
+        return CreateRingFallback(center, diameter, color, lifetime, attackWarning);
+    }
+
+    internal static GameObject CreateRingFallback(Vector2 center, float diameter, Color color, float lifetime, bool attackWarning)
+    {
+        color = DangerWarningColor(color);
+        GameObject go = new GameObject(attackWarning ? "Enemy attack warning" : "Bell echo wave");
         go.transform.position = center;
         var line = go.AddComponent<LineRenderer>();
         line.useWorldSpace = false;
         line.loop = true;
         line.positionCount = 40;
-        line.startWidth = 0.075f;
-        line.endWidth = 0.075f;
+        line.startWidth = DangerWarningWidth(0.075f);
+        line.endWidth = DangerWarningWidth(0.075f);
         line.startColor = color;
         line.endColor = color;
         line.sortingOrder = 22;
@@ -279,8 +284,9 @@ public static class ScadrykEffects
             float angle = i * Mathf.PI * 2f / line.positionCount;
             line.SetPosition(i, new Vector3(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius, 0f));
         }
-        go.AddComponent<ScadrykTimedVisual>().Initialize(lifetime, color, false);
-        if (attackWarning) go.name = "Enemy attack warning";
+        ScadrykTimedVisual timedVisual = go.AddComponent<ScadrykTimedVisual>();
+        timedVisual.Initialize(lifetime, color, false);
+        if (attackWarning) timedVisual.MarkDangerWarning();
         return go;
     }
 

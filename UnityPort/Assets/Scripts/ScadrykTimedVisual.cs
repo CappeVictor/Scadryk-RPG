@@ -33,6 +33,14 @@ public sealed class ScadrykTimedVisual : MonoBehaviour
             c.a *= dangerWarning ? DangerWarningAlpha(progress) : 1f - Mathf.SmoothStep(0.45f, 1f, progress);
             renderer.color = c;
         }
+        LineRenderer line = dangerWarning ? GetComponent<LineRenderer>() : null;
+        if (line != null)
+        {
+            Color warningColor = initialColor;
+            warningColor.a *= DangerWarningAlpha(progress);
+            line.startColor = warningColor;
+            line.endColor = warningColor;
+        }
         if (expanding) transform.localScale = initialScale * ScadrykEffects.FlashExpansionScale(progress, ScadrykSettings.ReduceFlash);
         if (spinDegreesPerSecond != 0f) transform.Rotate(0f, 0f, spinDegreesPerSecond * Time.deltaTime);
         if (age >= lifetime) Destroy(gameObject);
