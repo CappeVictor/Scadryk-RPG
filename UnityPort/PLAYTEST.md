@@ -48,6 +48,8 @@ Para consolidar os registros no Windows, abra PowerShell na pasta do projeto e u
 
 Após a sessão, registre as respostas de 1 a 5 numa linha de `PLAYTEST-RATINGS.csv`, identificada pelo `session_id` e nível `iniciante`, `intermediária` ou `experiente`; deixe sem nota as perguntas não respondidas. Não acrescente nome, email ou outros dados pessoais. Passe também `-RatingsPath .\UnityPort\PLAYTEST-RATINGS.csv` ao resumo para calcular médias separadas por nível; cada sessão aceita uma única ficha. O relatório mostra quantas respostas há em cada nível e quantas faltam para a meta de duas, e avisa quando uma amostra ainda é pequena demais para comparar médias.
 
+Para validar o leitor sem usar dados de participantes, rode `.\UnityPort\Tools\Test-Summarize-Playtests.ps1` no PowerShell. O comando gera e remove fixtures temporários e verifica cobertura parcial, ausência de respostas, fichas duplicadas e notas fora da escala.
+
 | Fase / sala | Segundos ativos | Mortes | F8 / sinais pouco claros | Crescente | Estouro | Rompante | Entradas na corrente | Segundos na corrente | Segundos na água | Ressonâncias por Pulso | Selos revelados | Objetivo compreendido sem ajuda? | Comentário curto |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
 | Bosque alagado 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |
