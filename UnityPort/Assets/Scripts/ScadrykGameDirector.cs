@@ -633,6 +633,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ApplyPauseTimeScale();
             return;
         }
+        RecordCurrentRoomStory();
         StartFinalGuardianInterlude();
         StartRoomTimer();
         ApplyPauseTimeScale();
@@ -658,7 +659,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private void DismissOpeningStory()
     {
         showOpeningStory = false;
-        if (!smokeRun) RecordStoryJournalEntry("Scadryk.", OpeningMemory);
+        if (!smokeRun)
+        {
+            RecordStoryJournalEntry("Scadryk.", OpeningMemory);
+            RecordCurrentRoomStory();
+        }
         memoryText = null;
         memoryUntil = 0f;
         memoryModal = false;
@@ -807,6 +812,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         bool openingCoversFirstRoom = OpeningStoryCoversRoomStatus(showOpeningStory, phaseIndex, roomIndex);
         statusMessage = roomIndex == RoomsPerPhase - 1 ? GuardianIntroductions[phaseIndex] : RoomStories[phaseIndex * RoomsPerPhase + roomIndex];
         statusUntil = Time.time + (openingCoversFirstRoom ? 0f : roomIndex == RoomsPerPhase - 1 ? 8f : 6f);
+        RecordCurrentRoomStory();
         if (finalBossAlreadyDefeated) UnlockExit();
         else if (ShouldResumeFinalGuardianInterlude(phaseIndex, roomIndex, guardianAlreadyDefeated, finalBossAlreadyDefeated))
         {
@@ -1239,6 +1245,20 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         PlayerPrefs.SetString(StoryJournalProgressKey(keyPrefix), JsonUtility.ToJson(new StoryJournalData { entries = entries }));
         PlayerPrefs.Save();
         return true;
+    }
+
+    internal static string RoomStoryJournalEntry(string roomName, string story) =>
+        string.IsNullOrWhiteSpace(roomName) || string.IsNullOrWhiteSpace(story)
+            ? string.Empty
+            : roomName.Trim() + "\n" + story.Trim();
+
+    private void RecordCurrentRoomStory()
+    {
+        if (smokeRun || showTitle || showOpeningStory) return;
+        string story = roomIndex == RoomsPerPhase - 1
+            ? GuardianIntroductions[phaseIndex]
+            : RoomStories[phaseIndex * RoomsPerPhase + roomIndex];
+        RecordStoryJournalEntry("Scadryk.", RoomStoryJournalEntry(roomNames[phaseIndex][roomIndex], story));
     }
 
     internal static void ClearStoryJournal(string keyPrefix) => PlayerPrefs.DeleteKey(StoryJournalProgressKey(keyPrefix));
@@ -1833,9 +1853,12 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             RecordStoryJournalEntry(checkpointTestPrefix, "Primeira lembrança.");
             RecordStoryJournalEntry(checkpointTestPrefix, "Primeira lembrança.");
             RecordStoryJournalEntry(checkpointTestPrefix, "A costa voltou a cantar.");
+            string firstRoomStory = RoomStoryJournalEntry(roomNames[0][0], RoomStories[0]);
+            RecordStoryJournalEntry(checkpointTestPrefix, firstRoomStory);
+            RecordStoryJournalEntry(checkpointTestPrefix, firstRoomStory);
             string[] journalEntries = ReadStoryJournal(checkpointTestPrefix);
-            storyJournalRoundTrip = journalEntries.Length == 2 && journalEntries[0] == "Primeira lembrança." &&
-                journalEntries[1] == "A costa voltou a cantar.";
+            storyJournalRoundTrip = journalEntries.Length == 3 && journalEntries[0] == "Primeira lembrança." &&
+                journalEntries[1] == "A costa voltou a cantar." && journalEntries[2] == firstRoomStory;
             ClearStoryJournal(checkpointTestPrefix);
             storyJournalRoundTrip &= ReadStoryJournal(checkpointTestPrefix).Length == 0;
             PlayerPrefs.SetInt(checkpointTestPrefix + "Room", 2);
@@ -2033,6 +2056,19 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             !GuardianMemories[1].Contains("última onda") || !GuardianMemories[2].Contains("poupar os vivos") ||
             !EndingMemory.Contains("Nara escolhe lembrar") || !EndingMemory.Contains("aprisionou os mortos"))
         { SmokeFail("A história perdeu a causa da maré imóvel, a ligação de Nima ou a resolução do conflito"); yield break; }
+        var roomStoryJournalEntries = new HashSet<string>();
+        for (int phase = 0; phase < PhaseNames.Length; phase++)
+        for (int room = 0; room < RoomsPerPhase; room++)
+        {
+            string story = room == RoomsPerPhase - 1
+                ? GuardianIntroductions[phase]
+                : RoomStories[phase * RoomsPerPhase + room];
+            string entry = RoomStoryJournalEntry(roomNames[phase][room], story);
+            if (string.IsNullOrWhiteSpace(entry) || !entry.StartsWith(roomNames[phase][room] + "\n") || !roomStoryJournalEntries.Add(entry))
+            { SmokeFail("Uma das nove apresentações de sala/guardião está ausente ou duplicada no caderno"); yield break; }
+        }
+        if (roomStoryJournalEntries.Count != PhaseNames.Length * RoomsPerPhase)
+        { SmokeFail("O caderno não tem uma apresentação identificável para cada sala"); yield break; }
         Debug.Log("SCADRYK_SMOKE: abertura, falas, aparição crescente de Nima, memórias dos guardiões e resolução formam o arco da maré");
         string victoryOverlay = OverlayMessage(false, true, false);
         if (!victoryOverlay.Contains("Os sinos respondem") || !victoryOverlay.Contains("Nara escolheu lembrar") ||
