@@ -159,10 +159,15 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     }
 
     internal bool TryGetWindupAttackLabel(out string label)
+        => TryGetWindupAttackLabel(out label, out _);
+
+    internal bool TryGetWindupAttackLabel(out string label, out float secondsUntilImpact)
     {
         label = null;
+        secondsUntilImpact = float.PositiveInfinity;
         if (dead || !isWindup) return false;
         label = AttackReadabilityLabel(biomeIndex, IsBoss, isFinalBoss, combatRole, queuedFinalPattern, queuedFinalStage);
+        secondsUntilImpact = Mathf.Max(0f, windupEndsAt - Time.time);
         return !string.IsNullOrEmpty(label);
     }
 

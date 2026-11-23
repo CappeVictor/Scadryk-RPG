@@ -2712,8 +2712,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 attackTargetField.SetValue(finalBoss, (Vector2)player.transform.position);
                 Vector2 volleyForward = ((Vector2)player.transform.position - (Vector2)finalBoss.transform.position).normalized;
                 beginBossAttack.Invoke(finalBoss, null);
-                if (!finalBoss.TryGetWindupAttackLabel(out string windupCaption) ||
-                    !windupCaption.Contains("Arauto fase 1") || !windupCaption.Contains("salva de Ecos"))
+                if (!finalBoss.TryGetWindupAttackLabel(out string windupCaption, out float captionSecondsUntilImpact) ||
+                    !windupCaption.Contains("Arauto fase 1") || !windupCaption.Contains("salva de Ecos") ||
+                    captionSecondsUntilImpact <= 0f || captionSecondsUntilImpact > 1.36f)
                 { SmokeFail("A legenda textual do Arauto não identificou o golpe durante a preparação"); yield break; }
                 int announcedStage = (int)queuedStageField.GetValue(finalBoss);
                 finalBoss.TakeDamage(400f);

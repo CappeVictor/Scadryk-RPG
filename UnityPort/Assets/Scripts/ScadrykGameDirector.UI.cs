@@ -88,13 +88,26 @@ public sealed partial class ScadrykGameDirector
     {
         string first = null;
         string second = null;
+        float firstImpact = float.PositiveInfinity;
+        float secondImpact = float.PositiveInfinity;
         for (int i = 0; i < activeEnemies.Count; i++)
         {
             ScadrykEnemyHealth enemy = activeEnemies[i];
-            if (enemy == null || !enemy.TryGetWindupAttackLabel(out string label)) continue;
-            if (label == first || label == second) continue;
-            if (first == null) first = label;
-            else { second = label; break; }
+            if (enemy == null || !enemy.TryGetWindupAttackLabel(out string label, out float secondsUntilImpact)) continue;
+            if (label == first) { firstImpact = Mathf.Min(firstImpact, secondsUntilImpact); continue; }
+            if (label == second) { secondImpact = Mathf.Min(secondImpact, secondsUntilImpact); continue; }
+            if (secondsUntilImpact < firstImpact)
+            {
+                second = first;
+                secondImpact = firstImpact;
+                first = label;
+                firstImpact = secondsUntilImpact;
+            }
+            else if (secondsUntilImpact < secondImpact)
+            {
+                second = label;
+                secondImpact = secondsUntilImpact;
+            }
         }
         if (first == null) return;
 
