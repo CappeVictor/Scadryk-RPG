@@ -2830,10 +2830,14 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             mutedWarningProbe = ScadrykEffects.TelegraphLine(Vector2.zero, Vector2.right * 3f, new Color(0.2f, 0.4f, 0.8f, 0.6f), 0.1f, 1f);
             SpriteRenderer warningRenderer = mutedWarningProbe != null ? mutedWarningProbe.GetComponent<SpriteRenderer>() : null;
             ScadrykTimedVisual lineWarningVisual = mutedWarningProbe != null ? mutedWarningProbe.GetComponent<ScadrykTimedVisual>() : null;
+            SpriteRenderer[] warningRenderers = mutedWarningProbe != null ? mutedWarningProbe.GetComponentsInChildren<SpriteRenderer>(true) : System.Array.Empty<SpriteRenderer>();
+            bool warningHasDarkOutline = warningRenderers.Length == 2 && warningRenderers[0] != null && warningRenderers[1] != null &&
+                warningRenderers[0] != warningRenderers[1] &&
+                (warningRenderers[0].color.r < 0.08f || warningRenderers[1].color.r < 0.08f);
             ScadrykSettings.HighContrastWarnings = true;
             if (lineWarningVisual != null) lineWarningVisual.RefreshDangerWarningColor(1f);
             warningVisibleWithoutSound = warningRenderer != null && warningRenderer.sprite != null &&
-                warningRenderer.color.a >= 0.98f && Mathf.Abs(mutedWarningProbe.transform.localScale.y - 0.14f) < 0.001f;
+                warningRenderer.color.a >= 0.98f && Mathf.Abs(mutedWarningProbe.transform.localScale.y - 0.14f) < 0.001f && warningHasDarkOutline;
             ScadrykSettings.HighContrastWarnings = false;
             spriteWarningProbe = ScadrykEffects.CreateSpriteEffect(ScadrykEffects.WhiteSprite, Vector2.zero,
                 Vector2.one, new Color(0.2f, 0.4f, 0.8f, 0.6f), 1f, "Smoke sprite attack warning", false, true, true);
@@ -2843,9 +2847,12 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ScadrykSettings.HighContrastWarnings = true;
             if (spriteWarningVisual != null) spriteWarningVisual.RefreshDangerWarningColor(0f);
             Color spriteWarningAfterContrast = spriteWarningRenderer != null ? spriteWarningRenderer.color : Color.clear;
+            SpriteRenderer spriteWarningOutline = spriteWarningProbe != null ?
+                spriteWarningProbe.transform.Find("Danger warning contrast edge")?.GetComponent<SpriteRenderer>() : null;
             spriteWarningRemainsLegible = spriteWarningRenderer != null && spriteWarningRenderer.sprite != null &&
                 spriteWarningVisual != null && spriteWarningVisual.IsDangerWarning &&
-                spriteWarningAfterContrast.r > spriteWarningBeforeContrast.r && spriteWarningAfterContrast.a > spriteWarningBeforeContrast.a;
+                spriteWarningAfterContrast.r > spriteWarningBeforeContrast.r && spriteWarningAfterContrast.a > spriteWarningBeforeContrast.a &&
+                spriteWarningOutline != null && spriteWarningOutline.color.a >= 0.5f;
         }
         finally
         {
@@ -2857,7 +2864,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         }
         if (!warningVisibleWithoutSound || !spriteWarningRemainsLegible)
         { SmokeFail("Um aviso de perigo visual sumiu, piscou ou ficou fraco com áudio silenciado, alto contraste e redução de flashes"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: avisos lineares e sprite ativos ampliam/clareiam ao mudar alto contraste, mesmo sem áudio e com flashes reduzidos; preferências restauradas");
+        Debug.Log("SCADRYK_SMOKE: avisos lineares e sprite mantêm borda escura, ampliam/clareiam ao mudar alto contraste, mesmo sem áudio e com flashes reduzidos; preferências restauradas");
         Color reducedFlashColor = ScadrykEffects.ApplyReducedFlash(Color.white, true);
         Color normalFlashColor = ScadrykEffects.ApplyReducedFlash(Color.white, false);
         if (reducedFlashColor.a >= normalFlashColor.a || ScadrykEffects.FlashAlphaScale(true) >= 1f || ScadrykEffects.FlashDiameterScale(true) >= 1f ||
