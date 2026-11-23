@@ -1124,6 +1124,7 @@ public sealed partial class ScadrykGameDirector
         if (roomId == 3 || roomId == 6) return 0;
         if (roomId == 0) return 1;
         if (roomId == 1) return 2;
+        if (roomId == 4) return 3;
         return room == 1 ? 4 : 3;
     }
 
