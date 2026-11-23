@@ -2495,9 +2495,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Color normalFlashColor = ScadrykEffects.ApplyReducedFlash(Color.white, false);
         if (reducedFlashColor.a >= normalFlashColor.a || ScadrykEffects.FlashAlphaScale(true) >= 1f || ScadrykEffects.FlashDiameterScale(true) >= 1f ||
             ScadrykEffects.FlashExpansionScale(1f, true) >= ScadrykEffects.FlashExpansionScale(1f, false) ||
-            ScadrykEffects.DeathBurstMoteCount(true, true) >= ScadrykEffects.DeathBurstMoteCount(true, false))
-        { SmokeFail("Reduzir flashes não atenua explosões, expansões ou partículas de derrota"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: reduzir flashes atenua explosões e expansões sem remover a leitura de perigo");
+            ScadrykEffects.DeathBurstMoteCount(true, true) >= ScadrykEffects.DeathBurstMoteCount(true, false) ||
+            ScadrykEffects.DashAfterimageInterval(true) <= ScadrykEffects.DashAfterimageInterval(false) ||
+            ScadrykEffects.AfterimageLifetime(true) >= ScadrykEffects.AfterimageLifetime(false))
+        { SmokeFail("Reduzir flashes ainda deixa explosões, expansões, rastros ou partículas de derrota sem atenuação"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: reduzir flashes atenua impactos e rastros sem remover a leitura de perigo");
         bool settingsSaveIsThrottled = !ScadrykSettings.ShouldFlushDeferredSave(true, 2f, 2.45f) &&
             ScadrykSettings.ShouldFlushDeferredSave(true, 2.45f, 2.45f) &&
             !ScadrykSettings.ShouldFlushDeferredSave(false, 3f, 2.45f) &&

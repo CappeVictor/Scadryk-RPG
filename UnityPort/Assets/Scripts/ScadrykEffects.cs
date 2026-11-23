@@ -28,6 +28,8 @@ public static class ScadrykEffects
     internal static Vector2 PlayerSlashFootprint(float length) => new Vector2(length * 1.65f, length * 0.88f);
     internal static float FlashAlphaScale(bool reduceFlash) => reduceFlash ? 0.48f : 1f;
     internal static float FlashDiameterScale(bool reduceFlash) => reduceFlash ? 0.8f : 1f;
+    internal static float DashAfterimageInterval(bool reduceFlash) => reduceFlash ? 0.18f : 0.09f;
+    internal static float AfterimageLifetime(bool reduceFlash) => reduceFlash ? 0.13f : 0.23f;
     internal static Color ApplyReducedFlash(Color color, bool reduceFlash) { if (reduceFlash) color.a *= FlashAlphaScale(true); return color; }
     internal static float FlashExpansionScale(float progress, bool reduceFlash) =>
         Mathf.Lerp(reduceFlash ? 0.94f : 0.72f, reduceFlash ? 1.06f : 1.32f, Mathf.Sin(Mathf.Clamp01(progress) * Mathf.PI * 0.5f));
@@ -113,6 +115,8 @@ public static class ScadrykEffects
     public static void Afterimage(SpriteRenderer source, Color color)
     {
         if (source == null || source.sprite == null) return;
+        bool reduceFlash = ScadrykSettings.ReduceFlash;
+        color = ApplyReducedFlash(color, reduceFlash);
         var ghost = new GameObject("Motion afterimage");
         ghost.transform.position = source.transform.position;
         ghost.transform.rotation = source.transform.rotation;
@@ -122,7 +126,7 @@ public static class ScadrykEffects
         renderer.flipX = source.flipX;
         renderer.sortingOrder = source.sortingOrder - 1;
         renderer.color = color;
-        ghost.AddComponent<ScadrykTimedVisual>().Initialize(0.23f, color, false);
+        ghost.AddComponent<ScadrykTimedVisual>().Initialize(AfterimageLifetime(reduceFlash), color, false);
         RegisterSecondary(ghost);
     }
 

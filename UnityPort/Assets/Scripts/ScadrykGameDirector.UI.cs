@@ -947,7 +947,7 @@ public sealed partial class ScadrykGameDirector
             GUI.Label(new Rect(x + 15f, y + 225f, 170f, 28f), "Tamanho do texto", bodyStyle);
             float scale = GUI.HorizontalSlider(new Rect(x + 195f, y + 235f, width - 215f, 24f), ScadrykSettings.TextScale, 1f, 1.5f);
             if (Mathf.Abs(scale - ScadrykSettings.TextScale) > 0.01f) { ScadrykSettings.TextScale = scale; titleStyle = null; }
-            ScadrykSettings.ReduceFlash = GUI.Toggle(new Rect(x + 15f, y + 285f, width - 30f, 34f), ScadrykSettings.ReduceFlash, "Reduzir flashes de dano");
+            ScadrykSettings.ReduceFlash = GUI.Toggle(new Rect(x + 15f, y + 285f, width - 30f, 34f), ScadrykSettings.ReduceFlash, "Reduzir flashes e rastros");
             ScadrykSettings.ReduceShake = GUI.Toggle(new Rect(x + 15f, y + 325f, width - 30f, 34f), ScadrykSettings.ReduceShake, "Desligar tremor de câmera");
             ScadrykSettings.HighContrastWarnings = GUI.Toggle(new Rect(x + 15f, y + 365f, width - 30f, 34f), ScadrykSettings.HighContrastWarnings, "Alto contraste nos avisos de perigo");
             GUI.Label(new Rect(x + 15f, y + 410f, width - 30f, 70f), "Avisos permanecem visíveis com os efeitos em silêncio. F8 marca um ataque pouco claro durante testes.", memoryStyle);
@@ -1060,7 +1060,7 @@ public sealed partial class ScadrykGameDirector
         if (Mathf.Abs(textScale - ScadrykSettings.TextScale) > 0.01f) { ScadrykSettings.TextScale = textScale; titleStyle = null; }
 
         DrawCompactOptionSelection(6, 176f, 40f, width);
-        ScadrykSettings.ReduceFlash = GUI.Toggle(new Rect(left, 179f, width - 24f, 34f), ScadrykSettings.ReduceFlash, "Reduzir flashes de dano");
+        ScadrykSettings.ReduceFlash = GUI.Toggle(new Rect(left, 179f, width - 24f, 34f), ScadrykSettings.ReduceFlash, "Reduzir flashes e rastros");
         DrawCompactOptionSelection(7, 220f, 40f, width);
         ScadrykSettings.ReduceShake = GUI.Toggle(new Rect(left, 223f, width - 24f, 34f), ScadrykSettings.ReduceShake, "Desligar tremor de câmera");
         DrawCompactOptionSelection(8, 264f, 40f, width);

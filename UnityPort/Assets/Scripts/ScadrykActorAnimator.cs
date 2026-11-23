@@ -150,7 +150,7 @@ public sealed class ScadrykActorAnimator : MonoBehaviour
         if (dash > 0f && Time.time >= nextTrailAt && visualRenderer != null)
         {
             ScadrykEffects.Afterimage(visualRenderer, new Color(0.48f, 0.88f, 1f, 0.36f));
-            nextTrailAt = Time.time + 0.09f;
+            nextTrailAt = Time.time + ScadrykEffects.DashAfterimageInterval(ScadrykSettings.ReduceFlash);
         }
         visual.localPosition = basePosition + Vector3.up * (Mathf.Abs(stride) * 0.085f - death * 0.22f) +
             (Vector3)dashOffset +
