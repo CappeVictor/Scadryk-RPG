@@ -16,6 +16,8 @@ Este documento compara princípios observáveis sem copiar conteúdo. Uma build 
 
 **Calibração acessível (23/11/2026):** a aba de controle compara X/Y com sinal e magnitude bruta/útil dos analógicos para movimento e mira; o painel também rola até ficar visível em janelas compactas. Unity batch e build passaram; a execução do smoke, conferência visual e teste com controle físico ainda estão pendentes.
 
+**Legibilidade textual dos ataques (23/11/2026):** durante a preparação, o HUD nomeia o golpe como alternativa aos avisos visuais/sonoros, prioriza os dois padrões mais próximos do impacto e limita a quantidade para evitar excesso de texto. O posicionamento evita HUD e minimapa em telas largas/médias; em janela baixa, substitui por poucos instantes o texto do objetivo e limita a fonte ao espaço disponível. O smoke verifica o ciclo temporal do Arauto e a geometria em três proporções, mas não foi executado. A prioridade percebida, a leitura dos nomes em combate cheio e o espaço reservado ao objetivo precisam de revisão visual e avaliação com jogadores.
+
 **Análise de sessões (23/11/2026):** `Tools/Summarize-Playtests.ps1` consolida as métricas automáticas v8 por sala e sessão, associa marcas F8 e calcula médias das avaliações por nível de experiência a partir de `PLAYTEST-RATINGS.csv`. A ferramenta prepara comparação objetiva, mas não substitui as seis sessões observadas nem a avaliação qualitativa prevista no protocolo.
 
 **Regra:** registrar evidências na [QA.md](QA.md), atualizar esta tabela após cada etapa e não declarar paridade sem sessões externas comparáveis.
