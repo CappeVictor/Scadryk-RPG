@@ -2701,6 +2701,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 attackTargetField.SetValue(finalBoss, (Vector2)player.transform.position);
                 Vector2 volleyForward = ((Vector2)player.transform.position - (Vector2)finalBoss.transform.position).normalized;
                 beginBossAttack.Invoke(finalBoss, null);
+                if (!finalBoss.TryGetWindupAttackLabel(out string windupCaption) ||
+                    !windupCaption.Contains("Arauto fase 1") || !windupCaption.Contains("salva de Ecos"))
+                { SmokeFail("A legenda textual do Arauto não identificou o golpe durante a preparação"); yield break; }
                 int announcedStage = (int)queuedStageField.GetValue(finalBoss);
                 finalBoss.TakeDamage(400f);
                 GameObject transitionPulse = BossStagePulse;
@@ -2714,6 +2717,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                     !(bool)stageBreatherPendingField.GetValue(finalBoss) || !transitionPulseReadable)
                 { SmokeFail("A transição não preservou o ataque anunciado ou o pulso inofensivo ficou ilegível"); yield break; }
                 resolveBossAttack.Invoke(finalBoss, null);
+                if (finalBoss.TryGetWindupAttackLabel(out _))
+                { SmokeFail("A legenda textual do Arauto permaneceu ativa após o impacto do golpe"); yield break; }
                 bool transitionBreatherApplied = !(bool)stageBreatherPendingField.GetValue(finalBoss) &&
                     (float)stageBreatherUntilField.GetValue(finalBoss) >= Time.time + ScadrykEnemyHealth.FinalStageBreatherDuration - 0.01f &&
                     (float)nextBossAttackField.GetValue(finalBoss) >= Time.time + ScadrykEnemyHealth.FinalStageAttackDelay - 0.01f;
