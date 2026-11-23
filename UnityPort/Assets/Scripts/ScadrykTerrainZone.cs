@@ -5,6 +5,7 @@ using UnityEngine;
 public sealed class ScadrykTerrainZone : MonoBehaviour
 {
     internal const string CoastalCurrentKey = "bell-coast-current";
+    internal const string SaltDriftKey = "salt-crosswind";
     internal const string ShallowWaterKey = "shallow-water";
     internal const float MaximumFlowSpeed = 2.4f;
     [SerializeField, Range(0.4f, 1f)] private float movementScale = 0.78f;

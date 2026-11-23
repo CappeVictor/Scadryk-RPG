@@ -462,6 +462,7 @@ public sealed partial class ScadrykGameDirector
                 for (int shard = 0; shard < 3; shard++)
                     MakeDecoration(parent, "Salt crystal", new Vector2(cx + (shard - 1) * 0.28f, cy + 0.18f), new Vector2(0.34f, 0.78f - Mathf.Abs(shard - 1) * 0.18f), new Color(0.82f, 0.68f, 0.39f, 0.66f), false, -7, -18f + shard * 18f);
             }
+            if (room == 1) DrawSaltCrosswind(parent, x);
             DrawRune(parent, new Vector2(x, 4.15f), 1.55f, new Color(0.9f, 0.69f, 0.36f, 0.22f));
         }
         else
@@ -507,6 +508,36 @@ public sealed partial class ScadrykGameDirector
         trigger.isTrigger = true;
         trigger.size = size;
         zoneObject.AddComponent<ScadrykTerrainZone>().Configure(0.78f, default, null, ScadrykTerrainZone.ShallowWaterKey);
+    }
+
+    private static void DrawSaltCrosswind(Transform parent, float roomX)
+    {
+        Vector2 center = new Vector2(roomX + 0.8f, -2.35f);
+        Color saltLight = new Color(0.96f, 0.78f, 0.48f, 0.48f);
+        MakeDecoration(parent, "Salt crosswind field", center, new Vector2(4.2f, 1.9f),
+            new Color(0.74f, 0.57f, 0.32f, 0.12f), false, -8);
+
+        // Left-facing chevrons show the drift direction before Nara enters the field.
+        for (int arrow = 0; arrow < 4; arrow++)
+        {
+            Vector2 head = center + new Vector2(1.45f - arrow * 0.96f, 0f);
+            var marker = new GameObject("Salt grains drifting southwest");
+            marker.transform.SetParent(parent);
+            marker.transform.position = head;
+            marker.transform.rotation = Quaternion.Euler(0f, 0f, 24f);
+            MakeCurrentFoamStroke(marker.transform, "Upper salt streak", new Vector2(0.16f, 0.17f), saltLight, -34f);
+            MakeCurrentFoamStroke(marker.transform, "Lower salt streak", new Vector2(0.16f, -0.17f), saltLight, 34f);
+            marker.AddComponent<ScadrykAmbientProp>().ConfigureFlow(0.42f, arrow / 4f);
+        }
+
+        var zoneObject = new GameObject("Salt crosswind · drifts southwest");
+        zoneObject.transform.SetParent(parent);
+        zoneObject.transform.position = center;
+        BoxCollider2D trigger = zoneObject.AddComponent<BoxCollider2D>();
+        trigger.isTrigger = true;
+        trigger.size = new Vector2(4.2f, 1.9f);
+        zoneObject.AddComponent<ScadrykTerrainZone>().Configure(0.96f, new Vector2(-1.05f, -0.48f),
+            "O vento arrasta para sudoeste. A esquiva mantém o impulso para cruzar a faixa.", ScadrykTerrainZone.SaltDriftKey);
     }
 
     public void ShowShallowWaterHint()

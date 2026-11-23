@@ -1639,10 +1639,12 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Vector2 cappedFlow = ScadrykTerrainZone.CombineFlow(Vector2.right * 1.8f, Vector2.right * 1.8f);
         Vector2 opposingWalk = ScadrykPlayerController.ResolveTerrainTargetVelocity(Vector2.left, 6.2f, 1f, Vector2.right * 1.8f);
         Vector2 carriedIdle = ScadrykPlayerController.ResolveTerrainTargetVelocity(Vector2.zero, 6.2f, 1f, Vector2.right * 1.8f);
+        Vector2 saltCrosswindWalk = ScadrykPlayerController.ResolveTerrainTargetVelocity(Vector2.right, 6.2f, 0.96f, new Vector2(-1.05f, -0.48f));
         if (Mathf.Abs(cappedFlow.magnitude - ScadrykTerrainZone.MaximumFlowSpeed) > 0.001f ||
             opposingWalk.x >= 0f || Mathf.Abs(opposingWalk.y) > 0.001f ||
-            Mathf.Abs(carriedIdle.x - 1.8f) > 0.001f || Mathf.Abs(carriedIdle.y) > 0.001f)
-        { SmokeFail("A corrente não conserva o impulso, não limita fluxos somados ou vence a caminhada contra o fluxo"); yield break; }
+            Mathf.Abs(carriedIdle.x - 1.8f) > 0.001f || Mathf.Abs(carriedIdle.y) > 0.001f ||
+            saltCrosswindWalk.x <= 0f || saltCrosswindWalk.y >= 0f)
+        { SmokeFail("Correntes ambientais não limitam fluxos, resistem à caminhada ou preservam o avanço na Bacia"); yield break; }
         Debug.Log("SCADRYK_SMOKE: corrente move em repouso, permite contrafluxo e limita a velocidade somada");
         float markerStart = ScadrykAmbientProp.FlowMarkerOffset(0f, 0.5f, 1f, 0.34f);
         float markerAdvance = ScadrykAmbientProp.FlowMarkerOffset(0.25f, 0.5f, 1f, 0.34f);
