@@ -1,6 +1,6 @@
 # Scadryk — plano e registro de qualidade
 
-- **Identificação da build para playtest (23/11/2026):** o script de build escreve `Build/SCADRYK_BUILD_INFO.txt` ao lado do executável, com commit, versão do Editor e horário UTC; `PLAYTEST.md` instrui a copiar esse commit para cada ficha, reduzindo o risco de misturar métricas de builds diferentes. Unity 6000.6.9f1 gerou a build em batch e confirmou o arquivo com o commit de origem `cee28c75a4ef`; não iniciei o jogo.
+- **Identificação da build para playtest (23/11/2026):** o método comum `ScadrykBuildMenu.BuildWindowsDemo` agora cria `Build/SCADRYK_BUILD_INFO.txt` depois do BuildReport bem-sucedido; menu do Editor, PowerShell e CI passam pelo mesmo método. O PowerShell exige os campos e compara o commit informado com o checkout, detectando identificação ausente ou antiga. `PLAYTEST.md` instrui copiar o commit para cada ficha, reduzindo mistura de métricas. Unity 6000.6.9f1 compilou e o caminho PowerShell gerou o arquivo esperado; não iniciei o jogo. A validação hospedada e o smoke de campanha seguem pendentes.
 
 - **Alocações de texto no HUD (23/11/2026):** o caminho ativo de `OnGUI` criava novos `GUIContent` a cada cálculo de altura/largura para status, lembranças e instruções; agora reutiliza quatro instâncias e atualiza seu texto apenas quando muda. Layout e texto exibido permanecem iguais. Unity 6000.6.9f1 compilou os scripts e `Tools/build-windows.ps1` gerou a build Windows com sucesso. O smoke não foi executado; a queda real de GC precisa de profiling no gameplay. Não iniciei o jogo.
 

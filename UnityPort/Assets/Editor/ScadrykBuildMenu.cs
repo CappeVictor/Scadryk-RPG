@@ -30,7 +30,51 @@ public static class ScadrykBuildMenu
         BuildReport report = BuildPipeline.BuildPlayer(options);
         if (report.summary.result != BuildResult.Succeeded)
             throw new System.Exception("Falha ao gerar o executável Windows do Scadryk: " + report.summary.result);
+        WriteBuildInfo(projectRoot, outputDirectory);
         if (!Application.isBatchMode) EditorUtility.DisplayDialog("Scadryk", "Executável criado em Build/ScadrykDemo.exe", "OK");
+    }
+
+    private static void WriteBuildInfo(string projectRoot, string outputDirectory)
+    {
+        string commit = "desconhecido";
+        try
+        {
+            var startInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "git",
+                Arguments = "-C \"" + projectRoot.Replace("\"", "\\\"") + "\" rev-parse --short=12 HEAD",
+                WorkingDirectory = projectRoot,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
+            using (System.Diagnostics.Process process = System.Diagnostics.Process.Start(startInfo))
+            {
+                if (process != null)
+                {
+                    string output = process.StandardOutput.ReadToEnd().Trim();
+                    process.StandardError.ReadToEnd();
+                    process.WaitForExit();
+                    if (process.ExitCode == 0 && !string.IsNullOrEmpty(output)) commit = output;
+                }
+            }
+        }
+        catch (System.Exception exception)
+        {
+            Debug.LogWarning("Scadryk: commit não identificado para a build: " + exception.Message);
+        }
+
+        string editorVersion = Application.unityVersion;
+        string buildUtc = System.DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", System.Globalization.CultureInfo.InvariantCulture);
+        string[] lines =
+        {
+            "Scadryk — UnityPort Windows build",
+            "Commit: " + commit,
+            "Unity Editor: " + editorVersion,
+            "Build UTC: " + buildUtc
+        };
+        File.WriteAllLines(Path.Combine(outputDirectory, "SCADRYK_BUILD_INFO.txt"), lines, new System.Text.UTF8Encoding(false));
     }
 
     [MenuItem("Scadryk/Build campaign smoke test")]

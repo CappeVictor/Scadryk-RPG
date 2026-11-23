@@ -61,25 +61,27 @@ if ($missingPayload) {
     throw "A build foi confirmada, mas o payload está incompleto: $($missingPayload -join ', '). Consulte o log: $logPath"
 }
 
+$buildInfoPath = Join-Path $projectRoot 'Build/SCADRYK_BUILD_INFO.txt'
+if (-not (Test-Path -LiteralPath $buildInfoPath -PathType Leaf)) {
+    throw "A build foi concluída, mas o Unity não gerou a identificação esperada: $buildInfoPath"
+}
+$buildInfoLines = Get-Content -LiteralPath $buildInfoPath
+$buildInfoCommitLine = $buildInfoLines | Where-Object { $_.StartsWith('Commit: ', [System.StringComparison]::Ordinal) } | Select-Object -First 1
+$buildInfoEditorLine = $buildInfoLines | Where-Object { $_.StartsWith('Unity Editor: ', [System.StringComparison]::Ordinal) } | Select-Object -First 1
+$buildInfoUtcLine = $buildInfoLines | Where-Object { $_ -match '^Build UTC: \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$' } | Select-Object -First 1
+if (-not $buildInfoCommitLine -or -not $buildInfoEditorLine -or -not $buildInfoUtcLine) {
+    throw "A identificação da build está incompleta: $buildInfoPath"
+}
+
 $repositoryRoot = Split-Path -Parent $projectRoot
-$buildCommit = 'desconhecido'
 $gitCommand = Get-Command git -ErrorAction SilentlyContinue
 if ($gitCommand) {
     $candidateCommit = & $gitCommand.Source -C $repositoryRoot rev-parse --short=12 HEAD 2>$null
-    if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($candidateCommit)) {
-        $buildCommit = $candidateCommit.Trim()
+    if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($candidateCommit) -and
+        $buildInfoCommitLine -ne ('Commit: ' + $candidateCommit.Trim())) {
+        throw "A build informa '$buildInfoCommitLine', mas o código-fonte atual está em '$($candidateCommit.Trim())'."
     }
 }
-$editorVersionLine = Select-String -LiteralPath (Join-Path $projectRoot 'ProjectSettings/ProjectVersion.txt') -Pattern '^m_EditorVersion:' -ErrorAction SilentlyContinue | Select-Object -First 1
-$editorVersion = if ($editorVersionLine) { ($editorVersionLine.Line -split ':', 2)[1].Trim() } else { 'desconhecida' }
-$buildInfoPath = Join-Path $projectRoot 'Build/SCADRYK_BUILD_INFO.txt'
-$buildInfo = @(
-    'Scadryk — UnityPort Windows build',
-    "Commit: $buildCommit",
-    "Unity Editor: $editorVersion",
-    "Build UTC: $([DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ'))"
-)
-[System.IO.File]::WriteAllLines($buildInfoPath, $buildInfo, [System.Text.UTF8Encoding]::new($false))
 
 Write-Host "Build compilada. O jogo não foi iniciado."
 Write-Host "Executável: $outputPath"
