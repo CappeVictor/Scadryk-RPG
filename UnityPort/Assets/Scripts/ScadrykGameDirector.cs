@@ -2460,15 +2460,25 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             OpeningStoryCoversRoomStatus(true, 0, 1) || OpeningStoryCoversRoomStatus(true, 1, 0))
         { SmokeFail("Memórias, comandos de saída ou a janela opcional do Selo final falharam"); yield break; }
         Debug.Log("SCADRYK_SMOKE: memórias modais têm comandos de saída válidos e cabem em janela compacta");
+        int secondaryCountBeforeFallback = ScadrykEffects.SecondaryVisualCount;
+        GameObject fallbackWarning = ScadrykEffects.CreateGroundLaneFallback(roomCenter + Vector2.up * 12f, Vector2.right,
+            3f, 0.2f, new Color(1f, 0.2f, 0.2f, 1f), 10f);
+        ScadrykTimedVisual fallbackTimedVisual = fallbackWarning != null ? fallbackWarning.GetComponent<ScadrykTimedVisual>() : null;
+        bool fallbackProtected = fallbackWarning != null && fallbackWarning.activeInHierarchy &&
+            fallbackTimedVisual != null && fallbackTimedVisual.IsDangerWarning &&
+            ScadrykEffects.SecondaryVisualCount == secondaryCountBeforeFallback;
         GameObject priorityWarning = ScadrykEffects.TelegraphLine(roomCenter, roomCenter + Vector2.right * 3f,
             new Color(1f, 0.2f, 0.2f, 1f), 0.2f, 10f);
         for (int effect = 0; effect < 40; effect++)
             ScadrykEffects.Burst(roomCenter + Vector2.up * (20f + effect), Color.clear, 0.05f);
         bool effectBudgetRespected = ScadrykEffects.SecondaryVisualCount <= ScadrykEffects.SecondaryVisualLimit;
         bool warningProtected = priorityWarning != null && priorityWarning.activeInHierarchy;
+        bool fallbackRemainsActive = fallbackWarning != null && fallbackWarning.activeInHierarchy;
         if (priorityWarning != null) Destroy(priorityWarning);
-        if (!effectBudgetRespected || !warningProtected) { SmokeFail("O orçamento excedeu o teto ou removeu um telegráfico de perigo prioritário"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: efeitos comuns respeitam o teto e telegráficos prioritários permanecem ativos");
+        if (fallbackWarning != null) Destroy(fallbackWarning);
+        if (!effectBudgetRespected || !warningProtected || !fallbackProtected || !fallbackRemainsActive)
+        { SmokeFail("O orçamento excedeu o teto, removeu um telegráfico prioritário ou classificou o fallback de investida como efeito comum"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: efeitos comuns respeitam o teto e avisos prioritários, inclusive o fallback de investida, permanecem ativos");
         for (int room = 0; room < 9; room++)
         {
             if (phaseIndex * RoomsPerPhase + roomIndex != room) { SmokeFail("Sala inesperada: " + room); yield break; }

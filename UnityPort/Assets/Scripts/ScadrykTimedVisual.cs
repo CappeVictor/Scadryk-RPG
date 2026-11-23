@@ -8,6 +8,7 @@ public sealed class ScadrykTimedVisual : MonoBehaviour
     private bool dangerWarning;
     private float spinDegreesPerSecond;
     private Vector3 initialScale;
+    internal bool IsDangerWarning => dangerWarning;
     public void Initialize(float duration, Color color, bool expand)
     {
         lifetime = duration;

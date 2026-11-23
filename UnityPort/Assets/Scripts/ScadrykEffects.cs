@@ -232,13 +232,21 @@ public static class ScadrykEffects
         Sprite attackSprite = LoadEffectSprite("AttackRootThorns", 300f, ref rootThornSprite);
         if (attackSprite == null)
         {
-            GameObject fallback = Create(center, DangerWarningColor(color), length, DangerWarningWidth(width), lifetime);
-            fallback.transform.right = direction;
-            fallback.name = "Root thorn attack";
+            CreateGroundLaneFallback(center, direction, length, width, color, lifetime);
             return;
         }
         GameObject go = CreateSpriteEffect(attackSprite, center, new Vector2(length, width), Color.white, lifetime, "Root thorn attack", true, true);
         go.transform.right = direction;
+    }
+
+    internal static GameObject CreateGroundLaneFallback(Vector2 center, Vector2 direction, float length, float width, Color color, float lifetime)
+    {
+        GameObject fallback = Create(center, DangerWarningColor(color), length, DangerWarningWidth(width), lifetime, true);
+        fallback.transform.right = direction;
+        fallback.name = "Enemy attack warning";
+        ScadrykTimedVisual visual = fallback.GetComponent<ScadrykTimedVisual>();
+        if (visual != null) visual.MarkDangerWarning();
+        return fallback;
     }
 
     public static GameObject Ring(Vector2 center, float diameter, Color color, float lifetime, bool attackWarning = false)
