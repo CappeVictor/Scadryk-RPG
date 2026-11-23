@@ -95,8 +95,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private ScadrykActorAnimator animator;
     private bool dead;
     private bool isWindup;
-    private bool openingAttackPending;
-    private bool openingAttackSlotReserved;
+    private bool attackStartSlotReserved;
     private Sprite[] animationFrames;
     private Vector2 attackTarget;
     private int biomeIndex;
@@ -243,8 +242,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         biomeIndex = Mathf.Clamp(biome, 0, 2);
         combatRole = boss ? 0 : Mathf.Clamp(role, 0, 3);
         nextAttackAt = Time.time + Mathf.Max(0f, openingAttackDelay);
-        openingAttackPending = true;
-        openingAttackSlotReserved = false;
+        attackStartSlotReserved = false;
         roleTint = boss ? Color.white : RoleTintForBiome(biomeIndex, combatRole);
         attackRange = boss ? (biomeIndex == 1 ? 8f : biomeIndex == 0 ? 6.8f : 5.8f) :
             combatRole == 0 ? 3.1f : combatRole == 1 ? 7.2f : combatRole == 2 ? 3.9f : 5.5f;
@@ -259,8 +257,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         isFinalBoss = true;
         IsBoss = true;
         nextAttackAt = Time.time + OpeningAttackDelay(0, true);
-        openingAttackPending = true;
-        openingAttackSlotReserved = false;
+        attackStartSlotReserved = false;
         maxHealth = 1250f;
         health = maxHealth;
         moveSpeed = 1.35f;
@@ -311,6 +308,9 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         if (Time.time < knockbackUntil) { BodyVelocity = knockbackVelocity; return; }
         if (Time.time < staggerUntil) { BodyVelocity = Vector2.zero; return; }
 
+        if (attackStartSlotReserved && (distance > attackRange || shotBlocked)) attackStartSlotReserved = false;
+        if (attackStartSlotReserved && Time.time < nextAttackAt) { BodyVelocity = Vector2.zero; return; }
+
         if (isWindup)
         {
             BodyVelocity = Vector2.zero;
@@ -323,16 +323,16 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         if (Time.time < recoveryUntil) { BodyVelocity = Vector2.zero; return; }
         if (Time.time >= nextAttackAt && distance <= attackRange && !shotBlocked)
         {
-            if (openingAttackPending)
+            if (director != null)
             {
-                if (!openingAttackSlotReserved)
+                if (!attackStartSlotReserved)
                 {
-                    nextAttackAt = director != null ? director.ScheduleOpeningAttack(Time.time) : Time.time;
-                    openingAttackSlotReserved = true;
+                    nextAttackAt = director.ScheduleEnemyAttackStart(Time.time);
+                    attackStartSlotReserved = true;
                 }
                 if (Time.time < nextAttackAt) { BodyVelocity = Vector2.zero; return; }
-                openingAttackPending = false;
             }
+            attackStartSlotReserved = false;
             BeginAttack();
             return;
         }
@@ -653,7 +653,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         (index - (FinalStarfallSideProjectileCount(stage) - 1) * 0.5f) * FinalStarfallProjectileAngleStep;
     internal static float OpeningAttackDelay(int enemyIndex, bool boss, bool campaignOpeningRoom = false) =>
         boss ? 1.25f : (campaignOpeningRoom ? 2.6f : 0.3f) + Mathf.Max(0, enemyIndex) * OpeningAttackSpacing;
-    internal static float ReserveOpeningAttackSlot(ref float nextAvailableAt, float requestedAt)
+    internal static float ReserveEnemyAttackSlot(ref float nextAvailableAt, float requestedAt)
     {
         float scheduledAt = Mathf.Max(nextAvailableAt, requestedAt);
         nextAvailableAt = scheduledAt + OpeningAttackSpacing;

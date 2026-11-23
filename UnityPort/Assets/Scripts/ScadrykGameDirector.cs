@@ -130,7 +130,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private Vector3 memoryLastMousePosition;
     private float roomActiveSeconds;
     private float progressHintSeconds;
-    private float nextOpeningAttackSlotAt;
+    private float nextEnemyAttackSlotAt;
     private int roomDeaths;
     private int unclearAttackMarks;
     private string sessionInputMode = "unknown";
@@ -752,7 +752,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private void BuildPhase(int newPhase, int newRoom, bool newGame, bool preserveRoomSession = false)
     {
         phaseGuardian = null;
-        nextOpeningAttackSlotAt = 0f;
+        nextEnemyAttackSlotAt = 0f;
         if (levelRoot != null && !preserveRoomSession) RecordRoomSession();
         ClearRoomProjectiles();
         if (levelRoot != null) Destroy(levelRoot);
@@ -880,8 +880,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private string ActiveObjectiveText() => ObjectiveText(phaseIndex, roomIndex, enemiesRemaining, anchorsActivated, anchorsRequired,
         anchorsNeedPulse, anchorsNeedSequence, gateObject != null, ActiveCombatObjectiveLabel(), InputBinding(6), InputBinding(2));
 
-    internal float ScheduleOpeningAttack(float requestedAt) =>
-        ScadrykEnemyHealth.ReserveOpeningAttackSlot(ref nextOpeningAttackSlotAt, requestedAt);
+    internal float ScheduleEnemyAttackStart(float requestedAt) =>
+        ScadrykEnemyHealth.ReserveEnemyAttackSlot(ref nextEnemyAttackSlotAt, requestedAt);
 
     public void OnEnemyDefeated(ScadrykEnemyHealth enemy)
     {
@@ -1989,16 +1989,16 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ScadrykEnemyHealth.OpeningAttackDelay(3, false) <= ScadrykEnemyHealth.OpeningAttackDelay(2, false) ||
             Mathf.Abs(ScadrykEnemyHealth.OpeningAttackDelay(0, true) - 1.25f) > 0.001f)
         { SmokeFail("Os primeiros avisos de ataque dos encontros não estão espaçados"); yield break; }
-        float nextOpeningSlot = 0f;
-        float firstOpeningAttack = ScadrykEnemyHealth.ReserveOpeningAttackSlot(ref nextOpeningSlot, 0.3f);
-        float secondOpeningAttack = ScadrykEnemyHealth.ReserveOpeningAttackSlot(ref nextOpeningSlot, 0.82f);
-        float lateOpeningAttack = ScadrykEnemyHealth.ReserveOpeningAttackSlot(ref nextOpeningSlot, 5f);
-        float followingLateAttack = ScadrykEnemyHealth.ReserveOpeningAttackSlot(ref nextOpeningSlot, 5.1f);
-        if (Mathf.Abs(firstOpeningAttack - 0.3f) > 0.001f || Mathf.Abs(secondOpeningAttack - 0.82f) > 0.001f ||
-            Mathf.Abs(lateOpeningAttack - 5f) > 0.001f ||
-            Mathf.Abs(followingLateAttack - lateOpeningAttack - ScadrykEnemyHealth.OpeningAttackSpacing) > 0.001f)
-        { SmokeFail("O escalonador não mantém intervalo entre avisos quando Ecos chegam ao alcance depois"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: escalonamento preserva intervalo mesmo se um Eco chega ao alcance atrasado");
+        float nextEnemySlot = 0f;
+        float firstAttack = ScadrykEnemyHealth.ReserveEnemyAttackSlot(ref nextEnemySlot, 0.3f);
+        float secondAttack = ScadrykEnemyHealth.ReserveEnemyAttackSlot(ref nextEnemySlot, 0.82f);
+        float lateAttack = ScadrykEnemyHealth.ReserveEnemyAttackSlot(ref nextEnemySlot, 5f);
+        float clusteredFollowup = ScadrykEnemyHealth.ReserveEnemyAttackSlot(ref nextEnemySlot, 5.1f);
+        if (Mathf.Abs(firstAttack - 0.3f) > 0.001f || Mathf.Abs(secondAttack - 0.82f) > 0.001f ||
+            Mathf.Abs(lateAttack - 5f) > 0.001f ||
+            Mathf.Abs(clusteredFollowup - lateAttack - ScadrykEnemyHealth.OpeningAttackSpacing) > 0.001f)
+        { SmokeFail("O escalonador não separou inimigos que voltaram a coincidir após o primeiro ciclo"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: primeiros avisos e ataques repetidos mantêm intervalo entre inimigos");
         if (EnemyCountForRoom(0) != 1 || EnemyRoleForRoom(0, 0) != 0 ||
             EnemyCountForRoom(1) != 2 || EnemyRoleForRoom(1, 0) != 0 || EnemyRoleForRoom(1, 1) != 1 ||
             EnemyCountForRoom(4) != 4 ||
