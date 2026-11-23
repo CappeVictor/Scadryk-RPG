@@ -87,6 +87,7 @@ Respostas de 1 (discordo) a 5 (concordo), com observações:
 - As mortes pareceram evitáveis quando aconteceram: `1  2  3  4  5` — nota: `____________________`
 - Qual sala foi mais interessante e por quê? `________________________________________`
 - Qual sala foi mais confusa ou repetitiva? `________________________________________`
+- As entradas do bosque, da bacia de sal e da costa pareceram lugares distintos? O caminho e os marcos de cada uma ficaram claros? `________________________________________`
 - Que ataque causou dano sem você entender o motivo? `________________________________________`
 - Que poder você usou menos e por quê? `________________________________________`
 - O painel de memória mostrou um comando incorreto ou avançou uma fala sem você querer? `________________________________________`
