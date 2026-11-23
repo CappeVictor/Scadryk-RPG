@@ -3,6 +3,9 @@ using UnityEngine;
 /// <summary>Small, persistent settings shared by the front end, input and audio.</summary>
 public static class ScadrykSettings
 {
+    internal const float DeferredSaveDelay = 0.45f;
+    private static bool deferredSavePending;
+    private static float deferredSaveAt;
     internal const float DefaultGamepadDeadzone = 0.19f;
     internal const float MinimumGamepadDeadzone = 0.08f;
     internal const float MaximumGamepadDeadzone = 0.4f;
@@ -17,6 +20,29 @@ public static class ScadrykSettings
         KeyCode.JoystickButton12, KeyCode.JoystickButton13, KeyCode.JoystickButton14, KeyCode.JoystickButton15,
         KeyCode.JoystickButton16, KeyCode.JoystickButton17, KeyCode.JoystickButton18, KeyCode.JoystickButton19
     };
+
+    internal static bool ShouldFlushDeferredSave(bool pending, float now, float dueAt) => pending && now >= dueAt;
+    internal static float DeferredSaveDeadline(bool pending, float now, float currentDueAt) =>
+        pending ? currentDueAt : now + DeferredSaveDelay;
+
+    private static void SetFloatDeferred(string key, float value)
+    {
+        PlayerPrefs.SetFloat(key, value);
+        deferredSaveAt = DeferredSaveDeadline(deferredSavePending, Time.unscaledTime, deferredSaveAt);
+        deferredSavePending = true;
+    }
+
+    internal static void TickDeferredSave()
+    {
+        if (ShouldFlushDeferredSave(deferredSavePending, Time.unscaledTime, deferredSaveAt)) FlushPendingSave();
+    }
+
+    internal static void FlushPendingSave()
+    {
+        if (!deferredSavePending) return;
+        PlayerPrefs.Save();
+        deferredSavePending = false;
+    }
 
     public static KeyCode Key(int action) => Key(action, "Scadryk.Key.");
     internal static KeyCode Key(int action, string prefix) => (KeyCode)PlayerPrefs.GetInt(prefix + action, (int)Defaults[action]);
@@ -157,12 +183,12 @@ public static class ScadrykSettings
     public static float MusicVolume
     {
         get => PlayerPrefs.GetFloat("Scadryk.Music", 0.42f);
-        set { if (Mathf.Abs(MusicVolume - value) < 0.001f) return; PlayerPrefs.SetFloat("Scadryk.Music", Mathf.Clamp01(value)); PlayerPrefs.Save(); }
+        set { float clamped = Mathf.Clamp01(value); if (Mathf.Abs(MusicVolume - clamped) < 0.001f) return; SetFloatDeferred("Scadryk.Music", clamped); }
     }
     public static float EffectsVolume
     {
         get => PlayerPrefs.GetFloat("Scadryk.Effects", 0.65f);
-        set { if (Mathf.Abs(EffectsVolume - value) < 0.001f) return; PlayerPrefs.SetFloat("Scadryk.Effects", Mathf.Clamp01(value)); PlayerPrefs.Save(); }
+        set { float clamped = Mathf.Clamp01(value); if (Mathf.Abs(EffectsVolume - clamped) < 0.001f) return; SetFloatDeferred("Scadryk.Effects", clamped); }
     }
     public static float GamepadDeadzone
     {
@@ -171,14 +197,13 @@ public static class ScadrykSettings
         {
             float clamped = Mathf.Clamp(value, MinimumGamepadDeadzone, MaximumGamepadDeadzone);
             if (Mathf.Abs(GamepadDeadzone - clamped) < 0.001f) return;
-            PlayerPrefs.SetFloat("Scadryk.GamepadDeadzone", clamped);
-            PlayerPrefs.Save();
+            SetFloatDeferred("Scadryk.GamepadDeadzone", clamped);
         }
     }
     public static float TextScale
     {
         get => PlayerPrefs.GetFloat("Scadryk.TextScale", 1f);
-        set { if (Mathf.Abs(TextScale - value) < 0.001f) return; PlayerPrefs.SetFloat("Scadryk.TextScale", Mathf.Clamp(value, 1f, 1.5f)); PlayerPrefs.Save(); }
+        set { float clamped = Mathf.Clamp(value, 1f, 1.5f); if (Mathf.Abs(TextScale - clamped) < 0.001f) return; SetFloatDeferred("Scadryk.TextScale", clamped); }
     }
     public static bool ReduceFlash
     {

@@ -197,6 +197,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     private void Update()
     {
+        ScadrykSettings.TickDeferredSave();
         ApplyPauseTimeScale();
         ScadrykAudio audio = GetComponent<ScadrykAudio>();
         if (audio != null) audio.SetCombatIntensity(ScadrykAudio.CombatIntensityFor(activeEnemies.Count,
@@ -1033,6 +1034,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     private void OnApplicationQuit()
     {
+        ScadrykSettings.FlushPendingSave();
         Time.timeScale = 1f;
         if (levelRoot != null && !showTitle && !showOpeningStory)
         {
@@ -1040,6 +1042,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 SaveProgress(phaseIndex, roomIndex);
             RecordRoomSession();
         }
+    }
+
+    private void OnApplicationPause(bool paused)
+    {
+        if (paused) ScadrykSettings.FlushPendingSave();
     }
 
     internal static bool ShouldSaveCheckpointOnQuit(bool hasPlayer, bool hasVictory, bool titleVisible,
@@ -2490,6 +2497,14 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ScadrykEffects.DeathBurstMoteCount(true, true) >= ScadrykEffects.DeathBurstMoteCount(true, false))
         { SmokeFail("Reduzir flashes não atenua explosões, expansões ou partículas de derrota"); yield break; }
         Debug.Log("SCADRYK_SMOKE: reduzir flashes atenua explosões e expansões sem remover a leitura de perigo");
+        bool settingsSaveIsThrottled = !ScadrykSettings.ShouldFlushDeferredSave(true, 2f, 2.45f) &&
+            ScadrykSettings.ShouldFlushDeferredSave(true, 2.45f, 2.45f) &&
+            !ScadrykSettings.ShouldFlushDeferredSave(false, 3f, 2.45f) &&
+            Mathf.Abs(ScadrykSettings.DeferredSaveDeadline(false, 2f, 0f) - 2.45f) < 0.001f &&
+            Mathf.Abs(ScadrykSettings.DeferredSaveDeadline(true, 3f, 2.45f) - 2.45f) < 0.001f;
+        if (!settingsSaveIsThrottled)
+        { SmokeFail("As opções não limitam a frequência de gravação dos sliders"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: sliders salvam periodicamente durante ajustes longos sem gravar a cada frame");
         if (!OverlayLayoutFits(400f, 360f) || !OverlayLayoutFits(1280f, 520f) || !OverlayLayoutFits(1280f, 720f) ||
             !PauseMapOverlayLayoutFits(400f, 360f))
         { SmokeFail("O menu inicial ou o menu de pausa com acesso ao mapa escapam de uma janela compacta"); yield break; }

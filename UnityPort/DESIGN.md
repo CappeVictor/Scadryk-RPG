@@ -143,3 +143,5 @@ As referências de outros jogos orientam clareza, descoberta e ritmo. Não repro
 - **Avisos em janelas estreitas (22/11/2026):** a faixa de status agora mede a altura da mensagem, quebra nomes longos de ataques e usa uma base escura de contraste em vez de cortar texto na largura fixa. O smoke verifica a expansão e os limites em 400×360; a composição real e escalas extremas ainda precisam de inspeção visual.
 ### Onboarding de combate
 Na primeira sala da jornada, o Caçador aguarda 2,6 s antes de iniciar seu primeiro aviso de golpe, além do tempo de windup visível. Isso dá ao jogador uma janela curta para fechar a abertura, ler a dica de controles e observar a arena. Os demais encontros conservam o escalonamento padrão; ajustar após sessões de jogo, não por estimativa isolada.
+
+**Persistência de opções (23/11/2026):** sliders não forçam gravação síncrona em cada atualização de interface; preferências são agrupadas e descarregadas periodicamente, ao perder foco e ao fechar. O smoke verifica a cadência do flush. Build local passou; teste de interação e smoke continuam pendentes.
