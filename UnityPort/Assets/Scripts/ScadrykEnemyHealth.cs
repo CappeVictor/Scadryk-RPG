@@ -162,15 +162,21 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             1 => "Vigia do Sal — salva de estilhaços",
             _ => "Vigia do Coro — pulso de sino"
         };
-        string biomeName = biome switch { 0 => "Bosque", 1 => "Bacia de sal", _ => "Costa" };
+        string roleName = Mathf.Clamp(role, 0, 3) switch
+        {
+            0 => "Caçador",
+            1 => "Atirador",
+            2 => "Ressonador",
+            _ => "Tecelão"
+        };
         string attackName = Mathf.Clamp(role, 0, 3) switch
         {
             0 => biome switch { 0 => "avanço de raízes", 1 => "estocada de sal", _ => "investida do recife" },
             1 => ScadrykEnemyProjectile.LabelForBiome(biome),
             2 => AreaPulseLabelForBiome(biome),
-            _ => "pulso de apoio"
+            _ => "cura dos Ecos"
         };
-        return biomeName + " — Eco " + attackName;
+        return roleName + " — " + attackName;
     }
 
     internal bool TryGetRecentAttackLabel(float now, out string label)

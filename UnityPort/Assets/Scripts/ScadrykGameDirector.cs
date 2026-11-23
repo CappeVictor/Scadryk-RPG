@@ -2207,15 +2207,16 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         string finalPattern = ScadrykEnemyHealth.AttackReadabilityLabel(2, true, true, 0, 2, 3);
         string clarityRow = FormatAttackClarityEventCsvRow("session", "2026-11-22T00:00:00Z", 3, 2, finalPattern).TrimEnd('\n');
         string escapedClarityRow = FormatAttackClarityEventCsvRow("session", "2026-11-22T00:00:00Z", 3, 2, "Eco, \"salva\"").TrimEnd('\n');
-        if (!commonPattern.Contains("pulso de sal") ||
+        if (!commonPattern.Contains("Ressonador — pulso de sal") ||
             ScadrykEnemyHealth.AreaPulseLabelForBiome(0) == ScadrykEnemyHealth.AreaPulseLabelForBiome(1) ||
             ScadrykEnemyHealth.AreaPulseLabelForBiome(1) == ScadrykEnemyHealth.AreaPulseLabelForBiome(2) ||
-            !forestVolleyPattern.Contains("espinho lançado") || !saltVolleyPattern.Contains("estilhaço de sal") ||
-            !coastalVolleyPattern.Contains("fragmento de sino") || forestVolleyPattern == saltVolleyPattern ||
-            !forestThrustPattern.Contains("avanço de raízes") || !saltThrustPattern.Contains("estocada de sal") ||
-            !coastalThrustPattern.Contains("investida do recife") || forestThrustPattern == saltThrustPattern ||
+            !forestVolleyPattern.Contains("Atirador — espinho lançado") || !saltVolleyPattern.Contains("Atirador — estilhaço de sal") ||
+            !coastalVolleyPattern.Contains("Atirador — fragmento de sino") || forestVolleyPattern == saltVolleyPattern ||
+            !forestThrustPattern.Contains("Caçador — avanço de raízes") || !saltThrustPattern.Contains("Caçador — estocada de sal") ||
+            !coastalThrustPattern.Contains("Caçador — investida do recife") || forestThrustPattern == saltThrustPattern ||
             saltThrustPattern == coastalThrustPattern ||
             saltVolleyPattern == coastalVolleyPattern ||
+            !ScadrykEnemyHealth.AttackReadabilityLabel(2, false, false, 3, 0, 0).Contains("Tecelão — cura dos Ecos") ||
             ScadrykEnemyProjectile.ImpactColor(0) == ScadrykEnemyProjectile.ImpactColor(1) ||
             ScadrykEnemyProjectile.ImpactColor(1) == ScadrykEnemyProjectile.ImpactColor(2) ||
             ScadrykEnemyProjectile.ImpactColor(-1) != new Color(0.93f, 0.36f, 0.67f, 0.82f) ||
