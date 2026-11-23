@@ -125,7 +125,11 @@ public sealed partial class ScadrykGameDirector
         for (int i = 0; i < anchorsRequired; i++)
         {
             if (roomAnchors[i] == null || Vector2.Distance(position, roomAnchors[i].transform.position) > 1.8f) continue;
-            if (anchorsNeedPulse) { ShowStatus("Este objeto responde ao Pulso (" + InputBinding(2) + ").", 3f); return; }
+            if (anchorsNeedPulse)
+            {
+                ShowStatus(PulseAnchorPromptText(phaseIndex * RoomsPerPhase + roomIndex, i, anchorsActivated, InputBinding(2)), 3f);
+                return;
+            }
             ActivateAnchor(i);
             return;
         }
@@ -765,6 +769,18 @@ public sealed partial class ScadrykGameDirector
             case 7: return new[] { new Vector2(-3.6f, -0.1f), new Vector2(5.4f, 2.15f) };
             default: return System.Array.Empty<Vector2>();
         }
+    }
+
+    internal static string PulseAnchorPromptText(int roomId, int anchorIndex, int activated, string pulseBinding)
+    {
+        if (roomId == 4) return "Cristal marcado — Pulso (" + pulseBinding + ").";
+        if (roomId == 7)
+        {
+            if (anchorIndex == 1 && activated == 0) return "Sino do recife — primeiro acione o farol com Pulso (" + pulseBinding + ").";
+            if (anchorIndex == 0) return "Farol da entrada — use Pulso (" + pulseBinding + ") primeiro.";
+            return "Sino do recife — use Pulso (" + pulseBinding + ") agora.";
+        }
+        return "Sinal marcado — use Pulso (" + pulseBinding + ").";
     }
 
     internal static bool RoomAnchorsAvoidCover()
