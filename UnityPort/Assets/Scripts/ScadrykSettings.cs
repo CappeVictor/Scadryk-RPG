@@ -221,4 +221,16 @@ public static class ScadrykSettings
         get => PlayerPrefs.GetInt("Scadryk.HighContrastWarnings", 0) != 0;
         set { if (HighContrastWarnings == value) return; PlayerPrefs.SetInt("Scadryk.HighContrastWarnings", value ? 1 : 0); PlayerPrefs.Save(); }
     }
+
+    public static bool Fullscreen
+    {
+        get => PlayerPrefs.GetInt("Scadryk.Fullscreen", 1) != 0;
+        set
+        {
+            if (Fullscreen == value) return;
+            PlayerPrefs.SetInt("Scadryk.Fullscreen", value ? 1 : 0);
+            PlayerPrefs.Save();
+            Screen.fullScreen = value;
+        }
+    }
 }
