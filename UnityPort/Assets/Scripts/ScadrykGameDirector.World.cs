@@ -469,10 +469,8 @@ public sealed partial class ScadrykGameDirector
             for (int side = -1; side <= 1; side += 2)
             {
                 float y = side * (room == 1 ? 4.65f : 4.2f);
-                MakeDecoration(parent, "Tide pool", new Vector2(x - 5.9f, y), new Vector2(3.0f, 1.05f), new Color(0.08f, 0.30f, 0.30f, 0.52f), true, -9);
-                MakeShallowWaterZone(parent, new Vector2(x - 5.9f, y), new Vector2(3.0f, 1.05f));
-                MakeDecoration(parent, "Tide pool", new Vector2(x + 5.6f, -y * 0.78f), new Vector2(2.5f, 0.82f), new Color(0.07f, 0.26f, 0.27f, 0.48f), true, -9);
-                MakeShallowWaterZone(parent, new Vector2(x + 5.6f, -y * 0.78f), new Vector2(2.5f, 0.82f));
+                MakeShallowWaterPool(parent, "Tide pool", new Vector2(x - 5.9f, y), new Vector2(3.0f, 1.05f), new Color(0.08f, 0.30f, 0.30f, 0.52f));
+                MakeShallowWaterPool(parent, "Tide pool", new Vector2(x + 5.6f, -y * 0.78f), new Vector2(2.5f, 0.82f), new Color(0.07f, 0.26f, 0.27f, 0.48f));
                 for (int reed = 0; reed < 3; reed++)
                 {
                     float rx = x - 7.2f + reed * 0.36f;
@@ -482,9 +480,8 @@ public sealed partial class ScadrykGameDirector
             for (int bank = -1; bank <= 1; bank += 2)
             {
                 Vector2 outerPool = ForestOuterPoolPosition(new Vector2(x, 0f), bank);
-                MakeDecoration(parent, "Outer tide pool", outerPool, new Vector2(2.8f, 0.9f),
-                    new Color(0.06f, 0.28f, 0.29f, 0.42f), true, -9);
-                MakeShallowWaterZone(parent, outerPool, new Vector2(2.8f, 0.9f));
+                MakeShallowWaterPool(parent, "Outer tide pool", outerPool, new Vector2(2.8f, 0.9f),
+                    new Color(0.06f, 0.28f, 0.29f, 0.42f));
             }
             DrawRune(parent, new Vector2(x + (room - 1) * 1.15f, 4.1f), 1.8f, dim);
         }
@@ -552,6 +549,13 @@ public sealed partial class ScadrykGameDirector
         trigger.isTrigger = true;
         trigger.size = size;
         zoneObject.AddComponent<ScadrykTerrainZone>().Configure(0.78f, default, null, ScadrykTerrainZone.ShallowWaterKey);
+    }
+
+    private static void MakeShallowWaterPool(Transform parent, string name, Vector2 position, Vector2 size, Color color)
+    {
+        GameObject water = MakeDecoration(parent, name, position, size, color, true, -9);
+        water.AddComponent<ScadrykAmbientProp>().Configure(ScadrykAmbientMotion.Water, 0.85f);
+        MakeShallowWaterZone(parent, position, size);
     }
 
     internal static Vector2 ForestOuterPoolPosition(Vector2 roomCenter, int bank) =>

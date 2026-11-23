@@ -2732,11 +2732,13 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                     foreach (ScadrykTerrainZone zone in waterZones)
                     {
                         if (zone.HintKey != ScadrykTerrainZone.ShallowWaterKey) continue;
-                        if (Vector2.Distance((Vector2)zone.transform.position, northPool) < 0.05f) northBankWet = true;
-                        if (Vector2.Distance((Vector2)zone.transform.position, southPool) < 0.05f) southBankWet = true;
+                        bool northMatch = Vector2.Distance((Vector2)zone.transform.position, northPool) < 0.05f;
+                        bool southMatch = Vector2.Distance((Vector2)zone.transform.position, southPool) < 0.05f;
+                        if (northMatch) northBankWet = HasAnimatedWaterAt(zone.transform.parent, northPool);
+                        if (southMatch) southBankWet = HasAnimatedWaterAt(zone.transform.parent, southPool);
                     }
                     if (!northBankWet || !southBankWet)
-                    { SmokeFail("As duas margens ampliadas do bosque perderam suas travessias de água rasa"); yield break; }
+                    { SmokeFail("As margens do bosque precisam manter poças lentas com animação de água"); yield break; }
                 }
             }
             for (int previousRoom = 0; previousRoom < roomIndex; previousRoom++)
@@ -3069,6 +3071,18 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         { SmokeFail("Uma nova jornada iniciada após a vitória ficou bloqueada pelo estado de encerramento"); yield break; }
         Debug.Log("SCADRYK_SMOKE: SUCCESS nove salas, três poderes, Arauto e vitória");
         Application.Quit(0);
+    }
+
+    private static bool HasAnimatedWaterAt(Transform room, Vector2 position)
+    {
+        if (room == null) return false;
+        for (int child = 0; child < room.childCount; child++)
+        {
+            Transform candidate = room.GetChild(child);
+            if (candidate.name != "Outer tide pool" || Vector2.Distance((Vector2)candidate.position, position) >= 0.05f) continue;
+            return candidate.TryGetComponent<ScadrykAmbientProp>(out var motion) && motion.Motion == ScadrykAmbientMotion.Water;
+        }
+        return false;
     }
 
     private static void ClearSmokeAttackWarnings()

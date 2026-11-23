@@ -13,6 +13,8 @@ public enum ScadrykAmbientMotion
 /// <summary>Small looping motion for trees, crystals, pools and lanterns.</summary>
 public sealed class ScadrykAmbientProp : MonoBehaviour
 {
+    internal ScadrykAmbientMotion Motion => motion;
+
     private ScadrykAmbientMotion motion;
     private SpriteRenderer sprite;
     private Vector3 basePosition;
