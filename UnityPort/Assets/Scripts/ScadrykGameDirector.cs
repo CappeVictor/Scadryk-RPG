@@ -2204,6 +2204,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         string saltThrustPattern = ScadrykEnemyHealth.AttackReadabilityLabel(1, false, false, 0, 0, 0);
         string coastalThrustPattern = ScadrykEnemyHealth.AttackReadabilityLabel(2, false, false, 0, 0, 0);
         string saltGuardianPattern = ScadrykEnemyHealth.AttackReadabilityLabel(1, true, false, 0, 0, 0);
+        string finalVolleyPattern = ScadrykEnemyHealth.AttackReadabilityLabel(2, true, true, 0, 0, 1);
+        string finalStarfallPattern = ScadrykEnemyHealth.AttackReadabilityLabel(2, true, true, 0, 1, 2);
         string finalPattern = ScadrykEnemyHealth.AttackReadabilityLabel(2, true, true, 0, 2, 3);
         string clarityRow = FormatAttackClarityEventCsvRow("session", "2026-11-22T00:00:00Z", 3, 2, finalPattern).TrimEnd('\n');
         string escapedClarityRow = FormatAttackClarityEventCsvRow("session", "2026-11-22T00:00:00Z", 3, 2, "Eco, \"salva\"").TrimEnd('\n');
@@ -2223,8 +2225,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ScadrykEnemyProjectile.ForestHitSlowDuration <= 0f || ScadrykEnemyProjectile.SaltHitSlowDuration <= ScadrykEnemyProjectile.ForestHitSlowDuration ||
             ScadrykEnemyProjectile.CoastalHitKnockbackSpeed <= 0f || ScadrykEnemyProjectile.CoastalHitKnockbackDuration <= 0f ||
             !saltGuardianPattern.Contains("Vigia do Sal") ||
-            !saltGuardianPattern.Contains("salva de estilhaços") || !finalPattern.Contains("Arauto fase 3") ||
-            !finalPattern.Contains("onda de vazio") || clarityRow.Split(',').Length != 5 ||
+            !saltGuardianPattern.Contains("salva de estilhaços") || !finalVolleyPattern.Contains("entre as linhas") ||
+            !finalStarfallPattern.Contains("saia da marca") || !finalPattern.Contains("Arauto fase 3") ||
+            !finalPattern.Contains("onda de vazio") || !finalPattern.Contains("centro seguro") || clarityRow.Split(',').Length != 5 ||
             !clarityRow.EndsWith(finalPattern) ||
             escapedClarityRow != "session,2026-11-22T00:00:00Z,3,2,\"Eco, \"\"salva\"\"\"")
         { SmokeFail("O registro de legibilidade não identifica papéis, guardiões, fases do Arauto ou campos do CSV"); yield break; }

@@ -150,9 +150,9 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         {
             string pattern = finalPattern switch
             {
-                0 => "salva de Ecos",
-                1 => "queda de memória",
-                _ => "onda de vazio"
+                0 => "salva de Ecos · entre as linhas",
+                1 => "queda de memória · saia da marca",
+                _ => "onda de vazio · centro seguro"
             };
             return "Arauto fase " + Mathf.Clamp(finalStage, 1, 3) + " — " + pattern;
         }
