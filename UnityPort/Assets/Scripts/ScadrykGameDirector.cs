@@ -38,6 +38,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private static readonly Dictionary<string, Sprite[]> WholeSpriteSheets = new Dictionary<string, Sprite[]>();
     private Sprite[] environmentSprites;
     private Sprite[] phaseGroundSprites;
+    private Sprite[] phaseApproachGroundSprites;
     private Sprite[] phaseCenterGroundSprites;
     private Sprite[] phaseGuardianGroundSprites;
     private Sprite[] phaseEnemySprites;
@@ -189,6 +190,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         EnsureSprites();
         environmentSprites = LoadSheetRow("ScadrykEnvironment", 0, true);
         phaseGroundSprites = new[] { LoadSingleSprite("ForestClearing", 80f), LoadSingleSprite("SaltBasin", 80f), LoadSingleSprite("BellCoast", 80f) };
+        phaseApproachGroundSprites = new[] {
+            LoadSingleSprite("ForestCausewayApproachGround", 80f),
+            LoadSingleSprite("SaltFlatsApproachGround", 80f),
+            LoadSingleSprite("BellTidewayApproachGround", 80f)
+        };
         phaseCenterGroundSprites = new[] {
             LoadSingleSprite("ForestAshFordGround", 80f),
             LoadSingleSprite("BasinCrosswindGround", 80f),
@@ -2489,16 +2495,18 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (titleBackdropTexture == null) { SmokeFail("A arte de abertura ScadrykTitleBackdrop não foi carregada"); yield break; }
         Debug.Log("SCADRYK_SMOKE: arte original da tela inicial carregada");
         bool worldArtLoaded = HasAllSprites(environmentSprites, 16) && HasAllSprites(phaseGroundSprites, 3) &&
+            HasAllSprites(phaseApproachGroundSprites, 3) &&
             HasAllSprites(phaseCenterGroundSprites, 3) && HasAllSprites(phaseGuardianGroundSprites, 3) && HasAllSprites(phaseEnemySprites, 3) &&
             fallenWillowLogSprite != null && portalSprite != null && witnessSprite != null;
         bool distinctRoomGroundsSelected = true;
         for (int biome = 0; biome < 3; biome++)
         {
-            distinctRoomGroundsSelected &= GroundSpriteForRoom(biome, 1, RoomSpacing, phaseGroundSprites, phaseCenterGroundSprites, phaseGuardianGroundSprites) == phaseCenterGroundSprites[biome];
-            distinctRoomGroundsSelected &= GroundSpriteForRoom(biome, 2, RoomSpacing * (RoomsPerPhase - 1), phaseGroundSprites, phaseCenterGroundSprites, phaseGuardianGroundSprites) == phaseGuardianGroundSprites[biome];
-            distinctRoomGroundsSelected &= GroundSpriteForRoom(biome, 0, 0f, phaseGroundSprites, phaseCenterGroundSprites, phaseGuardianGroundSprites) == phaseGroundSprites[biome];
-            distinctRoomGroundsSelected &= GroundSpriteForRoom(biome, 1, -RoomSpacing, phaseGroundSprites, phaseCenterGroundSprites, phaseGuardianGroundSprites) == phaseGroundSprites[biome];
-            distinctRoomGroundsSelected &= GroundSpriteForRoom(biome, 2, 0f, phaseGroundSprites, phaseCenterGroundSprites, phaseGuardianGroundSprites) == phaseGroundSprites[biome];
+            distinctRoomGroundsSelected &= GroundSpriteForRoom(biome, 0, 0f, phaseGroundSprites, phaseCenterGroundSprites, phaseGuardianGroundSprites, phaseApproachGroundSprites) == phaseApproachGroundSprites[biome];
+            distinctRoomGroundsSelected &= GroundSpriteForRoom(biome, 1, RoomSpacing, phaseGroundSprites, phaseCenterGroundSprites, phaseGuardianGroundSprites, phaseApproachGroundSprites) == phaseCenterGroundSprites[biome];
+            distinctRoomGroundsSelected &= GroundSpriteForRoom(biome, 2, RoomSpacing * (RoomsPerPhase - 1), phaseGroundSprites, phaseCenterGroundSprites, phaseGuardianGroundSprites, phaseApproachGroundSprites) == phaseGuardianGroundSprites[biome];
+            distinctRoomGroundsSelected &= GroundSpriteForRoom(biome, 0, -RoomSpacing, phaseGroundSprites, phaseCenterGroundSprites, phaseGuardianGroundSprites, phaseApproachGroundSprites) == phaseGroundSprites[biome];
+            distinctRoomGroundsSelected &= GroundSpriteForRoom(biome, 1, -RoomSpacing, phaseGroundSprites, phaseCenterGroundSprites, phaseGuardianGroundSprites, phaseApproachGroundSprites) == phaseGroundSprites[biome];
+            distinctRoomGroundsSelected &= GroundSpriteForRoom(biome, 2, 0f, phaseGroundSprites, phaseCenterGroundSprites, phaseGuardianGroundSprites, phaseApproachGroundSprites) == phaseGroundSprites[biome];
         }
         bool enemyArtLoaded = HasAllSprites(LoadSheetRow("Enemies", 0, false), 4) &&
             HasAllSprites(LoadSheetRow("Enemies", 1, false), 4) && HasAllSprites(LoadSheetRow("Enemies", 2, false), 4) &&
@@ -2507,7 +2515,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             HasAllSprites(LoadSheetRow("BossesFinalWave", 2, false), 4) && HasAllSprites(LoadSheetRow("BossesEndgame", 0, false), 4);
         if (!worldArtLoaded || !distinctRoomGroundsSelected || !enemyArtLoaded || !ScadrykEffects.RequiredCombatArtIsLoaded)
         { SmokeFail("Uma arte obrigatória de sala, personagem, guardião ou combate não carregou ou foi aplicada à rota errada"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: cenários base, salas centrais e arenas dos três biomas, personagens, guardiões e efeitos de combate carregados");
+        Debug.Log("SCADRYK_SMOKE: cenários de aproximação, salas centrais e arenas dos três biomas, personagens, guardiões e efeitos de combate carregados");
         if (!AllArtTexturesAreGpuOnly(out int artTextureCount))
         { SmokeFail("A biblioteca de arte contém textura legível pela CPU ou está vazia"); yield break; }
         Debug.Log("SCADRYK_SMOKE: " + artTextureCount + " texturas de arte carregadas sem cópia legível pela CPU");
