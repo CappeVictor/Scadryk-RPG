@@ -2476,6 +2476,17 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ringTimedVisual != null && ringTimedVisual.IsDangerWarning && ringFallbackLine != null &&
             Mathf.Abs(ringFallbackLine.startWidth - expectedRingLineWidth) < 0.001f &&
             ScadrykEffects.SecondaryVisualCount == secondaryCountBeforeFallback;
+        GameObject[] supportSignals = ScadrykEffects.SupportPulseSignal(roomCenter + Vector2.up * 24f,
+            new Color(0.38f, 1f, 0.6f, 0.8f), 10f, true);
+        ScadrykTimedVisual outerSupportSignal = supportSignals.Length > 0 && supportSignals[0] != null
+            ? supportSignals[0].GetComponent<ScadrykTimedVisual>() : null;
+        ScadrykTimedVisual innerSupportSignal = supportSignals.Length > 1 && supportSignals[1] != null
+            ? supportSignals[1].GetComponent<ScadrykTimedVisual>() : null;
+        bool supportSignalDistinct = supportSignals.Length == 2 && supportSignals[0] != null && supportSignals[1] != null &&
+            outerSupportSignal != null && outerSupportSignal.IsDangerWarning && innerSupportSignal != null && innerSupportSignal.IsDangerWarning &&
+            Mathf.Abs(ScadrykEffects.RingVisualDiameter(supportSignals[0]) - ScadrykEnemyHealth.SupportPulseDiameter) < 0.01f &&
+            Mathf.Abs(ScadrykEffects.RingVisualDiameter(supportSignals[1]) - ScadrykEnemyHealth.SupportPulseInnerDiameter) < 0.01f &&
+            ScadrykEffects.SecondaryVisualCount == secondaryCountBeforeFallback;
         GameObject priorityWarning = ScadrykEffects.TelegraphLine(roomCenter, roomCenter + Vector2.right * 3f,
             new Color(1f, 0.2f, 0.2f, 1f), 0.2f, 10f);
         for (int effect = 0; effect < 40; effect++)
@@ -2484,13 +2495,16 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         bool warningProtected = priorityWarning != null && priorityWarning.activeInHierarchy;
         bool fallbackRemainsActive = fallbackWarning != null && fallbackWarning.activeInHierarchy;
         bool ringFallbackRemainsActive = ringFallbackWarning != null && ringFallbackWarning.activeInHierarchy;
+        bool supportSignalsRemainActive = supportSignalDistinct && supportSignals[0].activeInHierarchy && supportSignals[1].activeInHierarchy;
         if (priorityWarning != null) Destroy(priorityWarning);
         if (fallbackWarning != null) Destroy(fallbackWarning);
         if (ringFallbackWarning != null) Destroy(ringFallbackWarning);
+        if (supportSignals.Length > 0 && supportSignals[0] != null) Destroy(supportSignals[0]);
+        if (supportSignals.Length > 1 && supportSignals[1] != null) Destroy(supportSignals[1]);
         if (!effectBudgetRespected || !warningProtected || !fallbackProtected || !fallbackRemainsActive ||
-            !ringFallbackProtected || !ringFallbackRemainsActive)
-        { SmokeFail("O orçamento excedeu o teto, removeu aviso prioritário ou desprotegeu fallback de investida/anel"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: efeitos comuns respeitam o teto e avisos prioritários, inclusive fallbacks de investida e anel, permanecem ativos");
+            !ringFallbackProtected || !ringFallbackRemainsActive || !supportSignalsRemainActive)
+        { SmokeFail("O orçamento excedeu o teto, removeu aviso prioritário ou desprotegeu fallback de investida/anel/sinal de apoio"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: efeitos comuns respeitam o teto; fallbacks de investida/anel e contorno duplo do apoio continuam ativos");
         for (int room = 0; room < 9; room++)
         {
             if (phaseIndex * RoomsPerPhase + roomIndex != room) { SmokeFail("Sala inesperada: " + room); yield break; }

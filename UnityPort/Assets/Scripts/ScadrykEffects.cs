@@ -262,6 +262,25 @@ public static class ScadrykEffects
         return CreateRingFallback(center, diameter, color, lifetime, attackWarning);
     }
 
+    internal static GameObject[] SupportPulseSignal(Vector2 center, Color color, float lifetime, bool attackWarning)
+    {
+        return new[]
+        {
+            Ring(center, ScadrykEnemyHealth.SupportPulseDiameter, color, lifetime, attackWarning),
+            Ring(center, ScadrykEnemyHealth.SupportPulseInnerDiameter, Color.Lerp(color, Color.white, 0.28f), lifetime, attackWarning)
+        };
+    }
+
+    internal static float RingVisualDiameter(GameObject ring)
+    {
+        if (ring == null) return -1f;
+        SpriteRenderer sprite = ring.GetComponent<SpriteRenderer>();
+        if (sprite != null) return sprite.bounds.size.x;
+        LineRenderer line = ring.GetComponent<LineRenderer>();
+        if (line == null || line.positionCount < 21) return -1f;
+        return Vector3.Distance(line.GetPosition(0), line.GetPosition(line.positionCount / 2));
+    }
+
     internal static GameObject CreateRingFallback(Vector2 center, float diameter, Color color, float lifetime, bool attackWarning)
     {
         color = DangerWarningColor(color);

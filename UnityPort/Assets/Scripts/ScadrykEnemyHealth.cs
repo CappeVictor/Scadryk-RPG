@@ -19,6 +19,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     internal const float AreaPulseRadius = 3.2f;
     internal const float BellPulseRadius = 5.3f;
     internal const float SupportPulseRadius = 2.5f;
+    internal static float SupportPulseInnerDiameter => SupportPulseRadius * 0.9f;
     internal const float OpeningAttackSpacing = 0.52f;
     internal const int SteeringHitCapacity = 32;
     internal static float AttackRecoveryDuration(bool boss, bool finalBoss) => finalBoss ? 0.42f : boss ? 0.36f : 0.24f;
@@ -381,7 +382,10 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         Color warning = biomeIndex == 0 ? new Color(0.64f, 0.86f, 0.35f, 0.85f) :
             biomeIndex == 1 ? new Color(1f, 0.78f, 0.34f, 0.85f) : new Color(0.34f, 0.9f, 1f, 0.85f);
         if (!IsBoss && combatRole == 3)
-            TrackAttackWarning(ScadrykEffects.Ring(origin, SupportPulseDiameter, new Color(0.38f, 1f, 0.6f, 0.8f), windup, true));
+        {
+            foreach (GameObject signal in ScadrykEffects.SupportPulseSignal(origin, new Color(0.38f, 1f, 0.6f, 0.8f), windup, true))
+                TrackAttackWarning(signal);
+        }
         else if (!IsBoss && combatRole == 2)
             TrackAttackWarning(ScadrykEffects.Ring(origin, AreaPulseDiameter, warning, windup, true));
         else if (IsBoss && biomeIndex == 2)
@@ -599,7 +603,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
 
     private void ResolveSupportPulse()
     {
-        ScadrykEffects.Ring(transform.position, SupportPulseDiameter, new Color(0.38f, 1f, 0.6f), 0.35f);
+        ScadrykEffects.SupportPulseSignal(transform.position, new Color(0.38f, 1f, 0.6f), 0.35f, false);
         if (!supportPulseFilterReady)
         {
             supportPulseFilter = new ContactFilter2D();
