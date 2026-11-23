@@ -2399,6 +2399,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Rect compactMap = MiniMapPanelRect(400f, 360f, 1.5f);
         Rect narrowHud = HudPanelRect(700f, 600f, 1.5f);
         Rect narrowMap = MiniMapPanelRect(700f, 600f, 1.5f);
+        Rect wideThreatCaption = ThreatCaptionPanelRect(1920f, 1080f, 1f, 2);
+        Rect narrowThreatCaption = ThreatCaptionPanelRect(700f, 600f, 1.5f, 2);
+        Rect compactThreatCaption = ThreatCaptionPanelRect(400f, 360f, 1.5f, 2);
         Rect narrowLegend = MiniMapLegendRect(narrowMap, 1.5f);
         Rect shortStatus = StatusLabelRect(400f, 360f, 24f);
         Rect wrappedStatus = StatusLabelRect(400f, 360f, 72f);
@@ -2409,6 +2412,14 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             !string.IsNullOrEmpty(AbilityHudLabel(3, "X", "pronto")) ||
             !HudPanelFits(compactHud, 400f, 360f) || MiniMapPanelFits(compactMap, compactHud, 400f, 360f) ||
             !HudPanelFits(narrowHud, 700f, 600f) || !MiniMapPanelFits(narrowMap, narrowHud, 700f, 600f) ||
+            wideThreatCaption.yMin < 72f || wideThreatCaption.Overlaps(HudPanelRect(1920f, 1080f, 1f)) ||
+            wideThreatCaption.Overlaps(MiniMapPanelRect(1920f, 1080f, 1f)) ||
+            narrowThreatCaption.xMin < 8f || narrowThreatCaption.yMin < 8f ||
+            narrowThreatCaption.xMax > 692f || narrowThreatCaption.yMax > 592f || narrowThreatCaption.Overlaps(narrowHud) ||
+            narrowThreatCaption.Overlaps(narrowMap) || narrowThreatCaption.yMax > 556f ||
+            compactThreatCaption.xMin < 28f || compactThreatCaption.yMin < 196f ||
+            compactThreatCaption.yMax > compactHud.yMax - 10f || compactThreatCaption.xMax > compactHud.xMax - 8f ||
+            ThreatCaptionFontSize(1.5f, (compactThreatCaption.height - 6f) * 0.5f) > 14 ||
             narrowLegend.yMin < narrowMap.yMin || narrowLegend.yMax > narrowMap.yMax ||
             wrappedStatus.height <= shortStatus.height || wrappedStatus.xMin < 0f || wrappedStatus.xMax > 400f ||
             wrappedStatus.yMin < 0f || wrappedStatus.yMax > 360f)

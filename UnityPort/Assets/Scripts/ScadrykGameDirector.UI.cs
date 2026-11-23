@@ -98,21 +98,63 @@ public sealed partial class ScadrykGameDirector
         }
         if (first == null) return;
 
-        float width = Mathf.Min(620f, Screen.width - 28f);
-        float height = second == null ? 30f : 52f;
-        Rect panel = new Rect((Screen.width - width) * 0.5f, Mathf.Max(92f, Screen.height * 0.12f), width, height);
+        int captionCount = second == null ? 1 : 2;
+        Rect panel = ThreatCaptionPanelRect(Screen.width, Screen.height, ScadrykSettings.TextScale, captionCount);
         GUI.color = new Color(0.035f, 0.025f, 0.035f, 0.9f);
         GUI.DrawTexture(panel, Texture2D.whiteTexture);
         GUI.color = new Color(1f, 0.72f, 0.38f, 1f);
         GUI.DrawTexture(new Rect(panel.x, panel.y, panel.width, 2f), Texture2D.whiteTexture);
         GUI.color = Color.white;
 
+        float rowHeight = (panel.height - 6f) / captionCount;
         int oldSize = centeredBodyStyle.fontSize;
-        centeredBodyStyle.fontSize = Mathf.Max(10, Mathf.RoundToInt(13f * Mathf.Clamp(ScadrykSettings.TextScale, 1f, 1.5f)));
-        GUI.Label(new Rect(panel.x + 8f, panel.y + 2f, panel.width - 16f, 24f), "PREPARANDO: " + first, centeredBodyStyle);
+        centeredBodyStyle.fontSize = ThreatCaptionFontSize(ScadrykSettings.TextScale, rowHeight);
+        GUI.Label(new Rect(panel.x + 8f, panel.y + 3f, panel.width - 16f, rowHeight), "PREPARANDO: " + first, centeredBodyStyle);
         if (second != null)
-            GUI.Label(new Rect(panel.x + 8f, panel.y + 26f, panel.width - 16f, 23f), "PREPARANDO: " + second, centeredBodyStyle);
+            GUI.Label(new Rect(panel.x + 8f, panel.y + 3f + rowHeight, panel.width - 16f, rowHeight), "PREPARANDO: " + second, centeredBodyStyle);
         centeredBodyStyle.fontSize = oldSize;
+    }
+
+    private static int ThreatCaptionFontSize(float textScale, float rowHeight) =>
+        Mathf.Max(9, Mathf.Min(Mathf.Max(10, Mathf.RoundToInt(13f * Mathf.Clamp(textScale, 1f, 1.5f))),
+            Mathf.FloorToInt(Mathf.Max(0f, rowHeight) * 0.75f)));
+
+    private static Rect ThreatCaptionPanelRect(float screenWidth, float screenHeight, float textScale, int captionCount)
+    {
+        float scale = Mathf.Clamp(textScale, 1f, 1.5f);
+        int rows = Mathf.Clamp(captionCount, 1, 2);
+        float height = rows * 20f * scale + 8f;
+        float width = Mathf.Min(620f, Mathf.Max(0f, screenWidth - 28f));
+        Rect hud = HudPanelRect(screenWidth, screenHeight, scale);
+        Rect minimap = MiniMapPanelRect(screenWidth, screenHeight, scale);
+
+        float gapXMin = hud.xMax + 8f;
+        float gapXMax = minimap.xMin - 8f;
+        float gapWidth = gapXMax - gapXMin;
+        if (gapWidth >= 220f)
+        {
+            width = Mathf.Min(width, gapWidth);
+            return new Rect(gapXMin + (gapWidth - width) * 0.5f, 78f, width, height);
+        }
+
+        if (MiniMapPanelFits(minimap, hud, screenWidth, screenHeight))
+        {
+            float y = Mathf.Max(hud.yMax, minimap.yMax) + 8f;
+            if (y + height <= screenHeight - 44f)
+                return new Rect((screenWidth - width) * 0.5f, y, width, height);
+        }
+
+        // On very short windows, preserve an always-visible warning by using
+        // the objective block only for the brief windup; never cover health,
+        // ability cooldowns, the minimap, or the bottom control hint.
+        float extra = scale - 1f;
+        float objectiveY = 164f + extra * 64f;
+        float objectiveBottom = hud.yMax - 10f;
+        float objectiveHeight = Mathf.Max(0f, objectiveBottom - objectiveY);
+        float objectiveX = Mathf.Min(28f, hud.xMax);
+        float objectiveWidth = Mathf.Max(0f, hud.xMax - objectiveX - 8f);
+        height = Mathf.Min(height, objectiveHeight);
+        return new Rect(objectiveX, objectiveY, objectiveWidth, height);
     }
 
     private void DrawMemoryJournal()

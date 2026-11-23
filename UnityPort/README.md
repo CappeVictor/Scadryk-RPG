@@ -10,7 +10,7 @@ Registro de builds, teste de progressão e roteiro de avaliação com jogadores:
 
 Quando cues de perigo se sobrepõem, cada novo aviso reduz o volume relativo conforme a quantidade de sinais ativos; nenhum cue é descartado. Os telegráficos visuais permanecem individualizados, com alto contraste opcional. A clareza da mixagem ainda precisa de avaliação em jogo.
 
-Durante a preparação de um golpe, uma legenda central também nomeia o ataque como alternativa textual aos sinais visuais e sonoros. Para preservar a leitura em combates cheios, ela reúne no máximo dois tipos de ameaça ao mesmo tempo; a legenda desaparece assim que a preparação termina. O tamanho acompanha a escala de texto das opções.
+Durante a preparação de um golpe, uma legenda central também nomeia o ataque como alternativa textual aos sinais visuais e sonoros. Para preservar a leitura em combates cheios, ela reúne no máximo dois tipos de ameaça ao mesmo tempo; a legenda desaparece assim que a preparação termina. O tamanho acompanha a escala de texto das opções, respeitando o espaço disponível em janelas compactas. Em telas largas, ocupa a faixa entre HUD e minimapa; em telas baixas, substitui o objetivo apenas durante o aviso.
 
 Os três ataques do Arauto também têm motivos de aviso próprios: notas descendentes antecipam a salva, notas ascendentes anunciam a queda de memória e pulsos graves identificam a onda de vazio. O som geral de chegada do Arauto continua separado; os motivos são sintetizados no código, sem arquivos de áudio externos. A distinção e o equilíbrio com a trilha ainda precisam ser ouvidos em jogo.
 
