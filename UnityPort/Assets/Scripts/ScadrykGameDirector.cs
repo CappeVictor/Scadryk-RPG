@@ -1912,7 +1912,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (stickDrift != Vector2.zero || intentionalDiagonal == Vector2.zero || intentionalAim == Vector2.zero ||
             Mathf.Abs(intentionalAim.magnitude - ((0.5f - 0.19f) / 0.81f)) > 0.001f ||
             Mathf.Abs(fullStick.magnitude - 1f) > 0.001f || Mathf.Abs(halfwayStick.magnitude - 0.5f) > 0.001f ||
-            driftReadout != "12→00%" || movingReadout != "60→50%" ||
+            driftReadout != "X+12 Y+03 12→00%" || movingReadout != "X+60 Y00 60→50%" ||
             ScadrykSettings.DefaultGamepadDeadzone < ScadrykSettings.MinimumGamepadDeadzone ||
             ScadrykSettings.DefaultGamepadDeadzone > ScadrykSettings.MaximumGamepadDeadzone)
         { SmokeFail("A zona morta radial não filtra drift, preserva diagonal/mira ou remapeia progressivamente a faixa útil"); yield break; }

@@ -934,8 +934,8 @@ public sealed partial class ScadrykGameDirector
         Vector2 aim = new Vector2(Input.GetAxisRaw("Scadryk Aim X"), Input.GetAxisRaw("Scadryk Aim Y"));
         string movementText = "Mover " + ScadrykSettings.GamepadStickReadout(movement, deadzone);
         string aimText = "Mirar " + ScadrykSettings.GamepadStickReadout(aim, deadzone);
-        return compact ? "Bruto → útil\n" + movementText + "\n" + aimText :
-            "Analógicos bruto → útil\n" + movementText + " · " + aimText;
+        return compact ? "Eixos X/Y · força bruta → útil\n" + movementText + "\n" + aimText :
+            "Eixos X/Y · força bruta → útil\n" + movementText + " · " + aimText;
     }
 
     private void DrawCompactOptionSelection(int selection, float top, float height, float width)

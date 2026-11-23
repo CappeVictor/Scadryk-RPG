@@ -75,9 +75,11 @@ public static class ScadrykSettings
     }
     internal static string GamepadStickReadout(Vector2 raw, float deadzone)
     {
+        int xPercent = Mathf.RoundToInt(Mathf.Clamp(raw.x, -1f, 1f) * 100f);
+        int yPercent = Mathf.RoundToInt(Mathf.Clamp(raw.y, -1f, 1f) * 100f);
         int rawPercent = Mathf.RoundToInt(Mathf.Clamp01(raw.magnitude) * 100f);
         int usefulPercent = Mathf.RoundToInt(ApplyRadialDeadzone(raw, deadzone).magnitude * 100f);
-        return string.Format("{0:00}→{1:00}%", rawPercent, usefulPercent);
+        return string.Format("X{0:+00;-00;00} Y{1:+00;-00;00} {2:00}→{3:00}%", xPercent, yPercent, rawPercent, usefulPercent);
     }
     public static bool PadDown(int action) => action >= 0 && action < PadDefaults.Length && PadButtonDown(PadButton(action));
     public static bool PadButtonDown(int button) => button >= 0 && button < PadButtons.Length && Input.GetKeyDown(PadButtons[button]);

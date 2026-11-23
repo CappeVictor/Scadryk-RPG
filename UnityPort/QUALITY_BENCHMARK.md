@@ -14,7 +14,7 @@ Este documento compara princípios observáveis sem copiar conteúdo. Uma build 
 
 **Atualização de controle (23/11/2026):** a zona morta radial de 8–40% agora remapeia linearmente a faixa útil de zero à força máxima, preservando direção e diagonais. Unity batch e build Windows passaram; ainda falta avaliar drift, precisão e sensação de resposta em controles físicos.
 
-**Calibração acessível (23/11/2026):** a aba de controle agora compara ao vivo a magnitude bruta e útil dos analógicos para movimento e mira; o painel também rola até ficar visível em janelas compactas. Compilação e build Windows passaram; o smoke da geometria e a verificação visual e com controle físico ainda estão pendentes.
+**Calibração acessível (23/11/2026):** a aba de controle compara X/Y com sinal e magnitude bruta/útil dos analógicos para movimento e mira; o painel também rola até ficar visível em janelas compactas. Unity batch e build passaram; a execução do smoke, conferência visual e teste com controle físico ainda estão pendentes.
 
 **Análise de sessões (23/11/2026):** `Tools/Summarize-Playtests.ps1` consolida as métricas automáticas v8 por sala e sessão, associa marcas F8 e calcula médias das avaliações por nível de experiência a partir de `PLAYTEST-RATINGS.csv`. A ferramenta prepara comparação objetiva, mas não substitui as seis sessões observadas nem a avaliação qualitativa prevista no protocolo.
 
