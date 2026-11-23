@@ -2,6 +2,8 @@ using UnityEngine;
 
 public sealed class ScadrykTimedVisual : MonoBehaviour
 {
+    private SpriteRenderer spriteRenderer;
+    private LineRenderer lineRenderer;
     private float lifetime, age;
     private Color initialColor;
     private bool expanding;
@@ -9,8 +11,18 @@ public sealed class ScadrykTimedVisual : MonoBehaviour
     private float spinDegreesPerSecond;
     private Vector3 initialScale;
     internal bool IsDangerWarning => dangerWarning;
+
+    private void Awake() => CacheRenderers();
+
+    private void CacheRenderers()
+    {
+        if (spriteRenderer == null) spriteRenderer = GetComponent<SpriteRenderer>();
+        if (lineRenderer == null) lineRenderer = GetComponent<LineRenderer>();
+    }
+
     public void Initialize(float duration, Color color, bool expand)
     {
+        CacheRenderers();
         lifetime = duration;
         initialColor = color;
         expanding = expand;
@@ -26,14 +38,13 @@ public sealed class ScadrykTimedVisual : MonoBehaviour
     {
         age += Time.deltaTime;
         float progress = Mathf.Clamp01(age / Mathf.Max(0.01f, lifetime));
-        var renderer = GetComponent<SpriteRenderer>();
-        if (renderer != null)
+        if (spriteRenderer != null)
         {
             var c = initialColor;
             c.a *= dangerWarning ? DangerWarningAlpha(progress) : 1f - Mathf.SmoothStep(0.45f, 1f, progress);
-            renderer.color = c;
+            spriteRenderer.color = c;
         }
-        LineRenderer line = dangerWarning ? GetComponent<LineRenderer>() : null;
+        LineRenderer line = dangerWarning ? lineRenderer : null;
         if (line != null)
         {
             Color warningColor = initialColor;
