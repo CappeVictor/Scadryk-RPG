@@ -415,8 +415,9 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             for (int i = -1; i <= 1; i++)
             {
                 Vector2 shardDirection = Rotate(direction, i * 0.32f);
-                TrackAttackWarning(ScadrykEffects.TelegraphLine(origin, origin + shardDirection * length, warning,
-                    ScadrykEnemyProjectile.HitboxDiameter(0.34f), windup));
+                float shardWidth = ScadrykEnemyProjectile.HitboxDiameter(0.34f);
+                Vector2 shardEnd = ScadrykCombatRules.ClipWarningLineEnd(origin, origin + shardDirection * length, shardWidth);
+                TrackAttackWarning(ScadrykEffects.TelegraphLine(origin, shardEnd, warning, shardWidth, windup));
             }
         }
         else
@@ -428,6 +429,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             !IsBoss && combatRole == 1 ? ScadrykEnemyProjectile.HitboxDiameter(0.34f) : IsBoss && biomeIndex == 0 ? 1.4f : ScadrykEnemyProjectile.HitboxDiameter(0.34f);
             if ((!IsBoss && combatRole == 0) || (IsBoss && biomeIndex == 0))
                 telegraphThickness = RootLaneVisualWidth(telegraphThickness, PlayerCollisionRadius(player));
+            end = ScadrykCombatRules.ClipWarningLineEnd(origin, end, telegraphThickness);
             TrackAttackWarning(ScadrykEffects.TelegraphLine(origin, end, warning, telegraphThickness, windup));
         }
     }
@@ -450,8 +452,12 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             Vector2 direction = (attackTarget - origin).normalized;
             int halfCount = stage == 1 ? 1 : stage == 2 ? 2 : 3;
             for (int i = -halfCount; i <= halfCount; i++)
-                TrackAttackWarning(ScadrykEffects.TelegraphLine(origin, origin + Rotate(direction, i * FinalVolleyAngleStep) * FinalVolleyLength, warning,
-                    ScadrykEnemyProjectile.HitboxDiameter(0.58f), windup));
+            {
+                float shardWidth = ScadrykEnemyProjectile.HitboxDiameter(0.58f);
+                Vector2 shardEnd = ScadrykCombatRules.ClipWarningLineEnd(origin,
+                    origin + Rotate(direction, i * FinalVolleyAngleStep) * FinalVolleyLength, shardWidth);
+                TrackAttackWarning(ScadrykEffects.TelegraphLine(origin, shardEnd, warning, shardWidth, windup));
+            }
         }
         else if (queuedFinalPattern == 1)
         {
@@ -465,8 +471,10 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
                 for (int i = 0; i < count; i++)
                 {
                     Vector2 shardDirection = Rotate(direction, FinalStarfallSideProjectileAngle(stage, i));
-                    TrackAttackWarning(ScadrykEffects.TelegraphLine(origin, origin + shardDirection * FinalStarfallProjectileLength, warning,
-                        ScadrykEnemyProjectile.HitboxDiameter(FinalStarfallProjectileScale), windup));
+                    float shardWidth = ScadrykEnemyProjectile.HitboxDiameter(FinalStarfallProjectileScale);
+                    Vector2 shardEnd = ScadrykCombatRules.ClipWarningLineEnd(origin,
+                        origin + shardDirection * FinalStarfallProjectileLength, shardWidth);
+                    TrackAttackWarning(ScadrykEffects.TelegraphLine(origin, shardEnd, warning, shardWidth, windup));
                 }
             }
         }

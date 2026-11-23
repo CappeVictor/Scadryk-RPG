@@ -20,15 +20,32 @@ public static class ScadrykCombatRules
         Vector2 delta = target - origin;
         float distance = delta.magnitude;
         if (distance < 0.05f) return false;
-        int hitCount = Physics2D.Raycast(origin, delta / distance, WorldQueryFilter, RaycastHits, distance);
-        if (hitCount >= RaycastHits.Length) return true;
+        return FirstWorldBlockDistance(origin, delta / distance, distance) < distance;
+    }
+
+    public static Vector2 ClipWarningLineEnd(Vector2 start, Vector2 end, float warningWidth)
+    {
+        Vector2 delta = end - start;
+        float distance = delta.magnitude;
+        if (distance < 0.05f) return end;
+        float blockDistance = FirstWorldBlockDistance(start, delta / distance, distance);
+        if (blockDistance >= distance) return end;
+        float visibleDistance = Mathf.Max(0f, blockDistance - Mathf.Max(0f, warningWidth) * 0.5f);
+        return start + delta / distance * visibleDistance;
+    }
+
+    private static float FirstWorldBlockDistance(Vector2 origin, Vector2 direction, float distance)
+    {
+        int hitCount = Physics2D.Raycast(origin, direction, WorldQueryFilter, RaycastHits, distance);
+        float nearestDistance = float.PositiveInfinity;
         for (int i = 0; i < hitCount; i++)
         {
             Collider2D collider = RaycastHits[i].collider;
             if (collider == null || collider.isTrigger || !collider.enabled) continue;
             if (collider.GetComponent<ScadrykPlayerController>() != null || collider.GetComponent<ScadrykEnemyHealth>() != null) continue;
-            return true;
+            nearestDistance = Mathf.Min(nearestDistance, RaycastHits[i].distance);
         }
-        return false;
+        return hitCount >= RaycastHits.Length ?
+            Mathf.Min(nearestDistance, Mathf.Max(0f, distance - 0.01f)) : nearestDistance;
     }
 }
