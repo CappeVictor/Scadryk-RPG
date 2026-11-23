@@ -346,6 +346,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         return row * 2 + column;
     }
 
+    internal static int MoveVictoryMenuSelection(int selection, int verticalDirection) =>
+        Mathf.Clamp(selection + System.Math.Sign(verticalDirection), 0, 2);
+
     internal static int TitleMenuMaximumSelection(bool hasCheckpoint) => hasCheckpoint ? 3 : 2;
     internal static int TitleMenuOptionsSelection(bool hasCheckpoint) => hasCheckpoint ? 2 : 1;
     internal static int TitleMenuJournalSelection(bool hasCheckpoint) => hasCheckpoint ? 3 : 2;
@@ -397,7 +400,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         else if (up || down)
         {
             int max = confirmNewJourney ? 1 : victory ? 2 : showTitle ? TitleMenuMaximumSelection(HasCheckpoint("Scadryk.")) : 0;
-            overlaySelection = Mathf.Clamp(overlaySelection + (down ? 1 : -1), 0, max);
+            overlaySelection = victory ? MoveVictoryMenuSelection(overlaySelection, down ? 1 : -1) :
+                Mathf.Clamp(overlaySelection + (down ? 1 : -1), 0, max);
         }
 
         if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Space))
@@ -441,8 +445,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             {
                 overlaySelection = MovePauseGridSelection(overlaySelection, 0, navigation.y > 0f ? -1 : 1);
             }
+            else if (victory) overlaySelection = MoveVictoryMenuSelection(overlaySelection, navigation.y > 0f ? -1 : 1);
             else overlaySelection = Mathf.Clamp(overlaySelection - (navigation.y > 0f ? 1 : -1), 0,
-                confirmNewJourney ? 1 : victory ? 2 : showTitle ? TitleMenuMaximumSelection(HasCheckpoint("Scadryk.")) : 4);
+                confirmNewJourney ? 1 : showTitle ? TitleMenuMaximumSelection(HasCheckpoint("Scadryk.")) : 4);
             nextGamepadNavigationAt = Time.unscaledTime + 0.2f;
         }
         else if (!showOptions && !showTitle && !victory && !confirmNewJourney && Time.unscaledTime >= nextGamepadNavigationAt && Mathf.Abs(navigation.x) > 0.55f)
@@ -2425,6 +2430,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             MovePauseGridSelection(5, -1, 0) == 4;
         if (!pauseGridNavigationWorks) { SmokeFail("A navegação da grade da pausa perde a seleção nas bordas"); yield break; }
         Debug.Log("SCADRYK_SMOKE: grade de seis opções da pausa mantém coluna e respeita as bordas");
+        bool victoryMenuNavigationWorks = MoveVictoryMenuSelection(0, 1) == 1 && MoveVictoryMenuSelection(1, 1) == 2 &&
+            MoveVictoryMenuSelection(2, 1) == 2 && MoveVictoryMenuSelection(2, -1) == 1 &&
+            MoveVictoryMenuSelection(1, -1) == 0 && MoveVictoryMenuSelection(0, -1) == 0 && MoveVictoryMenuSelection(1, 0) == 1;
+        if (!victoryMenuNavigationWorks) { SmokeFail("A seleção linear do menu de vitória pula opções ou sai dos limites"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: menu final percorre nova jornada, caderno e título em ordem e respeita as bordas");
         if (!StoryJournalLayoutFits(400f, 360f) || !StoryJournalLayoutFits(700f, 600f))
         { SmokeFail("O caderno de memórias não cabe em janela compacta"); yield break; }
         Debug.Log("SCADRYK_SMOKE: caderno de memórias cabe em janela compacta e padrão");
