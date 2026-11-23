@@ -2080,6 +2080,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (ScadrykPlayerController.InputBufferCanStart(1.1f, 1.3f, 1.2f) ||
             !ScadrykPlayerController.InputBufferCanStart(1.21f, 1.3f, 1.2f) ||
             ScadrykPlayerController.InputBufferCanStart(1.31f, 1.3f, 1.2f) ||
+            ScadrykPlayerController.CanUpdateAim(1.1f, 1.2f) ||
+            !ScadrykPlayerController.CanUpdateAim(1.2f, 1.2f) ||
             ScadrykPlayerController.AbilityBufferWindow <= 0f || ScadrykPlayerController.AbilityBufferWindow > 0.25f ||
             Mathf.Abs(ScadrykPlayerController.BasicAttackBufferWindow - 0.2f) > 0.001f ||
             ScadrykPlayerController.NextBasicAttackStep(-1, false) != 0 ||

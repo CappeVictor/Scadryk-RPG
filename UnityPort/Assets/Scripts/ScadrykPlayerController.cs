@@ -32,6 +32,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     private float dashEndsAt, nextDashAt, nextAttackAt, nextShockwaveAt, dashBufferedUntil, attackBufferedUntil;
     private float health = 120f;
     private float maxHealth = 120f;
+    private float aimLockedUntil;
     private int lastBasicAttackStep = -1;
     private float basicAttackComboUntil;
     private bool isDying;
@@ -242,6 +243,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
 
     private void AimAtPointer(bool keyboardMouseInput, bool gamepadInput)
     {
+        if (!CanUpdateAim(Time.time, aimLockedUntil)) return;
         if (Input.mousePosition != lastMousePosition)
         {
             keyboardMouseInput = true;
@@ -302,6 +304,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
 
     internal static bool InputBufferCanStart(float now, float bufferedUntil, float cooldownEndsAt) =>
         bufferedUntil > now && now >= cooldownEndsAt;
+    internal static bool CanUpdateAim(float now, float lockUntil) => now >= lockUntil;
     internal static bool DashBufferCanStart(float now, float bufferedUntil, float cooldownEndsAt) =>
         InputBufferCanStart(now, bufferedUntil, cooldownEndsAt);
     internal static float DashInvulnerabilityUntil(float currentUntil, float dashEndsAt, float graceDuration) =>
@@ -334,6 +337,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         float windupForStep = BasicAttackWindupForStep(comboStep);
         nextAttackAt = Time.time + attackCooldown * BasicAttackCooldownScale(comboStep);
         Vector2 direction = facing;
+        aimLockedUntil = Time.time + windupForStep + 0.04f;
         ScadrykAudio.Play(ScadrykCue.Sword);
         if (animator != null) animator.PlayAttack(direction, comboStep == BasicAttackComboLength - 1);
         StartCoroutine(ResolveBasicAttack(direction, comboStep, attackDamageForStep, attackRangeForStep, windupForStep));
@@ -399,6 +403,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         if (Time.time < nextShockwaveAt) return;
         nextShockwaveAt = Time.time + shockwaveCooldown;
         Vector2 direction = facing;
+        aimLockedUntil = Time.time + ShockwaveWindup + 0.04f;
         if (animator != null) animator.PlayWindup(direction, ShockwaveWindup);
         StartCoroutine(ResolveShockwave(direction));
     }
@@ -462,6 +467,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         abilityReadyAt[index] = Time.time + cooldown;
         ScadrykAudio.Play(ScadrykCue.Power);
         Vector2 direction = facing;
+        aimLockedUntil = Time.time + AbilityWindupFor(index) + 0.04f;
         if (animator != null) animator.PlayWindup(direction, AbilityWindupFor(index));
         StartCoroutine(ResolveAbility(index, direction, radius, damage));
     }
@@ -573,6 +579,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         System.Array.Clear(learnedAbilities, 0, learnedAbilities.Length);
         System.Array.Clear(abilityReadyAt, 0, abilityReadyAt.Length);
         System.Array.Clear(abilityBufferedUntil, 0, abilityBufferedUntil.Length);
+        aimLockedUntil = 0f;
     }
     public void ResetCombatCooldowns()
     {
@@ -582,6 +589,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         basicAttackComboUntil = 0f;
         System.Array.Clear(abilityReadyAt, 0, abilityReadyAt.Length);
         System.Array.Clear(abilityBufferedUntil, 0, abilityBufferedUntil.Length);
+        aimLockedUntil = 0f;
     }
     public void ApplyRootSlow(float duration) => rootedUntil = Mathf.Max(rootedUntil, Time.time + duration);
     public void SetPortalTransitPose(Vector2 position, float visibility)
