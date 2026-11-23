@@ -11,6 +11,8 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $phaseNames = @('Bosque alagado', 'Bacia de sal', 'Costa das badaladas')
+$allowedExperience = @('iniciante', 'intermediária', 'experiente')
+$minimumRatingsPerExperience = 2
 
 if (-not (Test-Path -LiteralPath $SessionsPath -PathType Leaf)) {
     throw "CSV de sessões não encontrado: $SessionsPath"
@@ -73,7 +75,6 @@ if (-not [string]::IsNullOrWhiteSpace($RatingsPath)) {
     }
 
     $sessionIds = @($sessions | ForEach-Object { $_.session_id } | Select-Object -Unique)
-    $allowedExperience = @('iniciante', 'intermediária', 'experiente')
     $ratingRows = @(Import-Csv -LiteralPath $RatingsPath | Where-Object { $_.session_id -in $sessionIds })
     foreach ($duplicate in ($ratingRows | Group-Object session_id | Where-Object { $_.Count -gt 1 })) {
         throw "Mais de uma ficha de avaliação foi informada para a sessão '$($duplicate.Name)'."
@@ -159,18 +160,37 @@ $details | Sort-Object session_id, phase, room |
         crescent, salt, tide, completed, input_mode -AutoSize |
     Out-String | Write-Output
 
-if ($ratingDetails.Count -gt 0) {
-    $ratingSummary = foreach ($group in ($ratingDetails | Group-Object experience)) {
-        $items = @($group.Group)
-        $summary = [ordered]@{ experience = $group.Name; participants = $items.Count }
-        foreach ($column in $ratingColumns) {
-            $values = @($items | ForEach-Object { $_.$column } | Where-Object { $null -ne $_ })
-            $summary[$column] = if ($values.Count -gt 0) { [math]::Round((($values | Measure-Object -Average).Average), 2) } else { $null }
+if (-not [string]::IsNullOrWhiteSpace($RatingsPath)) {
+    $ratingCoverage = foreach ($experience in $allowedExperience) {
+        $items = @($ratingDetails | Where-Object { $_.experience -eq $experience })
+        [pscustomobject]@{
+            experience = $experience
+            participants = $items.Count
+            minimum = $minimumRatingsPerExperience
+            missing = [math]::Max(0, $minimumRatingsPerExperience - $items.Count)
+            target_met = $items.Count -ge $minimumRatingsPerExperience
         }
-        [pscustomobject]$summary
     }
-    Write-Output 'Médias das avaliações por experiência (escala de 1 a 5)'
-    $ratingSummary | Sort-Object experience | Format-Table -AutoSize | Out-String | Write-Output
+    Write-Output "Cobertura das avaliações (meta: $minimumRatingsPerExperience participantes por experiência)"
+    $ratingCoverage | Format-Table -AutoSize | Out-String | Write-Output
+    foreach ($row in $ratingCoverage | Where-Object { -not $_.target_met }) {
+        Write-Warning "Experiência '$($row.experience)': faltam $($row.missing) avaliação(ões); não compare médias deste grupo como amostra concluída."
+    }
+
+    if ($ratingDetails.Count -gt 0) {
+        $ratingSummary = foreach ($experience in $allowedExperience) {
+            $items = @($ratingDetails | Where-Object { $_.experience -eq $experience })
+            if ($items.Count -eq 0) { continue }
+            $summary = [ordered]@{ experience = $experience; participants = $items.Count }
+            foreach ($column in $ratingColumns) {
+                $values = @($items | ForEach-Object { $_.$column } | Where-Object { $null -ne $_ })
+                $summary[$column] = if ($values.Count -gt 0) { [math]::Round((($values | Measure-Object -Average).Average), 2) } else { $null }
+            }
+            [pscustomobject]$summary
+        }
+        Write-Output 'Médias das avaliações por experiência (escala de 1 a 5; interpretar junto da cobertura)'
+        $ratingSummary | Format-Table -AutoSize | Out-String | Write-Output
+    }
 }
 
 if (-not [string]::IsNullOrWhiteSpace($OutputPath)) {
