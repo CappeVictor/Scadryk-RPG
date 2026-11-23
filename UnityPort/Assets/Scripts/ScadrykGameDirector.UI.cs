@@ -609,18 +609,20 @@ public sealed partial class ScadrykGameDirector
         float center = Screen.width * 0.5f;
         bool compact = Screen.height < 520f;
         bool pauseMapMenu = !showTitle && !victory && !confirmNewJourney;
+        bool ultraCompactTitleMenu = showTitle && !victory && !confirmNewJourney && Screen.height < 400f;
         float top = compact ? 18f : Screen.height * 0.29f;
         float titleWidth = Mathf.Min(600f, Screen.width - 32f);
         float messageWidth = Mathf.Min(680f, Screen.width - 32f);
         float buttonWidth = Mathf.Min(230f, Screen.width - 32f);
         float titleHeight = compact ? 42f : 52f;
         float messageTop = top + (compact ? 42f : 48f);
-        float messageHeight = compact ? (pauseMapMenu ? 68f : 86f) : 62f;
+        float messageHeight = compact ? (pauseMapMenu ? 68f : ultraCompactTitleMenu ? 66f : 86f) : 62f;
         bool compactTitleMenu = showTitle && !victory && !confirmNewJourney;
         bool compressedTitleMenu = compactTitleMenu && Screen.height < 600f;
-        float buttonY = top + (compact ? (pauseMapMenu ? 118f : compactTitleMenu ? 130f : 136f) : compressedTitleMenu ? 120f : 132f);
-        float buttonHeight = compact ? (pauseMapMenu ? 42f : compactTitleMenu ? 36f : 40f) : compressedTitleMenu ? 40f : 44f;
-        float buttonStep = compact ? (pauseMapMenu ? 44f : compactTitleMenu ? 40f : 48f) : compressedTitleMenu ? 42f : 54f;
+        bool denseTitleMenu = compressedTitleMenu;
+        float buttonY = top + (compact ? (pauseMapMenu ? 118f : denseTitleMenu ? 130f : 136f) : denseTitleMenu ? 120f : 132f);
+        float buttonHeight = compact ? (pauseMapMenu ? 42f : denseTitleMenu ? 30f : 40f) : denseTitleMenu ? 30f : 44f;
+        float buttonStep = compact ? (pauseMapMenu ? 44f : denseTitleMenu ? 32f : 48f) : denseTitleMenu ? 32f : 54f;
         float footerWidth = Mathf.Min(600f, Screen.width - 32f), footerHeight = compact ? 28f : 35f;
         float footerTop = Screen.height - (compact ? 42f : 58f);
         GUI.Label(new Rect(center - titleWidth * 0.5f, top, titleWidth, titleHeight), heading, centeredTitleStyle);
@@ -652,6 +654,7 @@ public sealed partial class ScadrykGameDirector
             if (OverlayButton(new Rect(center - buttonWidth * 0.5f, titleButtonStep, buttonWidth, buttonHeight), "Opções e controles", optionsIndex))
             { showOptions = true; optionsTab = optionsSelection = 0; }
             if (OverlayButton(new Rect(center - buttonWidth * 0.5f, titleButtonStep + buttonStep, buttonWidth, buttonHeight), "Caderno de memórias", journalIndex)) OpenMemoryJournal();
+            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, titleButtonStep + buttonStep * 2f, buttonWidth, buttonHeight), "Sair do jogo", TitleMenuQuitSelection(hasCheckpoint))) Application.Quit();
         }
         else if (victory)
         {
@@ -835,17 +838,17 @@ public sealed partial class ScadrykGameDirector
         bool compact = screenHeight < 520f;
         float top = compact ? 18f : screenHeight * 0.29f;
         float messageTop = top + (compact ? 42f : 48f);
-        float messageHeight = compact ? 86f : 62f;
-        bool compressedTitleMenu = screenHeight < 600f;
-        float buttonY = top + (compact ? 130f : compressedTitleMenu ? 120f : 132f);
-        float buttonHeight = compact ? 36f : compressedTitleMenu ? 40f : 44f;
-        float buttonStep = compact ? 40f : compressedTitleMenu ? 42f : 54f;
+        bool denseTitleMenu = screenHeight < 600f;
+        float messageHeight = compact ? screenHeight < 400f ? 66f : 86f : 62f;
+        float buttonY = top + (compact ? 130f : denseTitleMenu ? 120f : 132f);
+        float buttonHeight = denseTitleMenu ? 30f : 44f;
+        float buttonStep = denseTitleMenu ? 32f : 54f;
         float footerTop = screenHeight - (compact ? 42f : 58f);
         float footerHeight = compact ? 28f : 35f;
         float horizontalWidth = Mathf.Min(680f, screenWidth - 32f);
-        float fourthButtonBottom = buttonY + buttonStep * 3f + buttonHeight;
+        float fifthButtonBottom = buttonY + buttonStep * 4f + buttonHeight;
         return screenWidth >= 64f && horizontalWidth <= screenWidth - 32f &&
-               messageTop + messageHeight <= buttonY && fourthButtonBottom <= footerTop && footerTop + footerHeight <= screenHeight;
+               messageTop + messageHeight <= buttonY && fifthButtonBottom <= footerTop && footerTop + footerHeight <= screenHeight;
     }
 
     private static bool PauseMapOverlayLayoutFits(float screenWidth, float screenHeight)
