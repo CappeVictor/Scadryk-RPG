@@ -44,6 +44,8 @@ Se houver controle, antes da partida observe alguns segundos com os dois analóg
 
 Depois da sessão, filtre os dois CSVs pelo `session_id` e copie os valores automáticos abaixo. O jogo preserva mortes e usos de poderes ao reiniciar a sala, então os valores da linha já cobrem as tentativas daquela sala na campanha. Se a pessoa repetir a campanha em outra execução, o ID muda; mantenha cada tentativa separada. Para cada F8, compare o padrão salvo com o relato do jogador. Se constar `não identificado`, peça ao jogador ou observador uma descrição apenas se ainda lembrar do golpe; não adivinhe nem complete a informação depois.
 
+Para consolidar os registros no Windows, abra PowerShell na pasta do projeto e use `.\UnityPort\Tools\Summarize-Playtests.ps1 -SessionsPath "CAMINHO\scadryk-sessions-v8.csv" -AttackClarityPath "CAMINHO\scadryk-attack-clarity-v1.csv"`. Acrescente `-SessionId "ID_DA_SESSAO"` para filtrar uma tentativa ou `-OutputPath ".\playtest-summary.csv"` para salvar as métricas por sala; sem esses parâmetros, o script mostra todas as sessões e mantém cada `session_id` separado.
+
 | Fase / sala | Segundos ativos | Mortes | F8 / sinais pouco claros | Crescente | Estouro | Rompante | Entradas na corrente | Segundos na corrente | Segundos na água | Ressonâncias por Pulso | Selos revelados | Objetivo compreendido sem ajuda? | Comentário curto |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
 | Bosque alagado 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |

@@ -16,4 +16,6 @@ Este documento compara princípios observáveis sem copiar conteúdo. Uma build 
 
 **Calibração acessível (23/11/2026):** a aba de controle agora compara ao vivo a magnitude bruta e útil dos analógicos para movimento e mira; o painel também rola até ficar visível em janelas compactas. Compilação e build Windows passaram; o smoke da geometria e a verificação visual e com controle físico ainda estão pendentes.
 
+**Análise de sessões (23/11/2026):** `Tools/Summarize-Playtests.ps1` consolida as métricas automáticas v8 por sala e sessão e associa marcas F8. A ferramenta prepara comparação objetiva, mas não substitui as seis sessões observadas nem a avaliação qualitativa prevista no protocolo.
+
 **Regra:** registrar evidências na [QA.md](QA.md), atualizar esta tabela após cada etapa e não declarar paridade sem sessões externas comparáveis.
