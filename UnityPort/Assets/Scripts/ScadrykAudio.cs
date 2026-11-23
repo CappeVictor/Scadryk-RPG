@@ -24,6 +24,7 @@ public sealed class ScadrykAudio : MonoBehaviour
     private readonly float[] nextCueAt = new float[System.Enum.GetValues(typeof(ScadrykCue)).Length];
     internal bool HasCue(ScadrykCue cue) => cueClips != null && (int)cue >= 0 && (int)cue < cueClips.Length;
     internal string CueClipName(ScadrykCue cue) => HasCue(cue) && cueClips[(int)cue] != null ? cueClips[(int)cue].name : string.Empty;
+    internal float CueDuration(ScadrykCue cue) => HasCue(cue) && cueClips[(int)cue] != null ? cueClips[(int)cue].length : 0f;
     internal bool HasCombatLayer => combatMusic != null && combatMusic.clip != null && combatMusic.clip == combatLoop;
 
     private void Awake()
@@ -59,9 +60,9 @@ public sealed class ScadrykAudio : MonoBehaviour
             MakeWarningMotif("Herald falling memory", new[] { 196f, 392f, 587f }, 0.16f, 0.045f, 0.24f),
             MakeWarningMotif("Herald void wave", new[] { 110f, 110f, 165f }, 0.17f, 0.075f, 0.28f),
             MakeCue("Salt grains in the crosswind", 238f, 0.42f, 0.13f), MakeNimaFarewellCue(),
-            MakeCue("Verdant crescent impact", 523.25f, 0.23f, 0.28f),
-            MakeCue("Saltburst impact", 246.94f, 0.3f, 0.32f),
-            MakeCue("Tidebreaker impact", 174.61f, 0.34f, 0.34f)
+            MakePowerImpactCue("Verdant crescent impact", 440f, 0),
+            MakePowerImpactCue("Saltburst impact", 246.94f, 1),
+            MakePowerImpactCue("Tidebreaker impact", 146.83f, 2)
         };
     }
 
@@ -254,6 +255,43 @@ public sealed class ScadrykAudio : MonoBehaviour
             float envelope = Mathf.Sin(Mathf.PI * i / count) * Mathf.Exp(-t * 3f);
             float sweep = frequency * (1f + 0.28f * (1f - t / duration));
             data[i] = (Mathf.Sin(2f * Mathf.PI * sweep * t) + 0.3f * Mathf.Sin(2f * Mathf.PI * sweep * 2.01f * t)) * envelope * strength;
+        }
+        AudioClip clip = AudioClip.Create(name, count, 1, SampleRate, false);
+        clip.SetData(data, 0);
+        return clip;
+    }
+
+    private static AudioClip MakePowerImpactCue(string name, float root, int character)
+    {
+        float duration = character == 0 ? 0.25f : character == 1 ? 0.32f : 0.38f;
+        int count = Mathf.CeilToInt(SampleRate * duration);
+        float[] data = new float[count];
+        for (int i = 0; i < count; i++)
+        {
+            float t = i / (float)SampleRate;
+            float progress = Mathf.Clamp01(t / duration);
+            float sample;
+            if (character == 0)
+            {
+                float sweep = root * Mathf.Lerp(2.25f, 0.72f, progress);
+                float edge = Mathf.Sin(Mathf.PI * progress) * Mathf.Exp(-t * 2.4f);
+                sample = (Mathf.Sin(2f * Mathf.PI * sweep * t) + 0.24f * Mathf.Sin(2f * Mathf.PI * sweep * 2.03f * t)) * edge * 0.25f;
+            }
+            else if (character == 1)
+            {
+                float crack = Mathf.Sin(2f * Mathf.PI * root * 6.7f * t) * Mathf.Exp(-t * 32f) * 0.19f;
+                float crystal = Mathf.Sin(2f * Mathf.PI * root * 2.52f * t) * Mathf.Exp(-t * 8f) +
+                    0.36f * Mathf.Sin(2f * Mathf.PI * root * 4.03f * t) * Mathf.Exp(-t * 11f);
+                sample = crack + crystal * 0.18f * Mathf.Sin(Mathf.PI * progress);
+            }
+            else
+            {
+                float swell = Mathf.Sin(Mathf.PI * Mathf.Min(1f, progress * 1.35f));
+                float low = Mathf.Sin(2f * Mathf.PI * root * 0.72f * t) * Mathf.Exp(-t * 4f);
+                float wash = Mathf.Sin(2f * Mathf.PI * root * (1.6f - progress * 0.55f) * t) * Mathf.Exp(-t * 3.2f);
+                sample = (low * 0.28f + wash * 0.12f) * swell;
+            }
+            data[i] = sample;
         }
         AudioClip clip = AudioClip.Create(name, count, 1, SampleRate, false);
         clip.SetData(data, 0);

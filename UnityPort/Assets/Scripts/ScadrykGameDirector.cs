@@ -2231,6 +2231,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             audio.CueClipName(ScadrykCue.VerdantCrescentImpact) != "Verdant crescent impact" ||
             audio.CueClipName(ScadrykCue.SaltburstImpact) != "Saltburst impact" ||
             audio.CueClipName(ScadrykCue.TidebreakerImpact) != "Tidebreaker impact" ||
+            Mathf.Abs(audio.CueDuration(ScadrykCue.VerdantCrescentImpact) - 0.25f) > 0.01f ||
+            Mathf.Abs(audio.CueDuration(ScadrykCue.SaltburstImpact) - 0.32f) > 0.01f ||
+            Mathf.Abs(audio.CueDuration(ScadrykCue.TidebreakerImpact) - 0.38f) > 0.01f ||
             ScadrykAudio.AbilityImpactCue(0) != ScadrykCue.VerdantCrescentImpact ||
             ScadrykAudio.AbilityImpactCue(1) != ScadrykCue.SaltburstImpact ||
             ScadrykAudio.AbilityImpactCue(2) != ScadrykCue.TidebreakerImpact ||
