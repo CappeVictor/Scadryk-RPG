@@ -958,7 +958,7 @@ public sealed partial class ScadrykGameDirector
             ScadrykSettings.ReduceFlash = GUI.Toggle(new Rect(x + 15f, y + 285f, width - 30f, 34f), ScadrykSettings.ReduceFlash, "Reduzir flashes e rastros");
             ScadrykSettings.ReduceShake = GUI.Toggle(new Rect(x + 15f, y + 325f, width - 30f, 34f), ScadrykSettings.ReduceShake, "Desligar tremor de câmera");
             ScadrykSettings.HighContrastWarnings = GUI.Toggle(new Rect(x + 15f, y + 365f, width - 30f, 34f), ScadrykSettings.HighContrastWarnings, "Alto contraste nos avisos de perigo");
-            ScadrykSettings.Fullscreen = GUI.Toggle(new Rect(x + 15f, y + 402f, width - 30f, 36f), ScadrykSettings.Fullscreen, "Usar tela cheia");
+        ScadrykSettings.Fullscreen = GUI.Toggle(new Rect(x + 15f, y + 402f, width - 30f, 36f), ScadrykSettings.Fullscreen, "Tela cheia (janela ajustada ao monitor)");
             GUI.Label(new Rect(x + 15f, y + 444f, width - 30f, 60f), "Avisos permanecem visíveis com os efeitos em silêncio. F8 marca um ataque pouco claro durante testes.", memoryStyle);
         }
         else if (optionsTab == 1)
@@ -1077,7 +1077,7 @@ public sealed partial class ScadrykGameDirector
         GUI.Label(new Rect(left, 310f, width - 24f, 78f),
             "Avisos continuam visíveis sem efeitos sonoros. F8 marca um sinal difícil de ler durante QA.", memoryStyle);
         DrawCompactOptionSelection(9, 392f, 40f, width);
-        ScadrykSettings.Fullscreen = GUI.Toggle(new Rect(left, 395f, width - 24f, 34f), ScadrykSettings.Fullscreen, "Usar tela cheia");
+        ScadrykSettings.Fullscreen = GUI.Toggle(new Rect(left, 395f, width - 24f, 34f), ScadrykSettings.Fullscreen, "Tela cheia / janela ajustada");
     }
 
     private void DrawCompactKeyboardOptions(float width)

@@ -170,7 +170,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         smokeRun = System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-scadryk-smoke") >= 0;
 #endif
         ScadrykSettings.ClearReservedBindings();
-        if (Screen.fullScreen != ScadrykSettings.Fullscreen) Screen.fullScreen = ScadrykSettings.Fullscreen;
+        ScadrykSettings.ApplyFullscreenPreference();
         sessionId = System.Guid.NewGuid().ToString("N");
         Debug.Log("SCADRYK_SESSION: " + sessionId);
         EnsureSprites();
@@ -2527,6 +2527,15 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (!settingsSaveIsThrottled)
         { SmokeFail("As opções não limitam a frequência de gravação dos sliders"); yield break; }
         Debug.Log("SCADRYK_SMOKE: sliders salvam periodicamente durante ajustes longos sem gravar a cada frame");
+        Vector2Int largeWindow = ScadrykSettings.WindowedResolutionForDisplay(1920, 1080);
+        Vector2Int laptopWindow = ScadrykSettings.WindowedResolutionForDisplay(1366, 768);
+        Vector2Int smallWindow = ScadrykSettings.WindowedResolutionForDisplay(800, 600);
+        bool windowedSizesFit = largeWindow.x <= 1280 && largeWindow.y <= 720 && largeWindow.x == 1280 && largeWindow.y == 720 &&
+            laptopWindow.x <= 1366 * 0.9f + 1f && laptopWindow.y <= 768 * 0.9f + 1f &&
+            smallWindow.x <= 800 * 0.9f + 1f && smallWindow.y <= 600 * 0.9f + 1f &&
+            Mathf.Abs((float)laptopWindow.x / laptopWindow.y - 1366f / 768f) < 0.002f;
+        if (!windowedSizesFit) { SmokeFail("A janela não cabe no monitor ou distorce a proporção da imagem"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: janela ajustada mantém a proporção em monitor 1080p, notebook e tela menor");
         if (!OverlayLayoutFits(400f, 360f) || !OverlayLayoutFits(1280f, 520f) || !OverlayLayoutFits(1280f, 720f) ||
             !PauseMapOverlayLayoutFits(400f, 360f) || !PauseMapOverlayLayoutFits(1280f, 520f) ||
             !PauseMapOverlayLayoutFits(1280f, 720f))

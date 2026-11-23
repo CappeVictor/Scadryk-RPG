@@ -230,7 +230,32 @@ public static class ScadrykSettings
             if (Fullscreen == value) return;
             PlayerPrefs.SetInt("Scadryk.Fullscreen", value ? 1 : 0);
             PlayerPrefs.Save();
-            Screen.fullScreen = value;
+            ApplyFullscreen(value);
+        }
+    }
+
+    internal static Vector2Int WindowedResolutionForDisplay(int displayWidth, int displayHeight)
+    {
+        if (displayWidth <= 0 || displayHeight <= 0) return new Vector2Int(1280, 720);
+        float scale = Mathf.Min(0.9f, 1280f / displayWidth, 720f / displayHeight);
+        return new Vector2Int(Mathf.Max(1, Mathf.FloorToInt(displayWidth * scale)),
+            Mathf.Max(1, Mathf.FloorToInt(displayHeight * scale)));
+    }
+
+    internal static void ApplyFullscreenPreference()
+    {
+        bool fullscreen = Fullscreen;
+        if (Screen.fullScreen != fullscreen) ApplyFullscreen(fullscreen);
+    }
+
+    private static void ApplyFullscreen(bool fullscreen)
+    {
+        Resolution display = Screen.currentResolution;
+        if (fullscreen) Screen.SetResolution(display.width, display.height, FullScreenMode.FullScreenWindow);
+        else
+        {
+            Vector2Int windowed = WindowedResolutionForDisplay(display.width, display.height);
+            Screen.SetResolution(windowed.x, windowed.y, FullScreenMode.Windowed);
         }
     }
 }
