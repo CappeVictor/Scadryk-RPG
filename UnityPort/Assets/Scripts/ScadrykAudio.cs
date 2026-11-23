@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum ScadrykCue { Sword, Dash, Pulse, Power, Warning, Impact, Hurt, Portal, Victory, Memory, LaneWarning, VolleyWarning, AreaWarning, SupportWarning, FinalBossWarning, PlayerStrike, PlayerFinisher, PlayerPowerImpact, CoastalCurrent, EchoReleased, FinalVolleyWarning, FinalStarfallWarning, FinalWaveWarning }
+public enum ScadrykCue { Sword, Dash, Pulse, Power, Warning, Impact, Hurt, Portal, Victory, Memory, LaneWarning, VolleyWarning, AreaWarning, SupportWarning, FinalBossWarning, PlayerStrike, PlayerFinisher, PlayerPowerImpact, CoastalCurrent, EchoReleased, FinalVolleyWarning, FinalStarfallWarning, FinalWaveWarning, SaltCrosswind }
 
 /// <summary>Original, lightweight synthesized motifs and combat signals; no external audio assets.</summary>
 public sealed class ScadrykAudio : MonoBehaviour
@@ -55,7 +55,8 @@ public sealed class ScadrykAudio : MonoBehaviour
             MakeCue("Coastal cross-current", 310f, 0.32f, 0.16f), MakeEchoReleaseCue(),
             MakeWarningMotif("Herald remembered volley", new[] { 392f, 294f, 220f }, 0.12f, 0.055f, 0.26f),
             MakeWarningMotif("Herald falling memory", new[] { 196f, 392f, 587f }, 0.16f, 0.045f, 0.24f),
-            MakeWarningMotif("Herald void wave", new[] { 110f, 110f, 165f }, 0.17f, 0.075f, 0.28f)
+            MakeWarningMotif("Herald void wave", new[] { 110f, 110f, 165f }, 0.17f, 0.075f, 0.28f),
+            MakeCue("Salt grains in the crosswind", 238f, 0.42f, 0.13f)
         };
     }
 

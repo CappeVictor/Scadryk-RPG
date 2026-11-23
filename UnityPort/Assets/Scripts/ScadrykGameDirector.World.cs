@@ -572,7 +572,8 @@ public sealed partial class ScadrykGameDirector
         trigger.isTrigger = true;
         trigger.size = new Vector2(4.2f, 1.9f);
         zoneObject.AddComponent<ScadrykTerrainZone>().Configure(0.96f, new Vector2(-1.05f, -0.48f),
-            "O vento arrasta para sudoeste. A esquiva mantém o impulso para cruzar a faixa.", ScadrykTerrainZone.SaltDriftKey);
+            "O vento arrasta para sudoeste. A esquiva mantém o impulso para cruzar a faixa.",
+            ScadrykTerrainZone.SaltDriftKey, ScadrykCue.SaltCrosswind);
     }
 
     public void ShowShallowWaterHint()

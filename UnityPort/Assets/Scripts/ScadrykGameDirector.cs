@@ -2040,7 +2040,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             audio.CueClipName(ScadrykCue.FinalStarfallWarning) != "Herald falling memory" ||
             audio.CueClipName(ScadrykCue.FinalWaveWarning) != "Herald void wave" ||
             !audio.HasCue(ScadrykCue.EchoReleased) || !audio.HasCue(ScadrykCue.PlayerStrike) || !audio.HasCue(ScadrykCue.PlayerFinisher) ||
-            !audio.HasCue(ScadrykCue.PlayerPowerImpact) || !audio.HasCue(ScadrykCue.CoastalCurrent) || ScadrykCue.PlayerPowerImpact == ScadrykCue.Impact ||
+            !audio.HasCue(ScadrykCue.PlayerPowerImpact) || !audio.HasCue(ScadrykCue.CoastalCurrent) ||
+            !audio.HasCue(ScadrykCue.SaltCrosswind) || audio.CueClipName(ScadrykCue.SaltCrosswind) != "Salt grains in the crosswind" ||
+            ScadrykCue.SaltCrosswind == ScadrykCue.CoastalCurrent || ScadrykCue.PlayerPowerImpact == ScadrykCue.Impact ||
             ScadrykCue.PlayerPowerImpact == ScadrykCue.Power || ScadrykCue.PlayerPowerImpact == ScadrykCue.PlayerStrike ||
             ScadrykCue.PlayerStrike == ScadrykCue.Impact || ScadrykCue.PlayerStrike == ScadrykCue.Sword ||
             ScadrykCue.PlayerFinisher == ScadrykCue.PlayerStrike || ScadrykCue.PlayerFinisher == ScadrykCue.Impact ||
