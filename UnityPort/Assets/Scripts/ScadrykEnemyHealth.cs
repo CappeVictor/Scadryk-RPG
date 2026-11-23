@@ -166,7 +166,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         string attackName = Mathf.Clamp(role, 0, 3) switch
         {
             0 => "investida",
-            1 => "projétil",
+            1 => ScadrykEnemyProjectile.LabelForBiome(biome),
             2 => AreaPulseLabelForBiome(biome),
             _ => "pulso de apoio"
         };
@@ -691,7 +691,8 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             ScadrykEnemyProjectile.Launch(transform.position + (Vector3)(shardDirection * 0.55f), shardDirection, speed, IsBoss ? 15f : 11f,
                 biomeIndex == 0 ? ScadrykEffects.RootThrustSprite : biomeIndex == 2 ? ScadrykEffects.BellPulseSprite : ScadrykEffects.SaltShardSprite,
                 size: 0.34f, projectileName: "Salt crystal shard",
-                travelDistance: Mathf.Max(0f, travelDistance - 0.55f - ScadrykEnemyProjectile.HitboxRadius(0.34f)));
+                travelDistance: Mathf.Max(0f, travelDistance - 0.55f - ScadrykEnemyProjectile.HitboxRadius(0.34f)),
+                hitEffectBiome: biomeIndex);
         }
     }
 

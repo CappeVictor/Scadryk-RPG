@@ -5,10 +5,15 @@ using UnityEngine;
 public sealed class ScadrykEnemyProjectile : MonoBehaviour
 {
     private const float ColliderRadius = 0.45f;
+    internal const float ForestHitSlowDuration = 0.42f;
+    internal const float SaltHitSlowDuration = 0.62f;
+    internal const float CoastalHitKnockbackSpeed = 2.4f;
+    internal const float CoastalHitKnockbackDuration = 0.12f;
     private Rigidbody2D body;
     private float damage;
     private float expiresAt;
     private float travelDistanceLimit;
+    private int hitEffectBiome = -1;
     internal float TravelDistanceLimit => travelDistanceLimit;
 
     internal static float HitboxDiameter(float spriteScale) => ColliderRadius * 2f * spriteScale;
@@ -20,7 +25,7 @@ public sealed class ScadrykEnemyProjectile : MonoBehaviour
     private Vector2 BodyVelocity { set => body.velocity = value; }
 #endif
 
-    public static void Launch(Vector2 position, Vector2 direction, float speed, float damage, Sprite projectileSprite = null, Color? tint = null, float size = 0.34f, string projectileName = "Salt crystal shard", float travelDistance = -1f)
+    public static void Launch(Vector2 position, Vector2 direction, float speed, float damage, Sprite projectileSprite = null, Color? tint = null, float size = 0.34f, string projectileName = "Salt crystal shard", float travelDistance = -1f, int hitEffectBiome = -1)
     {
         var shard = new GameObject(projectileName);
         ScadrykGameDirector director = FindAnyObjectByType<ScadrykGameDirector>();
@@ -41,13 +46,14 @@ public sealed class ScadrykEnemyProjectile : MonoBehaviour
         body.bodyType = RigidbodyType2D.Kinematic;
         body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
         var projectile = shard.AddComponent<ScadrykEnemyProjectile>();
-        projectile.Configure(direction, speed, damage, travelDistance);
+        projectile.Configure(direction, speed, damage, travelDistance, hitEffectBiome);
     }
 
-    private void Configure(Vector2 direction, float speed, float hitDamage, float travelDistance)
+    private void Configure(Vector2 direction, float speed, float hitDamage, float travelDistance, int effectBiome)
     {
         body = GetComponent<Rigidbody2D>();
         damage = hitDamage;
+        hitEffectBiome = effectBiome >= 0 ? Mathf.Clamp(effectBiome, 0, 2) : -1;
         travelDistanceLimit = travelDistance >= 0f && speed > 0f ? travelDistance : Mathf.Max(0f, speed) * 3.2f;
         float lifetime = speed > 0f ? travelDistanceLimit / speed : 3.2f;
         expiresAt = Time.time + lifetime;
@@ -64,10 +70,40 @@ public sealed class ScadrykEnemyProjectile : MonoBehaviour
         if (other.TryGetComponent<ScadrykEnemyHealth>(out _)) return;
         if (other.TryGetComponent<ScadrykPlayerController>(out var target))
         {
-            target.TakeDamage(damage);
-            ScadrykEffects.Burst(transform.position, new Color(0.93f, 0.36f, 0.67f, 0.82f), 0.72f);
+            bool damageApplied = target.TakeDamage(damage);
+            if (damageApplied) ApplyBiomeHitEffect(target, transform.position, hitEffectBiome);
+            ScadrykEffects.Burst(transform.position, ImpactColor(hitEffectBiome), 0.72f);
         }
         else if (other.isTrigger) return;
         Destroy(gameObject);
+    }
+
+    internal static Color ImpactColor(int biome)
+    {
+        if (biome < 0) return new Color(0.93f, 0.36f, 0.67f, 0.82f);
+        return Mathf.Clamp(biome, 0, 2) switch
+        {
+            0 => new Color(0.58f, 0.88f, 0.43f, 0.82f),
+            1 => new Color(1f, 0.69f, 0.29f, 0.82f),
+            _ => new Color(0.34f, 0.82f, 0.94f, 0.82f)
+        };
+    }
+
+    internal static string LabelForBiome(int biome) => Mathf.Clamp(biome, 0, 2) switch
+    {
+        0 => "espinho lançado",
+        1 => "estilhaço de sal",
+        _ => "fragmento de sino"
+    };
+
+    internal static void ApplyBiomeHitEffect(ScadrykPlayerController target, Vector2 projectileOrigin, int biome)
+    {
+        if (target == null || biome < 0) return;
+        switch (Mathf.Clamp(biome, 0, 2))
+        {
+            case 0: target.ApplyRootSlow(ForestHitSlowDuration); break;
+            case 1: target.ApplySaltCrustSlow(SaltHitSlowDuration); break;
+            default: target.ApplyImpactKnockback(projectileOrigin, CoastalHitKnockbackSpeed, CoastalHitKnockbackDuration); break;
+        }
     }
 }
