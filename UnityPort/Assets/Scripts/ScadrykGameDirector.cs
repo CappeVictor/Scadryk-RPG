@@ -1680,6 +1680,16 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         return true;
     }
 
+    private static bool AllArtTexturesAreGpuOnly(out int textureCount)
+    {
+        Texture2D[] textures = Resources.LoadAll<Texture2D>("ScadrykArt");
+        textureCount = textures != null ? textures.Length : 0;
+        if (textureCount == 0) return false;
+        for (int i = 0; i < textureCount; i++)
+            if (textures[i] == null || textures[i].isReadable) return false;
+        return true;
+    }
+
     private static Sprite LoadSingleSprite(string name, float pixelsPerUnit)
     {
         Texture2D texture = Resources.Load<Texture2D>("ScadrykArt/" + name);
@@ -2421,6 +2431,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (!worldArtLoaded || !enemyArtLoaded || !ScadrykEffects.RequiredCombatArtIsLoaded)
         { SmokeFail("Uma arte obrigatória de bioma, personagem, guardião ou combate não carregou"); yield break; }
         Debug.Log("SCADRYK_SMOKE: cenários, personagens, guardiões e efeitos de combate obrigatórios carregados");
+        if (!AllArtTexturesAreGpuOnly(out int artTextureCount))
+        { SmokeFail("A biblioteca de arte contém textura legível pela CPU ou está vazia"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: " + artTextureCount + " texturas de arte carregadas sem cópia legível pela CPU");
         Sprite[] firstEnemyRow = LoadSheetRow("Enemies", 0, false);
         Sprite[] repeatedEnemyRow = LoadSheetRow("Enemies", 0, false);
         Sprite[] otherEnemyRow = LoadSheetRow("Enemies", 1, false);
