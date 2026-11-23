@@ -626,6 +626,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (player != null && !victory) SaveProgress(phaseIndex, roomIndex);
         RecordRoomSession();
         showTitle = true;
+        victory = false;
         isPaused = false;
         showOptions = false;
         confirmNewJourney = false;
@@ -2830,6 +2831,12 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (completedColumn < 0 || enemiesColumn < 0 || completedColumn >= victoryColumns.Length || enemiesColumn >= victoryColumns.Length ||
             victoryColumns[completedColumn] != "true" || victoryColumns[enemiesColumn] != "0")
         { SmokeFail("A sessão da vitória não registrou a última sala concluída e o Arauto derrotado"); yield break; }
+        ReturnToTitle();
+        if (!showTitle || victory || showOpeningStory)
+        { SmokeFail("Voltar ao título manteve o estado de vitória ou abriu uma cena de história fora de ordem"); yield break; }
+        BeginJourney();
+        if (showTitle || !showOpeningStory || victory)
+        { SmokeFail("Uma nova jornada iniciada após a vitória ficou bloqueada pelo estado de encerramento"); yield break; }
         Debug.Log("SCADRYK_SMOKE: SUCCESS nove salas, três poderes, Arauto e vitória");
         Application.Quit(0);
     }
