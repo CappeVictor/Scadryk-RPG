@@ -1992,7 +1992,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             EnemyRoleForRoom(7, 0) != 1 || EnemyRoleForRoom(7, 1) != 1 || EnemyRoleForRoom(7, 2) != 2 || EnemyRoleForRoom(7, 3) != 3 ||
             !GuardianAttackIsPreviewedBeforeBoss(0) || !GuardianAttackIsPreviewedBeforeBoss(1) || !GuardianAttackIsPreviewedBeforeBoss(2) ||
             EnemyArtworkRowForRole(0) != 0 || EnemyArtworkRowForRole(1) != 1 ||
-            EnemyArtworkRowForRole(2) != 3 || EnemyArtworkRowForRole(3) != 2)
+            EnemyArtworkRowForRole(2) != 3 || EnemyArtworkRowForRole(3) != 2 || !ScadrykEnemyHealth.RoleTintPalettesAreLegible())
         { SmokeFail("As composições dos encontros de quatro inimigos perderam sua identidade tática"); yield break; }
         Debug.Log("SCADRYK_SMOKE: equipes de bosque, sal e costa têm papéis próprios e cada chefe é anunciado por um padrão previamente ensinado");
         if (GuardianNames.Length != 3 || GuardianIntroductions.Length != 3 || GuardianMemories.Length != 3)

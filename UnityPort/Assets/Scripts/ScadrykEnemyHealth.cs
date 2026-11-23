@@ -176,6 +176,46 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     internal static Color StateTint(bool windingUp, bool exposed, Color roleTint) =>
         windingUp ? new Color(1f, 0.68f, 0.24f) : exposed ? new Color(0.58f, 0.9f, 1f) : roleTint;
 
+    internal static Color RoleTintForBiome(int biome, int role)
+    {
+        Color roleColor = Mathf.Clamp(role, 0, 3) switch
+        {
+            0 => new Color(1f, 0.87f, 0.75f),
+            1 => new Color(0.72f, 0.9f, 1f),
+            2 => new Color(1f, 0.76f, 0.85f),
+            _ => new Color(0.77f, 1f, 0.82f)
+        };
+        Color biomeColor = Mathf.Clamp(biome, 0, 2) switch
+        {
+            0 => new Color(0.35f, 0.67f, 0.42f),
+            1 => new Color(0.88f, 0.61f, 0.27f),
+            _ => new Color(0.24f, 0.55f, 0.78f)
+        };
+        return Color.Lerp(roleColor, biomeColor, 0.3f);
+    }
+
+    internal static bool RoleTintPalettesAreLegible()
+    {
+        const float minimumColorDistanceSquared = 0.0064f;
+        for (int biome = 0; biome < 3; biome++)
+        for (int firstRole = 0; firstRole < 4; firstRole++)
+        for (int secondRole = firstRole + 1; secondRole < 4; secondRole++)
+            if (ColorDistanceSquared(RoleTintForBiome(biome, firstRole), RoleTintForBiome(biome, secondRole)) < minimumColorDistanceSquared)
+                return false;
+        for (int role = 0; role < 4; role++)
+        for (int firstBiome = 0; firstBiome < 3; firstBiome++)
+        for (int secondBiome = firstBiome + 1; secondBiome < 3; secondBiome++)
+            if (ColorDistanceSquared(RoleTintForBiome(firstBiome, role), RoleTintForBiome(secondBiome, role)) < minimumColorDistanceSquared)
+                return false;
+        return true;
+    }
+
+    private static float ColorDistanceSquared(Color first, Color second)
+    {
+        float red = first.r - second.r, green = first.g - second.g, blue = first.b - second.b;
+        return red * red + green * green + blue * blue;
+    }
+
     public void Configure(float hp, float speed, bool boss, int biome, Sprite[] frames, int role = 0, float openingAttackDelay = 0f)
     {
         maxHealth = hp; health = hp; moveSpeed = speed; IsBoss = boss;
@@ -184,7 +224,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         nextAttackAt = Time.time + Mathf.Max(0f, openingAttackDelay);
         openingAttackPending = true;
         openingAttackSlotReserved = false;
-        roleTint = boss ? Color.white : combatRole == 0 ? new Color(1f, 0.87f, 0.75f) : combatRole == 1 ? new Color(0.72f, 0.9f, 1f) : combatRole == 2 ? new Color(1f, 0.76f, 0.85f) : new Color(0.77f, 1f, 0.82f);
+        roleTint = boss ? Color.white : RoleTintForBiome(biomeIndex, combatRole);
         attackRange = boss ? (biomeIndex == 1 ? 8f : biomeIndex == 0 ? 6.8f : 5.8f) :
             combatRole == 0 ? 3.1f : combatRole == 1 ? 7.2f : combatRole == 2 ? 3.9f : 5.5f;
         animationFrames = frames;
