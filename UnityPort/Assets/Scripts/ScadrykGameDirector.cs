@@ -344,6 +344,10 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         return row * 2 + column;
     }
 
+    internal static int TitleMenuMaximumSelection(bool hasCheckpoint) => hasCheckpoint ? 3 : 2;
+    internal static int TitleMenuOptionsSelection(bool hasCheckpoint) => hasCheckpoint ? 2 : 1;
+    internal static int TitleMenuJournalSelection(bool hasCheckpoint) => hasCheckpoint ? 3 : 2;
+
     private void UpdateKeyboardMenus()
     {
         if (rebindingAction >= 0 || gamepadRebindAction >= 0) return;
@@ -390,7 +394,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         }
         else if (up || down)
         {
-            int max = confirmNewJourney ? 1 : victory ? 2 : showTitle ? 3 : 0;
+            int max = confirmNewJourney ? 1 : victory ? 2 : showTitle ? TitleMenuMaximumSelection(HasCheckpoint("Scadryk.")) : 0;
             overlaySelection = Mathf.Clamp(overlaySelection + (down ? 1 : -1), victory ? 1 : 0, max);
         }
 
@@ -436,7 +440,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 overlaySelection = MovePauseGridSelection(overlaySelection, 0, navigation.y > 0f ? -1 : 1);
             }
             else overlaySelection = Mathf.Clamp(overlaySelection - (navigation.y > 0f ? 1 : -1), victory ? 1 : 0,
-                confirmNewJourney ? 1 : victory ? 2 : showTitle ? 3 : 4);
+                confirmNewJourney ? 1 : victory ? 2 : showTitle ? TitleMenuMaximumSelection(HasCheckpoint("Scadryk.")) : 4);
             nextGamepadNavigationAt = Time.unscaledTime + 0.2f;
         }
         else if (!showOptions && !showTitle && !victory && !confirmNewJourney && Time.unscaledTime >= nextGamepadNavigationAt && Mathf.Abs(navigation.x) > 0.55f)
@@ -493,9 +497,14 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         {
             BeginJourney();
         }
-        else if (showTitle && overlaySelection == 1) RequestNewGame();
-        else if (showTitle && overlaySelection == 2) { showOptions = true; optionsTab = 0; optionsSelection = 0; }
-        else if (showTitle && overlaySelection == 3) OpenMemoryJournal();
+        else if (showTitle)
+        {
+            bool hasCheckpoint = HasCheckpoint("Scadryk.");
+            if (hasCheckpoint && overlaySelection == 1) RequestNewGame();
+            else if (overlaySelection == TitleMenuOptionsSelection(hasCheckpoint))
+            { showOptions = true; optionsTab = optionsSelection = 0; }
+            else if (overlaySelection == TitleMenuJournalSelection(hasCheckpoint)) OpenMemoryJournal();
+        }
         else if (overlaySelection == 0) isPaused = false;
         else if (overlaySelection == 1) { showWorldMap = true; isPaused = false; }
         else if (overlaySelection == 2) RequestNewGame();
@@ -2402,6 +2411,10 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             !PauseMapOverlayLayoutFits(400f, 360f))
         { SmokeFail("O menu inicial ou o menu de pausa com acesso ao mapa escapam de uma janela compacta"); yield break; }
         Debug.Log("SCADRYK_SMOKE: menu inicial cabe em 400×360, 1280×520 e 1280×720; menu de pausa cabe em 400×360");
+        if (TitleMenuMaximumSelection(false) != 2 || TitleMenuOptionsSelection(false) != 1 || TitleMenuJournalSelection(false) != 2 ||
+            TitleMenuMaximumSelection(true) != 3 || TitleMenuOptionsSelection(true) != 2 || TitleMenuJournalSelection(true) != 3)
+        { SmokeFail("As opções de título ficam redundantes ou recebem índices incorretos conforme o save"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: menu inicial omite Nova jornada sem checkpoint e reindexa opções/diário corretamente");
         bool pauseGridNavigationWorks = MovePauseGridSelection(0, 0, 1) == 2 &&
             MovePauseGridSelection(3, 0, 1) == 5 && MovePauseGridSelection(4, 0, -1) == 2 &&
             MovePauseGridSelection(5, 0, -1) == 3 && MovePauseGridSelection(0, 1, 0) == 1 &&

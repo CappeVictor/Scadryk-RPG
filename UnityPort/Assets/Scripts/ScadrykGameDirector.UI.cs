@@ -547,10 +547,19 @@ public sealed partial class ScadrykGameDirector
         }
         if (showTitle)
         {
-            if (!victory && OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY, buttonWidth, buttonHeight), HasCheckpoint("Scadryk.") ? "Continuar jornada" : "Começar jornada", 0)) BeginJourney();
-            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep, buttonWidth, buttonHeight), "Nova jornada", 1)) RequestNewGame();
-            if (!victory && OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep * 2f, buttonWidth, buttonHeight), "Opções e controles", 2)) { showOptions = true; optionsTab = optionsSelection = 0; }
-            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep * 3f, buttonWidth, buttonHeight), "Caderno de memórias", 3)) OpenMemoryJournal();
+            bool hasCheckpoint = HasCheckpoint("Scadryk.");
+            float titleButtonStep = buttonY + buttonStep;
+            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY, buttonWidth, buttonHeight), hasCheckpoint ? "Continuar jornada" : "Começar jornada", 0)) BeginJourney();
+            if (hasCheckpoint)
+            {
+                if (OverlayButton(new Rect(center - buttonWidth * 0.5f, titleButtonStep, buttonWidth, buttonHeight), "Nova jornada", 1)) RequestNewGame();
+                titleButtonStep += buttonStep;
+            }
+            int optionsIndex = TitleMenuOptionsSelection(hasCheckpoint);
+            int journalIndex = TitleMenuJournalSelection(hasCheckpoint);
+            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, titleButtonStep, buttonWidth, buttonHeight), "Opções e controles", optionsIndex))
+            { showOptions = true; optionsTab = optionsSelection = 0; }
+            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, titleButtonStep + buttonStep, buttonWidth, buttonHeight), "Caderno de memórias", journalIndex)) OpenMemoryJournal();
         }
         else if (victory)
         {
