@@ -1,6 +1,6 @@
 # Scadryk — diagnóstico e direção
 
-## Revisão de estado (22/11/2026; branch `codex/unity-playable-phase-maps`)
+## Revisão de estado (23/11/2026; branch `codex/unity-playable-phase-maps`)
 
 **Ritmo do encerramento (22/11/2026):** após a lembrança do terceiro guardião, a pausa modal agora precisa ser encerrada antes que a progressão continue. Se o selo da costa ainda estiver presente, o Arauto espera 12 segundos de tempo ativo para a pessoa alcançar e libertar a melhoria opcional; a contagem para durante menu e leitura. Carregar ou morrer reabre a lembrança e agenda um único surgimento do Arauto, evitando duplicação de corrotinas. O Unity compilou a mudança em batch; a oportunidade real e o ritmo ainda aguardam a build e avaliação humana.
 
@@ -63,7 +63,7 @@
 - **Pausa (20/11/2026):** a tela inicial, opções, pausa e vitória agora congelam o relógio de jogo, impedindo projéteis e telegráficos de avançar atrás do menu. Transições por portal continuam animadas porque não usam o estado de pausa. O smoke verifica que o relógio não avança durante espera em tempo real; falta observar no Editor.
 - **Selos opcionais (20/11/2026):** a revelação agora usa a mesma forma de alcance visível/de acerto do poder (arco direcional, raio ou retângulo) em vez de um raio genérico amplo. A automação confere os três selos, poder e posição corretos, cura e ordem em que Nara conquista Rompante após o guardião costeiro. Descoberta e valor da recompensa continuam exigindo jogadores sem orientação externa.
 - **Limite do CI:** a workflow `.github/workflows/validate.yml` valida apenas o aplicativo .NET da raiz, não os scripts/cena do UnityPort. Portanto, checks ausentes no commit Unity não são sinal de compilação Unity bem-sucedida.
-- A build normal atualmente presente em `Build/ScadrykDemo.exe` é anterior às mudanças de 22/11; a regeneração foi bloqueada pelo Code Integrity (evento 3077, DLL do Unity não assinada). Não confundir a compilação batch bem-sucedida com a build atual, smoke test ou avaliação de gameplay.
+- A build normal em `Build/ScadrykDemo.exe` foi regenerada em 23/11/2026 após a compilação batch. A falha anterior do Code Integrity (evento 3077) foi superada sem desativar a proteção. A nova build não foi iniciada nesta etapa; smoke e avaliação de gameplay seguem pendentes.
 
 ## Diagnóstico inicial e direção criativa
 
