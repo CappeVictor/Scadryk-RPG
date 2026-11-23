@@ -16,6 +16,8 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private const float FinalStarfallProjectileScale = 0.48f;
     private const float FinalStarfallProjectileLength = 10f;
     private const float FinalStarfallProjectileSpeed = 5.4f;
+    internal const float FinalStageBreatherDuration = 0.9f;
+    internal const float FinalStageAttackDelay = 3.1f;
     internal const float AreaPulseRadius = 3.2f;
     internal const float BellPulseRadius = 5.3f;
     internal const float SupportPulseRadius = 2.5f;
@@ -80,6 +82,8 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private int finalAttackIndex;
     private int queuedFinalPattern;
     private int queuedFinalStage;
+    private bool pendingFinalStageBreather;
+    private float finalStageBreatherUntil;
     private int combatRole;
     private Color roleTint = Color.white;
     private float animationPhase;
@@ -239,6 +243,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         }
 
         if (windupEndsAt > 0f && Time.time >= windupEndsAt) ResolveAttack();
+        if (Time.time < finalStageBreatherUntil) { BodyVelocity = Vector2.zero; return; }
         if (Time.time < recoveryUntil) { BodyVelocity = Vector2.zero; return; }
         if (Time.time >= nextAttackAt && distance <= attackRange && !shotBlocked)
         {
@@ -472,6 +477,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         if (isFinalBoss)
         {
             ResolveFinalBossAttack();
+            if (pendingFinalStageBreather) BeginFinalStageBreather();
             return;
         }
 
@@ -531,6 +537,15 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             ScadrykEffects.Ring(origin, diameter, new Color(0.98f, 0.24f, 0.57f, 0.96f), 0.42f);
             if (FinalWaveHitsAtDistance(distance)) player.TakeDamage(stage == 3 ? 27f : 23f);
         }
+    }
+
+    private void BeginFinalStageBreather()
+    {
+        pendingFinalStageBreather = false;
+        finalStageBreatherUntil = Mathf.Max(finalStageBreatherUntil, Time.time + FinalStageBreatherDuration);
+        recoveryUntil = Mathf.Max(recoveryUntil, finalStageBreatherUntil);
+        nextAttackAt = Mathf.Max(nextAttackAt, Time.time + FinalStageAttackDelay);
+        BodyVelocity = Vector2.zero;
     }
 
     private System.Collections.IEnumerator ResolveStarfall(Vector2 target)
@@ -710,7 +725,12 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         if (dead) return;
         int previousStage = FinalStage;
         health -= Mathf.Max(0f, amount) * (Time.time < exposedUntil ? 1.3f : 1f);
-        if (isFinalBoss && health > 0f && FinalStage != previousStage && director != null) director.ShowBossStage(FinalStage);
+        if (isFinalBoss && health > 0f && FinalStage != previousStage)
+        {
+            if (isWindup) pendingFinalStageBreather = true;
+            else BeginFinalStageBreather();
+            if (director != null) director.ShowBossStage(FinalStage);
+        }
         if (animator != null) animator.PlayHit(player != null ? ((Vector2)transform.position - (Vector2)player.transform.position).normalized : Vector2.up);
         if (health <= 0f)
         {

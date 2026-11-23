@@ -1486,9 +1486,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     public void ShowBossStage(int stage)
     {
-        string message = stage == 2 ? "O Arauto convoca o sal. Observe as linhas âmbar e a queda marcada." :
-            "Os três silêncios se juntam. O anel interno indica abrigo da onda.";
-        ScadrykEffects.Burst(finalBoss != null ? (Vector2)finalBoss.transform.position : roomCenter, new Color(0.95f, 0.48f, 0.75f), 2.8f);
+        string message = stage == 2 ? "Transição: o Arauto convoca o sal. Linhas âmbar anunciam cada trajetória." :
+            "Transição final: os três silêncios se juntam. O anel interno marca o abrigo da onda.";
+        Vector2 center = finalBoss != null ? (Vector2)finalBoss.transform.position : roomCenter;
+        ScadrykEffects.Burst(center, new Color(0.95f, 0.48f, 0.75f), 2.8f);
+        ScadrykEffects.Ring(center, 5.2f, new Color(0.78f, 0.72f, 1f, 0.82f), ScadrykEnemyHealth.FinalStageBreatherDuration, false);
         ShowStatus(message, 7f);
         ScadrykAudio.Play(ScadrykCue.FinalBossWarning);
     }
@@ -2682,9 +2684,13 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 var queuedStageField = bossType.GetField("queuedFinalStage", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
                 var attackIndexField = bossType.GetField("finalAttackIndex", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
                 var attackTargetField = bossType.GetField("attackTarget", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                var stageBreatherPendingField = bossType.GetField("pendingFinalStageBreather", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                var stageBreatherUntilField = bossType.GetField("finalStageBreatherUntil", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                var nextBossAttackField = bossType.GetField("nextAttackAt", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
                 var beginBossAttack = bossType.GetMethod("BeginFinalBossAttack", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-                var resolveBossAttack = bossType.GetMethod("ResolveFinalBossAttack", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-                if (queuedStageField == null || attackIndexField == null || attackTargetField == null || beginBossAttack == null || resolveBossAttack == null)
+                var resolveBossAttack = bossType.GetMethod("ResolveAttack", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                if (queuedStageField == null || attackIndexField == null || attackTargetField == null || stageBreatherPendingField == null ||
+                    stageBreatherUntilField == null || nextBossAttackField == null || beginBossAttack == null || resolveBossAttack == null)
                 { SmokeFail("Não foi possível preparar a checagem de fase do Arauto"); yield break; }
                 foreach (ScadrykEnemyProjectile projectile in FindObjectsByType<ScadrykEnemyProjectile>())
                     if (projectile != null) { projectile.gameObject.SetActive(false); Destroy(projectile.gameObject); }
@@ -2697,9 +2703,13 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 finalBoss.TakeDamage(400f);
                 float volleyWidth = ScadrykEnemyProjectile.HitboxDiameter(0.58f);
                 if (announcedStage != 1 || finalBoss.FinalStage != 2 || finalBoss.DisplayStage != 1 ||
-                    !SmokeAttackWarningsMatch((Vector2)finalBoss.transform.position, volleyForward, 7.2f, volleyWidth, 0.19f, 1))
+                    !SmokeAttackWarningsMatch((Vector2)finalBoss.transform.position, volleyForward, 7.2f, volleyWidth, 0.19f, 1) ||
+                    !(bool)stageBreatherPendingField.GetValue(finalBoss))
                 { SmokeFail("O teste não cruzou o limiar de fase durante o aviso do Arauto"); yield break; }
                 resolveBossAttack.Invoke(finalBoss, null);
+                bool transitionBreatherApplied = !(bool)stageBreatherPendingField.GetValue(finalBoss) &&
+                    (float)stageBreatherUntilField.GetValue(finalBoss) >= Time.time + ScadrykEnemyHealth.FinalStageBreatherDuration - 0.01f &&
+                    (float)nextBossAttackField.GetValue(finalBoss) >= Time.time + ScadrykEnemyHealth.FinalStageAttackDelay - 0.01f;
                 int announcedVolleyCount = 0;
                 bool volleyRangeMatchesWarning = true;
                 foreach (ScadrykEnemyProjectile projectile in FindObjectsByType<ScadrykEnemyProjectile>())
@@ -2713,8 +2723,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                     projectile.gameObject.SetActive(false);
                     Destroy(projectile.gameObject);
                 }
-                if (announcedVolleyCount != 3 || !volleyRangeMatchesWarning)
-                { SmokeFail("A salva do Arauto mudou de fase ou seu alcance excedeu o aviso"); yield break; }
+                if (announcedVolleyCount != 3 || !volleyRangeMatchesWarning || !transitionBreatherApplied)
+                { SmokeFail("A salva anunciada excedeu o aviso ou a transição não abriu a pausa segura após o golpe"); yield break; }
                 if (finalBoss.DisplayStage != 2)
                 { SmokeFail("A barra do Arauto não avançou após resolver a salva anunciada na fase anterior"); yield break; }
                 Debug.Log("SCADRYK_SMOKE: salva do Arauto manteve fase e alcance dentro do aviso");
