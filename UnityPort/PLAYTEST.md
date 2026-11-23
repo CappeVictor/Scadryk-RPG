@@ -1,6 +1,6 @@
 # Ficha de sessão de teste — Scadryk
 
-Use este roteiro em uma build identificada por commit. Não ensine objetivos, segredos ou estratégias durante a primeira tentativa; apresente apenas os controles. Peça autorização antes de registrar comentários e use um apelido ou código, sem dados pessoais. O jogo grava duração, mortes, ataques difíceis de perceber, usos de poderes, exposição à corrente, exposição à água rasa, ativações de ressonância por Pulso e selos opcionais revelados por sala em `scadryk-sessions-v8.csv` dentro de `Application.persistentDataPath`. O mesmo `session_id` agrupa as salas gravadas em uma execução; ele também aparece no log como `SCADRYK_SESSION`. As marcações feitas com F8 também aparecem em `scadryk-attack-clarity-v1.csv`, com fase, sala e padrões inimigos recentes quando identificáveis.
+Use este roteiro em uma build identificada por commit. Não ensine objetivos, segredos ou estratégias durante a primeira tentativa; apresente apenas os controles. Peça autorização antes de registrar comentários e use um apelido ou código, sem dados pessoais. O jogo grava duração, mortes, ataques difíceis de perceber, usos de poderes, exposição à corrente costeira, à corrente de sal e à água rasa, ativações de ressonância por Pulso e selos opcionais revelados por sala em `scadryk-sessions-v9.csv` dentro de `Application.persistentDataPath`. O mesmo `session_id` agrupa as salas gravadas em uma execução; ele também aparece no log como `SCADRYK_SESSION`. As marcações feitas com F8 também aparecem em `scadryk-attack-clarity-v1.csv`, com fase, sala e padrões inimigos recentes quando identificáveis.
 
 ## Participante e build
 
@@ -44,23 +44,23 @@ Se houver controle, antes da partida observe alguns segundos com os dois analóg
 
 Depois da sessão, filtre os dois CSVs pelo `session_id` e copie os valores automáticos abaixo. O jogo preserva mortes e usos de poderes ao reiniciar a sala, então os valores da linha já cobrem as tentativas daquela sala na campanha. Se a pessoa repetir a campanha em outra execução, o ID muda; mantenha cada tentativa separada. Para cada F8, compare o padrão salvo com o relato do jogador. Se constar `não identificado`, peça ao jogador ou observador uma descrição apenas se ainda lembrar do golpe; não adivinhe nem complete a informação depois.
 
-Para consolidar os registros no Windows, abra PowerShell na pasta do projeto e use `.\UnityPort\Tools\Summarize-Playtests.ps1 -SessionsPath "CAMINHO\scadryk-sessions-v8.csv" -AttackClarityPath "CAMINHO\scadryk-attack-clarity-v1.csv"`. Acrescente `-SessionId "ID_DA_SESSAO"` para filtrar uma tentativa ou `-OutputPath ".\playtest-summary.csv"` para salvar as métricas por sala; sem esses parâmetros, o script mostra todas as sessões e mantém cada `session_id` separado.
+Para consolidar os registros no Windows, abra PowerShell na pasta do projeto e use `.\UnityPort\Tools\Summarize-Playtests.ps1 -SessionsPath "CAMINHO\scadryk-sessions-v9.csv" -AttackClarityPath "CAMINHO\scadryk-attack-clarity-v1.csv"`. Acrescente `-SessionId "ID_DA_SESSAO"` para filtrar uma tentativa ou `-OutputPath ".\playtest-summary.csv"` para salvar as métricas por sala; sem esses parâmetros, o script mostra todas as sessões e mantém cada `session_id` separado. CSVs v8 antigos também podem ser resumidos; a nova exposição à corrente de sal fica zerada neles.
 
 Após a sessão, registre as respostas de 1 a 5 numa linha de `PLAYTEST-RATINGS.csv`, identificada pelo `session_id` e nível `iniciante`, `intermediária` ou `experiente`; deixe sem nota as perguntas não respondidas. Não acrescente nome, email ou outros dados pessoais. Passe também `-RatingsPath .\UnityPort\PLAYTEST-RATINGS.csv` ao resumo para calcular médias separadas por nível; cada sessão aceita uma única ficha. O relatório mostra quantas respostas há em cada nível e quantas faltam para a meta de duas, e avisa quando uma amostra ainda é pequena demais para comparar médias.
 
 Para validar o leitor sem usar dados de participantes, rode `.\UnityPort\Tools\Test-Summarize-Playtests.ps1` no PowerShell. O comando gera e remove fixtures temporários e verifica cobertura parcial, ausência de respostas, fichas duplicadas e notas fora da escala.
 
-| Fase / sala | Segundos ativos | Mortes | F8 / sinais pouco claros | Crescente | Estouro | Rompante | Entradas na corrente | Segundos na corrente | Segundos na água | Ressonâncias por Pulso | Selos revelados | Objetivo compreendido sem ajuda? | Comentário curto |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
-| Bosque alagado 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| Bosque alagado 2 |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| Bosque alagado 3 / guardião |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| Bacia de sal 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| Bacia de sal 2 |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| Bacia de sal 3 / guardião |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| Costa das badaladas 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| Costa das badaladas 2 |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| Costa das badaladas 3 / guardião e Arauto |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| Fase / sala | Segundos ativos | Mortes | F8 / sinais pouco claros | Crescente | Estouro | Rompante | Entradas na corrente | Segundos na corrente | Segundos no vento de sal | Segundos na água | Ressonâncias por Pulso | Selos revelados | Objetivo compreendido sem ajuda? | Comentário curto |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
+| Bosque alagado 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| Bosque alagado 2 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| Bosque alagado 3 / guardião |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| Bacia de sal 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| Bacia de sal 2 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| Bacia de sal 3 / guardião |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| Costa das badaladas 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| Costa das badaladas 2 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| Costa das badaladas 3 / guardião e Arauto |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 
 ## Perguntas após a sessão
 

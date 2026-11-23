@@ -16,7 +16,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private static readonly GUIContent WorldMapTitleContent = new GUIContent("MAPA DA JORNADA");
     private const string EndingMemory = "O Arauto quis ocultar a catástrofe para poupar os vivos da dor, mas o silêncio aprisionou os mortos. Nara escolhe lembrar e abre o limiar para que todos possam atravessar.";
     private const string VictoryEndingText = "Os sinos respondem. Nara escolheu lembrar; o limiar já não prende ninguém.";
-    private const string SessionCsvHeader = "session_id,utc,phase,room,seconds,deaths,unclear_attacks,crescent,salt,tide,enemies_left,completed,current_entries,current_seconds,input_mode,seals_revealed,shallow_water_seconds,resonance_activations\n";
+    private const string SessionCsvHeader = "session_id,utc,phase,room,seconds,deaths,unclear_attacks,crescent,salt,tide,enemies_left,completed,current_entries,current_seconds,input_mode,seals_revealed,shallow_water_seconds,resonance_activations,salt_crosswind_seconds\n";
     private const string AttackClarityCsvHeader = "session_id,utc,phase,room,attack_patterns\n";
     private const string StoryJournalKeySuffix = "StoryJournal.v1";
     [System.Serializable]
@@ -135,6 +135,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private int roomSecretsRevealed;
     private float coastalCurrentSeconds;
     private float shallowWaterSeconds;
+    private float saltCrosswindSeconds;
     private int resonanceActivations;
     private GUIStyle titleStyle { get; set; }
     private GUIStyle bodyStyle { get; set; }
@@ -824,6 +825,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         coastalCurrentSeconds = 0f;
         roomSecretsRevealed = 0;
         shallowWaterSeconds = 0f;
+        saltCrosswindSeconds = 0f;
         resonanceActivations = 0;
     }
     internal static string ObjectiveText(int phase, int room, int enemiesLeft, int anchorsDone, int anchorsNeeded,
@@ -952,6 +954,12 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             shallowWaterSeconds = AddShallowWaterExposure(shallowWaterSeconds, phaseIndex, seconds);
     }
 
+    public void RecordSaltCrosswindExposure(float seconds)
+    {
+        if (!roomSessionRecorded)
+            saltCrosswindSeconds = AddSaltCrosswindExposure(saltCrosswindSeconds, phaseIndex, roomIndex, seconds);
+    }
+
     public void RecordResonanceActivation()
     {
         if (!roomSessionRecorded)
@@ -970,6 +978,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     internal static float AddShallowWaterExposure(float currentSeconds, int phase, float seconds) =>
         IsShallowWaterMetricsBiome(phase) ? currentSeconds + Mathf.Max(0f, seconds) : currentSeconds;
+
+    internal static bool IsSaltCrosswindMetricsRoom(int phase, int room) => phase == 1 && room == 1;
+
+    internal static float AddSaltCrosswindExposure(float currentSeconds, int phase, int room, float seconds) =>
+        IsSaltCrosswindMetricsRoom(phase, room) ? currentSeconds + Mathf.Max(0f, seconds) : currentSeconds;
 
     internal static bool IsResonanceMetricsRoom(int phase, int room) =>
         (phase == 1 && room == 1) || (phase == 2 && room == 1);
@@ -994,7 +1007,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             Mathf.RoundToInt(Mathf.Max(0f, roomActiveSeconds)) + "," + roomDeaths + "," + unclearAttackMarks + "," + roomPowerUses[0] + "," +
             roomPowerUses[1] + "," + roomPowerUses[2] + "," + enemiesRemaining + "," + completed.ToString().ToLowerInvariant() + "," +
             coastalCurrentEntries + "," + Mathf.RoundToInt(Mathf.Max(0f, coastalCurrentSeconds)) + "," + sessionInputMode + "," + roomSecretsRevealed + "," +
-            Mathf.RoundToInt(Mathf.Max(0f, shallowWaterSeconds)) + "," + resonanceActivations + "\n";
+            Mathf.RoundToInt(Mathf.Max(0f, shallowWaterSeconds)) + "," + resonanceActivations + "," +
+            Mathf.RoundToInt(Mathf.Max(0f, saltCrosswindSeconds)) + "\n";
     }
 
     private void RecordRoomSession()
@@ -1003,7 +1017,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         roomSessionRecorded = true;
         try
         {
-            string path = Path.Combine(Application.persistentDataPath, "scadryk-sessions-v8.csv");
+            string path = Path.Combine(Application.persistentDataPath, "scadryk-sessions-v9.csv");
             if (!File.Exists(path)) File.WriteAllText(path, SessionCsvHeader);
             bool completed = IsRoomMarkedComplete(clearedRooms, roomIndex);
             File.AppendAllText(path, FormatSessionCsvRow(completed));
@@ -2248,6 +2262,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         roomPowerUses[0] = 2;
         roomSecretsRevealed = 1;
         shallowWaterSeconds = 2.2f;
+        saltCrosswindSeconds = AddSaltCrosswindExposure(0f, 1, 1, 2.8f);
         resonanceActivations = 2;
         if (!IsCoastalCurrentMetricsRoom(2, 1) || IsCoastalCurrentMetricsRoom(1, 1) || IsCoastalCurrentMetricsRoom(2, 2) ||
             AddCoastalCurrentEntry(4, 1, 1) != 4 || AddCoastalCurrentExposure(3f, 2, 0, 0.8f) != 3f ||
@@ -2256,6 +2271,10 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             Mathf.Abs(AddShallowWaterExposure(1f, 0, 1.2f) - 2.2f) > 0.001f ||
             Mathf.Abs(AddShallowWaterExposure(1f, 1, 1.2f) - 1f) > 0.001f ||
             Mathf.Abs(AddShallowWaterExposure(1f, 0, -0.2f) - 1f) > 0.001f ||
+            !IsSaltCrosswindMetricsRoom(1, 1) || IsSaltCrosswindMetricsRoom(2, 1) || IsSaltCrosswindMetricsRoom(1, 0) ||
+            Mathf.Abs(AddSaltCrosswindExposure(1f, 1, 1, 1.5f) - 2.5f) > 0.001f ||
+            Mathf.Abs(AddSaltCrosswindExposure(1f, 2, 1, 1.5f) - 1f) > 0.001f ||
+            Mathf.Abs(AddSaltCrosswindExposure(1f, 1, 1, -0.2f) - 1f) > 0.001f ||
             !IsResonanceMetricsRoom(1, 1) || !IsResonanceMetricsRoom(2, 1) ||
             IsResonanceMetricsRoom(1, 0) || IsResonanceMetricsRoom(2, 2) ||
             AddResonanceActivation(1, 1, 1) != 2 || AddResonanceActivation(1, 1, 0) != 1)
@@ -2274,26 +2293,27 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (!System.Guid.TryParseExact(sessionId, "N", out _) ||
             deathCsvColumns.Length != SessionCsvHeader.TrimEnd('\n').Split(',').Length || deathCsvColumns[0] != sessionId ||
             deathCsvColumns[5] != "1" || deathCsvColumns[12] != "2" || deathCsvColumns[13] != "5" ||
-            deathCsvColumns[15] != "1" || deathCsvColumns[16] != "2" || deathCsvColumns[17] != "2")
+            deathCsvColumns[15] != "1" || deathCsvColumns[16] != "2" || deathCsvColumns[17] != "2" || deathCsvColumns[18] != "3")
         { SmokeFail("O CSV não registraria uma morte antes de terminar a animação"); yield break; }
         RestartCurrentRoom();
         if (roomActiveSeconds != 17f || roomDeaths != 1 || roomPowerUses[0] != 2 || roomSecretsRevealed != 1 ||
             coastalCurrentEntries != 2 || Mathf.Abs(coastalCurrentSeconds - 4.6f) > 0.001f ||
-            Mathf.Abs(shallowWaterSeconds - 2.2f) > 0.001f || resonanceActivations != 2 || sessionInputMode != "gamepad")
+            Mathf.Abs(shallowWaterSeconds - 2.2f) > 0.001f || Mathf.Abs(saltCrosswindSeconds - 2.8f) > 0.001f ||
+            resonanceActivations != 2 || sessionInputMode != "gamepad")
         { SmokeFail("Morte reiniciou a sala mas perdeu tempo, mortes, poderes, uso da corrente ou dispositivo da sessão"); yield break; }
         string[] csvHeaderColumns = SessionCsvHeader.TrimEnd('\n').Split(',');
         string[] csvRowColumns = FormatSessionCsvRow(true).TrimEnd('\n').Split(',');
         if (csvRowColumns.Length != csvHeaderColumns.Length || csvHeaderColumns[12] != "current_entries" ||
             csvHeaderColumns[13] != "current_seconds" || csvHeaderColumns[14] != "input_mode" ||
             csvHeaderColumns[15] != "seals_revealed" || csvHeaderColumns[16] != "shallow_water_seconds" ||
-            csvHeaderColumns[17] != "resonance_activations" || csvRowColumns[14] != "gamepad" ||
-            csvRowColumns[15] != "1" || csvRowColumns[16] != "2" || csvRowColumns[17] != "2")
+            csvHeaderColumns[17] != "resonance_activations" || csvHeaderColumns[18] != "salt_crosswind_seconds" || csvRowColumns[14] != "gamepad" ||
+            csvRowColumns[15] != "1" || csvRowColumns[16] != "2" || csvRowColumns[17] != "2" || csvRowColumns[18] != "3")
         { SmokeFail("A linha CSV da sessão não corresponde ao cabeçalho ou omite o dispositivo"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: CSV v8 preserva corrente, água, ressonâncias e selos após morte e serializa cabeçalho/valores");
+        Debug.Log("SCADRYK_SMOKE: CSV v9 preserva correntes, água, ressonâncias e selos após morte e serializa cabeçalho/valores");
         ResetRoomSessionMetrics();
         if (roomActiveSeconds != 0f || roomDeaths != 0 || unclearAttackMarks != 0 || sessionInputMode != "unknown" ||
             roomPowerUses[0] != 0 || coastalCurrentEntries != 0 || coastalCurrentSeconds != 0f || roomSecretsRevealed != 0 ||
-            shallowWaterSeconds != 0f || resonanceActivations != 0)
+            shallowWaterSeconds != 0f || saltCrosswindSeconds != 0f || resonanceActivations != 0)
         { SmokeFail("O início de uma nova sala manteve métricas da sala anterior"); yield break; }
         Debug.Log("SCADRYK_SMOKE: métricas ambientais são por sala e reiniciam na nova tentativa");
         float laneRadius = ScadrykEnemyHealth.PlayerCollisionRadius(player);

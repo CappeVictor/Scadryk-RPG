@@ -32,8 +32,9 @@ $requiredSessionColumns = @(
 $sessionColumns = @($sessions[0].PSObject.Properties.Name)
 $missingSessionColumns = @($requiredSessionColumns | Where-Object { $_ -notin $sessionColumns })
 if ($missingSessionColumns.Count -gt 0) {
-    throw "Este não parece ser o CSV v8. Colunas ausentes: $($missingSessionColumns -join ', ')"
+    throw "CSV de sessões incompatível. Colunas ausentes: $($missingSessionColumns -join ', ')"
 }
+$hasSaltCrosswindMetric = 'salt_crosswind_seconds' -in $sessionColumns
 
 if (-not [string]::IsNullOrWhiteSpace($SessionId)) {
     $sessions = @($sessions | Where-Object { $_.session_id -eq $SessionId })
@@ -129,6 +130,7 @@ $details = foreach ($row in $sessions) {
         enemies_left = [int]$row.enemies_left
         current_entries = [int]$row.current_entries
         current_seconds = [int]$row.current_seconds
+        salt_crosswind_seconds = if ($hasSaltCrosswindMetric -and -not [string]::IsNullOrWhiteSpace($row.salt_crosswind_seconds)) { [int]$row.salt_crosswind_seconds } else { 0 }
         shallow_water_seconds = [int]$row.shallow_water_seconds
         resonance_activations = [int]$row.resonance_activations
         seals_revealed = [int]$row.seals_revealed
@@ -148,6 +150,7 @@ $sessionSummary = foreach ($group in ($details | Group-Object session_id)) {
         crescent = ($items | Measure-Object crescent -Sum).Sum
         salt = ($items | Measure-Object salt -Sum).Sum
         tide = ($items | Measure-Object tide -Sum).Sum
+        salt_crosswind_seconds = ($items | Measure-Object salt_crosswind_seconds -Sum).Sum
         input_modes = (@($items.input_mode | Where-Object { $_ } | Select-Object -Unique) -join ', ')
     }
 }
@@ -157,7 +160,7 @@ $sessionSummary | Format-Table -AutoSize | Out-String | Write-Output
 Write-Output 'Detalhes por sala'
 $details | Sort-Object session_id, phase, room |
     Format-Table session_id, location, seconds, deaths, unclear_attacks, attack_marks,
-        crescent, salt, tide, completed, input_mode -AutoSize |
+        crescent, salt, tide, current_seconds, salt_crosswind_seconds, shallow_water_seconds, completed, input_mode -AutoSize |
     Out-String | Write-Output
 
 if (-not [string]::IsNullOrWhiteSpace($RatingsPath)) {

@@ -179,6 +179,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         {
             if (IsInCoastalCurrent()) director.RecordCoastalCurrentExposure(Time.fixedDeltaTime);
             if (IsInShallowWater()) director.RecordShallowWaterExposure(Time.fixedDeltaTime);
+            if (IsInSaltCrosswind()) director.RecordSaltCrosswindExposure(Time.fixedDeltaTime);
         }
         if (Time.time < dashEndsAt)
         {
@@ -232,6 +233,13 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     {
         foreach (ScadrykTerrainZone zone in terrainZones)
             if (zone != null && zone.HintKey == ScadrykTerrainZone.ShallowWaterKey) return true;
+        return false;
+    }
+
+    private bool IsInSaltCrosswind()
+    {
+        foreach (ScadrykTerrainZone zone in terrainZones)
+            if (zone != null && zone.HintKey == ScadrykTerrainZone.SaltDriftKey) return true;
         return false;
     }
 

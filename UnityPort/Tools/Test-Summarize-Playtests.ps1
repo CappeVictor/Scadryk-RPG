@@ -19,11 +19,11 @@ function Invoke-Summary([string]$RatingsFile) {
 }
 
 try {
-    $sessionHeader = 'session_id,phase,room,seconds,deaths,unclear_attacks,crescent,salt,tide,enemies_left,completed,current_entries,current_seconds,input_mode,seals_revealed,shallow_water_seconds,resonance_activations'
+    $sessionHeader = 'session_id,phase,room,seconds,deaths,unclear_attacks,crescent,salt,tide,enemies_left,completed,current_entries,current_seconds,input_mode,seals_revealed,shallow_water_seconds,resonance_activations,salt_crosswind_seconds'
     $sessionRows = @(
-        'beginner,1,1,60,0,0,0,0,0,0,true,0,0,keyboard,0,0,0',
-        'intermediate1,1,1,60,0,0,0,0,0,0,true,0,0,keyboard,0,0,0',
-        'intermediate2,1,2,60,0,0,0,0,0,0,true,0,0,keyboard,0,0,0'
+        'beginner,1,1,60,0,0,0,0,0,0,true,0,0,keyboard,0,0,0,7',
+        'intermediate1,1,1,60,0,0,0,0,0,0,true,0,0,keyboard,0,0,0,0',
+        'intermediate2,1,2,60,0,0,0,0,0,0,true,0,0,keyboard,0,0,0,4'
     )
     [IO.File]::WriteAllText((Join-Path $fixtureRoot 'sessions.csv'), ($sessionHeader + "`n" + ($sessionRows -join "`n") + "`n"), [Text.UTF8Encoding]::new($false))
 
@@ -40,6 +40,18 @@ try {
     $partial = Invoke-Summary 'ratings.csv'
     Assert-Condition ($partial.Output.Contains('Cobertura das avaliações')) 'A tabela de cobertura não foi impressa.'
     Assert-Condition (($partial.Warnings.Count -eq 2) -and (($partial.Warnings -join "`n") -match "iniciante.*faltam 1") -and (($partial.Warnings -join "`n") -match "experiente.*faltam 2")) 'As lacunas das amostras parciais não foram avisadas corretamente.'
+    $v9SummaryPath = Join-Path $fixtureRoot 'v9-summary.csv'
+    & $summaryScript -SessionsPath (Join-Path $fixtureRoot 'sessions.csv') -OutputPath $v9SummaryPath | Out-Null
+    $v9Rows = @(Import-Csv -LiteralPath $v9SummaryPath)
+    Assert-Condition (($v9Rows | Where-Object session_id -eq 'beginner').salt_crosswind_seconds -eq '7') 'O resumo v9 perdeu a exposição à corrente de sal.'
+
+    $legacyHeader = ($sessionHeader -split ',') | Where-Object { $_ -ne 'salt_crosswind_seconds' }
+    $legacyRows = @($sessionRows | ForEach-Object { $_.Substring(0, $_.LastIndexOf(',')) })
+    [IO.File]::WriteAllText((Join-Path $fixtureRoot 'legacy-v8.csv'), (($legacyHeader -join ',') + "`n" + ($legacyRows -join "`n") + "`n"), [Text.UTF8Encoding]::new($false))
+    $legacySummaryPath = Join-Path $fixtureRoot 'legacy-summary.csv'
+    & $summaryScript -SessionsPath (Join-Path $fixtureRoot 'legacy-v8.csv') -OutputPath $legacySummaryPath | Out-Null
+    $legacyRowsOut = @(Import-Csv -LiteralPath $legacySummaryPath)
+    Assert-Condition (($legacyRowsOut | Where-Object session_id -eq 'beginner').salt_crosswind_seconds -eq '0') 'CSV v8 legado não recebeu zero seguro para a nova métrica.'
 
     $empty = Invoke-Summary 'empty-ratings.csv'
     Assert-Condition ($empty.Output.Contains('Cobertura das avaliações') -and $empty.Warnings.Count -eq 3) 'O CSV sem respostas não mostrou os três grupos pendentes.'
@@ -60,7 +72,7 @@ try {
     Write-Output 'PASS: amostra parcial, arquivo sem respostas, ficha duplicada e nota inválida.'
 }
 finally {
-    foreach ($name in @('sessions.csv', 'ratings.csv', 'empty-ratings.csv')) {
+    foreach ($name in @('sessions.csv', 'ratings.csv', 'empty-ratings.csv', 'v9-summary.csv', 'legacy-v8.csv', 'legacy-summary.csv')) {
         $path = Join-Path $fixtureRoot $name
         if (Test-Path -LiteralPath $path -PathType Leaf) { Remove-Item -LiteralPath $path }
     }
