@@ -84,9 +84,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         "Escutar o sino encalhado", "Ressoar farol e sino do recife nessa ordem", "Enfrentar o Arauto do Vazio"
     };
     private static readonly string[] RoomStories = {
-        "A água conserva vozes que Nara pensava perdidas.", "A comporta ainda espera a mão de uma Ouvinte.", "O guardião prende nas raízes o primeiro sino.",
-        "A bacia está imóvel, mas o sal ainda se recorda da maré.", "Dois cristais guardam a rota; o Pulso pode fazê-los cantar.", "O zelador do sal protege uma lembrança que não é sua.",
-        "Na costa, as badaladas cessaram antes da última onda.", "Ressoar o farol primeiro; o sino do recife responderá depois.", "O Arauto reuniu os três silêncios para esconder a verdade."
+        "A água conserva vozes que Nara pensava perdidas.", "A comporta espera uma Ouvinte; raízes sobre a água cruzam o bosque.", "O guardião prende nas raízes o primeiro sino.",
+        "A bacia está imóvel, mas o sal ainda se recorda da maré.", "Dois cristais guardam a rota; uma prateleira de sal contorna a bacia.", "O zelador do sal protege uma lembrança que não é sua.",
+        "Na costa, as badaladas cessaram antes da última onda.", "Farol primeiro, sino depois. A vereda das bóias cruza a costa.", "O Arauto reuniu os três silêncios para esconder a verdade."
     };
     private static readonly string[] GuardianNames = { "A Raiz-Mor", "A Vigia do Sal", "O Vigia do Coro" };
     private static readonly string[] GuardianIntroductions = {
@@ -1850,6 +1850,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (!RoomObstacleLayoutsAreDistinctAndOpen())
         { SmokeFail("As nove salas repetem obstáculos, bloqueiam entrada/saída ou não têm rota caminhável até o portal"); yield break; }
         Debug.Log("SCADRYK_SMOKE: nove layouts distintos têm corredores caminháveis entre entrada e portal");
+        if (!SideRoutesAreDistinctAndNavigable())
+        { SmokeFail("Os desvios laterais dos três biomas não conectam as duas aberturas ou não deixam largura segura"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: bosque, sal e costa têm desvios alternativos com aberturas e largura transitáveis");
         if (!RoomAnchorsAvoidCover())
         { SmokeFail("Um objetivo de ressonância está oculto pela cobertura ou perto demais da entrada/saída"); yield break; }
         Debug.Log("SCADRYK_SMOKE: objetivos das cinco salas de sinal ficam legíveis e acessíveis fora da cobertura");
@@ -2559,6 +2562,14 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             { SmokeFail("A sala " + (room + 1) + " não isolou seus limites de progressão"); yield break; }
             if (!ActiveRoomHasWalkableRoute(roomCenter))
             { SmokeFail("A geometria sólida ativa bloqueou a rota caminhável da sala " + (room + 1)); yield break; }
+            if (roomIndex == 1 && TryGetSideRoute(phaseIndex, roomIndex, out int routeSide, out float routeEntry, out float routeExit))
+            {
+                Vector2 routeStart = roomCenter + new Vector2(routeEntry, routeSide * 5.4f);
+                Vector2 routeTarget = roomCenter + new Vector2(routeExit, routeSide * 5.4f);
+                if (!ActiveRoomHasWalkableRoute(roomCenter, routeStart, routeTarget))
+                { SmokeFail("O desvio alternativo não conecta as duas aberturas na sala " + (room + 1)); yield break; }
+                Debug.Log("SCADRYK_SMOKE: rota principal e desvio alternativo abertos na sala " + (room + 1));
+            }
             Debug.Log("SCADRYK_SMOKE: sala " + (room + 1) + "/9 isolada e rota ao portal livre dos colisores sólidos do bioma");
             for (int anchorIndex = 0; anchorIndex < roomAnchors.Length; anchorIndex++)
             {

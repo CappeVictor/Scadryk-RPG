@@ -151,11 +151,17 @@ public sealed partial class ScadrykGameDirector
         {
             float x = i * RoomSpacing;
             Color roomFloor = floor * (i == 1 ? 1.08f : 0.96f);
+            bool hasSideRoute = TryGetSideRoute(phaseIndex, i, out int routeSide, out float routeEntry, out float routeExit);
             MakeBox(parent, "Room floor " + (i + 1), new Vector2(x, 0), new Vector2(RoomSpacing + 0.2f, 13f), roomFloor, false, -10);
             PlacePhaseGround(parent, x, i);
             DrawRoomScenery(parent, i, x, roomFloor);
-            MakeBox(parent, "North wall", new Vector2(x, 6.6f), new Vector2(19.5f, 0.5f), wall, true, 0);
-            MakeBox(parent, "South wall", new Vector2(x, -6.6f), new Vector2(19.5f, 0.5f), wall, true, 0);
+            if (hasSideRoute) DrawRoomSideRoute(parent, x, floor, wall, routeSide, routeEntry, routeExit);
+            if (!hasSideRoute || routeSide < 0)
+                MakeBox(parent, "North wall", new Vector2(x, 6.6f), new Vector2(19.5f, 0.5f), wall, true, 0);
+            else DrawSideRouteWall(parent, x, 6.6f, wall, routeEntry, routeExit);
+            if (!hasSideRoute || routeSide > 0)
+                MakeBox(parent, "South wall", new Vector2(x, -6.6f), new Vector2(19.5f, 0.5f), wall, true, 0);
+            else DrawSideRouteWall(parent, x, -6.6f, wall, routeEntry, routeExit);
             if (i == 0) MakeBox(parent, "West outer wall", new Vector2(x - 9.7f, 0), new Vector2(0.5f, 13f), wall, true, 0);
             else
             {
@@ -187,6 +193,99 @@ public sealed partial class ScadrykGameDirector
             DrawRoomObstacles(parent, i, x);
             MakeLabelMarker(parent, new Vector2(x, 5.35f), (i + 1).ToString(), PhaseAccentColors[phaseIndex]);
         }
+    }
+
+    private static void DrawSideRouteWall(Transform parent, float roomX, float y, Color wall, float firstOpening, float secondOpening)
+    {
+        const float halfWallWidth = 9.75f;
+        const float openingHalfWidth = 1.8f;
+        float leftOpening = Mathf.Min(firstOpening, secondOpening);
+        float rightOpening = Mathf.Max(firstOpening, secondOpening);
+        AddWallSegment(roomX, -halfWallWidth, leftOpening - openingHalfWidth);
+        AddWallSegment(roomX, leftOpening + openingHalfWidth, rightOpening - openingHalfWidth);
+        AddWallSegment(roomX, rightOpening + openingHalfWidth, halfWallWidth);
+
+        void AddWallSegment(float origin, float minimum, float maximum)
+        {
+            float width = maximum - minimum;
+            if (width < 0.2f) return;
+            MakeBox(parent, "Side route threshold", new Vector2(origin + (minimum + maximum) * 0.5f, y),
+                new Vector2(width, 0.5f), wall, true, 0);
+        }
+    }
+
+    private void DrawRoomSideRoute(Transform parent, float roomX, Color floor, Color wall, int side, float entry, float exit)
+    {
+        const float routeEndExtension = 2f;
+        const float routeDepth = 5.4f;
+        float minimumX = Mathf.Min(entry, exit) - routeEndExtension;
+        float maximumX = Mathf.Max(entry, exit) + routeEndExtension;
+        float centerY = side * (6.6f + routeDepth * 0.5f);
+        float width = maximumX - minimumX;
+        Vector2 center = new Vector2(roomX + (minimumX + maximumX) * 0.5f, centerY);
+        string routeName = phaseIndex switch
+        {
+            0 => "Root causeway",
+            1 => "Salt shelf bypass",
+            _ => "Buoy lee path"
+        };
+
+        MakeBox(parent, routeName + " floor", center, new Vector2(width, routeDepth), floor * 0.98f, false, -9);
+        MakeBox(parent, routeName + " outer rail", center + Vector2.up * (side * routeDepth * 0.5f),
+            new Vector2(width, 0.36f), wall, true, 0);
+        MakeBox(parent, routeName + " west end", new Vector2(roomX + minimumX, centerY),
+            new Vector2(0.36f, routeDepth), wall, true, 0);
+        MakeBox(parent, routeName + " east end", new Vector2(roomX + maximumX, centerY),
+            new Vector2(0.36f, routeDepth), wall, true, 0);
+
+        for (int plank = 0; plank < 6; plank++)
+        {
+            float step = Mathf.Lerp(minimumX + 1.25f, maximumX - 1.25f, plank / 5f);
+            Vector2 mark = new Vector2(roomX + step, centerY + side * (routeDepth * 0.5f - 0.55f));
+            Color accent = PhaseAccentColors[phaseIndex];
+            MakeDecoration(parent, routeName + " waymark", mark,
+                phaseIndex == 1 ? new Vector2(0.48f, 0.7f) : new Vector2(0.85f, 0.12f),
+                new Color(accent.r, accent.g, accent.b, 0.38f), phaseIndex == 1, -8,
+                phaseIndex == 0 ? -12f : phaseIndex == 2 ? 5f : 0f);
+        }
+        MakeDecoration(parent, routeName + " entry glow", new Vector2(roomX + entry, side * 6.95f),
+            new Vector2(0.72f, 0.72f), new Color(PhaseAccentColors[phaseIndex].r, PhaseAccentColors[phaseIndex].g,
+                PhaseAccentColors[phaseIndex].b, 0.2f), true, -8);
+        MakeDecoration(parent, routeName + " exit glow", new Vector2(roomX + exit, side * 6.95f),
+            new Vector2(0.72f, 0.72f), new Color(PhaseAccentColors[phaseIndex].r, PhaseAccentColors[phaseIndex].g,
+                PhaseAccentColors[phaseIndex].b, 0.2f), true, -8);
+    }
+
+    internal static bool TryGetSideRoute(int biome, int room, out int side, out float entry, out float exit)
+    {
+        side = 0;
+        entry = exit = 0f;
+        if (room != 1 || biome < 0 || biome >= 3) return false;
+        side = biome == 1 ? -1 : 1;
+        entry = biome == 0 ? -5.4f : 5.4f;
+        exit = -entry;
+        return true;
+    }
+
+    internal static bool SideRoutesAreDistinctAndNavigable()
+    {
+        int[] expectedSides = { 1, -1, 1 };
+        const float doorWidth = 3.6f;
+        const float passageDepth = 5.4f;
+        const float playerRadius = 0.42f;
+        const float routeRailThickness = 0.36f;
+        float clearDoorWidth = doorWidth - 2f * playerRadius;
+        float clearPassageDepth = passageDepth - routeRailThickness - 2f * playerRadius;
+        if (clearDoorWidth < 2f || clearPassageDepth < 2f) return false;
+        for (int biome = 0; biome < 3; biome++)
+        {
+            if (!TryGetSideRoute(biome, 1, out int side, out float entry, out float exit) || side != expectedSides[biome] ||
+                Mathf.Abs(Mathf.Abs(entry) - 5.4f) > 0.001f || Mathf.Abs(entry + exit) > 0.001f ||
+                Mathf.Abs(entry) + 1.8f >= 9.75f || Mathf.Abs(exit) + 1.8f >= 9.75f)
+                return false;
+            if (TryGetSideRoute(biome, 0, out _, out _, out _) || TryGetSideRoute(biome, 2, out _, out _, out _)) return false;
+        }
+        return true;
     }
 
     private void BuildWorldSecret()
@@ -657,17 +756,21 @@ public sealed partial class ScadrykGameDirector
         return false;
     }
 
-    private bool ActiveRoomHasWalkableRoute(Vector2 center) => ActiveRoomHasWalkableRoute(center, center + Vector2.right * 8.05f);
+    private bool ActiveRoomHasWalkableRoute(Vector2 center) =>
+        ActiveRoomHasWalkableRoute(center, center + Vector2.left * 6.2f, center + Vector2.right * 8.05f);
 
-    private bool ActiveRoomHasWalkableRoute(Vector2 center, Vector2 target)
+    private bool ActiveRoomHasWalkableRoute(Vector2 center, Vector2 target) =>
+        ActiveRoomHasWalkableRoute(center, center + Vector2.left * 6.2f, target);
+
+    private bool ActiveRoomHasWalkableRoute(Vector2 center, Vector2 start, Vector2 target)
     {
         if (levelRoot == null) return false;
         const float step = 0.35f;
         const float playerRadius = 0.42f;
         float minX = -9.7f + 0.25f + playerRadius;
         float maxX = 9.7f - 0.25f - playerRadius;
-        float minY = -6.6f + 0.25f + playerRadius;
-        float maxY = 6.6f - 0.25f - playerRadius;
+        float minY = -12.4f + 0.25f + playerRadius;
+        float maxY = 12.4f - 0.25f - playerRadius;
         int columns = Mathf.FloorToInt((maxX - minX) / step) + 1;
         int rows = Mathf.FloorToInt((maxY - minY) / step) + 1;
         var solids = new System.Collections.Generic.List<Collider2D>();
@@ -691,8 +794,8 @@ public sealed partial class ScadrykGameDirector
             }
         }
 
-        int startX = Mathf.RoundToInt((-6.2f - minX) / step);
-        int startY = Mathf.RoundToInt(-minY / step);
+        int startX = Mathf.RoundToInt((start.x - center.x - minX) / step);
+        int startY = Mathf.RoundToInt((start.y - center.y - minY) / step);
         int targetX = Mathf.RoundToInt((target.x - center.x - minX) / step);
         int targetY = Mathf.RoundToInt((target.y - center.y - minY) / step);
         if (targetX < 0 || targetX >= columns || targetY < 0 || targetY >= rows ||
