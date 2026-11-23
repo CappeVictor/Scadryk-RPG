@@ -28,6 +28,7 @@ public static class ScadrykEffects
     internal static Vector2 PlayerSlashFootprint(float length) => new Vector2(length * 1.65f, length * 0.88f);
     internal static float FlashAlphaScale(bool reduceFlash) => reduceFlash ? 0.48f : 1f;
     internal static float FlashDiameterScale(bool reduceFlash) => reduceFlash ? 0.8f : 1f;
+    internal static Color ApplyReducedFlash(Color color, bool reduceFlash) { if (reduceFlash) color.a *= FlashAlphaScale(true); return color; }
     internal static float FlashExpansionScale(float progress, bool reduceFlash) =>
         Mathf.Lerp(reduceFlash ? 0.94f : 0.72f, reduceFlash ? 1.06f : 1.32f, Mathf.Sin(Mathf.Clamp01(progress) * Mathf.PI * 0.5f));
     internal static int DeathBurstMoteCount(bool boss, bool reduceFlash) => reduceFlash ? (boss ? 3 : 2) : (boss ? 6 : 3);
@@ -320,6 +321,9 @@ public static class ScadrykEffects
 
     private static GameObject CreateSpriteEffect(Sprite sprite, Vector2 position, Vector2 size, Color color, float lifetime, string objectName, bool expand = false, bool protectFromBudget = false)
     {
+        bool reduceFlash = ScadrykSettings.ReduceFlash && !protectFromBudget;
+        color = ApplyReducedFlash(color, reduceFlash);
+        if (reduceFlash) size *= FlashDiameterScale(true);
         var go = new GameObject(objectName);
         go.transform.position = position;
         Vector2 spriteSize = sprite.bounds.size;

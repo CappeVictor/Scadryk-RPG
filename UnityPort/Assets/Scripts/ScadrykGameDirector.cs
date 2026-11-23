@@ -2483,7 +2483,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (!warningVisibleWithoutSound)
         { SmokeFail("Um aviso visual de perigo ficou ausente ou fraco com o volume de efeitos zerado"); yield break; }
         Debug.Log("SCADRYK_SMOKE: aviso de perigo real continua visível em alto contraste com efeitos silenciados; preferências restauradas");
-        if (ScadrykEffects.FlashAlphaScale(true) >= 1f || ScadrykEffects.FlashDiameterScale(true) >= 1f ||
+        Color reducedFlashColor = ScadrykEffects.ApplyReducedFlash(Color.white, true);
+        Color normalFlashColor = ScadrykEffects.ApplyReducedFlash(Color.white, false);
+        if (reducedFlashColor.a >= normalFlashColor.a || ScadrykEffects.FlashAlphaScale(true) >= 1f || ScadrykEffects.FlashDiameterScale(true) >= 1f ||
             ScadrykEffects.FlashExpansionScale(1f, true) >= ScadrykEffects.FlashExpansionScale(1f, false) ||
             ScadrykEffects.DeathBurstMoteCount(true, true) >= ScadrykEffects.DeathBurstMoteCount(true, false))
         { SmokeFail("Reduzir flashes não atenua explosões, expansões ou partículas de derrota"); yield break; }
