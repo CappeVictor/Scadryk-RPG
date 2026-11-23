@@ -2765,7 +2765,20 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 ClearSmokeAttackWarnings();
                 Debug.Log("SCADRYK_SMOKE: projétil lateral da queda de estrelas anunciado na fase 2");
 
+                attackTargetField.SetValue(finalBoss, (Vector2)player.transform.position);
+                attackIndexField.SetValue(finalBoss, 0);
+                beginBossAttack.Invoke(finalBoss, null);
                 finalBoss.TakeDamage(600f);
+                bool canceledStageAttackPending = finalBoss.FinalStage == 3 && finalBoss.DisplayStage == 2 &&
+                    (bool)stageBreatherPendingField.GetValue(finalBoss);
+                finalBoss.ApplyCrescentControl();
+                bool interruptedTransitionBreatherApplied = canceledStageAttackPending && finalBoss.DisplayStage == 3 &&
+                    !(bool)stageBreatherPendingField.GetValue(finalBoss) &&
+                    (float)stageBreatherUntilField.GetValue(finalBoss) >= Time.time + ScadrykEnemyHealth.FinalStageBreatherDuration - 0.01f &&
+                    (float)nextBossAttackField.GetValue(finalBoss) >= Time.time + ScadrykEnemyHealth.FinalStageAttackDelay - 0.01f;
+                if (!interruptedTransitionBreatherApplied)
+                { SmokeFail("Crescente cancelou o aviso do Arauto sem iniciar a pausa segura da nova fase"); yield break; }
+                Debug.Log("SCADRYK_SMOKE: interrupção de Crescente conclui a mudança de fase e preserva a janela segura");
                 attackIndexField.SetValue(finalBoss, 0);
                 ClearSmokeAttackWarnings();
                 volleyForward = ((Vector2)player.transform.position - (Vector2)finalBoss.transform.position).normalized;

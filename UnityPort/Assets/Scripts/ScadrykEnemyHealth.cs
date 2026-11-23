@@ -650,6 +650,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             windupEndsAt = 0f;
             nextAttackAt = staggerUntil + 0.8f;
             if (animator != null) animator.CancelWindup();
+            if (isFinalBoss && pendingFinalStageBreather) BeginFinalStageBreather();
         }
     }
 
