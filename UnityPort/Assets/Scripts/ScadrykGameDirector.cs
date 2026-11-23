@@ -676,8 +676,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ? "Pista: a comporta antiga está marcada no lado direito da sala. Aproxime-se e interaja (" + InputBinding(6) + ")."
             : "Pista: procure o vestígio brilhante junto à passagem da direita e interaja (" + InputBinding(6) + ") ao lado dele.";
         if (roomId == 3) return stage == 0
-            ? "Pista: há uma lembrança marcada no lado sul da bacia. Aproxime-se e interaja (" + InputBinding(6) + ")."
-            : "Pista: escute o vestígio no lado sul usando interagir (" + InputBinding(6) + ") quando estiver ao lado do brilho marcado.";
+            ? "Pista: há uma lembrança marcada perto do centro da bacia. Aproxime-se e interaja (" + InputBinding(6) + ")."
+            : "Pista: escute o vestígio junto ao centro da bacia usando interagir (" + InputBinding(6) + ") ao lado do brilho marcado.";
         if (roomId == 6) return stage == 0
             ? "Pista: o sino encalhado está marcado perto do centro da costa. Aproxime-se e interaja (" + InputBinding(6) + ")."
             : "Pista: a lembrança da costa responde a interagir (" + InputBinding(6) + ") quando Nara chega perto do sino marcado.";
@@ -2297,6 +2297,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Debug.Log("SCADRYK_SMOKE: marcadores de jogador e alvo cabem no minimapa em limites e escala ampliada");
         if (ProgressHint(1, 0, 0) == ProgressHint(1, 0, 1) ||
             ProgressHint(3, 0, 0) == ProgressHint(3, 0, 1) ||
+            !ProgressHint(3, 0, 0).Contains("centro da bacia") ||
+            !ProgressHint(3, 0, 1).Contains("centro da bacia") ||
+            RoomAnchorOffsets(1, 0).Length != 1 || RoomAnchorOffsets(1, 0)[0].magnitude > 1f ||
             ProgressHint(4, 0, 0) == ProgressHint(4, 0, 1) || ProgressHint(4, 0, 1) == ProgressHint(4, 0, 2) ||
             ProgressHint(6, 0, 0) == ProgressHint(6, 0, 1) ||
             ProgressHint(7, 0, 0) == ProgressHint(7, 0, 1) || ProgressHint(7, 0, 1) == ProgressHint(7, 0, 2) ||
