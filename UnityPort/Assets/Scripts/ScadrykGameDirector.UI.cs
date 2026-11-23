@@ -7,6 +7,16 @@ public sealed partial class ScadrykGameDirector
     private int lastCompactOptionsSelection = -1;
     private Vector2 memoryJournalScroll;
     private float nextMemoryJournalNavigationAt;
+    private string[] memoryJournalEntries;
+    private bool memoryJournalLoaded;
+
+    private void OpenMemoryJournal()
+    {
+        memoryJournalEntries = ReadStoryJournal("Scadryk.");
+        memoryJournalLoaded = true;
+        memoryJournalScroll = Vector2.zero;
+        showMemoryJournal = true;
+    }
 
     private void OnGUI()
     {
@@ -85,7 +95,8 @@ public sealed partial class ScadrykGameDirector
         GUI.DrawTexture(new Rect(panel.x, panel.y, panel.width, 3f), Texture2D.whiteTexture);
         GUI.color = Color.white;
 
-        string[] entries = ReadStoryJournal("Scadryk.");
+        if (!memoryJournalLoaded) OpenMemoryJournal();
+        string[] entries = memoryJournalEntries ?? System.Array.Empty<string>();
         GUI.Label(new Rect(panel.x + 18f, panel.y + 10f, panel.width - 36f, 30f), "CADERNO DE MEMÓRIAS", titleStyle);
         GUI.Label(new Rect(panel.x + 18f, panel.y + 39f, panel.width - 36f, 22f),
             entries.Length + (entries.Length == 1 ? " lembrança recuperada" : " lembranças recuperadas"), smallStyle);
@@ -93,9 +104,10 @@ public sealed partial class ScadrykGameDirector
         Rect viewport = StoryJournalViewportRect(panel);
         if (entries.Length == 0)
         {
-            smallStyle.alignment = TextAnchor.MiddleCenter;
+            TextAnchor oldAlignment = memoryStyle.alignment;
+            memoryStyle.alignment = TextAnchor.MiddleCenter;
             GUI.Label(viewport, "As lembranças surgirão aqui quando Nara encontrar os Ecos.", memoryStyle);
-            smallStyle.alignment = TextAnchor.MiddleLeft;
+            memoryStyle.alignment = oldAlignment;
         }
         float textWidth = Mathf.Max(40f, viewport.width - 30f);
         float contentHeight = 8f;
@@ -541,7 +553,7 @@ public sealed partial class ScadrykGameDirector
         {
             if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY, buttonWidth, buttonHeight), "Nova jornada", 1)) StartNewGame();
             if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep, buttonWidth, buttonHeight), "Caderno de memórias", 2))
-            { showMemoryJournal = true; memoryJournalScroll = Vector2.zero; }
+                OpenMemoryJournal();
         }
         else
         {
@@ -558,7 +570,7 @@ public sealed partial class ScadrykGameDirector
             { isPaused = false; showWorldMap = true; ApplyPauseTimeScale(); }
             if (OverlayButton(new Rect(left, row1, columnWidth, buttonHeight), "Nova jornada", 2)) RequestNewGame();
             if (OverlayButton(new Rect(right, row1, columnWidth, buttonHeight), "Opções", 3)) { showOptions = true; optionsTab = optionsSelection = 0; }
-            if (OverlayButton(new Rect(left, row2, columnWidth, buttonHeight), "Memórias", 4)) { showMemoryJournal = true; memoryJournalScroll = Vector2.zero; }
+            if (OverlayButton(new Rect(left, row2, columnWidth, buttonHeight), "Memórias", 4)) OpenMemoryJournal();
             if (OverlayButton(new Rect(right, row2, columnWidth, buttonHeight), "Salvar e sair", 5)) ReturnToTitle();
         }
         GUI.Label(new Rect(center - footerWidth * 0.5f, footerTop, footerWidth, footerHeight), "Três lugares · nove salas · memórias a libertar", centeredBodyStyle);

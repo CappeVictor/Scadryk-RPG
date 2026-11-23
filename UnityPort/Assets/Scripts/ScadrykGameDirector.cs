@@ -478,7 +478,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     {
         if (victory)
         {
-            if (overlaySelection == 2) { showMemoryJournal = true; memoryJournalScroll = Vector2.zero; }
+            if (overlaySelection == 2) OpenMemoryJournal();
             else StartNewGame();
             return;
         }
@@ -499,7 +499,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         else if (overlaySelection == 1) { showWorldMap = true; isPaused = false; }
         else if (overlaySelection == 2) RequestNewGame();
         else if (overlaySelection == 3) { showOptions = true; optionsTab = 0; optionsSelection = 0; }
-        else if (overlaySelection == 4) { showMemoryJournal = true; memoryJournalScroll = Vector2.zero; }
+        else if (overlaySelection == 4) OpenMemoryJournal();
         else if (overlaySelection == 5) ReturnToTitle();
         else ReturnToTitle();
     }
