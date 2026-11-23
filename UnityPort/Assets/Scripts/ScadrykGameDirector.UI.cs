@@ -31,6 +31,7 @@ public sealed partial class ScadrykGameDirector
         DrawWitnessPrompt();
         if (phaseGuardian != null) DrawPhaseGuardianTitle();
         if (finalBoss != null) DrawFinalBossBar();
+        DrawThreatCaptions();
         bool showStatus = Time.time < statusUntil;
         bool showMemory = Time.time < memoryUntil && !transitioning;
         if (showStatus)
@@ -81,6 +82,37 @@ public sealed partial class ScadrykGameDirector
             if (transitioning && transitionFade > 0.35f)
                 GUI.Label(new Rect(0, Screen.height / 2f - 20, Screen.width, 40), "ATRAVESSANDO O LIMIAR", centeredTitleStyle);
         }
+    }
+
+    private void DrawThreatCaptions()
+    {
+        string first = null;
+        string second = null;
+        for (int i = 0; i < activeEnemies.Count; i++)
+        {
+            ScadrykEnemyHealth enemy = activeEnemies[i];
+            if (enemy == null || !enemy.TryGetWindupAttackLabel(out string label)) continue;
+            if (label == first || label == second) continue;
+            if (first == null) first = label;
+            else { second = label; break; }
+        }
+        if (first == null) return;
+
+        float width = Mathf.Min(620f, Screen.width - 28f);
+        float height = second == null ? 30f : 52f;
+        Rect panel = new Rect((Screen.width - width) * 0.5f, Mathf.Max(92f, Screen.height * 0.12f), width, height);
+        GUI.color = new Color(0.035f, 0.025f, 0.035f, 0.9f);
+        GUI.DrawTexture(panel, Texture2D.whiteTexture);
+        GUI.color = new Color(1f, 0.72f, 0.38f, 1f);
+        GUI.DrawTexture(new Rect(panel.x, panel.y, panel.width, 2f), Texture2D.whiteTexture);
+        GUI.color = Color.white;
+
+        int oldSize = centeredBodyStyle.fontSize;
+        centeredBodyStyle.fontSize = Mathf.Max(10, Mathf.RoundToInt(13f * Mathf.Clamp(ScadrykSettings.TextScale, 1f, 1.5f)));
+        GUI.Label(new Rect(panel.x + 8f, panel.y + 2f, panel.width - 16f, 24f), "PREPARANDO: " + first, centeredBodyStyle);
+        if (second != null)
+            GUI.Label(new Rect(panel.x + 8f, panel.y + 26f, panel.width - 16f, 23f), "PREPARANDO: " + second, centeredBodyStyle);
+        centeredBodyStyle.fontSize = oldSize;
     }
 
     private void DrawMemoryJournal()

@@ -158,6 +158,14 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         return !string.IsNullOrEmpty(label);
     }
 
+    internal bool TryGetWindupAttackLabel(out string label)
+    {
+        label = null;
+        if (dead || !isWindup) return false;
+        label = AttackReadabilityLabel(biomeIndex, IsBoss, isFinalBoss, combatRole, queuedFinalPattern, queuedFinalStage);
+        return !string.IsNullOrEmpty(label);
+    }
+
     internal static Color StateTint(bool windingUp, bool exposed, Color roleTint) =>
         windingUp ? new Color(1f, 0.68f, 0.24f) : exposed ? new Color(0.58f, 0.9f, 1f) : roleTint;
 
