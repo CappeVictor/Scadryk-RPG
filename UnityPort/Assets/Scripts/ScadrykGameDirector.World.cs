@@ -436,7 +436,7 @@ public sealed partial class ScadrykGameDirector
 
     private void PlacePhaseGround(Transform parent, float x, int room)
     {
-        Sprite groundSprite = GroundSpriteForRoom(phaseIndex, room, x, phaseGroundSprites, saltCrosswindGroundSprite);
+        Sprite groundSprite = GroundSpriteForRoom(phaseIndex, room, x, phaseGroundSprites, phaseCenterGroundSprites);
         if (groundSprite == null) return;
         var ground = new GameObject("Painted top-down biome — " + PhaseNames[phaseIndex]);
         ground.transform.SetParent(parent);
@@ -451,11 +451,12 @@ public sealed partial class ScadrykGameDirector
         ground.transform.localScale = new Vector3((RoomSpacing + 0.2f) / size.x, RoomHeight / size.y, 1f);
     }
 
-    internal static Sprite GroundSpriteForRoom(int biome, int room, float roomX, Sprite[] biomeGrounds, Sprite saltCrosswindGround)
+    internal static Sprite GroundSpriteForRoom(int biome, int room, float roomX, Sprite[] biomeGrounds, Sprite[] centerGrounds)
     {
         if (biomeGrounds == null || biome < 0 || biome >= biomeGrounds.Length) return null;
-        if (biome == 1 && room == 1 && Mathf.Abs(roomX - RoomSpacing) < 0.01f && saltCrosswindGround != null)
-            return saltCrosswindGround;
+        if (room == 1 && Mathf.Abs(roomX - RoomSpacing) < 0.01f && centerGrounds != null &&
+            biome < centerGrounds.Length && centerGrounds[biome] != null)
+            return centerGrounds[biome];
         return biomeGrounds[biome];
     }
 

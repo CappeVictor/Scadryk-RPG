@@ -38,7 +38,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private static readonly Dictionary<string, Sprite[]> WholeSpriteSheets = new Dictionary<string, Sprite[]>();
     private Sprite[] environmentSprites;
     private Sprite[] phaseGroundSprites;
-    private Sprite saltCrosswindGroundSprite;
+    private Sprite[] phaseCenterGroundSprites;
     private Sprite[] phaseEnemySprites;
     private Sprite fallenWillowLogSprite;
     private Sprite portalSprite;
@@ -188,7 +188,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         EnsureSprites();
         environmentSprites = LoadSheetRow("ScadrykEnvironment", 0, true);
         phaseGroundSprites = new[] { LoadSingleSprite("ForestClearing", 80f), LoadSingleSprite("SaltBasin", 80f), LoadSingleSprite("BellCoast", 80f) };
-        saltCrosswindGroundSprite = LoadSingleSprite("BasinCrosswindGround", 80f);
+        phaseCenterGroundSprites = new[] {
+            LoadSingleSprite("ForestAshFordGround", 80f),
+            LoadSingleSprite("BasinCrosswindGround", 80f),
+            LoadSingleSprite("BellwakeShelfGround", 80f)
+        };
         phaseEnemySprites = new[] { LoadSingleSprite("Rootbound", 1200f), LoadSingleSprite("SaltCrawler", 1200f), LoadSingleSprite("BellWraith", 1200f) };
         fallenWillowLogSprite = LoadSingleSprite("FallenWillowLog", 300f);
         portalSprite = LoadSingleSprite("AncientPortal", 600f);
@@ -2475,20 +2479,23 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (titleBackdropTexture == null) { SmokeFail("A arte de abertura ScadrykTitleBackdrop não foi carregada"); yield break; }
         Debug.Log("SCADRYK_SMOKE: arte original da tela inicial carregada");
         bool worldArtLoaded = HasAllSprites(environmentSprites, 16) && HasAllSprites(phaseGroundSprites, 3) &&
-            saltCrosswindGroundSprite != null && HasAllSprites(phaseEnemySprites, 3) &&
+            HasAllSprites(phaseCenterGroundSprites, 3) && HasAllSprites(phaseEnemySprites, 3) &&
             fallenWillowLogSprite != null && portalSprite != null && witnessSprite != null;
-        bool distinctSaltGroundSelected = GroundSpriteForRoom(1, 1, RoomSpacing, phaseGroundSprites, saltCrosswindGroundSprite) == saltCrosswindGroundSprite &&
-            GroundSpriteForRoom(1, 0, 0f, phaseGroundSprites, saltCrosswindGroundSprite) == phaseGroundSprites[1] &&
-            GroundSpriteForRoom(1, 1, -RoomSpacing, phaseGroundSprites, saltCrosswindGroundSprite) == phaseGroundSprites[1] &&
-            GroundSpriteForRoom(2, 1, RoomSpacing, phaseGroundSprites, saltCrosswindGroundSprite) == phaseGroundSprites[2];
+        bool distinctCenterGroundsSelected = true;
+        for (int biome = 0; biome < 3; biome++)
+        {
+            distinctCenterGroundsSelected &= GroundSpriteForRoom(biome, 1, RoomSpacing, phaseGroundSprites, phaseCenterGroundSprites) == phaseCenterGroundSprites[biome];
+            distinctCenterGroundsSelected &= GroundSpriteForRoom(biome, 0, 0f, phaseGroundSprites, phaseCenterGroundSprites) == phaseGroundSprites[biome];
+            distinctCenterGroundsSelected &= GroundSpriteForRoom(biome, 1, -RoomSpacing, phaseGroundSprites, phaseCenterGroundSprites) == phaseGroundSprites[biome];
+        }
         bool enemyArtLoaded = HasAllSprites(LoadSheetRow("Enemies", 0, false), 4) &&
             HasAllSprites(LoadSheetRow("Enemies", 1, false), 4) && HasAllSprites(LoadSheetRow("Enemies", 2, false), 4) &&
             HasAllSprites(LoadSheetRow("Enemies", 3, false), 4) && HasAllSprites(LoadSheetRow("Listener", 0, true), 16) &&
             HasAllSprites(LoadSheetRow("Bosses", 0, false), 4) && HasAllSprites(LoadSheetRow("BossesMidgame", 1, false), 4) &&
             HasAllSprites(LoadSheetRow("BossesFinalWave", 2, false), 4) && HasAllSprites(LoadSheetRow("BossesEndgame", 0, false), 4);
-        if (!worldArtLoaded || !distinctSaltGroundSelected || !enemyArtLoaded || !ScadrykEffects.RequiredCombatArtIsLoaded)
+        if (!worldArtLoaded || !distinctCenterGroundsSelected || !enemyArtLoaded || !ScadrykEffects.RequiredCombatArtIsLoaded)
         { SmokeFail("Uma arte obrigatória de sala, personagem, guardião ou combate não carregou ou foi aplicada à rota errada"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: cenários, variação do vento de sal, personagens, guardiões e efeitos de combate carregados");
+        Debug.Log("SCADRYK_SMOKE: cenários base e três fundos centrais de bioma, personagens, guardiões e efeitos de combate carregados");
         if (!AllArtTexturesAreGpuOnly(out int artTextureCount))
         { SmokeFail("A biblioteca de arte contém textura legível pela CPU ou está vazia"); yield break; }
         Debug.Log("SCADRYK_SMOKE: " + artTextureCount + " texturas de arte carregadas sem cópia legível pela CPU");
