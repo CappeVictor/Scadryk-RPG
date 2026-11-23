@@ -1394,6 +1394,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         transitioning = false;
         transitionFade = 0f;
         victory = true;
+        overlaySelection = 0;
         ScadrykAudio.Play(ScadrykCue.Victory);
         if (!smokeRun)
         {
@@ -2824,6 +2825,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         }
         if (!victory) { SmokeFail("Portal final não encerrou a campanha"); yield break; }
         if (statusMessage != VictoryEndingText) { SmokeFail("O encerramento não confirmou o retorno das vozes e dos sinos"); yield break; }
+        if (overlaySelection != 0) { SmokeFail("A tela final não selecionou a primeira opção ao abrir"); yield break; }
         string[] victoryColumns = FormatSessionCsvRow(IsRoomMarkedComplete(clearedRooms, roomIndex)).TrimEnd('\n').Split(',');
         string[] sessionColumns = SessionCsvHeader.TrimEnd('\n').Split(',');
         int completedColumn = System.Array.IndexOf(sessionColumns, "completed");
