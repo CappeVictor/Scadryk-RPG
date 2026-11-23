@@ -60,7 +60,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private GameObject levelRoot, gateObject, witnessObject;
     private GameObject bossStagePulse;
     private int witnessLine;
+#if UNITY_EDITOR
     private bool nimaFarewellCompleted;
+#endif
     private bool resumeFinalGuardianInterlude;
     private Coroutine finalBossSpawnRoutine;
     private bool smokeRestoreFinalGuardianForRestart;
@@ -1508,7 +1510,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             yield return null;
         }
         Destroy(nimaObject);
+#if UNITY_EDITOR
         nimaFarewellCompleted = true;
+#endif
         yield return FadeScreen(1f, 0.45f);
         RecordRoomSession();
         transitioning = false;
@@ -2223,6 +2227,16 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             audio.CueClipName(ScadrykCue.FinalWaveWarning) != "Herald void wave" ||
             !audio.HasCue(ScadrykCue.EchoReleased) || !audio.HasCue(ScadrykCue.PlayerStrike) || !audio.HasCue(ScadrykCue.PlayerFinisher) ||
             !audio.HasCue(ScadrykCue.PlayerPowerImpact) || !audio.HasCue(ScadrykCue.CoastalCurrent) ||
+            !audio.HasCue(ScadrykCue.VerdantCrescentImpact) || !audio.HasCue(ScadrykCue.SaltburstImpact) || !audio.HasCue(ScadrykCue.TidebreakerImpact) ||
+            audio.CueClipName(ScadrykCue.VerdantCrescentImpact) != "Verdant crescent impact" ||
+            audio.CueClipName(ScadrykCue.SaltburstImpact) != "Saltburst impact" ||
+            audio.CueClipName(ScadrykCue.TidebreakerImpact) != "Tidebreaker impact" ||
+            ScadrykAudio.AbilityImpactCue(0) != ScadrykCue.VerdantCrescentImpact ||
+            ScadrykAudio.AbilityImpactCue(1) != ScadrykCue.SaltburstImpact ||
+            ScadrykAudio.AbilityImpactCue(2) != ScadrykCue.TidebreakerImpact ||
+            ScadrykCue.VerdantCrescentImpact == ScadrykCue.SaltburstImpact ||
+            ScadrykCue.SaltburstImpact == ScadrykCue.TidebreakerImpact ||
+            ScadrykCue.VerdantCrescentImpact == ScadrykCue.TidebreakerImpact ||
             !audio.HasCue(ScadrykCue.SaltCrosswind) || audio.CueClipName(ScadrykCue.SaltCrosswind) != "Salt grains in the crosswind" ||
             !audio.HasCue(ScadrykCue.NimaFarewell) || audio.CueClipName(ScadrykCue.NimaFarewell) != "Nima — the last crossing" ||
             ScadrykCue.NimaFarewell == ScadrykCue.EchoReleased ||
@@ -2234,6 +2248,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         { SmokeFail("Cues de perigo, música de combate ou sinais de impacto não distinguem os estados previstos"); yield break; }
         Debug.Log("SCADRYK_SMOKE: música escala em combate, recua em pausa e abre espaço para avisos de perigo");
         Debug.Log("SCADRYK_SMOKE: cada padrão do Arauto tem cue próprio; avisos sobrepostos perdem volume e têm teto de quatro vozes");
+        Debug.Log("SCADRYK_SMOKE: impactos do Crescente, Estouro e Rompante usam assinaturas sonoras distintas");
         if (!FocusLossRequiresPause(false, false, false, false, false, false) ||
             FocusLossRequiresPause(true, false, false, false, false, false) ||
             FocusLossRequiresPause(false, true, false, false, false, false) ||

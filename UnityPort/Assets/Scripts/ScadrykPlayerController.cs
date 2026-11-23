@@ -508,7 +508,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         if (index == 0) ScadrykEffects.AbilityCrescent(origin, direction);
         else if (index == 1) ScadrykEffects.AbilitySaltburst(origin, ScadrykEffects.AbilitySaltburstVisualDiameter(radius));
         else ScadrykEffects.AbilityTidebreaker(origin, direction);
-        ScadrykAudio.Play(ScadrykCue.PlayerPowerImpact);
+        ScadrykAudio.Play(ScadrykAudio.AbilityImpactCue(index));
         if (animator != null) animator.PlayAbilityImpact(direction, AbilityRecoveryFor(index));
         ShakeCamera(index == 2 ? 0.12f : 0.075f);
         int hitCount = CollectAttackHits(origin, radius);

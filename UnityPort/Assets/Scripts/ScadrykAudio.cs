@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum ScadrykCue { Sword, Dash, Pulse, Power, Warning, Impact, Hurt, Portal, Victory, Memory, LaneWarning, VolleyWarning, AreaWarning, SupportWarning, FinalBossWarning, PlayerStrike, PlayerFinisher, PlayerPowerImpact, CoastalCurrent, EchoReleased, FinalVolleyWarning, FinalStarfallWarning, FinalWaveWarning, SaltCrosswind, NimaFarewell }
+public enum ScadrykCue { Sword, Dash, Pulse, Power, Warning, Impact, Hurt, Portal, Victory, Memory, LaneWarning, VolleyWarning, AreaWarning, SupportWarning, FinalBossWarning, PlayerStrike, PlayerFinisher, PlayerPowerImpact, CoastalCurrent, EchoReleased, FinalVolleyWarning, FinalStarfallWarning, FinalWaveWarning, SaltCrosswind, NimaFarewell, VerdantCrescentImpact, SaltburstImpact, TidebreakerImpact }
 
 /// <summary>Original, lightweight synthesized motifs and combat signals; no external audio assets.</summary>
 public sealed class ScadrykAudio : MonoBehaviour
@@ -58,7 +58,10 @@ public sealed class ScadrykAudio : MonoBehaviour
             MakeWarningMotif("Herald remembered volley", new[] { 392f, 294f, 220f }, 0.12f, 0.055f, 0.26f),
             MakeWarningMotif("Herald falling memory", new[] { 196f, 392f, 587f }, 0.16f, 0.045f, 0.24f),
             MakeWarningMotif("Herald void wave", new[] { 110f, 110f, 165f }, 0.17f, 0.075f, 0.28f),
-            MakeCue("Salt grains in the crosswind", 238f, 0.42f, 0.13f), MakeNimaFarewellCue()
+            MakeCue("Salt grains in the crosswind", 238f, 0.42f, 0.13f), MakeNimaFarewellCue(),
+            MakeCue("Verdant crescent impact", 523.25f, 0.23f, 0.28f),
+            MakeCue("Saltburst impact", 246.94f, 0.3f, 0.32f),
+            MakeCue("Tidebreaker impact", 174.61f, 0.34f, 0.34f)
         };
     }
 
@@ -101,6 +104,12 @@ public sealed class ScadrykAudio : MonoBehaviour
 
     internal static float WarningCueVolumeScale(int overlappingWarnings) => 0.8f / Mathf.Max(1, overlappingWarnings + 1);
     internal static bool CanPlayWarningCue(int overlappingWarnings) => overlappingWarnings < MaxConcurrentWarningCues;
+    internal static ScadrykCue AbilityImpactCue(int ability) => Mathf.Clamp(ability, 0, 2) switch
+    {
+        0 => ScadrykCue.VerdantCrescentImpact,
+        1 => ScadrykCue.SaltburstImpact,
+        _ => ScadrykCue.TidebreakerImpact
+    };
 
     public void SetContext(int biome, bool finalBoss)
     {
