@@ -16,7 +16,7 @@ Os três ataques do Arauto também têm motivos de aviso próprios: notas descen
 
 Ao atravessar um limiar de fase durante o aviso, o Arauto ainda conclui o golpe já anunciado. Depois há um breve pulso de transição e 0,9 s sem movimento, com o próximo ataque adiado por 3,1 s, para abrir espaço para ler o novo padrão e se reposicionar.
 
-O HUD mantém a função de cada poder junto do comando e da recarga: Crescente interrompe Ecos comuns, Estouro expõe alvos para golpes seguintes e Rompante afasta Ecos comuns. Os guardiões e o Arauto resistem a esses controles de grupo; a dica de aquisição também lembra que os poderes revelam selos opcionais.
+O HUD mantém a função de cada poder junto do comando e da recarga: Crescente interrompe Ecos comuns, Estouro expõe alvos para golpes seguintes e Rompante afasta Ecos comuns. Os guardiões e o Arauto resistem a esses controles de grupo; a dica de aquisição também lembra que os poderes revelam selos opcionais. Se um poder estiver a até 0,18 s do fim da recarga, o comando fica guardado até ele ficar pronto; comandos feitos antes expiram sem disparo atrasado.
 
 Os três Selos de Eco agora aprofundam a build sem adicionar telas ou equipamentos: o selo verde reduz em 20% a recarga do Crescente, o selo do sal prolonga a vulnerabilidade causada pelo Estouro e o selo das badaladas aumenta força e duração do empurrão do Rompante contra Ecos comuns. Cada melhoria permanece salva por sala, aparece como “eco” no HUD e também recupera até 35 pontos de vida. A aplicação visual e o equilíbrio ainda dependem do smoke e de sessões com jogadores.
 

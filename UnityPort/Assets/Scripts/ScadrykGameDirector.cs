@@ -2080,6 +2080,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (ScadrykPlayerController.InputBufferCanStart(1.1f, 1.3f, 1.2f) ||
             !ScadrykPlayerController.InputBufferCanStart(1.21f, 1.3f, 1.2f) ||
             ScadrykPlayerController.InputBufferCanStart(1.31f, 1.3f, 1.2f) ||
+            ScadrykPlayerController.AbilityBufferWindow <= 0f || ScadrykPlayerController.AbilityBufferWindow > 0.25f ||
             Mathf.Abs(ScadrykPlayerController.BasicAttackBufferWindow - 0.2f) > 0.001f ||
             ScadrykPlayerController.NextBasicAttackStep(-1, false) != 0 ||
             ScadrykPlayerController.NextBasicAttackStep(0, true) != 1 ||
@@ -2099,7 +2100,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 ScadrykPlayerController.DashPostInvulnerabilityGrace) - 1.48f) > 0.001f ||
             Mathf.Abs(ScadrykPlayerController.DashBufferWindow - 0.12f) > 0.001f)
         { SmokeFail("Buffers, proteção de invulnerabilidade do dash ou combo perderam suas janelas válidas"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: combo e buffers respeitam a cadência; dash preserva invulnerabilidade existente");
+        Debug.Log("SCADRYK_SMOKE: combo, buffers de ataque/esquiva/poder e invulnerabilidade preservam as janelas previstas");
         if (ScadrykPlayerController.AbilityWindupFor(0) <= 0f ||
             Mathf.Abs(ScadrykPlayerController.AbilityCooldownFor(0, true) - 5.6f) > 0.001f ||
             ScadrykPlayerController.AbilityCooldownFor(0, true) >= ScadrykPlayerController.AbilityCooldownFor(0, false) ||

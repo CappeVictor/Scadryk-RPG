@@ -40,6 +40,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     private readonly bool[] learnedAbilities = new bool[3];
     private readonly bool[] powerEchoes = new bool[3];
     private readonly float[] abilityReadyAt = new float[3];
+    private readonly float[] abilityBufferedUntil = new float[3];
     private readonly List<Collider2D> attackHits = new List<Collider2D>(16);
     private ContactFilter2D attackHitFilter;
     private SpriteRenderer sprite;
@@ -50,6 +51,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     private const int BasicAttackComboLength = 3;
     internal const float BasicAttackComboWindow = 0.82f;
     internal const float BasicAttackBufferWindow = 0.2f;
+    internal const float AbilityBufferWindow = 0.18f;
     internal const float DashBufferWindow = 0.12f;
     internal const float DashPostInvulnerabilityGrace = 0.08f;
     internal const float ShockwaveWindup = 0.08f;
@@ -127,6 +129,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         {
             moveInput = Vector2.zero;
             dashBufferedUntil = attackBufferedUntil = 0f;
+            System.Array.Clear(abilityBufferedUntil, 0, abilityBufferedUntil.Length);
             return;
         }
 
@@ -160,6 +163,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         if (keyboardCrescent || gamepadCrescent) UseAbility(0);
         if (keyboardSaltburst || gamepadSaltburst) UseAbility(1);
         if (keyboardTidebreaker || gamepadTidebreaker) UseAbility(2);
+        for (int ability = 0; ability < abilityBufferedUntil.Length; ability++) TryStartBufferedAbility(ability);
         if ((keyboardInteract || gamepadInteract) && director != null) director.TryInteract(transform.position);
 
         UpdateSprite();
@@ -423,7 +427,19 @@ public sealed class ScadrykPlayerController : MonoBehaviour
             if (director != null) director.ShowAbilityLocked(index);
             return;
         }
-        if (Time.time < abilityReadyAt[index]) return;
+        abilityBufferedUntil[index] = Time.time + AbilityBufferWindow;
+        TryStartBufferedAbility(index);
+    }
+
+    private void TryStartBufferedAbility(int index)
+    {
+        if (index < 0 || index >= abilityBufferedUntil.Length) return;
+        if (!InputBufferCanStart(Time.time, abilityBufferedUntil[index], abilityReadyAt[index]))
+        {
+            if (Time.time >= abilityBufferedUntil[index]) abilityBufferedUntil[index] = 0f;
+            return;
+        }
+        abilityBufferedUntil[index] = 0f;
 
         if (director != null) director.RecordPowerUse(index);
 
@@ -556,6 +572,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     {
         System.Array.Clear(learnedAbilities, 0, learnedAbilities.Length);
         System.Array.Clear(abilityReadyAt, 0, abilityReadyAt.Length);
+        System.Array.Clear(abilityBufferedUntil, 0, abilityBufferedUntil.Length);
     }
     public void ResetCombatCooldowns()
     {
@@ -564,6 +581,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         lastBasicAttackStep = -1;
         basicAttackComboUntil = 0f;
         System.Array.Clear(abilityReadyAt, 0, abilityReadyAt.Length);
+        System.Array.Clear(abilityBufferedUntil, 0, abilityBufferedUntil.Length);
     }
     public void ApplyRootSlow(float duration) => rootedUntil = Mathf.Max(rootedUntil, Time.time + duration);
     public void SetPortalTransitPose(Vector2 position, float visibility)
