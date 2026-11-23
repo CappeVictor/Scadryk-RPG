@@ -805,6 +805,7 @@ public sealed partial class ScadrykGameDirector
         if (measuredObjectiveWidth > objectiveWidth && measuredObjectiveWidth > 0f)
             worldMapObjectiveStyle.fontSize = Mathf.Max(9, Mathf.FloorToInt(worldMapObjectiveStyle.fontSize * objectiveWidth / measuredObjectiveWidth));
         GUI.Label(new Rect(panel.x + 16f, panel.yMax - 55f, objectiveWidth, 22f), objectiveContent, worldMapObjectiveStyle);
+        worldMapInstructionStyle.fontSize = Mathf.Min(smallStyle.fontSize, 12);
         GUI.Label(new Rect(panel.x + 16f, panel.yMax - 29f, panel.width - 32f, 18f),
             "M · L3 · Esc · Start para voltar", worldMapInstructionStyle);
         GUI.color = Color.white;
