@@ -344,10 +344,12 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     internal static int MovePauseGridSelection(int selection, int horizontalDirection, int verticalDirection)
     {
-        int row = Mathf.Clamp(selection, 0, 5) / 2;
-        int column = Mathf.Clamp(selection, 0, 5) % 2;
-        if (verticalDirection != 0) row = Mathf.Clamp(row + System.Math.Sign(verticalDirection), 0, 2);
-        if (horizontalDirection != 0) column = horizontalDirection > 0 ? 1 : 0;
+        int safeSelection = Mathf.Clamp(selection, 0, 6);
+        int row = safeSelection < 6 ? safeSelection / 2 : 3;
+        int column = safeSelection < 6 ? safeSelection % 2 : 0;
+        if (verticalDirection != 0) row = Mathf.Clamp(row + System.Math.Sign(verticalDirection), 0, 3);
+        if (horizontalDirection != 0 && row < 3) column = horizontalDirection > 0 ? 1 : 0;
+        if (row == 3) return 6;
         return row * 2 + column;
     }
 
@@ -526,6 +528,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         else if (overlaySelection == 3) { showOptions = true; optionsTab = 0; optionsSelection = 0; }
         else if (overlaySelection == 4) OpenMemoryJournal();
         else if (overlaySelection == 5) ReturnToTitle();
+        else if (overlaySelection == 6) Application.Quit();
         else ReturnToTitle();
     }
 
@@ -2519,9 +2522,10 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         { SmokeFail("As opções não limitam a frequência de gravação dos sliders"); yield break; }
         Debug.Log("SCADRYK_SMOKE: sliders salvam periodicamente durante ajustes longos sem gravar a cada frame");
         if (!OverlayLayoutFits(400f, 360f) || !OverlayLayoutFits(1280f, 520f) || !OverlayLayoutFits(1280f, 720f) ||
-            !PauseMapOverlayLayoutFits(400f, 360f))
+            !PauseMapOverlayLayoutFits(400f, 360f) || !PauseMapOverlayLayoutFits(1280f, 520f) ||
+            !PauseMapOverlayLayoutFits(1280f, 720f))
         { SmokeFail("O menu inicial ou o menu de pausa com acesso ao mapa escapam de uma janela compacta"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: menu inicial cabe em 400×360, 1280×520 e 1280×720; menu de pausa cabe em 400×360");
+        Debug.Log("SCADRYK_SMOKE: menu inicial e pausa cabem em 400×360, 1280×520 e 1280×720");
         if (TitleMenuMaximumSelection(false) != 3 || TitleMenuOptionsSelection(false) != 1 || TitleMenuJournalSelection(false) != 2 ||
             TitleMenuQuitSelection(false) != 3 || TitleMenuMaximumSelection(true) != 4 || TitleMenuOptionsSelection(true) != 2 ||
             TitleMenuJournalSelection(true) != 3 || TitleMenuQuitSelection(true) != 4)
@@ -2531,9 +2535,10 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             MovePauseGridSelection(3, 0, 1) == 5 && MovePauseGridSelection(4, 0, -1) == 2 &&
             MovePauseGridSelection(5, 0, -1) == 3 && MovePauseGridSelection(0, 1, 0) == 1 &&
             MovePauseGridSelection(1, -1, 0) == 0 && MovePauseGridSelection(4, 1, 0) == 5 &&
-            MovePauseGridSelection(5, -1, 0) == 4;
+            MovePauseGridSelection(5, -1, 0) == 4 && MovePauseGridSelection(5, 0, 1) == 6 &&
+            MovePauseGridSelection(6, -1, 0) == 6 && MovePauseGridSelection(6, 0, -1) == 4;
         if (!pauseGridNavigationWorks) { SmokeFail("A navegação da grade da pausa perde a seleção nas bordas"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: grade de seis opções da pausa mantém coluna e respeita as bordas");
+        Debug.Log("SCADRYK_SMOKE: grade de sete opções da pausa mantém coluna e respeita as bordas");
         bool victoryMenuNavigationWorks = MoveVictoryMenuSelection(0, 1) == 1 && MoveVictoryMenuSelection(1, 1) == 2 &&
             MoveVictoryMenuSelection(2, 1) == 2 && MoveVictoryMenuSelection(2, -1) == 1 &&
             MoveVictoryMenuSelection(1, -1) == 0 && MoveVictoryMenuSelection(0, -1) == 0 && MoveVictoryMenuSelection(1, 0) == 1;

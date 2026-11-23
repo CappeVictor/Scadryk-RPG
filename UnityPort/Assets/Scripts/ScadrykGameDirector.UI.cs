@@ -610,6 +610,7 @@ public sealed partial class ScadrykGameDirector
         bool compact = Screen.height < 520f;
         bool pauseMapMenu = !showTitle && !victory && !confirmNewJourney;
         bool ultraCompactTitleMenu = showTitle && !victory && !confirmNewJourney && Screen.height < 400f;
+        bool densePauseMenu = pauseMapMenu && Screen.height < 570f;
         float top = compact ? 18f : Screen.height * 0.29f;
         float titleWidth = Mathf.Min(600f, Screen.width - 32f);
         float messageWidth = Mathf.Min(680f, Screen.width - 32f);
@@ -620,9 +621,9 @@ public sealed partial class ScadrykGameDirector
         bool compactTitleMenu = showTitle && !victory && !confirmNewJourney;
         bool compressedTitleMenu = compactTitleMenu && Screen.height < 600f;
         bool denseTitleMenu = compressedTitleMenu;
-        float buttonY = top + (compact ? (pauseMapMenu ? 118f : denseTitleMenu ? 130f : 136f) : denseTitleMenu ? 120f : 132f);
-        float buttonHeight = compact ? (pauseMapMenu ? 42f : denseTitleMenu ? 30f : 40f) : denseTitleMenu ? 30f : 44f;
-        float buttonStep = compact ? (pauseMapMenu ? 44f : denseTitleMenu ? 32f : 48f) : denseTitleMenu ? 32f : 54f;
+        float buttonY = top + (compact ? (pauseMapMenu ? 118f : denseTitleMenu ? 130f : 136f) : densePauseMenu || denseTitleMenu ? 120f : 132f);
+        float buttonHeight = compact ? (pauseMapMenu ? densePauseMenu ? 30f : 42f : denseTitleMenu ? 30f : 40f) : densePauseMenu || denseTitleMenu ? 30f : 44f;
+        float buttonStep = compact ? (pauseMapMenu ? densePauseMenu ? 32f : 44f : denseTitleMenu ? 32f : 48f) : densePauseMenu || denseTitleMenu ? 32f : 54f;
         float footerWidth = Mathf.Min(600f, Screen.width - 32f), footerHeight = compact ? 28f : 35f;
         float footerTop = Screen.height - (compact ? 42f : 58f);
         GUI.Label(new Rect(center - titleWidth * 0.5f, top, titleWidth, titleHeight), heading, centeredTitleStyle);
@@ -672,6 +673,7 @@ public sealed partial class ScadrykGameDirector
             float row0 = buttonY;
             float row1 = buttonY + buttonStep;
             float row2 = buttonY + buttonStep * 2f;
+            float row3 = buttonY + buttonStep * 3f;
 
             if (OverlayButton(new Rect(left, row0, columnWidth, buttonHeight), "Continuar", 0)) isPaused = false;
             if (OverlayButton(new Rect(right, row0, columnWidth, buttonHeight), "Mapa", 1))
@@ -680,6 +682,7 @@ public sealed partial class ScadrykGameDirector
             if (OverlayButton(new Rect(right, row1, columnWidth, buttonHeight), "Opções", 3)) { showOptions = true; optionsTab = optionsSelection = 0; }
             if (OverlayButton(new Rect(left, row2, columnWidth, buttonHeight), "Memórias", 4)) OpenMemoryJournal();
             if (OverlayButton(new Rect(right, row2, columnWidth, buttonHeight), "Salvar e sair", 5)) ReturnToTitle();
+            if (OverlayButton(new Rect(center - columnWidth * 0.5f, row3, columnWidth, buttonHeight), "Sair do jogo", 6)) Application.Quit();
         }
         GUI.Label(new Rect(center - footerWidth * 0.5f, footerTop, footerWidth, footerHeight), "Três lugares · nove salas · memórias a libertar", centeredBodyStyle);
     }
@@ -854,14 +857,15 @@ public sealed partial class ScadrykGameDirector
     private static bool PauseMapOverlayLayoutFits(float screenWidth, float screenHeight)
     {
         bool compact = screenHeight < 520f;
+        bool densePauseMenu = screenHeight < 570f;
         float top = compact ? 18f : screenHeight * 0.29f;
         float messageBottom = top + (compact ? 42f + 68f : 48f + 62f);
-        float buttonY = top + (compact ? 118f : 132f);
-        float buttonHeight = compact ? 42f : 44f;
-        float buttonStep = compact ? 44f : 54f;
+        float buttonY = top + (compact ? 118f : densePauseMenu ? 120f : 132f);
+        float buttonHeight = densePauseMenu ? 30f : compact ? 42f : 44f;
+        float buttonStep = densePauseMenu ? 32f : compact ? 44f : 54f;
         float footerTop = screenHeight - (compact ? 42f : 58f);
-        float thirdRowBottom = buttonY + buttonStep * 2f + buttonHeight;
-        return screenWidth >= 256f && messageBottom <= buttonY && thirdRowBottom <= footerTop && footerTop + (compact ? 28f : 35f) <= screenHeight;
+        float fourthRowBottom = buttonY + buttonStep * 3f + buttonHeight;
+        return screenWidth >= 256f && messageBottom <= buttonY && fourthRowBottom <= footerTop && footerTop + (compact ? 28f : 35f) <= screenHeight;
     }
 
     private static Rect MemoryPanelRect(float screenWidth, float screenHeight, float bodyHeight)
