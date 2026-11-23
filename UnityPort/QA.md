@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **Retorno ao título após concluir a campanha (23/11/2026):** a tela de vitória agora oferece “Voltar ao título” além de nova jornada e caderno de memórias. Escape, B e Start também voltam ao título; a lembrança persistida continua acessível no caderno. A alteração foi feita nos menus de teclado/mouse e controle. Unity 6000.6.9f1 importou e compilou em batch com código 0; não abri cena, Play Mode nem executável.
+
 - **Controles visíveis desde a primeira sala (22/11/2026, código `aa4aa08`):** na jornada nova, a abertura narrativa substitui a mensagem ambiental repetida da primeira sala. Assim que a pessoa começa, o HUD mostra os comandos em vez de ocultá-los sob texto de status enquanto o grupo já inicia os ataques. O smoke testa em quais fases/salas a abertura cobre esse status. Unity 6000.6.9f1 compilou em batch, código 0, sem erros ou avisos; a cena e o smoke não foram executados.
 
 - **Avisos de perigo protegidos pelo orçamento visual (22/11/2026, código `c0806e4`):** o smoke agora sobrecarrega o orçamento de efeitos comuns enquanto mantém um telegráfico de ataque prioritário ativo; verifica os dois resultados na mesma cena. Unity 6000.6.9f1 importou/compilou em batch, código 0, sem erros ou avisos C#. A cena e o smoke não foram executados.

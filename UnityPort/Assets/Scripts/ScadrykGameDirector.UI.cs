@@ -563,9 +563,10 @@ public sealed partial class ScadrykGameDirector
         }
         else if (victory)
         {
-            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY, buttonWidth, buttonHeight), "Nova jornada", 1)) StartNewGame();
-            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep, buttonWidth, buttonHeight), "Caderno de memórias", 2))
+            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY, buttonWidth, buttonHeight), "Nova jornada", 0)) StartNewGame();
+            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep, buttonWidth, buttonHeight), "Caderno de memórias", 1))
                 OpenMemoryJournal();
+            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep * 2f, buttonWidth, buttonHeight), "Voltar ao título", 2)) ReturnToTitle();
         }
         else
         {

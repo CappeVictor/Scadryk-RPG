@@ -263,7 +263,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         {
             showOptions = true; optionsTab = 0; optionsSelection = 0; gamepadRebindAction = rebindingAction = -1;
         }
-        if (!victory && (Input.GetKeyDown(KeyCode.Escape) || ScadrykSettings.PadButtonDown(7)))
+        if (victory && (Input.GetKeyDown(KeyCode.Escape) || ScadrykSettings.PadButtonDown(1) || ScadrykSettings.PadButtonDown(7)))
+            ReturnToTitle();
+        else if (!victory && (Input.GetKeyDown(KeyCode.Escape) || ScadrykSettings.PadButtonDown(7)))
         {
             if (showOptions && RebindingCanBeCancelled(rebindingAction, gamepadRebindAction))
             {
@@ -395,7 +397,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         else if (up || down)
         {
             int max = confirmNewJourney ? 1 : victory ? 2 : showTitle ? TitleMenuMaximumSelection(HasCheckpoint("Scadryk.")) : 0;
-            overlaySelection = Mathf.Clamp(overlaySelection + (down ? 1 : -1), victory ? 1 : 0, max);
+            overlaySelection = Mathf.Clamp(overlaySelection + (down ? 1 : -1), 0, max);
         }
 
         if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Space))
@@ -439,7 +441,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             {
                 overlaySelection = MovePauseGridSelection(overlaySelection, 0, navigation.y > 0f ? -1 : 1);
             }
-            else overlaySelection = Mathf.Clamp(overlaySelection - (navigation.y > 0f ? 1 : -1), victory ? 1 : 0,
+            else overlaySelection = Mathf.Clamp(overlaySelection - (navigation.y > 0f ? 1 : -1), 0,
                 confirmNewJourney ? 1 : victory ? 2 : showTitle ? TitleMenuMaximumSelection(HasCheckpoint("Scadryk.")) : 4);
             nextGamepadNavigationAt = Time.unscaledTime + 0.2f;
         }
@@ -482,8 +484,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     {
         if (victory)
         {
-            if (overlaySelection == 2) OpenMemoryJournal();
-            else StartNewGame();
+            if (overlaySelection == 0) StartNewGame();
+            else if (overlaySelection == 1) OpenMemoryJournal();
+            else ReturnToTitle();
             return;
         }
         if (confirmNewJourney)
