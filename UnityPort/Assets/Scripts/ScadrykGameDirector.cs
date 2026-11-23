@@ -52,6 +52,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private ScadrykPlayerController player;
     private ScadrykCameraFollow follow;
     private GameObject levelRoot, gateObject, witnessObject;
+    private GameObject bossStagePulse;
     private int witnessLine;
     private bool resumeFinalGuardianInterlude;
     private Coroutine finalBossSpawnRoutine;
@@ -161,6 +162,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     public Vector2 CurrentRoomCenter => roomCenter;
     public Vector2 ExitPosition => exitPosition;
     public Transform ActiveRoomRoot => levelRoot != null ? levelRoot.transform : null;
+    internal GameObject BossStagePulse => bossStagePulse;
 
     private void Start()
     {
@@ -1490,7 +1492,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             "Transição final: os três silêncios se juntam. O anel interno marca o abrigo da onda.";
         Vector2 center = finalBoss != null ? (Vector2)finalBoss.transform.position : roomCenter;
         ScadrykEffects.Burst(center, new Color(0.95f, 0.48f, 0.75f), 2.8f);
-        ScadrykEffects.Ring(center, 5.2f, new Color(0.78f, 0.72f, 1f, 0.82f), ScadrykEnemyHealth.FinalStageBreatherDuration, false);
+        bossStagePulse = ScadrykEffects.Ring(center, 5.2f, new Color(0.78f, 0.72f, 1f, 0.82f), ScadrykEnemyHealth.FinalStageBreatherDuration, false);
         ShowStatus(message, 7f);
         ScadrykAudio.Play(ScadrykCue.FinalBossWarning);
     }
@@ -2701,11 +2703,16 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 beginBossAttack.Invoke(finalBoss, null);
                 int announcedStage = (int)queuedStageField.GetValue(finalBoss);
                 finalBoss.TakeDamage(400f);
+                GameObject transitionPulse = BossStagePulse;
+                ScadrykTimedVisual transitionSignal = transitionPulse != null ? transitionPulse.GetComponent<ScadrykTimedVisual>() : null;
+                bool transitionPulseReadable = transitionPulse != null && transitionPulse.activeInHierarchy && transitionSignal != null &&
+                    !transitionSignal.IsDangerWarning && Mathf.Abs(ScadrykEffects.RingVisualDiameter(transitionPulse) - 5.2f) < 0.02f &&
+                    Vector2.Distance(transitionPulse.transform.position, finalBoss.transform.position) < 0.02f;
                 float volleyWidth = ScadrykEnemyProjectile.HitboxDiameter(0.58f);
                 if (announcedStage != 1 || finalBoss.FinalStage != 2 || finalBoss.DisplayStage != 1 ||
                     !SmokeAttackWarningsMatch((Vector2)finalBoss.transform.position, volleyForward, 7.2f, volleyWidth, 0.19f, 1) ||
-                    !(bool)stageBreatherPendingField.GetValue(finalBoss))
-                { SmokeFail("O teste não cruzou o limiar de fase durante o aviso do Arauto"); yield break; }
+                    !(bool)stageBreatherPendingField.GetValue(finalBoss) || !transitionPulseReadable)
+                { SmokeFail("A transição não preservou o ataque anunciado ou o pulso inofensivo ficou ilegível"); yield break; }
                 resolveBossAttack.Invoke(finalBoss, null);
                 bool transitionBreatherApplied = !(bool)stageBreatherPendingField.GetValue(finalBoss) &&
                     (float)stageBreatherUntilField.GetValue(finalBoss) >= Time.time + ScadrykEnemyHealth.FinalStageBreatherDuration - 0.01f &&
