@@ -2,7 +2,7 @@
 
 ## Revisão de estado (23/11/2026; branch `codex/unity-playable-phase-maps`)
 
-**Desempenho dos efeitos:** efeitos temporários agora mantêm referências aos renderizadores ao serem criados, evitando procurar componentes em todos os quadros durante seus poucos décimos de segundo de vida. A mudança reduz trabalho repetido de CPU; não promete reduzir uso total de RAM e seu ganho precisa de profiling em gameplay.
+**Desempenho de combate:** efeitos temporários mantêm referências aos renderizadores após a criação; as rotinas de desvio dos Ecos e de linha de visão usam consultas de componente sem exceção para filtrar atores. São reduções de trabalho repetido na CPU, sem promessa de queda perceptível de RAM ou FPS; o ganho precisa de profiling em gameplay.
 
 **Ritmo do encerramento (22/11/2026):** após a lembrança do terceiro guardião, a pausa modal agora precisa ser encerrada antes que a progressão continue. Se o selo da costa ainda estiver presente, o Arauto espera 12 segundos de tempo ativo para a pessoa alcançar e libertar a melhoria opcional; a contagem para durante menu e leitura. Carregar ou morrer reabre a lembrança e agenda um único surgimento do Arauto, evitando duplicação de corrotinas. O Unity compilou a mudança em batch; a oportunidade real e o ritmo ainda aguardam a build e avaliação humana.
 

@@ -42,7 +42,8 @@ public static class ScadrykCombatRules
         {
             Collider2D collider = RaycastHits[i].collider;
             if (collider == null || collider.isTrigger || !collider.enabled) continue;
-            if (collider.GetComponent<ScadrykPlayerController>() != null || collider.GetComponent<ScadrykEnemyHealth>() != null) continue;
+            if (collider.TryGetComponent<ScadrykPlayerController>(out _) ||
+                collider.TryGetComponent<ScadrykEnemyHealth>(out _)) continue;
             nearestDistance = Mathf.Min(nearestDistance, RaycastHits[i].distance);
         }
         return hitCount >= RaycastHits.Length ?

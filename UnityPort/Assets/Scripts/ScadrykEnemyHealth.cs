@@ -386,7 +386,8 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         {
             Collider2D hit = steeringHits[hitIndex].collider;
             if (hit == null || !hit.enabled || hit.isTrigger || hit.transform == transform || hit.transform.IsChildOf(transform)) continue;
-            if (hit.GetComponent<ScadrykEnemyHealth>() != null || hit.GetComponent<ScadrykPlayerController>() != null || hit.GetComponent<ScadrykEnemyProjectile>() != null) continue;
+            if (hit.TryGetComponent<ScadrykEnemyHealth>(out _) || hit.TryGetComponent<ScadrykPlayerController>(out _) ||
+                hit.TryGetComponent<ScadrykEnemyProjectile>(out _)) continue;
             return true;
         }
         return false;
