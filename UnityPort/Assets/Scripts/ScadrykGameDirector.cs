@@ -17,7 +17,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private static readonly GUIContent OpeningMemoryContent = new GUIContent(OpeningMemory);
     private static readonly GUIContent WorldMapTitleContent = new GUIContent("MAPA DA JORNADA");
     private const string EndingMemory = "O Arauto quis ocultar a catástrofe para poupar os vivos da dor, mas o silêncio aprisionou os mortos. Nara escolhe lembrar e abre o limiar para que todos possam atravessar.";
-    private const string VictoryEndingText = "Os sinos respondem. Nara escolheu lembrar; o limiar já não prende ninguém.";
+    private const string VictoryEndingText = "Os sinos respondem; Nima atravessa levando seu nome. Nara escolheu lembrar: o limiar já não prende ninguém.";
     private const string SessionCsvHeader = "session_id,utc,phase,room,seconds,deaths,unclear_attacks,crescent,salt,tide,enemies_left,completed,current_entries,current_seconds,input_mode,seals_revealed,shallow_water_seconds,resonance_activations,salt_crosswind_seconds\n";
     private const string AttackClarityCsvHeader = "session_id,utc,phase,room,attack_patterns\n";
     private const string StoryJournalKeySuffix = "StoryJournal.v1";
@@ -2071,9 +2071,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         { SmokeFail("O caderno não tem uma apresentação identificável para cada sala"); yield break; }
         Debug.Log("SCADRYK_SMOKE: abertura, falas, aparição crescente de Nima, memórias dos guardiões e resolução formam o arco da maré");
         string victoryOverlay = OverlayMessage(false, true, false);
-        if (!victoryOverlay.Contains("Os sinos respondem") || !victoryOverlay.Contains("Nara escolheu lembrar") ||
-            !victoryOverlay.Contains("não prende ninguém"))
-        { SmokeFail("O painel de vitória precisa confirmar a escolha de Nara, o retorno dos sinos e o fim do aprisionamento"); yield break; }
+        if (!victoryOverlay.Contains("Os sinos respondem") || !victoryOverlay.Contains("Nima atravessa levando seu nome") ||
+            !victoryOverlay.Contains("Nara escolheu lembrar") || !victoryOverlay.Contains("não prende ninguém"))
+        { SmokeFail("O painel de vitória precisa concluir a travessia de Nima, a escolha de Nara, o retorno dos sinos e o fim do aprisionamento"); yield break; }
         Debug.Log("SCADRYK_SMOKE: o painel de vitória seleciona o encerramento da história");
         string savedLocation = CheckpointSummary(2, 1);
         string clampedLocation = CheckpointSummary(-1, 99);
