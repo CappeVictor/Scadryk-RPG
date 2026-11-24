@@ -608,4 +608,6 @@ Critérios para revisão: nenhum dano sem aviso reconhecível; nenhum poder fica
 
 - **CI do commit `30dddb0` (24/11/2026):** a validação Unity de recursos passou e o workflow C# passou (somente o protótipo legado). O job Unity de build/smoke falhou no gate pré-compilação devido aos secrets `UNITY_LICENSE`, `UNITY_EMAIL` e `UNITY_PASSWORD` vazios. A compilação local Unity batch do smoke preparado passou; build Windows e execução do jogo não foram feitos.
 
+- **CI do commit `2940214` (24/11/2026):** a validação Unity de recursos passou e o workflow C# passou (somente o protótipo legado). O job Unity de build/smoke falhou no gate pré-compilação pelos secrets `UNITY_LICENSE`, `UNITY_EMAIL` e `UNITY_PASSWORD` vazios. Localmente, Unity `6000.6.9f1` compilou o cache dos mapas e a cobertura smoke adicionada; nenhum smoke, build Windows ou jogo foi iniciado.
+
 - **Cache dos mapas (24/11/2026):** o minimapa e o mapa da jornada agora reutilizam os nove rótulos de sala em `GUIContent`; removi consultas repetidas a `PlayerPrefs` e concatenação por redesenho. O estado do selo é carregado na montagem da sala e o texto correspondente atualiza no instante da descoberta. O smoke confere reuso sem alteração e atualização `◇`→`◆`; Unity `6000.6.9f1` compilou os scripts em batch. Não executei smoke, build ou jogo; o custo real de GC/CPU continua sem medição de Profiler.
