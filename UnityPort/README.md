@@ -36,8 +36,24 @@ Cada bioma também tem um fundo original para sua primeira sala — Vau das Lant
 
 - Unity Editor `6000.6.9f1` (ver `ProjectSettings/ProjectVersion.txt`) e o módulo Windows Build Support para gerar o executável Windows.
 - Para builds Windows com backend IL2CPP, o Unity também exige Visual Studio C++ Build Tools e Windows SDK 10.0.19041 ou superior. São ferramentas de compilação; o código continua sendo editado no VS Code, sem precisar abrir o IDE Visual Studio.
+- Para editar e compilar no Editor, a Unity recomenda no mínimo 8 GB de RAM; 16 GB são recomendados para trabalhar com o Unity e o VS Code abertos juntos. O consumo real depende dos programas e assets carregados. Consulte os [requisitos oficiais do Unity 6.6](https://docs.unity.com/en-us/engine/6000.6/manual/get-started/install-and-upgrade/getting-started-installing-unity/system-requirements).
 - O projeto usa Input Manager (Old), já configurado em Project Settings. Artes de cenário e inimigos estão em `Assets/Resources/ScadrykArt/`.
 - As folhas de arte são importadas sem cópia legível pela CPU: o jogo apenas as desenha e fatia por UV, então manter pixels duplicados em RAM não é necessário. `Tools/Validate-Resources.ps1` confere a existência dos recursos citados nos scripts e essa configuração em todos os PNGs de arte.
+
+### Requisitos do jogo Windows
+
+Os requisitos abaixo para o **jogo executável** são estimativas conservadoras para esta aventura 2D, não mínimos medidos nem garantia de FPS. Ainda faltam sessões de desempenho em máquinas variadas; até lá, trate a coluna recomendada como uma meta de configuração, não como benchmark.
+
+| | Mínimo estimado | Recomendado estimado |
+|---|---|---|
+| Sistema | Windows 10 64 bits, versão 21H1 ou posterior | Windows 10/11 64 bits atualizado |
+| Processador | x64 com SSE2, 2 núcleos | x64 com SSE2, 4 núcleos recentes |
+| Memória instalada | 8 GB RAM (estimativa provisória) | 16 GB RAM ou mais |
+| Gráficos | GPU integrada ou dedicada com driver do fabricante e suporte a DirectX 10 ou superior | GPU integrada recente ou dedicada, com driver atualizado e suporte a DirectX 11 ou superior |
+| Tela | 1280×720 | 1920×1080, proporção 16:9 |
+| Armazenamento | Reserve 1 GB livre para instalar/descompactar a build e guardar dados locais | SSD recomendado; a pasta `Build` desta versão ocupa cerca de 161 MB e o tamanho pode mudar entre versões |
+
+A Unity lista Windows 10 21H1+, CPU x86/x64 com SSE2 e GPU DX10/DX11/DX12/Vulkan como compatibilidade de plataforma do Player; isso não substitui a medição dos requisitos deste jogo. A configuração do projeto parte de 1920×1080 e oferece tela cheia ou janela dimensionada a até 1280×720, conforme o monitor. Para o **Editor Unity**, use a seção Requisitos acima: a tabela desta seção é somente para jogar uma build pronta.
 
 ## Programar em C# com VS Code
 
@@ -53,10 +69,18 @@ Não instale o pacote Unity antigo `com.unity.ide.vscode`: ele foi descontinuado
 
 ## Abrir e jogar
 
-1. Instale/abra o Unity Hub e instale o Editor `6000.6.9f1` com o módulo Windows Build Support.
-2. Em **Projects**, escolha **Add > Add project from disk** e selecione a pasta `UnityPort` deste repositório (a pasta que contém `Assets`, `Packages` e `ProjectSettings`).
-3. Abra `Assets/Scenes/ScadrykDemo.unity` e pressione **Play** no Editor.
+### Jogar pelo Unity Editor
+
+1. Instale/abra o Unity Hub e instale o Editor `6000.6.9f1`. O módulo Windows Build Support só é necessário para gerar o executável.
+2. Em **Projects**, escolha **Add > Add project from disk** e selecione a pasta `UnityPort` deste repositório (a pasta que contém `Assets`, `Packages` e `ProjectSettings`). Aguarde a primeira importação dos assets terminar.
+3. No Unity, abra `Assets/Scenes/ScadrykDemo.unity` e pressione **Play** na barra superior. O VS Code não executa o jogo sozinho; ele serve para editar o código C#.
 4. Comece pelo menu. Limpe os Ecos e conclua o objetivo indicado em cada sala; quando o portal surgir, espere a animação de abertura terminar, aproxime-se e use o comando de interação mostrado na tela (padrão **E** no teclado ou **Y** no controle). Complete as nove salas para concluir os três biomas e enfrentar o Arauto.
+
+### Jogar a build Windows pronta
+
+1. Obtenha/descompacte a pasta `Build` inteira de uma versão publicada do projeto.
+2. Abra `Build/ScadrykDemo.exe` no Windows. Mantenha junto dele as pastas e arquivos auxiliares (`ScadrykDemo_Data`, `UnityPlayer.dll`, `UnityCrashHandler64.exe` e demais arquivos da pasta); não copie somente o `.exe`.
+3. Se a tela cheia não for adequada ao monitor, inicie o jogo e escolha **Opções > Tela cheia** para alternar entre tela cheia e janela ajustada ao monitor.
 
 Para criar um executável Windows, escolha **Scadryk > Build Windows demo** ou use a tarefa de build do VS Code. O build aparece em `Build/ScadrykDemo.exe` dentro do projeto Unity; o método de build da Unity gera também `Build/SCADRYK_BUILD_INFO.txt` com commit, estado da árvore-fonte antes do empacotamento, número de caminhos alterados, versão do Editor e horário UTC, tanto pelo menu quanto pelo script ou CI. A cena e o executável não são iniciados pelo script de build; execute o `.exe` manualmente quando quiser jogar. O smoke da campanha continua pendente.
 
@@ -70,7 +94,7 @@ O smoke verifica a campanha por automação interna da build Development e encer
 
 Para gerar o executável Windows sem abrir a cena em Play Mode, execute `.\Tools\build-windows.ps1` na pasta `UnityPort`. Esse segundo passo requer o módulo Windows Build Support; procura o Editor nos mesmos caminhos, exige o resultado `Build Finished, Result: Success.` no log do Unity e confirma o executável e os arquivos essenciais do payload (`Assembly-CSharp.dll`, `boot.config` e `globalgamemanagers`). Ambos gravam logs em `%TEMP%`; nenhum inicia o executável. A compilação não substitui a avaliação manual da campanha.
 
-Para jogar a build gerada no Windows, abra `Build/ScadrykDemo.exe`. Mantenha os arquivos e pastas auxiliares da pasta `Build` juntos do `.exe`; não copie só o executável para outro local. A build atual ainda precisa de uma sessão de avaliação de gameplay.
+Para uma rodada rápida de desenvolvimento, a sequência é: **Unity Hub → abrir `UnityPort` → cena `Assets/Scenes/ScadrykDemo.unity` → botão Play**. Para jogar sem o Editor, use a build completa em `Build/ScadrykDemo.exe`. A build atual ainda precisa de uma sessão de avaliação de gameplay.
 
 O avanço é salvo automaticamente ao atravessar cada portal. O checkpoint guarda bioma e sala juntos em um registro versionado; saves antigos com esses valores em chaves separadas continuam sendo carregados, e as chaves escalares são mantidas em paralelo para compatibilidade e recuperação. Ao reabrir o jogo, a última sala alcançada é carregada com os poderes das fases já vencidas. A conclusão da campanha apaga o marcador de progresso para permitir uma nova jornada. As métricas ficam na pasta retornada por `Application.persistentDataPath` (no Windows, normalmente `%USERPROFILE%/AppData/LocalLow/<CompanyName>/<ProductName>`). Nenhum dado é enviado pela rede.
 
