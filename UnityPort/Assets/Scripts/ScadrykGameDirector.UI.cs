@@ -2,6 +2,12 @@ using UnityEngine;
 
 public sealed partial class ScadrykGameDirector
 {
+    private static readonly string[] MiniMapBiomeNames = { "Bosque", "Sal", "Costa" };
+    private readonly GUIContent miniMapHeaderContent = new GUIContent();
+    private readonly GUIContent worldMapLegendContent = new GUIContent("TRÊS BIOMAS · NOVE SALAS · ↑/↓ DESVIO · ◇ PENDENTE · ◆ LIBERADO · SELADO = BLOQUEADO");
+    private readonly GUIContent[] mapRoomContents = CreateMapRoomContents();
+    private readonly bool[] mapRoomSecretFlags = new bool[PhaseNames.Length * RoomsPerPhase];
+    private readonly bool[] mapRoomContentInitialized = new bool[PhaseNames.Length * RoomsPerPhase];
     private Vector2 compactOptionsScroll;
     private int lastCompactOptionsTab = -1;
     private int lastCompactOptionsSelection = -1;
@@ -73,6 +79,44 @@ public sealed partial class ScadrykGameDirector
     private ScadrykEnemyHealth cachedHudObjectiveBoss;
     private string cachedHudObjectiveInputMode;
     private int cachedHudObjectiveBindingRevision = -1;
+
+    private static GUIContent[] CreateMapRoomContents()
+    {
+        var contents = new GUIContent[PhaseNames.Length * RoomsPerPhase];
+        for (int i = 0; i < contents.Length; i++) contents[i] = new GUIContent();
+        return contents;
+    }
+
+    private int MapRoomContentIndex(int phase, int room) => Mathf.Clamp(phase, 0, PhaseNames.Length - 1) * RoomsPerPhase + Mathf.Clamp(room, 0, RoomsPerPhase - 1);
+
+    internal static bool RefreshMapRoomContent(GUIContent content, ref bool cachedSecretFound, ref bool initialized,
+        int phase, int room, bool secretFound)
+    {
+        if (content == null || (initialized && cachedSecretFound == secretFound)) return false;
+        content.text = (room + 1) + ". " + MapRoomRouteLabel(phase, room, secretFound);
+        cachedSecretFound = secretFound;
+        initialized = true;
+        return true;
+    }
+
+    private GUIContent CachedMapRoomContent(int phase, int room)
+    {
+        int index = MapRoomContentIndex(phase, room);
+        bool secretFound = mapRoomSecretFlags[index];
+        RefreshMapRoomContent(mapRoomContents[index], ref mapRoomSecretFlags[index], ref mapRoomContentInitialized[index], phase, room, secretFound);
+        return mapRoomContents[index];
+    }
+
+    private void RefreshMapRoomContents()
+    {
+        for (int phase = 0; phase < PhaseNames.Length; phase++)
+        for (int room = 0; room < RoomsPerPhase; room++)
+        {
+            int index = MapRoomContentIndex(phase, room);
+            bool secretFound = !smokeRun && IsWorldSecretRevealed("Scadryk.", phase, room);
+            RefreshMapRoomContent(mapRoomContents[index], ref mapRoomSecretFlags[index], ref mapRoomContentInitialized[index], phase, room, secretFound);
+        }
+    }
 
     private static void RefreshMeasureContent(GUIContent content, ref string cachedText, string text)
     {
@@ -709,11 +753,11 @@ public sealed partial class ScadrykGameDirector
         Rect hud = HudPanelRect(Screen.width, Screen.height, ScadrykSettings.TextScale);
         if (!MiniMapPanelFits(panel, hud, Screen.width, Screen.height)) return;
         GUI.color = new Color(0.035f, 0.05f, 0.06f, 0.9f); GUI.Box(panel, GUIContent.none); GUI.color = Color.white;
-        string[] mapBiomeNames = { "Bosque", "Sal", "Costa" };
-        string mapHeader = MiniMapHeaderText(mapBiomeNames[phaseIndex]);
+        string mapHeader = MiniMapHeaderText(MiniMapBiomeNames[phaseIndex]);
+        if (miniMapHeaderContent.text != mapHeader) miniMapHeaderContent.text = mapHeader;
         int baseHeaderFontSize = smallStyle.fontSize;
-        smallStyle.fontSize = FitMiniMapHeaderFontSize(baseHeaderFontSize, smallStyle.CalcSize(new GUIContent(mapHeader)).x, width - 26f);
-        GUI.Label(new Rect(panel.x + 13, panel.y + 8, width - 26f, 21f + extra * 8f), mapHeader, smallStyle);
+        smallStyle.fontSize = FitMiniMapHeaderFontSize(baseHeaderFontSize, smallStyle.CalcSize(miniMapHeaderContent).x, width - 26f);
+        GUI.Label(new Rect(panel.x + 13, panel.y + 8, width - 26f, 21f + extra * 8f), miniMapHeaderContent, smallStyle);
         smallStyle.fontSize = baseHeaderFontSize;
         float mapX = panel.x + 15, mapY = panel.y + 43 + extra * 5f, roomW = 75f + extra * 30f, roomH = 57f + extra * 10f, gap = 8;
         for (int i = 0; i < RoomsPerPhase; i++)
@@ -721,7 +765,7 @@ public sealed partial class ScadrykGameDirector
             Rect cell = new Rect(mapX + i * (roomW + gap), mapY, roomW, roomH);
             GUI.color = MiniMapRoomColor(i == roomIndex, clearedRooms[i]);
             GUI.Box(cell, GUIContent.none); GUI.color = new Color(0.75f, 0.74f, 0.67f);
-            GUI.Label(new Rect(cell.x + 3, cell.y + 2, roomW - 6, 18), (i + 1) + ". " + MapRoomRouteLabel(phaseIndex, i, IsWorldSecretRevealed("Scadryk.", phaseIndex, i)), smallStyle);
+            GUI.Label(new Rect(cell.x + 3, cell.y + 2, roomW - 6, 18), CachedMapRoomContent(phaseIndex, i), smallStyle);
             if (i == roomIndex && gateObject != null)
             {
                 GUI.color = PhaseAccentColors[phaseIndex];
@@ -1135,13 +1179,12 @@ public sealed partial class ScadrykGameDirector
             openingTitleStyle.fontSize = Mathf.Max(12, Mathf.FloorToInt(openingTitleStyle.fontSize * titleWidth / measuredTitleWidth));
         GUI.Label(new Rect(panel.center.x - titleWidth * 0.5f, panel.y + 4f, titleWidth, 40f), WorldMapTitleContent, openingTitleStyle);
         worldMapInstructionStyle.fontSize = Mathf.Min(smallStyle.fontSize, 12);
-        string mapLegend = "TRÊS BIOMAS · NOVE SALAS · ↑/↓ DESVIO · ◇ PENDENTE · ◆ LIBERADO · SELADO = BLOQUEADO";
         float legendWidth = panel.width - 32f;
-        float measuredLegendWidth = worldMapInstructionStyle.CalcSize(new GUIContent(mapLegend)).x;
+        float measuredLegendWidth = worldMapInstructionStyle.CalcSize(worldMapLegendContent).x;
         if (measuredLegendWidth > legendWidth && measuredLegendWidth > 0f)
             worldMapInstructionStyle.fontSize = Mathf.Max(9, Mathf.FloorToInt(worldMapInstructionStyle.fontSize * legendWidth / measuredLegendWidth));
         GUI.Label(new Rect(panel.x + 16f, panel.y + 45f, panel.width - 32f, 17f),
-            mapLegend, worldMapInstructionStyle);
+            worldMapLegendContent, worldMapInstructionStyle);
         if (GUI.Button(new Rect(panel.xMax - 92f, panel.y + 14f, 76f, 28f), "FECHAR")) CloseWorldMap();
 
         float rowHeight = WorldMapRowHeight(panel.height);
@@ -1172,7 +1215,7 @@ public sealed partial class ScadrykGameDirector
                 GUI.DrawTexture(new Rect(card.x, card.y, card.width, 2f), Texture2D.whiteTexture);
                 GUI.color = Color.white;
                 GUI.Label(new Rect(card.x + 3f, card.y + 3f, card.width - 6f, card.height * 0.5f),
-                    (room + 1) + ". " + MapRoomRouteLabel(phase, room, IsWorldSecretRevealed("Scadryk.", phase, room)), worldMapRoomStyle);
+                    CachedMapRoomContent(phase, room), worldMapRoomStyle);
                 string stateLabel = state == 1 ? "VOCÊ ESTÁ AQUI" : state == 2 ? "CONCLUÍDA" : state == 3 ? "SELADO" : "ADIANTE";
                 GUI.color = state == 1 ? new Color(0.55f, 1f, 0.94f) : state == 2 ? new Color(0.62f, 0.9f, 0.68f) :
                     state == 3 ? new Color(0.68f, 0.52f, 0.36f) : new Color(0.7f, 0.73f, 0.71f);
@@ -1181,14 +1224,13 @@ public sealed partial class ScadrykGameDirector
             }
         }
 
-        string currentObjective = "Objetivo: " + ActiveObjectiveText();
-        GUIContent objectiveContent = new GUIContent(currentObjective);
+        RefreshHudObjectiveCache();
         float objectiveWidth = panel.width - 32f;
         worldMapObjectiveStyle.fontSize = Mathf.RoundToInt(11f * Mathf.Clamp(ScadrykSettings.TextScale, 1f, 1.5f));
-        float measuredObjectiveWidth = worldMapObjectiveStyle.CalcSize(objectiveContent).x;
+        float measuredObjectiveWidth = worldMapObjectiveStyle.CalcSize(hudObjectiveContent).x;
         if (measuredObjectiveWidth > objectiveWidth && measuredObjectiveWidth > 0f)
             worldMapObjectiveStyle.fontSize = Mathf.Max(9, Mathf.FloorToInt(worldMapObjectiveStyle.fontSize * objectiveWidth / measuredObjectiveWidth));
-        GUI.Label(new Rect(panel.x + 16f, panel.yMax - 55f, objectiveWidth, 22f), objectiveContent, worldMapObjectiveStyle);
+        GUI.Label(new Rect(panel.x + 16f, panel.yMax - 55f, objectiveWidth, 22f), hudObjectiveContent, worldMapObjectiveStyle);
         worldMapInstructionStyle.fontSize = Mathf.Min(smallStyle.fontSize, 12);
         GUI.Label(new Rect(panel.x + 16f, panel.yMax - 29f, panel.width - 32f, 18f),
             "M · L3 · Esc · Start para voltar", worldMapInstructionStyle);

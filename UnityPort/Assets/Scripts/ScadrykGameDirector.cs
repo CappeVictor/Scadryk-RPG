@@ -804,6 +804,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         activeEnemies.Clear();
         for (int i = 0; i < Mathf.Clamp(newRoom, 0, RoomsPerPhase); i++) clearedRooms[i] = true;
         phaseIndex = newPhase; roomIndex = newRoom; victory = false;
+        RefreshMapRoomContents();
         roomCenter = new Vector2(roomIndex * RoomSpacing, 0f);
         exitPosition = roomCenter + Vector2.right * 8.05f;
         levelRoot = new GameObject("Phase " + (phaseIndex + 1) + " map");
@@ -2794,6 +2795,13 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         bool changedCooldownRefreshesText = nextCooldownLabel == "0.7s" && !object.ReferenceEquals(firstCooldownLabel, nextCooldownLabel);
         string readyCooldownLabel = HudCooldownLabel(0.02f, ref cachedCooldownTenths, ref cachedCooldownLabel);
         string nearReadyCooldownLabel = HudCooldownLabel(0.04f, ref cachedCooldownTenths, ref cachedCooldownLabel);
+        var cachedMapRoomContent = new GUIContent();
+        bool cachedMapSecretFound = false, cachedMapRoomInitialized = false;
+        bool firstMapRoomRefresh = RefreshMapRoomContent(cachedMapRoomContent, ref cachedMapSecretFound, ref cachedMapRoomInitialized, 1, 1, false);
+        string firstMapRoomLabel = cachedMapRoomContent.text;
+        bool repeatedMapRoomRefresh = RefreshMapRoomContent(cachedMapRoomContent, ref cachedMapSecretFound, ref cachedMapRoomInitialized, 1, 1, false);
+        bool repeatedMapRoomReusesText = object.ReferenceEquals(firstMapRoomLabel, cachedMapRoomContent.text);
+        bool revealedMapRoomRefresh = RefreshMapRoomContent(cachedMapRoomContent, ref cachedMapSecretFound, ref cachedMapRoomInitialized, 1, 1, true);
         string singleExposureCaption = ExposureCaption(1);
         string groupExposureCaption = ExposureCaption(3);
         if (HudHealthLabel(68.2f, 100f) != "VIDA 69/100" ||
@@ -2807,6 +2815,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             AbilityHudLabel(2, "R", "pronto") != "R  Rompante · afasta  ·  pronto" ||
             !string.IsNullOrEmpty(AbilityHudLabel(3, "X", "pronto")) ||
             !unchangedCooldownReusesText || !changedCooldownRefreshesText || readyCooldownLabel != "pronto" || nearReadyCooldownLabel != "0.0s" ||
+            !firstMapRoomRefresh || repeatedMapRoomRefresh || !repeatedMapRoomReusesText || !revealedMapRoomRefresh ||
+            firstMapRoomLabel != "2. Bacia ↓ ◇" || cachedMapRoomContent.text != "2. Bacia ↓ ◆" ||
             !HudPanelFits(compactHud, 400f, 360f) || MiniMapPanelFits(compactMap, compactHud, 400f, 360f) ||
             !HudPanelFits(narrowHud, 700f, 600f) || !MiniMapPanelFits(narrowMap, narrowHud, 700f, 600f) ||
             wideThreatCaption.yMin < 72f || wideThreatCaption.Overlaps(HudPanelRect(1920f, 1080f, 1f)) ||

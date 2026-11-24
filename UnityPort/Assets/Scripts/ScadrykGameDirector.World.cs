@@ -424,7 +424,13 @@ public sealed partial class ScadrykGameDirector
         if (!smokeRun) ScadrykAudio.Play(ScadrykCue.EchoReleased);
         ScadrykEffects.Burst(spot, PhaseAccentColors[phaseIndex], 1.5f);
         ScadrykEffects.ReleaseEcho(witnessSprite != null ? witnessSprite : CircleSprite, spot, PhaseAccentColors[phaseIndex]);
-        if (!smokeRun) MarkWorldSecretRevealed("Scadryk.", phaseIndex, roomIndex);
+        if (!smokeRun)
+        {
+            MarkWorldSecretRevealed("Scadryk.", phaseIndex, roomIndex);
+            int mapRoomIndex = MapRoomContentIndex(phaseIndex, roomIndex);
+            RefreshMapRoomContent(mapRoomContents[mapRoomIndex], ref mapRoomSecretFlags[mapRoomIndex],
+                ref mapRoomContentInitialized[mapRoomIndex], phaseIndex, roomIndex, true);
+        }
         if (player != null) player.UnlockPowerEcho(requiredPower);
         Destroy(worldSecret);
         worldSecret = null;
