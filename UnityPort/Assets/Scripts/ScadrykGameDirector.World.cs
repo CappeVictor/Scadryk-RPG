@@ -166,15 +166,23 @@ public sealed partial class ScadrykGameDirector
         ScadrykEffects.Burst(anchor.transform.position, PhaseAccentColors[phaseIndex], 1.8f);
         ScadrykAudio.Play(ScadrykCue.Portal);
         Destroy(anchor);
+        ShowStatus(AnchorActivationFeedback(phaseIndex * RoomsPerPhase + roomIndex,
+            anchorsActivated, anchorsRequired, InputBinding(2)), anchorsActivated >= anchorsRequired ? 5f : 4f);
         if (anchorsActivated >= anchorsRequired)
         {
-            ShowStatus("O vestígio respondeu. A passagem pode se abrir.", 5f);
             int id = phaseIndex * RoomsPerPhase + roomIndex;
             if (id == 3) ShowMemory("O sal guardava uma maré inteira, suspensa no instante em que o Arauto ordenou silêncio. Nara reconhece a voz de quem tentou avisar a costa.", 8f);
             if (id == 6) ShowMemory("Um sino encalhado repete o pedido dos navegantes: não apagar a lembrança da onda. Eles não pedem vingança; pedem que alguém a escute.", 8f);
             if (enemiesRemaining == 0) UnlockExit();
         }
-        else ShowStatus("Um sinal respondeu. Falta mais um.", 4f);
+    }
+
+    internal static string AnchorActivationFeedback(int roomId, int activated, int required, string pulseBinding)
+    {
+        if (activated >= required) return "O vestígio respondeu. A passagem pode se abrir.";
+        if (roomId == 7 && activated > 0)
+            return "O farol respondeu. Vá à direita, até o sino do recife, e use o Pulso (" + pulseBinding + ") perto dele.";
+        return "Um sinal respondeu. Falta mais um.";
     }
 
     private void DrawPhaseMap(Transform parent)

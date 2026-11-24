@@ -2847,6 +2847,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             !PulseAnchorPromptText(7, 0, 0, "Q").Contains("Farol") ||
             !PulseAnchorPromptText(7, 1, 0, "Q").Contains("primeiro acione o farol") ||
             !PulseAnchorPromptText(7, 1, 1, "Q").Contains("use Pulso (Q) agora") ||
+            !AnchorActivationFeedback(7, 1, 2, "Q").Contains("O farol respondeu") ||
+            !AnchorActivationFeedback(7, 1, 2, "Q").Contains("à direita, até o sino do recife") ||
+            !AnchorActivationFeedback(7, 1, 2, "Q").Contains("Pulso (Q)") ||
+            AnchorActivationFeedback(7, 2, 2, "Q") != "O vestígio respondeu. A passagem pode se abrir." ||
+            AnchorActivationFeedback(4, 1, 2, "Q") != "Um sinal respondeu. Falta mais um." ||
             Mathf.Abs(ProgressHintDelay(0) - 16f) > 0.001f || Mathf.Abs(ProgressHintDelay(1) - 11f) > 0.001f ||
             !ShouldAccumulateProgressHint(false, 0, 0, 2, 0f, 1f) ||
             ShouldAccumulateProgressHint(false, 0, 0, 2, 2f, 1f) ||
