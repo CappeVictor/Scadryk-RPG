@@ -2832,6 +2832,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ScadrykSettings.FrameRateModeLabel(ScadrykSettings.FrameRateMonitor) == "Auto FPS" &&
             ScadrykSettings.FrameRateModeLabel(ScadrykSettings.FrameRate30) == "30 FPS" &&
             ScadrykSettings.FrameRateModeLabel(ScadrykSettings.FrameRate60) == "60 FPS";
+        bool mouseOptionFocusWorks = OptionSelectionAfterClick(true, 3, 10) == 10 &&
+            OptionSelectionAfterClick(false, 3, 10) == 3;
+        if (!mouseOptionFocusWorks)
+        { SmokeFail("Um clique no menu não atualiza a seleção ativa, ou uma moldura sem clique mudou o foco"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: seleção visual do menu acompanha cliques sem mover o foco em repinturas");
         if (!frameRateModesWork)
         { SmokeFail("Os limites de FPS, a sincronização com o monitor ou a rotação das opções estão inconsistentes"); yield break; }
         Debug.Log("SCADRYK_SMOKE: 30/60 FPS usam limite fixo e Auto FPS acompanha a atualização do monitor");

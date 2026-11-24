@@ -1433,9 +1433,12 @@ public sealed partial class ScadrykGameDirector
     {
         if (optionsSelection == selection) DrawSelection(rect);
         bool clicked = GUI.Button(rect, label);
-        if (clicked) optionsSelection = selection;
+        optionsSelection = OptionSelectionAfterClick(clicked, optionsSelection, selection);
         return clicked;
     }
+
+    internal static int OptionSelectionAfterClick(bool clicked, int previousSelection, int clickedSelection) =>
+        clicked ? clickedSelection : previousSelection;
 
     private void EnsureStyles()
     {
