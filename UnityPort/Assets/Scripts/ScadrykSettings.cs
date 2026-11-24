@@ -9,6 +9,9 @@ public static class ScadrykSettings
     internal const float DefaultGamepadDeadzone = 0.19f;
     internal const float MinimumGamepadDeadzone = 0.08f;
     internal const float MaximumGamepadDeadzone = 0.4f;
+    internal const int FrameRateMonitor = 0;
+    internal const int FrameRate30 = 1;
+    internal const int FrameRate60 = 2;
     public static readonly string[] Actions = { "Atacar", "Esquivar", "Pulso", "Crescente", "Estouro", "Rompante", "Interagir", "Cima", "Baixo", "Esquerda", "Direita" };
     private static readonly KeyCode[] Defaults = { KeyCode.Space, KeyCode.LeftShift, KeyCode.Q, KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3, KeyCode.E, KeyCode.W, KeyCode.S, KeyCode.A, KeyCode.D };
     private static readonly int[] PadDefaults = { 0, 1, 2, 4, 5, 6, 3 };
@@ -28,6 +31,13 @@ public static class ScadrykSettings
     private static void SetFloatDeferred(string key, float value)
     {
         PlayerPrefs.SetFloat(key, value);
+        deferredSaveAt = DeferredSaveDeadline(deferredSavePending, Time.unscaledTime, deferredSaveAt);
+        deferredSavePending = true;
+    }
+
+    private static void SetIntDeferred(string key, int value)
+    {
+        PlayerPrefs.SetInt(key, value);
         deferredSaveAt = DeferredSaveDeadline(deferredSavePending, Time.unscaledTime, deferredSaveAt);
         deferredSavePending = true;
     }
@@ -252,6 +262,49 @@ public static class ScadrykSettings
             ApplyFullscreen(value);
         }
     }
+
+    public static int FrameRateMode
+    {
+        get => Mathf.Clamp(PlayerPrefs.GetInt("Scadryk.FrameRateMode", FrameRateMonitor), FrameRateMonitor, FrameRate60);
+        set
+        {
+            int clamped = Mathf.Clamp(value, FrameRateMonitor, FrameRate60);
+            if (FrameRateMode == clamped) return;
+            SetIntDeferred("Scadryk.FrameRateMode", clamped);
+            ApplyFrameRateMode(clamped);
+        }
+    }
+
+    internal static int FrameRateTargetForMode(int mode) => Mathf.Clamp(mode, FrameRateMonitor, FrameRate60) switch
+    {
+        FrameRate30 => 30,
+        FrameRate60 => 60,
+        _ => -1
+    };
+
+    internal static int VSyncForFrameRateMode(int mode) => Mathf.Clamp(mode, FrameRateMonitor, FrameRate60) == FrameRateMonitor ? 1 : 0;
+
+    internal static int NextFrameRateMode(int mode, int direction)
+    {
+        int normalizedDirection = direction < 0 ? -1 : 1;
+        return (Mathf.Clamp(mode, FrameRateMonitor, FrameRate60) + normalizedDirection + 3) % 3;
+    }
+
+    internal static string FrameRateModeLabel(int mode) => Mathf.Clamp(mode, FrameRateMonitor, FrameRate60) switch
+    {
+        FrameRate30 => "30 FPS",
+        FrameRate60 => "60 FPS",
+        _ => "Auto FPS"
+    };
+
+    internal static void ApplyFrameRateMode(int mode)
+    {
+        int clamped = Mathf.Clamp(mode, FrameRateMonitor, FrameRate60);
+        QualitySettings.vSyncCount = VSyncForFrameRateMode(clamped);
+        Application.targetFrameRate = FrameRateTargetForMode(clamped);
+    }
+
+    internal static void ApplyFrameRatePreference() => ApplyFrameRateMode(FrameRateMode);
 
     internal static Vector2Int WindowedResolutionForDisplay(int displayWidth, int displayHeight)
     {

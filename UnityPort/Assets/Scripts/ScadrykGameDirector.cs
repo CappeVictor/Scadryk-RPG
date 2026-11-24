@@ -185,6 +185,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 #endif
         ScadrykSettings.ClearReservedBindings();
         ScadrykSettings.ApplyFullscreenPreference();
+        ScadrykSettings.ApplyFrameRatePreference();
         sessionId = System.Guid.NewGuid().ToString("N");
         Debug.Log("SCADRYK_SESSION: " + sessionId);
         EnsureSprites();
@@ -420,12 +421,13 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 if (optionsSelection == 3) ScadrykSettings.MusicVolume += step;
                 else if (optionsSelection == 4) ScadrykSettings.EffectsVolume += step;
                 else if (optionsSelection == 5) { ScadrykSettings.TextScale += step; titleStyle = null; }
+                else if (optionsSelection == 10) ScadrykSettings.FrameRateMode = ScadrykSettings.NextFrameRateMode(ScadrykSettings.FrameRateMode, right ? 1 : -1);
             }
             else if (optionsTab == 2 && optionsSelection == 11 && (left || right))
                 ScadrykSettings.GamepadDeadzone += right ? 0.02f : -0.02f;
             if (up || down)
             {
-                int max = optionsTab == 0 ? 10 : optionsTab == 1 ? 15 : 12;
+                int max = optionsTab == 0 ? 11 : optionsTab == 1 ? 15 : 12;
                 optionsSelection = Mathf.Clamp(optionsSelection + (down ? 1 : -1), 0, max);
             }
             if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Space))
@@ -484,7 +486,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         {
             if (showOptions)
             {
-                int max = optionsTab == 0 ? 10 : optionsTab == 1 ? 15 : 12;
+                int max = optionsTab == 0 ? 11 : optionsTab == 1 ? 15 : 12;
                 optionsSelection = Mathf.Clamp(optionsSelection - (navigation.y > 0f ? 1 : -1), 0, max);
             }
             else if (!showTitle && !victory && !confirmNewJourney)
@@ -515,6 +517,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             if (optionsSelection == 3) ScadrykSettings.MusicVolume += step;
             else if (optionsSelection == 4) ScadrykSettings.EffectsVolume += step;
             else if (optionsSelection == 5) { ScadrykSettings.TextScale += step; titleStyle = null; }
+            else if (optionsTab == 0 && optionsSelection == 10)
+                ScadrykSettings.FrameRateMode = ScadrykSettings.NextFrameRateMode(ScadrykSettings.FrameRateMode, navigation.x > 0f ? 1 : -1);
             else if (optionsTab == 2 && optionsSelection == 11) ScadrykSettings.GamepadDeadzone += navigation.x > 0f ? 0.02f : -0.02f;
             nextGamepadNavigationAt = Time.unscaledTime + 0.16f;
         }
@@ -579,7 +583,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             else if (optionsSelection == 7) ScadrykSettings.ReduceShake = !ScadrykSettings.ReduceShake;
             else if (optionsSelection == 8) ScadrykSettings.HighContrastWarnings = !ScadrykSettings.HighContrastWarnings;
             else if (optionsSelection == 9) ScadrykSettings.Fullscreen = !ScadrykSettings.Fullscreen;
-            else if (optionsSelection == 10) showOptions = false;
+            else if (optionsSelection == 10) ScadrykSettings.FrameRateMode = ScadrykSettings.NextFrameRateMode(ScadrykSettings.FrameRateMode, 1);
+            else if (optionsSelection == 11) showOptions = false;
         }
         else if (optionsTab == 1)
         {
@@ -2794,24 +2799,42 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Rect lastCompactPad = CompactOptionsSelectionRect(2, 9);
         Rect compactPadDeadzone = CompactOptionsSelectionRect(2, 11);
         Rect compactFullscreen = CompactOptionsSelectionRect(0, 9);
+        Rect compactFrameRate = CompactOptionsSelectionRect(0, 10);
         float keyListScroll = ScrollOptionItemIntoView(0f, shortOptionsViewport, lastCompactKey.y, lastCompactKey.height, CompactOptionsContentHeight(1));
         float padListScroll = ScrollOptionItemIntoView(0f, shortOptionsViewport, lastCompactPad.y, lastCompactPad.height, CompactOptionsContentHeight(2));
         float padDeadzoneScroll = ScrollOptionItemIntoView(0f, shortOptionsViewport, compactPadDeadzone.y, compactPadDeadzone.height, CompactOptionsContentHeight(2));
         float fullscreenScroll = ScrollOptionItemIntoView(0f, shortOptionsViewport, compactFullscreen.y, compactFullscreen.height, CompactOptionsContentHeight(0));
+        float frameRateScroll = ScrollOptionItemIntoView(0f, shortOptionsViewport, compactFrameRate.y, compactFrameRate.height, CompactOptionsContentHeight(0));
         if (!CompactOptionsLayoutFits(400f, 360f) || keyListScroll <= 0f || padListScroll <= 0f ||
             lastCompactKey.y + lastCompactKey.height > keyListScroll + shortOptionsViewport + 0.001f ||
             lastCompactPad.y + lastCompactPad.height > padListScroll + shortOptionsViewport + 0.001f ||
             compactPadDeadzone.y + compactPadDeadzone.height > padDeadzoneScroll + shortOptionsViewport + 0.001f ||
             compactFullscreen.y + compactFullscreen.height > fullscreenScroll + shortOptionsViewport + 0.001f ||
+            compactFrameRate.y + compactFrameRate.height > frameRateScroll + shortOptionsViewport + 0.001f ||
             Mathf.Abs(compactPadDeadzone.height - 108f) > 0.001f ||
             keyListScroll > CompactOptionsContentHeight(1) - shortOptionsViewport ||
             padListScroll > CompactOptionsContentHeight(2) - shortOptionsViewport ||
             padDeadzoneScroll > CompactOptionsContentHeight(2) - shortOptionsViewport ||
-            fullscreenScroll > CompactOptionsContentHeight(0) - shortOptionsViewport)
-        { SmokeFail("As opções roláveis não mantêm as últimas ações, tela cheia ou zona morta visíveis em 400x360"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: opções roláveis preservam remapeamento, tela cheia e zona morta em 400x360");
+            fullscreenScroll > CompactOptionsContentHeight(0) - shortOptionsViewport ||
+            frameRateScroll > CompactOptionsContentHeight(0) - shortOptionsViewport)
+        { SmokeFail("As opções roláveis não mantêm as últimas ações, FPS, tela cheia ou zona morta visíveis em 400x360"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: opções roláveis preservam remapeamento, FPS, tela cheia e zona morta em 400x360");
         if (!SoundOptionsLayoutFits(600f))
         { SmokeFail("O controle de alto contraste ou as instruções de avisos saem do menu em janela baixa"); yield break; }
+        bool frameRateModesWork = ScadrykSettings.FrameRateTargetForMode(ScadrykSettings.FrameRateMonitor) == -1 &&
+            ScadrykSettings.VSyncForFrameRateMode(ScadrykSettings.FrameRateMonitor) == 1 &&
+            ScadrykSettings.FrameRateTargetForMode(ScadrykSettings.FrameRate30) == 30 &&
+            ScadrykSettings.VSyncForFrameRateMode(ScadrykSettings.FrameRate30) == 0 &&
+            ScadrykSettings.FrameRateTargetForMode(ScadrykSettings.FrameRate60) == 60 &&
+            ScadrykSettings.VSyncForFrameRateMode(ScadrykSettings.FrameRate60) == 0 &&
+            ScadrykSettings.NextFrameRateMode(ScadrykSettings.FrameRate60, 1) == ScadrykSettings.FrameRateMonitor &&
+            ScadrykSettings.NextFrameRateMode(ScadrykSettings.FrameRateMonitor, -1) == ScadrykSettings.FrameRate60 &&
+            ScadrykSettings.FrameRateModeLabel(ScadrykSettings.FrameRateMonitor) == "Auto FPS" &&
+            ScadrykSettings.FrameRateModeLabel(ScadrykSettings.FrameRate30) == "30 FPS" &&
+            ScadrykSettings.FrameRateModeLabel(ScadrykSettings.FrameRate60) == "60 FPS";
+        if (!frameRateModesWork)
+        { SmokeFail("Os limites de FPS, a sincronização com o monitor ou a rotação das opções estão inconsistentes"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: 30/60 FPS usam limite fixo e Auto FPS acompanha a atualização do monitor");
         bool oldHighContrast = ScadrykSettings.HighContrastWarnings;
         Color testWarning = new Color(0.2f, 0.4f, 0.8f, 0.6f);
         ScadrykSettings.HighContrastWarnings = false;
