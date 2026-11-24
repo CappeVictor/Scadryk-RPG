@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **Caderno persiste depois da vitória (24/11/2026, commit `ac8a79e`):** acrescentei ao smoke um ciclo que grava uma memória, apaga checkpoint/chefes/testemunhas/selos como na limpeza da campanha e exige que a entrada do Caderno permaneça. A limpeza feita por uma jornada nova continua removendo o diário em etapa separada. Unity `6000.6.9f1` compilou em batch e `Tools/build-windows.ps1` gerou build limpa para `ac8a79e9a3a2` (`2026-11-24T22:58:00Z`). Não rodei o smoke nem iniciei o jogo.
+
 - **Entradas dos desvios mais legíveis (24/11/2026, commit `aada3ee`):** aumentei os marcadores de entrada/saída de 0,72 para 0,9 unidades e a opacidade de 0,20 para 0,32; os sinais não piscam. Unity `6000.6.9f1` compilou em batch e gerou `Build/ScadrykDemo.exe` com árvore limpa (manifesto `aada3eeb833a`, `2026-11-24T22:55:00Z`). Não abri a build nem Play Mode. O contraste contextual ainda exige inspeção visual.
 
 - **Smoke da entrada de sala ampliado (24/11/2026, commit `c606f74`):** a verificação agora arma uma habilidade em buffer, mantém um cooldown ativo e aplica mira para trás antes de chamar `ResetForRoom`. Ela exige que fila e mira sejam limpas, que a recarga continue e que Nara volte voltada para o portal. Unity `6000.6.9f1` compilou em batch; `Tools/build-windows.ps1` gerou build limpa para `c606f74dff4b` (`2026-11-24T22:51:30Z`); `Tools/Validate-Resources.ps1` validou 36 referências e 51 texturas GPU-only. O smoke ainda não foi executado; nenhum jogo foi iniciado.
