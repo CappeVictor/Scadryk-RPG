@@ -1220,6 +1220,22 @@ public sealed partial class ScadrykGameDirector
         return enemyIndex % 4;
     }
 
+    internal static bool EncounterCompositionHasExpectedPacing()
+    {
+        int[][] expectedRoles = {
+            new[] { 0 }, new[] { 0, 1 }, new[] { 0 }, new int[0], new[] { 0, 1, 2 },
+            new[] { 0 }, new int[0], new[] { 1, 1, 2, 3 }, new[] { 0 }
+        };
+        for (int roomId = 0; roomId < expectedRoles.Length; roomId++)
+        {
+            int[] roles = expectedRoles[roomId];
+            if (EnemyCountForRoom(roomId) != roles.Length) return false;
+            for (int enemyIndex = 0; enemyIndex < roles.Length; enemyIndex++)
+                if (EnemyRoleForRoom(roomId, enemyIndex) != roles[enemyIndex]) return false;
+        }
+        return true;
+    }
+
     internal static bool GuardianAttackIsPreviewedBeforeBoss(int biomeIndex)
     {
         if (biomeIndex < 0 || biomeIndex >= 3) return false;

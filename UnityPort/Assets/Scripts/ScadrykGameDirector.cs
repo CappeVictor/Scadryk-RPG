@@ -2219,7 +2219,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             Mathf.Abs(clusteredFollowup - lateAttack - ScadrykEnemyHealth.OpeningAttackSpacing) > 0.001f)
         { SmokeFail("O escalonador não separou inimigos que voltaram a coincidir após o primeiro ciclo"); yield break; }
         Debug.Log("SCADRYK_SMOKE: primeiros avisos e ataques repetidos mantêm intervalo entre inimigos");
-        if (EnemyCountForRoom(0) != 1 || EnemyRoleForRoom(0, 0) != 0 ||
+        if (!EncounterCompositionHasExpectedPacing() ||
+            EnemyCountForRoom(0) != 1 || EnemyRoleForRoom(0, 0) != 0 ||
             EnemyCountForRoom(1) != 2 || EnemyRoleForRoom(1, 0) != 0 || EnemyRoleForRoom(1, 1) != 1 ||
             EnemyCountForRoom(4) != 3 ||
             EnemyRoleForRoom(4, 0) != 0 || EnemyRoleForRoom(4, 1) != 1 || EnemyRoleForRoom(4, 2) != 2 ||
