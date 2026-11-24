@@ -2785,6 +2785,15 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         RefreshThreatCaptionContent(threatCaptionContent, ref cachedThreatCaptionLabel, "Arauto fase 3 — onda de vazio", 0.89f);
         bool unchangedCaptionReusesText = object.ReferenceEquals(firstThreatCaptionText, threatCaptionContent.text);
         RefreshThreatCaptionContent(threatCaptionContent, ref cachedThreatCaptionLabel, "Bosque — Eco avanço de raízes", 0.21f);
+        int cachedCooldownTenths = int.MinValue;
+        string cachedCooldownLabel = null;
+        string firstCooldownLabel = HudCooldownLabel(0.81f, ref cachedCooldownTenths, ref cachedCooldownLabel);
+        string unchangedCooldownLabel = HudCooldownLabel(0.84f, ref cachedCooldownTenths, ref cachedCooldownLabel);
+        bool unchangedCooldownReusesText = object.ReferenceEquals(firstCooldownLabel, unchangedCooldownLabel);
+        string nextCooldownLabel = HudCooldownLabel(0.69f, ref cachedCooldownTenths, ref cachedCooldownLabel);
+        bool changedCooldownRefreshesText = nextCooldownLabel == "0.7s" && !object.ReferenceEquals(firstCooldownLabel, nextCooldownLabel);
+        string readyCooldownLabel = HudCooldownLabel(0.02f, ref cachedCooldownTenths, ref cachedCooldownLabel);
+        string nearReadyCooldownLabel = HudCooldownLabel(0.04f, ref cachedCooldownTenths, ref cachedCooldownLabel);
         string singleExposureCaption = ExposureCaption(1);
         string groupExposureCaption = ExposureCaption(3);
         if (HudHealthLabel(68.2f, 100f) != "VIDA 69/100" ||
@@ -2797,6 +2806,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             AbilityHudLabel(1, "E", "4.2s") != "E  Estouro · expõe  ·  4.2s" ||
             AbilityHudLabel(2, "R", "pronto") != "R  Rompante · afasta  ·  pronto" ||
             !string.IsNullOrEmpty(AbilityHudLabel(3, "X", "pronto")) ||
+            !unchangedCooldownReusesText || !changedCooldownRefreshesText || readyCooldownLabel != "pronto" || nearReadyCooldownLabel != "0.0s" ||
             !HudPanelFits(compactHud, 400f, 360f) || MiniMapPanelFits(compactMap, compactHud, 400f, 360f) ||
             !HudPanelFits(narrowHud, 700f, 600f) || !MiniMapPanelFits(narrowMap, narrowHud, 700f, 600f) ||
             wideThreatCaption.yMin < 72f || wideThreatCaption.Overlaps(HudPanelRect(1920f, 1080f, 1f)) ||
@@ -2819,7 +2829,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             wrappedStatus.height <= shortStatus.height || wrappedStatus.xMin < 0f || wrappedStatus.xMax > 400f ||
             wrappedStatus.yMin < 0f || wrappedStatus.yMax > 360f)
         { SmokeFail("HUD, minimapa ou aviso de status sai da tela numa janela compacta com texto ampliado"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: HUD, legenda do impacto e funções táticas cabem em 400x360 com texto ampliado");
+        Debug.Log("SCADRYK_SMOKE: cache de recargas, HUD, legenda do impacto e funções táticas cabem em 400x360 com texto ampliado");
         if (!OptionsLayoutFits(600f) || !OptionsResetRowFits(400f))
         { SmokeFail("O menu de opções corta as teclas remapeáveis ou os controles de retorno a 600px de altura"); yield break; }
         Debug.Log("SCADRYK_SMOKE: menu de opções e restauração de comandos cabem em janela compacta");

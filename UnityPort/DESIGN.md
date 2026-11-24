@@ -173,6 +173,8 @@ Na primeira sala da jornada, o Caçador aguarda 2,6 s antes de iniciar seu prime
 
 **Cache de textos do HUD (24/11/2026):** cabeçalhos, vida, recargas, poderes e objetivo reutilizam `GUIContent`; os textos só são reconstruídos quando os dados visíveis mudam. A compilação batch passou, mas a redução de alocações e CPU não foi medida com o Profiler.
 
+O smoke do HUD também confere o arredondamento dos rótulos de recarga e que o texto é reutilizado sem mudança de décimo. A compilação passou; o smoke ainda não foi executado.
+
 **Fundos das salas de aproximação (23/11/2026):** cada bioma agora tem uma arte própria também na primeira sala: Vau das Lanternas no bosque alagado, Planícies do Vento de Vidro na bacia de sal e Calçada da Maré Baixa na costa. Os caminhos laterais mantêm o corredor central livre para combate e travessia; colisões continuam definidas pela geometria do mapa, não pela textura. Unity importa as três imagens sem cópia legível pela CPU. Falta inspecionar as composições na build e avaliar contraste em jogo.
 
 **Limite de FPS configurável (24/11/2026):** em Tela e som, Auto FPS sincroniza com o monitor; os modos 30 e 60 FPS desativam VSync e aplicam o limite fixo para reduzir trabalho desnecessário em telas rápidas ou priorizar economia. A mudança é imediata e fica salva com gravação agrupada. Smoke adicionado para alvos, alternância e navegação compacta; compilação Unity batch passou. Não foi iniciada a build porque Code Integrity ainda bloqueia o pós-processador Unity, e a sensação, tearing, consumo e estabilidade em taxas diferentes seguem sem medição real.

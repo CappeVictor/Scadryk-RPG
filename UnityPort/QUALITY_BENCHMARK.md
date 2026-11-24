@@ -26,6 +26,6 @@ Este documento compara princípios observáveis sem copiar conteúdo. Uma build 
 
 **Atualização de legibilidade regional (23/11/2026):** investidas comuns agora têm identidade e consequência próprias por bioma; Nara também recebe tintas temporárias distintas para enraizamento, crosta de sal e empurrão. No impacto, a faixa para na primeira cobertura sólida, coerente com o aviso e a regra de dano. Compilação batch e build Windows passaram; smoke e revisão visual/auditiva continuam pendentes.
 
-**Otimização do HUD (24/11/2026):** fase, sala, vida, estado dos poderes, recargas e objetivo usam conteúdo de texto em cache e só são atualizados quando seus valores visíveis mudam. Importação/compilação Unity batch passou; ainda não houve medição com Profiler nem avaliação visual no jogo. Isso é uma redução planejada de trabalho por quadro, não uma alegação de FPS ou RAM comprovada.
+**Otimização do HUD (24/11/2026):** fase, sala, vida, estado dos poderes, recargas e objetivo usam conteúdo de texto em cache e só são atualizados quando seus valores visíveis mudam. Smoke preparado cobre o arredondamento e a identidade do texto de recarga; Unity batch compilou. Ainda não houve execução do smoke, medição com Profiler nem avaliação visual no jogo. Isso é uma redução planejada de trabalho por quadro, não uma alegação de FPS ou RAM comprovada.
 
 **Regra:** registrar evidências na [QA.md](QA.md), atualizar esta tabela após cada etapa e não declarar paridade sem sessões externas comparáveis.
