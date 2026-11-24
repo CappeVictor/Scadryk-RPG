@@ -503,7 +503,7 @@ public sealed partial class ScadrykGameDirector
             bool showNimaPortrait = nimaMemoryPortraitSprite != null && MemoryHasNimaPortrait(entries[i]);
             if (showNimaPortrait)
             {
-                GUI.color = new Color(0.42f, 0.82f, 0.88f, 0.84f);
+                GUI.color = new Color(1f, 1f, 1f, 0.96f);
                 GUI.DrawTexture(MemoryJournalPortraitRect(card), nimaMemoryPortraitSprite.texture, ScaleMode.ScaleToFit, true);
                 GUI.color = Color.white;
             }
@@ -628,7 +628,7 @@ public sealed partial class ScadrykGameDirector
         if (showNimaPortrait)
         {
             Rect portraitRect = MemoryPortraitRect(panel);
-            GUI.color = new Color(0.42f, 0.82f, 0.88f, 0.88f);
+            GUI.color = new Color(1f, 1f, 1f, 0.96f);
             GUI.DrawTexture(portraitRect, nimaMemoryPortraitSprite.texture, ScaleMode.ScaleToFit, true);
             GUI.color = Color.white;
         }
