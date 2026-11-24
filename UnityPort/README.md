@@ -10,7 +10,7 @@ Registro de builds, teste de progressão e roteiro de avaliação com jogadores:
 
 **Visão geral:** aventura top-down original com três biomas, nove salas conectadas, guardiões, três poderes de combate e exploração, o superchefe Arauto do Vazio e uma história sobre Nara e os Ecos. Consulte [Progressão e mapa](#progressão-e-mapa) para entender a campanha e [Menu, opções e áudio](#menu-opções-e-áudio) para os recursos do jogo.
 
-**Estado desta revisão:** os scripts foram importados e compilados em batch com Unity `6000.6.9f1` em 24/11/2026, sem abrir Play Mode. A build Windows ainda não inclui as alterações mais recentes: a tentativa local foi bloqueada pela política Windows Code Integrity ao carregar `Bee.Stevedore.Program.dll`. No commit `a6b2df4`, o GitHub passou a validação independente de recursos, mas não executou build/smoke porque faltam os secrets de licença Unity; o workflow C# da raiz passou somente no protótipo legado. O smoke da campanha e a avaliação visual, sonora e de gameplay continuam pendentes. Resultados e limitações estão em [QA.md](QA.md).
+**Estado desta revisão:** os scripts foram importados e compilados em batch com Unity `6000.6.9f1` em 24/11/2026, sem abrir Play Mode. A build Windows ainda não inclui as alterações mais recentes: a tentativa local foi bloqueada pela política Windows Code Integrity ao carregar `Bee.Stevedore.Program.dll`. No commit `c3cf9e0`, o GitHub passou a validação independente de recursos, mas não executou build/smoke porque os secrets `UNITY_LICENSE`, `UNITY_EMAIL` e `UNITY_PASSWORD` estão vazios. O workflow C# da raiz valida somente o protótipo legado. O smoke da campanha e a avaliação visual, sonora e de gameplay continuam pendentes. Resultados e limitações estão em [QA.md](QA.md).
 
 ## Comece aqui
 
