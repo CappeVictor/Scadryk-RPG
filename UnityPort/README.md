@@ -2,7 +2,7 @@
 
 > Direção criativa, diagnóstico e etapas de desenvolvimento: [DESIGN.md](DESIGN.md). A etapa de fundação está em andamento; esta versão ainda não atende a todos os critérios de produto completo.
 
-Critérios de comparação com jogos de referência e lacunas verificáveis: [QUALITY_BENCHMARK.md](QUALITY_BENCHMARK.md).
+Critérios de comparação com jogos de referência e lacunas verificáveis: [QUALITY_BENCHMARK.md](QUALITY_BENCHMARK.md). A tabela parte do snapshot de 23/11; o documento abre com o estado mais recente da build, validação e itens pendentes.
 
 Registro de builds, teste de progressão e roteiro de avaliação com jogadores: [QA.md](QA.md).
 
