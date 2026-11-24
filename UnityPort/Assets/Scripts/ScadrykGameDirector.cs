@@ -3344,11 +3344,17 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             { SmokeFail("A geometria sólida ativa bloqueou a rota caminhável da sala " + (room + 1)); yield break; }
             if (roomIndex == 1 && TryGetSideRoute(phaseIndex, roomIndex, out int routeSide, out float routeEntry, out float routeExit))
             {
-                Vector2 routeStart = roomCenter + new Vector2(routeEntry, routeSide * 5.4f);
-                Vector2 routeTarget = roomCenter + new Vector2(routeExit, routeSide * 5.4f);
-                if (!ActiveRoomHasWalkableRoute(roomCenter, routeStart, routeTarget))
-                { SmokeFail("O desvio alternativo não conecta as duas aberturas na sala " + (room + 1)); yield break; }
-                Debug.Log("SCADRYK_SMOKE: rota principal e desvio alternativo abertos na sala " + (room + 1));
+                const float routeDepth = 5.4f;
+                float routeLaneY = routeSide * (RoomHalfHeight + routeDepth * 0.5f);
+                Vector2 entryInside = roomCenter + new Vector2(routeEntry, routeSide * (RoomHalfHeight - 1f));
+                Vector2 entryOutside = roomCenter + new Vector2(routeEntry, routeLaneY);
+                Vector2 exitOutside = roomCenter + new Vector2(routeExit, routeLaneY);
+                Vector2 exitInside = roomCenter + new Vector2(routeExit, routeSide * (RoomHalfHeight - 1f));
+                if (!ActiveRoomHasWalkableRoute(roomCenter, entryInside, entryOutside) ||
+                    !ActiveRoomHasWalkableRoute(roomCenter, entryOutside, exitOutside) ||
+                    !ActiveRoomHasWalkableRoute(roomCenter, exitOutside, exitInside))
+                { SmokeFail("O desvio alternativo não conecta a sala, o corredor externo e o retorno na sala " + (room + 1)); yield break; }
+                Debug.Log("SCADRYK_SMOKE: entrada, corredor lateral e retorno navegáveis na sala " + (room + 1));
             }
             Debug.Log("SCADRYK_SMOKE: sala " + (room + 1) + "/9 isolada e rota ao portal livre dos colisores sólidos do bioma");
             for (int anchorIndex = 0; anchorIndex < roomAnchors.Length; anchorIndex++)
