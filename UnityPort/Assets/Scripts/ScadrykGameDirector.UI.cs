@@ -198,12 +198,15 @@ public sealed partial class ScadrykGameDirector
 
         float rowHeight = (panel.height - 6f) / captionCount;
         int oldSize = centeredBodyStyle.fontSize;
-        centeredBodyStyle.fontSize = ThreatCaptionFontSize(ScadrykSettings.TextScale, rowHeight);
         GUIContent firstContent = first == null ? exposureCaptionContent : threatCaptionFirstContent;
+        GUIContent secondContent = second == null ? exposureCaptionContent : threatCaptionSecondContent;
+        int longestCaption = Mathf.Max(firstContent.text != null ? firstContent.text.Length : 0,
+            captionCount == 2 && secondContent.text != null ? secondContent.text.Length : 0);
+        centeredBodyStyle.fontSize = ThreatCaptionFontSizeToFit(ScadrykSettings.TextScale, rowHeight,
+            panel.width - 16f, longestCaption);
         GUI.Label(new Rect(panel.x + 8f, panel.y + 3f, panel.width - 16f, rowHeight), firstContent, centeredBodyStyle);
         if (captionCount == 2)
         {
-            GUIContent secondContent = second == null ? exposureCaptionContent : threatCaptionSecondContent;
             GUI.Label(new Rect(panel.x + 8f, panel.y + 3f + rowHeight, panel.width - 16f, rowHeight), secondContent, centeredBodyStyle);
         }
         centeredBodyStyle.fontSize = oldSize;
@@ -248,6 +251,14 @@ public sealed partial class ScadrykGameDirector
     private static int ThreatCaptionFontSize(float textScale, float rowHeight) =>
         Mathf.Max(9, Mathf.Min(Mathf.Max(10, Mathf.RoundToInt(13f * Mathf.Clamp(textScale, 1f, 1.5f))),
             Mathf.FloorToInt(Mathf.Max(0f, rowHeight) * 0.75f)));
+
+    internal static int ThreatCaptionFontSizeToFit(float textScale, float rowHeight, float availableWidth, int textLength)
+    {
+        int preferred = ThreatCaptionFontSize(textScale, rowHeight);
+        float estimatedCharacterWidth = Mathf.Max(1, textLength) * 0.52f;
+        int widthLimited = Mathf.FloorToInt(Mathf.Max(0f, availableWidth) / estimatedCharacterWidth);
+        return Mathf.Max(9, Mathf.Min(preferred, widthLimited));
+    }
 
     private static Rect ThreatCaptionPanelRect(float screenWidth, float screenHeight, float textScale, int captionCount)
     {

@@ -2776,6 +2776,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Rect shortStatus = StatusLabelRect(400f, 360f, 24f);
         Rect wrappedStatus = StatusLabelRect(400f, 360f, 72f);
         var threatCaptionContent = new GUIContent();
+        string longestCompactThreatText = ThreatCaptionText("Arauto fase 3 — queda de memória · saia da marca", 14);
+        int compactThreatFontSize = ThreatCaptionFontSizeToFit(1.5f,
+            (compactThreatCaption.height - 6f) * 0.5f, compactThreatCaption.width - 16f, longestCompactThreatText.Length);
         string cachedThreatCaptionLabel = null;
         RefreshThreatCaptionContent(threatCaptionContent, ref cachedThreatCaptionLabel, "Arauto fase 3 — onda de vazio", 0.81f);
         string firstThreatCaptionText = threatCaptionContent.text;
@@ -2804,6 +2807,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             compactThreatCaption.xMin < 28f || compactThreatCaption.yMin < 196f ||
             compactThreatCaption.yMax > compactHud.yMax - 10f || compactThreatCaption.xMax > compactHud.xMax - 8f ||
             ThreatCaptionFontSize(1.5f, (compactThreatCaption.height - 6f) * 0.5f) > 14 ||
+            compactThreatFontSize < 9 || compactThreatFontSize > 14 ||
+            compactThreatFontSize * longestCompactThreatText.Length * 0.52f > compactThreatCaption.width - 16f + 0.001f ||
             !unchangedCaptionReusesText || ThreatCaptionTenthsUntilImpact(0.71f) != 8 ||
             ThreatCaptionTenthsUntilImpact(-0.1f) != 0 ||
             ThreatCaptionText("Bosque — Eco avanço de raízes", 3) != "0,3 s · Bosque — Eco avanço de raízes" ||
@@ -2814,7 +2819,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             wrappedStatus.height <= shortStatus.height || wrappedStatus.xMin < 0f || wrappedStatus.xMax > 400f ||
             wrappedStatus.yMin < 0f || wrappedStatus.yMax > 360f)
         { SmokeFail("HUD, minimapa ou aviso de status sai da tela numa janela compacta com texto ampliado"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: HUD mostra a função tática dos três poderes e cabe em 400x360 com texto ampliado");
+        Debug.Log("SCADRYK_SMOKE: HUD, legenda do impacto e funções táticas cabem em 400x360 com texto ampliado");
         if (!OptionsLayoutFits(600f) || !OptionsResetRowFits(400f))
         { SmokeFail("O menu de opções corta as teclas remapeáveis ou os controles de retorno a 600px de altura"); yield break; }
         Debug.Log("SCADRYK_SMOKE: menu de opções e restauração de comandos cabem em janela compacta");
