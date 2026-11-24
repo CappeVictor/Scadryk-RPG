@@ -760,7 +760,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         return "Pista: siga o objetivo marcado nesta sala e aproxime-se do sinal indicado.";
     }
 
-    internal static float ProgressHintDelay(int stage) => stage <= 0 ? 24f : 18f;
+    internal static float ProgressHintDelay(int stage) => stage <= 0 ? 16f : 11f;
 
     internal static bool OpeningStoryCoversRoomStatus(bool openingStoryVisible, int phase, int room) =>
         openingStoryVisible && phase == 0 && room == 0;
@@ -2733,7 +2733,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             !PulseAnchorPromptText(7, 0, 0, "Q").Contains("Farol") ||
             !PulseAnchorPromptText(7, 1, 0, "Q").Contains("primeiro acione o farol") ||
             !PulseAnchorPromptText(7, 1, 1, "Q").Contains("use Pulso (Q) agora") ||
-            Mathf.Abs(ProgressHintDelay(0) - 24f) > 0.001f || Mathf.Abs(ProgressHintDelay(1) - 18f) > 0.001f ||
+            Mathf.Abs(ProgressHintDelay(0) - 16f) > 0.001f || Mathf.Abs(ProgressHintDelay(1) - 11f) > 0.001f ||
             !ShouldAccumulateProgressHint(false, 0, 0, 2, 0f, 1f) ||
             ShouldAccumulateProgressHint(false, 0, 0, 2, 2f, 1f) ||
             ShouldAccumulateProgressHint(false, 1, 0, 2, 0f, 1f) ||
