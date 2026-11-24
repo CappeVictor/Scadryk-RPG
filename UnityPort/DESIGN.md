@@ -2,6 +2,8 @@
 
 ## Revisão de estado (24/11/2026; branch `codex/unity-playable-phase-maps`)
 
+**Orientação durante o combate:** a legenda de perigo já anunciava nome e tempo restante, mas não localizava o inimigo que preparava o golpe. Agora mostra uma seta relativa em oito direções (ou um ponto quando coincide com Nara). O smoke cobre os setores; visualização em várias resoluções e utilidade em combate continuam pendentes de avaliação.
+
 **Navegação dos desvios:** a cobertura de smoke antes verificava apenas o espaço interior entre as duas entradas. Agora testa separadamente a travessia da sala até o corredor, o próprio corredor externo e a reentrada do outro lado, usando a geometria sólida instanciada. A compilação batch passou, mas a rotina de smoke ainda não foi executada.
 
 **Orientação de exploração:** a entrada de cada desvio central agora explica a direção norte/sul quando Nara se aproxima, uma vez por sala, depois das mensagens iniciais e quando não há inimigos ativos. A checagem estática/smoke cobre as condições; ainda falta avaliar a posição e a clareza em execução.
