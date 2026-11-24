@@ -3134,7 +3134,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             MoveVictoryMenuSelection(1, -1) == 0 && MoveVictoryMenuSelection(0, -1) == 0 && MoveVictoryMenuSelection(1, 0) == 1;
         if (!victoryMenuNavigationWorks) { SmokeFail("A seleção linear do menu de vitória pula opções ou sai dos limites"); yield break; }
         Debug.Log("SCADRYK_SMOKE: menu final percorre nova jornada, caderno e título em ordem e respeita as bordas");
-        if (!StoryJournalLayoutFits(400f, 360f) || !StoryJournalLayoutFits(700f, 600f))
+        if (!StoryJournalLayoutFits(400f, 360f) || !StoryJournalLayoutFits(700f, 600f) ||
+            !MemoryJournalPortraitLayoutFits(314f, 64f) || !MemoryJournalPortraitLayoutFits(614f, 64f) ||
+            MemoryJournalCardTextWidth(290f, true) != 230f || MemoryJournalCardTextWidth(290f, false) != 290f)
         { SmokeFail("O caderno de memórias não cabe em janela compacta"); yield break; }
         Debug.Log("SCADRYK_SMOKE: caderno de memórias cabe em janela compacta e padrão");
         GameObject warningProbe = new GameObject("QA enemy attack warning");

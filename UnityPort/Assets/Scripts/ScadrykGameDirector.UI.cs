@@ -487,7 +487,7 @@ public sealed partial class ScadrykGameDirector
             GUI.Label(viewport, "As lembranças surgirão aqui quando Nara encontrar os Ecos.", memoryStyle);
             memoryStyle.alignment = oldAlignment;
         }
-        float textWidth = Mathf.Max(40f, viewport.width - 30f);
+        float textWidth = Mathf.Max(40f, viewport.width - 46f);
         float contentHeight = EnsureMemoryJournalCardLayout(entries, textWidth, viewport.height);
         Rect content = new Rect(0f, 0f, viewport.width - 18f, contentHeight);
         memoryJournalScroll = GUI.BeginScrollView(viewport, memoryJournalScroll, content);
@@ -500,7 +500,14 @@ public sealed partial class ScadrykGameDirector
             GUI.color = new Color(0.74f, 0.63f, 0.34f, 0.72f);
             GUI.DrawTexture(new Rect(card.x, card.y, 2f, card.height), Texture2D.whiteTexture);
             GUI.color = Color.white;
-            GUI.Label(new Rect(card.x + 12f, card.y + 8f, card.width - 24f, card.height - 16f), memoryJournalCardContents[i], memoryStyle);
+            bool showNimaPortrait = nimaMemoryPortraitSprite != null && MemoryHasNimaPortrait(entries[i]);
+            if (showNimaPortrait)
+            {
+                GUI.color = new Color(0.42f, 0.82f, 0.88f, 0.84f);
+                GUI.DrawTexture(MemoryJournalPortraitRect(card), nimaMemoryPortraitSprite.texture, ScaleMode.ScaleToFit, true);
+                GUI.color = Color.white;
+            }
+            GUI.Label(MemoryJournalCardTextRect(card, showNimaPortrait), memoryJournalCardContents[i], memoryStyle);
             y += card.height + 10f;
         }
         GUI.EndScrollView();
@@ -543,7 +550,10 @@ public sealed partial class ScadrykGameDirector
             float contentHeight = 8f;
             for (int i = 0; i < entries.Length; i++)
             {
-                memoryJournalCardHeights[i] = Mathf.Max(52f, memoryStyle.CalcHeight(memoryJournalCardContents[i], textWidth) + 22f);
+                bool withPortrait = nimaMemoryPortraitSprite != null && MemoryHasNimaPortrait(entries[i]);
+                float cardTextWidth = MemoryJournalCardTextWidth(textWidth, withPortrait);
+                memoryJournalCardHeights[i] = Mathf.Max(withPortrait ? 64f : 52f,
+                    memoryStyle.CalcHeight(memoryJournalCardContents[i], cardTextWidth) + 22f);
                 contentHeight += memoryJournalCardHeights[i] + 10f;
             }
 
@@ -573,6 +583,29 @@ public sealed partial class ScadrykGameDirector
         Rect viewport = StoryJournalViewportRect(panel);
         return screenWidth >= 220f && screenHeight >= 160f && panel.width >= 188f && panel.height >= 128f &&
             viewport.width >= 156f && viewport.height >= 45f && panel.y >= 0f && panel.yMax <= screenHeight;
+    }
+
+    internal static float MemoryJournalCardTextWidth(float availableWidth, bool withPortrait) =>
+        Mathf.Max(40f, availableWidth - (withPortrait ? 60f : 0f));
+
+    internal static Rect MemoryJournalPortraitRect(Rect card) =>
+        new Rect(card.x + 8f, card.y + (card.height - 48f) * 0.5f, 48f, 48f);
+
+    internal static Rect MemoryJournalCardTextRect(Rect card, bool withPortrait)
+    {
+        float portraitSpace = withPortrait ? 60f : 0f;
+        return new Rect(card.x + 12f + portraitSpace, card.y + 8f,
+            Mathf.Max(40f, card.width - 24f - portraitSpace), card.height - 16f);
+    }
+
+    internal static bool MemoryJournalPortraitLayoutFits(float cardWidth, float cardHeight)
+    {
+        Rect card = new Rect(0f, 0f, cardWidth, cardHeight);
+        Rect portrait = MemoryJournalPortraitRect(card);
+        Rect text = MemoryJournalCardTextRect(card, true);
+        return cardWidth >= 132f && cardHeight >= 64f && portrait.xMax <= text.xMin &&
+            portrait.xMin >= card.xMin && portrait.yMin >= card.yMin && portrait.yMax <= card.yMax &&
+            text.xMax <= card.xMax && text.height >= 48f;
     }
 
     private void DrawMemoryModal()
