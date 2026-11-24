@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **Arco de Nara, Nima e os guardiões (24/11/2026):** reescrevi a abertura, as nove apresentações de sala, falas e memórias dos três guardiões, as conversas de Nima e o encerramento para formar uma linha causal: Nima tocou para avisar da onda; cada guardião tentou proteger alguém do luto; o Arauto prolongou o silêncio; Nara escolhe lembrar sem aprisionar. Unity `6000.6.9f1` importou e compilou o projeto em batch. Asserções smoke existentes para nomes, falas, poderes e resolução foram preservadas; smoke e leitura narrativa no jogo não foram executados.
+
 - **Revalidação do checkout `09a8975` (24/11/2026):** `Tools/Validate-Resources.ps1` confirmou 35 referências de recursos e as 50 texturas de arte configuradas para GPU-only. `Tools/compile-unity.ps1` importou e compilou os scripts com Unity `6000.6.9f1`, encerrando com sucesso sem abrir a cena em Play Mode. Não executei smoke, build Windows, jogo ou Profiler; a avaliação da campanha segue pendente.
 
 - **CI do código `ed22ab7` (24/11/2026):** Unity run #311 (`45493358208`) passou a validação de recursos, mas o job hospedado de build/smoke falhou no gate `Require Unity Personal license secrets`; importação Unity, build, smoke e upload foram ignorados. O workflow C# run #1169 (`45493357974`) passou, mas valida somente o protótipo legado da raiz.
