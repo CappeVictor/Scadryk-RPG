@@ -9,6 +9,15 @@ public sealed partial class ScadrykGameDirector
     private float nextMemoryJournalNavigationAt;
     private string[] memoryJournalEntries;
     private bool memoryJournalLoaded;
+    private GUIContent[] memoryJournalCardContents = System.Array.Empty<GUIContent>();
+    private float[] memoryJournalCardHeights = System.Array.Empty<float>();
+    private readonly GUIContent memoryJournalCountContent = new GUIContent();
+    private int cachedMemoryJournalCount = -1;
+    private string[] cachedMemoryJournalLayoutEntries;
+    private float cachedMemoryJournalTextWidth = -1f;
+    private float cachedMemoryJournalViewportHeight = -1f;
+    private int cachedMemoryJournalFontSize = -1;
+    private float cachedMemoryJournalContentHeight;
     private readonly GUIContent statusMeasureContent = new GUIContent();
     private string cachedStatusMeasureText;
     private readonly GUIContent memoryMeasureContent = new GUIContent();
@@ -50,6 +59,7 @@ public sealed partial class ScadrykGameDirector
     {
         memoryJournalEntries = ReadStoryJournal("Scadryk.");
         memoryJournalLoaded = true;
+        cachedMemoryJournalLayoutEntries = null;
         memoryJournalScroll = Vector2.zero;
         showMemoryJournal = true;
     }
@@ -244,8 +254,12 @@ public sealed partial class ScadrykGameDirector
         if (!memoryJournalLoaded) OpenMemoryJournal();
         string[] entries = memoryJournalEntries ?? System.Array.Empty<string>();
         GUI.Label(new Rect(panel.x + 18f, panel.y + 10f, panel.width - 36f, 30f), "CADERNO DE MEMÓRIAS", titleStyle);
-        GUI.Label(new Rect(panel.x + 18f, panel.y + 39f, panel.width - 36f, 22f),
-            entries.Length + (entries.Length == 1 ? " lembrança recuperada" : " lembranças recuperadas"), smallStyle);
+        if (cachedMemoryJournalCount != entries.Length)
+        {
+            cachedMemoryJournalCount = entries.Length;
+            memoryJournalCountContent.text = entries.Length + (entries.Length == 1 ? " lembrança recuperada" : " lembranças recuperadas");
+        }
+        GUI.Label(new Rect(panel.x + 18f, panel.y + 39f, panel.width - 36f, 22f), memoryJournalCountContent, smallStyle);
 
         Rect viewport = StoryJournalViewportRect(panel);
         if (entries.Length == 0)
@@ -256,26 +270,19 @@ public sealed partial class ScadrykGameDirector
             memoryStyle.alignment = oldAlignment;
         }
         float textWidth = Mathf.Max(40f, viewport.width - 30f);
-        float contentHeight = 8f;
-        float[] cardHeights = new float[entries.Length];
-        for (int i = 0; i < entries.Length; i++)
-        {
-            cardHeights[i] = Mathf.Max(52f, memoryStyle.CalcHeight(new GUIContent(entries[i]), textWidth) + 22f);
-            contentHeight += cardHeights[i] + 10f;
-        }
-        contentHeight = Mathf.Max(contentHeight, viewport.height);
+        float contentHeight = EnsureMemoryJournalCardLayout(entries, textWidth, viewport.height);
         Rect content = new Rect(0f, 0f, viewport.width - 18f, contentHeight);
         memoryJournalScroll = GUI.BeginScrollView(viewport, memoryJournalScroll, content);
         float y = 8f;
         for (int i = 0; i < entries.Length; i++)
         {
-            Rect card = new Rect(2f, y, content.width - 4f, cardHeights[i]);
+            Rect card = new Rect(2f, y, content.width - 4f, memoryJournalCardHeights[i]);
             GUI.color = new Color(0.055f, 0.08f, 0.085f, 0.96f);
             GUI.DrawTexture(card, Texture2D.whiteTexture);
             GUI.color = new Color(0.74f, 0.63f, 0.34f, 0.72f);
             GUI.DrawTexture(new Rect(card.x, card.y, 2f, card.height), Texture2D.whiteTexture);
             GUI.color = Color.white;
-            GUI.Label(new Rect(card.x + 12f, card.y + 8f, card.width - 24f, card.height - 16f), entries[i], memoryStyle);
+            GUI.Label(new Rect(card.x + 12f, card.y + 8f, card.width - 24f, card.height - 16f), memoryJournalCardContents[i], memoryStyle);
             y += card.height + 10f;
         }
         GUI.EndScrollView();
@@ -283,6 +290,53 @@ public sealed partial class ScadrykGameDirector
         GUI.Label(new Rect(panel.x + 14f, panel.yMax - 31f, panel.width - 28f, 22f),
             "Esc / Start / B voltar · setas, analógico ou roda para ler", smallStyle);
         smallStyle.alignment = TextAnchor.MiddleLeft;
+    }
+
+    private float EnsureMemoryJournalCardLayout(string[] entries, float textWidth, float viewportHeight)
+    {
+        bool recalculate = !System.Object.ReferenceEquals(cachedMemoryJournalLayoutEntries, entries) ||
+            !Mathf.Approximately(cachedMemoryJournalTextWidth, textWidth) ||
+            !Mathf.Approximately(cachedMemoryJournalViewportHeight, viewportHeight) ||
+            cachedMemoryJournalFontSize != memoryStyle.fontSize;
+
+        if (memoryJournalCardContents.Length != entries.Length)
+        {
+            memoryJournalCardContents = new GUIContent[entries.Length];
+            memoryJournalCardHeights = new float[entries.Length];
+            recalculate = true;
+        }
+
+        for (int i = 0; i < entries.Length; i++)
+        {
+            if (memoryJournalCardContents[i] == null)
+            {
+                memoryJournalCardContents[i] = new GUIContent(entries[i]);
+                recalculate = true;
+            }
+            else if (memoryJournalCardContents[i].text != entries[i])
+            {
+                memoryJournalCardContents[i].text = entries[i];
+                recalculate = true;
+            }
+        }
+
+        if (recalculate)
+        {
+            float contentHeight = 8f;
+            for (int i = 0; i < entries.Length; i++)
+            {
+                memoryJournalCardHeights[i] = Mathf.Max(52f, memoryStyle.CalcHeight(memoryJournalCardContents[i], textWidth) + 22f);
+                contentHeight += memoryJournalCardHeights[i] + 10f;
+            }
+
+            cachedMemoryJournalContentHeight = Mathf.Max(contentHeight, viewportHeight);
+            cachedMemoryJournalLayoutEntries = entries;
+            cachedMemoryJournalTextWidth = textWidth;
+            cachedMemoryJournalViewportHeight = viewportHeight;
+            cachedMemoryJournalFontSize = memoryStyle.fontSize;
+        }
+
+        return cachedMemoryJournalContentHeight;
     }
 
     internal static Rect StoryJournalPanelRect(float screenWidth, float screenHeight)
