@@ -1995,6 +1995,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         bool checkpointRoundTrip = false, witnessProgressRoundTrip = false, worldSecretProgressRoundTrip = false;
         bool storyJournalRoundTrip = false, storyJournalMigrationRoundTrip = false;
         bool quitCheckpointStateIsValid = false, campaignProgressCleanupRoundTrip = false;
+        bool storyJournalSurvivesCampaignCleanup = false;
         bool bossProgressRoundTrip = false, powerRestoreRoundTrip = false, powerEchoProgressRoundTrip = false;
         try
         {
@@ -2015,6 +2016,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 !ShouldSaveCheckpointOnApplicationPause(false, true, false, false, false, false) &&
                 !ShouldSaveCheckpointOnApplicationPause(true, false, false, false, false, false) &&
                 !ShouldSaveCheckpointOnApplicationPause(true, true, true, false, false, false);
+            RecordStoryJournalEntry(checkpointTestPrefix, "Memórias permanecem no Caderno após a vitória.");
             WriteGuardianDefeatProgress(checkpointTestPrefix, 0);
             WriteFinalBossDefeatProgress(checkpointTestPrefix);
             WriteWitnessProgress(checkpointTestPrefix, 1, 2);
@@ -2023,6 +2025,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             campaignProgressCleanupRoundTrip = !HasGuardianDefeatProgress(checkpointTestPrefix, 0) &&
                 !HasFinalBossDefeatProgress(checkpointTestPrefix) && ReadWitnessProgress(checkpointTestPrefix, 1) == 0 &&
                 !IsWorldSecretRevealed(checkpointTestPrefix, 2, 1);
+            storyJournalSurvivesCampaignCleanup = System.Array.IndexOf(ReadStoryJournal(checkpointTestPrefix),
+                "Memórias permanecem no Caderno após a vitória.") >= 0;
+            ClearStoryJournal(checkpointTestPrefix);
             RecordStoryJournalEntry(checkpointTestPrefix, "Primeira lembrança.");
             RecordStoryJournalEntry(checkpointTestPrefix, "Primeira lembrança.");
             RecordStoryJournalEntry(checkpointTestPrefix, "A costa voltou a cantar.");
@@ -2032,6 +2037,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             string[] journalEntries = ReadStoryJournal(checkpointTestPrefix);
             storyJournalRoundTrip = journalEntries.Length == 3 && journalEntries[0] == "Primeira lembrança." &&
                 journalEntries[1] == "A costa voltou a cantar." && journalEntries[2] == firstRoomStory;
+            storyJournalRoundTrip &= storyJournalSurvivesCampaignCleanup;
             ClearStoryJournal(checkpointTestPrefix);
             storyJournalRoundTrip &= ReadStoryJournal(checkpointTestPrefix).Length == 0;
             string previousRoomStory = RoomStoryJournalEntry(roomNames[0][0], "A água conserva vozes que Nara pensava perdidas.");
@@ -2173,7 +2179,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ClearStoryJournal(checkpointTestPrefix);
             PlayerPrefs.Save();
         }
-        if (!storyJournalRoundTrip || !storyJournalMigrationRoundTrip) { SmokeFail("O caderno não preserva lembranças únicas, migra textos antigos ou limpa os dados temporários"); yield break; }
+        if (!storyJournalRoundTrip || !storyJournalMigrationRoundTrip) { SmokeFail("O Caderno não preserva lembranças únicas após a vitória, migra textos antigos ou limpa os dados temporários"); yield break; }
         Debug.Log("SCADRYK_SMOKE: caderno persiste lembranças únicas em ordem e reinicia com nova jornada");
         if (!checkpointRoundTrip) { SmokeFail("Checkpoint parcial não foi ignorado, ou o portal não foi restaurado/limitado"); yield break; }
         Debug.Log("SCADRYK_SMOKE: checkpoint versionado grava, recupera versão antiga/danificada, retoma e limpa chaves temporárias");
