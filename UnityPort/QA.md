@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **Limpeza unificada ao vencer (24/11/2026, commit `baeb3f4`):** extraí `ClearProgressAfterVictory`, usado pelo encerramento e pelo smoke. Com dados temporários, a cobertura grava checkpoint, progresso de chefes, testemunhas, selo e uma memória; exige que a vitória limpe o checkpoint e o progresso da jornada, salve as alterações e preserve o Caderno. Unity `6000.6.9f1` compilou em batch e `Tools/build-windows.ps1` gerou build limpa `baeb3f432a08` (`2026-11-24T22:59:54Z`). Não executei o smoke nem iniciei o jogo.
+
 - **Caderno persiste depois da vitória (24/11/2026, commit `ac8a79e`):** acrescentei ao smoke um ciclo que grava uma memória, apaga checkpoint/chefes/testemunhas/selos como na limpeza da campanha e exige que a entrada do Caderno permaneça. A limpeza feita por uma jornada nova continua removendo o diário em etapa separada. Unity `6000.6.9f1` compilou em batch e `Tools/build-windows.ps1` gerou build limpa para `ac8a79e9a3a2` (`2026-11-24T22:58:00Z`). Não rodei o smoke nem iniciei o jogo.
 
 - **Entradas dos desvios mais legíveis (24/11/2026, commit `aada3ee`):** aumentei os marcadores de entrada/saída de 0,72 para 0,9 unidades e a opacidade de 0,20 para 0,32; os sinais não piscam. Unity `6000.6.9f1` compilou em batch e gerou `Build/ScadrykDemo.exe` com árvore limpa (manifesto `aada3eeb833a`, `2026-11-24T22:55:00Z`). Não abri a build nem Play Mode. O contraste contextual ainda exige inspeção visual.
