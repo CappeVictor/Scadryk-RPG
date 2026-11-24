@@ -4,6 +4,8 @@
 
 - **CI do código `ed22ab7` (24/11/2026):** Unity run #311 (`45493358208`) passou a validação de recursos, mas o job hospedado de build/smoke falhou no gate `Require Unity Personal license secrets`; importação Unity, build, smoke e upload foram ignorados. O workflow C# run #1169 (`45493357974`) passou, mas valida somente o protótipo legado da raiz.
 
+- **CI da revisão `a44f398` (24/11/2026):** Unity run #315 (`45494259331`) voltou a passar a validação de recursos e falhou no mesmo gate de secrets; Unity build, smoke da campanha e upload foram ignorados. C# run #1173 (`45494259281`) passou a compilação, smoke, publicação e verificação do executável do protótipo legado; isso não valida `UnityPort`.
+
 - **CI do commit `7d9348d` (24/11/2026):** Unity run #296 (`45483037895`) passou `Validate Unity resource files without Editor license`; o job `Build and smoke-test on hosted Windows` falhou no passo `Require Unity Personal license secrets`, então build, smoke da campanha e upload foram ignorados. O workflow C# run #1154 (`45483037831`) concluiu com sucesso, mas compila/testa somente o protótipo legado da raiz; ele não valida `UnityPort`.
 
 - **Separação temporal dos avisos sonoros comuns (24/11/2026):** acrescentei ao smoke a regra de que a duração de cada cue de Caçador, Atirador, Ressonador e Tecelão não exceda o intervalo global de 0,52 s entre inícios de ataques. Isso protege contra sobreposição previsível de sinais consecutivos sem alterar o balanceamento; a mixagem real ainda requer escuta. Unity 6000.6.9f1 importou e compilou os scripts em batch; smoke não executado.
