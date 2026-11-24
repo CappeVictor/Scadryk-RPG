@@ -209,9 +209,25 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         label = null;
         secondsUntilImpact = float.PositiveInfinity;
         if (dead || !isWindup) return false;
-        label = lastAttackReadabilityLabel;
+        string direction = ThreatDirectionArrow(player != null ? (Vector2)player.transform.position : transform.position,
+            transform.position);
+        label = direction + " " + lastAttackReadabilityLabel;
         secondsUntilImpact = Mathf.Max(0f, windupEndsAt - Time.time);
         return !string.IsNullOrEmpty(label);
+    }
+
+    internal static string ThreatDirectionArrow(Vector2 from, Vector2 threat)
+    {
+        Vector2 direction = threat - from;
+        if (direction.sqrMagnitude < 0.01f) return "•";
+        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+        if (angle < 0f) angle += 360f;
+        int sector = Mathf.RoundToInt(angle / 45f) % 8;
+        return sector switch
+        {
+            0 => "→", 1 => "↗", 2 => "↑", 3 => "↖",
+            4 => "←", 5 => "↙", 6 => "↓", _ => "↘"
+        };
     }
 
     internal static Color StateTint(bool windingUp, bool exposed, Color roleTint) =>

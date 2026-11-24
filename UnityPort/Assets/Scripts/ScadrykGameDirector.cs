@@ -2474,9 +2474,18 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         }
         for (int stage = 1; stage <= 3; stage++)
             enemyWarningsMeetReactionFloor &= ScadrykEnemyHealth.FinalBossWindupDuration(stage) >= ScadrykEnemyHealth.MinimumAttackWarningDuration;
-        if (!enemyWarningsMeetReactionFloor)
-        { SmokeFail("Um padrão inimigo ou fase do Arauto anuncia dano por menos tempo que o mínimo de reação definido"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: todos os papéis inimigos, guardiões e fases do Arauto preservam ao menos 0,7 s de aviso");
+        if (!enemyWarningsMeetReactionFloor ||
+            ScadrykEnemyHealth.ThreatDirectionArrow(Vector2.zero, Vector2.right) != "→" ||
+            ScadrykEnemyHealth.ThreatDirectionArrow(Vector2.zero, new Vector2(1f, 1f)) != "↗" ||
+            ScadrykEnemyHealth.ThreatDirectionArrow(Vector2.zero, Vector2.up) != "↑" ||
+            ScadrykEnemyHealth.ThreatDirectionArrow(Vector2.zero, new Vector2(-1f, 1f)) != "↖" ||
+            ScadrykEnemyHealth.ThreatDirectionArrow(Vector2.zero, Vector2.left) != "←" ||
+            ScadrykEnemyHealth.ThreatDirectionArrow(Vector2.zero, new Vector2(-1f, -1f)) != "↙" ||
+            ScadrykEnemyHealth.ThreatDirectionArrow(Vector2.zero, Vector2.down) != "↓" ||
+            ScadrykEnemyHealth.ThreatDirectionArrow(Vector2.zero, new Vector2(1f, -1f)) != "↘" ||
+            ScadrykEnemyHealth.ThreatDirectionArrow(Vector2.zero, Vector2.zero) != "•")
+        { SmokeFail("Um padrão inimigo anuncia dano por menos que o tempo de reação definido ou as setas de direção falharam"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: avisos preservam 0,7 s e setas identificam a ameaça nas oito direções");
         if (ScadrykPlayerController.InputBufferCanStart(1.1f, 1.3f, 1.2f) ||
             !ScadrykPlayerController.InputBufferCanStart(1.21f, 1.3f, 1.2f) ||
             ScadrykPlayerController.InputBufferCanStart(1.31f, 1.3f, 1.2f) ||
