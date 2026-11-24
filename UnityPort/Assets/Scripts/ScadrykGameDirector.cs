@@ -2694,6 +2694,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         { SmokeFail("O CSV não registraria uma morte antes de terminar a animação"); yield break; }
         RestartCurrentRoom();
         if (statusMessage != "Você caiu. Vida restaurada; poderes e memórias preservados." ||
+            player == null || (player.Facing - Vector2.right).sqrMagnitude > 0.001f ||
             roomActiveSeconds != 17f || roomDeaths != 1 || roomPowerUses[0] != 2 || roomSecretsRevealed != 1 ||
             coastalCurrentEntries != 2 || Mathf.Abs(coastalCurrentSeconds - 4.6f) > 0.001f ||
             Mathf.Abs(shallowWaterSeconds - 2.2f) > 0.001f || Mathf.Abs(saltCrosswindSeconds - 2.8f) > 0.001f ||

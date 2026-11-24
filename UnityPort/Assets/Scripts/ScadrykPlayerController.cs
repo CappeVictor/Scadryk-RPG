@@ -646,6 +646,10 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         saltCrustUntil = impactKnockbackUntil = 0f;
         impactKnockbackVelocity = Vector2.zero;
         dashBufferedUntil = attackBufferedUntil = 0f;
+        System.Array.Clear(abilityBufferedUntil, 0, abilityBufferedUntil.Length);
+        aimLockedUntil = 0f;
+        facing = Vector2.right;
+        dashDirection = Vector2.zero;
         lastBasicAttackStep = -1;
         basicAttackComboUntil = 0f;
         terrainZones.Clear();
