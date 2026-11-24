@@ -581,16 +581,25 @@ public sealed partial class ScadrykGameDirector
         GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
         GUI.color = Color.white;
         float width = Mathf.Max(0f, Mathf.Min(740f, Screen.width - 36f));
+        bool showNimaPortrait = MemoryHasNimaPortrait(memoryText) && nimaMemoryPortraitSprite != null;
         RefreshMeasureContent(memoryMeasureContent, ref cachedMemoryMeasureText, memoryText);
-        float bodyHeight = Mathf.Max(62f, memoryStyle.CalcHeight(memoryMeasureContent, Mathf.Max(32f, width - 36f)));
+        float bodyHeight = Mathf.Max(62f, memoryStyle.CalcHeight(memoryMeasureContent, MemoryTextWidth(width, showNimaPortrait)));
         Rect panel = MemoryPanelRect(Screen.width, Screen.height, bodyHeight);
         GUI.color = new Color(0.025f, 0.04f, 0.045f, 0.98f); GUI.DrawTexture(panel, Texture2D.whiteTexture); GUI.color = Color.white;
         Rect titleRect = new Rect(panel.x + 18f, panel.y + 10f, panel.width - 36f, 24f);
+        string title = showNimaPortrait ? "NIMA · VESTÍGIO ESCUTADO" : "VESTÍGIO ESCUTADO";
         int titleFontSize = titleStyle.fontSize;
-        titleStyle.fontSize = FitLabelFontSize(titleFontSize, titleStyle.CalcSize(new GUIContent("VESTÍGIO ESCUTADO")).x, titleRect.width);
-        GUI.Label(titleRect, "VESTÍGIO ESCUTADO", titleStyle);
+        titleStyle.fontSize = FitLabelFontSize(titleFontSize, titleStyle.CalcSize(new GUIContent(title)).x, titleRect.width);
+        GUI.Label(titleRect, title, titleStyle);
         titleStyle.fontSize = titleFontSize;
-        GUI.Label(MemoryTextRect(panel), memoryText, memoryStyle);
+        if (showNimaPortrait)
+        {
+            Rect portraitRect = MemoryPortraitRect(panel);
+            GUI.color = new Color(0.42f, 0.82f, 0.88f, 0.88f);
+            GUI.DrawTexture(portraitRect, nimaMemoryPortraitSprite.texture, ScaleMode.ScaleToFit, true);
+            GUI.color = Color.white;
+        }
+        GUI.Label(MemoryTextRect(panel, showNimaPortrait), memoryText, memoryStyle);
         smallStyle.alignment = TextAnchor.MiddleCenter;
         Rect hintRect = MemoryDismissHintRect(panel);
         int hintFontSize = smallStyle.fontSize;
@@ -1353,24 +1362,52 @@ public sealed partial class ScadrykGameDirector
         return new Rect((screenWidth - width) * 0.5f, y, width, panelHeight);
     }
 
-    private static Rect MemoryTextRect(Rect panel) =>
-        new Rect(panel.x + 18f, panel.y + 34f, panel.width - 36f, panel.height - 82f);
+    private static bool MemoryHasNimaPortrait(string message) =>
+        message == BasinWitnessLines[0] || message == BasinWitnessLines[2] ||
+        message == CoastWitnessLines[0] || message == CoastWitnessLines[2];
+
+    private static float MemoryPortraitWidth(float panelWidth) =>
+        Mathf.Min(panelWidth < 460f ? 74f : 126f, Mathf.Max(54f, panelWidth * 0.22f));
+
+    private static float MemoryTextWidth(float panelWidth, bool withPortrait) =>
+        Mathf.Max(48f, panelWidth - 36f - (withPortrait ? MemoryPortraitWidth(panelWidth) + 12f : 0f));
+
+    private static Rect MemoryPortraitRect(Rect panel) =>
+        new Rect(panel.x + 18f, panel.y + 38f, MemoryPortraitWidth(panel.width), Mathf.Max(48f, panel.height - 84f));
+
+    private static Rect MemoryTextRect(Rect panel) => MemoryTextRect(panel, false);
+
+    private static Rect MemoryTextRect(Rect panel, bool withPortrait)
+    {
+        float portraitSpace = withPortrait ? MemoryPortraitWidth(panel.width) + 12f : 0f;
+        return new Rect(panel.x + 18f + portraitSpace, panel.y + 34f,
+            Mathf.Max(48f, panel.width - 36f - portraitSpace), panel.height - 82f);
+    }
 
     internal static string CompactControlHintText(string movement, string aim, string attack, string dodge, string pulse, string interact) =>
         "Mover: " + movement + " · mirar: " + aim + "\n" +
         attack + " atacar · " + dodge + " esquivar · " + pulse + " pulso\n" +
         interact + " interagir · M/L3 mapa · Esc/Start pausa";
 
-    private static bool MemoryPanelFits(float screenWidth, float screenHeight, float bodyHeight)
+    private static bool MemoryPanelFits(float screenWidth, float screenHeight, float bodyHeight, bool withPortrait = false)
     {
         float requiredBodyHeight = Mathf.Max(62f, bodyHeight);
         Rect panel = MemoryPanelRect(screenWidth, screenHeight, requiredBodyHeight);
-        Rect text = MemoryTextRect(panel);
+        Rect text = MemoryTextRect(panel, withPortrait);
         Rect hint = MemoryDismissHintRect(panel);
         return screenWidth >= 240f && screenHeight >= requiredBodyHeight + 106f &&
             panel.xMin >= 0f && panel.xMax <= screenWidth && panel.yMin >= 12f && panel.yMax <= screenHeight - 12f &&
             text.yMin >= panel.yMin && text.yMax <= hint.yMin && text.height >= requiredBodyHeight &&
             hint.yMin >= text.yMax && hint.yMax <= panel.yMax;
+    }
+
+    private static bool MemoryPortraitPanelDoesNotOverlap(float screenWidth, float screenHeight, float bodyHeight)
+    {
+        Rect panel = MemoryPanelRect(screenWidth, screenHeight, Mathf.Max(62f, bodyHeight));
+        Rect portrait = MemoryPortraitRect(panel);
+        Rect text = MemoryTextRect(panel, true);
+        return portrait.xMax <= text.xMin && portrait.xMin >= panel.xMin && portrait.yMin >= panel.yMin + 34f &&
+            portrait.yMax <= panel.yMax - 48f && text.xMax <= panel.xMax && text.yMax <= MemoryDismissHintRect(panel).yMin;
     }
 
     internal static int FitLabelFontSize(int fontSize, float measuredWidth, float availableWidth, int minimum = 9)

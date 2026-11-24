@@ -45,6 +45,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private Sprite fallenWillowLogSprite;
     private Sprite portalSprite;
     private Sprite witnessSprite;
+    private Sprite nimaMemoryPortraitSprite;
     private Texture2D titleBackdropTexture;
 
     private int phaseIndex, roomIndex, enemiesRemaining;
@@ -268,6 +269,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         fallenWillowLogSprite = LoadSingleSprite("FallenWillowLog", 300f);
         portalSprite = LoadSingleSprite("AncientPortal", 600f);
         witnessSprite = LoadSingleSprite("DrownedMemory", 280f);
+        nimaMemoryPortraitSprite = LoadSingleSprite("NimaMemoryPortrait", 420f);
         titleBackdropTexture = Resources.Load<Texture2D>("ScadrykArt/ScadrykTitleBackdrop");
         SetupCamera();
         gameObject.AddComponent<ScadrykAudio>();
@@ -2610,7 +2612,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Debug.Log("SCADRYK_SMOKE: redução de tremor interrompe sacudida ativa");
         if (titleBackdropTexture == null) { SmokeFail("A arte de abertura ScadrykTitleBackdrop não foi carregada"); yield break; }
         Debug.Log("SCADRYK_SMOKE: arte original da tela inicial carregada");
-        bool worldArtLoaded = HasAllSprites(environmentSprites, 16) && HasAllSprites(phaseGroundSprites, 3) &&
+        bool worldArtLoaded = HasAllSprites(environmentSprites, 16) && nimaMemoryPortraitSprite != null && HasAllSprites(phaseGroundSprites, 3) &&
             HasAllSprites(phaseApproachGroundSprites, 3) &&
             HasAllSprites(phaseCenterGroundSprites, 3) && HasAllSprites(phaseGuardianGroundSprites, 3) && HasAllSprites(phaseEnemySprites, 3) &&
             fallenWillowLogSprite != null && portalSprite != null && witnessSprite != null;
@@ -3142,6 +3144,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         { SmokeFail("Interromper um ataque não removeu seus avisos visuais pendentes"); yield break; }
         Debug.Log("SCADRYK_SMOKE: interromper um golpe desativa todos os telegráficos associados");
         if (!MemoryPanelFits(400f, 360f, 120f) || !MemoryPanelFits(700f, 600f, 90f) ||
+            !MemoryPanelFits(400f, 440f, 180f, true) || !MemoryPanelFits(700f, 600f, 120f, true) ||
+            !MemoryPortraitPanelDoesNotOverlap(400f, 440f, 180f) || !MemoryPortraitPanelDoesNotOverlap(700f, 600f, 120f) ||
+            !MemoryHasNimaPortrait(BasinWitnessLines[0]) || !MemoryHasNimaPortrait(BasinWitnessLines[2]) ||
+            !MemoryHasNimaPortrait(CoastWitnessLines[0]) || !MemoryHasNimaPortrait(CoastWitnessLines[2]) ||
+            MemoryHasNimaPortrait(GuardianMemories[0]) ||
             !MemoryDismissRequested(true, false, false) || !MemoryDismissRequested(false, true, false) ||
             !MemoryDismissRequested(false, false, true) || MemoryDismissRequested(false, false, false) ||
             !MemoryDismissedThisFrame(12, 12) || MemoryDismissedThisFrame(12, 13) ||
@@ -3169,7 +3176,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             !OpeningStoryCoversRoomStatus(true, 0, 0) || OpeningStoryCoversRoomStatus(false, 0, 0) ||
             OpeningStoryCoversRoomStatus(true, 0, 1) || OpeningStoryCoversRoomStatus(true, 1, 0))
         { SmokeFail("Memórias, comandos de saída ou a janela opcional do Selo final falharam"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: memórias modais têm comandos de saída válidos e cabem em janela compacta");
+        Debug.Log("SCADRYK_SMOKE: memórias modais têm comandos por dispositivo, retrato de Nima só nas falas dela e layout compacto sem sobreposição");
         int secondaryCountBeforeFallback = ScadrykEffects.SecondaryVisualCount;
         GameObject fallbackWarning = ScadrykEffects.CreateGroundLaneFallback(roomCenter + Vector2.up * 12f, Vector2.right,
             3f, 0.2f, new Color(1f, 0.2f, 0.2f, 1f), 10f);
