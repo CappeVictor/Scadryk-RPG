@@ -120,14 +120,14 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         "O Vigia do Coro entrega o Rompante: os guardiões aceitaram calar os sinos para poupar os vivos; o Arauto fez do medo uma regra sem fim. A onda afasta Ecos comuns."
     };
     private static readonly string[] BasinWitnessLines = {
-        "Sou Nima, a voz do primeiro sino. Toquei para avisar a margem; a onda não respondeu, e meu nome voltou preso às raízes.",
+        "Nima: Sou a voz do primeiro sino. Toquei para avisar a margem; a onda não respondeu, e meu nome voltou preso às raízes.",
         "Nara: A Raiz-Mor chamou isso de proteção. Guardar uma voz para sempre também é fazê-la desaparecer.",
-        "O sal ainda segura a onda no instante em que partiu. Ressoem os cristais; a água precisa voltar a seguir."
+        "Nima: O sal ainda segura a onda no instante em que partiu. Ressoem os cristais; a água precisa voltar a seguir."
     };
     private static readonly string[] CoastWitnessLines = {
-        "Você devolveu movimento ao sal. Agora sabemos: o Arauto parou a onda depois que a costa perdeu seus nomes.",
+        "Nima: Você devolveu movimento ao sal. Agora sabemos: o Arauto parou a onda depois que a costa perdeu seus nomes.",
         "Nara: Os guardiões aceitaram o silêncio por medo. Vou escutar cada um antes de decidir o que fazer com o Arauto.",
-        "O Vigia do Coro ouviu o Arauto e nunca mais tocou. Faça o farol responder primeiro; o sino do recife vem depois."
+        "Nima: O Vigia do Coro ouviu o Arauto e nunca mais tocou. Faça o farol responder primeiro; o sino do recife vem depois."
     };
     private static readonly Dictionary<string, string> LegacyStoryJournalEntries = CreateLegacyStoryJournalEntries();
 
@@ -149,6 +149,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ["Nara: Posso lembrar e seguir em frente. Vou abrir a passagem para que ninguém fique preso."] = CoastWitnessLines[1],
             ["O Arauto chama o silêncio de abrigo. Pergunte a quem perdeu o próprio nome se isso parece paz."] = CoastWitnessLines[2]
         };
+
+        replacements["Sou Nima, a voz do primeiro sino. Toquei para avisar a margem; a onda não respondeu, e meu nome voltou preso às raízes."] = BasinWitnessLines[0];
+        replacements["O sal ainda segura a onda no instante em que partiu. Ressoem os cristais; a água precisa voltar a seguir."] = BasinWitnessLines[2];
+        replacements["Você devolveu movimento ao sal. Agora sabemos: o Arauto parou a onda depois que a costa perdeu seus nomes."] = CoastWitnessLines[0];
+        replacements["O Vigia do Coro ouviu o Arauto e nunca mais tocou. Faça o farol responder primeiro; o sino do recife vem depois."] = CoastWitnessLines[2];
 
         string[] previousRoomStories = {
             "A água conserva vozes que Nara pensava perdidas.", "A comporta espera uma Ouvinte; raízes sobre a água cruzam o bosque.", "O guardião prende nas raízes o primeiro sino.",
@@ -2041,6 +2046,10 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                     RoomStoryJournalEntry(roomNames[0][2], GuardianIntroductions[0]) &&
                 MigrateLegacyStoryJournalEntry("A Raiz-Mor entrega o Crescente e revela que Nima tocou o primeiro sino; seu nome ficou guardado nas raízes. O arco do Crescente interrompe Ecos.") == GuardianMemories[0] &&
                 MigrateLegacyStoryJournalEntry("Sou Nima, a voz do primeiro sino. A Raiz-Mor guardou meu nome para que o silêncio não me apagasse. Ainda lembro o Arauto chamando esse silêncio de abrigo.") == BasinWitnessLines[0] &&
+                MigrateLegacyStoryJournalEntry("Sou Nima, a voz do primeiro sino. Toquei para avisar a margem; a onda não respondeu, e meu nome voltou preso às raízes.") == BasinWitnessLines[0] &&
+                MigrateLegacyStoryJournalEntry("O sal ainda segura a onda no instante em que partiu. Ressoem os cristais; a água precisa voltar a seguir.") == BasinWitnessLines[2] &&
+                MigrateLegacyStoryJournalEntry("Você devolveu movimento ao sal. Agora sabemos: o Arauto parou a onda depois que a costa perdeu seus nomes.") == CoastWitnessLines[0] &&
+                MigrateLegacyStoryJournalEntry("O Vigia do Coro ouviu o Arauto e nunca mais tocou. Faça o farol responder primeiro; o sino do recife vem depois.") == CoastWitnessLines[2] &&
                 MigrateLegacyStoryJournalEntry("O Arauto chama o silêncio de abrigo. Pergunte a quem perdeu o próprio nome se isso parece paz.") == CoastWitnessLines[2] &&
                 MigrateLegacyStoryJournalEntry("Memória de outra versão.") == "Memória de outra versão.";
             RecordStoryJournalEntry(checkpointTestPrefix, firstRoomStory);
