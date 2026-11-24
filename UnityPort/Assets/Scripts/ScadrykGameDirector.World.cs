@@ -298,11 +298,11 @@ public sealed partial class ScadrykGameDirector
                 phaseIndex == 0 ? -12f : phaseIndex == 2 ? 5f : 0f);
         }
         MakeDecoration(parent, routeName + " entry glow", new Vector2(roomX + entry, side * (RoomHalfHeight + 0.45f)),
-            new Vector2(0.72f, 0.72f), new Color(PhaseAccentColors[phaseIndex].r, PhaseAccentColors[phaseIndex].g,
-                PhaseAccentColors[phaseIndex].b, 0.2f), true, -8);
+            new Vector2(0.9f, 0.9f), new Color(PhaseAccentColors[phaseIndex].r, PhaseAccentColors[phaseIndex].g,
+                PhaseAccentColors[phaseIndex].b, 0.32f), true, -8);
         MakeDecoration(parent, routeName + " exit glow", new Vector2(roomX + exit, side * (RoomHalfHeight + 0.45f)),
-            new Vector2(0.72f, 0.72f), new Color(PhaseAccentColors[phaseIndex].r, PhaseAccentColors[phaseIndex].g,
-                PhaseAccentColors[phaseIndex].b, 0.2f), true, -8);
+            new Vector2(0.9f, 0.9f), new Color(PhaseAccentColors[phaseIndex].r, PhaseAccentColors[phaseIndex].g,
+                PhaseAccentColors[phaseIndex].b, 0.32f), true, -8);
     }
 
     internal static bool TryGetSideRoute(int biome, int room, out int side, out float entry, out float exit)
