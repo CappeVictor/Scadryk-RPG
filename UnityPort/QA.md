@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **Migração de textos do Caderno (24/11/2026):** saves anteriores podem conter as redações que foram substituídas no arco narrativo; `ReadStoryJournal` agora converte essas entradas (abertura, salas, guardiões e conversas), remove duplicatas e grava o diário normalizado. Acrescentei smoke para provar migração/deduplicação e preservar textos desconhecidos. Unity `6000.6.9f1` importou e compilou em batch; não executei smoke, build nem jogo.
+
 - **Arco de Nara, Nima e os guardiões (24/11/2026):** reescrevi a abertura, as nove apresentações de sala, falas e memórias dos três guardiões, as conversas de Nima e o encerramento para formar uma linha causal: Nima tocou para avisar da onda; cada guardião tentou proteger alguém do luto; o Arauto prolongou o silêncio; Nara escolhe lembrar sem aprisionar. Unity `6000.6.9f1` importou e compilou o projeto em batch. Asserções smoke existentes para nomes, falas, poderes e resolução foram preservadas; smoke e leitura narrativa no jogo não foram executados.
 
 - **Revalidação do checkout `09a8975` (24/11/2026):** `Tools/Validate-Resources.ps1` confirmou 35 referências de recursos e as 50 texturas de arte configuradas para GPU-only. `Tools/compile-unity.ps1` importou e compilou os scripts com Unity `6000.6.9f1`, encerrando com sucesso sem abrir a cena em Play Mode. Não executei smoke, build Windows, jogo ou Profiler; a avaliação da campanha segue pendente.

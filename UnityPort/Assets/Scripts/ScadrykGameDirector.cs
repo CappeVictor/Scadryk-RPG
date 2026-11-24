@@ -82,7 +82,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private bool smokeProjectileCoverPassed;
     private readonly bool[] clearedRooms = new bool[RoomsPerPhase];
     private readonly List<ScadrykEnemyHealth> activeEnemies = new List<ScadrykEnemyHealth>();
-    private readonly string[][] roomNames = {
+    private static readonly string[][] roomNames = {
         new[] { "Margem Alagada", "Vau de Cinza", "Casa das Comportas" },
         new[] { "Juncal Raso", "Bacia Imóvel", "Câmara do Sal" },
         new[] { "Costa das Badaladas", "Fileira das Bóias", "Coro da Maré Falsa" }
@@ -129,6 +129,53 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         "Nara: Os guardiões aceitaram o silêncio por medo. Vou escutar cada um antes de decidir o que fazer com o Arauto.",
         "O Vigia do Coro ouviu o Arauto e nunca mais tocou. Faça o farol responder primeiro; o sino do recife vem depois."
     };
+    private static readonly Dictionary<string, string> LegacyStoryJournalEntries = CreateLegacyStoryJournalEntries();
+
+    private static Dictionary<string, string> CreateLegacyStoryJournalEntries()
+    {
+        var replacements = new Dictionary<string, string>
+        {
+            ["Depois que a Grande Onda cobriu a costa, os três sinos emudeceram. Nara, a Ouvinte, ainda escutava os nomes perdidos e seguiu a maré imóvel."] = OpeningMemory,
+            ["A Raiz-Mor: sem mim, os nomes voltam à correnteza."] = GuardianIntroductions[0],
+            ["A Vigia do Sal: a maré ainda não pode voltar."] = GuardianIntroductions[1],
+            ["O Vigia do Coro: os sinos devolverão a dor."] = GuardianIntroductions[2],
+            ["A Raiz-Mor entrega o Crescente e revela que Nima tocou o primeiro sino; seu nome ficou guardado nas raízes. O arco do Crescente interrompe Ecos."] = GuardianMemories[0],
+            ["A Vigia do Sal devolve o Estouro e revela que o Arauto deteve a última onda, deixando a costa presa no instante em que perdeu suas vozes. A explosão do Estouro expõe alvos a golpes seguintes."] = GuardianMemories[1],
+            ["O Vigia do Coro entrega o Rompante e revela que o Arauto mandou calar os sinos para poupar os vivos. A onda do Rompante afasta Ecos comuns."] = GuardianMemories[2],
+            ["Sou Nima, a voz do primeiro sino. A Raiz-Mor guardou meu nome para que o silêncio não me apagasse. Ainda lembro o Arauto chamando esse silêncio de abrigo."] = BasinWitnessLines[0],
+            ["Nara: Também tenho medo do que a lembrança traz. Mas não vou pedir que vocês desapareçam."] = BasinWitnessLines[1],
+            ["O sal ainda segura a onda no instante em que ela partiu. Faça os cristais responderem; a água precisa voltar a seguir."] = BasinWitnessLines[2],
+            ["Você devolveu movimento ao sal. Agora os sinos lembram que cada voz tinha alguém esperando por ela."] = CoastWitnessLines[0],
+            ["Nara: Posso lembrar e seguir em frente. Vou abrir a passagem para que ninguém fique preso."] = CoastWitnessLines[1],
+            ["O Arauto chama o silêncio de abrigo. Pergunte a quem perdeu o próprio nome se isso parece paz."] = CoastWitnessLines[2]
+        };
+
+        string[] previousRoomStories = {
+            "A água conserva vozes que Nara pensava perdidas.", "A comporta espera uma Ouvinte; raízes sobre a água cruzam o bosque.", "O guardião prende nas raízes o primeiro sino.",
+            "A bacia está imóvel, mas o sal ainda se recorda da maré.", "Dois cristais guardam a rota; a prateleira de sal esconde uma lembrança.", "O zelador do sal protege uma lembrança que não é sua.",
+            "Na costa, as badaladas cessaram antes da última onda.", "Farol primeiro, sino depois. A vereda das bóias guarda um Eco antigo.", "O Arauto reuniu os três silêncios para esconder a verdade."
+        };
+        for (int index = 0; index < previousRoomStories.Length; index++)
+        {
+            int phase = index / RoomsPerPhase;
+            int room = index % RoomsPerPhase;
+            string currentStory = room == RoomsPerPhase - 1 ? GuardianIntroductions[phase] : RoomStories[index];
+            replacements[RoomStoryJournalEntry(roomNames[phase][room], previousRoomStories[index])] =
+                RoomStoryJournalEntry(roomNames[phase][room], currentStory);
+        }
+
+        replacements[RoomStoryJournalEntry(roomNames[0][2], "A Raiz-Mor: sem mim, os nomes voltam à correnteza.")] =
+            RoomStoryJournalEntry(roomNames[0][2], GuardianIntroductions[0]);
+        replacements[RoomStoryJournalEntry(roomNames[1][2], "A Vigia do Sal: a maré ainda não pode voltar.")] =
+            RoomStoryJournalEntry(roomNames[1][2], GuardianIntroductions[1]);
+        replacements[RoomStoryJournalEntry(roomNames[2][2], "O Vigia do Coro: os sinos devolverão a dor.")] =
+            RoomStoryJournalEntry(roomNames[2][2], GuardianIntroductions[2]);
+        return replacements;
+    }
+
+    internal static string MigrateLegacyStoryJournalEntry(string entry) =>
+        !string.IsNullOrEmpty(entry) && LegacyStoryJournalEntries.TryGetValue(entry, out string replacement) ? replacement : entry;
+
     private static string PowerAcquisitionHint(int powerIndex, string binding) => powerIndex switch
     {
         0 => "Crescente (" + binding + "): arco frontal interrompe; revela selos.",
@@ -1286,8 +1333,20 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             StoryJournalData data = JsonUtility.FromJson<StoryJournalData>(PlayerPrefs.GetString(key));
             if (data == null || data.entries == null) return new string[0];
             var entries = new List<string>(data.entries.Count);
+            bool changed = false;
             foreach (string entry in data.entries)
-                if (!string.IsNullOrWhiteSpace(entry) && !entries.Contains(entry)) entries.Add(entry);
+            {
+                if (string.IsNullOrWhiteSpace(entry)) { changed = true; continue; }
+                string migratedEntry = MigrateLegacyStoryJournalEntry(entry);
+                if (migratedEntry != entry) changed = true;
+                if (entries.Contains(migratedEntry)) { changed = true; continue; }
+                entries.Add(migratedEntry);
+            }
+            if (changed)
+            {
+                PlayerPrefs.SetString(key, JsonUtility.ToJson(new StoryJournalData { entries = entries }));
+                PlayerPrefs.Save();
+            }
             return entries.ToArray();
         }
         catch (System.Exception) { return new string[0]; }
@@ -1927,7 +1986,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Debug.Log("SCADRYK_SMOKE: padrões de teclado e controle são independentes e preservam preferências");
         string checkpointTestPrefix = "Scadryk.Smoke." + System.DateTime.UtcNow.Ticks + ".";
         bool checkpointRoundTrip = false, witnessProgressRoundTrip = false, worldSecretProgressRoundTrip = false;
-        bool storyJournalRoundTrip = false;
+        bool storyJournalRoundTrip = false, storyJournalMigrationRoundTrip = false;
         bool quitCheckpointStateIsValid = false, campaignProgressCleanupRoundTrip = false;
         bool bossProgressRoundTrip = false, powerRestoreRoundTrip = false, powerEchoProgressRoundTrip = false;
         try
@@ -1968,6 +2027,21 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 journalEntries[1] == "A costa voltou a cantar." && journalEntries[2] == firstRoomStory;
             ClearStoryJournal(checkpointTestPrefix);
             storyJournalRoundTrip &= ReadStoryJournal(checkpointTestPrefix).Length == 0;
+            string previousRoomStory = RoomStoryJournalEntry(roomNames[0][0], "A água conserva vozes que Nara pensava perdidas.");
+            var legacyJournal = new StoryJournalData { entries = new List<string> { previousRoomStory, firstRoomStory } };
+            PlayerPrefs.SetString(StoryJournalProgressKey(checkpointTestPrefix), JsonUtility.ToJson(legacyJournal));
+            string[] migratedJournal = ReadStoryJournal(checkpointTestPrefix);
+            StoryJournalData migratedStoredJournal = JsonUtility.FromJson<StoryJournalData>(PlayerPrefs.GetString(StoryJournalProgressKey(checkpointTestPrefix)));
+            storyJournalMigrationRoundTrip = migratedJournal.Length == 1 && migratedJournal[0] == firstRoomStory &&
+                migratedStoredJournal != null && migratedStoredJournal.entries != null && migratedStoredJournal.entries.Count == 1 &&
+                migratedStoredJournal.entries[0] == firstRoomStory &&
+                !PlayerPrefs.GetString(StoryJournalProgressKey(checkpointTestPrefix)).Contains("A água conserva vozes") &&
+                MigrateLegacyStoryJournalEntry("Sou Nima, a voz do primeiro sino. A Raiz-Mor guardou meu nome para que o silêncio não me apagasse. Ainda lembro o Arauto chamando esse silêncio de abrigo.") == BasinWitnessLines[0] &&
+                MigrateLegacyStoryJournalEntry("Memória de outra versão.") == "Memória de outra versão.";
+            RecordStoryJournalEntry(checkpointTestPrefix, firstRoomStory);
+            storyJournalMigrationRoundTrip &= ReadStoryJournal(checkpointTestPrefix).Length == 1;
+            ClearStoryJournal(checkpointTestPrefix);
+            storyJournalMigrationRoundTrip &= ReadStoryJournal(checkpointTestPrefix).Length == 0;
             PlayerPrefs.SetInt(checkpointTestPrefix + "Room", 2);
             bool ignoresOrphanedRoom = !HasCheckpoint(checkpointTestPrefix) &&
                 !TryLoadCheckpoint(checkpointTestPrefix, out int orphanPhase, out int orphanRoom) && orphanPhase == 0 && orphanRoom == 0;
@@ -2083,7 +2157,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ClearStoryJournal(checkpointTestPrefix);
             PlayerPrefs.Save();
         }
-        if (!storyJournalRoundTrip) { SmokeFail("O caderno não preserva lembranças únicas ou não limpa os dados temporários"); yield break; }
+        if (!storyJournalRoundTrip || !storyJournalMigrationRoundTrip) { SmokeFail("O caderno não preserva lembranças únicas, migra textos antigos ou limpa os dados temporários"); yield break; }
         Debug.Log("SCADRYK_SMOKE: caderno persiste lembranças únicas em ordem e reinicia com nova jornada");
         if (!checkpointRoundTrip) { SmokeFail("Checkpoint parcial não foi ignorado, ou o portal não foi restaurado/limitado"); yield break; }
         Debug.Log("SCADRYK_SMOKE: checkpoint versionado grava, recupera versão antiga/danificada, retoma e limpa chaves temporárias");
