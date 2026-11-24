@@ -2683,6 +2683,34 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (SecretRevealCountAfterSuccess(0, false) != 1 || SecretRevealCountAfterSuccess(3, false) != 4 ||
             SecretRevealCountAfterSuccess(3, true) != 3)
         { SmokeFail("A telemetria de selos não conta descobertas ou interfere no smoke"); yield break; }
+        var abilityBuffersField = typeof(ScadrykPlayerController).GetField("abilityBufferedUntil", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        var abilityReadyField = typeof(ScadrykPlayerController).GetField("abilityReadyAt", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        var aimLockField = typeof(ScadrykPlayerController).GetField("aimLockedUntil", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        if (player == null || abilityBuffersField == null || abilityReadyField == null || aimLockField == null)
+        { SmokeFail("O smoke não encontrou os estados de mira e fila de poder para a troca de sala"); yield break; }
+        float[] abilityBuffers = (float[])abilityBuffersField.GetValue(player);
+        float[] abilityReadyAt = (float[])abilityReadyField.GetValue(player);
+        float[] savedAbilityBuffers = (float[])abilityBuffers.Clone();
+        float[] savedAbilityReadyAt = (float[])abilityReadyAt.Clone();
+        float savedAimLock = (float)aimLockField.GetValue(player);
+        Vector2 savedFacing = player.Facing;
+        abilityBuffers[0] = Time.time + 1f;
+        abilityReadyAt[0] = Time.time + 2f;
+        aimLockField.SetValue(player, Time.time + 1f);
+        var facingField = typeof(ScadrykPlayerController).GetField("facing", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        if (facingField == null) { SmokeFail("O smoke não encontrou a direção de mira para a troca de sala"); yield break; }
+        facingField.SetValue(player, Vector2.left);
+        player.ResetForRoom(player.transform.position);
+        bool roomEntryClearsInput = System.Array.TrueForAll(abilityBuffers, value => value == 0f) &&
+            (float)aimLockField.GetValue(player) == 0f && (player.Facing - Vector2.right).sqrMagnitude < 0.001f;
+        bool roomEntryKeepsCooldown = Mathf.Abs(player.AbilityCooldownLeft(0) - 2f) < 0.05f;
+        System.Array.Copy(savedAbilityBuffers, abilityBuffers, abilityBuffers.Length);
+        System.Array.Copy(savedAbilityReadyAt, abilityReadyAt, abilityReadyAt.Length);
+        aimLockField.SetValue(player, savedAimLock);
+        facingField.SetValue(player, savedFacing);
+        if (!roomEntryClearsInput || !roomEntryKeepsCooldown)
+        { SmokeFail("A entrada de sala manteve um poder/mira em espera ou apagou a recarga ativa"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: entrada de sala limpa mira/comandos bufferizados, mantém cooldown e orienta ao portal");
         RecordInputMode("gamepad");
         RecordPlayerDeath();
         if (roomDeaths != 1) { SmokeFail("A derrota não foi contabilizada no instante da morte"); yield break; }
