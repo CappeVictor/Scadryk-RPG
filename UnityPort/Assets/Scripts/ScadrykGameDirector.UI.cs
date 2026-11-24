@@ -1432,7 +1432,9 @@ public sealed partial class ScadrykGameDirector
     private bool OptionButton(Rect rect, string label, int selection)
     {
         if (optionsSelection == selection) DrawSelection(rect);
-        return GUI.Button(rect, label);
+        bool clicked = GUI.Button(rect, label);
+        if (clicked) optionsSelection = selection;
+        return clicked;
     }
 
     private void EnsureStyles()

@@ -135,6 +135,7 @@ A primeira jornada começa com uma abertura narrativa; combate e cronômetro fic
 ### Teclado e remapeamento
 
 - Setas ou WASD navegam pelos menus; Enter/Espaço confirma e Esc retorna. **Esc**, **F8** e **M** são reservados, respectivamente, para navegação, registro de clareza de ataque e mapa.
+- Clique num botão das opções para torná-lo a seleção ativa; teclado e controle mostram o mesmo destaque ao navegar.
 - Na aba **Teclas**, remapeie ataque, esquiva, Pulso, poderes, interação e direções. Se uma tecla já estiver em uso, os vínculos trocam de lugar; **Padrões** restaura o esquema padrão.
 - Enquanto captura um novo vínculo, Esc cancela a captura; pressione novamente para sair das opções. HUD, pistas e mensagens de interação refletem o dispositivo usado por último.
 
