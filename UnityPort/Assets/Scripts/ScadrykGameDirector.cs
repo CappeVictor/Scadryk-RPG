@@ -2802,6 +2802,20 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         bool repeatedMapRoomRefresh = RefreshMapRoomContent(cachedMapRoomContent, ref cachedMapSecretFound, ref cachedMapRoomInitialized, 1, 1, false);
         bool repeatedMapRoomReusesText = object.ReferenceEquals(firstMapRoomLabel, cachedMapRoomContent.text);
         bool revealedMapRoomRefresh = RefreshMapRoomContent(cachedMapRoomContent, ref cachedMapSecretFound, ref cachedMapRoomInitialized, 1, 1, true);
+        var cachedHeaderContent = new GUIContent();
+        int cachedHeaderBiome = -1;
+        bool initialHeaderRefresh = RefreshMiniMapHeaderContent(cachedHeaderContent, ref cachedHeaderBiome, 0);
+        string firstMiniMapHeader = cachedHeaderContent.text;
+        bool repeatedHeaderRefresh = RefreshMiniMapHeaderContent(cachedHeaderContent, ref cachedHeaderBiome, 0);
+        bool repeatedHeaderReusesText = object.ReferenceEquals(firstMiniMapHeader, cachedHeaderContent.text);
+        bool changedHeaderRefresh = RefreshMiniMapHeaderContent(cachedHeaderContent, ref cachedHeaderBiome, 1);
+        var cachedBossStageContent = new GUIContent();
+        int cachedBossStage = -1;
+        bool initialBossStageRefresh = RefreshFinalBossStageContent(cachedBossStageContent, ref cachedBossStage, 1);
+        string firstBossStageLabel = cachedBossStageContent.text;
+        bool repeatedBossStageRefresh = RefreshFinalBossStageContent(cachedBossStageContent, ref cachedBossStage, 1);
+        bool repeatedBossStageReusesText = object.ReferenceEquals(firstBossStageLabel, cachedBossStageContent.text);
+        bool changedBossStageRefresh = RefreshFinalBossStageContent(cachedBossStageContent, ref cachedBossStage, 2);
         string singleExposureCaption = ExposureCaption(1);
         string groupExposureCaption = ExposureCaption(3);
         if (HudHealthLabel(68.2f, 100f) != "VIDA 69/100" ||
@@ -2817,6 +2831,10 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             !unchangedCooldownReusesText || !changedCooldownRefreshesText || readyCooldownLabel != "pronto" || nearReadyCooldownLabel != "0.0s" ||
             !firstMapRoomRefresh || repeatedMapRoomRefresh || !repeatedMapRoomReusesText || !revealedMapRoomRefresh ||
             firstMapRoomLabel != "2. Bacia ↓ ◇" || cachedMapRoomContent.text != "2. Bacia ↓ ◆" ||
+            !initialHeaderRefresh || repeatedHeaderRefresh || !repeatedHeaderReusesText || !changedHeaderRefresh ||
+            firstMiniMapHeader != "MAPA · Bosque · ↑/↓ DESVIO · ◇ PEND. · ◆ FEITO" || cachedHeaderContent.text != "MAPA · Sal · ↑/↓ DESVIO · ◇ PEND. · ◆ FEITO" ||
+            !initialBossStageRefresh || repeatedBossStageRefresh || !repeatedBossStageReusesText || !changedBossStageRefresh ||
+            firstBossStageLabel != "O ARAUTO DO VAZIO  ·  FASE 1/3" || cachedBossStageContent.text != "O ARAUTO DO VAZIO  ·  FASE 2/3" ||
             !HudPanelFits(compactHud, 400f, 360f) || MiniMapPanelFits(compactMap, compactHud, 400f, 360f) ||
             !HudPanelFits(narrowHud, 700f, 600f) || !MiniMapPanelFits(narrowMap, narrowHud, 700f, 600f) ||
             wideThreatCaption.yMin < 72f || wideThreatCaption.Overlaps(HudPanelRect(1920f, 1080f, 1f)) ||

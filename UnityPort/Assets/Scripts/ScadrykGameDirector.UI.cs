@@ -4,6 +4,9 @@ public sealed partial class ScadrykGameDirector
 {
     private static readonly string[] MiniMapBiomeNames = { "Bosque", "Sal", "Costa" };
     private readonly GUIContent miniMapHeaderContent = new GUIContent();
+    private readonly GUIContent witnessPromptContent = new GUIContent();
+    private readonly GUIContent finalBossStageContent = new GUIContent();
+    private readonly GUIContent offscreenTargetContent = new GUIContent();
     private readonly GUIContent worldMapLegendContent = new GUIContent("TRÊS BIOMAS · NOVE SALAS · ↑/↓ DESVIO · ◇ PENDENTE · ◆ LIBERADO · SELADO = BLOQUEADO");
     private readonly GUIContent[] mapRoomContents = CreateMapRoomContents();
     private readonly bool[] mapRoomSecretFlags = new bool[PhaseNames.Length * RoomsPerPhase];
@@ -79,6 +82,11 @@ public sealed partial class ScadrykGameDirector
     private ScadrykEnemyHealth cachedHudObjectiveBoss;
     private string cachedHudObjectiveInputMode;
     private int cachedHudObjectiveBindingRevision = -1;
+    private int cachedMiniMapHeaderBiome = -1;
+    private int cachedFinalBossDisplayStage = -1;
+    private string cachedOffscreenTargetArrow;
+    private string cachedWitnessInputMode;
+    private int cachedWitnessBindingRevision = -1;
 
     private static GUIContent[] CreateMapRoomContents()
     {
@@ -96,6 +104,24 @@ public sealed partial class ScadrykGameDirector
         content.text = (room + 1) + ". " + MapRoomRouteLabel(phase, room, secretFound);
         cachedSecretFound = secretFound;
         initialized = true;
+        return true;
+    }
+
+    internal static bool RefreshMiniMapHeaderContent(GUIContent content, ref int cachedBiome, int biome)
+    {
+        int safeBiome = Mathf.Clamp(biome, 0, MiniMapBiomeNames.Length - 1);
+        if (content == null || cachedBiome == safeBiome) return false;
+        content.text = MiniMapHeaderText(MiniMapBiomeNames[safeBiome]);
+        cachedBiome = safeBiome;
+        return true;
+    }
+
+    internal static bool RefreshFinalBossStageContent(GUIContent content, ref int cachedStage, int stage)
+    {
+        int safeStage = Mathf.Clamp(stage, 1, 3);
+        if (content == null || cachedStage == safeStage) return false;
+        content.text = "O ARAUTO DO VAZIO  ·  FASE " + safeStage + "/3";
+        cachedStage = safeStage;
         return true;
     }
 
@@ -704,7 +730,13 @@ public sealed partial class ScadrykGameDirector
         if (screen.z <= 0f) return;
         Rect prompt = new Rect(screen.x - 130f, Screen.height - screen.y - 16f, 260f, 30f);
         GUI.color = new Color(0.025f, 0.04f, 0.045f, 0.9f); GUI.DrawTexture(prompt, Texture2D.whiteTexture); GUI.color = Color.white;
-        GUI.Label(prompt, WitnessPromptText(), centeredBodyStyle);
+        if (cachedWitnessInputMode != sessionInputMode || cachedWitnessBindingRevision != ScadrykSettings.BindingRevision)
+        {
+            witnessPromptContent.text = WitnessPromptText();
+            cachedWitnessInputMode = sessionInputMode;
+            cachedWitnessBindingRevision = ScadrykSettings.BindingRevision;
+        }
+        GUI.Label(prompt, witnessPromptContent, centeredBodyStyle);
     }
 
     private string WitnessPromptText() => InputBinding(6) + "  ·  FALAR COM NIMA";
@@ -735,7 +767,8 @@ public sealed partial class ScadrykGameDirector
         GUI.color = new Color(0.78f, 0.19f, 0.62f, 0.95f); GUI.DrawTexture(new Rect(panel.x, panel.y, panel.width, 2f), Texture2D.whiteTexture);
         GUI.color = new Color(0.94f, 0.63f, 0.31f, 0.9f); GUI.DrawTexture(new Rect(panel.x, panel.yMax - 2f, panel.width, 2f), Texture2D.whiteTexture);
         GUI.color = Color.white;
-        GUI.Label(new Rect(panel.x + 10f, panel.y + 3f, panel.width - 20f, 20f), "O ARAUTO DO VAZIO  ·  FASE " + finalBoss.DisplayStage + "/3", finalBossLabelStyle);
+        RefreshFinalBossStageContent(finalBossStageContent, ref cachedFinalBossDisplayStage, finalBoss.DisplayStage);
+        GUI.Label(new Rect(panel.x + 10f, panel.y + 3f, panel.width - 20f, 20f), finalBossStageContent, finalBossLabelStyle);
         Rect track = new Rect(panel.x + 12f, panel.y + 31f, panel.width - 24f, 15f);
         GUI.color = new Color(0.17f, 0.06f, 0.15f, 1f); GUI.DrawTexture(track, Texture2D.whiteTexture);
         GUI.color = new Color(0.91f, 0.22f, 0.58f, 1f); GUI.DrawTexture(new Rect(track.x, track.y, track.width * finalBoss.Health01, track.height), Texture2D.whiteTexture);
@@ -753,8 +786,7 @@ public sealed partial class ScadrykGameDirector
         Rect hud = HudPanelRect(Screen.width, Screen.height, ScadrykSettings.TextScale);
         if (!MiniMapPanelFits(panel, hud, Screen.width, Screen.height)) return;
         GUI.color = new Color(0.035f, 0.05f, 0.06f, 0.9f); GUI.Box(panel, GUIContent.none); GUI.color = Color.white;
-        string mapHeader = MiniMapHeaderText(MiniMapBiomeNames[phaseIndex]);
-        if (miniMapHeaderContent.text != mapHeader) miniMapHeaderContent.text = mapHeader;
+        RefreshMiniMapHeaderContent(miniMapHeaderContent, ref cachedMiniMapHeaderBiome, phaseIndex);
         int baseHeaderFontSize = smallStyle.fontSize;
         smallStyle.fontSize = FitMiniMapHeaderFontSize(baseHeaderFontSize, smallStyle.CalcSize(miniMapHeaderContent).x, width - 26f);
         GUI.Label(new Rect(panel.x + 13, panel.y + 8, width - 26f, 21f + extra * 8f), miniMapHeaderContent, smallStyle);
@@ -813,7 +845,12 @@ public sealed partial class ScadrykGameDirector
         GUI.color = new Color(0.025f, 0.04f, 0.045f, 0.9f);
         GUI.DrawTexture(hint, Texture2D.whiteTexture);
         GUI.color = new Color(0.28f, 0.88f, 1f, 1f);
-        GUI.Label(hint, arrow + "  ALVO FORA DA TELA", offscreenTargetStyle);
+        if (cachedOffscreenTargetArrow != arrow)
+        {
+            offscreenTargetContent.text = arrow + "  ALVO FORA DA TELA";
+            cachedOffscreenTargetArrow = arrow;
+        }
+        GUI.Label(hint, offscreenTargetContent, offscreenTargetStyle);
         GUI.color = Color.white;
     }
 

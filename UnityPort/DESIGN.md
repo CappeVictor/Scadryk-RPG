@@ -173,7 +173,7 @@ Na primeira sala da jornada, o Caçador aguarda 2,6 s antes de iniciar seu prime
 
 **Cache de textos do HUD (24/11/2026):** cabeçalhos, vida, recargas, poderes e objetivo reutilizam `GUIContent`; os textos só são reconstruídos quando os dados visíveis mudam. A compilação batch passou, mas a redução de alocações e CPU não foi medida com o Profiler.
 
-O minimapa e o mapa da jornada também reutilizam os conteúdos das salas; leituras de progresso e formatação de rótulos ocorrem ao montar a sala ou revelar um selo, não em cada redesenho. O smoke confere mudança de estado e reuso de texto nos mapas, além do arredondamento das recargas do HUD. A compilação passou; o smoke e a medição de Profiler ainda estão pendentes.
+O minimapa e o mapa da jornada também reutilizam os conteúdos das salas; leituras de progresso e formatação de rótulos ocorrem ao montar a sala ou revelar um selo, não em cada redesenho. Cabeçalho do bioma, fase do Arauto, fala de Nima e bússola fora da tela também reutilizam texto; só atualizam quando mudam os dados que exibem. O smoke confere mudança de estado e reuso de texto em mapas e cabeçalho/fase de chefe, além do arredondamento das recargas do HUD. A compilação passou; o smoke e a medição de Profiler ainda estão pendentes.
 
 **Fundos das salas de aproximação (23/11/2026):** cada bioma agora tem uma arte própria também na primeira sala: Vau das Lanternas no bosque alagado, Planícies do Vento de Vidro na bacia de sal e Calçada da Maré Baixa na costa. Os caminhos laterais mantêm o corredor central livre para combate e travessia; colisões continuam definidas pela geometria do mapa, não pela textura. Unity importa as três imagens sem cópia legível pela CPU. Falta inspecionar as composições na build e avaliar contraste em jogo.
 
