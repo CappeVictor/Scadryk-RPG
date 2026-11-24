@@ -2036,7 +2036,12 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 migratedStoredJournal != null && migratedStoredJournal.entries != null && migratedStoredJournal.entries.Count == 1 &&
                 migratedStoredJournal.entries[0] == firstRoomStory &&
                 !PlayerPrefs.GetString(StoryJournalProgressKey(checkpointTestPrefix)).Contains("A água conserva vozes") &&
+                MigrateLegacyStoryJournalEntry("Depois que a Grande Onda cobriu a costa, os três sinos emudeceram. Nara, a Ouvinte, ainda escutava os nomes perdidos e seguiu a maré imóvel.") == OpeningMemory &&
+                MigrateLegacyStoryJournalEntry(RoomStoryJournalEntry(roomNames[0][2], "O guardião prende nas raízes o primeiro sino.")) ==
+                    RoomStoryJournalEntry(roomNames[0][2], GuardianIntroductions[0]) &&
+                MigrateLegacyStoryJournalEntry("A Raiz-Mor entrega o Crescente e revela que Nima tocou o primeiro sino; seu nome ficou guardado nas raízes. O arco do Crescente interrompe Ecos.") == GuardianMemories[0] &&
                 MigrateLegacyStoryJournalEntry("Sou Nima, a voz do primeiro sino. A Raiz-Mor guardou meu nome para que o silêncio não me apagasse. Ainda lembro o Arauto chamando esse silêncio de abrigo.") == BasinWitnessLines[0] &&
+                MigrateLegacyStoryJournalEntry("O Arauto chama o silêncio de abrigo. Pergunte a quem perdeu o próprio nome se isso parece paz.") == CoastWitnessLines[2] &&
                 MigrateLegacyStoryJournalEntry("Memória de outra versão.") == "Memória de outra versão.";
             RecordStoryJournalEntry(checkpointTestPrefix, firstRoomStory);
             storyJournalMigrationRoundTrip &= ReadStoryJournal(checkpointTestPrefix).Length == 1;

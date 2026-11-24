@@ -1,6 +1,6 @@
 # Scadryk — plano e registro de qualidade
 
-- **Migração de textos do Caderno (24/11/2026):** saves anteriores podem conter as redações que foram substituídas no arco narrativo; `ReadStoryJournal` agora converte essas entradas (abertura, salas, guardiões e conversas), remove duplicatas e grava o diário normalizado. Acrescentei smoke para provar migração/deduplicação e preservar textos desconhecidos. Unity `6000.6.9f1` importou e compilou em batch; não executei smoke, build nem jogo.
+- **Migração de textos do Caderno (24/11/2026):** saves anteriores podem conter as redações que foram substituídas no arco narrativo; `ReadStoryJournal` agora converte essas entradas (abertura, salas, guardiões e conversas), remove duplicatas e grava o diário normalizado. O smoke cobre exemplos da abertura, de sala, da memória e fala de guardião, das conversas de Nima nos dois biomas e preservação de texto desconhecido. Unity `6000.6.9f1` importou e compilou em batch; smoke, build e jogo não foram executados.
 
 - **Arco de Nara, Nima e os guardiões (24/11/2026):** reescrevi a abertura, as nove apresentações de sala, falas e memórias dos três guardiões, as conversas de Nima e o encerramento para formar uma linha causal: Nima tocou para avisar da onda; cada guardião tentou proteger alguém do luto; o Arauto prolongou o silêncio; Nara escolhe lembrar sem aprisionar. Unity `6000.6.9f1` importou e compilou o projeto em batch. Asserções smoke existentes para nomes, falas, poderes e resolução foram preservadas; smoke e leitura narrativa no jogo não foram executados.
 
