@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **Identificação da build disponível (24/11/2026):** `Build/SCADRYK_BUILD_INFO.txt` aponta para `b30704eeb51f`, árvore limpa, Unity `6000.6.9f1`, build de `2026-11-23T23:39:33Z`; o código atual está em `7a87907`. Portanto, a build local não representa a fonte atual. Não iniciei o executável. Uma tentativa posterior de build foi bloqueada pelo Windows Code Integrity durante o pós-processamento Bee; CI Unity segue condicionado aos secrets de licença.
+
 - **Migração de textos do Caderno (24/11/2026):** saves anteriores podem conter as redações que foram substituídas no arco narrativo; `ReadStoryJournal` agora converte essas entradas (abertura, salas, guardiões e conversas), remove duplicatas e grava o diário normalizado. O smoke cobre exemplos da abertura, de sala, da memória e fala de guardião, das conversas de Nima nos dois biomas e preservação de texto desconhecido. Unity `6000.6.9f1` importou e compilou em batch; smoke, build e jogo não foram executados.
 
 - **Arco de Nara, Nima e os guardiões (24/11/2026):** reescrevi a abertura, as nove apresentações de sala, falas e memórias dos três guardiões, as conversas de Nima e o encerramento para formar uma linha causal: Nima tocou para avisar da onda; cada guardião tentou proteger alguém do luto; o Arauto prolongou o silêncio; Nara escolhe lembrar sem aprisionar. Unity `6000.6.9f1` importou e compilou o projeto em batch. Asserções smoke existentes para nomes, falas, poderes e resolução foram preservadas; smoke e leitura narrativa no jogo não foram executados.
