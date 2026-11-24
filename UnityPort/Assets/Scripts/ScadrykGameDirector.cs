@@ -1680,7 +1680,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         BuildPhase(phaseIndex, roomIndex, false, true);
         resumeFinalGuardianInterlude = ShouldContinueFinalGuardianInterludeAfterRestart(interludeWasPending, resumeFinalGuardianInterlude);
         StartFinalGuardianInterlude();
-        ShowStatus("Você caiu e retornou ao começo da sala.", 2.5f);
+        ShowStatus("Você caiu. Vida restaurada; poderes e memórias preservados.", 2.5f);
     }
 
     public void RecordPlayerDeath() => roomDeaths++;
@@ -2693,7 +2693,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             deathCsvColumns[15] != "1" || deathCsvColumns[16] != "2" || deathCsvColumns[17] != "2" || deathCsvColumns[18] != "3")
         { SmokeFail("O CSV não registraria uma morte antes de terminar a animação"); yield break; }
         RestartCurrentRoom();
-        if (roomActiveSeconds != 17f || roomDeaths != 1 || roomPowerUses[0] != 2 || roomSecretsRevealed != 1 ||
+        if (statusMessage != "Você caiu. Vida restaurada; poderes e memórias preservados." ||
+            roomActiveSeconds != 17f || roomDeaths != 1 || roomPowerUses[0] != 2 || roomSecretsRevealed != 1 ||
             coastalCurrentEntries != 2 || Mathf.Abs(coastalCurrentSeconds - 4.6f) > 0.001f ||
             Mathf.Abs(shallowWaterSeconds - 2.2f) > 0.001f || Mathf.Abs(saltCrosswindSeconds - 2.8f) > 0.001f ||
             resonanceActivations != 2 || sessionInputMode != "gamepad")
