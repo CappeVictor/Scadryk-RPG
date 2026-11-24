@@ -2777,11 +2777,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Rect wrappedStatus = StatusLabelRect(400f, 360f, 72f);
         var threatCaptionContent = new GUIContent();
         string cachedThreatCaptionLabel = null;
-        RefreshThreatCaptionContent(threatCaptionContent, ref cachedThreatCaptionLabel, "Arauto fase 3 — onda de vazio");
+        RefreshThreatCaptionContent(threatCaptionContent, ref cachedThreatCaptionLabel, "Arauto fase 3 — onda de vazio", 0.81f);
         string firstThreatCaptionText = threatCaptionContent.text;
-        RefreshThreatCaptionContent(threatCaptionContent, ref cachedThreatCaptionLabel, "Arauto fase 3 — onda de vazio");
+        RefreshThreatCaptionContent(threatCaptionContent, ref cachedThreatCaptionLabel, "Arauto fase 3 — onda de vazio", 0.89f);
         bool unchangedCaptionReusesText = object.ReferenceEquals(firstThreatCaptionText, threatCaptionContent.text);
-        RefreshThreatCaptionContent(threatCaptionContent, ref cachedThreatCaptionLabel, "Bosque — Eco avanço de raízes");
+        RefreshThreatCaptionContent(threatCaptionContent, ref cachedThreatCaptionLabel, "Bosque — Eco avanço de raízes", 0.21f);
         string singleExposureCaption = ExposureCaption(1);
         string groupExposureCaption = ExposureCaption(3);
         if (HudHealthLabel(68.2f, 100f) != "VIDA 69/100" ||
@@ -2804,7 +2804,10 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             compactThreatCaption.xMin < 28f || compactThreatCaption.yMin < 196f ||
             compactThreatCaption.yMax > compactHud.yMax - 10f || compactThreatCaption.xMax > compactHud.xMax - 8f ||
             ThreatCaptionFontSize(1.5f, (compactThreatCaption.height - 6f) * 0.5f) > 14 ||
-            !unchangedCaptionReusesText || threatCaptionContent.text != "PREPARANDO: Bosque — Eco avanço de raízes" ||
+            !unchangedCaptionReusesText || ThreatCaptionTenthsUntilImpact(0.71f) != 8 ||
+            ThreatCaptionTenthsUntilImpact(-0.1f) != 0 ||
+            ThreatCaptionText("Bosque — Eco avanço de raízes", 3) != "0,3 s · Bosque — Eco avanço de raízes" ||
+            threatCaptionContent.text != "0,3 s · Bosque — Eco avanço de raízes" ||
             !string.IsNullOrEmpty(ExposureCaption(0)) || singleExposureCaption != "ESTOURO ATIVO · 1 ECO EXPOSTO · +30% DANO" ||
             groupExposureCaption != "ESTOURO ATIVO · 3 ECOS EXPOSTOS · +30% DANO" ||
             narrowLegend.yMin < narrowMap.yMin || narrowLegend.yMax > narrowMap.yMax ||

@@ -42,11 +42,23 @@ public sealed partial class ScadrykGameDirector
         cachedText = text;
     }
 
-    private static void RefreshThreatCaptionContent(GUIContent content, ref string cachedLabel, string label)
+    internal static int ThreatCaptionTenthsUntilImpact(float secondsUntilImpact) =>
+        Mathf.Max(0, Mathf.CeilToInt(Mathf.Max(0f, secondsUntilImpact) * 10f));
+
+    internal static string ThreatCaptionText(string label, int tenthsUntilImpact)
     {
-        if (cachedLabel == label) return;
-        content.text = string.IsNullOrEmpty(label) ? string.Empty : "PREPARANDO: " + label;
-        cachedLabel = label;
+        if (string.IsNullOrEmpty(label)) return string.Empty;
+        int tenths = Mathf.Max(0, tenthsUntilImpact);
+        return (tenths / 10) + "," + (tenths % 10) + " s · " + label;
+    }
+
+    private static void RefreshThreatCaptionContent(GUIContent content, ref string cachedLabel, string label, float secondsUntilImpact)
+    {
+        int tenths = ThreatCaptionTenthsUntilImpact(secondsUntilImpact);
+        string cacheKey = string.IsNullOrEmpty(label) ? string.Empty : label + "\u001f" + tenths;
+        if (cachedLabel == cacheKey) return;
+        content.text = ThreatCaptionText(label, tenths);
+        cachedLabel = cacheKey;
     }
 
     private static string ExposureCaption(int count)
@@ -172,9 +184,9 @@ public sealed partial class ScadrykGameDirector
         if (first == null)
             exposureCaptionContent.text = cachedExposureCaptionLabel;
         else
-            RefreshThreatCaptionContent(threatCaptionFirstContent, ref cachedThreatCaptionFirstLabel, first);
+            RefreshThreatCaptionContent(threatCaptionFirstContent, ref cachedThreatCaptionFirstLabel, first, firstImpact);
         if (second != null)
-            RefreshThreatCaptionContent(threatCaptionSecondContent, ref cachedThreatCaptionSecondLabel, second);
+            RefreshThreatCaptionContent(threatCaptionSecondContent, ref cachedThreatCaptionSecondLabel, second, secondImpact);
 
         int captionCount = (first != null && (second != null || showExposure)) ? 2 : 1;
         Rect panel = ThreatCaptionPanelRect(Screen.width, Screen.height, ScadrykSettings.TextScale, captionCount);
