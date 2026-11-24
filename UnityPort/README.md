@@ -142,7 +142,7 @@ A primeira jornada começa com uma abertura narrativa; combate e cronômetro fic
 ### Controle
 
 - Analógico esquerdo move e o direito mira. A ataca, B esquiva, X usa Pulso, Y interage, LB/RB/Back ativam os poderes e Start pausa. L3 abre o mapa.
-- A mira acompanha o movimento até o analógico direito ser usado; depois disso, fica independente e conserva a direção ao soltar o analógico.
+- Quando o controle é o dispositivo ativo, quatro marcas douradas discretas indicam a direção atual do ataque à frente de Nara; elas mostram direção, não o alcance do golpe. A mira acompanha o movimento até o analógico direito ser usado; depois disso, fica independente e conserva a direção ao soltar o analógico.
 - Na aba **Controle**, remapeie botões e ajuste a zona morta radial entre 8% e 40% (padrão: 19%). Analógicos navegam, A confirma e B retorna. Start e L3 ficam reservados para pausa e mapa.
 - O painel mostra eixos e intensidade útil/bruta para ajudar a ajustar a zona morta. A correspondência pode variar conforme o controle e o driver; ainda faltam sessões com dispositivos físicos variados.
 

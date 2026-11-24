@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **Indicador de direção de mira no controle (24/11/2026):** com gamepad ativo, quatro marcas discretas mostram 1,45 unidade à frente de Nara, usando `Facing`; mouse/teclado e telas de menu não exibem o marcador. A distância é apenas uma indicação direcional, não o alcance de ataque. O smoke verifica direção normalizada e fallback quando a direção é nula; Unity 6000.6.9f1 importou e compilou os scripts em batch. Falta executar o smoke e inspecionar contraste/obstrução visual em gameplay; não abri Play Mode.
+
 - **Pistas chegam antes quando a exploração trava (24/11/2026):** a primeira orientação específica de uma sala de objetivo passa a aparecer após 16 s sem progresso, e as seguintes após 11 s adicionais de espera ativa; combate, pausa e mensagens temporárias continuam fora da contagem. Atualizei as asserções do smoke que protegiam o intervalo antigo de 24/18 s. Unity 6000.6.9f1 importou e compilou os scripts em batch; smoke e gameplay não foram executados.
 
 - **Seleção visual acompanha cliques no menu (24/11/2026):** o botão comum de opções agora grava o índice selecionado ao receber clique, para o contorno de foco acompanhar mouse, teclado e controle. O smoke distingue clique de repintura sem clique e cobre FPS, alternância tela cheia e retorno. Unity 6000.6.9f1 importou e compilou os scripts em batch; não rodei o smoke, não abri Play Mode nem o executável.

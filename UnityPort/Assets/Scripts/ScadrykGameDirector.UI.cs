@@ -73,7 +73,7 @@ public sealed partial class ScadrykGameDirector
         if (showOptions) { DrawOptions(); return; }
         if (memoryModal) { DrawMemoryModal(); return; }
         if (showTitle || isPaused || victory) { DrawOverlay(); return; }
-        DrawHud(); DrawMiniMap(); DrawOffscreenTargetHint();
+        DrawHud(); DrawMiniMap(); DrawOffscreenTargetHint(); DrawGamepadAimMarker();
         DrawWitnessPrompt();
         if (phaseGuardian != null) DrawPhaseGuardianTitle();
         if (finalBoss != null) DrawFinalBossBar();
@@ -195,6 +195,42 @@ public sealed partial class ScadrykGameDirector
             GUI.Label(new Rect(panel.x + 8f, panel.y + 3f + rowHeight, panel.width - 16f, rowHeight), secondContent, centeredBodyStyle);
         }
         centeredBodyStyle.fontSize = oldSize;
+    }
+
+    private void DrawGamepadAimMarker()
+    {
+        if (sessionInputMode != "gamepad" || player == null) return;
+        Camera camera = Camera.main;
+        if (camera == null) return;
+        Vector3 world = GamepadAimMarkerWorldPosition(player.transform.position, player.Facing);
+        Vector3 projected = camera.WorldToScreenPoint(world);
+        if (projected.z <= 0f) return;
+        Vector2 center = new Vector2(projected.x, Screen.height - projected.y);
+        float scale = Mathf.Clamp(Screen.height / 720f, 0.8f, 1.4f);
+        DrawAimMarkerTicks(center, scale, new Color(0.015f, 0.025f, 0.03f, 0.92f), 4f * scale);
+        DrawAimMarkerTicks(center, scale, new Color(1f, 0.82f, 0.38f, 0.95f), 2f * scale);
+    }
+
+    internal static Vector2 GamepadAimMarkerWorldPosition(Vector2 playerPosition, Vector2 facing)
+    {
+        Vector2 direction = facing.sqrMagnitude > 0.001f ? facing.normalized : Vector2.right;
+        return playerPosition + direction * 1.45f;
+    }
+
+    private static void DrawAimMarkerTicks(Vector2 center, float scale, Color color, float thickness)
+    {
+        const float radius = 7f;
+        const float tickLength = 3f;
+        GUI.color = color;
+        GUI.DrawTexture(new Rect(center.x - (radius + tickLength) * scale, center.y - thickness * 0.5f,
+            tickLength * scale, thickness), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(center.x + radius * scale, center.y - thickness * 0.5f,
+            tickLength * scale, thickness), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(center.x - thickness * 0.5f, center.y - (radius + tickLength) * scale,
+            thickness, tickLength * scale), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(center.x - thickness * 0.5f, center.y + radius * scale,
+            thickness, tickLength * scale), Texture2D.whiteTexture);
+        GUI.color = Color.white;
     }
 
     private static int ThreatCaptionFontSize(float textScale, float rowHeight) =>

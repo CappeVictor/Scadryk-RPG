@@ -2837,6 +2837,12 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         if (!mouseOptionFocusWorks)
         { SmokeFail("Um clique no menu não atualiza a seleção ativa, ou uma moldura sem clique mudou o foco"); yield break; }
         Debug.Log("SCADRYK_SMOKE: seleção visual do menu acompanha cliques sem mover o foco em repinturas");
+        Vector2 aimMarkerRight = GamepadAimMarkerWorldPosition(new Vector2(2f, -1f), Vector2.right * 2f);
+        Vector2 aimMarkerFallback = GamepadAimMarkerWorldPosition(new Vector2(2f, -1f), Vector2.zero);
+        if (Vector2.Distance(aimMarkerRight, new Vector2(3.45f, -1f)) > 0.001f ||
+            Vector2.Distance(aimMarkerFallback, new Vector2(3.45f, -1f)) > 0.001f)
+        { SmokeFail("O marcador de mira do controle não segue a direção normalizada ou a direção padrão"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: marcador de mira do controle segue a direção de ataque");
         if (!frameRateModesWork)
         { SmokeFail("Os limites de FPS, a sincronização com o monitor ou a rotação das opções estão inconsistentes"); yield break; }
         Debug.Log("SCADRYK_SMOKE: 30/60 FPS usam limite fixo e Auto FPS acompanha a atualização do monitor");
