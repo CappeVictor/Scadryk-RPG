@@ -341,6 +341,7 @@ public sealed partial class ScadrykGameDirector
     {
         worldSecret = null;
         worldSecretHintShown = false;
+        worldSideRouteHintShown = false;
         int requiredPower = RequiredWorldSecretPower();
         if (requiredPower < 0) return;
         if (!ShouldBuildWorldSecret(smokeRun, IsWorldSecretRevealed("Scadryk.", phaseIndex, roomIndex))) return;
@@ -419,6 +420,28 @@ public sealed partial class ScadrykGameDirector
         if (power < 0) return false;
         ShowStatus(WorldSecretHint(power), 6f);
         worldSecretHintShown = true;
+        return true;
+    }
+
+    internal const float SideRouteHintRadius = 3.4f;
+
+    internal static bool ShouldShowSideRouteHint(bool alreadyShown, bool routeExists, bool combatActive,
+        bool statusVisible, float distance) =>
+        !alreadyShown && routeExists && !combatActive && !statusVisible && distance <= SideRouteHintRadius;
+
+    internal static string SideRouteHintText(int side) => side > 0
+        ? "A passagem lateral segue ao norte; as marcas no chão mostram por onde sair e voltar."
+        : "A passagem lateral segue ao sul; as marcas no chão mostram por onde sair e voltar.";
+
+    private bool TryShowSideRouteHint()
+    {
+        if (player == null || !TryGetSideRoute(phaseIndex, roomIndex, out int side, out float entry, out _)) return false;
+        Vector2 entrance = roomCenter + new Vector2(entry, side * (RoomHalfHeight + 0.45f));
+        float distance = Vector2.Distance(player.transform.position, entrance);
+        if (!ShouldShowSideRouteHint(worldSideRouteHintShown, true, enemiesRemaining > 0,
+                Time.time < statusUntil, distance)) return false;
+        ShowStatus(SideRouteHintText(side), 5f);
+        worldSideRouteHintShown = true;
         return true;
     }
 

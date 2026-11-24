@@ -75,6 +75,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private ScadrykEnemyHealth phaseGuardian;
     private GameObject worldSecret;
     private bool worldSecretHintShown;
+    private bool worldSideRouteHintShown;
     private readonly GameObject[] roomAnchors = new GameObject[2];
     private int anchorsRequired, anchorsActivated, hintStage;
     private bool anchorsNeedPulse;
@@ -384,7 +385,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             hintStage++;
             progressHintSeconds = 0f;
         }
-        if (!IsPaused) TryShowWorldSecretHint();
+        if (!IsPaused)
+        {
+            TryShowSideRouteHint();
+            TryShowWorldSecretHint();
+        }
         if (!IsPaused && Input.GetKeyDown(KeyCode.F8))
         {
             unclearAttackMarks++;
@@ -2837,6 +2842,15 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             MapRoomRouteLabel(0, 1, true).EndsWith(" ◆", System.StringComparison.Ordinal))
         { SmokeFail("Os selos opcionais não estão posicionados dentro dos desvios que os anunciam"); yield break; }
         Debug.Log("SCADRYK_SMOKE: mapa orienta os desvios e distingue selos pendentes dos já liberados");
+        if (!ShouldShowSideRouteHint(false, true, false, false, SideRouteHintRadius) ||
+            ShouldShowSideRouteHint(false, true, false, false, SideRouteHintRadius + 0.01f) ||
+            ShouldShowSideRouteHint(true, true, false, false, 0f) ||
+            ShouldShowSideRouteHint(false, false, false, false, 0f) ||
+            ShouldShowSideRouteHint(false, true, true, false, 0f) ||
+            ShouldShowSideRouteHint(false, true, false, true, 0f) ||
+            !SideRouteHintText(1).Contains("norte") || !SideRouteHintText(-1).Contains("sul"))
+        { SmokeFail("A dica de desvio aparece fora de alcance, durante combate/status ou sem direção correta"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: dica de desvio contextual respeita alcance, combate, avisos ativos e direção");
         bool[] mapCleared = { true, false, false };
         if (WorldMapRoomStatus(0, 2, 1, 1, mapCleared) != 2 ||
             WorldMapRoomStatus(1, 0, 1, 1, mapCleared) != 2 ||
