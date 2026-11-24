@@ -1329,6 +1329,13 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         ClearWorldSecretProgress(keyPrefix);
     }
 
+    internal static void ClearProgressAfterVictory(string keyPrefix)
+    {
+        ClearCheckpoint(keyPrefix);
+        ClearCampaignProgress(keyPrefix);
+        PlayerPrefs.Save();
+    }
+
     internal static string StoryJournalProgressKey(string keyPrefix) => keyPrefix + StoryJournalKeySuffix;
 
     internal static string[] ReadStoryJournal(string keyPrefix)
@@ -1639,12 +1646,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         victory = true;
         overlaySelection = 0;
         ScadrykAudio.Play(ScadrykCue.Victory);
-        if (!smokeRun)
-        {
-            ClearCheckpoint("Scadryk.");
-            ClearCampaignProgress("Scadryk.");
-            PlayerPrefs.Save();
-        }
+        if (!smokeRun) ClearProgressAfterVictory("Scadryk.");
         statusMessage = VictoryEndingText;
     }
 
@@ -2016,15 +2018,16 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 !ShouldSaveCheckpointOnApplicationPause(false, true, false, false, false, false) &&
                 !ShouldSaveCheckpointOnApplicationPause(true, false, false, false, false, false) &&
                 !ShouldSaveCheckpointOnApplicationPause(true, true, true, false, false, false);
+            WriteCheckpoint(checkpointTestPrefix, 2, 2);
             RecordStoryJournalEntry(checkpointTestPrefix, "Memórias permanecem no Caderno após a vitória.");
             WriteGuardianDefeatProgress(checkpointTestPrefix, 0);
             WriteFinalBossDefeatProgress(checkpointTestPrefix);
             WriteWitnessProgress(checkpointTestPrefix, 1, 2);
             MarkWorldSecretRevealed(checkpointTestPrefix, 2, 1);
-            ClearCampaignProgress(checkpointTestPrefix);
+            ClearProgressAfterVictory(checkpointTestPrefix);
             campaignProgressCleanupRoundTrip = !HasGuardianDefeatProgress(checkpointTestPrefix, 0) &&
                 !HasFinalBossDefeatProgress(checkpointTestPrefix) && ReadWitnessProgress(checkpointTestPrefix, 1) == 0 &&
-                !IsWorldSecretRevealed(checkpointTestPrefix, 2, 1);
+                !IsWorldSecretRevealed(checkpointTestPrefix, 2, 1) && !HasCheckpoint(checkpointTestPrefix);
             storyJournalSurvivesCampaignCleanup = System.Array.IndexOf(ReadStoryJournal(checkpointTestPrefix),
                 "Memórias permanecem no Caderno após a vitória.") >= 0;
             ClearStoryJournal(checkpointTestPrefix);
