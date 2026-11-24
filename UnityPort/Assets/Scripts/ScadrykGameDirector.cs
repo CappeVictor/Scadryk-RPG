@@ -392,7 +392,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         }
         if (!IsPaused && Input.GetKeyDown(KeyCode.F8))
         {
-            unclearAttackMarks++;
+            RecordUnclearAttackMark();
             string attackPatterns = RecentAttackReadabilityLabels();
             RecordAttackClarityEvent(attackPatterns);
             ShowStatus(attackPatterns == "não identificado"
@@ -1047,6 +1047,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     {
         if (index >= 0 && index < roomPowerUses.Length) roomPowerUses[index]++;
     }
+
+    internal int RecordUnclearAttackMark() => ++unclearAttackMarks;
 
     public void RecordCoastalCurrentEntry()
     {
@@ -2679,7 +2681,13 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Debug.Log("SCADRYK_SMOKE: nova jornada com save pode ser cancelada");
         roomActiveSeconds = 17f;
         roomDeaths = 0;
-        roomPowerUses[0] = 2;
+        RecordPowerUse(0);
+        RecordPowerUse(0);
+        RecordPowerUse(1);
+        RecordPowerUse(2);
+        RecordPowerUse(-1);
+        RecordPowerUse(roomPowerUses.Length);
+        int recordedUnclearAttackMarks = RecordUnclearAttackMark();
         roomSecretsRevealed = 1;
         shallowWaterSeconds = 2.2f;
         saltCrosswindSeconds = AddSaltCrosswindExposure(0f, 1, 1, 2.8f);
@@ -2701,8 +2709,9 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         { SmokeFail("A telemetria ambiental contou bioma/sala errados ou exposição negativa"); yield break; }
         coastalCurrentEntries = AddCoastalCurrentEntry(AddCoastalCurrentEntry(0, 2, 1), 2, 1);
         coastalCurrentSeconds = AddCoastalCurrentExposure(AddCoastalCurrentExposure(0f, 2, 1, 2.1f), 2, 1, 2.5f);
-        if (coastalCurrentEntries != 2 || Mathf.Abs(coastalCurrentSeconds - 4.6f) > 0.001f)
-        { SmokeFail("A telemetria não somou entradas e segundos ativos da corrente"); yield break; }
+        if (coastalCurrentEntries != 2 || Mathf.Abs(coastalCurrentSeconds - 4.6f) > 0.001f ||
+            recordedUnclearAttackMarks != 1 || roomPowerUses[0] != 2 || roomPowerUses[1] != 1 || roomPowerUses[2] != 1)
+        { SmokeFail("A telemetria não somou uso de poderes, marcas de ataque difícil ou entradas/segundos da corrente"); yield break; }
         if (SecretRevealCountAfterSuccess(0, false) != 1 || SecretRevealCountAfterSuccess(3, false) != 4 ||
             SecretRevealCountAfterSuccess(3, true) != 3)
         { SmokeFail("A telemetria de selos não conta descobertas ou interfere no smoke"); yield break; }
@@ -2740,20 +2749,28 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         string[] deathCsvColumns = FormatSessionCsvRow(false).TrimEnd('\n').Split(',');
         if (!System.Guid.TryParseExact(sessionId, "N", out _) ||
             deathCsvColumns.Length != SessionCsvHeader.TrimEnd('\n').Split(',').Length || deathCsvColumns[0] != sessionId ||
-            deathCsvColumns[5] != "1" || deathCsvColumns[12] != "2" || deathCsvColumns[13] != "5" ||
+            deathCsvColumns[4] != "17" || deathCsvColumns[5] != "1" || deathCsvColumns[6] != "1" ||
+            deathCsvColumns[7] != "2" || deathCsvColumns[8] != "1" || deathCsvColumns[9] != "1" ||
+            deathCsvColumns[12] != "2" || deathCsvColumns[13] != "5" ||
             deathCsvColumns[15] != "1" || deathCsvColumns[16] != "2" || deathCsvColumns[17] != "2" || deathCsvColumns[18] != "3")
-        { SmokeFail("O CSV não registraria uma morte antes de terminar a animação"); yield break; }
+        { SmokeFail("O CSV de sessão perdeu duração, morte, marca de clareza, usos dos três poderes ou métricas ambientais"); yield break; }
         RestartCurrentRoom();
         if (statusMessage != "Você caiu. Vida restaurada; poderes e memórias preservados." ||
             player == null || (player.Facing - Vector2.right).sqrMagnitude > 0.001f ||
-            roomActiveSeconds != 17f || roomDeaths != 1 || roomPowerUses[0] != 2 || roomSecretsRevealed != 1 ||
+            roomActiveSeconds != 17f || roomDeaths != 1 || unclearAttackMarks != 1 ||
+            roomPowerUses[0] != 2 || roomPowerUses[1] != 1 || roomPowerUses[2] != 1 || roomSecretsRevealed != 1 ||
             coastalCurrentEntries != 2 || Mathf.Abs(coastalCurrentSeconds - 4.6f) > 0.001f ||
             Mathf.Abs(shallowWaterSeconds - 2.2f) > 0.001f || Mathf.Abs(saltCrosswindSeconds - 2.8f) > 0.001f ||
             resonanceActivations != 2 || sessionInputMode != "gamepad")
         { SmokeFail("Morte reiniciou a sala mas perdeu tempo, mortes, poderes, uso da corrente ou dispositivo da sessão"); yield break; }
         string[] csvHeaderColumns = SessionCsvHeader.TrimEnd('\n').Split(',');
         string[] csvRowColumns = FormatSessionCsvRow(true).TrimEnd('\n').Split(',');
-        if (csvRowColumns.Length != csvHeaderColumns.Length || csvHeaderColumns[12] != "current_entries" ||
+        if (csvRowColumns.Length != csvHeaderColumns.Length || csvHeaderColumns[4] != "seconds" ||
+            csvHeaderColumns[5] != "deaths" || csvHeaderColumns[6] != "unclear_attacks" ||
+            csvHeaderColumns[7] != "crescent" || csvHeaderColumns[8] != "salt" || csvHeaderColumns[9] != "tide" ||
+            csvRowColumns[4] != "17" || csvRowColumns[5] != "1" || csvRowColumns[6] != "1" ||
+            csvRowColumns[7] != "2" || csvRowColumns[8] != "1" || csvRowColumns[9] != "1" ||
+            csvHeaderColumns[12] != "current_entries" ||
             csvHeaderColumns[13] != "current_seconds" || csvHeaderColumns[14] != "input_mode" ||
             csvHeaderColumns[15] != "seals_revealed" || csvHeaderColumns[16] != "shallow_water_seconds" ||
             csvHeaderColumns[17] != "resonance_activations" || csvHeaderColumns[18] != "salt_crosswind_seconds" || csvRowColumns[14] != "gamepad" ||
@@ -2762,7 +2779,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         Debug.Log("SCADRYK_SMOKE: CSV v9 preserva correntes, água, ressonâncias e selos após morte e serializa cabeçalho/valores");
         ResetRoomSessionMetrics();
         if (roomActiveSeconds != 0f || roomDeaths != 0 || unclearAttackMarks != 0 || sessionInputMode != "unknown" ||
-            roomPowerUses[0] != 0 || coastalCurrentEntries != 0 || coastalCurrentSeconds != 0f || roomSecretsRevealed != 0 ||
+            roomPowerUses[0] != 0 || roomPowerUses[1] != 0 || roomPowerUses[2] != 0 ||
+            coastalCurrentEntries != 0 || coastalCurrentSeconds != 0f || roomSecretsRevealed != 0 ||
             shallowWaterSeconds != 0f || saltCrosswindSeconds != 0f || resonanceActivations != 0)
         { SmokeFail("O início de uma nova sala manteve métricas da sala anterior"); yield break; }
         Debug.Log("SCADRYK_SMOKE: métricas ambientais são por sala e reiniciam na nova tentativa");
