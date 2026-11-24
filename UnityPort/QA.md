@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **CI do commit `7d9348d` (24/11/2026):** Unity run #296 (`45483037895`) passou `Validate Unity resource files without Editor license`; o job `Build and smoke-test on hosted Windows` falhou no passo `Require Unity Personal license secrets`, então build, smoke da campanha e upload foram ignorados. O workflow C# run #1154 (`45483037831`) concluiu com sucesso, mas compila/testa somente o protótipo legado da raiz; ele não valida `UnityPort`.
+
 - **Separação temporal dos avisos sonoros comuns (24/11/2026):** acrescentei ao smoke a regra de que a duração de cada cue de Caçador, Atirador, Ressonador e Tecelão não exceda o intervalo global de 0,52 s entre inícios de ataques. Isso protege contra sobreposição previsível de sinais consecutivos sem alterar o balanceamento; a mixagem real ainda requer escuta. Unity 6000.6.9f1 importou e compilou os scripts em batch; smoke não executado.
 
 - **Indicador de direção de mira no controle (24/11/2026):** com gamepad ativo, quatro marcas discretas mostram 1,45 unidade à frente de Nara, usando `Facing`; mouse/teclado e telas de menu não exibem o marcador. A distância é apenas uma indicação direcional, não o alcance de ataque. O smoke verifica direção normalizada e fallback quando a direção é nula; Unity 6000.6.9f1 importou e compilou os scripts em batch. Falta executar o smoke e inspecionar contraste/obstrução visual em gameplay; não abri Play Mode.
