@@ -23,6 +23,8 @@ Registro de builds, teste de progressão e roteiro de avaliação com jogadores:
 
 Quando cues de perigo se sobrepõem, cada novo aviso reduz o volume relativo conforme a quantidade de sinais ativos; nenhum cue é descartado. Os telegráficos visuais permanecem individualizados, com alto contraste opcional. A clareza da mixagem ainda precisa de avaliação em jogo.
 
+Todo ataque inimigo que causa dano tem uma preparação visual e sonora; a duração mínima configurada é 0,7 s para Ecos comuns, guardiões e fases do Arauto. O smoke verifica esse limite no código. Ele é uma proteção contra avisos curtos acidentais, não comprova que o tempo seja suficiente para todos os jogadores; isso ainda precisa de sessões de avaliação.
+
 Durante a preparação de um golpe, uma legenda central também nomeia o ataque como alternativa textual aos sinais visuais e sonoros. Para preservar a leitura em combates cheios, ela reúne no máximo dois tipos de ameaça ao mesmo tempo e prioriza os impactos mais próximos; a legenda desaparece assim que a preparação termina. O tamanho acompanha a escala de texto das opções, respeitando o espaço disponível em janelas compactas. Em telas largas, ocupa a faixa entre HUD e minimapa; em telas baixas, substitui o objetivo apenas durante o aviso.
 
 O Caderno de Memórias mantém em cache as alturas e conteúdos formatados dos cartões enquanto a lista, largura e escala de texto não mudam; isso evita recriar arrays e objetos de texto em cada redesenho do painel. Esse ajuste reduz alocações previstas no código, mas o efeito em GC e desempenho ainda precisa ser medido com o Profiler.

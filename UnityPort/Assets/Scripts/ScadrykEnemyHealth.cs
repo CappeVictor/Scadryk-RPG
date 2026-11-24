@@ -18,6 +18,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private const float FinalStarfallProjectileSpeed = 5.4f;
     internal const float FinalStageBreatherDuration = 0.9f;
     internal const float FinalStageAttackDelay = 3.1f;
+    internal const float MinimumAttackWarningDuration = 0.7f;
     internal const float AreaPulseRadius = 3.2f;
     internal const float SaltPulseRadius = 3.65f;
     internal const float CoastalPulseRadius = 2.8f;
@@ -27,6 +28,19 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     internal const float OpeningAttackSpacing = 0.52f;
     internal const int SteeringHitCapacity = 32;
     internal static float AttackRecoveryDuration(bool boss, bool finalBoss) => finalBoss ? 0.42f : boss ? 0.36f : 0.24f;
+    internal static float AttackWindupDuration(bool boss, int biome, int role) => boss ? Mathf.Clamp(biome, 0, 2) switch
+    {
+        0 => 0.95f,
+        1 => 0.86f,
+        _ => 1.05f
+    } : Mathf.Clamp(role, 0, 3) switch
+    {
+        0 => 0.7f,
+        1 => 0.85f,
+        2 => 0.95f,
+        _ => 1.1f
+    };
+    internal static float FinalBossWindupDuration(int stage) => Mathf.Clamp(stage, 1, 3) == 3 ? 1.18f : 1.35f;
     internal static float SaltExposureDuration(bool boss, bool echo) => boss ? (echo ? 4f : 3f) : (echo ? 7f : 5f);
     internal static float TidePushStrength(bool echo) => echo ? 7.2f : 5.5f;
     internal static float TidePushDuration(bool echo) => echo ? 0.31f : 0.24f;
@@ -469,8 +483,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         ScadrykAudio.Play(WarningCueFor(biomeIndex, IsBoss, false, combatRole));
         lastAttackStartedAt = Time.time;
         lastAttackReadabilityLabel = AttackReadabilityLabel(biomeIndex, IsBoss, false, combatRole, queuedFinalPattern, queuedFinalStage);
-        float windup = IsBoss ? (biomeIndex == 0 ? 0.95f : biomeIndex == 1 ? 0.86f : 1.05f) :
-            combatRole == 0 ? 0.7f : combatRole == 1 ? 0.85f : combatRole == 2 ? 0.95f : 1.1f;
+        float windup = AttackWindupDuration(IsBoss, biomeIndex, combatRole);
         if (animator != null) animator.PlayWindup(AnnouncedAttackDirection(transform.position, attackTarget), windup);
         isWindup = true;
         windupEndsAt = Time.time + windup;
@@ -521,7 +534,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         lastAttackReadabilityLabel = AttackReadabilityLabel(biomeIndex, IsBoss, true, combatRole, queuedFinalPattern, queuedFinalStage);
         ScadrykAudio.Play(FinalBossPatternWarningCue(queuedFinalPattern));
         lastAttackStartedAt = Time.time;
-        float windup = stage == 3 ? 1.18f : 1.35f;
+        float windup = FinalBossWindupDuration(stage);
         if (animator != null) animator.PlayWindup(AnnouncedAttackDirection(transform.position, attackTarget), windup);
         isWindup = true;
         windupEndsAt = Time.time + windup;

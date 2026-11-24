@@ -2353,6 +2353,18 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ResolveInputMode("unknown", null) != "unknown")
         { SmokeFail("A telemetria não acompanha trocas reais de dispositivo ou aceita modos inválidos"); yield break; }
         Debug.Log("SCADRYK_SMOKE: telemetria alterna teclado/controle e ignora modos inválidos");
+        bool enemyWarningsMeetReactionFloor = true;
+        for (int biome = 0; biome < PhaseNames.Length; biome++)
+        {
+            for (int role = 0; role < 4; role++)
+                enemyWarningsMeetReactionFloor &= ScadrykEnemyHealth.AttackWindupDuration(false, biome, role) >= ScadrykEnemyHealth.MinimumAttackWarningDuration;
+            enemyWarningsMeetReactionFloor &= ScadrykEnemyHealth.AttackWindupDuration(true, biome, 0) >= ScadrykEnemyHealth.MinimumAttackWarningDuration;
+        }
+        for (int stage = 1; stage <= 3; stage++)
+            enemyWarningsMeetReactionFloor &= ScadrykEnemyHealth.FinalBossWindupDuration(stage) >= ScadrykEnemyHealth.MinimumAttackWarningDuration;
+        if (!enemyWarningsMeetReactionFloor)
+        { SmokeFail("Um padrão inimigo ou fase do Arauto anuncia dano por menos tempo que o mínimo de reação definido"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: todos os papéis inimigos, guardiões e fases do Arauto preservam ao menos 0,7 s de aviso");
         if (ScadrykPlayerController.InputBufferCanStart(1.1f, 1.3f, 1.2f) ||
             !ScadrykPlayerController.InputBufferCanStart(1.21f, 1.3f, 1.2f) ||
             ScadrykPlayerController.InputBufferCanStart(1.31f, 1.3f, 1.2f) ||
