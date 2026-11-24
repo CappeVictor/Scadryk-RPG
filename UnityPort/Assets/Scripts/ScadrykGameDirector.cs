@@ -2261,6 +2261,10 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             ScadrykCue.FinalVolleyWarning == ScadrykCue.FinalWaveWarning ||
             ScadrykCue.FinalStarfallWarning == ScadrykCue.FinalWaveWarning ||
             audio == null || !audio.HasCombatLayer ||
+            audio.CueDuration(laneCue) > ScadrykEnemyHealth.OpeningAttackSpacing ||
+            audio.CueDuration(volleyCue) > ScadrykEnemyHealth.OpeningAttackSpacing ||
+            audio.CueDuration(areaCue) > ScadrykEnemyHealth.OpeningAttackSpacing ||
+            audio.CueDuration(supportCue) > ScadrykEnemyHealth.OpeningAttackSpacing ||
             Mathf.Abs(ScadrykAudio.CombatIntensityFor(0, false, false)) > 0.001f ||
             Mathf.Abs(ScadrykAudio.CombatIntensityFor(1, false, false) - 0.32f) > 0.001f ||
             Mathf.Abs(ScadrykAudio.CombatIntensityFor(4, false, false) - 0.78f) > 0.001f ||
