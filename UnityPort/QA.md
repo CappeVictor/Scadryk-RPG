@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **CI da revisão `f03d28c` (24/11/2026):** Unity run #320 (`45496839557`) passou a validação dos recursos, mas falhou em `Require Unity Personal license secrets`; importação/build Unity, smoke da campanha e upload foram ignorados. C# run #1178 (`45496839824`) passou build, smoke, publicação e verificação do executável do protótipo legado da raiz; não compila nem testa `UnityPort`.
+
 - **Identificação da build disponível (24/11/2026):** `Build/SCADRYK_BUILD_INFO.txt` aponta para `b30704eeb51f`, árvore limpa, Unity `6000.6.9f1`, build de `2026-11-23T23:39:33Z`; o código atual está em `7a87907`. Portanto, a build local não representa a fonte atual. Não iniciei o executável. Uma tentativa posterior de build foi bloqueada pelo Windows Code Integrity durante o pós-processamento Bee; CI Unity segue condicionado aos secrets de licença.
 
 - **Migração de textos do Caderno (24/11/2026):** saves anteriores podem conter as redações que foram substituídas no arco narrativo; `ReadStoryJournal` agora converte essas entradas (abertura, salas, guardiões e conversas), remove duplicatas e grava o diário normalizado. O smoke cobre exemplos da abertura, de sala, da memória e fala de guardião, das conversas de Nima nos dois biomas e preservação de texto desconhecido. Unity `6000.6.9f1` importou e compilou em batch; smoke, build e jogo não foram executados.
