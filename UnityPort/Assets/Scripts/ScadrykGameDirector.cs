@@ -2772,7 +2772,12 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         RefreshThreatCaptionContent(threatCaptionContent, ref cachedThreatCaptionLabel, "Bosque — Eco avanço de raízes");
         string singleExposureCaption = ExposureCaption(1);
         string groupExposureCaption = ExposureCaption(3);
-        if (AbilityHudLabel(0, "Q", "pronto") != "Q  Crescente · interrompe  ·  pronto" ||
+        if (HudHealthLabel(68.2f, 100f) != "VIDA 69/100" ||
+            HudHealthLabel(0f, 100f) != "VIDA 0/100" ||
+            HudHealthLabel(140f, 100f) != "VIDA 100/100" ||
+            HudHealthTrackWidth(344f, 1.5f) > 236.001f ||
+            344f - HudHealthTrackWidth(344f, 1.5f) - 8f < 99.999f ||
+            AbilityHudLabel(0, "Q", "pronto") != "Q  Crescente · interrompe  ·  pronto" ||
             AbilityHudLabel(0, "Q", "pronto", true) != "Q  Crescente · interrompe  ·  pronto  ·  eco" ||
             AbilityHudLabel(1, "E", "4.2s") != "E  Estouro · expõe  ·  4.2s" ||
             AbilityHudLabel(2, "R", "pronto") != "R  Rompante · afasta  ·  pronto" ||

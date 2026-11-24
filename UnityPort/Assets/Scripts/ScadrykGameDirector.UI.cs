@@ -450,18 +450,36 @@ public sealed partial class ScadrykGameDirector
         return hasEcho && label.Length > 0 ? label + "  ·  eco" : label;
     }
 
+    internal static string HudHealthLabel(float health, float maxHealth)
+    {
+        float safeMax = Mathf.Max(1f, maxHealth);
+        int maximum = Mathf.CeilToInt(safeMax);
+        int current = Mathf.CeilToInt(Mathf.Clamp(health, 0f, safeMax));
+        return "VIDA " + current + "/" + maximum;
+    }
+
+    internal static float HudHealthTrackWidth(float availableWidth, float textScale)
+    {
+        float extra = Mathf.Clamp(textScale, 1f, 1.5f) - 1f;
+        return Mathf.Max(0f, Mathf.Min(275f + extra * 120f, availableWidth - 108f));
+    }
+
     private void DrawHud()
     {
         float extra = ScadrykSettings.TextScale - 1f;
         string objective = ActiveObjectiveText();
         Rect panel = HudPanelRect(Screen.width, Screen.height, ScadrykSettings.TextScale);
         float textWidth = Mathf.Max(0f, panel.width - 28f);
-        float trackWidth = Mathf.Min(275f + extra * 120f, textWidth);
+        float trackWidth = HudHealthTrackWidth(textWidth, ScadrykSettings.TextScale);
+        float healthLabelX = 28f + trackWidth + 8f;
+        float healthLabelWidth = Mathf.Max(0f, textWidth - trackWidth - 8f);
         GUI.color = new Color(0.035f, 0.05f, 0.06f, 0.92f); GUI.Box(panel, GUIContent.none); GUI.color = Color.white;
         GUI.Label(new Rect(28, 22, textWidth, 25f + extra * 15f), PhaseNames[phaseIndex] + "  ·  Fase " + (phaseIndex + 1) + "/3", titleStyle);
         GUI.Label(new Rect(28, 51f + extra * 8f, textWidth, 23f + extra * 12f), roomNames[phaseIndex][roomIndex] + "  ·  Sala " + (roomIndex + 1) + "/3", bodyStyle);
         GUI.color = new Color(0.18f, 0.19f, 0.2f); GUI.DrawTexture(new Rect(28, 82f + extra * 18f, trackWidth, 12), Texture2D.whiteTexture);
         GUI.color = new Color(0.79f, 0.25f, 0.22f); GUI.DrawTexture(new Rect(28, 82f + extra * 18f, trackWidth * (player != null ? player.Health / player.MaxHealth : 1f), 12), Texture2D.whiteTexture); GUI.color = Color.white;
+        GUI.Label(new Rect(healthLabelX, 77f + extra * 18f, healthLabelWidth, 22f + extra * 6f),
+            HudHealthLabel(player != null ? player.Health : 0f, player != null ? player.MaxHealth : 1f), smallStyle);
         GUI.Label(new Rect(28, 98f + extra * 23f, textWidth, 19f + extra * 10f), "Ecos: " + enemiesRemaining + "    Esquiva: " + Cooldown(player != null ? player.DashCooldownLeft : 0) + "    Pulso: " + Cooldown(player != null ? player.ShockwaveCooldownLeft : 0), smallStyle);
         for (int i = 0; i < 3; i++)
         {
