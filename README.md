@@ -4,7 +4,7 @@ Scadryk é um RPG de ação top-down de fantasia sombria, com identidade, mundo 
 
 ## Usar o protótipo na Unity
 
-Para abrir a aventura Unity, use o Unity Hub e selecione a pasta `UnityPort`; consulte o [guia do UnityPort](UnityPort/README.md) para a versão exata do Editor, controles e estado da validação. A cena inicial é `Assets/Scenes/ScadrykDemo.unity`. O port reúne três biomas e nove salas conectadas, mas ainda não alcança a amplitude do protótipo original nem todos os critérios de produto completo. Não abra a pasta da raiz como se fosse o projeto Unity.
+Para abrir a aventura Unity, use o Unity Hub e selecione a pasta `UnityPort`; consulte o [guia do UnityPort](UnityPort/README.md) para requisitos mínimos/recomendados, instalar e iniciar pelo Editor, abrir uma build Windows, controles e estado da validação. A cena inicial é `Assets/Scenes/ScadrykDemo.unity`. O port reúne três biomas e nove salas conectadas, mas ainda não alcança a amplitude do protótipo original nem todos os critérios de produto completo. Não abra a pasta da raiz como se fosse o projeto Unity.
 
 O [objetivo completo do projeto](OBJETIVO_SCADRYK.md) descreve a experiência desejada, os sistemas e os critérios para cada etapa.
 

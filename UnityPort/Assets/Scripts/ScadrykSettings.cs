@@ -3,6 +3,7 @@ using UnityEngine;
 /// <summary>Small, persistent settings shared by the front end, input and audio.</summary>
 public static class ScadrykSettings
 {
+    internal static int BindingRevision { get; private set; }
     internal const float DeferredSaveDelay = 0.45f;
     private static bool deferredSavePending;
     private static float deferredSaveAt;
@@ -134,6 +135,7 @@ public static class ScadrykSettings
         SwapConflictingBinding(bindings, action, (int)key);
         for (int i = 0; i < bindings.Length; i++) PlayerPrefs.SetInt("Scadryk.Key." + i, bindings[i]);
         PlayerPrefs.Save();
+        BindingRevision++;
     }
 
     public static void BindPad(int action, int button)
@@ -144,6 +146,7 @@ public static class ScadrykSettings
         SwapConflictingBinding(bindings, action, button);
         for (int i = 0; i < bindings.Length; i++) PlayerPrefs.SetInt("Scadryk.Pad." + i, bindings[i]);
         PlayerPrefs.Save();
+        BindingRevision++;
     }
 
     internal static bool SwapConflictingBinding(int[] bindings, int action, int newBinding)
@@ -190,6 +193,7 @@ public static class ScadrykSettings
     public static void ResetKeyboardBindings()
     {
         ResetKeyboardBindings("Scadryk.Key.");
+        BindingRevision++;
     }
 
     internal static void ResetKeyboardBindings(string prefix)
@@ -201,6 +205,7 @@ public static class ScadrykSettings
     public static void ResetGamepadBindings()
     {
         ResetGamepadBindings("Scadryk.Pad.");
+        BindingRevision++;
     }
 
     internal static void ResetGamepadBindings(string prefix)
