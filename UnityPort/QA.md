@@ -1,5 +1,7 @@
 # Scadryk — plano e registro de qualidade
 
+- **Retorno após derrota (24/11/2026, commit `1506bf9`):** a mensagem ao reiniciar a sala informa que a vida foi restaurada e que poderes e memórias foram preservados. O smoke agora também exige esse texto e continua conferindo métricas da sessão mantidas após a derrota. Unity `6000.6.9f1` compilou em batch sem abrir a cena; `Tools/build-windows.ps1` gerou a build limpa `Build/ScadrykDemo.exe` (manifesto `1506bf9f4977`, árvore limpa, zero caminhos alterados, `2026-11-24T22:41:49Z`). `Tools/Validate-Resources.ps1` confirmou 36 referências e 51 importações de arte GPU-only. Não iniciei o jogo nem rodei o smoke; a recuperação em runtime e a leitura da mensagem ainda aguardam avaliação.
+
 - **CI da revisão `f03d28c` (24/11/2026):** Unity run #320 (`45496839557`) passou a validação dos recursos, mas falhou em `Require Unity Personal license secrets`; importação/build Unity, smoke da campanha e upload foram ignorados. C# run #1178 (`45496839824`) passou build, smoke, publicação e verificação do executável do protótipo legado da raiz; não compila nem testa `UnityPort`.
 
 - **Identificação da build disponível (24/11/2026):** `Build/SCADRYK_BUILD_INFO.txt` aponta para `b30704eeb51f`, árvore limpa, Unity `6000.6.9f1`, build de `2026-11-23T23:39:33Z`; o código atual está em `7a87907`. Portanto, a build local não representa a fonte atual. Não iniciei o executável. Uma tentativa posterior de build foi bloqueada pelo Windows Code Integrity durante o pós-processamento Bee; CI Unity segue condicionado aos secrets de licença.
