@@ -1473,7 +1473,7 @@ public sealed partial class ScadrykGameDirector
         bool compact = Screen.height < 720f;
         float width = Mathf.Min(620f, Screen.width - 36f), x = (Screen.width - width) * 0.5f;
         float y = compact ? 8f : Mathf.Max(18f, (Screen.height - 690f) * 0.5f);
-        float keyRowStart = compact ? 130f : 135f, keyRowStep = compact ? 34f : 39f, keyRowHeight = compact ? 30f : 32f;
+        float keyRowStart = compact ? 130f : 135f, keyRowStep = compact ? 32f : 38f, keyRowHeight = compact ? 30f : 32f;
         float padRowStart = compact ? 130f : 135f, padRowStep = compact ? 40f : 45f, padRowHeight = compact ? 30f : 32f;
         float backOffset = compact ? 512f : 585f, footerOffset = compact ? 560f : 637f;
         GUI.Label(new Rect(x, y, width, 42f), "OPÇÕES", centeredTitleStyle);
@@ -1481,7 +1481,7 @@ public sealed partial class ScadrykGameDirector
         if (OptionButton(new Rect(x + 15f, y + 48f, tabWidth, 38f), "Tela e som", 0)) { optionsTab = 0; optionsSelection = 0; }
         if (OptionButton(new Rect(x + 23f + tabWidth, y + 48f, tabWidth, 38f), "Teclas", 1)) { optionsTab = 1; optionsSelection = 1; }
         if (OptionButton(new Rect(x + 31f + tabWidth * 2f, y + 48f, tabWidth, 38f), "Controle", 2)) { optionsTab = 2; optionsSelection = 2; }
-        if (Screen.height < 600f)
+        if (Screen.height < 720f)
         {
             DrawCompactOptionsContent(x, y, width);
             return;
@@ -1514,12 +1514,13 @@ public sealed partial class ScadrykGameDirector
             ScadrykSettings.Fullscreen = GUI.Toggle(fullscreenRect, ScadrykSettings.Fullscreen, "Tela cheia");
             if (OptionButton(frameRateRect, ScadrykSettings.FrameRateModeLabel(ScadrykSettings.FrameRateMode), 10))
                 ScadrykSettings.FrameRateMode = ScadrykSettings.NextFrameRateMode(ScadrykSettings.FrameRateMode, 1);
-            GUI.Label(new Rect(x + 15f, y + 444f, width - 30f, 60f), "Avisos permanecem visíveis com os efeitos em silêncio. F8 marca um ataque pouco claro durante testes.", memoryStyle);
+            GUI.Label(new Rect(x + 15f, y + 444f, width - 30f, 60f), "Avisos permanecem visíveis com os efeitos em silêncio. " +
+                InputBinding(ScadrykSettings.UnclearAttackAction) + " registra um ataque pouco claro durante testes.", memoryStyle);
         }
         else if (optionsTab == 1)
         {
-            GUI.Label(new Rect(x + 15f, y + 99f, width - 185f, 31f), "Clique para trocar; M mapa; F8 QA.", smallStyle);
-            if (OptionButton(new Rect(x + width - 155f, y + 95f, 140f, 32f), "Padrões", 14))
+            GUI.Label(new Rect(x + 15f, y + 99f, width - 185f, 31f), "Clique numa ação para remapear; M abre o mapa.", smallStyle);
+            if (OptionButton(new Rect(x + width - 155f, y + 95f, 140f, 32f), "Padrões", 15))
             {
                 ScadrykSettings.ResetKeyboardBindings();
                 rebindingAction = -1;
@@ -1548,26 +1549,27 @@ public sealed partial class ScadrykGameDirector
         else if (optionsTab == 2)
         {
             GUI.Label(new Rect(x + 15f, y + 99f, width - 185f, 31f), "Botões e zona morta do analógico.", smallStyle);
-            if (OptionButton(new Rect(x + width - 155f, y + 95f, 140f, 32f), "Padrões", 10))
+            if (OptionButton(new Rect(x + width - 155f, y + 95f, 140f, 32f), "Padrões", 11))
             {
                 ScadrykSettings.ResetGamepadBindings();
                 gamepadRebindAction = -1;
                 ShowStatus("Controle padrão restaurado.", 2f);
             }
-            for (int i = 0; i < 7; i++)
+            for (int i = 0; i < 8; i++)
             {
                 float row = y + padRowStart + i * padRowStep;
-                GUI.Label(new Rect(x + 15f, row, 220f, padRowHeight), ScadrykSettings.Actions[i], bodyStyle);
-                string label = gamepadRebindAction == i ? "Pressione um botão…" : ScadrykSettings.PadButtonName(ScadrykSettings.PadButton(i));
-                if (OptionButton(new Rect(x + 240f, row, width - 255f, padRowHeight), label, i + 3)) { gamepadRebindAction = i; gamepadRebindAfterFrame = Time.frameCount; }
+                int action = ScadrykSettings.PadOptionAction(i);
+                GUI.Label(new Rect(x + 15f, row, 220f, padRowHeight), ScadrykSettings.Actions[action], bodyStyle);
+                string label = gamepadRebindAction == action ? "Pressione um botão…" : ScadrykSettings.PadButtonName(ScadrykSettings.PadButton(action));
+                if (OptionButton(new Rect(x + 240f, row, width - 255f, padRowHeight), label, i + 3)) { gamepadRebindAction = action; gamepadRebindAfterFrame = Time.frameCount; }
             }
-            GUI.Label(new Rect(x + 15f, y + 445f, 210f, 30f), "Zona morta: " + Mathf.RoundToInt(ScadrykSettings.GamepadDeadzone * 100f) + "%", bodyStyle);
-            ScadrykSettings.GamepadDeadzone = GUI.HorizontalSlider(new Rect(x + 240f, y + 450f, width - 255f, 24f),
+            GUI.Label(new Rect(x + 15f, y + 490f, 210f, 30f), "Zona morta: " + Mathf.RoundToInt(ScadrykSettings.GamepadDeadzone * 100f) + "%", bodyStyle);
+            ScadrykSettings.GamepadDeadzone = GUI.HorizontalSlider(new Rect(x + 240f, y + 495f, width - 255f, 24f),
                 ScadrykSettings.GamepadDeadzone, ScadrykSettings.MinimumGamepadDeadzone, ScadrykSettings.MaximumGamepadDeadzone);
-            if (optionsSelection == 11) DrawSelection(new Rect(x + 10f, y + 438f, width - 20f, 72f));
-            GUI.Label(new Rect(x + 15f, y + 480f, width - 30f, 46f), GamepadAnalogReadout(false), smallStyle);
+            if (optionsSelection == 12) DrawSelection(new Rect(x + 10f, y + 484f, width - 20f, 88f));
+            GUI.Label(new Rect(x + 15f, y + 525f, width - 30f, 48f), GamepadAnalogReadout(false), smallStyle);
         }
-        if (OptionButton(new Rect(x + (width - 180f) * 0.5f, y + backOffset, 180f, 42f), "Voltar", optionsTab == 0 ? 11 : optionsTab == 1 ? 15 : 12)) { showOptions = false; rebindingAction = gamepadRebindAction = -1; }
+        if (OptionButton(new Rect(x + (width - 180f) * 0.5f, y + backOffset, 180f, 42f), "Voltar", optionsTab == 0 ? 11 : optionsTab == 1 ? 16 : 13)) { showOptions = false; rebindingAction = gamepadRebindAction = -1; }
         GUI.Label(new Rect(x, y + footerOffset, width, 28f), "Controle: analógico navega · A confirma · B volta · Start pausa · L3 mapa.", smallStyle);
     }
 
@@ -1600,7 +1602,7 @@ public sealed partial class ScadrykGameDirector
 
         float backWidth = Mathf.Min(180f, width - 24f);
         Rect back = new Rect(x + (width - backWidth) * 0.5f, backY, backWidth, backHeight);
-        int backSelection = optionsTab == 0 ? 11 : optionsTab == 1 ? 15 : 12;
+        int backSelection = optionsTab == 0 ? 11 : optionsTab == 1 ? 16 : 13;
         if (OptionButton(back, "Voltar", backSelection)) { showOptions = false; rebindingAction = gamepadRebindAction = -1; }
         GUI.Label(new Rect(x + 4f, Screen.height - footerHeight - 2f, width - 8f, footerHeight),
             "Analógico: navegar · A: confirmar · B: voltar", smallStyle);
@@ -1630,7 +1632,8 @@ public sealed partial class ScadrykGameDirector
         DrawCompactOptionSelection(8, 264f, 40f, width);
         ScadrykSettings.HighContrastWarnings = GUI.Toggle(new Rect(left, 267f, width - 24f, 34f), ScadrykSettings.HighContrastWarnings, "Alto contraste nos avisos");
         GUI.Label(new Rect(left, 310f, width - 24f, 78f),
-            "Avisos continuam visíveis sem efeitos sonoros. F8 marca um sinal difícil de ler durante QA.", memoryStyle);
+            "Avisos continuam visíveis sem efeitos sonoros. " + InputBinding(ScadrykSettings.UnclearAttackAction) +
+            " marca um sinal difícil de ler durante os testes.", memoryStyle);
         DrawCompactOptionSelection(9, 392f, 40f, width);
         DrawCompactOptionSelection(10, 392f, 40f, width);
         float toggleWidth = Mathf.Max(80f, (width - 36f) * 0.52f);
@@ -1643,7 +1646,7 @@ public sealed partial class ScadrykGameDirector
     private void DrawCompactKeyboardOptions(float width)
     {
         GUI.Label(new Rect(12f, 5f, width - 150f, 32f), "Selecione uma ação para trocar a tecla.", smallStyle);
-        if (OptionButton(new Rect(width - 142f, 3f, 130f, 34f), "Padrões", 14))
+        if (OptionButton(new Rect(width - 142f, 3f, 130f, 34f), "Padrões", 15))
         {
             ScadrykSettings.ResetKeyboardBindings();
             rebindingAction = -1;
@@ -1673,26 +1676,27 @@ public sealed partial class ScadrykGameDirector
     private void DrawCompactGamepadOptions(float width)
     {
         GUI.Label(new Rect(12f, 5f, width - 150f, 32f), "Selecione a ação e pressione o botão.", smallStyle);
-        if (OptionButton(new Rect(width - 142f, 3f, 130f, 34f), "Padrões", 10))
+        if (OptionButton(new Rect(width - 142f, 3f, 130f, 34f), "Padrões", 11))
         {
             ScadrykSettings.ResetGamepadBindings();
             gamepadRebindAction = -1;
             ShowStatus("Controle padrão restaurado.", 2f);
         }
         float labelWidth = Mathf.Clamp(width * 0.38f, 95f, 138f);
-        for (int i = 0; i < 7; i++)
+        for (int i = 0; i < 8; i++)
         {
             float row = 44f + i * 40f;
-            GUI.Label(new Rect(12f, row, labelWidth, 32f), ScadrykSettings.Actions[i], bodyStyle);
-            string label = gamepadRebindAction == i ? "Aperte…" : ScadrykSettings.PadButtonName(ScadrykSettings.PadButton(i));
+            int action = ScadrykSettings.PadOptionAction(i);
+            GUI.Label(new Rect(12f, row, labelWidth, 32f), ScadrykSettings.Actions[action], bodyStyle);
+            string label = gamepadRebindAction == action ? "Aperte…" : ScadrykSettings.PadButtonName(ScadrykSettings.PadButton(action));
             if (OptionButton(new Rect(labelWidth + 20f, row, width - labelWidth - 32f, 32f), label, i + 3))
-            { gamepadRebindAction = i; gamepadRebindAfterFrame = Time.frameCount; }
+            { gamepadRebindAction = action; gamepadRebindAfterFrame = Time.frameCount; }
         }
-        DrawCompactOptionSelection(11, 328f, 108f, width);
-        GUI.Label(new Rect(12f, 334f, labelWidth, 28f), "Zona morta: " + Mathf.RoundToInt(ScadrykSettings.GamepadDeadzone * 100f) + "%", bodyStyle);
-        ScadrykSettings.GamepadDeadzone = GUI.HorizontalSlider(new Rect(labelWidth + 20f, 338f, width - labelWidth - 32f, 24f),
+        DrawCompactOptionSelection(12, 374f, 108f, width);
+        GUI.Label(new Rect(12f, 380f, labelWidth, 28f), "Zona morta: " + Mathf.RoundToInt(ScadrykSettings.GamepadDeadzone * 100f) + "%", bodyStyle);
+        ScadrykSettings.GamepadDeadzone = GUI.HorizontalSlider(new Rect(labelWidth + 20f, 384f, width - labelWidth - 32f, 24f),
             ScadrykSettings.GamepadDeadzone, ScadrykSettings.MinimumGamepadDeadzone, ScadrykSettings.MaximumGamepadDeadzone);
-        GUI.Label(new Rect(12f, 372f, width - 24f, 62f), GamepadAnalogReadout(true), smallStyle);
+        GUI.Label(new Rect(12f, 418f, width - 24f, 62f), GamepadAnalogReadout(true), smallStyle);
     }
 
     private static string GamepadAnalogReadout(bool compact)
@@ -1711,7 +1715,7 @@ public sealed partial class ScadrykGameDirector
         if (optionsSelection == selection) DrawSelection(new Rect(4f, top, width - 8f, height));
     }
 
-    internal static float CompactOptionsContentHeight(int tab) => tab == 0 ? 438f : tab == 1 ? 474f : 436f;
+    internal static float CompactOptionsContentHeight(int tab) => tab == 0 ? 438f : tab == 1 ? 474f : 482f;
 
     internal static Rect CompactOptionsSelectionRect(int tab, int selection)
     {
@@ -1724,14 +1728,14 @@ public sealed partial class ScadrykGameDirector
         if (tab == 0 && selection is 9 or 10) return new Rect(0f, 392f, 1f, 40f);
         if (tab == 1)
         {
-            if (selection == 14) return new Rect(0f, 3f, 1f, 34f);
-            if (selection is >= 3 and <= 13) return new Rect(0f, 44f + (selection - 3) * 36f, 1f, 30f);
+            if (selection == 15) return new Rect(0f, 3f, 1f, 34f);
+            if (selection is >= 3 and <= 14) return new Rect(0f, 44f + (selection - 3) * 36f, 1f, 30f);
         }
         if (tab == 2)
         {
-            if (selection == 10) return new Rect(0f, 3f, 1f, 34f);
-            if (selection is >= 3 and <= 9) return new Rect(0f, 44f + (selection - 3) * 40f, 1f, 32f);
-            if (selection == 11) return new Rect(0f, 328f, 1f, 108f);
+            if (selection == 11) return new Rect(0f, 3f, 1f, 34f);
+            if (selection is >= 3 and <= 10) return new Rect(0f, 44f + (selection - 3) * 40f, 1f, 32f);
+            if (selection == 12) return new Rect(0f, 374f, 1f, 108f);
         }
         return new Rect(0f, 0f, 1f, 1f);
     }
@@ -1753,14 +1757,14 @@ public sealed partial class ScadrykGameDirector
         float footerY = screenHeight - 30f;
         float viewportHeight = CompactOptionsViewportHeight(screenHeight);
         return width >= 240f && viewportHeight >= 76f && backY + 42f <= footerY && footerY + 28f <= screenHeight &&
-            CompactOptionsContentHeight(1) > viewportHeight;
+            Mathf.Max(CompactOptionsContentHeight(1), CompactOptionsContentHeight(2)) > viewportHeight;
     }
 
     private static bool OptionsLayoutFits(float screenHeight)
     {
         bool compact = screenHeight < 720f;
         float y = compact ? 8f : Mathf.Max(18f, (screenHeight - 690f) * 0.5f);
-        float rowStart = compact ? 130f : 135f, rowStep = compact ? 34f : 39f, rowHeight = compact ? 30f : 32f;
+        float rowStart = compact ? 130f : 135f, rowStep = compact ? 32f : 38f, rowHeight = compact ? 30f : 32f;
         float backOffset = compact ? 512f : 585f, footerOffset = compact ? 560f : 637f;
         float lastKeyRowBottom = y + rowStart + (ScadrykSettings.Actions.Length - 1) * rowStep + rowHeight;
         return lastKeyRowBottom <= y + backOffset && y + backOffset + 42f <= screenHeight && y + footerOffset + 28f <= screenHeight;

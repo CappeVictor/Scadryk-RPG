@@ -8,22 +8,25 @@ public sealed partial class ScadrykGameDirector
 #if DEBUG
     private static bool SmokeBindingResetIsolation()
     {
-        const int keyboardCount = 11, gamepadCount = 7;
+        const int keyboardCount = 12, gamepadCount = 7;
         string testPrefix = "Scadryk.Smoke." + System.DateTime.UtcNow.Ticks + ".bindings.";
         string keyPrefix = testPrefix + "Key.";
         string padPrefix = testPrefix + "Pad.";
+        string unclearPadKey = padPrefix + "UnclearAttack";
         try
         {
-            KeyCode[] defaultKeys = { KeyCode.Space, KeyCode.LeftShift, KeyCode.Q, KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3, KeyCode.E, KeyCode.W, KeyCode.S, KeyCode.A, KeyCode.D };
+            KeyCode[] defaultKeys = { KeyCode.Space, KeyCode.LeftShift, KeyCode.Q, KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3, KeyCode.E, KeyCode.W, KeyCode.S, KeyCode.A, KeyCode.D, KeyCode.F8 };
             int[] defaultButtons = { 0, 1, 2, 4, 5, 6, 3 };
             PlayerPrefs.SetInt(keyPrefix + "0", (int)KeyCode.M);
             PlayerPrefs.SetInt(padPrefix + "0", 8);
             PlayerPrefs.SetInt(keyPrefix + "1", (int)KeyCode.G);
             PlayerPrefs.SetInt(padPrefix + "1", 19);
-            ScadrykSettings.ClearReservedBindings(keyPrefix, padPrefix);
+            PlayerPrefs.SetInt(unclearPadKey, 8);
+            ScadrykSettings.ClearReservedBindings(keyPrefix, padPrefix, unclearPadKey);
             bool reservedBindingsCleared = ScadrykSettings.Key(0, keyPrefix) == defaultKeys[0] &&
                 ScadrykSettings.PadButton(0, padPrefix) == defaultButtons[0] &&
-                ScadrykSettings.Key(1, keyPrefix) == KeyCode.G && ScadrykSettings.PadButton(1, padPrefix) == 19;
+                ScadrykSettings.Key(1, keyPrefix) == KeyCode.G && ScadrykSettings.PadButton(1, padPrefix) == 19 &&
+                ScadrykSettings.PadButton(ScadrykSettings.UnclearAttackAction, padPrefix) == 9;
 
             PlayerPrefs.SetInt(keyPrefix + "0", (int)KeyCode.F);
             PlayerPrefs.SetInt(padPrefix + "0", 19);
@@ -31,13 +34,16 @@ public sealed partial class ScadrykGameDirector
             bool keyboardDefaultsRestored = true;
             for (int i = 0; i < defaultKeys.Length; i++)
                 keyboardDefaultsRestored &= ScadrykSettings.Key(i, keyPrefix) == defaultKeys[i];
-            bool gamepadSurvivedKeyboardReset = ScadrykSettings.PadButton(0, padPrefix) == 19;
+            PlayerPrefs.SetInt(unclearPadKey, 18);
+            bool gamepadSurvivedKeyboardReset = ScadrykSettings.PadButton(0, padPrefix) == 19 &&
+                ScadrykSettings.PadButton(ScadrykSettings.UnclearAttackAction, padPrefix) == 18;
 
             PlayerPrefs.SetInt(keyPrefix + "1", (int)KeyCode.G);
             ScadrykSettings.ResetGamepadBindings(padPrefix);
             bool gamepadDefaultsRestored = true;
             for (int i = 0; i < defaultButtons.Length; i++)
                 gamepadDefaultsRestored &= ScadrykSettings.PadButton(i, padPrefix) == defaultButtons[i];
+            gamepadDefaultsRestored &= ScadrykSettings.PadButton(ScadrykSettings.UnclearAttackAction, padPrefix) == 9;
             bool keyboardSurvivedGamepadReset = ScadrykSettings.Key(1, keyPrefix) == KeyCode.G;
             return reservedBindingsCleared && keyboardDefaultsRestored && gamepadSurvivedKeyboardReset && gamepadDefaultsRestored && keyboardSurvivedGamepadReset;
         }
@@ -45,6 +51,7 @@ public sealed partial class ScadrykGameDirector
         {
             for (int i = 0; i < keyboardCount; i++) PlayerPrefs.DeleteKey(keyPrefix + i);
             for (int i = 0; i < gamepadCount; i++) PlayerPrefs.DeleteKey(padPrefix + i);
+            PlayerPrefs.DeleteKey(unclearPadKey);
             PlayerPrefs.Save();
         }
     }
@@ -91,16 +98,25 @@ public sealed partial class ScadrykGameDirector
         { SmokeFail("O selo opcional não permanece sutil ao longe e legível ao se aproximar"); yield break; }
         Debug.Log("SCADRYK_SMOKE: selos do Eco surgem em intensidade conforme Nara se aproxima");
         if (ScadrykSettings.CanBindKey(KeyCode.None) || ScadrykSettings.CanBindKey(KeyCode.Escape) ||
-            ScadrykSettings.CanBindKey(KeyCode.F8) || ScadrykSettings.CanBindKey(KeyCode.M) || !ScadrykSettings.CanBindKey(KeyCode.F) ||
+            !ScadrykSettings.CanBindKey(KeyCode.F8) || ScadrykSettings.CanBindKey(KeyCode.M) || !ScadrykSettings.CanBindKey(KeyCode.F) ||
             ScadrykSettings.CanBindPadButton(7) || ScadrykSettings.CanBindPadButton(8) || !ScadrykSettings.CanBindPadButton(9))
-        { SmokeFail("Remapeamento permite tecla/botão reservado ou rejeita um vínculo normal"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: Esc, F8, M, Start e L3 reservados; vínculos normais disponíveis");
+        { SmokeFail("Remapeamento permite tecla/botão de sistema ou rejeita um vínculo de QA normal"); yield break; }
+        if (ScadrykSettings.PadOptionAction(7) != ScadrykSettings.UnclearAttackAction ||
+            ScadrykSettings.PadButton(ScadrykSettings.UnclearAttackAction) != 9 ||
+            ScadrykSettings.PadButtonName(9) != "R3")
+        { SmokeFail("A ação de marcar ataque pouco claro não está disponível no controle com nome correto"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: F8 é remapeável para QA; R3 marca ataques pouco claros no controle; Esc, M, Start e L3 permanecem reservados");
         int[] keyboardConflict = { 32, 304, 113, 101 };
         int[] gamepadConflict = { 0, 1, 2, 4, 5, 6, 3 };
+        int unclearAttackPadButton = 9;
+        bool crossDeviceBindingsSwap = ScadrykSettings.SwapGamepadBinding(gamepadConflict, 0, 9, ref unclearAttackPadButton) &&
+            unclearAttackPadButton == 0 && ScadrykSettings.BindingValuesAreUnique(gamepadConflict) &&
+            ScadrykSettings.SwapUnclearAttackPadBinding(gamepadConflict, 1, ref unclearAttackPadButton) &&
+            unclearAttackPadButton == 1 && gamepadConflict[1] == 0 && ScadrykSettings.BindingValuesAreUnique(gamepadConflict);
         if (!ScadrykSettings.SwapConflictingBinding(keyboardConflict, 2, 32) ||
             keyboardConflict[0] != 113 || keyboardConflict[2] != 32 || !ScadrykSettings.BindingValuesAreUnique(keyboardConflict) ||
             !ScadrykSettings.SwapConflictingBinding(gamepadConflict, 4, 0) ||
-            gamepadConflict[0] != 5 || gamepadConflict[4] != 0 || !ScadrykSettings.BindingValuesAreUnique(gamepadConflict) ||
+            !crossDeviceBindingsSwap || gamepadConflict[4] != 0 || !ScadrykSettings.BindingValuesAreUnique(gamepadConflict) ||
             ScadrykSettings.SwapConflictingBinding(gamepadConflict, 9, 1))
         { SmokeFail("Remapear uma tecla/botão ocupado deve trocar o vínculo sem duplicatas e rejeitar índices inválidos"); yield break; }
         Debug.Log("SCADRYK_SMOKE: remapeamento de teclado e controle troca conflitos sem duplicar comandos");
@@ -532,7 +548,7 @@ public sealed partial class ScadrykGameDirector
             !clarityRow.EndsWith(finalPattern) ||
             escapedClarityRow != "session,2026-11-22T00:00:00Z,3,2,\"Eco, \"\"salva\"\"\"")
         { SmokeFail("O registro de legibilidade não identifica papéis, guardiões, fases do Arauto ou campos do CSV"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: registros F8 identificam padrão recente e serializam fase, sala e ataque");
+        Debug.Log("SCADRYK_SMOKE: registros de ataque pouco claro identificam padrões recentes e serializam fase/sala/ataque");
         ScadrykCue laneCue = ScadrykEnemyHealth.WarningCueFor(0, false, false, 0);
         ScadrykCue volleyCue = ScadrykEnemyHealth.WarningCueFor(0, false, false, 1);
         ScadrykCue areaCue = ScadrykEnemyHealth.WarningCueFor(0, false, false, 2);
@@ -1220,9 +1236,9 @@ public sealed partial class ScadrykGameDirector
         { SmokeFail("O menu de opções corta as teclas remapeáveis ou os controles de retorno a 600px de altura"); yield break; }
         Debug.Log("SCADRYK_SMOKE: menu de opções e restauração de comandos cabem em janela compacta");
         float shortOptionsViewport = CompactOptionsViewportHeight(360f);
-        Rect lastCompactKey = CompactOptionsSelectionRect(1, 13);
-        Rect lastCompactPad = CompactOptionsSelectionRect(2, 9);
-        Rect compactPadDeadzone = CompactOptionsSelectionRect(2, 11);
+        Rect lastCompactKey = CompactOptionsSelectionRect(1, 14);
+        Rect lastCompactPad = CompactOptionsSelectionRect(2, 10);
+        Rect compactPadDeadzone = CompactOptionsSelectionRect(2, 12);
         Rect compactFullscreen = CompactOptionsSelectionRect(0, 9);
         Rect compactFrameRate = CompactOptionsSelectionRect(0, 10);
         float keyListScroll = ScrollOptionItemIntoView(0f, shortOptionsViewport, lastCompactKey.y, lastCompactKey.height, CompactOptionsContentHeight(1));
@@ -1230,7 +1246,7 @@ public sealed partial class ScadrykGameDirector
         float padDeadzoneScroll = ScrollOptionItemIntoView(0f, shortOptionsViewport, compactPadDeadzone.y, compactPadDeadzone.height, CompactOptionsContentHeight(2));
         float fullscreenScroll = ScrollOptionItemIntoView(0f, shortOptionsViewport, compactFullscreen.y, compactFullscreen.height, CompactOptionsContentHeight(0));
         float frameRateScroll = ScrollOptionItemIntoView(0f, shortOptionsViewport, compactFrameRate.y, compactFrameRate.height, CompactOptionsContentHeight(0));
-        if (!CompactOptionsLayoutFits(400f, 360f) || keyListScroll <= 0f || padListScroll <= 0f ||
+        if (!CompactOptionsLayoutFits(400f, 360f) || !CompactOptionsLayoutFits(700f, 600f) || keyListScroll <= 0f || padListScroll <= 0f ||
             lastCompactKey.y + lastCompactKey.height > keyListScroll + shortOptionsViewport + 0.001f ||
             lastCompactPad.y + lastCompactPad.height > padListScroll + shortOptionsViewport + 0.001f ||
             compactPadDeadzone.y + compactPadDeadzone.height > padDeadzoneScroll + shortOptionsViewport + 0.001f ||

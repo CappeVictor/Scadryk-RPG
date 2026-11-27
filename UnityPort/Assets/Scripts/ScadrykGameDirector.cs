@@ -390,7 +390,8 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             TryShowSideRouteHint();
             TryShowWorldSecretHint();
         }
-        if (!IsPaused && Input.GetKeyDown(KeyCode.F8))
+        if (!IsPaused && (ScadrykSettings.Down(ScadrykSettings.UnclearAttackAction) ||
+            ScadrykSettings.PadDown(ScadrykSettings.UnclearAttackAction)))
         {
             RecordUnclearAttackMark();
             string attackPatterns = RecentAttackReadabilityLabels();
@@ -435,6 +436,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     internal static bool MemoryDismissedThisFrame(int dismissedFrame, int currentFrame) => dismissedFrame >= 0 && dismissedFrame == currentFrame;
     private static bool GamepadActivityThisFrame() => ScadrykSettings.PadDown(0) || ScadrykSettings.PadDown(1) || ScadrykSettings.PadButtonDown(7) ||
         ScadrykSettings.PadDown(2) || ScadrykSettings.PadDown(3) || ScadrykSettings.PadDown(4) || ScadrykSettings.PadDown(5) || ScadrykSettings.PadDown(6) ||
+        ScadrykSettings.PadDown(ScadrykSettings.UnclearAttackAction) ||
         ScadrykSettings.ReadGamepadStick("Scadryk Move X", "Scadryk Move Y").sqrMagnitude > 0.09f ||
         ScadrykSettings.ReadGamepadStick("Scadryk Aim X", "Scadryk Aim Y").sqrMagnitude > 0.09f;
     internal static string MemoryInputModeAfterActivity(string current, bool keyboardActivity, bool gamepadActivity) =>
@@ -488,11 +490,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 else if (optionsSelection == 5) { ScadrykSettings.TextScale += step; titleStyle = null; }
                 else if (optionsSelection == 10) ScadrykSettings.FrameRateMode = ScadrykSettings.NextFrameRateMode(ScadrykSettings.FrameRateMode, right ? 1 : -1);
             }
-            else if (optionsTab == 2 && optionsSelection == 11 && (left || right))
+            else if (optionsTab == 2 && optionsSelection == 12 && (left || right))
                 ScadrykSettings.GamepadDeadzone += right ? 0.02f : -0.02f;
             if (up || down)
             {
-                int max = optionsTab == 0 ? 11 : optionsTab == 1 ? 15 : 12;
+                int max = optionsTab == 0 ? 11 : optionsTab == 1 ? 16 : 13;
                 optionsSelection = Mathf.Clamp(optionsSelection + (down ? 1 : -1), 0, max);
             }
             if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Space))
@@ -551,7 +553,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         {
             if (showOptions)
             {
-                int max = optionsTab == 0 ? 11 : optionsTab == 1 ? 15 : 12;
+                int max = optionsTab == 0 ? 11 : optionsTab == 1 ? 16 : 13;
                 optionsSelection = Mathf.Clamp(optionsSelection - (navigation.y > 0f ? 1 : -1), 0, max);
             }
             else if (!showTitle && !victory && !confirmNewJourney)
@@ -584,7 +586,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             else if (optionsSelection == 5) { ScadrykSettings.TextScale += step; titleStyle = null; }
             else if (optionsTab == 0 && optionsSelection == 10)
                 ScadrykSettings.FrameRateMode = ScadrykSettings.NextFrameRateMode(ScadrykSettings.FrameRateMode, navigation.x > 0f ? 1 : -1);
-            else if (optionsTab == 2 && optionsSelection == 11) ScadrykSettings.GamepadDeadzone += navigation.x > 0f ? 0.02f : -0.02f;
+            else if (optionsTab == 2 && optionsSelection == 12) ScadrykSettings.GamepadDeadzone += navigation.x > 0f ? 0.02f : -0.02f;
             nextGamepadNavigationAt = Time.unscaledTime + 0.16f;
         }
 
@@ -653,33 +655,33 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         }
         else if (optionsTab == 1)
         {
-            if (optionsSelection is >= 3 and <= 13)
+            if (optionsSelection is >= 3 and <= 14)
             {
                 rebindingAction = optionsSelection - 3;
                 keyboardRebindAfterFrame = Time.frameCount;
             }
-            else if (optionsSelection == 14)
+            else if (optionsSelection == 15)
             {
                 ScadrykSettings.ResetKeyboardBindings();
                 rebindingAction = -1;
                 ShowStatus("Teclas padrão restauradas.", 2f);
             }
-            else if (optionsSelection == 15) showOptions = false;
+            else if (optionsSelection == 16) showOptions = false;
         }
         else if (optionsTab == 2)
         {
-            if (optionsSelection is >= 3 and <= 9)
+            if (optionsSelection is >= 3 and <= 10)
             {
-                gamepadRebindAction = optionsSelection - 3;
+                gamepadRebindAction = ScadrykSettings.PadOptionAction(optionsSelection - 3);
                 gamepadRebindAfterFrame = Time.frameCount;
             }
-            else if (optionsSelection == 10)
+            else if (optionsSelection == 11)
             {
                 ScadrykSettings.ResetGamepadBindings();
                 gamepadRebindAction = -1;
                 ShowStatus("Controle padrão restaurado.", 2f);
             }
-            else if (optionsSelection == 12) showOptions = false;
+            else if (optionsSelection == 13) showOptions = false;
         }
     }
 

@@ -13,9 +13,13 @@ public static class ScadrykSettings
     internal const int FrameRateMonitor = 0;
     internal const int FrameRate30 = 1;
     internal const int FrameRate60 = 2;
-    public static readonly string[] Actions = { "Atacar", "Esquivar", "Pulso", "Crescente", "Estouro", "Rompante", "Interagir", "Cima", "Baixo", "Esquerda", "Direita" };
-    private static readonly KeyCode[] Defaults = { KeyCode.Space, KeyCode.LeftShift, KeyCode.Q, KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3, KeyCode.E, KeyCode.W, KeyCode.S, KeyCode.A, KeyCode.D };
+    internal const int UnclearAttackAction = 11;
+    private const int DefaultUnclearAttackPadButton = 9;
+    private const string UnclearAttackPadKey = "Scadryk.Pad.UnclearAttack";
+    public static readonly string[] Actions = { "Atacar", "Esquivar", "Pulso", "Crescente", "Estouro", "Rompante", "Interagir", "Cima", "Baixo", "Esquerda", "Direita", "Ataque pouco claro" };
+    private static readonly KeyCode[] Defaults = { KeyCode.Space, KeyCode.LeftShift, KeyCode.Q, KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3, KeyCode.E, KeyCode.W, KeyCode.S, KeyCode.A, KeyCode.D, KeyCode.F8 };
     private static readonly int[] PadDefaults = { 0, 1, 2, 4, 5, 6, 3 };
+    private static readonly int[] PadOptionActions = { 0, 1, 2, 3, 4, 5, 6, UnclearAttackAction };
     private static readonly KeyCode[] PadButtons =
     {
         KeyCode.JoystickButton0, KeyCode.JoystickButton1, KeyCode.JoystickButton2, KeyCode.JoystickButton3,
@@ -95,10 +99,12 @@ public static class ScadrykSettings
     };
     public static bool Down(int action) => Input.GetKeyDown(Key(action));
     public static bool Held(int action) => Input.GetKey(Key(action));
-    internal static bool CanBindKey(KeyCode key) => key != KeyCode.None && key != KeyCode.Escape && key != KeyCode.F8 && key != KeyCode.M;
+    internal static bool CanBindKey(KeyCode key) => key != KeyCode.None && key != KeyCode.Escape && key != KeyCode.M;
     internal static bool CanBindPadButton(int button) => button >= 0 && button < PadButtons.Length && button != 7 && button != 8;
     public static int PadButton(int action) => PadButton(action, "Scadryk.Pad.");
-    internal static int PadButton(int action, string prefix) => PlayerPrefs.GetInt(prefix + action, PadDefaults[action]);
+    internal static int PadButton(int action, string prefix) => action == UnclearAttackAction
+        ? Mathf.Clamp(PlayerPrefs.GetInt(prefix + "UnclearAttack", DefaultUnclearAttackPadButton), 0, PadButtons.Length - 1)
+        : PlayerPrefs.GetInt(prefix + action, PadDefaults[action]);
     internal static Vector2 ReadGamepadStick(string horizontalAxis, string verticalAxis) =>
         ApplyRadialDeadzone(new Vector2(Input.GetAxisRaw(horizontalAxis), Input.GetAxisRaw(verticalAxis)), GamepadDeadzone);
     internal static Vector2 ApplyRadialDeadzone(Vector2 stick, float deadzone)
@@ -118,12 +124,16 @@ public static class ScadrykSettings
         int usefulPercent = Mathf.RoundToInt(ApplyRadialDeadzone(raw, deadzone).magnitude * 100f);
         return string.Format("X{0:+00;-00;00} Y{1:+00;-00;00} {2:00}→{3:00}%", xPercent, yPercent, rawPercent, usefulPercent);
     }
-    public static bool PadDown(int action) => action >= 0 && action < PadDefaults.Length && PadButtonDown(PadButton(action));
+    public static bool PadDown(int action) => action >= 0 && action < PadDefaults.Length
+        ? PadButtonDown(PadButton(action))
+        : action == UnclearAttackAction && PadButtonDown(UnclearAttackPadButton);
+    internal static int PadOptionAction(int row) => row >= 0 && row < PadOptionActions.Length ? PadOptionActions[row] : -1;
+    public static int UnclearAttackPadButton => PadButton(UnclearAttackAction);
     public static bool PadButtonDown(int button) => button >= 0 && button < PadButtons.Length && Input.GetKeyDown(PadButtons[button]);
     public static string PadButtonName(int button) => button switch
     {
         0 => "A", 1 => "B", 2 => "X", 3 => "Y", 4 => "LB", 5 => "RB", 6 => "Back", 7 => "Start",
-        8 => "L3",
+        8 => "L3", 9 => "R3",
         _ => "Botão " + button
     };
 
@@ -140,11 +150,31 @@ public static class ScadrykSettings
 
     public static void BindPad(int action, int button)
     {
+        if (action == UnclearAttackAction)
+        {
+            BindUnclearAttackPad(button);
+            return;
+        }
         if (action < 0 || action >= PadDefaults.Length || !CanBindPadButton(button)) return;
         var bindings = new int[PadDefaults.Length];
         for (int i = 0; i < bindings.Length; i++) bindings[i] = PadButton(i);
-        SwapConflictingBinding(bindings, action, button);
+        int unclearAttackButton = UnclearAttackPadButton;
+        if (!SwapGamepadBinding(bindings, action, button, ref unclearAttackButton)) return;
         for (int i = 0; i < bindings.Length; i++) PlayerPrefs.SetInt("Scadryk.Pad." + i, bindings[i]);
+        if (unclearAttackButton != UnclearAttackPadButton) PlayerPrefs.SetInt(UnclearAttackPadKey, unclearAttackButton);
+        PlayerPrefs.Save();
+        BindingRevision++;
+    }
+
+    private static void BindUnclearAttackPad(int button)
+    {
+        if (!CanBindPadButton(button)) return;
+        int previous = UnclearAttackPadButton;
+        var bindings = new int[PadDefaults.Length];
+        for (int i = 0; i < PadDefaults.Length; i++) bindings[i] = PadButton(i);
+        if (!SwapUnclearAttackPadBinding(bindings, button, ref previous)) return;
+        for (int i = 0; i < PadDefaults.Length; i++) PlayerPrefs.SetInt("Scadryk.Pad." + i, bindings[i]);
+        PlayerPrefs.SetInt(UnclearAttackPadKey, button);
         PlayerPrefs.Save();
         BindingRevision++;
     }
@@ -159,6 +189,25 @@ public static class ScadrykSettings
         return true;
     }
 
+    internal static bool SwapGamepadBinding(int[] bindings, int action, int newBinding, ref int unclearAttackButton)
+    {
+        if (bindings == null || action < 0 || action >= bindings.Length || !CanBindPadButton(newBinding)) return false;
+        int previousActionButton = bindings[action];
+        if (!SwapConflictingBinding(bindings, action, newBinding)) return false;
+        if (newBinding == unclearAttackButton) unclearAttackButton = previousActionButton;
+        return true;
+    }
+
+    internal static bool SwapUnclearAttackPadBinding(int[] bindings, int newBinding, ref int unclearAttackButton)
+    {
+        if (bindings == null || !CanBindPadButton(newBinding)) return false;
+        int previous = unclearAttackButton;
+        for (int i = 0; i < bindings.Length; i++)
+            if (bindings[i] == newBinding) bindings[i] = previous;
+        unclearAttackButton = newBinding;
+        return true;
+    }
+
     internal static bool BindingValuesAreUnique(int[] bindings)
     {
         if (bindings == null) return false;
@@ -168,7 +217,10 @@ public static class ScadrykSettings
         return true;
     }
 
-    internal static void ClearReservedBindings(string keyPrefix, string padPrefix)
+    internal static void ClearReservedBindings(string keyPrefix, string padPrefix) =>
+        ClearReservedBindings(keyPrefix, padPrefix, keyPrefix == "Scadryk.Key." ? UnclearAttackPadKey : keyPrefix + "UnclearAttackPad");
+
+    internal static void ClearReservedBindings(string keyPrefix, string padPrefix, string unclearPadKey)
     {
         bool changed = false;
         for (int i = 0; i < Defaults.Length; i++)
@@ -183,6 +235,23 @@ public static class ScadrykSettings
             int saved = PlayerPrefs.GetInt(padPrefix + i, PadDefaults[i]);
             if (CanBindPadButton(saved)) continue;
             PlayerPrefs.DeleteKey(padPrefix + i);
+            changed = true;
+        }
+        int unclearPad = Mathf.Clamp(PlayerPrefs.GetInt(unclearPadKey, DefaultUnclearAttackPadButton), 0, PadButtons.Length - 1);
+        bool padConflict = !CanBindPadButton(unclearPad);
+        for (int i = 0; i < PadDefaults.Length; i++)
+            padConflict |= PlayerPrefs.GetInt(padPrefix + i, PadDefaults[i]) == unclearPad;
+        if (padConflict)
+        {
+            for (int candidate = 0; candidate < PadButtons.Length; candidate++)
+            {
+                if (!CanBindPadButton(candidate)) continue;
+                bool occupied = false;
+                for (int i = 0; i < PadDefaults.Length; i++)
+                    occupied |= PlayerPrefs.GetInt(padPrefix + i, PadDefaults[i]) == candidate;
+                if (!occupied) { unclearPad = candidate; break; }
+            }
+            PlayerPrefs.SetInt(unclearPadKey, unclearPad);
             changed = true;
         }
         if (changed) PlayerPrefs.Save();
@@ -211,6 +280,7 @@ public static class ScadrykSettings
     internal static void ResetGamepadBindings(string prefix)
     {
         for (int i = 0; i < PadDefaults.Length; i++) PlayerPrefs.DeleteKey(prefix + i);
+        PlayerPrefs.DeleteKey(prefix + "UnclearAttack");
         PlayerPrefs.Save();
     }
 
