@@ -1,6 +1,6 @@
 # Scadryk — diagnóstico e direção
 
-## Revisão de estado (24/11/2026; branch `codex/unity-playable-phase-maps`)
+## Revisão de estado (27/11/2026; branch `codex/unity-playable-phase-maps`)
 
 **Orientação durante o combate:** a legenda de perigo já anunciava nome e tempo restante, mas não localizava o inimigo que preparava o golpe. Agora mostra uma seta relativa em oito direções (ou um ponto quando coincide com Nara). O smoke cobre os setores; visualização em várias resoluções e utilidade em combate continuam pendentes de avaliação.
 
@@ -55,7 +55,7 @@
 - **Contrajogo do Arauto fica explícito (23/11/2026):** cada padrão agora acompanha o nome da fase com uma instrução curta: cruzar as linhas da salva, sair da marca da queda ou permanecer no centro seguro da onda. Os avisos geométricos continuam definindo exatamente onde há dano; o texto é redundante com a forma de contra-ataque, para ajudar na primeira leitura. O smoke verifica o vínculo padrão/instrução, sem execução ou avaliação de compreensão em jogo.
 
 - O port é um projeto Unity 6000.6.9f1 válido: uma cena serializada, 19 scripts de runtime, três scripts de editor, `ProjectSettings`, pacotes e 41 PNG originais em `Resources/ScadrykArt`. As nove salas são construídas em runtime pelo diretor; não são nove cenas separadas.
-- `ScadrykPlayerController` usa `Rigidbody2D`, aceleração, mira por mouse/analógico, ataques com janela de 0,12 s, esquiva invulnerável, pulso e três poderes. `ScadrykEnemyHealth` contém quatro papéis de Eco, avisos de ataque, cobertura por raycast, guardiões e três fases do Arauto. `ScadrykGameDirector` concentra geração de salas, portais, objetivos, saves, métricas, menus e smoke test (1.148 linhas na inspeção).
+- `ScadrykPlayerController` usa `Rigidbody2D`, aceleração, mira por mouse/analógico, ataques com janela de 0,12 s, esquiva invulnerável, pulso e três poderes. `ScadrykEnemyHealth` contém quatro papéis de Eco, avisos de ataque, cobertura por raycast, guardiões e três fases do Arauto. O diretor se divide em arquivos parciais para núcleo (1.834 linhas), interface (1.827) e mundo (1.279); o harness de campanha, agora isolado em `ScadrykGameDirector.Smoke.cs` (2.101 linhas sob `#if DEBUG`), não entra no runtime de produção. O Unity compilou e o build Windows passou em 27/11/2026; smoke e validação jogada seguem pendentes.
 - O contrato para poderes, exploração, narrativa, opções, telemetria e cenas consta no README; a cobertura sólida e o teste da campanha existem no código. Smoke test usa dano artificial e, mesmo passando, não substitui combate jogado nem observação humana.
 - **Defeito encontrado nesta revisão:** os projéteis eram objetos de cena sem pai. Ao trocar ou reiniciar a sala, o mapa antigo era destruído, mas um projétil em voo podia sobreviver até seu timeout e atingir Nara na sala seguinte. A correção associa cada projétil à sala ativa, limpa os restantes na passagem e estende o smoke test para conferir ambas as condições.
 - **Etapa de acessibilidade implementada no código, ainda sem aceite:** menus agora recebem navegação pelo analógico, A confirma, B volta, Start pausa; opções têm abas de teclado e gamepad e remapeamento dos sete comandos de combate. Associações duplicadas são trocadas. A compilação no Editor e a verificação com um controle físico continuam pendentes; não contar como suporte validado.
