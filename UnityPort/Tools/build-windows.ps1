@@ -28,7 +28,7 @@ $editorArguments = @(
     'ScadrykBuildMenu.BuildWindowsDemo',
     '-logFile', ('"{0}"' -f $logPath)
 )
-$unityProcess = Start-Process -FilePath $UnityEditorPath -ArgumentList $editorArguments -Wait -PassThru
+$unityProcess = Start-Process -FilePath $UnityEditorPath -ArgumentList $editorArguments -WindowStyle Hidden -Wait -PassThru
 $licenseError = Select-String -LiteralPath $logPath -Pattern 'No valid Unity Editor license found|Please activate your license' -ErrorAction SilentlyContinue
 if ($licenseError) {
     throw "Unity não tem uma licença ativa. Entre no Unity Hub e ative uma licença Personal ou válida. Consulte: $logPath"

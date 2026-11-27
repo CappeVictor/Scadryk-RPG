@@ -25,7 +25,7 @@ $editorArguments = @(
     '-projectPath', ('"{0}"' -f $projectRoot),
     '-logFile', ('"{0}"' -f $logPath)
 )
-$unityProcess = Start-Process -FilePath $UnityEditorPath -ArgumentList $editorArguments -Wait -PassThru
+$unityProcess = Start-Process -FilePath $UnityEditorPath -ArgumentList $editorArguments -WindowStyle Hidden -Wait -PassThru
 $unityExitCode = $unityProcess.ExitCode
 $licenseError = Select-String -LiteralPath $logPath -Pattern 'No valid Unity Editor license found|Please activate your license' -ErrorAction SilentlyContinue
 if ($licenseError) {
