@@ -477,16 +477,18 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
 
         float bestProgress = float.NegativeInfinity;
         Vector2 bestHeading = desiredHeading;
+        bool foundOpenHeading = false;
         for (int i = 1; i < SteeringAngles.Length; i++)
         {
             if (blocked[i]) continue;
+            foundOpenHeading = true;
             Vector2 candidate = Rotate(desiredHeading, SteeringAngles[i] * Mathf.Deg2Rad);
             float progress = Vector2.Dot(candidate, desiredHeading);
             if (progress <= bestProgress) continue;
             bestProgress = progress;
             bestHeading = candidate;
         }
-        return bestHeading;
+        return foundOpenHeading ? bestHeading : Vector2.zero;
     }
 
     private void TrackAttackWarning(GameObject warning)
