@@ -460,6 +460,11 @@ public sealed partial class ScadrykGameDirector
         Debug.Log("SCADRYK_SMOKE: selos persistem, migram locais antigos, isolam salas e limpam em nova jornada");
         if (!powerEchoProgressRoundTrip) { SmokeFail("Melhorias de poder dos Ecos não acompanham corretamente os selos no save ou na nova jornada"); yield break; }
         Debug.Log("SCADRYK_SMOKE: os três selos salvam melhorias distintas e a jornada nova as remove");
+        if (!ScadrykCombatRules.IsValidDamageAmount(0.01f) || ScadrykCombatRules.IsValidDamageAmount(0f) ||
+            ScadrykCombatRules.IsValidDamageAmount(-1f) || ScadrykCombatRules.IsValidDamageAmount(float.NaN) ||
+            ScadrykCombatRules.IsValidDamageAmount(float.PositiveInfinity) || ScadrykCombatRules.IsValidDamageAmount(float.NegativeInfinity))
+        { SmokeFail("Entrada de dano zero, negativa ou não finita não foi rejeitada antes de alterar vida/reações"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: dano zero, negativo e não finito é rejeitado antes da reação de impacto");
         if (!SmokeCoverBlocksOnlyWhenSolid())
         { SmokeFail("Cobertura não bloqueia poderes direcionais ou gatilhos bloqueiam poderes circulares"); yield break; }
         Debug.Log("SCADRYK_SMOKE: cobertura interrompe golpes direcionais, não o Estouro circular, e gatilhos não bloqueiam");

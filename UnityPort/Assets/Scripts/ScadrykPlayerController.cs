@@ -574,8 +574,9 @@ public sealed class ScadrykPlayerController : MonoBehaviour
 
     public bool TakeDamage(float amount)
     {
-        if (isDying || Time.time < invulnerableUntil || (director != null && director.IsPaused)) return false;
-        health -= Mathf.Max(0f, amount);
+        if (!ScadrykCombatRules.IsValidDamageAmount(amount) || isDying || Time.time < invulnerableUntil ||
+            (director != null && director.IsPaused)) return false;
+        health -= amount;
         ScadrykAudio.Play(ScadrykCue.Hurt);
         invulnerableUntil = Time.time + 0.62f;
         if (animator != null) animator.PlayHit(-facing);

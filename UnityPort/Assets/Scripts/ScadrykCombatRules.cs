@@ -7,6 +7,9 @@ public static class ScadrykCombatRules
     private static readonly RaycastHit2D[] RaycastHits = new RaycastHit2D[RaycastHitCapacity];
     private static readonly ContactFilter2D WorldQueryFilter = CreateWorldQueryFilter();
 
+    internal static bool IsValidDamageAmount(float amount) =>
+        amount > 0f && !float.IsNaN(amount) && !float.IsInfinity(amount);
+
     private static ContactFilter2D CreateWorldQueryFilter()
     {
         var filter = new ContactFilter2D();

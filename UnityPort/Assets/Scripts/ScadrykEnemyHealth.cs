@@ -942,9 +942,9 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
 
     public void TakeDamage(float amount)
     {
-        if (dead) return;
+        if (dead || !ScadrykCombatRules.IsValidDamageAmount(amount)) return;
         int previousStage = FinalStage;
-        health -= Mathf.Max(0f, amount) * (Time.time < exposedUntil ? 1.3f : 1f);
+        health -= amount * (Time.time < exposedUntil ? 1.3f : 1f);
         if (isFinalBoss && health > 0f && FinalStage != previousStage)
         {
             if (isWindup) pendingFinalStageBreather = true;
