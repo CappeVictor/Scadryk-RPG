@@ -2,6 +2,8 @@
 
 ## Revisão de estado (28/11/2026; branch `codex/unity-playable-phase-maps`)
 
+**Marcos de ressonância com arte própria por lugar (28/11/2026, código `ca50490`):** as interações de exploração usam a pedra rúnica do Vau, a poça de salmoura da Bacia, cristais ressonantes e o santuário da Costa; na Fileira das Bóias, o primeiro sinal mostra a boia-farol e o segundo o sino do recife. A associação usa sprites já incluídos no atlas ambiental. Unity `6000.6.9f1` importou/compilou sem diagnósticos C# e a build Windows terminou com sucesso (`ca50490288bc`, `2026-11-28T03:21:36Z`). Ainda falta observar se os marcos podem ser identificados sem depender da legenda e se o tamanho se mantém legível durante a exploração.
+
 **Impasse do steering dos Ecos (28/11/2026, código `5269434`):** se o círculo de desvio marca todas as alternativas como bloqueadas, o inimigo fica parado até abrir uma direção; isso substitui o fallback anterior que continuava avançando contra a parede. O smoke compila a verificação de rota fechada e de desvio livre, mas não foi executado nem validado em arena real.
 
 **Reconhecimento do analógico esquerdo (28/11/2026, código `6275a1b`):** o movimento já respondia abaixo do limiar que o controlador usava para trocar dispositivo e selecionar a mira de movimento; agora ambas as respostas compartilham o corte de 5% da faixa filtrada. O smoke verifica as transições, mas não foi executado nem medido em controle físico.
