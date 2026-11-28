@@ -2,6 +2,8 @@
 
 ## Revisão de estado (28/11/2026; branch `codex/unity-playable-phase-maps`)
 
+**Percentuais nos controles de acessibilidade e áudio (28/11/2026, código `09ca774`):** música, efeitos e escala do texto mostram seus valores numéricos ao lado dos sliders. Em layouts muito estreitos, a indicação some para preservar uma largura mínima de ajuste. Unity `6000.6.9f1` compilou sem diagnósticos C# e a build Windows passou (`09ca7743f0bf`, `2026-11-28T13:54:41Z`). A leitura dos números deve ser conferida em tela compacta e com escala ampliada.
+
 **Duração da exposição informada na barra (28/11/2026, código `b17ab61`):** além de mudar para ciano, a barra do Eco exposto recebe uma faixa fina que diminui até a vulnerabilidade acabar. Reaplicar Estouro amplia corretamente o tempo total e atualiza a faixa; o teste smoke agora verifica limites e decaimento, mas ainda não foi executado. Unity `6000.6.9f1` compilou sem diagnósticos C# e a build Windows terminou com sucesso (`b17ab611b61f`, `2026-11-28T13:46:45Z`). A leitura do traço em combate real permanece pendente.
 
 **Vulnerabilidade legível também na vida do alvo (28/11/2026, código `63557ca`):** enquanto Estouro expõe um Eco, a barra de vida passa para ciano e volta à cor definida para aquele inimigo quando a exposição acaba. O sprite já recebia tonalidade ciano; repetir o estado na barra acrescenta um sinal persistente sem flash. Unity `6000.6.9f1` compilou sem diagnósticos C# e a build Windows terminou com sucesso (`63557caca1c5`, `2026-11-28T13:39:58Z`). O contraste, a duração percebida e a leitura quando há vários Ecos expostos precisam de avaliação visual em combate.
