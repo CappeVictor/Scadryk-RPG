@@ -69,6 +69,7 @@ public sealed class ScadrykAudio : MonoBehaviour
             MakePowerImpactCue("Saltburst impact", 246.94f, 1),
             MakePowerImpactCue("Tidebreaker impact", 146.83f, 2)
         };
+        ApplyOutputVolumes();
     }
 
     private void Update()
@@ -76,17 +77,26 @@ public sealed class ScadrykAudio : MonoBehaviour
         combatEnvelope = BlendCombatIntensity(combatEnvelope, combatTarget, Time.unscaledDeltaTime);
         warningMusicEnvelope = BlendWarningMusicEnvelope(warningMusicEnvelope,
             Time.unscaledTime < warningMusicDuckUntil, Time.unscaledDeltaTime);
-        float musicVolume = ScadrykSettings.MusicVolume * 0.34f;
-        if (music != null) music.volume = musicVolume * musicEnvelope * warningMusicEnvelope;
-        if (transitionMusic != null) transitionMusic.volume = musicVolume * transitionEnvelope * warningMusicEnvelope;
+        ApplyOutputVolumes();
         if (combatMusic != null)
         {
-            combatMusic.volume = ScadrykSettings.MusicVolume * 0.11f * combatEnvelope * warningMusicEnvelope;
             if (combatTarget > 0f && !combatMusic.isPlaying) combatMusic.Play();
             else if (combatTarget <= 0f && combatEnvelope <= 0.001f && combatMusic.isPlaying) combatMusic.Stop();
         }
-        if (effects != null) effects.volume = ScadrykSettings.EffectsVolume * 0.65f;
     }
+
+    private void ApplyOutputVolumes()
+    {
+        float musicVolume = ScadrykSettings.MusicVolume;
+        float effectsVolume = ScadrykSettings.EffectsVolume;
+        if (music != null) music.volume = OutputVolume(musicVolume, 0.34f, musicEnvelope * warningMusicEnvelope);
+        if (transitionMusic != null) transitionMusic.volume = OutputVolume(musicVolume, 0.34f, transitionEnvelope * warningMusicEnvelope);
+        if (combatMusic != null) combatMusic.volume = OutputVolume(musicVolume, 0.11f, combatEnvelope * warningMusicEnvelope);
+        if (effects != null) effects.volume = OutputVolume(effectsVolume, 0.65f, 1f);
+    }
+
+    internal static float OutputVolume(float setting, float channelGain, float envelope) =>
+        Mathf.Clamp01(setting) * Mathf.Clamp01(channelGain) * Mathf.Clamp01(envelope);
 
     public void SetCombatIntensity(float intensity)
     {

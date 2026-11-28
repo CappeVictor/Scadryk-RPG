@@ -705,6 +705,10 @@ public sealed partial class ScadrykGameDirector
             Mathf.Abs(ScadrykAudio.CombatIntensityFor(4, false, false) - 0.78f) > 0.001f ||
             Mathf.Abs(ScadrykAudio.CombatIntensityFor(1, true, false) - 1f) > 0.001f ||
             Mathf.Abs(ScadrykAudio.CombatIntensityFor(4, true, true)) > 0.001f ||
+            Mathf.Abs(ScadrykAudio.OutputVolume(ScadrykSettings.DefaultMusicVolume, 0.34f, 1f) - 0.1428f) > 0.001f ||
+            Mathf.Abs(ScadrykAudio.OutputVolume(ScadrykSettings.DefaultMusicVolume, 0.11f, 0f)) > 0.001f ||
+            Mathf.Abs(ScadrykAudio.OutputVolume(ScadrykSettings.DefaultEffectsVolume, 0.65f, 1f) - 0.4225f) > 0.001f ||
+            Mathf.Abs(ScadrykAudio.OutputVolume(0f, 0.65f, 1f)) > 0.001f ||
             Mathf.Abs(ScadrykAudio.BlendCombatIntensity(0f, 1f, 0.425f) - 0.5f) > 0.001f ||
             Mathf.Abs(ScadrykAudio.BlendCombatIntensity(1f, 0f, 0.425f) - 0.5f) > 0.001f ||
             Mathf.Abs(ScadrykAudio.WarningMusicDuckLevel - 0.62f) > 0.001f ||
