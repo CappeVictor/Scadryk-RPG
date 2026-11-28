@@ -29,7 +29,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     internal const float BellPulseRadius = 5.3f;
     internal const float SupportPulseRadius = 2.5f;
     internal static float SupportPulseInnerDiameter => SupportPulseRadius * 0.9f;
-    internal const float OpeningAttackSpacing = 0.52f;
+    internal const float OpeningAttackSpacing = 0.75f;
     internal const int SteeringHitCapacity = 32;
     internal const int AttackWarningCapacity = 8;
     internal static float AttackRecoveryDuration(bool boss, bool finalBoss) => finalBoss ? 0.42f : boss ? 0.36f : 0.24f;
