@@ -1319,6 +1319,12 @@ public sealed partial class ScadrykGameDirector
         RefreshThreatCaptionContent(threatCaptionContent, ref cachedThreatCaptionLabel, "Arauto fase 3 — onda de vazio", 0.89f);
         bool unchangedCaptionReusesText = object.ReferenceEquals(firstThreatCaptionText, threatCaptionContent.text);
         RefreshThreatCaptionContent(threatCaptionContent, ref cachedThreatCaptionLabel, "Bosque — Eco avanço de raízes", 0.21f);
+        string orderedThreatFirst = "Ressonador — pulso";
+        string orderedThreatSecond = "Atirador — estilhaço";
+        float orderedThreatFirstImpact = 0.8f;
+        float orderedThreatSecondImpact = 0.2f;
+        OrderThreatCaptionPair(ref orderedThreatFirst, ref orderedThreatFirstImpact,
+            ref orderedThreatSecond, ref orderedThreatSecondImpact);
         int cachedCooldownTenths = int.MinValue;
         string cachedCooldownLabel = null;
         string firstCooldownLabel = HudCooldownLabel(0.81f, ref cachedCooldownTenths, ref cachedCooldownLabel);
@@ -1381,6 +1387,8 @@ public sealed partial class ScadrykGameDirector
             compactThreatFontSize < 9 || compactThreatFontSize > 14 ||
             compactThreatFontSize * longestCompactThreatText.Length * 0.52f > compactThreatCaption.width - 16f + 0.001f ||
             !unchangedCaptionReusesText || ThreatCaptionTenthsUntilImpact(0.71f) != 8 ||
+            orderedThreatFirst != "Atirador — estilhaço" || orderedThreatSecond != "Ressonador — pulso" ||
+            Mathf.Abs(orderedThreatFirstImpact - 0.2f) > 0.001f || Mathf.Abs(orderedThreatSecondImpact - 0.8f) > 0.001f ||
             ThreatCaptionTenthsUntilImpact(-0.1f) != 0 ||
             ThreatCaptionText("Bosque — Eco avanço de raízes", 3) != "0,3 s · Bosque — Eco avanço de raízes" ||
             threatCaptionContent.text != "0,3 s · Bosque — Eco avanço de raízes" ||

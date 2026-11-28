@@ -204,6 +204,17 @@ public sealed partial class ScadrykGameDirector
     internal static int ThreatCaptionTenthsUntilImpact(float secondsUntilImpact) =>
         Mathf.Max(0, Mathf.CeilToInt(Mathf.Max(0f, secondsUntilImpact) * 10f));
 
+    internal static void OrderThreatCaptionPair(ref string first, ref float firstImpact, ref string second, ref float secondImpact)
+    {
+        if (string.IsNullOrEmpty(first) || string.IsNullOrEmpty(second) || secondImpact >= firstImpact) return;
+        string previousFirst = first;
+        first = second;
+        second = previousFirst;
+        float previousImpact = firstImpact;
+        firstImpact = secondImpact;
+        secondImpact = previousImpact;
+    }
+
     internal static string ThreatCaptionText(string label, int tenthsUntilImpact)
     {
         if (string.IsNullOrEmpty(label)) return string.Empty;
@@ -332,6 +343,7 @@ public sealed partial class ScadrykGameDirector
                 secondImpact = secondsUntilImpact;
             }
         }
+        OrderThreatCaptionPair(ref first, ref firstImpact, ref second, ref secondImpact);
         if (cachedExposureCount != exposedCount)
         {
             cachedExposureCount = exposedCount;
