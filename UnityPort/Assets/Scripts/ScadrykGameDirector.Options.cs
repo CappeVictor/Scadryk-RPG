@@ -336,7 +336,10 @@ public sealed partial class ScadrykGameDirector
             float viewportHeight = CompactOptionsViewportHeight(screenHeight);
             float compactBackTop = screenHeight - 78f;
             float compactFooterTop = screenHeight - 30f;
-            return viewportHeight >= 76f && CompactOptionsContentHeight(0) > viewportHeight &&
+            Rect reactionOption = CompactOptionsSelectionRect(0, 9);
+            Rect frameRateOption = CompactOptionsSelectionRect(0, 11);
+            return viewportHeight >= 76f && reactionOption.yMin >= 0f &&
+                reactionOption.yMax <= CompactOptionsContentHeight(0) && frameRateOption.yMax <= CompactOptionsContentHeight(0) &&
                 compactBackTop + 42f <= compactFooterTop && compactFooterTop + 28f <= screenHeight;
         }
         float y = compact ? 8f : Mathf.Max(18f, (screenHeight - 690f) * 0.5f);

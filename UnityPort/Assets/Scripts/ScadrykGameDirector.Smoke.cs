@@ -1458,7 +1458,7 @@ public sealed partial class ScadrykGameDirector
             frameRateScroll > CompactOptionsContentHeight(0) - shortOptionsViewport)
         { SmokeFail("As opções roláveis não mantêm as últimas ações, FPS, tela cheia ou zona morta visíveis em 400x360"); yield break; }
         Debug.Log("SCADRYK_SMOKE: opções roláveis preservam remapeamento, reação, FPS, tela cheia e zona morta em 400x360");
-        if (!SoundOptionsLayoutFits(600f) || !SoundOptionsLayoutFits(720f))
+        if (!SoundOptionsLayoutFits(600f) || !SoundOptionsLayoutFits(650f) || !SoundOptionsLayoutFits(720f))
         { SmokeFail("As opções de reação, alto contraste ou instruções de perigo saem do menu em janela baixa ou padrão"); yield break; }
         bool frameRateModesWork = ScadrykSettings.FrameRateTargetForMode(ScadrykSettings.FrameRateMonitor) == -1 &&
             ScadrykSettings.VSyncForFrameRateMode(ScadrykSettings.FrameRateMonitor) == 1 &&
