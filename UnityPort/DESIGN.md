@@ -2,6 +2,8 @@
 
 ## Revisão de estado (28/11/2026; branch `codex/unity-playable-phase-maps`)
 
+**Detecção de atividade do controle (28/11/2026, código `48e2ace`):** aim e detecção de dispositivo agora compartilham o corte de 5% da faixa filtrada. Isso elimina a divergência em que um analógico já movia a mira, mas a interface ainda identificava teclado/mouse até um desvio maior. Unity batch e build Windows passaram; as novas asserções do smoke ainda não foram executadas nem a resposta foi conferida em controle físico.
+
 **Resposta da mira twin-stick (28/11/2026, código `51528ea`):** a zona morta radial já filtrava drift, então a mira não precisa de outro corte de 30% da faixa resultante. Reduzi o gatilho extra para 5%; no padrão de 19%, a ativação calculada passa de aproximadamente 43% para 23% do curso físico. O smoke verifica a direção logo abaixo e acima do limiar, mas não foi executado; precisão e drift precisam ser avaliados em controle físico.
 
 **Organização dos dados narrativos (28/11/2026, código `5d72f7d`):** nomes e cores de biomas, salas, objetivos, falas, memórias, finais e migração de entradas antigas do Caderno foram agrupados em `ScadrykGameDirector.Content.cs`, um parcial C# do mesmo diretor. Nenhum ponto de uso foi alterado; Unity batch e build Windows passaram. O smoke de narrativa não foi executado nem a leitura foi observada em runtime.
