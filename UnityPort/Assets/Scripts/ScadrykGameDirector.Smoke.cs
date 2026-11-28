@@ -361,10 +361,11 @@ public sealed partial class ScadrykGameDirector
             bool clampsWitnessLine = ReadWitnessProgress(checkpointTestPrefix, 1) == 0;
             ClearWitnessProgress(checkpointTestPrefix);
             bool clearsWitnessLines = ReadWitnessProgress(checkpointTestPrefix, 1) == 0 && ReadWitnessProgress(checkpointTestPrefix, 2) == 0;
-            bool secretStartsHidden = !IsWorldSecretRevealed(checkpointTestPrefix, 1, 1);
+            bool secretStartsHidden = !IsWorldSecretRevealed(checkpointTestPrefix, 1, 1) && CountWorldSecretsRevealed(checkpointTestPrefix) == 0;
             MarkWorldSecretRevealed(checkpointTestPrefix, 1, 1);
             bool secretSurvivesRoomRebuild = IsWorldSecretRevealed(checkpointTestPrefix, 1, 1) &&
-                !ShouldBuildWorldSecret(false, IsWorldSecretRevealed(checkpointTestPrefix, 1, 1));
+                !ShouldBuildWorldSecret(false, IsWorldSecretRevealed(checkpointTestPrefix, 1, 1)) &&
+                CountWorldSecretsRevealed(checkpointTestPrefix) == 1;
             bool smokeCanRebuildSecret = ShouldBuildWorldSecret(true, IsWorldSecretRevealed(checkpointTestPrefix, 1, 1));
             bool secretsAreRoomSpecific = !IsWorldSecretRevealed(checkpointTestPrefix, 2, 1);
             ClearWorldSecretProgress(checkpointTestPrefix);
@@ -379,6 +380,7 @@ public sealed partial class ScadrykGameDirector
                 !IsWorldSecretRevealed(checkpointTestPrefix, 2, 0) &&
                 IsWorldSecretRevealed(checkpointTestPrefix, 1, 1) &&
                 IsWorldSecretRevealed(checkpointTestPrefix, 2, 1) &&
+                CountWorldSecretsRevealed(checkpointTestPrefix) == 2 &&
                 ShouldRestorePowerEcho(checkpointTestPrefix, 0) && ShouldRestorePowerEcho(checkpointTestPrefix, 1);
             ClearWorldSecretProgress(checkpointTestPrefix);
             worldSecretProgressRoundTrip &= legacySecretLocationsMigrated;
@@ -389,10 +391,12 @@ public sealed partial class ScadrykGameDirector
                 ShouldRestorePowerEcho(checkpointTestPrefix, 1) && ShouldRestorePowerEcho(checkpointTestPrefix, 2) &&
                 !ShouldRestorePowerEcho(checkpointTestPrefix, -1) && !ShouldRestorePowerEcho(checkpointTestPrefix, 3) &&
                 PowerGrantedBySecretAt(1, 1) == 0 && PowerGrantedBySecretAt(2, 1) == 1 &&
-                PowerGrantedBySecretAt(2, 2) == 2 && PowerGrantedBySecretAt(0, 0) == -1;
+                PowerGrantedBySecretAt(2, 2) == 2 && PowerGrantedBySecretAt(0, 0) == -1 &&
+                CountWorldSecretsRevealed(checkpointTestPrefix) == 3;
             ClearWorldSecretProgress(checkpointTestPrefix);
             powerEchoProgressRoundTrip &= !ShouldRestorePowerEcho(checkpointTestPrefix, 0) &&
-                !ShouldRestorePowerEcho(checkpointTestPrefix, 1) && !ShouldRestorePowerEcho(checkpointTestPrefix, 2);
+                !ShouldRestorePowerEcho(checkpointTestPrefix, 1) && !ShouldRestorePowerEcho(checkpointTestPrefix, 2) &&
+                CountWorldSecretsRevealed(checkpointTestPrefix) == 0;
             bool guardianStartsUndefeated = !HasGuardianDefeatProgress(checkpointTestPrefix, 0);
             WriteGuardianDefeatProgress(checkpointTestPrefix, 0);
             WriteGuardianDefeatProgress(checkpointTestPrefix, 2);
@@ -548,10 +552,16 @@ public sealed partial class ScadrykGameDirector
         { SmokeFail("O caderno não tem uma apresentação identificável para cada sala"); yield break; }
         Debug.Log("SCADRYK_SMOKE: abertura, falas, aparição crescente de Nima, memórias dos guardiões e resolução formam o arco da maré");
         string victoryOverlay = OverlayMessage(false, true, false);
-        if (!victoryOverlay.Contains("Os sinos respondem") || !victoryOverlay.Contains("Nima atravessa levando seu nome") ||
-            !victoryOverlay.Contains("Nara escolheu lembrar") || !victoryOverlay.Contains("não prende ninguém"))
-        { SmokeFail("O painel de vitória precisa concluir a travessia de Nima, a escolha de Nara, o retorno dos sinos e o fim do aprisionamento"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: o painel de vitória seleciona o encerramento da história");
+        string victoryWithSomeSeals = VictoryEndingTextForSecrets(2);
+        string victoryWithAllSeals = OverlayMessage(false, true, false, 3);
+        if (victoryOverlay != VictoryEndingText || !victoryOverlay.Contains("Os três sinos respondem") ||
+            !victoryOverlay.Contains("O Arauto tentou poupar os vivos") || !victoryOverlay.Contains("aprisionou os mortos") ||
+            !victoryOverlay.Contains("Nima atravessa levando o próprio nome") || !victoryOverlay.Contains("Nara escolhe lembrar sem prender") ||
+            !victoryWithSomeSeals.Contains("memórias libertadas acompanham Nara") || victoryWithSomeSeals == victoryOverlay ||
+            !victoryWithAllSeals.Contains("três memórias ocultas") || victoryWithAllSeals == victoryWithSomeSeals ||
+            VictoryEndingTextForSecrets(-5) != victoryOverlay || VictoryEndingTextForSecrets(99) != victoryWithAllSeals)
+        { SmokeFail("O encerramento deve resolver o conflito, celebrar os selos opcionais encontrados e continuar correto após a limpeza do save"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: finais sem selos, com memórias parciais e com todos os selos reconhecem a escolha e resolvem a história");
         string savedLocation = CheckpointSummary(2, 1);
         string clampedLocation = CheckpointSummary(-1, 99);
         string defeatedGuardianLocation = CheckpointSummary(2, 2, true);

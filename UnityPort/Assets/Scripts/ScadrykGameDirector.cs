@@ -18,7 +18,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private static readonly GUIContent OpeningMemoryContent = new GUIContent(OpeningMemory);
     private static readonly GUIContent WorldMapTitleContent = new GUIContent("MAPA DA JORNADA");
     private const string EndingMemory = "O Arauto quis ocultar a catástrofe para poupar os vivos da dor, mas o silêncio aprisionou os mortos. Nara escolhe lembrar e abre o limiar para que todos possam atravessar.";
-    private const string VictoryEndingText = "Os três sinos respondem sem apagar o som da onda. Nima atravessa levando o próprio nome. Nara escolhe lembrar sem prender: agora cada voz pode seguir seu caminho.";
+    internal const string VictoryEndingText = "Os três sinos respondem sem apagar o som da onda. O Arauto tentou poupar os vivos, mas seu silêncio aprisionou os mortos. Nara escolhe lembrar sem prender. Nima atravessa levando o próprio nome; cada voz pode seguir seu caminho.";
     private const string SessionCsvHeader = "session_id,utc,phase,room,seconds,deaths,unclear_attacks,crescent,salt,tide,enemies_left,completed,current_entries,current_seconds,input_mode,seals_revealed,shallow_water_seconds,resonance_activations,salt_crosswind_seconds\n";
     private const string AttackClarityCsvHeader = "session_id,utc,phase,room,attack_patterns\n";
     private static readonly char[] CsvSpecialCharacters = { ',', '"', '\r', '\n' };
@@ -98,6 +98,12 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         "Libertar os Ecos da margem", "Abrir a antiga comporta", "Ouvir o guardião das raízes",
         "Escutar o vestígio do sal", "Ressoar dois cristais com o Pulso", "Libertar o guardião do sal",
         "Escutar o sino encalhado", "Ressoar farol e sino do recife nessa ordem", "Enfrentar o Arauto do Vazio"
+    };
+    internal static string VictoryEndingTextForSecrets(int revealedSecrets) => Mathf.Clamp(revealedSecrets, 0, 3) switch
+    {
+        0 => VictoryEndingText,
+        1 or 2 => "Os três sinos respondem sem apagar o som da onda. O Arauto tentou poupar os vivos, mas seu silêncio aprisionou os mortos. As memórias libertadas acompanham Nara. Nima atravessa levando o próprio nome; cada voz pode seguir seu caminho.",
+        _ => "Os três sinos respondem sem apagar o som da onda. O Arauto tentou poupar os vivos, mas seu silêncio aprisionou os mortos. Nara devolveu as três memórias ocultas ao coro. Nima atravessa levando o próprio nome; nenhuma voz permanece presa."
     };
     private static readonly string[] RoomStories = {
         "Nas poças, nomes vêm em pares: alguém que partiu, alguém que ainda espera.",
@@ -206,6 +212,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private readonly int[] roomPowerUses = new int[3];
     private int coastalCurrentEntries;
     private int roomSecretsRevealed;
+    private int victoryOptionalSealCount;
     private float coastalCurrentSeconds;
     private float shallowWaterSeconds;
     private float saltCrosswindSeconds;
@@ -1215,6 +1222,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private IEnumerator TransitionToVictory()
     {
         ClearRoomProjectiles();
+        int revealedSecrets = smokeRun ? 0 : CountWorldSecretsRevealed("Scadryk.");
         transitioning = true;
         ScadrykPortalVisual exitPortal = gateObject != null ? gateObject.GetComponent<ScadrykPortalVisual>() : null;
         Vector2 start = player.transform.position;
@@ -1255,10 +1263,11 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         transitioning = false;
         transitionFade = 0f;
         victory = true;
+        victoryOptionalSealCount = revealedSecrets;
         overlaySelection = 0;
         ScadrykAudio.Play(ScadrykCue.Victory);
         if (!smokeRun) ClearProgressAfterVictory("Scadryk.");
-        statusMessage = VictoryEndingText;
+        statusMessage = VictoryEndingTextForSecrets(victoryOptionalSealCount);
     }
 
     internal static float NimaDepartureProgress(float elapsed) =>

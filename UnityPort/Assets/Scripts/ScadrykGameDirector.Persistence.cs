@@ -255,6 +255,16 @@ public sealed partial class ScadrykGameDirector
     internal static bool IsWorldSecretRevealed(string keyPrefix, int phase, int room) =>
         PlayerPrefs.GetInt(WorldSecretProgressKey(keyPrefix, phase, room), 0) == 1;
 
+    internal static int CountWorldSecretsRevealed(string keyPrefix)
+    {
+        if (string.IsNullOrEmpty(keyPrefix)) return 0;
+        int count = 0;
+        for (int phase = 0; phase < PhaseNames.Length; phase++)
+        for (int room = 0; room < RoomsPerPhase; room++)
+            if (PowerGrantedBySecretAt(phase, room) >= 0 && IsWorldSecretRevealed(keyPrefix, phase, room)) count++;
+        return count;
+    }
+
     internal static bool MigrateLegacyWorldSecretProgress(string keyPrefix)
     {
         bool migrated = MigrateLegacyWorldSecret(keyPrefix, 1, 0, 1, 1);

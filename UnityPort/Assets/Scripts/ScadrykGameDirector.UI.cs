@@ -1034,8 +1034,11 @@ public sealed partial class ScadrykGameDirector
     private static string Cooldown(float value) => value <= 0.02f ? "pronto" : value.ToString("0.0") + "s";
 
     internal static string OverlayMessage(bool confirmNewJourney, bool victory, bool showTitle) =>
+        OverlayMessage(confirmNewJourney, victory, showTitle, 0);
+
+    internal static string OverlayMessage(bool confirmNewJourney, bool victory, bool showTitle, int revealedSecrets) =>
         confirmNewJourney ? "Uma jornada nova apaga o progresso salvo. Quer substituir seu checkpoint?" :
-        victory ? VictoryEndingText :
+        victory ? VictoryEndingTextForSecrets(revealedSecrets) :
         showTitle ? "Nara, a Ouvinte, segue os Ecos até a origem do silêncio." :
         "A jornada pode esperar por você.";
 
@@ -1114,7 +1117,7 @@ public sealed partial class ScadrykGameDirector
             TryLoadCheckpoint("Scadryk.", out int savedPhase, out int savedRoom)
                 ? CheckpointSummary(savedPhase, savedRoom,
                     HasGuardianDefeatProgress("Scadryk.", savedPhase), HasFinalBossDefeatProgress("Scadryk."))
-                : OverlayMessage(confirmNewJourney, victory, showTitle);
+                : OverlayMessage(confirmNewJourney, victory, showTitle, victoryOptionalSealCount);
         float messageHeight = compact ? (pauseMapMenu ? 68f : ultraCompactTitleMenu ? 66f : 86f) : 62f;
         bool compactTitleMenu = showTitle && !victory && !confirmNewJourney;
         bool compressedTitleMenu = compactTitleMenu && Screen.height < 600f;
