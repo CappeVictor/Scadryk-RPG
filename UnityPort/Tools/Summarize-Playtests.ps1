@@ -22,6 +22,7 @@ $sessions = @(Import-Csv -LiteralPath $SessionsPath)
 if ($sessions.Count -eq 0) {
     throw 'O CSV de sessões não contém linhas de jogo.'
 }
+$knownSessionIds = @($sessions | ForEach-Object { $_.session_id } | Select-Object -Unique)
 
 $requiredSessionColumns = @(
     'session_id', 'phase', 'room', 'seconds', 'deaths', 'unclear_attacks',
@@ -80,8 +81,14 @@ if (-not [string]::IsNullOrWhiteSpace($RatingsPath)) {
         throw "Cabeçalho de avaliações inválido. Colunas ausentes: $($missingRatingColumns -join ', ')"
     }
 
+    $allRatingRows = @(Import-Csv -LiteralPath $RatingsPath)
+    $orphanRatings = @($allRatingRows | Where-Object { $_.session_id -notin $knownSessionIds })
+    foreach ($orphan in $orphanRatings) {
+        $orphanId = if ([string]::IsNullOrWhiteSpace($orphan.session_id)) { '(vazio)' } else { $orphan.session_id }
+        Write-Warning "A ficha '$orphanId' não corresponde a nenhuma sessão do CSV; ela não foi incluída."
+    }
     $sessionIds = @($sessions | ForEach-Object { $_.session_id } | Select-Object -Unique)
-    $ratingRows = @(Import-Csv -LiteralPath $RatingsPath | Where-Object { $_.session_id -in $sessionIds })
+    $ratingRows = @($allRatingRows | Where-Object { $_.session_id -in $sessionIds })
     foreach ($duplicate in ($ratingRows | Group-Object session_id | Where-Object { $_.Count -gt 1 })) {
         throw "Mais de uma ficha de avaliação foi informada para a sessão '$($duplicate.Name)'."
     }

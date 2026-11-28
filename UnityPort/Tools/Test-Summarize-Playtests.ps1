@@ -36,11 +36,17 @@ try {
     $ratingsPath = Join-Path $fixtureRoot 'ratings.csv'
     [IO.File]::WriteAllText($ratingsPath, ($ratingHeader + "`n" + ($ratingRows -join "`n") + "`n"), [Text.UTF8Encoding]::new($false))
     [IO.File]::WriteAllText((Join-Path $fixtureRoot 'empty-ratings.csv'), ($ratingHeader + "`n"), [Text.UTF8Encoding]::new($false))
+    $orphanRatingsPath = Join-Path $fixtureRoot 'orphan-ratings.csv'
+    $orphanRating = 'unknown-session,experiente,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4'
+    [IO.File]::WriteAllText($orphanRatingsPath, ($ratingHeader + "`n" + ($ratingRows -join "`n") + "`n" + $orphanRating + "`n"), [Text.UTF8Encoding]::new($false))
 
     $partial = Invoke-Summary 'ratings.csv'
     Assert-Condition ($partial.Output.Contains('Cobertura das avaliações')) 'A tabela de cobertura não foi impressa.'
     Assert-Condition ($partial.Output.Contains('accessibility_options') -and $partial.Output.Contains('reduced_flashes')) 'As avaliações de acessibilidade não foram incluídas nas médias.'
     Assert-Condition (($partial.Warnings.Count -eq 2) -and (($partial.Warnings -join "`n") -match "iniciante.*faltam 1") -and (($partial.Warnings -join "`n") -match "experiente.*faltam 2")) 'As lacunas das amostras parciais não foram avisadas corretamente.'
+    $orphan = Invoke-Summary 'orphan-ratings.csv'
+    Assert-Condition (($orphan.Warnings.Count -eq 3) -and (($orphan.Warnings -join "`n") -match "unknown-session.*não corresponde a nenhuma sessão") -and
+        (($orphan.Warnings -join "`n") -match "experiente.*faltam 2")) 'Uma ficha órfã foi descartada sem aviso ou alterou a cobertura das sessões válidas.'
     $v9SummaryPath = Join-Path $fixtureRoot 'v9-summary.csv'
     & $summaryScript -SessionsPath (Join-Path $fixtureRoot 'sessions.csv') -OutputPath $v9SummaryPath | Out-Null
     $v9Rows = @(Import-Csv -LiteralPath $v9SummaryPath)
@@ -73,7 +79,7 @@ try {
     Write-Output 'PASS: amostra parcial, arquivo sem respostas, ficha duplicada e nota inválida.'
 }
 finally {
-    foreach ($name in @('sessions.csv', 'ratings.csv', 'empty-ratings.csv', 'v9-summary.csv', 'legacy-v8.csv', 'legacy-summary.csv')) {
+    foreach ($name in @('sessions.csv', 'ratings.csv', 'empty-ratings.csv', 'orphan-ratings.csv', 'v9-summary.csv', 'legacy-v8.csv', 'legacy-summary.csv')) {
         $path = Join-Path $fixtureRoot $name
         if (Test-Path -LiteralPath $path -PathType Leaf) { Remove-Item -LiteralPath $path }
     }
