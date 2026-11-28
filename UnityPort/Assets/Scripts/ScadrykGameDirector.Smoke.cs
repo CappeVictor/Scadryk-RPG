@@ -5,7 +5,7 @@ using UnityEngine;
 
 public sealed partial class ScadrykGameDirector
 {
-#if DEBUG
+#if DEBUG || UNITY_EDITOR || SCADRYK_SMOKE
     private static bool SmokeBindingResetIsolation()
     {
         const int keyboardCount = 12, gamepadCount = 7;

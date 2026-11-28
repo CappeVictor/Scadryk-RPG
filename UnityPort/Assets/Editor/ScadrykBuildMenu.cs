@@ -100,7 +100,8 @@ public static class ScadrykBuildMenu
             scenes = new[] { "Assets/Scenes/ScadrykDemo.unity" },
             locationPathName = Path.Combine(outputDirectory, "ScadrykSmoke.exe"),
             target = BuildTarget.StandaloneWindows64,
-            options = BuildOptions.Development
+            options = BuildOptions.Development,
+            extraScriptingDefines = new[] { "SCADRYK_SMOKE" }
         };
         BuildReport report = BuildPipeline.BuildPlayer(options);
         if (report.summary.result != BuildResult.Succeeded)

@@ -65,7 +65,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
     private GameObject levelRoot, gateObject, witnessObject;
     private GameObject bossStagePulse;
     private int witnessLine;
-#if UNITY_EDITOR
+#if UNITY_EDITOR || SCADRYK_SMOKE
     private bool nimaFarewellCompleted;
 #endif
     private bool resumeFinalGuardianInterlude;
@@ -240,7 +240,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     private void Start()
     {
-#if DEBUG
+#if DEBUG || UNITY_EDITOR || SCADRYK_SMOKE
         smokeRun = System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-scadryk-smoke") >= 0;
 #endif
         ScadrykSettings.ClearReservedBindings();
@@ -281,7 +281,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         for (int i = 0; i < PhaseNames.Length; i++)
             if (ShouldRestoreAbility(i, savedPhase, !smokeRun && HasGuardianDefeatProgress("Scadryk.", i))) player.UnlockAbility(i);
         if (!smokeRun) RestorePowerEchoes("Scadryk.", player);
-#if DEBUG
+#if DEBUG || UNITY_EDITOR || SCADRYK_SMOKE
         if (smokeRun) { showTitle = false; StartCoroutine(SmokeCampaign()); }
 #endif
         ApplyPauseTimeScale();
@@ -1247,7 +1247,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             yield return null;
         }
         Destroy(nimaObject);
-#if UNITY_EDITOR
+#if UNITY_EDITOR || SCADRYK_SMOKE
         nimaFarewellCompleted = true;
 #endif
         yield return FadeScreen(1f, 0.45f);
