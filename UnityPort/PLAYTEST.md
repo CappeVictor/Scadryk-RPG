@@ -80,6 +80,7 @@ Respostas de 1 (discordo) a 5 (concordo), com observações:
 - Entendi a direção da corrente e escolhi quando atravessar ou evitá-la: `1  2  3  4  5` — nota: `____________________`
 - Entendi como as poças alteram o passo e como ressoar cristais/farol/sino com o Pulso: `1  2  3  4  5` — nota: `____________________`
 - Os avisos sonoros continuaram distinguíveis com música e mais de um Eco atacando: `1  2  3  4  5` — nota: `____________________`
+- A música me ajudou a reconhecer quando eu estava no bosque, na Bacia do Sal, na Costa ou diante do Arauto: `1  2  3  4  5` — anote quais motivos percebeu e onde ficaram difíceis de distinguir: `____________________`
 - Consegui ler cada lembrança com calma; o combate parou e os comandos do painel acompanharam o dispositivo usado: `1  2  3  4  5` — nota: `____________________`
 - O sinal sonoro de abertura da lembrança ficou claro sem competir com a música: `1  2  3  4  5` — nota: `____________________`
 - Percebi o toque ascendente ao libertar um selo e o distingui do som da lembrança: `1  2  3  4  5` — nota: `____________________`
