@@ -144,6 +144,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         Vector2 keyboard = new Vector2((ScadrykSettings.Held(10) ? 1f : 0f) - (ScadrykSettings.Held(9) ? 1f : 0f),
             (ScadrykSettings.Held(7) ? 1f : 0f) - (ScadrykSettings.Held(8) ? 1f : 0f));
         Vector2 stick = ScadrykSettings.ReadGamepadStick("Scadryk Move X", "Scadryk Move Y");
+        bool gamepadMovement = ScadrykGameDirector.GamepadStickActivity(stick);
         moveInput = Vector2.ClampMagnitude(keyboard + stick, 1f);
         bool keyboardAttack = ScadrykSettings.Down(0), gamepadAttack = ScadrykSettings.PadDown(0);
         bool keyboardDash = ScadrykSettings.Down(1), gamepadDash = ScadrykSettings.PadDown(1);
@@ -159,10 +160,10 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         {
             if (keyboard.sqrMagnitude > 0.01f || keyboardAction || Input.mousePosition != lastMousePosition)
                 director.RecordInputMode("keyboard_mouse");
-            if (stick.sqrMagnitude > 0.01f || gamepadAction)
+            if (gamepadMovement || gamepadAction)
                 director.RecordInputMode("gamepad");
         }
-        AimAtPointer(keyboard.sqrMagnitude > 0.01f || keyboardAction, stick.sqrMagnitude > 0.01f || gamepadAction);
+        AimAtPointer(keyboard.sqrMagnitude > 0.01f || keyboardAction, gamepadMovement || gamepadAction);
         if (keyboardDash || gamepadDash) dashBufferedUntil = Time.time + DashBufferWindow;
         TryStartBufferedDash();
         if (mouseAttack || keyboardAttack || gamepadAttack) attackBufferedUntil = Time.time + BasicAttackBufferWindow;

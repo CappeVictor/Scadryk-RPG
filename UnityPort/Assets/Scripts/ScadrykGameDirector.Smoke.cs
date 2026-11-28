@@ -770,9 +770,12 @@ public sealed partial class ScadrykGameDirector
                 Vector2.up * (ScadrykPlayerController.GamepadAimActivationMagnitude * 1.1f), Vector2.right, true), Vector2.up) > 0.001f)
         { SmokeFail("A mira do controle não conserva direção nem prioriza o analógico direito"); yield break; }
         Debug.Log("SCADRYK_SMOKE: mira do controle conserva o twin-stick, ativa com 5% da faixa filtrada e usa fallback de movimento");
-        if (GamepadStickActivity(Vector2.right * (ScadrykPlayerController.GamepadAimActivationMagnitude * 0.9f)) ||
-            !GamepadStickActivity(Vector2.up * (ScadrykPlayerController.GamepadAimActivationMagnitude * 1.1f)) ||
-            GamepadStickActivity(Vector2.zero))
+        Vector2 smallStickBelowThreshold = Vector2.right * (ScadrykPlayerController.GamepadAimActivationMagnitude * 0.9f);
+        Vector2 smallStickAboveThreshold = Vector2.right * (ScadrykPlayerController.GamepadAimActivationMagnitude * 1.1f);
+        if (GamepadStickActivity(smallStickBelowThreshold) ||
+            !GamepadStickActivity(smallStickAboveThreshold) || GamepadStickActivity(Vector2.zero) ||
+            MemoryInputModeAfterActivity("keyboard_mouse", false, GamepadStickActivity(smallStickBelowThreshold)) != "keyboard_mouse" ||
+            MemoryInputModeAfterActivity("keyboard_mouse", false, GamepadStickActivity(smallStickAboveThreshold)) != "gamepad")
         { SmokeFail("A troca de dispositivo pelo analógico não acompanha o limiar de mira"); yield break; }
         Debug.Log("SCADRYK_SMOKE: atividade dos analógicos troca o dispositivo no mesmo limiar responsivo da mira");
         Vector2 stickDrift = ScadrykSettings.ApplyRadialDeadzone(new Vector2(0.12f, 0.03f), 0.19f);
