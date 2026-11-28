@@ -2,6 +2,8 @@
 
 ## Revisão de estado (28/11/2026; branch `codex/unity-playable-phase-maps`)
 
+**Robustez das entradas de combate e opções (28/11/2026):** dano/cura não aceitam valores não finitos; a cura respeita a vida máxima e normaliza vida inválida. Disparos validam posição, direção, velocidade, dano, escala e limite de distância antes de obter uma instância do pool. Códigos de remapeamento de teclado são checados contra `KeyCode` definido e excluem mouse/joystick; preferências inválidas voltam ao padrão. Unity batch e build Windows passaram para `8973306`; o smoke que cobre esses limites não foi executado. Ainda falta observar combate, retomada e remapeamento em uso real.
+
 **Aviso da queda de estrelas do Arauto:** o anel que marca a área persiste pelo windup e pelos 0,46 s até o impacto; o mesmo atraso é usado pelo aviso e pela aplicação do dano. O smoke compara, por fase, valores de referência independentes: 1,81 s nas duas primeiras e 1,64 s na terceira. Unity compilou e gerou a build, mas o smoke não foi executado nem o sinal visual foi observado em combate.
 
 **Música por contexto:** bosque, Bacia do Sal, Costa das Badaladas e Arauto agora usam motivos originais de quatro notas, com harmonias distintas e crossfade entre notas. As frequências são calculadas ao criar cada loop em vez de a cada amostra. A build passou; tempo de inicialização não foi medido no Profiler e a mixagem não foi ouvida em gameplay.
