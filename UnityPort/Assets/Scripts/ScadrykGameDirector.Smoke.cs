@@ -465,6 +465,9 @@ public sealed partial class ScadrykGameDirector
         if (!SideRoutesAreDistinctAndNavigable())
         { SmokeFail("Os desvios laterais dos três biomas não conectam as duas aberturas ou não deixam largura segura"); yield break; }
         Debug.Log("SCADRYK_SMOKE: bosque, sal e costa têm desvios alternativos com aberturas e largura transitáveis");
+        if (!SideRouteChallengesAreDistinctAndSafe())
+        { SmokeFail("Os desvios não têm travessias ambientais próprias, ou o campo de movimento bloqueia o selo opcional"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: água, rajada e corrente dão desafios distintos sem cobrir os selos nem exceder o limite de fluxo");
         if (!RoomAnchorsAvoidCover())
         { SmokeFail("Um objetivo de ressonância está oculto pela cobertura ou perto demais da entrada/saída"); yield break; }
         Debug.Log("SCADRYK_SMOKE: objetivos das cinco salas de sinal ficam legíveis e acessíveis fora da cobertura");

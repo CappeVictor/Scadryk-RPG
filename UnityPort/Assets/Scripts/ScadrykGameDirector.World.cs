@@ -202,7 +202,11 @@ public sealed partial class ScadrykGameDirector
             MakeBox(parent, "Room floor " + (i + 1), new Vector2(x, 0), new Vector2(RoomSpacing + 0.2f, RoomHeight), roomFloor, false, -10);
             PlacePhaseGround(parent, x, i);
             DrawRoomScenery(parent, i, x, roomFloor);
-            if (hasSideRoute) DrawRoomSideRoute(parent, x, floor, wall, routeSide, routeEntry, routeExit);
+            if (hasSideRoute)
+            {
+                DrawRoomSideRoute(parent, x, floor, wall, routeSide, routeEntry, routeExit);
+                DrawSideRouteChallenge(parent, x, routeSide);
+            }
             if (!hasSideRoute || routeSide < 0)
                 MakeBox(parent, "North wall", new Vector2(x, RoomHalfHeight + 0.1f), new Vector2(19.5f, 0.5f), wall, true, 0);
             else DrawSideRouteWall(parent, x, RoomHalfHeight + 0.1f, wall, routeEntry, routeExit);
@@ -303,6 +307,95 @@ public sealed partial class ScadrykGameDirector
         MakeDecoration(parent, routeName + " exit glow", new Vector2(roomX + exit, side * (RoomHalfHeight + 0.45f)),
             new Vector2(0.9f, 0.9f), new Color(PhaseAccentColors[phaseIndex].r, PhaseAccentColors[phaseIndex].g,
                 PhaseAccentColors[phaseIndex].b, 0.32f), true, -8);
+    }
+
+    private void DrawSideRouteChallenge(Transform parent, float roomX, int side)
+    {
+        Vector2 roomCenter = new Vector2(roomX, 0f);
+        Vector2 center = SideRouteChallengeCenter(roomCenter, side);
+        Vector2 flow = SideRouteChallengeFlow(phaseIndex, side);
+        if (phaseIndex == 0)
+        {
+            MakeShallowWaterPool(parent, "Flooded root causeway", center, new Vector2(4.8f, 1.25f),
+                new Color(0.06f, 0.28f, 0.29f, 0.58f));
+            return;
+        }
+
+        Color accent = PhaseAccentColors[phaseIndex];
+        MakeDecoration(parent, phaseIndex == 1 ? "Salt gust crossing" : "Buoy lee current",
+            center, new Vector2(4.8f, 1.25f), new Color(accent.r, accent.g, accent.b, 0.14f), false, -8);
+        DrawSideRouteFlowMarks(parent, center, flow, accent);
+        var zoneObject = new GameObject(phaseIndex == 1 ? "Salt gust · outer rail" : "Lee current · against the route");
+        zoneObject.transform.SetParent(parent);
+        zoneObject.transform.position = center;
+        BoxCollider2D trigger = zoneObject.AddComponent<BoxCollider2D>();
+        trigger.isTrigger = true;
+        trigger.size = new Vector2(4.8f, 1.25f);
+        string hint = phaseIndex == 1
+            ? "A rajada empurra para a borda da bacia. Desvie pela margem ou esquive contra o vento."
+            : "A corrente puxa de volta para a entrada. Contorne a faixa ou esquive para cruzá-la.";
+        zoneObject.AddComponent<ScadrykTerrainZone>().Configure(SideRouteChallengeMovementScale(phaseIndex), flow,
+            hint, phaseIndex == 1 ? ScadrykTerrainZone.SaltDriftKey : ScadrykTerrainZone.CoastalCurrentKey,
+            phaseIndex == 1 ? ScadrykCue.SaltCrosswind : ScadrykCue.CoastalCurrent);
+    }
+
+    private static void DrawSideRouteFlowMarks(Transform parent, Vector2 center, Vector2 flow, Color accent)
+    {
+        if (flow.sqrMagnitude < 0.001f) return;
+        Vector2 direction = flow.normalized;
+        Vector2 across = new Vector2(-direction.y, direction.x);
+        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+        Color foam = new Color(Mathf.Lerp(accent.r, 1f, 0.28f), Mathf.Lerp(accent.g, 1f, 0.28f),
+            Mathf.Lerp(accent.b, 1f, 0.28f), 0.66f);
+        for (int i = 0; i < 5; i++)
+        {
+            var marker = new GameObject("Route current arrow");
+            marker.transform.SetParent(parent);
+            marker.transform.position = center + across * ((i - 2) * 0.43f);
+            marker.transform.rotation = Quaternion.Euler(0f, 0f, angle);
+            MakeCurrentFoamStroke(marker.transform, "Arrow stem", Vector2.zero, foam, 0f);
+            MakeCurrentFoamStroke(marker.transform, "Arrow upper barb", new Vector2(0.16f, 0.12f), foam, -38f);
+            MakeCurrentFoamStroke(marker.transform, "Arrow lower barb", new Vector2(0.16f, -0.12f), foam, 38f);
+            marker.AddComponent<ScadrykAmbientProp>().ConfigureFlow(0.42f, i / 5f);
+        }
+    }
+
+    internal static Vector2 SideRouteChallengeCenter(Vector2 roomCenter, int side) =>
+        roomCenter + Vector2.up * ((side < 0 ? -1f : 1f) * (RoomHalfHeight + 2.7f));
+
+    internal static Vector2 SideRouteChallengeFlow(int biome, int side) => Mathf.Clamp(biome, 0, 2) switch
+    {
+        0 => Vector2.zero,
+        1 => Vector2.up * (side < 0 ? -1.25f : 1.25f),
+        _ => Vector2.right * 1.45f
+    };
+
+    internal static float SideRouteChallengeMovementScale(int biome) => Mathf.Clamp(biome, 0, 2) switch
+    {
+        0 => 0.78f,
+        1 => 0.96f,
+        _ => 1f
+    };
+
+    internal static bool SideRouteChallengesAreDistinctAndSafe()
+    {
+        for (int biome = 0; biome < 3; biome++)
+        {
+            if (!TryGetSideRoute(biome, 1, out int side, out _, out _)) return false;
+            Vector2 routeCenter = SideRouteChallengeCenter(Vector2.zero, side);
+            Vector2 secret = WorldSecretPosition(Vector2.zero, biome, 1, biome - 1);
+            Vector2 flow = SideRouteChallengeFlow(biome, side);
+            float scale = SideRouteChallengeMovementScale(biome);
+            if (Mathf.Abs(routeCenter.x) > 0.001f ||
+                Mathf.Abs(Mathf.Abs(routeCenter.y) - (RoomHalfHeight + 2.7f)) > 0.001f ||
+                Vector2.Distance(routeCenter, secret) <= 1.25f + 0.42f ||
+                scale < 0.4f || scale > 1f || flow.magnitude > ScadrykTerrainZone.MaximumFlowSpeed)
+                return false;
+            if (biome == 0 && (flow.sqrMagnitude > 0.001f || Mathf.Abs(scale - 0.78f) > 0.001f)) return false;
+            if (biome == 1 && (Vector2.Dot(flow, Vector2.up * side) < 1.2f || Mathf.Abs(scale - 0.96f) > 0.001f)) return false;
+            if (biome == 2 && (Vector2.Dot(flow, Vector2.right) < 1.4f || Mathf.Abs(scale - 1f) > 0.001f)) return false;
+        }
+        return true;
     }
 
     internal static bool TryGetSideRoute(int biome, int room, out int side, out float entry, out float exit)
