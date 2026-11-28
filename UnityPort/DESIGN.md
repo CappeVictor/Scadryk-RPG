@@ -3,6 +3,8 @@
 ## Revisão de estado (28/11/2026; branch `codex/unity-playable-phase-maps`)
 
 
+**Janela de reação dos inimigos (28/11/2026, commit `79c7b54`):** aumentei a preparação do ataque mais rápido de 0,7 s para 0,8 s e o espaçamento entre avisos iniciais de 0,75 s para 0,85 s. A mudança dá mais tempo para identificar e responder ao primeiro golpe e reduz um pouco a sobreposição inicial. O smoke foi atualizado para cobrir os novos limites, mas não foi executado. Unity `6000.6.9f1` compilou sem diagnósticos C# e a build Windows passou (`79c7b54fd5f1`, `2026-11-28T14:11:20Z`). A sensação e a dificuldade só poderão ser julgadas em gameplay.
+
 **Organização do painel de opções (28/11/2026, commit `5208c6f`):** extraí a tela de opções, abas compactas, remapeamento e cálculos de layout para `ScadrykGameDirector.Options.cs`. O estado continua compartilhado pela classe parcial; os métodos de desenho e cálculos usados pelo smoke mantêm os mesmos nomes e regras. Unity `6000.6.9f1` importou/compilou sem diagnósticos C# e a build Windows teve sucesso (`5208c6f1c050`, `2026-11-28T14:03:27Z`). A extração não altera o desenho intencionalmente; falta conferir a tela em execução, e não executei jogo, Play Mode ou smoke.
 
 **Percentuais nos controles de acessibilidade e áudio (28/11/2026, código `09ca774`):** música, efeitos e escala do texto mostram seus valores numéricos ao lado dos sliders. Em layouts muito estreitos, a indicação some para preservar uma largura mínima de ajuste. Unity `6000.6.9f1` compilou sem diagnósticos C# e a build Windows passou (`09ca7743f0bf`, `2026-11-28T13:54:41Z`). A leitura dos números deve ser conferida em tela compacta e com escala ampliada.
