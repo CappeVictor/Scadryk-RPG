@@ -2,6 +2,8 @@
 
 ## Revisão de estado (28/11/2026; branch `codex/unity-playable-phase-maps`)
 
+**Reconhecimento do analógico esquerdo (28/11/2026, código `6275a1b`):** o movimento já respondia abaixo do limiar que o controlador usava para trocar dispositivo e selecionar a mira de movimento; agora ambas as respostas compartilham o corte de 5% da faixa filtrada. O smoke verifica as transições, mas não foi executado nem medido em controle físico.
+
 **Prioridade da legenda de ameaças (28/11/2026, código `c5e2ec1`):** as duas linhas de aviso agora são ordenadas de novo depois que duplicatas atualizam o tempo, mantendo o impacto mais próximo na primeira linha. O smoke cobre o caso; ainda falta observar legibilidade durante combate real.
 
 **Ritmo de avisos de ataque (28/11/2026, código `2398764`):** o escalonador agora espaça o início dos ataques inimigos em 0,75 s, acima do windup mínimo de 0,7 s. Com windups comuns de até 1,1 s, a regra evita que três preparações se acumulem e ainda deixa ataques longos de papéis diferentes se sobreporem uma vez. O smoke atualizado compilou, mas não foi executado; legibilidade e dificuldade ainda precisam de observação em gameplay.
