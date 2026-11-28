@@ -777,6 +777,7 @@ public sealed partial class ScadrykGameDirector
             ScadrykPlayerController.CanUpdateAim(1.1f, 1.2f) ||
             !ScadrykPlayerController.CanUpdateAim(1.2f, 1.2f) ||
             ScadrykPlayerController.AbilityBufferWindow <= 0f || ScadrykPlayerController.AbilityBufferWindow > 0.25f ||
+            ScadrykPlayerController.ShockwaveBufferWindow <= 0f || ScadrykPlayerController.ShockwaveBufferWindow > ScadrykPlayerController.AbilityBufferWindow ||
             Mathf.Abs(ScadrykPlayerController.BasicAttackBufferWindow - 0.2f) > 0.001f ||
             ScadrykPlayerController.NextBasicAttackStep(-1, false) != 0 ||
             ScadrykPlayerController.NextBasicAttackStep(0, true) != 1 ||

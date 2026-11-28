@@ -29,7 +29,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     private Vector2 moveInput;
     private Vector2 facing = Vector2.right;
     private Vector2 dashDirection;
-    private float dashEndsAt, nextDashAt, nextAttackAt, nextShockwaveAt, dashBufferedUntil, attackBufferedUntil;
+    private float dashEndsAt, nextDashAt, nextAttackAt, nextShockwaveAt, dashBufferedUntil, attackBufferedUntil, pulseBufferedUntil;
     private float health = 120f;
     private float maxHealth = 120f;
     private float aimLockedUntil;
@@ -56,6 +56,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     internal const float BasicAttackComboWindow = 0.82f;
     internal const float BasicAttackBufferWindow = 0.2f;
     internal const float AbilityBufferWindow = 0.18f;
+    internal const float ShockwaveBufferWindow = 0.18f;
     internal const float DashBufferWindow = 0.12f;
     internal const float DashPostInvulnerabilityGrace = 0.08f;
     internal const float ShockwaveWindup = 0.08f;
@@ -133,7 +134,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         if (isDying || (director != null && director.IsPaused))
         {
             moveInput = Vector2.zero;
-            dashBufferedUntil = attackBufferedUntil = 0f;
+            dashBufferedUntil = attackBufferedUntil = pulseBufferedUntil = 0f;
             System.Array.Clear(abilityBufferedUntil, 0, abilityBufferedUntil.Length);
             return;
         }
@@ -164,7 +165,8 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         TryStartBufferedDash();
         if (mouseAttack || keyboardAttack || gamepadAttack) attackBufferedUntil = Time.time + BasicAttackBufferWindow;
         TryStartBufferedAttack();
-        if (keyboardPulse || mousePulse || gamepadPulse) Shockwave();
+        if (keyboardPulse || mousePulse || gamepadPulse) pulseBufferedUntil = Time.time + ShockwaveBufferWindow;
+        TryStartBufferedShockwave();
         if (keyboardCrescent || gamepadCrescent) UseAbility(0);
         if (keyboardSaltburst || gamepadSaltburst) UseAbility(1);
         if (keyboardTidebreaker || gamepadTidebreaker) UseAbility(2);
@@ -425,9 +427,14 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         ScadrykEffects.Burst(transform.position, new Color(0.55f, 0.85f, 1f, 0.75f), 0.75f);
     }
 
-    private void Shockwave()
+    private void TryStartBufferedShockwave()
     {
-        if (Time.time < nextShockwaveAt) return;
+        if (!InputBufferCanStart(Time.time, pulseBufferedUntil, nextShockwaveAt))
+        {
+            if (Time.time >= pulseBufferedUntil) pulseBufferedUntil = 0f;
+            return;
+        }
+        pulseBufferedUntil = 0f;
         nextShockwaveAt = Time.time + shockwaveCooldown;
         Vector2 direction = facing;
         aimLockedUntil = Time.time + ShockwaveWindup + 0.04f;
@@ -612,7 +619,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     public void ResetCombatCooldowns()
     {
         dashEndsAt = nextDashAt = nextAttackAt = nextShockwaveAt = 0f;
-        dashBufferedUntil = attackBufferedUntil = 0f;
+        dashBufferedUntil = attackBufferedUntil = pulseBufferedUntil = 0f;
         lastBasicAttackStep = -1;
         basicAttackComboUntil = 0f;
         System.Array.Clear(abilityReadyAt, 0, abilityReadyAt.Length);
@@ -645,7 +652,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         rootedUntil = 0f;
         saltCrustUntil = impactKnockbackUntil = 0f;
         impactKnockbackVelocity = Vector2.zero;
-        dashBufferedUntil = attackBufferedUntil = 0f;
+        dashBufferedUntil = attackBufferedUntil = pulseBufferedUntil = 0f;
         System.Array.Clear(abilityBufferedUntil, 0, abilityBufferedUntil.Length);
         aimLockedUntil = 0f;
         facing = Vector2.right;
