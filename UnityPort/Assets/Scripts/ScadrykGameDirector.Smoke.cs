@@ -469,6 +469,16 @@ public sealed partial class ScadrykGameDirector
             ScadrykCombatRules.IsValidDamageAmount(float.PositiveInfinity) || ScadrykCombatRules.IsValidDamageAmount(float.NegativeInfinity))
         { SmokeFail("Entrada de dano zero, negativa ou não finita não foi rejeitada antes de alterar vida/reações"); yield break; }
         Debug.Log("SCADRYK_SMOKE: dano zero, negativo e não finito é rejeitado antes da reação de impacto");
+        if (!ScadrykEnemyProjectile.ProjectileArgumentsAreValid(Vector2.zero, Vector2.right, 8f, 12f, 0.34f, -1f) ||
+            ScadrykEnemyProjectile.ProjectileArgumentsAreValid(new Vector2(float.PositiveInfinity, 0f), Vector2.right, 8f, 12f, 0.34f, -1f) ||
+            ScadrykEnemyProjectile.ProjectileArgumentsAreValid(Vector2.zero, new Vector2(float.NaN, 1f), 8f, 12f, 0.34f, -1f) ||
+            ScadrykEnemyProjectile.ProjectileArgumentsAreValid(Vector2.zero, Vector2.right, float.PositiveInfinity, 12f, 0.34f, -1f) ||
+            ScadrykEnemyProjectile.ProjectileArgumentsAreValid(Vector2.zero, Vector2.right, 8f, float.NaN, 0.34f, -1f) ||
+            ScadrykEnemyProjectile.ProjectileArgumentsAreValid(Vector2.zero, Vector2.right, 8f, 12f, 0f, -1f) ||
+            ScadrykEnemyProjectile.ProjectileArgumentsAreValid(Vector2.zero, Vector2.right, 8f, 12f, 0.34f, float.PositiveInfinity) ||
+            ScadrykEnemyProjectile.ProjectileArgumentsAreValid(Vector2.zero, Vector2.zero, 8f, 12f, 0.34f, -1f))
+        { SmokeFail("Projétil aceita posição/direção inválida, dano não finito, velocidade sem expiração ou dimensões inválidas"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: configuração inválida de projétil é rejeitada antes de consumir o pool");
         if (ScadrykCombatRules.ApplyHealing(40f, 100f, 15f) != 55f ||
             ScadrykCombatRules.ApplyHealing(95f, 100f, 10f) != 100f ||
             ScadrykCombatRules.ApplyHealing(40f, 100f, 0f) != 40f ||

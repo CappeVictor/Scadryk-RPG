@@ -23,6 +23,21 @@ public sealed class ScadrykEnemyProjectile : MonoBehaviour
 
     internal static float HitboxDiameter(float spriteScale) => ColliderRadius * 2f * spriteScale;
     internal static float HitboxRadius(float spriteScale) => ColliderRadius * spriteScale;
+    internal static bool ProjectileArgumentsAreValid(Vector2 position, Vector2 direction, float speed,
+        float hitDamage, float size, float travelDistance)
+    {
+        float directionMagnitudeSquared = direction.sqrMagnitude;
+        return !float.IsNaN(position.x) && !float.IsInfinity(position.x) &&
+            !float.IsNaN(position.y) && !float.IsInfinity(position.y) &&
+            !float.IsNaN(direction.x) && !float.IsInfinity(direction.x) &&
+            !float.IsNaN(direction.y) && !float.IsInfinity(direction.y) &&
+            directionMagnitudeSquared > 0.0001f && !float.IsInfinity(directionMagnitudeSquared) &&
+            !float.IsNaN(speed) && !float.IsInfinity(speed) && speed > 0f &&
+            ScadrykCombatRules.IsValidDamageAmount(hitDamage) &&
+            !float.IsNaN(size) && !float.IsInfinity(size) && size > 0f &&
+            !float.IsNaN(travelDistance) && !float.IsInfinity(travelDistance) &&
+            (travelDistance == -1f || travelDistance >= 0f);
+    }
 
 #if UNITY_6000_0_OR_NEWER
     private Vector2 BodyVelocity { set => body.linearVelocity = value; }
@@ -32,6 +47,7 @@ public sealed class ScadrykEnemyProjectile : MonoBehaviour
 
     public static ScadrykEnemyProjectile Launch(Vector2 position, Vector2 direction, float speed, float damage, Sprite projectileSprite = null, Color? tint = null, float size = 0.34f, string projectileName = "Salt crystal shard", float travelDistance = -1f, int hitEffectBiome = -1, Transform roomRoot = null)
     {
+        if (!ProjectileArgumentsAreValid(position, direction, speed, damage, size, travelDistance)) return null;
         ScadrykEnemyProjectile projectile = Acquire(roomRoot, projectileName);
         GameObject shard = projectile.gameObject;
         shard.transform.position = position;
