@@ -1,0 +1,1556 @@
+using UnityEngine;
+
+public sealed partial class ScadrykGameDirector
+{
+    private static readonly string[] MiniMapBiomeNames = { "Bosque", "Sal", "Costa" };
+    private readonly GUIContent miniMapHeaderContent = new GUIContent();
+    private readonly GUIContent witnessPromptContent = new GUIContent();
+    private readonly GUIContent finalBossStageContent = new GUIContent();
+    private readonly GUIContent offscreenTargetContent = new GUIContent();
+    private readonly GUIContent worldMapLegendContent = new GUIContent("TRÊS BIOMAS · NOVE SALAS · ↑/↓ DESVIO · ◇ PENDENTE · ◆ LIBERADO · SELADO = BLOQUEADO");
+    private readonly GUIContent[] mapRoomContents = CreateMapRoomContents();
+    private readonly bool[] mapRoomSecretFlags = new bool[PhaseNames.Length * RoomsPerPhase];
+    private readonly bool[] mapRoomContentInitialized = new bool[PhaseNames.Length * RoomsPerPhase];
+    private Vector2 compactOptionsScroll;
+    private int lastCompactOptionsTab = -1;
+    private int lastCompactOptionsSelection = -1;
+    private Vector2 memoryJournalScroll;
+    private float nextMemoryJournalNavigationAt;
+    private string[] memoryJournalEntries;
+    private bool memoryJournalLoaded;
+    private GUIContent[] memoryJournalCardContents = System.Array.Empty<GUIContent>();
+    private float[] memoryJournalCardHeights = System.Array.Empty<float>();
+    private readonly GUIContent memoryJournalCountContent = new GUIContent();
+    private int cachedMemoryJournalCount = -1;
+    private string[] cachedMemoryJournalLayoutEntries;
+    private float cachedMemoryJournalTextWidth = -1f;
+    private float cachedMemoryJournalViewportHeight = -1f;
+    private int cachedMemoryJournalFontSize = -1;
+    private float cachedMemoryJournalContentHeight;
+    private readonly GUIContent statusMeasureContent = new GUIContent();
+    private string cachedStatusMeasureText;
+    private readonly GUIContent memoryMeasureContent = new GUIContent();
+    private string cachedMemoryMeasureText;
+    private readonly GUIContent controlHintMeasureContent = new GUIContent();
+    private string cachedControlHintMeasureText;
+    private readonly GUIContent memoryHintMeasureContent = new GUIContent();
+    private string cachedMemoryHintMeasureText;
+    private readonly GUIContent threatCaptionFirstContent = new GUIContent();
+    private string cachedThreatCaptionFirstLabel;
+    private readonly GUIContent threatCaptionSecondContent = new GUIContent();
+    private string cachedThreatCaptionSecondLabel;
+    private readonly GUIContent exposureCaptionContent = new GUIContent();
+    private string cachedExposureCaptionLabel;
+    private int cachedExposureCount = -1;
+    private readonly GUIContent hudPhaseContent = new GUIContent();
+    private readonly GUIContent hudRoomContent = new GUIContent();
+    private readonly GUIContent hudHealthContent = new GUIContent();
+    private readonly GUIContent hudEnemyContent = new GUIContent();
+    private readonly GUIContent hudObjectiveContent = new GUIContent();
+    private readonly GUIContent[] hudAbilityContents = { new GUIContent(), new GUIContent(), new GUIContent() };
+    private readonly string[] hudAbilityBindings = new string[3];
+    private readonly string[] hudAbilityStates = new string[3];
+    private readonly string[] cachedHudAbilityCooldownLabels = new string[3];
+    private readonly int[] hudAbilityCooldownKeys = { int.MinValue, int.MinValue, int.MinValue };
+    private readonly bool[] hudAbilityLearned = new bool[3];
+    private readonly bool[] hudAbilityEcho = new bool[3];
+    private readonly bool[] hudAbilityContentsNeedRefresh = { true, true, true };
+    private int cachedHudPhase = -1;
+    private int cachedHudRoomPhase = -1;
+    private int cachedHudRoom = -1;
+    private int cachedHudHealth = int.MinValue;
+    private int cachedHudMaxHealth = int.MinValue;
+    private int cachedHudEnemyCount = int.MinValue;
+    private string cachedHudEnemyLine;
+    private string cachedHudEnemyDash;
+    private string cachedHudEnemyPulse;
+    private int cachedHudDashCooldownKey = int.MinValue;
+    private int cachedHudPulseCooldownKey = int.MinValue;
+    private string cachedHudDashCooldown;
+    private string cachedHudPulseCooldown;
+    private string cachedHudInputMode;
+    private int cachedHudBindingRevision = -1;
+    private int cachedHudObjectivePhase = -1;
+    private int cachedHudObjectiveRoom = -1;
+    private int cachedHudObjectiveEnemies = int.MinValue;
+    private int cachedHudObjectiveAnchors = int.MinValue;
+    private int cachedHudObjectiveRequired = int.MinValue;
+    private bool cachedHudObjectiveNeedsPulse;
+    private bool cachedHudObjectiveNeedsSequence;
+    private bool cachedHudObjectiveHasGate;
+    private ScadrykEnemyHealth cachedHudObjectiveGuardian;
+    private ScadrykEnemyHealth cachedHudObjectiveBoss;
+    private string cachedHudObjectiveInputMode;
+    private int cachedHudObjectiveBindingRevision = -1;
+    private int cachedMiniMapHeaderBiome = -1;
+    private int cachedFinalBossDisplayStage = -1;
+    private string cachedOffscreenTargetArrow;
+    private string cachedWitnessInputMode;
+    private int cachedWitnessBindingRevision = -1;
+
+    private static GUIContent[] CreateMapRoomContents()
+    {
+        var contents = new GUIContent[PhaseNames.Length * RoomsPerPhase];
+        for (int i = 0; i < contents.Length; i++) contents[i] = new GUIContent();
+        return contents;
+    }
+
+    private int MapRoomContentIndex(int phase, int room) => Mathf.Clamp(phase, 0, PhaseNames.Length - 1) * RoomsPerPhase + Mathf.Clamp(room, 0, RoomsPerPhase - 1);
+
+    internal static bool RefreshMapRoomContent(GUIContent content, ref bool cachedSecretFound, ref bool initialized,
+        int phase, int room, bool secretFound)
+    {
+        if (content == null || (initialized && cachedSecretFound == secretFound)) return false;
+        content.text = (room + 1) + ". " + MapRoomRouteLabel(phase, room, secretFound);
+        cachedSecretFound = secretFound;
+        initialized = true;
+        return true;
+    }
+
+    internal static bool RefreshMiniMapHeaderContent(GUIContent content, ref int cachedBiome, int biome)
+    {
+        int safeBiome = Mathf.Clamp(biome, 0, MiniMapBiomeNames.Length - 1);
+        if (content == null || cachedBiome == safeBiome) return false;
+        content.text = MiniMapHeaderText(MiniMapBiomeNames[safeBiome]);
+        cachedBiome = safeBiome;
+        return true;
+    }
+
+    internal static bool RefreshFinalBossStageContent(GUIContent content, ref int cachedStage, int stage)
+    {
+        int safeStage = Mathf.Clamp(stage, 1, 3);
+        if (content == null || cachedStage == safeStage) return false;
+        content.text = "O ARAUTO DO VAZIO  ·  FASE " + safeStage + "/3";
+        cachedStage = safeStage;
+        return true;
+    }
+
+    private GUIContent CachedMapRoomContent(int phase, int room)
+    {
+        int index = MapRoomContentIndex(phase, room);
+        bool secretFound = mapRoomSecretFlags[index];
+        RefreshMapRoomContent(mapRoomContents[index], ref mapRoomSecretFlags[index], ref mapRoomContentInitialized[index], phase, room, secretFound);
+        return mapRoomContents[index];
+    }
+
+    private void RefreshMapRoomContents()
+    {
+        for (int phase = 0; phase < PhaseNames.Length; phase++)
+        for (int room = 0; room < RoomsPerPhase; room++)
+        {
+            int index = MapRoomContentIndex(phase, room);
+            bool secretFound = !smokeRun && IsWorldSecretRevealed("Scadryk.", phase, room);
+            RefreshMapRoomContent(mapRoomContents[index], ref mapRoomSecretFlags[index], ref mapRoomContentInitialized[index], phase, room, secretFound);
+        }
+    }
+
+    private static void RefreshMeasureContent(GUIContent content, ref string cachedText, string text)
+    {
+        text = text ?? string.Empty;
+        if (cachedText == text) return;
+        content.text = text;
+        cachedText = text;
+    }
+
+    internal static int HudCooldownTenths(float value) => value <= 0.02f ? -1 : Mathf.RoundToInt(value * 10f);
+
+    internal static string HudCooldownLabel(float value, ref int cachedTenths, ref string cachedLabel)
+    {
+        int tenths = HudCooldownTenths(value);
+        if (tenths == cachedTenths && cachedLabel != null) return cachedLabel;
+        cachedTenths = tenths;
+        cachedLabel = tenths < 0 ? "pronto" : (tenths / 10f).ToString("0.0") + "s";
+        return cachedLabel;
+    }
+
+    private void RefreshHudBindingCache()
+    {
+        if (cachedHudBindingRevision == ScadrykSettings.BindingRevision && cachedHudInputMode == sessionInputMode) return;
+        for (int i = 0; i < hudAbilityBindings.Length; i++)
+        {
+            string binding = InputBinding(i + 3);
+            if (hudAbilityBindings[i] != binding) hudAbilityContentsNeedRefresh[i] = true;
+            hudAbilityBindings[i] = binding;
+        }
+        cachedHudBindingRevision = ScadrykSettings.BindingRevision;
+        cachedHudInputMode = sessionInputMode;
+    }
+
+    private void RefreshHudObjectiveCache()
+    {
+        int bindingRevision = ScadrykSettings.BindingRevision;
+        if (cachedHudObjectivePhase == phaseIndex && cachedHudObjectiveRoom == roomIndex &&
+            cachedHudObjectiveEnemies == enemiesRemaining && cachedHudObjectiveAnchors == anchorsActivated &&
+            cachedHudObjectiveRequired == anchorsRequired && cachedHudObjectiveNeedsPulse == anchorsNeedPulse &&
+            cachedHudObjectiveNeedsSequence == anchorsNeedSequence && cachedHudObjectiveHasGate == (gateObject != null) &&
+            cachedHudObjectiveGuardian == phaseGuardian && cachedHudObjectiveBoss == finalBoss &&
+            cachedHudObjectiveInputMode == sessionInputMode && cachedHudObjectiveBindingRevision == bindingRevision) return;
+
+        cachedHudObjectivePhase = phaseIndex;
+        cachedHudObjectiveRoom = roomIndex;
+        cachedHudObjectiveEnemies = enemiesRemaining;
+        cachedHudObjectiveAnchors = anchorsActivated;
+        cachedHudObjectiveRequired = anchorsRequired;
+        cachedHudObjectiveNeedsPulse = anchorsNeedPulse;
+        cachedHudObjectiveNeedsSequence = anchorsNeedSequence;
+        cachedHudObjectiveHasGate = gateObject != null;
+        cachedHudObjectiveGuardian = phaseGuardian;
+        cachedHudObjectiveBoss = finalBoss;
+        cachedHudObjectiveInputMode = sessionInputMode;
+        cachedHudObjectiveBindingRevision = bindingRevision;
+        hudObjectiveContent.text = "Objetivo: " + ActiveObjectiveText();
+    }
+
+    internal static int ThreatCaptionTenthsUntilImpact(float secondsUntilImpact) =>
+        Mathf.Max(0, Mathf.CeilToInt(Mathf.Max(0f, secondsUntilImpact) * 10f));
+
+    internal static void OrderThreatCaptionPair(ref string first, ref float firstImpact, ref string second, ref float secondImpact)
+    {
+        if (string.IsNullOrEmpty(first) || string.IsNullOrEmpty(second) || secondImpact >= firstImpact) return;
+        string previousFirst = first;
+        first = second;
+        second = previousFirst;
+        float previousImpact = firstImpact;
+        firstImpact = secondImpact;
+        secondImpact = previousImpact;
+    }
+
+    internal static string ThreatCaptionText(string label, int tenthsUntilImpact)
+    {
+        if (string.IsNullOrEmpty(label)) return string.Empty;
+        int tenths = Mathf.Max(0, tenthsUntilImpact);
+        return (tenths / 10) + "," + (tenths % 10) + " s · " + label;
+    }
+
+    private static void RefreshThreatCaptionContent(GUIContent content, ref string cachedLabel, string label, float secondsUntilImpact)
+    {
+        int tenths = ThreatCaptionTenthsUntilImpact(secondsUntilImpact);
+        string cacheKey = string.IsNullOrEmpty(label) ? string.Empty : label + "\u001f" + tenths;
+        if (cachedLabel == cacheKey) return;
+        content.text = ThreatCaptionText(label, tenths);
+        cachedLabel = cacheKey;
+    }
+
+    private static string ExposureCaption(int count)
+    {
+        if (count <= 0) return string.Empty;
+        return "ESTOURO ATIVO · " + count + (count == 1 ? " ECO EXPOSTO · +30% DANO" : " ECOS EXPOSTOS · +30% DANO");
+    }
+
+    private void OpenMemoryJournal()
+    {
+        memoryJournalEntries = ReadStoryJournal("Scadryk.");
+        memoryJournalLoaded = true;
+        cachedMemoryJournalLayoutEntries = null;
+        memoryJournalScroll = Vector2.zero;
+        showMemoryJournal = true;
+    }
+
+    private void OnGUI()
+    {
+        EnsureStyles();
+        if (showOpeningStory) { DrawOpeningStory(); return; }
+        if (showMemoryJournal) { DrawMemoryJournal(); return; }
+        if (showWorldMap) { DrawWorldMap(); return; }
+        if (showOptions) { DrawOptions(); return; }
+        if (memoryModal) { DrawMemoryModal(); return; }
+        if (showTitle || isPaused || victory) { DrawOverlay(); return; }
+        DrawHud(); DrawMiniMap(); DrawOffscreenTargetHint(); DrawGamepadAimMarker();
+        DrawWitnessPrompt();
+        if (phaseGuardian != null) DrawPhaseGuardianTitle();
+        if (finalBoss != null) DrawFinalBossBar();
+        DrawThreatCaptions();
+        bool showStatus = Time.time < statusUntil;
+        bool showMemory = Time.time < memoryUntil && !transitioning;
+        if (showStatus)
+        {
+            float statusWidth = Mathf.Max(0f, Screen.width - 30f);
+            RefreshMeasureContent(statusMeasureContent, ref cachedStatusMeasureText, statusMessage);
+            float statusTextHeight = statusStyle.CalcHeight(statusMeasureContent, Mathf.Max(32f, statusWidth - 20f));
+            Rect statusRect = StatusLabelRect(Screen.width, Screen.height, statusTextHeight);
+            GUI.color = new Color(0.025f, 0.04f, 0.045f, 0.88f);
+            GUI.DrawTexture(statusRect, Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            GUI.Label(new Rect(statusRect.x + 10f, statusRect.y + 4f, statusRect.width - 20f, statusRect.height - 8f), statusMessage, statusStyle);
+        }
+        if (showMemory)
+        {
+            float width = Mathf.Max(0f, Mathf.Min(740f, Screen.width - 36f));
+            RefreshMeasureContent(memoryMeasureContent, ref cachedMemoryMeasureText, memoryText);
+            float bodyHeight = Mathf.Max(62f, memoryStyle.CalcHeight(memoryMeasureContent, Mathf.Max(32f, width - 36f)));
+            Rect panel = MemoryPanelRect(Screen.width, Screen.height, bodyHeight);
+            GUI.color = new Color(0.025f, 0.04f, 0.045f, 0.94f); GUI.DrawTexture(panel, Texture2D.whiteTexture); GUI.color = Color.white;
+            GUI.Label(new Rect(panel.x + 18f, panel.y + 10f, panel.width - 36f, 24f), "VESTÍGIO ESCUTADO", titleStyle);
+            GUI.Label(MemoryTextRect(panel), memoryText, memoryStyle);
+        }
+        bool compactControlHint = Screen.width < 840f;
+        if (!showStatus && !(compactControlHint && showMemory))
+        {
+            string controlHint = compactControlHint
+                ? CompactControlHintText("teclado/LS", "mouse/RS", InputBinding(0), InputBinding(1), InputBinding(2), InputBinding(6))
+                : "Mover: teclas/controle  ·  Mouse/analógico mirar  ·  " + InputBinding(0) + " atacar  ·  " + InputBinding(1) + " esquivar  ·  " + InputBinding(2) + " pulso  ·  " + InputBinding(6) + " interagir  ·  M/L3 mapa  ·  Esc pausa";
+            RefreshMeasureContent(controlHintMeasureContent, ref cachedControlHintMeasureText, controlHint);
+            controlHintStyle.fontSize = smallStyle.fontSize;
+            controlHintStyle.wordWrap = compactControlHint;
+            float hintWidth = Mathf.Max(0f, Screen.width - 28f);
+            float hintHeight = compactControlHint
+                ? controlHintStyle.CalcHeight(controlHintMeasureContent, hintWidth)
+                : 30f;
+            Rect controlHintRect = new Rect(14f, Screen.height - hintHeight - 8f, hintWidth, hintHeight);
+            if (!compactControlHint)
+            {
+                float measuredControlHintWidth = controlHintStyle.CalcSize(controlHintMeasureContent).x;
+                if (measuredControlHintWidth > controlHintRect.width && measuredControlHintWidth > 0f)
+                    controlHintStyle.fontSize = Mathf.Max(9, Mathf.FloorToInt(controlHintStyle.fontSize * controlHintRect.width / measuredControlHintWidth));
+            }
+            GUI.Label(controlHintRect, controlHint, controlHintStyle);
+        }
+        if (transitionFade > 0f)
+        {
+            GUI.color = new Color(0f, 0f, 0f, transitionFade);
+            GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            if (transitioning && transitionFade > 0.35f)
+                GUI.Label(new Rect(0, Screen.height / 2f - 20, Screen.width, 40), "ATRAVESSANDO O LIMIAR", centeredTitleStyle);
+        }
+    }
+
+    private void DrawThreatCaptions()
+    {
+        string first = null;
+        string second = null;
+        int exposedCount = 0;
+        float firstImpact = float.PositiveInfinity;
+        float secondImpact = float.PositiveInfinity;
+        for (int i = 0; i < activeEnemies.Count; i++)
+        {
+            ScadrykEnemyHealth enemy = activeEnemies[i];
+            if (enemy == null) continue;
+            if (enemy.IsExposed) exposedCount++;
+            if (!enemy.TryGetWindupAttackLabel(out string label, out float secondsUntilImpact)) continue;
+            if (label == first) { firstImpact = Mathf.Min(firstImpact, secondsUntilImpact); continue; }
+            if (label == second) { secondImpact = Mathf.Min(secondImpact, secondsUntilImpact); continue; }
+            if (secondsUntilImpact < firstImpact)
+            {
+                second = first;
+                secondImpact = firstImpact;
+                first = label;
+                firstImpact = secondsUntilImpact;
+            }
+            else if (secondsUntilImpact < secondImpact)
+            {
+                second = label;
+                secondImpact = secondsUntilImpact;
+            }
+        }
+        OrderThreatCaptionPair(ref first, ref firstImpact, ref second, ref secondImpact);
+        if (cachedExposureCount != exposedCount)
+        {
+            cachedExposureCount = exposedCount;
+            cachedExposureCaptionLabel = ExposureCaption(exposedCount);
+            exposureCaptionContent.text = cachedExposureCaptionLabel;
+        }
+        bool showExposure = exposedCount > 0 && second == null;
+        if (first == null && !showExposure) return;
+        if (first == null)
+            exposureCaptionContent.text = cachedExposureCaptionLabel;
+        else
+            RefreshThreatCaptionContent(threatCaptionFirstContent, ref cachedThreatCaptionFirstLabel, first, firstImpact);
+        if (second != null)
+            RefreshThreatCaptionContent(threatCaptionSecondContent, ref cachedThreatCaptionSecondLabel, second, secondImpact);
+
+        int captionCount = (first != null && (second != null || showExposure)) ? 2 : 1;
+        Rect panel = ThreatCaptionPanelRect(Screen.width, Screen.height, ScadrykSettings.TextScale, captionCount);
+        GUI.color = new Color(0.035f, 0.025f, 0.035f, 0.9f);
+        GUI.DrawTexture(panel, Texture2D.whiteTexture);
+        GUI.color = new Color(1f, 0.72f, 0.38f, 1f);
+        GUI.DrawTexture(new Rect(panel.x, panel.y, panel.width, 2f), Texture2D.whiteTexture);
+        GUI.color = Color.white;
+
+        float rowHeight = (panel.height - 6f) / captionCount;
+        int oldSize = centeredBodyStyle.fontSize;
+        GUIContent firstContent = first == null ? exposureCaptionContent : threatCaptionFirstContent;
+        GUIContent secondContent = second == null ? exposureCaptionContent : threatCaptionSecondContent;
+        int longestCaption = Mathf.Max(firstContent.text != null ? firstContent.text.Length : 0,
+            captionCount == 2 && secondContent.text != null ? secondContent.text.Length : 0);
+        centeredBodyStyle.fontSize = ThreatCaptionFontSizeToFit(ScadrykSettings.TextScale, rowHeight,
+            panel.width - 16f, longestCaption);
+        GUI.Label(new Rect(panel.x + 8f, panel.y + 3f, panel.width - 16f, rowHeight), firstContent, centeredBodyStyle);
+        if (captionCount == 2)
+        {
+            GUI.Label(new Rect(panel.x + 8f, panel.y + 3f + rowHeight, panel.width - 16f, rowHeight), secondContent, centeredBodyStyle);
+        }
+        centeredBodyStyle.fontSize = oldSize;
+    }
+
+    private void DrawGamepadAimMarker()
+    {
+        if (sessionInputMode != "gamepad" || player == null) return;
+        Camera camera = Camera.main;
+        if (camera == null) return;
+        Vector3 world = GamepadAimMarkerWorldPosition(player.transform.position, player.Facing);
+        Vector3 projected = camera.WorldToScreenPoint(world);
+        if (projected.z <= 0f) return;
+        Vector2 center = new Vector2(projected.x, Screen.height - projected.y);
+        float scale = Mathf.Clamp(Screen.height / 720f, 0.8f, 1.4f);
+        DrawAimMarkerTicks(center, scale, new Color(0.015f, 0.025f, 0.03f, 0.92f), 4f * scale);
+        DrawAimMarkerTicks(center, scale, new Color(1f, 0.82f, 0.38f, 0.95f), 2f * scale);
+    }
+
+    internal static Vector2 GamepadAimMarkerWorldPosition(Vector2 playerPosition, Vector2 facing)
+    {
+        Vector2 direction = facing.sqrMagnitude > 0.001f ? facing.normalized : Vector2.right;
+        return playerPosition + direction * 1.45f;
+    }
+
+    private static void DrawAimMarkerTicks(Vector2 center, float scale, Color color, float thickness)
+    {
+        const float radius = 7f;
+        const float tickLength = 3f;
+        GUI.color = color;
+        GUI.DrawTexture(new Rect(center.x - (radius + tickLength) * scale, center.y - thickness * 0.5f,
+            tickLength * scale, thickness), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(center.x + radius * scale, center.y - thickness * 0.5f,
+            tickLength * scale, thickness), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(center.x - thickness * 0.5f, center.y - (radius + tickLength) * scale,
+            thickness, tickLength * scale), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(center.x - thickness * 0.5f, center.y + radius * scale,
+            thickness, tickLength * scale), Texture2D.whiteTexture);
+        GUI.color = Color.white;
+    }
+
+    private static int ThreatCaptionFontSize(float textScale, float rowHeight) =>
+        Mathf.Max(9, Mathf.Min(Mathf.Max(10, Mathf.RoundToInt(13f * Mathf.Clamp(textScale, 1f, 1.5f))),
+            Mathf.FloorToInt(Mathf.Max(0f, rowHeight) * 0.75f)));
+
+    internal static int ThreatCaptionFontSizeToFit(float textScale, float rowHeight, float availableWidth, int textLength)
+    {
+        int preferred = ThreatCaptionFontSize(textScale, rowHeight);
+        float estimatedCharacterWidth = Mathf.Max(1, textLength) * 0.52f;
+        int widthLimited = Mathf.FloorToInt(Mathf.Max(0f, availableWidth) / estimatedCharacterWidth);
+        return Mathf.Max(9, Mathf.Min(preferred, widthLimited));
+    }
+
+    private static Rect ThreatCaptionPanelRect(float screenWidth, float screenHeight, float textScale, int captionCount)
+    {
+        float scale = Mathf.Clamp(textScale, 1f, 1.5f);
+        int rows = Mathf.Clamp(captionCount, 1, 2);
+        float height = rows * 20f * scale + 8f;
+        float width = Mathf.Min(620f, Mathf.Max(0f, screenWidth - 28f));
+        Rect hud = HudPanelRect(screenWidth, screenHeight, scale);
+        Rect minimap = MiniMapPanelRect(screenWidth, screenHeight, scale);
+
+        float gapXMin = hud.xMax + 8f;
+        float gapXMax = minimap.xMin - 8f;
+        float gapWidth = gapXMax - gapXMin;
+        if (gapWidth >= 220f)
+        {
+            width = Mathf.Min(width, gapWidth);
+            return new Rect(gapXMin + (gapWidth - width) * 0.5f, 78f, width, height);
+        }
+
+        if (MiniMapPanelFits(minimap, hud, screenWidth, screenHeight))
+        {
+            float y = Mathf.Max(hud.yMax, minimap.yMax) + 8f;
+            if (y + height <= screenHeight - 44f)
+                return new Rect((screenWidth - width) * 0.5f, y, width, height);
+        }
+
+        // On very short windows, preserve an always-visible warning by using
+        // the objective block only for the brief windup; never cover health,
+        // ability cooldowns, the minimap, or the bottom control hint.
+        float extra = scale - 1f;
+        float objectiveY = 164f + extra * 64f;
+        float objectiveBottom = hud.yMax - 10f;
+        float objectiveHeight = Mathf.Max(0f, objectiveBottom - objectiveY);
+        float objectiveX = Mathf.Min(28f, hud.xMax);
+        float objectiveWidth = Mathf.Max(0f, hud.xMax - objectiveX - 8f);
+        height = Mathf.Min(height, objectiveHeight);
+        return new Rect(objectiveX, objectiveY, objectiveWidth, height);
+    }
+
+    private void DrawMemoryJournal()
+    {
+        GUI.color = new Color(0f, 0f, 0f, 0.76f);
+        GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
+        GUI.color = Color.white;
+        Rect panel = StoryJournalPanelRect(Screen.width, Screen.height);
+        GUI.color = new Color(0.025f, 0.04f, 0.045f, 0.98f);
+        GUI.DrawTexture(panel, Texture2D.whiteTexture);
+        GUI.color = new Color(0.74f, 0.63f, 0.34f, 1f);
+        GUI.DrawTexture(new Rect(panel.x, panel.y, panel.width, 3f), Texture2D.whiteTexture);
+        GUI.color = Color.white;
+
+        if (!memoryJournalLoaded) OpenMemoryJournal();
+        string[] entries = memoryJournalEntries ?? System.Array.Empty<string>();
+        GUI.Label(new Rect(panel.x + 18f, panel.y + 10f, panel.width - 36f, 30f), "CADERNO DE MEMÓRIAS", titleStyle);
+        if (cachedMemoryJournalCount != entries.Length)
+        {
+            cachedMemoryJournalCount = entries.Length;
+            memoryJournalCountContent.text = entries.Length + (entries.Length == 1 ? " lembrança recuperada" : " lembranças recuperadas");
+        }
+        GUI.Label(new Rect(panel.x + 18f, panel.y + 39f, panel.width - 36f, 22f), memoryJournalCountContent, smallStyle);
+
+        Rect viewport = StoryJournalViewportRect(panel);
+        if (entries.Length == 0)
+        {
+            TextAnchor oldAlignment = memoryStyle.alignment;
+            memoryStyle.alignment = TextAnchor.MiddleCenter;
+            GUI.Label(viewport, "As lembranças surgirão aqui quando Nara encontrar os Ecos.", memoryStyle);
+            memoryStyle.alignment = oldAlignment;
+        }
+        float textWidth = Mathf.Max(40f, viewport.width - 46f);
+        float contentHeight = EnsureMemoryJournalCardLayout(entries, textWidth, viewport.height);
+        Rect content = new Rect(0f, 0f, viewport.width - 18f, contentHeight);
+        memoryJournalScroll = GUI.BeginScrollView(viewport, memoryJournalScroll, content);
+        float y = 8f;
+        for (int i = 0; i < entries.Length; i++)
+        {
+            Rect card = new Rect(2f, y, content.width - 4f, memoryJournalCardHeights[i]);
+            GUI.color = new Color(0.055f, 0.08f, 0.085f, 0.96f);
+            GUI.DrawTexture(card, Texture2D.whiteTexture);
+            GUI.color = new Color(0.74f, 0.63f, 0.34f, 0.72f);
+            GUI.DrawTexture(new Rect(card.x, card.y, 2f, card.height), Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            bool showNimaPortrait = nimaMemoryPortraitSprite != null && MemoryHasNimaPortrait(entries[i]);
+            if (showNimaPortrait)
+            {
+                GUI.color = new Color(1f, 1f, 1f, 0.96f);
+                GUI.DrawTexture(MemoryJournalPortraitRect(card), nimaMemoryPortraitSprite.texture, ScaleMode.ScaleToFit, true);
+                GUI.color = Color.white;
+            }
+            GUI.Label(MemoryJournalCardTextRect(card, showNimaPortrait), memoryJournalCardContents[i], memoryStyle);
+            y += card.height + 10f;
+        }
+        GUI.EndScrollView();
+        smallStyle.alignment = TextAnchor.MiddleCenter;
+        GUI.Label(new Rect(panel.x + 14f, panel.yMax - 31f, panel.width - 28f, 22f),
+            "Esc / Start / B voltar · setas, analógico ou roda para ler", smallStyle);
+        smallStyle.alignment = TextAnchor.MiddleLeft;
+    }
+
+    private float EnsureMemoryJournalCardLayout(string[] entries, float textWidth, float viewportHeight)
+    {
+        bool recalculate = !System.Object.ReferenceEquals(cachedMemoryJournalLayoutEntries, entries) ||
+            !Mathf.Approximately(cachedMemoryJournalTextWidth, textWidth) ||
+            !Mathf.Approximately(cachedMemoryJournalViewportHeight, viewportHeight) ||
+            cachedMemoryJournalFontSize != memoryStyle.fontSize;
+
+        if (memoryJournalCardContents.Length != entries.Length)
+        {
+            memoryJournalCardContents = new GUIContent[entries.Length];
+            memoryJournalCardHeights = new float[entries.Length];
+            recalculate = true;
+        }
+
+        for (int i = 0; i < entries.Length; i++)
+        {
+            if (memoryJournalCardContents[i] == null)
+            {
+                memoryJournalCardContents[i] = new GUIContent(entries[i]);
+                recalculate = true;
+            }
+            else if (memoryJournalCardContents[i].text != entries[i])
+            {
+                memoryJournalCardContents[i].text = entries[i];
+                recalculate = true;
+            }
+        }
+
+        if (recalculate)
+        {
+            float contentHeight = 8f;
+            for (int i = 0; i < entries.Length; i++)
+            {
+                bool withPortrait = nimaMemoryPortraitSprite != null && MemoryHasNimaPortrait(entries[i]);
+                float cardTextWidth = MemoryJournalCardTextWidth(textWidth, withPortrait);
+                memoryJournalCardHeights[i] = Mathf.Max(withPortrait ? 64f : 52f,
+                    memoryStyle.CalcHeight(memoryJournalCardContents[i], cardTextWidth) + 22f);
+                contentHeight += memoryJournalCardHeights[i] + 10f;
+            }
+
+            cachedMemoryJournalContentHeight = Mathf.Max(contentHeight, viewportHeight);
+            cachedMemoryJournalLayoutEntries = entries;
+            cachedMemoryJournalTextWidth = textWidth;
+            cachedMemoryJournalViewportHeight = viewportHeight;
+            cachedMemoryJournalFontSize = memoryStyle.fontSize;
+        }
+
+        return cachedMemoryJournalContentHeight;
+    }
+
+    internal static Rect StoryJournalPanelRect(float screenWidth, float screenHeight)
+    {
+        float width = Mathf.Max(0f, Mathf.Min(860f, screenWidth - 32f));
+        float height = Mathf.Max(0f, Mathf.Min(760f, screenHeight - 32f));
+        return new Rect((screenWidth - width) * 0.5f, (screenHeight - height) * 0.5f, width, height);
+    }
+
+    internal static Rect StoryJournalViewportRect(Rect panel) =>
+        new Rect(panel.x + 16f, panel.y + 66f, panel.width - 32f, panel.height - 111f);
+
+    internal static bool StoryJournalLayoutFits(float screenWidth, float screenHeight)
+    {
+        Rect panel = StoryJournalPanelRect(screenWidth, screenHeight);
+        Rect viewport = StoryJournalViewportRect(panel);
+        return screenWidth >= 220f && screenHeight >= 160f && panel.width >= 188f && panel.height >= 128f &&
+            viewport.width >= 156f && viewport.height >= 45f && panel.y >= 0f && panel.yMax <= screenHeight;
+    }
+
+    internal static float MemoryJournalCardTextWidth(float availableWidth, bool withPortrait) =>
+        Mathf.Max(40f, availableWidth - (withPortrait ? 60f : 0f));
+
+    internal static Rect MemoryJournalPortraitRect(Rect card) =>
+        new Rect(card.x + 8f, card.y + (card.height - 48f) * 0.5f, 48f, 48f);
+
+    internal static Rect MemoryJournalCardTextRect(Rect card, bool withPortrait)
+    {
+        float portraitSpace = withPortrait ? 60f : 0f;
+        return new Rect(card.x + 12f + portraitSpace, card.y + 8f,
+            Mathf.Max(40f, card.width - 24f - portraitSpace), card.height - 16f);
+    }
+
+    internal static bool MemoryJournalPortraitLayoutFits(float cardWidth, float cardHeight)
+    {
+        Rect card = new Rect(0f, 0f, cardWidth, cardHeight);
+        Rect portrait = MemoryJournalPortraitRect(card);
+        Rect text = MemoryJournalCardTextRect(card, true);
+        return cardWidth >= 132f && cardHeight >= 64f && portrait.xMax <= text.xMin &&
+            portrait.xMin >= card.xMin && portrait.yMin >= card.yMin && portrait.yMax <= card.yMax &&
+            text.xMax <= card.xMax && text.height >= 48f;
+    }
+
+    private void DrawMemoryModal()
+    {
+        GUI.color = new Color(0f, 0f, 0f, 0.68f);
+        GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
+        GUI.color = Color.white;
+        float width = Mathf.Max(0f, Mathf.Min(740f, Screen.width - 36f));
+        bool showNimaPortrait = MemoryHasNimaPortrait(memoryText) && nimaMemoryPortraitSprite != null;
+        RefreshMeasureContent(memoryMeasureContent, ref cachedMemoryMeasureText, memoryText);
+        float bodyHeight = Mathf.Max(62f, memoryStyle.CalcHeight(memoryMeasureContent, MemoryTextWidth(width, showNimaPortrait)));
+        Rect panel = MemoryPanelRect(Screen.width, Screen.height, bodyHeight);
+        GUI.color = new Color(0.025f, 0.04f, 0.045f, 0.98f); GUI.DrawTexture(panel, Texture2D.whiteTexture); GUI.color = Color.white;
+        Rect titleRect = new Rect(panel.x + 18f, panel.y + 10f, panel.width - 36f, 24f);
+        string title = showNimaPortrait ? "NIMA · VESTÍGIO ESCUTADO" : "VESTÍGIO ESCUTADO";
+        int titleFontSize = titleStyle.fontSize;
+        titleStyle.fontSize = FitLabelFontSize(titleFontSize, titleStyle.CalcSize(new GUIContent(title)).x, titleRect.width);
+        GUI.Label(titleRect, title, titleStyle);
+        titleStyle.fontSize = titleFontSize;
+        if (showNimaPortrait)
+        {
+            Rect portraitRect = MemoryPortraitRect(panel);
+            GUI.color = new Color(1f, 1f, 1f, 0.96f);
+            GUI.DrawTexture(portraitRect, nimaMemoryPortraitSprite.texture, ScaleMode.ScaleToFit, true);
+            GUI.color = Color.white;
+        }
+        GUI.Label(MemoryTextRect(panel, showNimaPortrait), memoryText, memoryStyle);
+        smallStyle.alignment = TextAnchor.MiddleCenter;
+        Rect hintRect = MemoryDismissHintRect(panel);
+        int hintFontSize = smallStyle.fontSize;
+        bool gamepad = sessionInputMode == "gamepad";
+        string hint = MemoryDismissHintText(gamepad, InputBinding(6));
+        RefreshMeasureContent(memoryHintMeasureContent, ref cachedMemoryHintMeasureText, hint);
+        if (smallStyle.CalcSize(memoryHintMeasureContent).x > hintRect.width)
+        {
+            hint = MemoryDismissHintText(gamepad, InputBinding(6), true);
+            RefreshMeasureContent(memoryHintMeasureContent, ref cachedMemoryHintMeasureText, hint);
+        }
+        smallStyle.fontSize = FitLabelFontSize(hintFontSize, smallStyle.CalcSize(memoryHintMeasureContent).x, hintRect.width);
+        GUI.Label(hintRect, hint, smallStyle);
+        smallStyle.fontSize = hintFontSize;
+        smallStyle.alignment = TextAnchor.MiddleLeft;
+    }
+
+    private static Rect MemoryDismissHintRect(Rect panel) =>
+        new Rect(panel.x + 12f, panel.yMax - 32f, panel.width - 24f, 24f);
+
+    internal static Rect StatusLabelRect(float screenWidth, float screenHeight, float measuredTextHeight)
+    {
+        float width = Mathf.Max(0f, screenWidth - 30f);
+        float availableHeight = Mathf.Max(0f, screenHeight - 16f);
+        float height = Mathf.Min(availableHeight, Mathf.Max(44f, Mathf.Max(0f, measuredTextHeight) + 12f));
+        return new Rect(15f, Mathf.Max(8f, screenHeight - height - 8f), width, height);
+    }
+
+    internal static string AbilityHudLabel(int index, string binding, string state)
+    {
+        string[] labels = { "Crescente · interrompe", "Estouro · expõe", "Rompante · afasta" };
+        if (index < 0 || index >= labels.Length) return string.Empty;
+        return binding + "  " + labels[index] + "  ·  " + state;
+    }
+
+    internal static string AbilityHudLabel(int index, string binding, string state, bool hasEcho)
+    {
+        string label = AbilityHudLabel(index, binding, state);
+        return hasEcho && label.Length > 0 ? label + "  ·  eco" : label;
+    }
+
+    internal static string HudHealthLabel(float health, float maxHealth)
+    {
+        float safeMax = Mathf.Max(1f, maxHealth);
+        int maximum = Mathf.CeilToInt(safeMax);
+        int current = Mathf.CeilToInt(Mathf.Clamp(health, 0f, safeMax));
+        return "VIDA " + current + "/" + maximum;
+    }
+
+    internal static float HudHealthTrackWidth(float availableWidth, float textScale)
+    {
+        float extra = Mathf.Clamp(textScale, 1f, 1.5f) - 1f;
+        return Mathf.Max(0f, Mathf.Min(275f + extra * 120f, availableWidth - 108f));
+    }
+
+    private void DrawHud()
+    {
+        float extra = ScadrykSettings.TextScale - 1f;
+        RefreshHudBindingCache();
+        RefreshHudObjectiveCache();
+        Rect panel = HudPanelRect(Screen.width, Screen.height, ScadrykSettings.TextScale);
+        float textWidth = Mathf.Max(0f, panel.width - 28f);
+        float trackWidth = HudHealthTrackWidth(textWidth, ScadrykSettings.TextScale);
+        float healthLabelX = 28f + trackWidth + 8f;
+        float healthLabelWidth = Mathf.Max(0f, textWidth - trackWidth - 8f);
+        GUI.color = new Color(0.035f, 0.05f, 0.06f, 0.92f); GUI.Box(panel, GUIContent.none); GUI.color = Color.white;
+        if (cachedHudPhase != phaseIndex)
+        {
+            hudPhaseContent.text = PhaseNames[phaseIndex] + "  ·  Fase " + (phaseIndex + 1) + "/3";
+            cachedHudPhase = phaseIndex;
+        }
+        if (cachedHudRoom != roomIndex || cachedHudRoomPhase != phaseIndex)
+        {
+            hudRoomContent.text = roomNames[phaseIndex][roomIndex] + "  ·  Sala " + (roomIndex + 1) + "/3";
+            cachedHudRoom = roomIndex;
+            cachedHudRoomPhase = phaseIndex;
+        }
+        GUI.Label(new Rect(28, 22, textWidth, 25f + extra * 15f), hudPhaseContent, titleStyle);
+        GUI.Label(new Rect(28, 51f + extra * 8f, textWidth, 23f + extra * 12f), hudRoomContent, bodyStyle);
+        GUI.color = new Color(0.18f, 0.19f, 0.2f); GUI.DrawTexture(new Rect(28, 82f + extra * 18f, trackWidth, 12), Texture2D.whiteTexture);
+        GUI.color = new Color(0.79f, 0.25f, 0.22f); GUI.DrawTexture(new Rect(28, 82f + extra * 18f, trackWidth * (player != null ? player.Health / player.MaxHealth : 1f), 12), Texture2D.whiteTexture); GUI.color = Color.white;
+        float health = player != null ? player.Health : 0f;
+        float maxHealth = player != null ? player.MaxHealth : 1f;
+        int displayedMaxHealth = Mathf.CeilToInt(Mathf.Max(1f, maxHealth));
+        int displayedHealth = Mathf.CeilToInt(Mathf.Clamp(health, 0f, Mathf.Max(1f, maxHealth)));
+        if (cachedHudHealth != displayedHealth || cachedHudMaxHealth != displayedMaxHealth)
+        {
+            hudHealthContent.text = HudHealthLabel(health, maxHealth);
+            cachedHudHealth = displayedHealth;
+            cachedHudMaxHealth = displayedMaxHealth;
+        }
+        GUI.Label(new Rect(healthLabelX, 77f + extra * 18f, healthLabelWidth, 22f + extra * 6f), hudHealthContent, smallStyle);
+        string dashCooldown = HudCooldownLabel(player != null ? player.DashCooldownLeft : 0f, ref cachedHudDashCooldownKey, ref cachedHudDashCooldown);
+        string pulseCooldown = HudCooldownLabel(player != null ? player.ShockwaveCooldownLeft : 0f, ref cachedHudPulseCooldownKey, ref cachedHudPulseCooldown);
+        if (cachedHudEnemyCount != enemiesRemaining || cachedHudEnemyDash != dashCooldown || cachedHudEnemyPulse != pulseCooldown)
+        {
+            cachedHudEnemyLine = "Ecos: " + enemiesRemaining + "    Esquiva: " + dashCooldown + "    Pulso: " + pulseCooldown;
+            hudEnemyContent.text = cachedHudEnemyLine;
+            cachedHudEnemyCount = enemiesRemaining;
+            cachedHudEnemyDash = dashCooldown;
+            cachedHudEnemyPulse = pulseCooldown;
+        }
+        GUI.Label(new Rect(28, 98f + extra * 23f, textWidth, 19f + extra * 10f), hudEnemyContent, smallStyle);
+        for (int i = 0; i < 3; i++)
+        {
+            bool learned = player != null && player.HasAbility(i);
+            float cooldown = learned ? player.AbilityCooldownLeft(i) : 0f;
+            string state = !learned ? "bloqueado" : HudCooldownLabel(cooldown, ref hudAbilityCooldownKeys[i], ref cachedHudAbilityCooldownLabels[i]);
+            bool hasEcho = player != null && player.HasPowerEcho(i);
+            string binding = hudAbilityBindings[i];
+            bool needsRefresh = hudAbilityContentsNeedRefresh[i] || hudAbilityLearned[i] != learned || hudAbilityEcho[i] != hasEcho ||
+                hudAbilityStates[i] != state;
+            if (needsRefresh)
+            {
+                hudAbilityContents[i].text = AbilityHudLabel(i, binding, state, hasEcho);
+                hudAbilityLearned[i] = learned;
+                hudAbilityEcho[i] = hasEcho;
+                hudAbilityBindings[i] = binding;
+                hudAbilityStates[i] = state;
+                hudAbilityContentsNeedRefresh[i] = false;
+            }
+            GUI.color = learned ? new Color(0.72f, 0.9f, 0.79f) : new Color(0.48f, 0.53f, 0.51f);
+            GUI.Label(new Rect(28, 116f + extra * 37f + i * (15f + extra * 9f), textWidth, 16f + extra * 9f), hudAbilityContents[i], smallStyle);
+        }
+        GUI.color = Color.white;
+        float objectiveY = 164f + extra * 64f;
+        float objectiveHeight = Mathf.Max(0f, panel.yMax - objectiveY - 10f);
+        GUI.Label(new Rect(28, objectiveY, textWidth, objectiveHeight), hudObjectiveContent, hudObjectiveStyle);
+    }
+
+    private void DrawWitnessPrompt()
+    {
+        if (witnessObject == null || player == null || Vector2.Distance(player.transform.position, witnessObject.transform.position) > 2.2f) return;
+        Camera sceneCamera = Camera.main;
+        if (sceneCamera == null) return;
+        Vector3 screen = sceneCamera.WorldToScreenPoint(witnessObject.transform.position + Vector3.up * 1.35f);
+        if (screen.z <= 0f) return;
+        Rect prompt = new Rect(screen.x - 130f, Screen.height - screen.y - 16f, 260f, 30f);
+        GUI.color = new Color(0.025f, 0.04f, 0.045f, 0.9f); GUI.DrawTexture(prompt, Texture2D.whiteTexture); GUI.color = Color.white;
+        if (cachedWitnessInputMode != sessionInputMode || cachedWitnessBindingRevision != ScadrykSettings.BindingRevision)
+        {
+            witnessPromptContent.text = WitnessPromptText();
+            cachedWitnessInputMode = sessionInputMode;
+            cachedWitnessBindingRevision = ScadrykSettings.BindingRevision;
+        }
+        GUI.Label(prompt, witnessPromptContent, centeredBodyStyle);
+    }
+
+    private string WitnessPromptText() => InputBinding(6) + "  ·  FALAR COM NIMA";
+
+    private void DrawPhaseGuardianTitle()
+    {
+        Camera sceneCamera = Camera.main;
+        if (sceneCamera == null || phaseGuardian == null) return;
+        Vector3 screen = sceneCamera.WorldToScreenPoint(phaseGuardian.transform.position + Vector3.up * 2f);
+        if (screen.z <= 0f || screen.x < 8f || screen.x > Screen.width - 8f || screen.y < 8f || screen.y > Screen.height - 8f) return;
+        float width = Mathf.Min(240f, Screen.width - 16f);
+        Rect panel = new Rect(Mathf.Clamp(screen.x - width * 0.5f, 8f, Screen.width - width - 8f),
+            Mathf.Clamp(Screen.height - screen.y - 28f, 8f, Screen.height - 36f), width, 28f);
+        GUI.color = new Color(0.025f, 0.035f, 0.03f, 0.92f);
+        GUI.DrawTexture(panel, Texture2D.whiteTexture);
+        GUI.color = PhaseAccentColors[phaseIndex];
+        GUI.DrawTexture(new Rect(panel.x, panel.y, panel.width, 2f), Texture2D.whiteTexture);
+        GUI.color = Color.white;
+        GUI.Label(panel, GuardianNames[phaseIndex], centeredBodyStyle);
+    }
+
+    private void DrawFinalBossBar()
+    {
+        float width = Mathf.Min(600f, Mathf.Max(250f, Screen.width - 660f));
+        float x = (Screen.width - width) * 0.5f;
+        Rect panel = new Rect(x, 13f, width, 57f);
+        GUI.color = new Color(0.025f, 0.008f, 0.035f, 0.96f); GUI.DrawTexture(panel, Texture2D.whiteTexture);
+        GUI.color = new Color(0.78f, 0.19f, 0.62f, 0.95f); GUI.DrawTexture(new Rect(panel.x, panel.y, panel.width, 2f), Texture2D.whiteTexture);
+        GUI.color = new Color(0.94f, 0.63f, 0.31f, 0.9f); GUI.DrawTexture(new Rect(panel.x, panel.yMax - 2f, panel.width, 2f), Texture2D.whiteTexture);
+        GUI.color = Color.white;
+        RefreshFinalBossStageContent(finalBossStageContent, ref cachedFinalBossDisplayStage, finalBoss.DisplayStage);
+        GUI.Label(new Rect(panel.x + 10f, panel.y + 3f, panel.width - 20f, 20f), finalBossStageContent, finalBossLabelStyle);
+        Rect track = new Rect(panel.x + 12f, panel.y + 31f, panel.width - 24f, 15f);
+        GUI.color = new Color(0.17f, 0.06f, 0.15f, 1f); GUI.DrawTexture(track, Texture2D.whiteTexture);
+        GUI.color = new Color(0.91f, 0.22f, 0.58f, 1f); GUI.DrawTexture(new Rect(track.x, track.y, track.width * finalBoss.Health01, track.height), Texture2D.whiteTexture);
+        GUI.color = new Color(1f, 0.88f, 0.67f, 0.9f);
+        GUI.DrawTexture(new Rect(track.x + track.width * 0.35f - 1f, track.y, 2f, track.height), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(track.x + track.width * 0.7f - 1f, track.y, 2f, track.height), Texture2D.whiteTexture);
+        GUI.color = Color.white;
+    }
+
+    private void DrawMiniMap()
+    {
+        float extra = ScadrykSettings.TextScale - 1f;
+        float width = 286f + extra * 120f;
+        Rect panel = MiniMapPanelRect(Screen.width, Screen.height, ScadrykSettings.TextScale);
+        Rect hud = HudPanelRect(Screen.width, Screen.height, ScadrykSettings.TextScale);
+        if (!MiniMapPanelFits(panel, hud, Screen.width, Screen.height)) return;
+        GUI.color = new Color(0.035f, 0.05f, 0.06f, 0.9f); GUI.Box(panel, GUIContent.none); GUI.color = Color.white;
+        RefreshMiniMapHeaderContent(miniMapHeaderContent, ref cachedMiniMapHeaderBiome, phaseIndex);
+        int baseHeaderFontSize = smallStyle.fontSize;
+        smallStyle.fontSize = FitMiniMapHeaderFontSize(baseHeaderFontSize, smallStyle.CalcSize(miniMapHeaderContent).x, width - 26f);
+        GUI.Label(new Rect(panel.x + 13, panel.y + 8, width - 26f, 21f + extra * 8f), miniMapHeaderContent, smallStyle);
+        smallStyle.fontSize = baseHeaderFontSize;
+        float mapX = panel.x + 15, mapY = panel.y + 43 + extra * 5f, roomW = 75f + extra * 30f, roomH = 57f + extra * 10f, gap = 8;
+        for (int i = 0; i < RoomsPerPhase; i++)
+        {
+            Rect cell = new Rect(mapX + i * (roomW + gap), mapY, roomW, roomH);
+            GUI.color = MiniMapRoomColor(i == roomIndex, clearedRooms[i]);
+            GUI.Box(cell, GUIContent.none); GUI.color = new Color(0.75f, 0.74f, 0.67f);
+            GUI.Label(new Rect(cell.x + 3, cell.y + 2, roomW - 6, 18), CachedMapRoomContent(phaseIndex, i), smallStyle);
+            if (i == roomIndex && gateObject != null)
+            {
+                GUI.color = PhaseAccentColors[phaseIndex];
+                GUI.Label(MiniMapPortalLabelRect(cell, ScadrykSettings.TextScale), "PORTAL", centeredBodyStyle);
+                GUI.color = Color.white;
+            }
+            if (i < RoomsPerPhase - 1) GUI.Label(new Rect(cell.xMax, cell.y + 20, gap + 2, 20), "›", bodyStyle);
+        }
+        Rect currentCell = new Rect(mapX + roomIndex * (roomW + gap), mapY, roomW, roomH);
+        if (TryGetMiniMapTarget(out Vector2 target))
+        {
+            Rect targetMarker = MiniMapPositionMarkerRect(currentCell, target - roomCenter, ScadrykSettings.TextScale);
+            GUI.color = Color.white;
+            DrawMiniMapDiamond(new Rect(targetMarker.x - 1f, targetMarker.y - 1f, targetMarker.width + 2f, targetMarker.height + 2f));
+            GUI.color = new Color(0.28f, 0.88f, 1f, 1f);
+            DrawMiniMapDiamond(targetMarker);
+        }
+        if (player != null)
+        {
+            Vector2 relative = (Vector2)player.transform.position - roomCenter;
+            Rect dot = MiniMapPositionMarkerRect(currentCell, relative, ScadrykSettings.TextScale);
+            GUI.color = new Color(1f, 0.82f, 0.38f); GUI.DrawTexture(dot, Texture2D.whiteTexture);
+        }
+        Rect legend = MiniMapLegendRect(panel, ScadrykSettings.TextScale);
+        float columnWidth = legend.width / 4f;
+        DrawMiniMapLegendItem(legend.x, legend.y, columnWidth, MiniMapRoomColor(true, false), "Você");
+        DrawMiniMapLegendItem(legend.x + columnWidth, legend.y, columnWidth, MiniMapRoomColor(false, true), "Feita");
+        DrawMiniMapLegendItem(legend.x + columnWidth * 2f, legend.y, columnWidth, MiniMapRoomColor(false, false), "Futura");
+        DrawMiniMapLegendItem(legend.x + columnWidth * 3f, legend.y, columnWidth, new Color(0.28f, 0.88f, 1f), "Alvo", true);
+        GUI.color = Color.white;
+    }
+
+    private void DrawOffscreenTargetHint()
+    {
+        if (player == null || Time.time < statusUntil || Time.time < memoryUntil || !TryGetMiniMapTarget(out Vector2 target)) return;
+        Camera sceneCamera = Camera.main;
+        if (sceneCamera == null) return;
+        Vector3 viewport = sceneCamera.WorldToViewportPoint(target);
+        if (viewport.z <= 0f) return;
+        string arrow = OffscreenTargetArrow(new Vector2(viewport.x, viewport.y));
+        if (arrow == null) return;
+
+        float width = Mathf.Min(280f, Screen.width - 32f);
+        Rect hint = new Rect((Screen.width - width) * 0.5f, Screen.height - 74f, width, 28f);
+        GUI.color = new Color(0.025f, 0.04f, 0.045f, 0.9f);
+        GUI.DrawTexture(hint, Texture2D.whiteTexture);
+        GUI.color = new Color(0.28f, 0.88f, 1f, 1f);
+        if (cachedOffscreenTargetArrow != arrow)
+        {
+            offscreenTargetContent.text = arrow + "  ALVO FORA DA TELA";
+            cachedOffscreenTargetArrow = arrow;
+        }
+        GUI.Label(hint, offscreenTargetContent, offscreenTargetStyle);
+        GUI.color = Color.white;
+    }
+
+    internal static string OffscreenTargetArrow(Vector2 viewportPosition)
+    {
+        if (viewportPosition.x >= 0f && viewportPosition.x <= 1f && viewportPosition.y >= 0f && viewportPosition.y <= 1f) return null;
+        Vector2 offset = viewportPosition - new Vector2(0.5f, 0.5f);
+        if (Mathf.Abs(offset.x) > Mathf.Abs(offset.y)) return offset.x >= 0f ? "→" : "←";
+        return offset.y >= 0f ? "↑" : "↓";
+    }
+
+    internal static Rect MiniMapPositionMarkerRect(Rect roomCell, Vector2 roomOffset, float textScale)
+    {
+        float scale = Mathf.Clamp(textScale, 1f, 1.5f);
+        float dx = Mathf.Clamp(roomOffset.x / 22f, -0.42f, 0.42f) * (roomCell.width - 10f * scale);
+        float dy = Mathf.Clamp(roomOffset.y / 15f, -0.35f, 0.35f) * (roomCell.height - 12f * scale);
+        float size = 7f * scale;
+        return new Rect(roomCell.center.x + dx - size * 0.5f, roomCell.center.y - dy - size * 0.5f, size, size);
+    }
+
+    internal static bool MiniMapPositionMarkerFits(Rect roomCell, Vector2 roomOffset, float textScale)
+    {
+        Rect marker = MiniMapPositionMarkerRect(roomCell, roomOffset, textScale);
+        return marker.xMin >= roomCell.xMin && marker.xMax <= roomCell.xMax &&
+            marker.yMin >= roomCell.yMin && marker.yMax <= roomCell.yMax;
+    }
+
+    private bool TryGetMiniMapTarget(out Vector2 target)
+    {
+        ScadrykEnemyHealth nearestEnemy = null;
+        float nearestDistance = float.MaxValue;
+        if (player != null)
+        {
+            for (int i = activeEnemies.Count - 1; i >= 0; i--)
+            {
+                ScadrykEnemyHealth enemy = activeEnemies[i];
+                if (enemy == null || enemy.Health <= 0f) { activeEnemies.RemoveAt(i); continue; }
+                float distance = ((Vector2)enemy.transform.position - (Vector2)player.transform.position).sqrMagnitude;
+                if (distance < nearestDistance) { nearestDistance = distance; nearestEnemy = enemy; }
+            }
+        }
+        if (nearestEnemy != null) { target = nearestEnemy.transform.position; return true; }
+        for (int i = 0; i < anchorsRequired; i++)
+            if (roomAnchors[i] != null) { target = roomAnchors[i].transform.position; return true; }
+        if (gateObject != null) { target = exitPosition; return true; }
+        target = Vector2.zero;
+        return false;
+    }
+
+    private void DrawMiniMapLegendItem(float x, float y, float width, Color swatch, string label, bool diamond = false)
+    {
+        float scale = ScadrykSettings.TextScale;
+        GUI.color = swatch;
+        Rect icon = new Rect(x, y + 4f * scale, 9f * scale, 9f * scale);
+        if (diamond) DrawMiniMapDiamond(icon);
+        else GUI.DrawTexture(icon, Texture2D.whiteTexture);
+        GUI.color = Color.white;
+        GUI.Label(new Rect(x + 13f * scale, y, width - 13f * scale, 18f * scale), label, smallStyle);
+    }
+
+    private static void DrawMiniMapDiamond(Rect rect)
+    {
+        float unitX = rect.width / 5f, unitY = rect.height / 5f;
+        GUI.DrawTexture(new Rect(rect.x + unitX * 2f, rect.y, unitX, unitY), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(rect.x + unitX, rect.y + unitY, unitX * 3f, unitY), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(rect.x, rect.y + unitY * 2f, rect.width, unitY), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(rect.x + unitX, rect.y + unitY * 3f, unitX * 3f, unitY), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(rect.x + unitX * 2f, rect.y + unitY * 4f, unitX, unitY), Texture2D.whiteTexture);
+    }
+
+    private static Color MiniMapRoomColor(bool current, bool cleared) =>
+        current ? new Color(0.19f, 0.36f, 0.35f) : cleared ? new Color(0.16f, 0.25f, 0.22f) : new Color(0.12f, 0.15f, 0.16f);
+
+    private static Rect MiniMapLegendRect(Rect panel, float textScale)
+    {
+        float scale = Mathf.Clamp(textScale, 1f, 1.5f);
+        float height = 22f * scale;
+        return new Rect(panel.x + 15f, panel.yMax - height, panel.width - 30f, height);
+    }
+
+    private static Rect MiniMapPortalLabelRect(Rect roomCell, float textScale)
+    {
+        float scale = Mathf.Clamp(textScale, 1f, 1.5f);
+        float inset = 3f * scale;
+        float height = 18f * scale;
+        return new Rect(roomCell.x + inset, roomCell.yMax - height - inset, roomCell.width - inset * 2f, height);
+    }
+
+    private static bool MiniMapPortalLabelFits(Rect roomCell, float textScale)
+    {
+        Rect label = MiniMapPortalLabelRect(roomCell, textScale);
+        return label.xMin >= roomCell.xMin && label.xMax <= roomCell.xMax &&
+            label.yMin >= roomCell.yMin && label.yMax <= roomCell.yMax;
+    }
+
+    private static Rect MiniMapPanelRect(float screenWidth, float screenHeight, float textScale)
+    {
+        float extra = Mathf.Clamp(textScale, 1f, 1.5f) - 1f;
+        float width = 286f + extra * 120f;
+        float height = 126f + extra * 24f;
+        Rect hud = HudPanelRect(screenWidth, screenHeight, textScale);
+        float x = screenWidth - width - 16f;
+        float y = 14f;
+        if (x < hud.xMax + 16f)
+        {
+            y = hud.yMax + 8f;
+            if (y + height > screenHeight - 8f) y = Mathf.Max(8f, screenHeight - height - 8f);
+        }
+        return new Rect(x, y, width, height);
+    }
+
+    private static Rect HudPanelRect(float screenWidth, float screenHeight, float textScale)
+    {
+        float extra = Mathf.Clamp(textScale, 1f, 1.5f) - 1f;
+        float preferredWidth = 325f + extra * 130f;
+        float width = Mathf.Min(preferredWidth, Mathf.Max(0f, screenWidth - 28f));
+        return new Rect(14f, 14f, width, 190f + extra * 86f);
+    }
+
+    private static bool MiniMapPanelFits(Rect panel, Rect hud, float screenWidth, float screenHeight) =>
+        panel.width > 0f && panel.height > 0f && panel.xMin >= 8f && panel.yMin >= 8f &&
+        panel.xMax <= screenWidth - 8f && panel.yMax <= screenHeight - 8f && !panel.Overlaps(hud);
+
+    private static bool HudPanelFits(Rect panel, float screenWidth, float screenHeight) =>
+        panel.width > 0f && panel.height > 0f && panel.xMin >= 8f && panel.yMin >= 8f &&
+        panel.xMax <= screenWidth - 8f && panel.yMax <= screenHeight - 8f;
+
+    private static string MapRoomLabel(int phase, int room) => MapRoomLabels[phase][room];
+    internal static string MiniMapHeaderText(string biomeName) =>
+        "MAPA · " + biomeName + " · ↑/↓ DESVIO · ◇ PEND. · ◆ FEITO";
+    internal static int FitMiniMapHeaderFontSize(int baseFontSize, float requiredWidth, float availableWidth) =>
+        requiredWidth <= availableWidth || requiredWidth <= 0f
+            ? Mathf.Max(9, baseFontSize)
+            : Mathf.Clamp(Mathf.FloorToInt(baseFontSize * availableWidth / requiredWidth), 9, Mathf.Max(9, baseFontSize));
+    internal static string MapRoomRouteLabel(int phase, int room) => MapRoomRouteLabel(phase, room, false);
+    internal static string MapRoomRouteLabel(int phase, int room, bool secretFound) =>
+        TryGetSideRoute(phase, room, out int side, out _, out _) ? MapRoomLabel(phase, room) + (side > 0 ? " ↑" : " ↓") +
+            (PowerGrantedBySecretAt(phase, room) >= 0 ? (secretFound ? " ◆" : " ◇") : string.Empty) : MapRoomLabel(phase, room);
+    private static string Cooldown(float value) => value <= 0.02f ? "pronto" : value.ToString("0.0") + "s";
+
+    internal static string OverlayMessage(bool confirmNewJourney, bool victory, bool showTitle) =>
+        OverlayMessage(confirmNewJourney, victory, showTitle, 0);
+
+    internal static string OverlayMessage(bool confirmNewJourney, bool victory, bool showTitle, int revealedSecrets) =>
+        confirmNewJourney ? "Uma jornada nova apaga o progresso salvo. Quer substituir seu checkpoint?" :
+        victory ? VictoryEndingTextForSecrets(revealedSecrets) :
+        showTitle ? "Nara, a Ouvinte, segue os Ecos até a origem do silêncio." :
+        "A jornada pode esperar por você.";
+
+    internal static float VictoryOverlayTextSpace(float screenHeight)
+    {
+        bool compact = screenHeight < 520f;
+        bool denseVictoryMenu = screenHeight < 400f;
+        float top = compact ? 18f : screenHeight * 0.29f;
+        float messageTop = top + (compact ? 42f : 48f);
+        float footerTop = screenHeight - (compact ? 42f : 58f);
+        float buttonHeight = compact ? denseVictoryMenu ? 30f : 40f : 44f;
+        float buttonStep = compact ? denseVictoryMenu ? 32f : 48f : 54f;
+        float footerGap = compact ? 8f : 12f;
+        return Mathf.Max(0f, footerTop - messageTop - footerGap - buttonStep * 2f - buttonHeight);
+    }
+
+    internal static bool VictoryOverlayLayoutFits(float screenWidth, float screenHeight, float preferredTextHeight)
+    {
+        bool compact = screenHeight < 520f;
+        bool denseVictoryMenu = screenHeight < 400f;
+        float top = compact ? 18f : screenHeight * 0.29f;
+        float messageTop = top + (compact ? 42f : 48f);
+        float footerTop = screenHeight - (compact ? 42f : 58f);
+        float footerHeight = compact ? 28f : 35f;
+        float buttonHeight = compact ? denseVictoryMenu ? 30f : 40f : 44f;
+        float buttonStep = compact ? denseVictoryMenu ? 32f : 48f : 54f;
+        float defaultButtonY = top + (compact ? denseVictoryMenu ? 130f : 136f : 132f);
+        float footerGap = compact ? 8f : 12f;
+        float messageHeight = Mathf.Max(compact ? 86f : 62f, preferredTextHeight);
+        float buttonY = Mathf.Max(defaultButtonY, messageTop + messageHeight + footerGap);
+        return screenWidth >= 64f && preferredTextHeight <= VictoryOverlayTextSpace(screenHeight) &&
+            buttonY + buttonStep * 2f + buttonHeight <= footerTop && footerTop + footerHeight <= screenHeight;
+    }
+
+    internal static string CheckpointSummary(int phase, int room, bool guardianDefeated = false, bool finalBossDefeated = false)
+    {
+        phase = Mathf.Clamp(phase, 0, PhaseNames.Length - 1);
+        room = Mathf.Clamp(room, 0, RoomsPerPhase - 1);
+        string location = "Retomar: " + PhaseNames[phase] + " · " + MapRoomLabel(phase, room) + " · sala " + (room + 1) + "/" + RoomsPerPhase;
+        if (ShouldRestoreFinalBossDefeat(phase, room, finalBossDefeated)) return location + " · portal colossal aberto";
+        if (ShouldRestoreDefeatedGuardian(phase, room, guardianDefeated))
+            return location + (phase == PhaseNames.Length - 1 ? " · último guardião vencido; Arauto aguarda" : " · guardião vencido; portal aberto");
+        return location;
+    }
+
+    private void DrawOverlay()
+    {
+        Rect screenRect = new Rect(0, 0, Screen.width, Screen.height);
+        if (showTitle && titleBackdropTexture != null)
+        {
+            GUI.color = Color.white;
+            GUI.DrawTexture(screenRect, titleBackdropTexture, ScaleMode.ScaleAndCrop);
+            GUI.color = new Color(0.01f, 0.02f, 0.025f, 0.44f);
+            GUI.DrawTexture(screenRect, Texture2D.whiteTexture);
+        }
+        else
+        {
+            GUI.color = new Color(0.015f, 0.02f, 0.025f, 0.91f);
+            GUI.DrawTexture(screenRect, Texture2D.whiteTexture);
+        }
+        GUI.color = Color.white;
+        string heading = confirmNewJourney ? "NOVA JORNADA?" : victory ? "AS VOZES VOLTAM" : showTitle ? "SCADRYK" : "PAUSADO";
+        float center = Screen.width * 0.5f;
+        bool compact = Screen.height < 520f;
+        bool pauseMapMenu = !showTitle && !victory && !confirmNewJourney;
+        bool ultraCompactTitleMenu = showTitle && !victory && !confirmNewJourney && Screen.height < 400f;
+        bool densePauseMenu = pauseMapMenu && Screen.height < 570f;
+        bool denseVictoryMenu = victory && Screen.height < 400f;
+        float top = compact ? 18f : Screen.height * 0.29f;
+        float titleWidth = Mathf.Min(600f, Screen.width - 32f);
+        float messageWidth = Mathf.Min(680f, Screen.width - 32f);
+        float buttonWidth = Mathf.Min(230f, Screen.width - 32f);
+        float titleHeight = compact ? 42f : 52f;
+        float messageTop = top + (compact ? 42f : 48f);
+        string message = showTitle && !victory && !confirmNewJourney &&
+            TryLoadCheckpoint("Scadryk.", out int savedPhase, out int savedRoom)
+                ? CheckpointSummary(savedPhase, savedRoom,
+                    HasGuardianDefeatProgress("Scadryk.", savedPhase), HasFinalBossDefeatProgress("Scadryk."))
+                : OverlayMessage(confirmNewJourney, victory, showTitle, victoryOptionalSealCount);
+        float messageHeight = compact ? (pauseMapMenu ? 68f : ultraCompactTitleMenu ? 66f : 86f) : 62f;
+        bool compactTitleMenu = showTitle && !victory && !confirmNewJourney;
+        bool compressedTitleMenu = compactTitleMenu && Screen.height < 600f;
+        bool denseTitleMenu = compressedTitleMenu;
+        float buttonY = top + (compact ? (pauseMapMenu ? 118f : denseTitleMenu || denseVictoryMenu ? 130f : 136f) : densePauseMenu || denseTitleMenu ? 120f : 132f);
+        float buttonHeight = compact ? (pauseMapMenu ? densePauseMenu ? 30f : 42f : denseTitleMenu || denseVictoryMenu ? 30f : 40f) : densePauseMenu || denseTitleMenu ? 30f : 44f;
+        float buttonStep = compact ? (pauseMapMenu ? densePauseMenu ? 32f : 44f : denseTitleMenu || denseVictoryMenu ? 32f : 48f) : densePauseMenu || denseTitleMenu ? 32f : 54f;
+        float footerWidth = Mathf.Min(600f, Screen.width - 32f), footerHeight = compact ? 28f : 35f;
+        float footerTop = Screen.height - (compact ? 42f : 58f);
+        int originalMessageFontSize = centeredBodyStyle.fontSize;
+        if (victory)
+        {
+            float maxTextHeight = VictoryOverlayTextSpace(Screen.height);
+            float preferredTextHeight = centeredBodyStyle.CalcHeight(new GUIContent(message), messageWidth);
+            while (preferredTextHeight > maxTextHeight && centeredBodyStyle.fontSize > 12)
+            {
+                centeredBodyStyle.fontSize--;
+                preferredTextHeight = centeredBodyStyle.CalcHeight(new GUIContent(message), messageWidth);
+            }
+            messageHeight = Mathf.Min(maxTextHeight, Mathf.Max(messageHeight, preferredTextHeight));
+            buttonY = Mathf.Max(buttonY, messageTop + messageHeight + (compact ? 8f : 12f));
+        }
+        GUI.Label(new Rect(center - titleWidth * 0.5f, top, titleWidth, titleHeight), heading, centeredTitleStyle);
+        GUI.Label(new Rect(center - messageWidth * 0.5f, messageTop, messageWidth, messageHeight), message, centeredBodyStyle);
+        if (victory) centeredBodyStyle.fontSize = originalMessageFontSize;
+        if (confirmNewJourney)
+        {
+            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY, buttonWidth, buttonHeight), "Apagar e começar", 0)) StartNewGame();
+            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep, buttonWidth, buttonHeight), "Manter progresso", 1)) { confirmNewJourney = false; overlaySelection = 0; }
+            GUI.Label(new Rect(center - footerWidth * 0.5f, footerTop, footerWidth, footerHeight), "Esc, B ou Start cancela", centeredBodyStyle);
+            return;
+        }
+        if (showTitle)
+        {
+            bool hasCheckpoint = HasCheckpoint("Scadryk.");
+            float titleButtonStep = buttonY + buttonStep;
+            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY, buttonWidth, buttonHeight), hasCheckpoint ? "Continuar jornada" : "Começar jornada", 0)) BeginJourney();
+            if (hasCheckpoint)
+            {
+                if (OverlayButton(new Rect(center - buttonWidth * 0.5f, titleButtonStep, buttonWidth, buttonHeight), "Nova jornada", 1)) RequestNewGame();
+                titleButtonStep += buttonStep;
+            }
+            int optionsIndex = TitleMenuOptionsSelection(hasCheckpoint);
+            int journalIndex = TitleMenuJournalSelection(hasCheckpoint);
+            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, titleButtonStep, buttonWidth, buttonHeight), "Opções e controles", optionsIndex))
+            { showOptions = true; optionsTab = optionsSelection = 0; }
+            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, titleButtonStep + buttonStep, buttonWidth, buttonHeight), "Caderno de memórias", journalIndex)) OpenMemoryJournal();
+            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, titleButtonStep + buttonStep * 2f, buttonWidth, buttonHeight), "Sair do jogo", TitleMenuQuitSelection(hasCheckpoint))) Application.Quit();
+        }
+        else if (victory)
+        {
+            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY, buttonWidth, buttonHeight), "Nova jornada", 0)) StartNewGame();
+            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep, buttonWidth, buttonHeight), "Caderno de memórias", 1))
+                OpenMemoryJournal();
+            if (OverlayButton(new Rect(center - buttonWidth * 0.5f, buttonY + buttonStep * 2f, buttonWidth, buttonHeight), "Voltar ao título", 2)) ReturnToTitle();
+        }
+        else
+        {
+            float gap = 8f;
+            float columnWidth = Mathf.Min((buttonWidth - gap) * 0.5f, (Screen.width - 32f - gap) * 0.5f);
+            float left = center - columnWidth - gap * 0.5f;
+            float right = center + gap * 0.5f;
+            float row0 = buttonY;
+            float row1 = buttonY + buttonStep;
+            float row2 = buttonY + buttonStep * 2f;
+            float row3 = buttonY + buttonStep * 3f;
+
+            if (OverlayButton(new Rect(left, row0, columnWidth, buttonHeight), "Continuar", 0)) isPaused = false;
+            if (OverlayButton(new Rect(right, row0, columnWidth, buttonHeight), "Mapa", 1))
+            { isPaused = false; showWorldMap = true; ApplyPauseTimeScale(); }
+            if (OverlayButton(new Rect(left, row1, columnWidth, buttonHeight), "Nova jornada", 2)) RequestNewGame();
+            if (OverlayButton(new Rect(right, row1, columnWidth, buttonHeight), "Opções", 3)) { showOptions = true; optionsTab = optionsSelection = 0; }
+            if (OverlayButton(new Rect(left, row2, columnWidth, buttonHeight), "Memórias", 4)) OpenMemoryJournal();
+            if (OverlayButton(new Rect(right, row2, columnWidth, buttonHeight), "Salvar e sair", 5)) ReturnToTitle();
+            if (OverlayButton(new Rect(center - columnWidth * 0.5f, row3, columnWidth, buttonHeight), "Sair do jogo", 6)) Application.Quit();
+        }
+        GUI.Label(new Rect(center - footerWidth * 0.5f, footerTop, footerWidth, footerHeight), "Três lugares · nove salas · memórias a libertar", centeredBodyStyle);
+    }
+
+    private void DrawOpeningStory()
+    {
+        Rect screen = new Rect(0f, 0f, Screen.width, Screen.height);
+        if (titleBackdropTexture != null) GUI.DrawTexture(screen, titleBackdropTexture, ScaleMode.ScaleAndCrop);
+        GUI.color = new Color(0.008f, 0.015f, 0.02f, 0.76f);
+        GUI.DrawTexture(screen, Texture2D.whiteTexture);
+        float width = Mathf.Max(0f, Mathf.Min(740f, Screen.width - 32f));
+        float height = Mathf.Max(0f, Mathf.Min(310f, Screen.height - 24f));
+        Rect panel = new Rect((Screen.width - width) * 0.5f, (Screen.height - height) * 0.5f, width, height);
+        GUI.color = new Color(0.025f, 0.045f, 0.05f, 0.97f);
+        GUI.DrawTexture(panel, Texture2D.whiteTexture);
+        GUI.color = new Color(0.74f, 0.63f, 0.34f, 1f);
+        GUI.DrawTexture(new Rect(panel.x, panel.y, panel.width, 3f), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(panel.x, panel.yMax - 3f, panel.width, 3f), Texture2D.whiteTexture);
+        GUI.color = Color.white;
+        float titleWidth = Mathf.Max(0f, panel.width - 36f);
+        openingTitleStyle.fontSize = centeredTitleStyle.fontSize;
+        float measuredTitleWidth = openingTitleStyle.CalcSize(OpeningTitleContent).x;
+        if (measuredTitleWidth > titleWidth && measuredTitleWidth > 0f)
+            openingTitleStyle.fontSize = Mathf.Max(12, Mathf.FloorToInt(openingTitleStyle.fontSize * titleWidth / measuredTitleWidth));
+        GUI.Label(new Rect(panel.x + 18f, panel.y + 16f, titleWidth, 40f), OpeningTitleContent, openingTitleStyle);
+        Rect storyBody = new Rect(panel.x + 28f, panel.y + 68f, panel.width - 56f, Mathf.Max(48f, panel.height - 150f));
+        openingBodyStyle.fontSize = centeredBodyStyle.fontSize;
+        float measuredBodyHeight = openingBodyStyle.CalcHeight(OpeningMemoryContent, storyBody.width);
+        if (measuredBodyHeight > storyBody.height && measuredBodyHeight > 0f)
+            openingBodyStyle.fontSize = Mathf.Max(12, Mathf.FloorToInt(openingBodyStyle.fontSize * storyBody.height / measuredBodyHeight));
+        GUI.Label(storyBody, OpeningMemoryContent, openingBodyStyle);
+        Rect begin = new Rect(panel.center.x - Mathf.Min(150f, panel.width * 0.38f), panel.yMax - 68f,
+            Mathf.Min(300f, panel.width * 0.76f), 38f);
+        if (GUI.Button(begin, "COMEÇAR A JORNADA")) DismissOpeningStory();
+        GUI.Label(new Rect(panel.x + 12f, panel.yMax - 27f, panel.width - 24f, 20f),
+            OpeningStoryContinueHint(sessionInputMode == "gamepad", InputBinding(6)), smallStyle);
+        GUI.color = Color.white;
+    }
+
+    internal static string OpeningStoryContinueHint(bool gamepad, string interactBinding)
+    {
+        if (gamepad) return interactBinding == "A" ? "A para continuar" : "A / " + interactBinding + " para continuar";
+        string keyboardBinding = interactBinding == "Enter" || interactBinding == "Espaço"
+            ? interactBinding == "Enter" ? "Enter / Espaço" : "Espaço / Enter"
+            : interactBinding + " / Enter / Espaço";
+        return keyboardBinding + " para continuar";
+    }
+
+    private void DrawWorldMap()
+    {
+        Rect screen = new Rect(0f, 0f, Screen.width, Screen.height);
+        GUI.color = new Color(0.008f, 0.015f, 0.02f, 0.9f);
+        GUI.DrawTexture(screen, Texture2D.whiteTexture);
+        Rect panel = WorldMapPanelRect(Screen.width, Screen.height);
+        GUI.color = new Color(0.025f, 0.045f, 0.05f, 0.98f);
+        GUI.DrawTexture(panel, Texture2D.whiteTexture);
+        GUI.color = new Color(0.74f, 0.63f, 0.34f, 1f);
+        GUI.DrawTexture(new Rect(panel.x, panel.y, panel.width, 3f), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(panel.x, panel.yMax - 3f, panel.width, 3f), Texture2D.whiteTexture);
+        GUI.color = Color.white;
+
+        float titleWidth = Mathf.Max(0f, panel.width - 150f);
+        openingTitleStyle.fontSize = centeredTitleStyle.fontSize;
+        float measuredTitleWidth = openingTitleStyle.CalcSize(WorldMapTitleContent).x;
+        if (measuredTitleWidth > titleWidth && measuredTitleWidth > 0f)
+            openingTitleStyle.fontSize = Mathf.Max(12, Mathf.FloorToInt(openingTitleStyle.fontSize * titleWidth / measuredTitleWidth));
+        GUI.Label(new Rect(panel.center.x - titleWidth * 0.5f, panel.y + 4f, titleWidth, 40f), WorldMapTitleContent, openingTitleStyle);
+        worldMapInstructionStyle.fontSize = Mathf.Min(smallStyle.fontSize, 12);
+        float legendWidth = panel.width - 32f;
+        float measuredLegendWidth = worldMapInstructionStyle.CalcSize(worldMapLegendContent).x;
+        if (measuredLegendWidth > legendWidth && measuredLegendWidth > 0f)
+            worldMapInstructionStyle.fontSize = Mathf.Max(9, Mathf.FloorToInt(worldMapInstructionStyle.fontSize * legendWidth / measuredLegendWidth));
+        GUI.Label(new Rect(panel.x + 16f, panel.y + 45f, panel.width - 32f, 17f),
+            worldMapLegendContent, worldMapInstructionStyle);
+        if (GUI.Button(new Rect(panel.xMax - 92f, panel.y + 14f, 76f, 28f), "FECHAR")) CloseWorldMap();
+
+        float rowHeight = WorldMapRowHeight(panel.height);
+        float contentX = panel.x + 16f;
+        float contentWidth = panel.width - 32f;
+        float cardGap = 8f;
+        float cardWidth = (contentWidth - cardGap * 2f) / 3f;
+        for (int phase = 0; phase < PhaseNames.Length; phase++)
+        {
+            float rowY = panel.y + 62f + phase * rowHeight;
+            GUI.color = PhaseAccentColors[phase];
+            GUI.Label(new Rect(contentX, rowY, contentWidth, 18f), PhaseNames[phase], smallStyle);
+            GUI.color = Color.white;
+            for (int room = 0; room < RoomsPerPhase; room++)
+            {
+                int state = WorldMapRoomStatus(phase, room, phaseIndex, roomIndex, clearedRooms);
+                Rect card = new Rect(contentX + room * (cardWidth + cardGap), rowY + 19f, cardWidth, rowHeight - 21f);
+                if (room < RoomsPerPhase - 1)
+                {
+                    int nextState = WorldMapRoomStatus(phase, room + 1, phaseIndex, roomIndex, clearedRooms);
+                    GUI.color = state == 2 ? new Color(0.42f, 0.78f, 0.53f, 0.95f) :
+                        nextState == 1 ? new Color(0.45f, 0.95f, 0.9f, 0.95f) : new Color(0.32f, 0.38f, 0.37f, 0.9f);
+                    GUI.DrawTexture(new Rect(card.xMax, card.center.y - 1.5f, cardGap, 3f), Texture2D.whiteTexture);
+                }
+                GUI.color = WorldMapRoomColor(state);
+                GUI.DrawTexture(card, Texture2D.whiteTexture);
+                GUI.color = state == 1 ? new Color(0.45f, 0.95f, 0.9f) : state == 2 ? new Color(0.42f, 0.78f, 0.53f) : new Color(0.45f, 0.49f, 0.48f);
+                GUI.DrawTexture(new Rect(card.x, card.y, card.width, 2f), Texture2D.whiteTexture);
+                GUI.color = Color.white;
+                GUI.Label(new Rect(card.x + 3f, card.y + 3f, card.width - 6f, card.height * 0.5f),
+                    CachedMapRoomContent(phase, room), worldMapRoomStyle);
+                if (TryGetSideRoute(phase, room, out int routeSide, out _, out _))
+                {
+                    int requiredPower = PowerGrantedBySecretAt(phase, room);
+                    bool hasSeal = requiredPower >= 0;
+                    bool sealFound = hasSeal && !smokeRun && IsWorldSecretRevealed("Scadryk.", phase, room);
+                    bool sealAvailable = hasSeal && player != null && player.HasAbility(requiredPower);
+                    DrawWorldMapSideRoute(card, routeSide, state, hasSeal, sealFound, sealAvailable, PhaseAccentColors[phase]);
+                }
+                string stateLabel = state == 1 ? "VOCÊ ESTÁ AQUI" : state == 2 ? "CONCLUÍDA" : state == 3 ? "SELADO" : "ADIANTE";
+                GUI.color = state == 1 ? new Color(0.55f, 1f, 0.94f) : state == 2 ? new Color(0.62f, 0.9f, 0.68f) :
+                    state == 3 ? new Color(0.68f, 0.52f, 0.36f) : new Color(0.7f, 0.73f, 0.71f);
+                GUI.Label(new Rect(card.x + 2f, card.yMax - 18f, card.width - 4f, 15f), stateLabel, worldMapStateStyle);
+                GUI.color = Color.white;
+            }
+        }
+
+        RefreshHudObjectiveCache();
+        float objectiveWidth = panel.width - 32f;
+        worldMapObjectiveStyle.fontSize = Mathf.RoundToInt(11f * Mathf.Clamp(ScadrykSettings.TextScale, 1f, 1.5f));
+        float measuredObjectiveWidth = worldMapObjectiveStyle.CalcSize(hudObjectiveContent).x;
+        if (measuredObjectiveWidth > objectiveWidth && measuredObjectiveWidth > 0f)
+            worldMapObjectiveStyle.fontSize = Mathf.Max(9, Mathf.FloorToInt(worldMapObjectiveStyle.fontSize * objectiveWidth / measuredObjectiveWidth));
+        GUI.Label(new Rect(panel.x + 16f, panel.yMax - 55f, objectiveWidth, 22f), hudObjectiveContent, worldMapObjectiveStyle);
+        worldMapInstructionStyle.fontSize = Mathf.Min(smallStyle.fontSize, 12);
+        GUI.Label(new Rect(panel.x + 16f, panel.yMax - 29f, panel.width - 32f, 18f),
+            "M · L3 · Esc · Start para voltar", worldMapInstructionStyle);
+        GUI.color = Color.white;
+    }
+
+    private static void DrawWorldMapSideRoute(Rect card, int side, int roomState, bool hasSeal,
+        bool sealFound, bool sealAvailable, Color biomeAccent)
+    {
+        float scale = Mathf.Clamp(ScadrykSettings.TextScale, 1f, 1.5f);
+        if (card.width < 54f || card.height < 110f) return;
+
+        float centerY = card.y + card.height * 0.66f;
+        float centerX = card.center.x;
+        float margin = Mathf.Min(18f * scale, card.width * 0.16f);
+        float stroke = Mathf.Max(2f, 2f * scale);
+        float branchLength = Mathf.Min(14f * scale, card.height * 0.09f);
+        float branchY = centerY - Mathf.Sign(side) * branchLength;
+        Color routeColor = !hasSeal ? biomeAccent : sealFound ? new Color(0.42f, 0.78f, 0.53f) :
+            sealAvailable ? new Color(1f, 0.76f, 0.34f) : new Color(0.58f, 0.49f, 0.37f);
+
+        GUI.color = new Color(0.48f, 0.55f, 0.55f, 0.9f);
+        GUI.DrawTexture(new Rect(card.x + margin, centerY - stroke * 0.5f, card.width - margin * 2f, stroke), Texture2D.whiteTexture);
+        GUI.color = routeColor;
+        float top = Mathf.Min(centerY, branchY);
+        GUI.DrawTexture(new Rect(centerX - stroke * 0.5f, top, stroke, Mathf.Abs(branchY - centerY)), Texture2D.whiteTexture);
+
+        float markerSize = (hasSeal ? 9f : 6f) * scale;
+        Rect marker = new Rect(centerX - markerSize * 0.5f, branchY - markerSize * 0.5f, markerSize, markerSize);
+        if (hasSeal)
+        {
+            DrawMiniMapDiamond(marker);
+            if (!sealFound)
+            {
+                GUI.color = WorldMapRoomColor(roomState);
+                float inset = 2f * scale;
+                DrawMiniMapDiamond(new Rect(marker.x + inset, marker.y + inset,
+                    marker.width - inset * 2f, marker.height - inset * 2f));
+            }
+        }
+        else GUI.DrawTexture(marker, Texture2D.whiteTexture);
+        GUI.color = Color.white;
+    }
+
+    private void CloseWorldMap()
+    {
+        showWorldMap = false;
+        ApplyPauseTimeScale();
+    }
+
+    private static Rect WorldMapPanelRect(float screenWidth, float screenHeight)
+    {
+        float width = Mathf.Max(0f, Mathf.Min(1100f, screenWidth - 32f));
+        float height = Mathf.Max(0f, Mathf.Min(700f, screenHeight - 32f));
+        return new Rect((screenWidth - width) * 0.5f, (screenHeight - height) * 0.5f, width, height);
+    }
+
+    private static float WorldMapRowHeight(float panelHeight) => Mathf.Max(60f, (panelHeight - 142f) / PhaseNames.Length);
+
+    internal static int WorldMapRoomStatus(int phase, int room, int currentPhase, int currentRoom, bool[] currentPhaseCleared)
+    {
+        if (phase < currentPhase) return 2;
+        if (phase > currentPhase) return 3;
+        if (room == currentRoom) return 1;
+        return currentPhaseCleared != null && room >= 0 && room < currentPhaseCleared.Length && currentPhaseCleared[room] ? 2 : 0;
+    }
+
+    private static Color WorldMapRoomColor(int state) => state == 1 ? new Color(0.1f, 0.24f, 0.25f, 0.98f) :
+        state == 2 ? new Color(0.1f, 0.2f, 0.14f, 0.98f) : new Color(0.065f, 0.085f, 0.09f, 0.98f);
+
+    internal static bool WorldMapLayoutFits(float screenWidth, float screenHeight)
+    {
+        Rect panel = WorldMapPanelRect(screenWidth, screenHeight);
+        float contentWidth = panel.width - 32f;
+        float cardWidth = (contentWidth - 16f) / 3f;
+        float rowHeight = WorldMapRowHeight(panel.height);
+        float finalCardBottom = panel.y + 62f + (PhaseNames.Length - 1) * rowHeight + rowHeight - 2f;
+        float objectiveTop = panel.yMax - 55f;
+        float footerBottom = panel.yMax - 11f;
+        return screenWidth >= 160f && screenHeight >= 180f && cardWidth > 0f &&
+            finalCardBottom <= objectiveTop && objectiveTop + 22f <= panel.yMax - 29f && footerBottom <= panel.yMax;
+    }
+
+    private static bool OverlayLayoutFits(float screenWidth, float screenHeight)
+    {
+        bool compact = screenHeight < 520f;
+        float top = compact ? 18f : screenHeight * 0.29f;
+        float messageTop = top + (compact ? 42f : 48f);
+        bool denseTitleMenu = screenHeight < 600f;
+        float messageHeight = compact ? screenHeight < 400f ? 66f : 86f : 62f;
+        float buttonY = top + (compact ? 130f : denseTitleMenu ? 120f : 132f);
+        float buttonHeight = denseTitleMenu ? 30f : 44f;
+        float buttonStep = denseTitleMenu ? 32f : 54f;
+        float footerTop = screenHeight - (compact ? 42f : 58f);
+        float footerHeight = compact ? 28f : 35f;
+        float horizontalWidth = Mathf.Min(680f, screenWidth - 32f);
+        float fifthButtonBottom = buttonY + buttonStep * 4f + buttonHeight;
+        return screenWidth >= 64f && horizontalWidth <= screenWidth - 32f &&
+               messageTop + messageHeight <= buttonY && fifthButtonBottom <= footerTop && footerTop + footerHeight <= screenHeight;
+    }
+
+    private static bool PauseMapOverlayLayoutFits(float screenWidth, float screenHeight)
+    {
+        bool compact = screenHeight < 520f;
+        bool densePauseMenu = screenHeight < 570f;
+        float top = compact ? 18f : screenHeight * 0.29f;
+        float messageBottom = top + (compact ? 42f + 68f : 48f + 62f);
+        float buttonY = top + (compact ? 118f : densePauseMenu ? 120f : 132f);
+        float buttonHeight = densePauseMenu ? 30f : compact ? 42f : 44f;
+        float buttonStep = densePauseMenu ? 32f : compact ? 44f : 54f;
+        float footerTop = screenHeight - (compact ? 42f : 58f);
+        float fourthRowBottom = buttonY + buttonStep * 3f + buttonHeight;
+        return screenWidth >= 256f && messageBottom <= buttonY && fourthRowBottom <= footerTop && footerTop + (compact ? 28f : 35f) <= screenHeight;
+    }
+
+    private static Rect MemoryPanelRect(float screenWidth, float screenHeight, float bodyHeight)
+    {
+        float width = Mathf.Max(0f, Mathf.Min(740f, screenWidth - 36f));
+        float panelHeight = 82f + Mathf.Max(62f, bodyHeight);
+        float y = Mathf.Max(12f, (screenHeight - panelHeight) * 0.5f);
+        return new Rect((screenWidth - width) * 0.5f, y, width, panelHeight);
+    }
+
+    private static bool MemoryHasNimaPortrait(string message) =>
+        message == BasinWitnessLines[0] || message == BasinWitnessLines[2] ||
+        message == CoastWitnessLines[0] || message == CoastWitnessLines[2];
+
+    private static float MemoryPortraitWidth(float panelWidth) =>
+        Mathf.Min(panelWidth < 460f ? 74f : 126f, Mathf.Max(54f, panelWidth * 0.22f));
+
+    private static float MemoryTextWidth(float panelWidth, bool withPortrait) =>
+        Mathf.Max(48f, panelWidth - 36f - (withPortrait ? MemoryPortraitWidth(panelWidth) + 12f : 0f));
+
+    private static Rect MemoryPortraitRect(Rect panel) =>
+        new Rect(panel.x + 18f, panel.y + 38f, MemoryPortraitWidth(panel.width), Mathf.Max(48f, panel.height - 84f));
+
+    private static Rect MemoryTextRect(Rect panel) => MemoryTextRect(panel, false);
+
+    private static Rect MemoryTextRect(Rect panel, bool withPortrait)
+    {
+        float portraitSpace = withPortrait ? MemoryPortraitWidth(panel.width) + 12f : 0f;
+        return new Rect(panel.x + 18f + portraitSpace, panel.y + 34f,
+            Mathf.Max(48f, panel.width - 36f - portraitSpace), panel.height - 82f);
+    }
+
+    internal static string CompactControlHintText(string movement, string aim, string attack, string dodge, string pulse, string interact) =>
+        "Mover: " + movement + " · mirar: " + aim + "\n" +
+        attack + " atacar · " + dodge + " esquivar · " + pulse + " pulso\n" +
+        interact + " interagir · M/L3 mapa · Esc/Start pausa";
+
+    private static bool MemoryPanelFits(float screenWidth, float screenHeight, float bodyHeight, bool withPortrait = false)
+    {
+        float requiredBodyHeight = Mathf.Max(62f, bodyHeight);
+        Rect panel = MemoryPanelRect(screenWidth, screenHeight, requiredBodyHeight);
+        Rect text = MemoryTextRect(panel, withPortrait);
+        Rect hint = MemoryDismissHintRect(panel);
+        return screenWidth >= 240f && screenHeight >= requiredBodyHeight + 106f &&
+            panel.xMin >= 0f && panel.xMax <= screenWidth && panel.yMin >= 12f && panel.yMax <= screenHeight - 12f &&
+            text.yMin >= panel.yMin && text.yMax <= hint.yMin && text.height >= requiredBodyHeight &&
+            hint.yMin >= text.yMax && hint.yMax <= panel.yMax;
+    }
+
+    private static bool MemoryPortraitPanelDoesNotOverlap(float screenWidth, float screenHeight, float bodyHeight)
+    {
+        Rect panel = MemoryPanelRect(screenWidth, screenHeight, Mathf.Max(62f, bodyHeight));
+        Rect portrait = MemoryPortraitRect(panel);
+        Rect text = MemoryTextRect(panel, true);
+        return portrait.xMax <= text.xMin && portrait.xMin >= panel.xMin && portrait.yMin >= panel.yMin + 34f &&
+            portrait.yMax <= panel.yMax - 48f && text.xMax <= panel.xMax && text.yMax <= MemoryDismissHintRect(panel).yMin;
+    }
+
+    internal static int FitLabelFontSize(int fontSize, float measuredWidth, float availableWidth, int minimum = 9)
+    {
+        int baseSize = Mathf.Max(1, fontSize);
+        int minSize = Mathf.Clamp(minimum, 1, baseSize);
+        if (measuredWidth <= 0f || measuredWidth <= availableWidth) return baseSize;
+        return Mathf.Max(minSize, Mathf.FloorToInt(baseSize * Mathf.Max(0f, availableWidth) / measuredWidth));
+    }
+
+    private bool OverlayButton(Rect rect, string label, int index)
+    {
+        if (overlaySelection == index) DrawSelection(rect);
+        return GUI.Button(rect, label);
+    }
+
+    private static void DrawSelection(Rect rect)
+    {
+        GUI.color = new Color(1f, 0.78f, 0.28f, 0.95f);
+        GUI.DrawTexture(new Rect(rect.x - 3f, rect.y - 3f, rect.width + 6f, 3f), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(rect.x - 3f, rect.yMax, rect.width + 6f, 3f), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(rect.x - 3f, rect.y, 3f, rect.height), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(rect.xMax, rect.y, 3f, rect.height), Texture2D.whiteTexture);
+        GUI.color = Color.white;
+    }
+
+    private void EnsureStyles()
+    {
+        float scale = Mathf.Clamp(ScadrykSettings.TextScale, 1f, 1.5f);
+        if (titleStyle != null && Mathf.Approximately(cachedTextScale, scale)) return;
+        cachedTextScale = scale;
+        GUI.skin.button.fontSize = Mathf.RoundToInt(14f * scale);
+        GUI.skin.toggle.fontSize = Mathf.RoundToInt(14f * scale);
+        titleStyle = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(17f * scale), fontStyle = FontStyle.Bold, normal = { textColor = new Color(0.91f, 0.81f, 0.57f) }, alignment = TextAnchor.MiddleLeft };
+        bodyStyle = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(14f * scale), normal = { textColor = new Color(0.88f, 0.89f, 0.83f) }, alignment = TextAnchor.MiddleLeft };
+        statusStyle = new GUIStyle(bodyStyle) { wordWrap = true, alignment = TextAnchor.MiddleCenter };
+        smallStyle = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(11f * scale), normal = { textColor = new Color(0.72f, 0.76f, 0.72f) }, alignment = TextAnchor.MiddleLeft };
+        hudObjectiveStyle = new GUIStyle(smallStyle) { wordWrap = true, alignment = TextAnchor.UpperLeft };
+        centeredTitleStyle = new GUIStyle(titleStyle) { alignment = TextAnchor.MiddleCenter, fontSize = Mathf.RoundToInt(25f * scale) };
+        openingTitleStyle = new GUIStyle(centeredTitleStyle);
+        centeredBodyStyle = new GUIStyle(bodyStyle) { alignment = TextAnchor.MiddleCenter, wordWrap = true, fontSize = Mathf.RoundToInt(16f * scale) };
+        openingBodyStyle = new GUIStyle(centeredBodyStyle);
+        worldMapRoomStyle = new GUIStyle(centeredBodyStyle) { fontSize = Mathf.RoundToInt(10f * scale), wordWrap = true, fontStyle = FontStyle.Bold };
+        worldMapStateStyle = new GUIStyle(smallStyle) { fontSize = Mathf.RoundToInt(9f * scale), alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+        worldMapObjectiveStyle = new GUIStyle(centeredBodyStyle) { fontSize = Mathf.RoundToInt(11f * scale), wordWrap = false };
+        worldMapInstructionStyle = new GUIStyle(smallStyle) { alignment = TextAnchor.MiddleCenter };
+        controlHintStyle = new GUIStyle(smallStyle) { alignment = TextAnchor.MiddleCenter };
+        offscreenTargetStyle = new GUIStyle(centeredBodyStyle) { fontSize = Mathf.RoundToInt(13f * scale), fontStyle = FontStyle.Bold };
+        finalBossLabelStyle = new GUIStyle(titleStyle) { alignment = TextAnchor.MiddleCenter, fontSize = Mathf.RoundToInt(14f * scale), normal = { textColor = new Color(1f, 0.73f, 0.86f) } };
+        memoryStyle = new GUIStyle(bodyStyle) { wordWrap = true, alignment = TextAnchor.UpperLeft };
+    }
+}
