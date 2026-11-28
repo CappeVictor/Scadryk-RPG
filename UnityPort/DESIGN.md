@@ -2,6 +2,8 @@
 
 ## Revisão de estado (28/11/2026; branch `codex/unity-playable-phase-maps`)
 
+**Ritmo de avisos de ataque (28/11/2026, código `2398764`):** o escalonador agora espaça o início dos ataques inimigos em 0,75 s, acima do windup mínimo de 0,7 s. Com windups comuns de até 1,1 s, a regra evita que três preparações se acumulem e ainda deixa ataques longos de papéis diferentes se sobreporem uma vez. O smoke atualizado compilou, mas não foi executado; legibilidade e dificuldade ainda precisam de observação em gameplay.
+
 **Calibração da mira (28/11/2026, código `0c9f0f4`):** o painel de opções mostra o eixo vertical convertido para a mesma direção usada pela mira twin-stick. Extraí a conversão para um método comum, evitando que a calibração reporte `Y+` enquanto a mira aponta para baixo. Unity batch e build Windows passaram; o smoke compilou, mas não foi executado, e a interface não foi aberta para inspeção visual.
 
 **Detecção de atividade do controle (28/11/2026, código `48e2ace`):** aim e detecção de dispositivo agora compartilham o corte de 5% da faixa filtrada. Isso elimina a divergência em que um analógico já movia a mira, mas a interface ainda identificava teclado/mouse até um desvio maior. Unity batch e build Windows passaram; as novas asserções do smoke ainda não foram executadas nem a resposta foi conferida em controle físico.
