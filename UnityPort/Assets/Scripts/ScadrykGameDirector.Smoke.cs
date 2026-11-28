@@ -765,7 +765,9 @@ public sealed partial class ScadrykGameDirector
             enemyWarningsMeetReactionFloor &= ScadrykEnemyHealth.AttackWindupDuration(true, biome, 0) >= ScadrykEnemyHealth.MinimumAttackWarningDuration;
         }
         for (int stage = 1; stage <= 3; stage++)
-            enemyWarningsMeetReactionFloor &= ScadrykEnemyHealth.FinalBossWindupDuration(stage) >= ScadrykEnemyHealth.MinimumAttackWarningDuration;
+            enemyWarningsMeetReactionFloor &= ScadrykEnemyHealth.FinalBossWindupDuration(stage) >= ScadrykEnemyHealth.MinimumAttackWarningDuration &&
+                ScadrykEnemyHealth.FinalStarfallWarningDuration(stage) >=
+                    ScadrykEnemyHealth.FinalBossWindupDuration(stage) + ScadrykEnemyHealth.FinalStarfallImpactDelay;
         if (!enemyWarningsMeetReactionFloor ||
             ScadrykEnemyHealth.ThreatDirectionArrow(Vector2.zero, Vector2.right) != "→" ||
             ScadrykEnemyHealth.ThreatDirectionArrow(Vector2.zero, new Vector2(1f, 1f)) != "↗" ||

@@ -8,6 +8,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     internal const float FinalWaveOuterRadius = 6.7f;
     internal const float FinalWaveSafeRadius = 2.2f;
     internal const float FinalStarfallRadius = 1.75f;
+    internal const float FinalStarfallImpactDelay = 0.46f;
     private const float FinalVolleyAngleStep = 0.19f;
     private const float FinalVolleyLength = 7.2f;
     private const float FinalVolleySpeed = 7.1f;
@@ -44,6 +45,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         _ => 1.1f
     };
     internal static float FinalBossWindupDuration(int stage) => Mathf.Clamp(stage, 1, 3) == 3 ? 1.18f : 1.35f;
+    internal static float FinalStarfallWarningDuration(int stage) => FinalBossWindupDuration(stage) + FinalStarfallImpactDelay;
     internal static float SaltExposureDuration(bool boss, bool echo) => boss ? (echo ? 4f : 3f) : (echo ? 7f : 5f);
     internal static float TidePushStrength(bool echo) => echo ? 7.2f : 5.5f;
     internal static float TidePushDuration(bool echo) => echo ? 0.31f : 0.24f;
@@ -605,7 +607,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         {
             float diameter = FinalStarfallVisualDiameter;
             TrackAttackWarning(ScadrykEffects.Voidburst(attackTarget, diameter, windup, true));
-            TrackAttackWarning(ScadrykEffects.Ring(attackTarget, diameter, warning, windup + 0.46f, true));
+            TrackAttackWarning(ScadrykEffects.Ring(attackTarget, diameter, warning, FinalStarfallWarningDuration(stage), true));
             if (stage > 1)
             {
                 Vector2 direction = (attackTarget - origin).normalized;
@@ -713,7 +715,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
 
     private System.Collections.IEnumerator ResolveStarfall(Vector2 target)
     {
-        yield return new WaitForSeconds(0.46f);
+        yield return new WaitForSeconds(FinalStarfallImpactDelay);
         if (dead) yield break;
         ScadrykEffects.Voidburst(target, FinalStarfallVisualDiameter, 0.38f);
         if (player != null && FinalStarfallHits(player.transform.position, target))
