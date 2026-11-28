@@ -407,7 +407,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
             if (!WithinVisualFootprint(enemy.transform.position, transform.position, direction, ScadrykEffects.PlayerSlashForwardOffset, footprint, EnemyCollisionRadius(enemy))) continue;
             if (ScadrykCombatRules.WorldBlocks(transform.position, enemy.transform.position)) continue;
             enemy.TakeDamage(damage);
-            if (comboStep == BasicAttackComboLength - 1) enemy.ApplyBasicFinisherStagger(direction);
+            if (comboStep == BasicAttackComboLength - 1) enemy.ApplyBasicFinisherStagger(transform.position, direction);
             hitEnemy = true;
         }
         if (hitEnemy) ScadrykAudio.Play(comboStep == BasicAttackComboLength - 1 ? ScadrykCue.PlayerFinisher : ScadrykCue.PlayerStrike);

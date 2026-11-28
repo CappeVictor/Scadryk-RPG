@@ -824,16 +824,18 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         }
     }
 
-    internal static Vector2 BasicFinisherKnockbackVelocity(Vector2 direction)
+    internal static Vector2 BasicFinisherKnockbackVelocity(Vector2 targetPosition, Vector2 sourcePosition, Vector2 attackDirection)
     {
+        Vector2 direction = targetPosition - sourcePosition;
+        if (direction.sqrMagnitude < 0.001f) direction = attackDirection;
         if (direction.sqrMagnitude < 0.001f) return Vector2.zero;
         return direction.normalized * BasicFinisherKnockbackSpeed;
     }
 
-    public void ApplyBasicFinisherStagger(Vector2 direction)
+    public void ApplyBasicFinisherStagger(Vector2 sourcePosition, Vector2 attackDirection)
     {
         if (dead || IsBoss) return;
-        knockbackVelocity = BasicFinisherKnockbackVelocity(direction);
+        knockbackVelocity = BasicFinisherKnockbackVelocity(transform.position, sourcePosition, attackDirection);
         knockbackUntil = Mathf.Max(knockbackUntil, Time.time + BasicFinisherKnockbackDuration);
         staggerUntil = Mathf.Max(staggerUntil, Time.time + 0.24f);
         if (!isWindup) return;
