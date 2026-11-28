@@ -120,6 +120,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private int finalAttackIndex;
     private int queuedFinalPattern;
     private int queuedFinalStage;
+    private int previousFinalPattern = -1;
     private string lastAttackReadabilityLabel;
     private bool pendingFinalStageBreather;
     private float finalStageBreatherUntil;
@@ -159,6 +160,16 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         1 => ScadrykCue.FinalStarfallWarning,
         _ => ScadrykCue.FinalWaveWarning
     };
+
+    internal static int SelectFinalBossPattern(int stage, int attackIndex, int previousPattern)
+    {
+        int clampedStage = Mathf.Clamp(stage, 1, 3);
+        int patternCount = clampedStage == 1 ? 2 : 3;
+        int pattern = (Mathf.Max(0, attackIndex) + clampedStage - 1) % patternCount;
+        if (patternCount > 1 && pattern == previousPattern)
+            pattern = (pattern + 1) % patternCount;
+        return pattern;
+    }
 
     internal static string AttackReadabilityLabel(int biome, bool boss, bool finalBoss, int role, int finalPattern, int finalStage)
     {
@@ -548,7 +559,8 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     {
         queuedFinalStage = FinalStage;
         int stage = queuedFinalStage;
-        queuedFinalPattern = finalAttackIndex % (stage == 1 ? 2 : 3);
+        queuedFinalPattern = SelectFinalBossPattern(stage, finalAttackIndex, previousFinalPattern);
+        previousFinalPattern = queuedFinalPattern;
         lastAttackReadabilityLabel = AttackReadabilityLabel(biomeIndex, IsBoss, true, combatRole, queuedFinalPattern, queuedFinalStage);
         ScadrykAudio.Play(FinalBossPatternWarningCue(queuedFinalPattern));
         lastAttackStartedAt = Time.time;

@@ -606,6 +606,16 @@ public sealed partial class ScadrykGameDirector
         ScadrykCue areaCue = ScadrykEnemyHealth.WarningCueFor(0, false, false, 2);
         ScadrykCue supportCue = ScadrykEnemyHealth.WarningCueFor(0, false, false, 3);
         ScadrykAudio audio = GetComponent<ScadrykAudio>();
+        int phaseOneLast = ScadrykEnemyHealth.SelectFinalBossPattern(1, 3, 0);
+        int phaseTwoFirst = ScadrykEnemyHealth.SelectFinalBossPattern(2, 4, phaseOneLast);
+        int phaseThreeFirst = ScadrykEnemyHealth.SelectFinalBossPattern(3, 7, phaseTwoFirst);
+        if (phaseOneLast != 1 || phaseOneLast == phaseTwoFirst || phaseTwoFirst == phaseThreeFirst ||
+            ScadrykEnemyHealth.SelectFinalBossPattern(1, 0, -1) != 0 ||
+            ScadrykEnemyHealth.SelectFinalBossPattern(1, 1, 0) != 1 ||
+            ScadrykEnemyHealth.SelectFinalBossPattern(2, 0, -1) > 2 ||
+            ScadrykEnemyHealth.SelectFinalBossPattern(3, 0, 1) == 1)
+        { SmokeFail("A sequência do Arauto deve apresentar padrões distintos sem repetir golpe ao trocar de fase"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: o Arauto alterna padrões e não repete o golpe na transição de fase");
         if (laneCue == volleyCue || laneCue == areaCue || laneCue == supportCue || volleyCue == areaCue || volleyCue == supportCue || areaCue == supportCue ||
             ScadrykEnemyHealth.WarningCueFor(0, true, false, 0) != laneCue ||
             ScadrykEnemyHealth.WarningCueFor(1, true, false, 0) != volleyCue ||
