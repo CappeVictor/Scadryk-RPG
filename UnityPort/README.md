@@ -10,7 +10,7 @@ Registro de builds, teste de progressão e roteiro de avaliação com jogadores:
 
 **Visão geral:** aventura top-down original com três biomas, nove salas conectadas, guardiões, três poderes de combate e exploração, o superchefe Arauto do Vazio e uma história sobre Nara e os Ecos. Consulte [Progressão e mapa](#progressão-e-mapa) para entender a campanha e [Menu, opções e áudio](#menu-opções-e-áudio) para os recursos do jogo.
 
-**Validação atual (28/11/2026):** Unity `6000.6.9f1` importou e compilou os scripts em batch; `Tools/Validate-Resources.ps1` confirmou 36 referências e 51 texturas GPU-only. No Arauto, a seleção de golpes agora evita repetição imediata, inclusive na troca de fase; a verificação foi acrescentada ao smoke, compilado sem ser executado. `Tools/build-windows.ps1` registrou `Build Finished, Result: Success` para `5f48bcf11172`; `Build/SCADRYK_BUILD_INFO.txt` marca árvore limpa, zero caminhos alterados e `2026-11-28T00:55:35Z`. Não iniciei nenhum player nem entrei em Play Mode. Faltam a validação da progressão em runtime, inspeção visual/sonora e avaliação com jogadores. O CI Unity ainda depende dos secrets de licença adiados. Há um `.meta` local de arte de título fora do commit; foi preservado.
+**Validação atual (28/11/2026):** Unity `6000.6.9f1` importou e compilou os scripts em batch; `Tools/Validate-Resources.ps1` confirmou 36 referências e 51 texturas GPU-only. O Atirador agora se reposiciona lateralmente em baixa velocidade quando está na faixa segura; o smoke recebeu checagens para a direção e os limites desse movimento, mas não foi executado. O Arauto evita repetir o golpe anterior, inclusive na troca de fase; essas checagens de sequência também foram compiladas sem execução. `Tools/build-windows.ps1` registrou `Build Finished, Result: Success` para `f8e4b32d3069`; `Build/SCADRYK_BUILD_INFO.txt` marca árvore limpa, zero caminhos alterados e `2026-11-28T01:00:31Z`. Não iniciei nenhum player nem entrei em Play Mode. Faltam a validação da progressão em runtime, inspeção visual/sonora e avaliação com jogadores. O CI Unity ainda depende dos secrets de licença adiados. Há um `.meta` local de arte de título fora do commit; foi preservado.
 
 ## Comece aqui
 
@@ -20,6 +20,8 @@ Registro de builds, teste de progressão e roteiro de avaliação com jogadores:
 - [Progressão, biomas e mapa](#progressão-e-mapa)
 
 ## Destaques implementados
+
+O Atirador dos Ecos avança ou recua para manter sua distância e agora circula lateralmente entre disparos; cada instância escolhe um lado estável. Esse reposicionamento usa 42% da velocidade de caminhada, para dar movimento sem substituir os sinais de preparação do ataque. O Tecelão continua mantendo a distância sem essa órbita enquanto procura apoiar seus aliados.
 
 Ao morrer, Nara retorna ao início da sala com a vida restaurada. A mensagem confirma que poderes e memórias continuam preservados. Ao entrar em qualquer sala, mira travada e comandos de poderes que aguardavam recarga são limpos; os cooldowns que ainda correm continuam valendo entre salas. Nara reaparece voltada ao portal de saída, para orientar a retomada. O smoke verifica a mensagem, a orientação e as métricas preservadas; ainda falta executar o smoke e confirmar a recuperação em uma sessão de jogo.
 
