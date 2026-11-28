@@ -609,7 +609,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         if (follow != null) follow.Shake(strength, 0.24f);
     }
 
-    public void RestoreHealth(float amount) => health = Mathf.Min(maxHealth, health + Mathf.Max(0f, amount));
+    public void RestoreHealth(float amount) => health = ScadrykCombatRules.ApplyHealing(health, maxHealth, amount);
     public void ResetAbilities()
     {
         System.Array.Clear(learnedAbilities, 0, learnedAbilities.Length);

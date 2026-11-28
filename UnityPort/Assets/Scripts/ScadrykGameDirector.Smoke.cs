@@ -465,6 +465,17 @@ public sealed partial class ScadrykGameDirector
             ScadrykCombatRules.IsValidDamageAmount(float.PositiveInfinity) || ScadrykCombatRules.IsValidDamageAmount(float.NegativeInfinity))
         { SmokeFail("Entrada de dano zero, negativa ou não finita não foi rejeitada antes de alterar vida/reações"); yield break; }
         Debug.Log("SCADRYK_SMOKE: dano zero, negativo e não finito é rejeitado antes da reação de impacto");
+        if (ScadrykCombatRules.ApplyHealing(40f, 100f, 15f) != 55f ||
+            ScadrykCombatRules.ApplyHealing(95f, 100f, 10f) != 100f ||
+            ScadrykCombatRules.ApplyHealing(40f, 100f, 0f) != 40f ||
+            ScadrykCombatRules.ApplyHealing(40f, 100f, -1f) != 40f ||
+            ScadrykCombatRules.ApplyHealing(40f, 100f, float.NaN) != 40f ||
+            ScadrykCombatRules.ApplyHealing(40f, 100f, float.PositiveInfinity) != 40f ||
+            ScadrykCombatRules.ApplyHealing(40f, 100f, float.NegativeInfinity) != 40f ||
+            ScadrykCombatRules.ApplyHealing(float.NaN, 100f, 10f) != 10f ||
+            ScadrykCombatRules.ApplyHealing(40f, float.PositiveInfinity, 10f) != 0f)
+        { SmokeFail("Cura ultrapassa o limite de vida, aceita entrada inválida ou preserva uma vida corrompida"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: cura é finita, positiva e limitada à vida máxima");
         if (!SmokeCoverBlocksOnlyWhenSolid())
         { SmokeFail("Cobertura não bloqueia poderes direcionais ou gatilhos bloqueiam poderes circulares"); yield break; }
         Debug.Log("SCADRYK_SMOKE: cobertura interrompe golpes direcionais, não o Estouro circular, e gatilhos não bloqueiam");

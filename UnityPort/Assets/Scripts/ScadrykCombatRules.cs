@@ -10,6 +10,16 @@ public static class ScadrykCombatRules
     internal static bool IsValidDamageAmount(float amount) =>
         amount > 0f && !float.IsNaN(amount) && !float.IsInfinity(amount);
 
+    internal static float ApplyHealing(float currentHealth, float maximumHealth, float amount)
+    {
+        if (!IsValidDamageAmount(maximumHealth)) return 0f;
+        float boundedHealth = float.IsNaN(currentHealth) || float.IsInfinity(currentHealth)
+            ? 0f
+            : Mathf.Clamp(currentHealth, 0f, maximumHealth);
+        if (!IsValidDamageAmount(amount)) return boundedHealth;
+        return Mathf.Min(maximumHealth, boundedHealth + amount);
+    }
+
     private static ContactFilter2D CreateWorldQueryFilter()
     {
         var filter = new ContactFilter2D();

@@ -846,7 +846,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         return false;
     }
 
-    private void Heal(float amount) { health = Mathf.Min(maxHealth, health + amount); }
+    private void Heal(float amount) { health = ScadrykCombatRules.ApplyHealing(health, maxHealth, amount); }
 
     public void ApplyCrescentControl()
     {
