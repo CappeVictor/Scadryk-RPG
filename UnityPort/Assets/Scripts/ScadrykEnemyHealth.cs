@@ -19,6 +19,8 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     internal const float FinalStageBreatherDuration = 0.9f;
     internal const float FinalStageAttackDelay = 3.1f;
     internal const float MinimumAttackWarningDuration = 0.7f;
+    internal const float BasicFinisherKnockbackSpeed = 3.2f;
+    internal const float BasicFinisherKnockbackDuration = 0.12f;
     internal const float AreaPulseRadius = 3.2f;
     internal const float SaltPulseRadius = 3.65f;
     internal const float CoastalPulseRadius = 2.8f;
@@ -822,9 +824,17 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         }
     }
 
-    public void ApplyBasicFinisherStagger()
+    internal static Vector2 BasicFinisherKnockbackVelocity(Vector2 direction)
+    {
+        if (direction.sqrMagnitude < 0.001f) return Vector2.zero;
+        return direction.normalized * BasicFinisherKnockbackSpeed;
+    }
+
+    public void ApplyBasicFinisherStagger(Vector2 direction)
     {
         if (dead || IsBoss) return;
+        knockbackVelocity = BasicFinisherKnockbackVelocity(direction);
+        knockbackUntil = Mathf.Max(knockbackUntil, Time.time + BasicFinisherKnockbackDuration);
         staggerUntil = Mathf.Max(staggerUntil, Time.time + 0.24f);
         if (!isWindup) return;
         ClearAttackWarnings();

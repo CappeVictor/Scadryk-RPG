@@ -696,6 +696,9 @@ public sealed partial class ScadrykGameDirector
             ScadrykPlayerController.BasicAttackRangeScale(2) <= ScadrykPlayerController.BasicAttackRangeScale(1) ||
             ScadrykPlayerController.BasicAttackCooldownScale(2) <= ScadrykPlayerController.BasicAttackCooldownScale(1) ||
             ScadrykPlayerController.BasicAttackWindupForStep(2) <= ScadrykPlayerController.BasicAttackWindupForStep(1) ||
+            Mathf.Abs(ScadrykEnemyHealth.BasicFinisherKnockbackVelocity(Vector2.right).magnitude - ScadrykEnemyHealth.BasicFinisherKnockbackSpeed) > 0.001f ||
+            ScadrykEnemyHealth.BasicFinisherKnockbackVelocity(Vector2.zero).sqrMagnitude > 0.001f ||
+            ScadrykEnemyHealth.BasicFinisherKnockbackDuration <= 0f ||
             ScadrykPlayerController.DashBufferCanStart(1.1f, 1.3f, 1.2f) ||
             !ScadrykPlayerController.DashBufferCanStart(1.21f, 1.3f, 1.2f) ||
             ScadrykPlayerController.DashBufferCanStart(1.31f, 1.3f, 1.2f) ||
