@@ -1310,6 +1310,14 @@ public sealed partial class ScadrykGameDirector
                 GUI.color = Color.white;
                 GUI.Label(new Rect(card.x + 3f, card.y + 3f, card.width - 6f, card.height * 0.5f),
                     CachedMapRoomContent(phase, room), worldMapRoomStyle);
+                if (TryGetSideRoute(phase, room, out int routeSide, out _, out _))
+                {
+                    int requiredPower = PowerGrantedBySecretAt(phase, room);
+                    bool hasSeal = requiredPower >= 0;
+                    bool sealFound = hasSeal && !smokeRun && IsWorldSecretRevealed("Scadryk.", phase, room);
+                    bool sealAvailable = hasSeal && player != null && player.HasAbility(requiredPower);
+                    DrawWorldMapSideRoute(card, routeSide, state, hasSeal, sealFound, sealAvailable, PhaseAccentColors[phase]);
+                }
                 string stateLabel = state == 1 ? "VOCÊ ESTÁ AQUI" : state == 2 ? "CONCLUÍDA" : state == 3 ? "SELADO" : "ADIANTE";
                 GUI.color = state == 1 ? new Color(0.55f, 1f, 0.94f) : state == 2 ? new Color(0.62f, 0.9f, 0.68f) :
                     state == 3 ? new Color(0.68f, 0.52f, 0.36f) : new Color(0.7f, 0.73f, 0.71f);
@@ -1328,6 +1336,44 @@ public sealed partial class ScadrykGameDirector
         worldMapInstructionStyle.fontSize = Mathf.Min(smallStyle.fontSize, 12);
         GUI.Label(new Rect(panel.x + 16f, panel.yMax - 29f, panel.width - 32f, 18f),
             "M · L3 · Esc · Start para voltar", worldMapInstructionStyle);
+        GUI.color = Color.white;
+    }
+
+    private static void DrawWorldMapSideRoute(Rect card, int side, int roomState, bool hasSeal,
+        bool sealFound, bool sealAvailable, Color biomeAccent)
+    {
+        float scale = Mathf.Clamp(ScadrykSettings.TextScale, 1f, 1.5f);
+        if (card.width < 54f || card.height < 110f) return;
+
+        float centerY = card.y + card.height * 0.66f;
+        float centerX = card.center.x;
+        float margin = Mathf.Min(18f * scale, card.width * 0.16f);
+        float stroke = Mathf.Max(2f, 2f * scale);
+        float branchLength = Mathf.Min(14f * scale, card.height * 0.09f);
+        float branchY = centerY - Mathf.Sign(side) * branchLength;
+        Color routeColor = !hasSeal ? biomeAccent : sealFound ? new Color(0.42f, 0.78f, 0.53f) :
+            sealAvailable ? new Color(1f, 0.76f, 0.34f) : new Color(0.58f, 0.49f, 0.37f);
+
+        GUI.color = new Color(0.48f, 0.55f, 0.55f, 0.9f);
+        GUI.DrawTexture(new Rect(card.x + margin, centerY - stroke * 0.5f, card.width - margin * 2f, stroke), Texture2D.whiteTexture);
+        GUI.color = routeColor;
+        float top = Mathf.Min(centerY, branchY);
+        GUI.DrawTexture(new Rect(centerX - stroke * 0.5f, top, stroke, Mathf.Abs(branchY - centerY)), Texture2D.whiteTexture);
+
+        float markerSize = (hasSeal ? 9f : 6f) * scale;
+        Rect marker = new Rect(centerX - markerSize * 0.5f, branchY - markerSize * 0.5f, markerSize, markerSize);
+        if (hasSeal)
+        {
+            DrawMiniMapDiamond(marker);
+            if (!sealFound)
+            {
+                GUI.color = WorldMapRoomColor(roomState);
+                float inset = 2f * scale;
+                DrawMiniMapDiamond(new Rect(marker.x + inset, marker.y + inset,
+                    marker.width - inset * 2f, marker.height - inset * 2f));
+            }
+        }
+        else GUI.DrawTexture(marker, Texture2D.whiteTexture);
         GUI.color = Color.white;
     }
 
