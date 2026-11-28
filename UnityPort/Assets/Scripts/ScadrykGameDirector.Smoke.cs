@@ -1153,8 +1153,8 @@ public sealed partial class ScadrykGameDirector
         Vector2 telegraphDirection = ScadrykEnemyHealth.AnnouncedAttackDirection(new Vector2(1f, 1f), new Vector2(4f, 5f));
         if ((telegraphDirection - new Vector2(0.6f, 0.8f)).sqrMagnitude > 0.001f ||
             (ScadrykEnemyHealth.AnnouncedAttackDirection(Vector2.one, Vector2.one) - Vector2.up).sqrMagnitude > 0.001f)
-        { SmokeFail("A pose de impacto não segue a mira anunciada ou não resolve a direção nula"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: pose de impacto aponta para a mesma posição anunciada no telegráfico");
+        { SmokeFail("A pose ou a trajetória do ataque diverge da direção anunciada ou não trata um alvo coincidente"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: pose, avisos e trajetórias compartilham fallback quando alvo e origem coincidem");
         if (!ScadrykPlayerController.WithinVisualFootprint(new Vector2(3.09f, 0f), Vector2.zero, Vector2.right, 1.05f, new Vector2(4.1f, 2.8f)) ||
             ScadrykPlayerController.WithinVisualFootprint(new Vector2(3.11f, 0f), Vector2.zero, Vector2.right, 1.05f, new Vector2(4.1f, 2.8f)) ||
             !ScadrykPlayerController.WithinVisualFootprint(new Vector2(6.39f, 0f), Vector2.zero, Vector2.right, 2.7f, new Vector2(7.4f, 4.4f)) ||

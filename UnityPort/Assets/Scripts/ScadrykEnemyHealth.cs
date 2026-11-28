@@ -546,7 +546,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             TrackAttackWarning(ScadrykEffects.Ring(origin, BellPulseDiameter, warning, windup, true));
         else if (IsBoss && biomeIndex == 1)
         {
-            Vector2 direction = (attackTarget - origin).normalized;
+            Vector2 direction = AnnouncedAttackDirection(origin, attackTarget);
             float length = CrystalVolleyLength(origin, attackTarget);
             for (int i = -1; i <= 1; i++)
             {
@@ -558,7 +558,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         }
         else
         {
-            Vector2 direction = (attackTarget - origin).normalized;
+            Vector2 direction = AnnouncedAttackDirection(origin, attackTarget);
             Vector2 end = !IsBoss && combatRole == 0 ? origin + direction * 3.3f :
                 IsBoss && biomeIndex == 0 ? origin + direction * Mathf.Clamp(Vector2.Distance(origin, attackTarget) + 1.25f, 2.8f, 7.2f) : attackTarget;
             float telegraphThickness = !IsBoss && combatRole == 0 ? 0.86f :
@@ -587,7 +587,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         Color warning = stage == 1 ? new Color(0.62f, 0.9f, 0.42f, 0.82f) : stage == 2 ? new Color(1f, 0.72f, 0.32f, 0.82f) : new Color(0.98f, 0.26f, 0.62f, 0.85f);
         if (queuedFinalPattern == 0)
         {
-            Vector2 direction = (attackTarget - origin).normalized;
+            Vector2 direction = AnnouncedAttackDirection(origin, attackTarget);
             int halfCount = FinalVolleyHalfCount(stage);
             for (int i = -halfCount; i <= halfCount; i++)
             {
@@ -604,7 +604,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             TrackAttackWarning(ScadrykEffects.Ring(attackTarget, diameter, warning, FinalStarfallWarningDuration(stage), true));
             if (stage > 1)
             {
-                Vector2 direction = (attackTarget - origin).normalized;
+                Vector2 direction = AnnouncedAttackDirection(origin, attackTarget);
                 int count = FinalStarfallSideProjectileCount(stage);
                 for (int i = 0; i < count; i++)
                 {
@@ -668,7 +668,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         Vector2 origin = transform.position;
         if (pattern == 0)
         {
-            Vector2 direction = (attackTarget - origin).normalized;
+            Vector2 direction = AnnouncedAttackDirection(origin, attackTarget);
             int halfCount = FinalVolleyHalfCount(stage);
             Sprite shot = stage == 1 ? ScadrykEffects.RootThrustSprite : stage == 2 ? ScadrykEffects.SaltShardSprite : ScadrykEffects.VoidburstSprite;
             Color color = stage == 1 ? new Color(0.66f, 1f, 0.52f) : stage == 2 ? new Color(1f, 0.84f, 0.5f) : new Color(1f, 0.72f, 0.92f);
@@ -738,7 +738,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private void ResolveRootThrust()
     {
         Vector2 start = transform.position;
-        Vector2 direction = (attackTarget - start).normalized;
+        Vector2 direction = AnnouncedAttackDirection(start, attackTarget);
         float length = IsBoss ? Mathf.Clamp(Vector2.Distance(start, attackTarget) + 1.25f, 2.8f, 7.2f) : 3.3f;
         float width = IsBoss ? 1.4f : 0.86f;
         Vector2 end = start + direction * length;
@@ -766,7 +766,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
 
     private void ResolveCrystalVolley()
     {
-        Vector2 direction = ((Vector2)attackTarget - (Vector2)transform.position).normalized;
+        Vector2 direction = AnnouncedAttackDirection(transform.position, attackTarget);
         int shardCount = IsBoss ? 3 : 1;
         float spread = IsBoss ? 0.32f : 0f;
         float speed = IsBoss ? 7.5f : 6.7f;
@@ -944,7 +944,8 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             else BeginFinalStageBreather();
             if (director != null) director.ShowBossStage(FinalStage);
         }
-        if (animator != null) animator.PlayHit(player != null ? ((Vector2)transform.position - (Vector2)player.transform.position).normalized : Vector2.up);
+        if (animator != null) animator.PlayHit(player != null ?
+            AnnouncedAttackDirection(player.transform.position, transform.position) : Vector2.up);
         if (health <= 0f)
         {
             ClearAttackWarnings();
