@@ -1557,18 +1557,23 @@ public sealed partial class ScadrykGameDirector
             if (optionsSelection == 8) DrawSelection(new Rect(x + 10f, y + 358f, width - 20f, 42f));
             float displayRowX = x + 15f;
             float displayRowWidth = width - 30f;
+            float sliderReadoutWidth = width >= 330f ? 44f : 0f;
+            float optionSliderWidth = width - 215f - (sliderReadoutWidth > 0f ? sliderReadoutWidth + 10f : 0f);
             float fullscreenWidth = (displayRowWidth - 8f) * 0.56f;
             Rect fullscreenRect = new Rect(displayRowX, y + 402f, fullscreenWidth, 36f);
             Rect frameRateRect = new Rect(displayRowX + fullscreenWidth + 8f, y + 402f,
                 displayRowWidth - fullscreenWidth - 8f, 36f);
             if (optionsSelection == 9) DrawSelection(new Rect(fullscreenRect.x - 5f, fullscreenRect.y - 4f, fullscreenRect.width + 10f, fullscreenRect.height + 8f));
             GUI.Label(new Rect(x + 15f, y + 125f, 170f, 28f), "Música", bodyStyle);
-            ScadrykSettings.MusicVolume = GUI.HorizontalSlider(new Rect(x + 195f, y + 135f, width - 215f, 24f), ScadrykSettings.MusicVolume, 0f, 1f);
+            ScadrykSettings.MusicVolume = GUI.HorizontalSlider(new Rect(x + 195f, y + 135f, optionSliderWidth, 24f), ScadrykSettings.MusicVolume, 0f, 1f);
+            if (sliderReadoutWidth > 0f) GUI.Label(new Rect(x + width - sliderReadoutWidth - 12f, y + 125f, sliderReadoutWidth, 28f), Mathf.RoundToInt(ScadrykSettings.MusicVolume * 100f) + "%", smallStyle);
             GUI.Label(new Rect(x + 15f, y + 175f, 170f, 28f), "Efeitos", bodyStyle);
-            ScadrykSettings.EffectsVolume = GUI.HorizontalSlider(new Rect(x + 195f, y + 185f, width - 215f, 24f), ScadrykSettings.EffectsVolume, 0f, 1f);
+            ScadrykSettings.EffectsVolume = GUI.HorizontalSlider(new Rect(x + 195f, y + 185f, optionSliderWidth, 24f), ScadrykSettings.EffectsVolume, 0f, 1f);
+            if (sliderReadoutWidth > 0f) GUI.Label(new Rect(x + width - sliderReadoutWidth - 12f, y + 175f, sliderReadoutWidth, 28f), Mathf.RoundToInt(ScadrykSettings.EffectsVolume * 100f) + "%", smallStyle);
             GUI.Label(new Rect(x + 15f, y + 225f, 170f, 28f), "Tamanho do texto", bodyStyle);
-            float scale = GUI.HorizontalSlider(new Rect(x + 195f, y + 235f, width - 215f, 24f), ScadrykSettings.TextScale, 1f, 1.5f);
+            float scale = GUI.HorizontalSlider(new Rect(x + 195f, y + 235f, optionSliderWidth, 24f), ScadrykSettings.TextScale, 1f, 1.5f);
             if (Mathf.Abs(scale - ScadrykSettings.TextScale) > 0.01f) { ScadrykSettings.TextScale = scale; titleStyle = null; }
+            if (sliderReadoutWidth > 0f) GUI.Label(new Rect(x + width - sliderReadoutWidth - 12f, y + 225f, sliderReadoutWidth, 28f), Mathf.RoundToInt(ScadrykSettings.TextScale * 100f) + "%", smallStyle);
             ScadrykSettings.ReduceFlash = GUI.Toggle(new Rect(x + 15f, y + 285f, width - 30f, 34f), ScadrykSettings.ReduceFlash, "Reduzir flashes e rastros");
             ScadrykSettings.ReduceShake = GUI.Toggle(new Rect(x + 15f, y + 325f, width - 30f, 34f), ScadrykSettings.ReduceShake, "Desligar tremor de câmera");
             ScadrykSettings.HighContrastWarnings = GUI.Toggle(new Rect(x + 15f, y + 365f, width - 30f, 34f), ScadrykSettings.HighContrastWarnings, "Alto contraste nos avisos de perigo");
@@ -1674,17 +1679,21 @@ public sealed partial class ScadrykGameDirector
         const float left = 12f;
         float labelWidth = Mathf.Clamp(width * 0.42f, 88f, 146f);
         float sliderX = left + labelWidth + 10f;
-        float sliderWidth = Mathf.Max(48f, width - sliderX - 16f);
+        float valueWidth = width >= 270f ? 44f : 0f;
+        float sliderWidth = Mathf.Max(48f, width - sliderX - 16f - (valueWidth > 0f ? valueWidth + 10f : 0f));
         DrawCompactOptionSelection(3, 10f, 48f, width);
         GUI.Label(new Rect(left, 16f, labelWidth, 28f), "Música", bodyStyle);
         ScadrykSettings.MusicVolume = GUI.HorizontalSlider(new Rect(sliderX, 18f, sliderWidth, 24f), ScadrykSettings.MusicVolume, 0f, 1f);
+        if (valueWidth > 0f) GUI.Label(new Rect(sliderX + sliderWidth + 6f, 16f, valueWidth, 28f), Mathf.RoundToInt(ScadrykSettings.MusicVolume * 100f) + "%", smallStyle);
         DrawCompactOptionSelection(4, 62f, 48f, width);
         GUI.Label(new Rect(left, 68f, labelWidth, 28f), "Efeitos", bodyStyle);
         ScadrykSettings.EffectsVolume = GUI.HorizontalSlider(new Rect(sliderX, 70f, sliderWidth, 24f), ScadrykSettings.EffectsVolume, 0f, 1f);
+        if (valueWidth > 0f) GUI.Label(new Rect(sliderX + sliderWidth + 6f, 68f, valueWidth, 28f), Mathf.RoundToInt(ScadrykSettings.EffectsVolume * 100f) + "%", smallStyle);
         DrawCompactOptionSelection(5, 114f, 48f, width);
         GUI.Label(new Rect(left, 120f, labelWidth, 28f), "Escala do texto", bodyStyle);
         float textScale = GUI.HorizontalSlider(new Rect(sliderX, 122f, sliderWidth, 24f), ScadrykSettings.TextScale, 1f, 1.5f);
         if (Mathf.Abs(textScale - ScadrykSettings.TextScale) > 0.01f) { ScadrykSettings.TextScale = textScale; titleStyle = null; }
+        if (valueWidth > 0f) GUI.Label(new Rect(sliderX + sliderWidth + 6f, 120f, valueWidth, 28f), Mathf.RoundToInt(ScadrykSettings.TextScale * 100f) + "%", smallStyle);
 
         DrawCompactOptionSelection(6, 176f, 40f, width);
         ScadrykSettings.ReduceFlash = GUI.Toggle(new Rect(left, 179f, width - 24f, 34f), ScadrykSettings.ReduceFlash, "Reduzir flashes e rastros");
