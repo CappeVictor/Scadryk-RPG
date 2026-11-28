@@ -56,9 +56,61 @@ public sealed partial class ScadrykGameDirector
         }
     }
 
+    private static bool SmokeSettingsPreferenceNormalization()
+    {
+        string[] keys = { "Scadryk.Music", "Scadryk.Effects", "Scadryk.GamepadDeadzone", "Scadryk.TextScale" };
+        var existed = new bool[keys.Length];
+        var values = new float[keys.Length];
+        for (int i = 0; i < keys.Length; i++)
+        {
+            existed[i] = PlayerPrefs.HasKey(keys[i]);
+            values[i] = PlayerPrefs.GetFloat(keys[i]);
+        }
+
+        try
+        {
+            PlayerPrefs.SetFloat(keys[0], float.NaN);
+            PlayerPrefs.SetFloat(keys[1], float.PositiveInfinity);
+            PlayerPrefs.SetFloat(keys[2], float.NegativeInfinity);
+            PlayerPrefs.SetFloat(keys[3], float.PositiveInfinity);
+            bool invalidReadsUseSafeValues =
+                ScadrykSettings.MusicVolume == ScadrykSettings.DefaultMusicVolume &&
+                ScadrykSettings.EffectsVolume == ScadrykSettings.DefaultEffectsVolume &&
+                ScadrykSettings.GamepadDeadzone == ScadrykSettings.DefaultGamepadDeadzone &&
+                ScadrykSettings.TextScale == 1f;
+
+            ScadrykSettings.MusicVolume = 0.1f;
+            ScadrykSettings.MusicVolume = float.NaN;
+            ScadrykSettings.EffectsVolume = 0.2f;
+            ScadrykSettings.EffectsVolume = float.PositiveInfinity;
+            ScadrykSettings.GamepadDeadzone = 0.35f;
+            ScadrykSettings.GamepadDeadzone = float.NegativeInfinity;
+            ScadrykSettings.TextScale = 1.4f;
+            ScadrykSettings.TextScale = float.NaN;
+            return invalidReadsUseSafeValues &&
+                Mathf.Abs(PlayerPrefs.GetFloat(keys[0]) - ScadrykSettings.DefaultMusicVolume) < 0.001f &&
+                Mathf.Abs(PlayerPrefs.GetFloat(keys[1]) - ScadrykSettings.DefaultEffectsVolume) < 0.001f &&
+                Mathf.Abs(PlayerPrefs.GetFloat(keys[2]) - ScadrykSettings.DefaultGamepadDeadzone) < 0.001f &&
+                Mathf.Abs(PlayerPrefs.GetFloat(keys[3]) - 1f) < 0.001f;
+        }
+        finally
+        {
+            for (int i = 0; i < keys.Length; i++)
+            {
+                if (existed[i]) PlayerPrefs.SetFloat(keys[i], values[i]);
+                else PlayerPrefs.DeleteKey(keys[i]);
+            }
+            PlayerPrefs.Save();
+            ScadrykSettings.FlushPendingSave();
+        }
+    }
+
     private IEnumerator SmokeCampaign()
     {
         yield return null;
+        if (!SmokeSettingsPreferenceNormalization())
+        { SmokeFail("As preferências salvas não recuperam valores padrão ou aceitam gravar NaN/infinito"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: preferências corrompidas usam padrões seguros, entradas não finitas não são salvas e dados originais são restaurados");
         if (!ScadrykPlayerController.CanMeasureTerrainExposure(false, false) ||
             ScadrykPlayerController.CanMeasureTerrainExposure(true, false) ||
             ScadrykPlayerController.CanMeasureTerrainExposure(false, true))
