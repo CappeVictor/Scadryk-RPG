@@ -10,10 +10,10 @@ function Assert-Condition([bool]$Condition, [string]$Message) {
     if (-not $Condition) { throw $Message }
 }
 
-function Invoke-Summary([string]$RatingsFile, [string]$SessionId) {
+function Invoke-Summary([string]$RatingsFile, [string]$SessionId, [string]$SessionsFile = 'sessions.csv') {
     $warnings = @()
     $parameters = @{
-        SessionsPath = Join-Path $fixtureRoot 'sessions.csv'
+        SessionsPath = Join-Path $fixtureRoot $SessionsFile
         RatingsPath = Join-Path $fixtureRoot $RatingsFile
         WarningVariable = 'warnings'
     }
@@ -31,6 +31,8 @@ try {
         'intermediate2,1,2,60,0,0,0,0,0,0,true,0,0,keyboard,0,0,0,4'
     )
     [IO.File]::WriteAllText((Join-Path $fixtureRoot 'sessions.csv'), ($sessionHeader + "`n" + ($sessionRows -join "`n") + "`n"), [Text.UTF8Encoding]::new($false))
+    $emptySessionIdPath = Join-Path $fixtureRoot 'empty-session-id.csv'
+    [IO.File]::WriteAllText($emptySessionIdPath, ($sessionHeader + "`n" + ',1,1,60,0,0,0,0,0,0,true,0,0,keyboard,0,0,0,7' + "`n"), [Text.UTF8Encoding]::new($false))
 
     $ratingHeader = 'session_id,experience,objectives,optional_secret,attack_readability,controls,power_use,combo_readability,environmental_mechanics,audio_mix,memory_readability,memory_audio,secret_audio,portal_readability,death_fairness,accessibility_options,reduced_flashes,reduced_shake,high_contrast_warnings,text_scaling,visual_warnings_without_audio'
     $ratingRows = @(
@@ -49,6 +51,10 @@ try {
     Assert-Condition ($partial.Output.Contains('Cobertura das avaliações')) 'A tabela de cobertura não foi impressa.'
     Assert-Condition ($partial.Output.Contains('accessibility_options') -and $partial.Output.Contains('reduced_flashes')) 'As avaliações de acessibilidade não foram incluídas nas médias.'
     Assert-Condition (($partial.Warnings.Count -eq 2) -and (($partial.Warnings -join "`n") -match "iniciante.*faltam 1") -and (($partial.Warnings -join "`n") -match "experiente.*faltam 2")) 'As lacunas das amostras parciais não foram avisadas corretamente.'
+    $emptySessionIdRejected = $false
+    try { Invoke-Summary 'ratings.csv' '' 'empty-session-id.csv' | Out-Null }
+    catch { $emptySessionIdRejected = $_.Exception.Message -match 'linha\(s\) sem session_id' }
+    Assert-Condition $emptySessionIdRejected 'Uma sessão sem ID foi agrupada como tentativa válida.'
     $orphan = Invoke-Summary 'orphan-ratings.csv'
     Assert-Condition (($orphan.Warnings.Count -eq 3) -and (($orphan.Warnings -join "`n") -match "unknown-session.*não corresponde a nenhuma sessão") -and
         (($orphan.Warnings -join "`n") -match "experiente.*faltam 2")) 'Uma ficha órfã foi descartada sem aviso ou alterou a cobertura das sessões válidas.'
@@ -91,10 +97,10 @@ try {
     catch { $invalidRatingRejected = $_.Exception.Message -match 'precisa ser de 1 a 5' }
     Assert-Condition $invalidRatingRejected 'A nota fora da escala de 1 a 5 não foi rejeitada.'
 
-    Write-Output 'PASS: amostra parcial/vazia, IDs órfãos, filtro por sessão, duplicata e nota inválida.'
+    Write-Output 'PASS: amostra parcial/vazia, session_id ausente/órfão, filtro por sessão, duplicata e nota inválida.'
 }
 finally {
-    foreach ($name in @('sessions.csv', 'ratings.csv', 'empty-ratings.csv', 'orphan-ratings.csv', 'v9-summary.csv', 'legacy-v8.csv', 'legacy-summary.csv')) {
+    foreach ($name in @('sessions.csv', 'empty-session-id.csv', 'ratings.csv', 'empty-ratings.csv', 'orphan-ratings.csv', 'v9-summary.csv', 'legacy-v8.csv', 'legacy-summary.csv')) {
         $path = Join-Path $fixtureRoot $name
         if (Test-Path -LiteralPath $path -PathType Leaf) { Remove-Item -LiteralPath $path }
     }

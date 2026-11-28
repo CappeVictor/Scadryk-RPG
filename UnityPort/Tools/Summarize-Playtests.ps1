@@ -22,6 +22,10 @@ $sessions = @(Import-Csv -LiteralPath $SessionsPath)
 if ($sessions.Count -eq 0) {
     throw 'O CSV de sessões não contém linhas de jogo.'
 }
+$sessionsWithoutId = @($sessions | Where-Object { [string]::IsNullOrWhiteSpace($_.session_id) })
+if ($sessionsWithoutId.Count -gt 0) {
+    throw "O CSV de sessões contém $($sessionsWithoutId.Count) linha(s) sem session_id; não é possível separar tentativas com segurança."
+}
 $knownSessionIds = @($sessions | ForEach-Object { $_.session_id } | Select-Object -Unique)
 
 $requiredSessionColumns = @(
