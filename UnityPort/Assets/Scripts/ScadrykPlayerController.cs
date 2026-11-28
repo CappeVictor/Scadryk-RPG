@@ -64,6 +64,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     internal const float ShockwaveRecovery = 0.28f;
     internal const float SaltburstAbilityRadius = 4.25f;
     internal const float SaltCrustSlowScale = 0.74f;
+    internal static Vector2 NormalizeGamepadAimStick(Vector2 rawAim) => new Vector2(rawAim.x, -rawAim.y);
     internal static float AbilityWindupFor(int index) => Mathf.Clamp(index, 0, 2) switch
     {
         0 => 0.10f,
@@ -269,8 +270,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
             keyboardMouseInput = true;
             lastMousePosition = Input.mousePosition;
         }
-        Vector2 stick = ScadrykSettings.ReadGamepadStick("Scadryk Aim X", "Scadryk Aim Y");
-        stick.y = -stick.y;
+        Vector2 stick = NormalizeGamepadAimStick(ScadrykSettings.ReadGamepadStick("Scadryk Aim X", "Scadryk Aim Y"));
         if (stick.sqrMagnitude > GamepadAimActivationMagnitude * GamepadAimActivationMagnitude)
         {
             hasIndependentGamepadAim = true;

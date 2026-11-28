@@ -1706,7 +1706,8 @@ public sealed partial class ScadrykGameDirector
     {
         float deadzone = ScadrykSettings.GamepadDeadzone;
         Vector2 movement = new Vector2(Input.GetAxisRaw("Scadryk Move X"), Input.GetAxisRaw("Scadryk Move Y"));
-        Vector2 aim = new Vector2(Input.GetAxisRaw("Scadryk Aim X"), Input.GetAxisRaw("Scadryk Aim Y"));
+        Vector2 aim = ScadrykPlayerController.NormalizeGamepadAimStick(
+            new Vector2(Input.GetAxisRaw("Scadryk Aim X"), Input.GetAxisRaw("Scadryk Aim Y")));
         string movementText = "Mover " + ScadrykSettings.GamepadStickReadout(movement, deadzone);
         string aimText = "Mirar " + ScadrykSettings.GamepadStickReadout(aim, deadzone);
         return compact ? "Eixos X/Y · força bruta → útil\n" + movementText + "\n" + aimText :

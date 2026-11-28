@@ -743,6 +743,10 @@ public sealed partial class ScadrykGameDirector
         Debug.Log("SCADRYK_SMOKE: música escala em combate, recua em pausa e abre espaço para avisos de perigo");
         Debug.Log("SCADRYK_SMOKE: cada padrão do Arauto tem cue próprio; avisos sobrepostos perdem volume e têm teto de quatro vozes");
         Debug.Log("SCADRYK_SMOKE: impactos do Crescente, Estouro e Rompante usam assinaturas sonoras distintas");
+        if (Vector2.Distance(ScadrykPlayerController.NormalizeGamepadAimStick(new Vector2(0.4f, 0.3f)), new Vector2(0.4f, -0.3f)) > 0.001f ||
+            Vector2.Distance(ScadrykPlayerController.NormalizeGamepadAimStick(Vector2.up), Vector2.down) > 0.001f)
+        { SmokeFail("A mira e a calibração não convertem o eixo vertical do analógico da mesma forma"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: a calibração exibe as direções úteis da mira twin-stick");
         if (!FocusLossRequiresPause(false, false, false, false, false, false) ||
             FocusLossRequiresPause(true, false, false, false, false, false) ||
             FocusLossRequiresPause(false, true, false, false, false, false) ||
