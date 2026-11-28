@@ -628,6 +628,13 @@ public sealed partial class ScadrykGameDirector
         ScadrykCue areaCue = ScadrykEnemyHealth.WarningCueFor(0, false, false, 2);
         ScadrykCue supportCue = ScadrykEnemyHealth.WarningCueFor(0, false, false, 3);
         ScadrykAudio audio = GetComponent<ScadrykAudio>();
+        if (audio == null || audio.BiomeLoopName(0) != "Roots remember" || audio.BiomeLoopName(1) != "Salt remembers" ||
+            audio.BiomeLoopName(2) != "Bells remember" || audio.BiomeLoopName(3) != "The silence breaks" ||
+            Mathf.Abs(audio.BiomeLoopDuration(0) - 8f) > 0.01f || Mathf.Abs(audio.BiomeLoopDuration(1) - 8f) > 0.01f ||
+            Mathf.Abs(audio.BiomeLoopDuration(2) - 8f) > 0.01f || Mathf.Abs(audio.BiomeLoopDuration(3) - 8f) > 0.01f ||
+            !string.IsNullOrEmpty(audio.BiomeLoopName(-1)) || !string.IsNullOrEmpty(audio.BiomeLoopName(4)))
+        { SmokeFail("As quatro paisagens sonoras devem manter motivo, nome e duração válidos por contexto"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: bosque, bacia, costa e Arauto mantêm loops musicais distintos e válidos");
         int phaseOneLast = ScadrykEnemyHealth.SelectFinalBossPattern(1, 3, 0);
         int phaseTwoFirst = ScadrykEnemyHealth.SelectFinalBossPattern(2, 4, phaseOneLast);
         int phaseThreeFirst = ScadrykEnemyHealth.SelectFinalBossPattern(3, 7, phaseTwoFirst);

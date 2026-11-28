@@ -44,7 +44,12 @@ public sealed class ScadrykAudio : MonoBehaviour
         combatMusic.clip = combatLoop;
         effects = gameObject.AddComponent<AudioSource>();
         effects.playOnAwake = false;
-        biomeLoops = new[] { MakeLoop("Roots remember", 110f, 1.0f), MakeLoop("Salt remembers", 146.83f, 0.72f), MakeLoop("Bells remember", 123.47f, 1.35f), MakeLoop("The silence breaks", 82.41f, 1.8f) };
+        biomeLoops = new[] {
+            MakeLoop("Roots remember", 110f, new[] { 0, 3, 5, 7 }),
+            MakeLoop("Salt remembers", 146.83f, new[] { 0, 2, 7, 5 }),
+            MakeLoop("Bells remember", 123.47f, new[] { 0, 5, 2, 7 }),
+            MakeLoop("The silence breaks", 82.41f, new[] { 0, 1, 7, 6 })
+        };
         cueClips = new[] {
             MakeCue("Nara sword", 410f, 0.16f, 0.46f), MakeCue("Nara dash", 250f, 0.13f, 0.24f),
             MakeCue("Nara pulse", 330f, 0.32f, 0.33f), MakeCue("Nara power charge", 520f, 0.12f, 0.26f),
@@ -105,6 +110,10 @@ public sealed class ScadrykAudio : MonoBehaviour
 
     internal static float WarningCueVolumeScale(int overlappingWarnings) => 0.8f / Mathf.Max(1, overlappingWarnings + 1);
     internal static bool CanPlayWarningCue(int overlappingWarnings) => overlappingWarnings < MaxConcurrentWarningCues;
+    internal string BiomeLoopName(int biome) => biomeLoops != null && biome >= 0 && biome < biomeLoops.Length && biomeLoops[biome] != null
+        ? biomeLoops[biome].name : string.Empty;
+    internal float BiomeLoopDuration(int biome) => biomeLoops != null && biome >= 0 && biome < biomeLoops.Length && biomeLoops[biome] != null
+        ? biomeLoops[biome].length : 0f;
     internal static ScadrykCue AbilityImpactCue(int ability) => Mathf.Clamp(ability, 0, 2) switch
     {
         0 => ScadrykCue.VerdantCrescentImpact,
@@ -203,19 +212,36 @@ public sealed class ScadrykAudio : MonoBehaviour
         ScadrykCue.AreaWarning or ScadrykCue.SupportWarning or ScadrykCue.FinalBossWarning or
         ScadrykCue.FinalVolleyWarning or ScadrykCue.FinalStarfallWarning or ScadrykCue.FinalWaveWarning;
 
-    private static AudioClip MakeLoop(string name, float root, float character)
+    private static AudioClip MakeLoop(string name, float root, int[] motifSemitones)
     {
-        int count = SampleRate * 8;
+        const float duration = 8f;
+        const float sectionCrossfade = 0.32f;
+        int count = Mathf.RoundToInt(SampleRate * duration);
+        if (motifSemitones == null || motifSemitones.Length == 0) motifSemitones = new[] { 0 };
         float[] data = new float[count];
         for (int i = 0; i < count; i++)
         {
             float t = i / (float)SampleRate;
-            float edge = Mathf.Min(1f, Mathf.Min(t, 8f - t) * 6f);
-            float pad = Mathf.Sin(2f * Mathf.PI * root * t) * 0.11f + Mathf.Sin(2f * Mathf.PI * root * 1.5f * t) * 0.065f;
-            float beat = t % 2f;
+            float edge = Mathf.Min(1f, Mathf.Min(t, duration - t) * 6f);
+            float sectionLength = duration / motifSemitones.Length;
+            int section = Mathf.Min(motifSemitones.Length - 1, Mathf.FloorToInt(t / sectionLength));
+            int previousSection = (section + motifSemitones.Length - 1) % motifSemitones.Length;
+            float sectionTime = t - section * sectionLength;
+            float blend = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(sectionTime / sectionCrossfade));
+            float pitch = Mathf.Pow(2f, motifSemitones[section] / 12f);
+            float previousPitch = Mathf.Pow(2f, motifSemitones[previousSection] / 12f);
+            float chordRoot = root * pitch;
+            float previousRoot = root * previousPitch;
+            float pad = Mathf.Lerp(
+                Mathf.Sin(2f * Mathf.PI * previousRoot * t) * 0.095f + Mathf.Sin(2f * Mathf.PI * previousRoot * 1.5f * t) * 0.045f,
+                Mathf.Sin(2f * Mathf.PI * chordRoot * t) * 0.095f + Mathf.Sin(2f * Mathf.PI * chordRoot * 1.5f * t) * 0.045f,
+                blend);
+            float beat = sectionTime;
             float bellAttack = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(beat / 0.018f));
-            float bell = Mathf.Sin(2f * Mathf.PI * root * (character + 1.5f) * t) * bellAttack * Mathf.Exp(-beat * 4f) * 0.08f;
-            data[i] = (pad * (0.8f + 0.2f * Mathf.Sin(t * 0.8f)) + bell) * edge;
+            float bellRoot = chordRoot * 2f;
+            float bell = (Mathf.Sin(2f * Mathf.PI * bellRoot * t) + 0.24f * Mathf.Sin(2f * Mathf.PI * bellRoot * 2.01f * t)) *
+                bellAttack * Mathf.Exp(-beat * 2.2f) * 0.052f;
+            data[i] = (pad * (0.82f + 0.18f * Mathf.Sin(t * 0.8f)) + bell) * edge;
         }
         AudioClip clip = AudioClip.Create(name, count, 1, SampleRate, false);
         clip.SetData(data, 0);
