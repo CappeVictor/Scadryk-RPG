@@ -218,20 +218,21 @@ public sealed class ScadrykAudio : MonoBehaviour
         const float sectionCrossfade = 0.32f;
         int count = Mathf.RoundToInt(SampleRate * duration);
         if (motifSemitones == null || motifSemitones.Length == 0) motifSemitones = new[] { 0 };
+        float sectionLength = duration / motifSemitones.Length;
+        var chordRoots = new float[motifSemitones.Length];
+        for (int section = 0; section < motifSemitones.Length; section++)
+            chordRoots[section] = root * Mathf.Pow(2f, motifSemitones[section] / 12f);
         float[] data = new float[count];
         for (int i = 0; i < count; i++)
         {
             float t = i / (float)SampleRate;
             float edge = Mathf.Min(1f, Mathf.Min(t, duration - t) * 6f);
-            float sectionLength = duration / motifSemitones.Length;
             int section = Mathf.Min(motifSemitones.Length - 1, Mathf.FloorToInt(t / sectionLength));
             int previousSection = (section + motifSemitones.Length - 1) % motifSemitones.Length;
             float sectionTime = t - section * sectionLength;
             float blend = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(sectionTime / sectionCrossfade));
-            float pitch = Mathf.Pow(2f, motifSemitones[section] / 12f);
-            float previousPitch = Mathf.Pow(2f, motifSemitones[previousSection] / 12f);
-            float chordRoot = root * pitch;
-            float previousRoot = root * previousPitch;
+            float chordRoot = chordRoots[section];
+            float previousRoot = chordRoots[previousSection];
             float pad = Mathf.Lerp(
                 Mathf.Sin(2f * Mathf.PI * previousRoot * t) * 0.095f + Mathf.Sin(2f * Mathf.PI * previousRoot * 1.5f * t) * 0.045f,
                 Mathf.Sin(2f * Mathf.PI * chordRoot * t) * 0.095f + Mathf.Sin(2f * Mathf.PI * chordRoot * 1.5f * t) * 0.045f,
