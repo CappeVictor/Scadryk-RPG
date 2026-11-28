@@ -190,9 +190,15 @@ public sealed partial class ScadrykGameDirector
         blockedHeadings[0] = true;
         blockedHeadings[1] = true;
         Vector2 steeredHeading = ScadrykEnemyHealth.SelectSteeringHeading(Vector2.right, blockedHeadings);
+        bool[] delayedOpening = new bool[10];
+        for (int i = 0; i < delayedOpening.Length; i++) delayedOpening[i] = true;
+        delayedOpening[3] = false;
+        Vector2 widestClearHeading = ScadrykEnemyHealth.SelectSteeringHeading(Vector2.right, delayedOpening);
         for (int i = 0; i < blockedHeadings.Length; i++) blockedHeadings[i] = true;
         Vector2 enclosedHeading = ScadrykEnemyHealth.SelectSteeringHeading(Vector2.right, blockedHeadings);
         if (Vector2.Dot(steeredHeading, Vector2.right) < 0.8f || enclosedHeading.sqrMagnitude > 0.001f ||
+            Vector2.Distance(widestClearHeading,
+                new Vector2(Mathf.Cos(70f * Mathf.Deg2Rad), Mathf.Sin(70f * Mathf.Deg2Rad))) > 0.001f ||
             ScadrykEnemyHealth.SteeringQueryIsSaturated(ScadrykEnemyHealth.SteeringHitCapacity - 1) ||
             !ScadrykEnemyHealth.SteeringQueryIsSaturated(ScadrykEnemyHealth.SteeringHitCapacity))
         { SmokeFail("A navegação dos Ecos não contorna um bloqueio ou tenta avançar quando todos os lados estão fechados"); yield break; }

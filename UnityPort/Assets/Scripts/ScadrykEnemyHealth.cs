@@ -50,12 +50,12 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     internal static float SaltExposureDuration(bool boss, bool echo) => boss ? (echo ? 4f : 3f) : (echo ? 7f : 5f);
     internal static float TidePushStrength(bool echo) => echo ? 7.2f : 5.5f;
     internal static float TidePushDuration(bool echo) => echo ? 0.31f : 0.24f;
+    // Candidates are ordered by absolute turn, so the first clear ray is the best-aligned route.
     private static readonly float[] SteeringAngles = { 0f, 35f, -35f, 70f, -70f, 110f, -110f, 145f, -145f, 180f };
     private static readonly List<Collider2D> SupportPulseHits = new List<Collider2D>(16);
     private static ContactFilter2D supportPulseFilter;
     private static bool supportPulseFilterReady;
     private readonly RaycastHit2D[] steeringHits = new RaycastHit2D[SteeringHitCapacity];
-    private readonly bool[] blockedSteeringHeadings = new bool[10];
     private readonly GameObject[] attackWarnings = new GameObject[AttackWarningCapacity];
     private int attackWarningCount;
     internal static float AreaPulseDiameter => AreaPulseRadius * 2f;
@@ -432,14 +432,13 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         if (castDistance < 0.05f) return desiredHeading;
 
         float radius = bodyCollider != null ? bodyCollider.radius * Mathf.Max(Mathf.Abs(transform.lossyScale.x), Mathf.Abs(transform.lossyScale.y)) : 0.34f;
-        blockedSteeringHeadings[0] = SolidAhead(desiredHeading, radius, castDistance);
-        if (!blockedSteeringHeadings[0]) return desiredHeading;
+        if (!SolidAhead(desiredHeading, radius, castDistance)) return desiredHeading;
         for (int i = 1; i < SteeringAngles.Length; i++)
         {
             Vector2 heading = Rotate(desiredHeading, SteeringAngles[i] * Mathf.Deg2Rad);
-            blockedSteeringHeadings[i] = SolidAhead(heading, radius, castDistance);
+            if (!SolidAhead(heading, radius, castDistance)) return heading;
         }
-        return SelectSteeringHeading(desiredHeading, blockedSteeringHeadings);
+        return Vector2.zero;
     }
 
     private bool SolidAhead(Vector2 heading, float radius, float distance)
@@ -475,20 +474,12 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         desiredHeading.Normalize();
         if (blocked == null || blocked.Length < SteeringAngles.Length || !blocked[0]) return desiredHeading;
 
-        float bestProgress = float.NegativeInfinity;
-        Vector2 bestHeading = desiredHeading;
-        bool foundOpenHeading = false;
         for (int i = 1; i < SteeringAngles.Length; i++)
         {
             if (blocked[i]) continue;
-            foundOpenHeading = true;
-            Vector2 candidate = Rotate(desiredHeading, SteeringAngles[i] * Mathf.Deg2Rad);
-            float progress = Vector2.Dot(candidate, desiredHeading);
-            if (progress <= bestProgress) continue;
-            bestProgress = progress;
-            bestHeading = candidate;
+            return Rotate(desiredHeading, SteeringAngles[i] * Mathf.Deg2Rad);
         }
-        return foundOpenHeading ? bestHeading : Vector2.zero;
+        return Vector2.zero;
     }
 
     private void TrackAttackWarning(GameObject warning)
