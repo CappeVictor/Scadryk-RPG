@@ -20,6 +20,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     internal const float FinalStageBreatherDuration = 0.9f;
     internal const float FinalStageAttackDelay = 3.1f;
     internal const float MinimumAttackWarningDuration = 0.8f;
+    internal const float ExtendedAttackWarningBonus = 0.25f;
     internal const float BasicFinisherKnockbackSpeed = 3.2f;
     internal const float BasicFinisherKnockbackDuration = 0.12f;
     internal const float RangedStrafeSpeedScale = 0.42f;
@@ -30,23 +31,39 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     internal const float SupportPulseRadius = 2.5f;
     internal static float SupportPulseInnerDiameter => SupportPulseRadius * 0.9f;
     internal const float OpeningAttackSpacing = 0.85f;
+    internal static float OpeningAttackSpacingForSettings(bool extendedWarnings) =>
+        OpeningAttackSpacing + (extendedWarnings ? ExtendedAttackWarningBonus : 0f);
     internal const int SteeringHitCapacity = 32;
     internal const int AttackWarningCapacity = 8;
     internal static float AttackRecoveryDuration(bool boss, bool finalBoss) => finalBoss ? 0.42f : boss ? 0.36f : 0.24f;
-    internal static float AttackWindupDuration(bool boss, int biome, int role) => boss ? Mathf.Clamp(biome, 0, 2) switch
+    internal static float AttackWindupDuration(bool boss, int biome, int role) =>
+        AttackWindupDurationForSettings(boss, biome, role, ScadrykSettings.ExtendedAttackWarnings);
+    internal static float AttackWindupDurationForSettings(bool boss, int biome, int role, bool extendedWarnings)
     {
-        0 => 0.95f,
-        1 => 0.86f,
-        _ => 1.05f
-    } : Mathf.Clamp(role, 0, 3) switch
-    {
-        0 => 0.8f,
-        1 => 0.85f,
-        2 => 0.95f,
-        _ => 1.1f
-    };
-    internal static float FinalBossWindupDuration(int stage) => Mathf.Clamp(stage, 1, 3) == 3 ? 1.18f : 1.35f;
-    internal static float FinalStarfallWarningDuration(int stage) => FinalBossWindupDuration(stage) + FinalStarfallImpactDelay;
+        float baseDuration = boss ? Mathf.Clamp(biome, 0, 2) switch
+        {
+            0 => 0.95f,
+            1 => 0.86f,
+            _ => 1.05f
+        } : Mathf.Clamp(role, 0, 3) switch
+        {
+            0 => 0.8f,
+            1 => 0.85f,
+            2 => 0.95f,
+            _ => 1.1f
+        };
+        return ApplyExtendedAttackWarning(baseDuration, extendedWarnings);
+    }
+    internal static float ApplyExtendedAttackWarning(float baseDuration, bool extendedWarnings) =>
+        Mathf.Max(MinimumAttackWarningDuration, baseDuration + (extendedWarnings ? ExtendedAttackWarningBonus : 0f));
+    internal static float FinalBossWindupDuration(int stage) =>
+        FinalBossWindupDurationForSettings(stage, ScadrykSettings.ExtendedAttackWarnings);
+    internal static float FinalBossWindupDurationForSettings(int stage, bool extendedWarnings) =>
+        ApplyExtendedAttackWarning(Mathf.Clamp(stage, 1, 3) == 3 ? 1.18f : 1.35f, extendedWarnings);
+    internal static float FinalStarfallWarningDuration(int stage) =>
+        FinalBossWindupDuration(stage) + FinalStarfallImpactDelay;
+    internal static float FinalStarfallWarningDurationForSettings(int stage, bool extendedWarnings) =>
+        FinalBossWindupDurationForSettings(stage, extendedWarnings) + FinalStarfallImpactDelay;
     internal static float SaltExposureDuration(bool boss, bool echo) => boss ? (echo ? 4f : 3f) : (echo ? 7f : 5f);
     internal static float TidePushStrength(bool echo) => echo ? 7.2f : 5.5f;
     internal static float TidePushDuration(bool echo) => echo ? 0.31f : 0.24f;
@@ -728,11 +745,15 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     internal static float FinalStarfallSideProjectileAngle(int stage, int index) =>
         (index - (FinalStarfallSideProjectileCount(stage) - 1) * 0.5f) * FinalStarfallProjectileAngleStep;
     internal static float OpeningAttackDelay(int enemyIndex, bool boss, bool campaignOpeningRoom = false) =>
-        boss ? 1.25f : (campaignOpeningRoom ? 2.6f : 0.3f) + Mathf.Max(0, enemyIndex) * OpeningAttackSpacing;
+        OpeningAttackDelayForSettings(enemyIndex, boss, campaignOpeningRoom, ScadrykSettings.ExtendedAttackWarnings);
+    internal static float OpeningAttackDelayForSettings(int enemyIndex, bool boss, bool campaignOpeningRoom, bool extendedWarnings) =>
+        boss ? 1.25f : (campaignOpeningRoom ? 2.6f : 0.3f) + Mathf.Max(0, enemyIndex) * OpeningAttackSpacingForSettings(extendedWarnings);
     internal static float ReserveEnemyAttackSlot(ref float nextAvailableAt, float requestedAt)
+        => ReserveEnemyAttackSlot(ref nextAvailableAt, requestedAt, ScadrykSettings.ExtendedAttackWarnings);
+    internal static float ReserveEnemyAttackSlot(ref float nextAvailableAt, float requestedAt, bool extendedWarnings)
     {
         float scheduledAt = Mathf.Max(nextAvailableAt, requestedAt);
-        nextAvailableAt = scheduledAt + OpeningAttackSpacing;
+        nextAvailableAt = scheduledAt + OpeningAttackSpacingForSettings(extendedWarnings);
         return scheduledAt;
     }
 

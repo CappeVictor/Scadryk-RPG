@@ -29,15 +29,16 @@ public sealed partial class ScadrykGameDirector
             if (optionsSelection == 6) DrawSelection(new Rect(x + 10f, y + 278f, width - 20f, 42f));
             if (optionsSelection == 7) DrawSelection(new Rect(x + 10f, y + 318f, width - 20f, 42f));
             if (optionsSelection == 8) DrawSelection(new Rect(x + 10f, y + 358f, width - 20f, 42f));
+            if (optionsSelection == 9) DrawSelection(new Rect(x + 10f, y + 398f, width - 20f, 42f));
             float displayRowX = x + 15f;
             float displayRowWidth = width - 30f;
             float sliderReadoutWidth = width >= 330f ? 44f : 0f;
             float optionSliderWidth = width - 215f - (sliderReadoutWidth > 0f ? sliderReadoutWidth + 10f : 0f);
             float fullscreenWidth = (displayRowWidth - 8f) * 0.56f;
-            Rect fullscreenRect = new Rect(displayRowX, y + 402f, fullscreenWidth, 36f);
-            Rect frameRateRect = new Rect(displayRowX + fullscreenWidth + 8f, y + 402f,
+            Rect fullscreenRect = new Rect(displayRowX, y + 447f, fullscreenWidth, 36f);
+            Rect frameRateRect = new Rect(displayRowX + fullscreenWidth + 8f, y + 447f,
                 displayRowWidth - fullscreenWidth - 8f, 36f);
-            if (optionsSelection == 9) DrawSelection(new Rect(fullscreenRect.x - 5f, fullscreenRect.y - 4f, fullscreenRect.width + 10f, fullscreenRect.height + 8f));
+            if (optionsSelection == 10) DrawSelection(new Rect(fullscreenRect.x - 5f, fullscreenRect.y - 4f, fullscreenRect.width + 10f, fullscreenRect.height + 8f));
             GUI.Label(new Rect(x + 15f, y + 125f, 170f, 28f), "Música", bodyStyle);
             ScadrykSettings.MusicVolume = GUI.HorizontalSlider(new Rect(x + 195f, y + 135f, optionSliderWidth, 24f), ScadrykSettings.MusicVolume, 0f, 1f);
             if (sliderReadoutWidth > 0f) GUI.Label(new Rect(x + width - sliderReadoutWidth - 12f, y + 125f, sliderReadoutWidth, 28f), Mathf.RoundToInt(ScadrykSettings.MusicVolume * 100f) + "%", smallStyle);
@@ -51,10 +52,11 @@ public sealed partial class ScadrykGameDirector
             ScadrykSettings.ReduceFlash = GUI.Toggle(new Rect(x + 15f, y + 285f, width - 30f, 34f), ScadrykSettings.ReduceFlash, "Reduzir flashes e rastros");
             ScadrykSettings.ReduceShake = GUI.Toggle(new Rect(x + 15f, y + 325f, width - 30f, 34f), ScadrykSettings.ReduceShake, "Desligar tremor de câmera");
             ScadrykSettings.HighContrastWarnings = GUI.Toggle(new Rect(x + 15f, y + 365f, width - 30f, 34f), ScadrykSettings.HighContrastWarnings, "Alto contraste nos avisos de perigo");
+            ScadrykSettings.ExtendedAttackWarnings = GUI.Toggle(new Rect(x + 15f, y + 405f, width - 30f, 34f), ScadrykSettings.ExtendedAttackWarnings, "Avisos: +0,25 s para reagir");
             ScadrykSettings.Fullscreen = GUI.Toggle(fullscreenRect, ScadrykSettings.Fullscreen, "Tela cheia");
-            if (OptionButton(frameRateRect, ScadrykSettings.FrameRateModeLabel(ScadrykSettings.FrameRateMode), 10))
+            if (OptionButton(frameRateRect, ScadrykSettings.FrameRateModeLabel(ScadrykSettings.FrameRateMode), 11))
                 ScadrykSettings.FrameRateMode = ScadrykSettings.NextFrameRateMode(ScadrykSettings.FrameRateMode, 1);
-            GUI.Label(new Rect(x + 15f, y + 444f, width - 30f, 60f), "Avisos permanecem visíveis com os efeitos em silêncio. " +
+            GUI.Label(new Rect(x + 15f, y + 489f, width - 30f, 60f), "Avisos permanecem visíveis com os efeitos em silêncio. " +
                 InputBinding(ScadrykSettings.UnclearAttackAction) + " registra um ataque pouco claro durante testes.", memoryStyle);
         }
         else if (optionsTab == 1)
@@ -109,7 +111,7 @@ public sealed partial class ScadrykGameDirector
             if (optionsSelection == 12) DrawSelection(new Rect(x + 10f, y + 484f, width - 20f, 88f));
             GUI.Label(new Rect(x + 15f, y + 525f, width - 30f, 48f), GamepadAnalogReadout(false), smallStyle);
         }
-        if (OptionButton(new Rect(x + (width - 180f) * 0.5f, y + backOffset, 180f, 42f), "Voltar", optionsTab == 0 ? 11 : optionsTab == 1 ? 16 : 13)) { showOptions = false; rebindingAction = gamepadRebindAction = -1; }
+        if (OptionButton(new Rect(x + (width - 180f) * 0.5f, y + backOffset, 180f, 42f), "Voltar", optionsTab == 0 ? 12 : optionsTab == 1 ? 16 : 13)) { showOptions = false; rebindingAction = gamepadRebindAction = -1; }
         GUI.Label(new Rect(x, y + footerOffset, width, 28f), "Controle: analógico navega · A confirma · B volta · Start pausa · L3 mapa.", smallStyle);
     }
 
@@ -142,7 +144,7 @@ public sealed partial class ScadrykGameDirector
 
         float backWidth = Mathf.Min(180f, width - 24f);
         Rect back = new Rect(x + (width - backWidth) * 0.5f, backY, backWidth, backHeight);
-        int backSelection = optionsTab == 0 ? 11 : optionsTab == 1 ? 16 : 13;
+        int backSelection = optionsTab == 0 ? 12 : optionsTab == 1 ? 16 : 13;
         if (OptionButton(back, "Voltar", backSelection)) { showOptions = false; rebindingAction = gamepadRebindAction = -1; }
         GUI.Label(new Rect(x + 4f, Screen.height - footerHeight - 2f, width - 8f, footerHeight),
             "Analógico: navegar · A: confirmar · B: voltar", smallStyle);
@@ -175,15 +177,16 @@ public sealed partial class ScadrykGameDirector
         ScadrykSettings.ReduceShake = GUI.Toggle(new Rect(left, 223f, width - 24f, 34f), ScadrykSettings.ReduceShake, "Desligar tremor de câmera");
         DrawCompactOptionSelection(8, 264f, 40f, width);
         ScadrykSettings.HighContrastWarnings = GUI.Toggle(new Rect(left, 267f, width - 24f, 34f), ScadrykSettings.HighContrastWarnings, "Alto contraste nos avisos");
-        GUI.Label(new Rect(left, 310f, width - 24f, 78f),
-            "Avisos continuam visíveis sem efeitos sonoros. " + InputBinding(ScadrykSettings.UnclearAttackAction) +
-            " marca um sinal difícil de ler durante os testes.", memoryStyle);
-        DrawCompactOptionSelection(9, 392f, 40f, width);
+        DrawCompactOptionSelection(9, 308f, 40f, width);
+        ScadrykSettings.ExtendedAttackWarnings = GUI.Toggle(new Rect(left, 311f, width - 24f, 34f), ScadrykSettings.ExtendedAttackWarnings, "Avisos: +0,25 s para reagir");
+        GUI.Label(new Rect(left, 352f, width - 24f, 38f),
+            "Sinais visuais seguem ativos sem som; " + InputBinding(ScadrykSettings.UnclearAttackAction) + " marca os difíceis.", smallStyle);
         DrawCompactOptionSelection(10, 392f, 40f, width);
+        DrawCompactOptionSelection(11, 392f, 40f, width);
         float toggleWidth = Mathf.Max(80f, (width - 36f) * 0.52f);
         ScadrykSettings.Fullscreen = GUI.Toggle(new Rect(left, 395f, toggleWidth, 34f), ScadrykSettings.Fullscreen, "Tela cheia");
         Rect frameRateRect = new Rect(left + toggleWidth + 8f, 395f, Mathf.Max(72f, width - toggleWidth - left - 20f), 34f);
-        if (OptionButton(frameRateRect, ScadrykSettings.FrameRateModeLabel(ScadrykSettings.FrameRateMode), 10))
+        if (OptionButton(frameRateRect, ScadrykSettings.FrameRateModeLabel(ScadrykSettings.FrameRateMode), 11))
             ScadrykSettings.FrameRateMode = ScadrykSettings.NextFrameRateMode(ScadrykSettings.FrameRateMode, 1);
     }
 
@@ -270,7 +273,8 @@ public sealed partial class ScadrykGameDirector
             int index = selection - 3;
             return new Rect(0f, tops[index], 1f, index < 3 ? 48f : 40f);
         }
-        if (tab == 0 && selection is 9 or 10) return new Rect(0f, 392f, 1f, 40f);
+        if (tab == 0 && selection == 9) return new Rect(0f, 308f, 1f, 40f);
+        if (tab == 0 && selection is 10 or 11) return new Rect(0f, 392f, 1f, 40f);
         if (tab == 1)
         {
             if (selection == 15) return new Rect(0f, 3f, 1f, 34f);
@@ -327,10 +331,18 @@ public sealed partial class ScadrykGameDirector
     private static bool SoundOptionsLayoutFits(float screenHeight)
     {
         bool compact = screenHeight < 720f;
+        if (compact)
+        {
+            float viewportHeight = CompactOptionsViewportHeight(screenHeight);
+            float compactBackTop = screenHeight - 78f;
+            float compactFooterTop = screenHeight - 30f;
+            return viewportHeight >= 76f && CompactOptionsContentHeight(0) > viewportHeight &&
+                compactBackTop + 42f <= compactFooterTop && compactFooterTop + 28f <= screenHeight;
+        }
         float y = compact ? 8f : Mathf.Max(18f, (screenHeight - 690f) * 0.5f);
-        float fullscreenToggleBottom = y + 402f + 36f;
-        float frameRateButtonBottom = y + 402f + 36f;
-        float warningHelpBottom = y + 444f + 60f;
+        float fullscreenToggleBottom = y + 447f + 36f;
+        float frameRateButtonBottom = y + 447f + 36f;
+        float warningHelpBottom = y + 489f + 60f;
         float backTop = y + (compact ? 512f : 585f);
         float footerBottom = y + (compact ? 560f : 637f) + 28f;
         return fullscreenToggleBottom <= warningHelpBottom && frameRateButtonBottom <= warningHelpBottom &&

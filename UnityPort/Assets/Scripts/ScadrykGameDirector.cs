@@ -388,13 +388,13 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
                 if (optionsSelection == 3) ScadrykSettings.MusicVolume += step;
                 else if (optionsSelection == 4) ScadrykSettings.EffectsVolume += step;
                 else if (optionsSelection == 5) { ScadrykSettings.TextScale += step; titleStyle = null; }
-                else if (optionsSelection == 10) ScadrykSettings.FrameRateMode = ScadrykSettings.NextFrameRateMode(ScadrykSettings.FrameRateMode, right ? 1 : -1);
+                else if (optionsSelection == 11) ScadrykSettings.FrameRateMode = ScadrykSettings.NextFrameRateMode(ScadrykSettings.FrameRateMode, right ? 1 : -1);
             }
             else if (optionsTab == 2 && optionsSelection == 12 && (left || right))
                 ScadrykSettings.GamepadDeadzone += right ? 0.02f : -0.02f;
             if (up || down)
             {
-                int max = optionsTab == 0 ? 11 : optionsTab == 1 ? 16 : 13;
+                int max = optionsTab == 0 ? 12 : optionsTab == 1 ? 16 : 13;
                 optionsSelection = Mathf.Clamp(optionsSelection + (down ? 1 : -1), 0, max);
             }
             if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Space))
@@ -453,7 +453,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
         {
             if (showOptions)
             {
-                int max = optionsTab == 0 ? 11 : optionsTab == 1 ? 16 : 13;
+                int max = optionsTab == 0 ? 12 : optionsTab == 1 ? 16 : 13;
                 optionsSelection = Mathf.Clamp(optionsSelection - (navigation.y > 0f ? 1 : -1), 0, max);
             }
             else if (!showTitle && !victory && !confirmNewJourney)
@@ -484,7 +484,7 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             if (optionsSelection == 3) ScadrykSettings.MusicVolume += step;
             else if (optionsSelection == 4) ScadrykSettings.EffectsVolume += step;
             else if (optionsSelection == 5) { ScadrykSettings.TextScale += step; titleStyle = null; }
-            else if (optionsTab == 0 && optionsSelection == 10)
+            else if (optionsTab == 0 && optionsSelection == 11)
                 ScadrykSettings.FrameRateMode = ScadrykSettings.NextFrameRateMode(ScadrykSettings.FrameRateMode, navigation.x > 0f ? 1 : -1);
             else if (optionsTab == 2 && optionsSelection == 12) ScadrykSettings.GamepadDeadzone += navigation.x > 0f ? 0.02f : -0.02f;
             nextGamepadNavigationAt = Time.unscaledTime + 0.16f;
@@ -549,9 +549,10 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
             if (optionsSelection == 6) ScadrykSettings.ReduceFlash = !ScadrykSettings.ReduceFlash;
             else if (optionsSelection == 7) ScadrykSettings.ReduceShake = !ScadrykSettings.ReduceShake;
             else if (optionsSelection == 8) ScadrykSettings.HighContrastWarnings = !ScadrykSettings.HighContrastWarnings;
-            else if (optionsSelection == 9) ScadrykSettings.Fullscreen = !ScadrykSettings.Fullscreen;
-            else if (optionsSelection == 10) ScadrykSettings.FrameRateMode = ScadrykSettings.NextFrameRateMode(ScadrykSettings.FrameRateMode, 1);
-            else if (optionsSelection == 11) showOptions = false;
+            else if (optionsSelection == 9) ScadrykSettings.ExtendedAttackWarnings = !ScadrykSettings.ExtendedAttackWarnings;
+            else if (optionsSelection == 10) ScadrykSettings.Fullscreen = !ScadrykSettings.Fullscreen;
+            else if (optionsSelection == 11) ScadrykSettings.FrameRateMode = ScadrykSettings.NextFrameRateMode(ScadrykSettings.FrameRateMode, 1);
+            else if (optionsSelection == 12) showOptions = false;
         }
         else if (optionsTab == 1)
         {

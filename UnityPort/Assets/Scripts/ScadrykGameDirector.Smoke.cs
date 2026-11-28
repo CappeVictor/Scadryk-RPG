@@ -514,21 +514,23 @@ public sealed partial class ScadrykGameDirector
         if (!EncounterSpawnsAvoidCover())
         { SmokeFail("Um Eco ou guardião nasce dentro da cobertura ou sobre outro inimigo"); yield break; }
         Debug.Log("SCADRYK_SMOKE: surgimento dos encontros evita cobertura sólida nas nove salas");
-        if (Mathf.Abs(ScadrykEnemyHealth.OpeningAttackDelay(0, false, true) - 2.6f) > 0.001f ||
-            Mathf.Abs(ScadrykEnemyHealth.OpeningAttackDelay(0, false) - 0.3f) > 0.001f ||
-            Mathf.Abs(ScadrykEnemyHealth.OpeningAttackDelay(1, false) - 1.15f) > 0.001f ||
-            Mathf.Abs(ScadrykEnemyHealth.OpeningAttackSpacing - 0.85f) > 0.001f ||
+        if (Mathf.Abs(ScadrykEnemyHealth.OpeningAttackDelayForSettings(0, false, true, false) - 2.6f) > 0.001f ||
+            Mathf.Abs(ScadrykEnemyHealth.OpeningAttackDelayForSettings(0, false, false, false) - 0.3f) > 0.001f ||
+            Mathf.Abs(ScadrykEnemyHealth.OpeningAttackDelayForSettings(1, false, false, false) - 1.15f) > 0.001f ||
+            Mathf.Abs(ScadrykEnemyHealth.OpeningAttackSpacingForSettings(false) - 0.85f) > 0.001f ||
+            Mathf.Abs(ScadrykEnemyHealth.OpeningAttackSpacingForSettings(true) - 1.1f) > 0.001f ||
+            Mathf.Abs(ScadrykEnemyHealth.OpeningAttackDelayForSettings(1, false, false, true) - 1.4f) > 0.001f ||
             ScadrykEnemyHealth.OpeningAttackSpacing < ScadrykEnemyHealth.MinimumAttackWarningDuration ||
-            ScadrykEnemyHealth.OpeningAttackDelay(1, false) <= ScadrykEnemyHealth.OpeningAttackDelay(0, false) ||
-            ScadrykEnemyHealth.OpeningAttackDelay(2, false) <= ScadrykEnemyHealth.OpeningAttackDelay(1, false) ||
-            ScadrykEnemyHealth.OpeningAttackDelay(3, false) <= ScadrykEnemyHealth.OpeningAttackDelay(2, false) ||
-            Mathf.Abs(ScadrykEnemyHealth.OpeningAttackDelay(0, true) - 1.25f) > 0.001f)
+            ScadrykEnemyHealth.OpeningAttackDelayForSettings(1, false, false, false) <= ScadrykEnemyHealth.OpeningAttackDelayForSettings(0, false, false, false) ||
+            ScadrykEnemyHealth.OpeningAttackDelayForSettings(2, false, false, false) <= ScadrykEnemyHealth.OpeningAttackDelayForSettings(1, false, false, false) ||
+            ScadrykEnemyHealth.OpeningAttackDelayForSettings(3, false, false, false) <= ScadrykEnemyHealth.OpeningAttackDelayForSettings(2, false, false, false) ||
+            Mathf.Abs(ScadrykEnemyHealth.OpeningAttackDelayForSettings(0, true, false, false) - 1.25f) > 0.001f)
         { SmokeFail("Os primeiros avisos de ataque dos encontros não estão espaçados"); yield break; }
         float nextEnemySlot = 0f;
-        float firstAttack = ScadrykEnemyHealth.ReserveEnemyAttackSlot(ref nextEnemySlot, 0.3f);
-        float secondAttack = ScadrykEnemyHealth.ReserveEnemyAttackSlot(ref nextEnemySlot, 0.82f);
-        float lateAttack = ScadrykEnemyHealth.ReserveEnemyAttackSlot(ref nextEnemySlot, 5f);
-        float clusteredFollowup = ScadrykEnemyHealth.ReserveEnemyAttackSlot(ref nextEnemySlot, 5.1f);
+        float firstAttack = ScadrykEnemyHealth.ReserveEnemyAttackSlot(ref nextEnemySlot, 0.3f, false);
+        float secondAttack = ScadrykEnemyHealth.ReserveEnemyAttackSlot(ref nextEnemySlot, 0.82f, false);
+        float lateAttack = ScadrykEnemyHealth.ReserveEnemyAttackSlot(ref nextEnemySlot, 5f, false);
+        float clusteredFollowup = ScadrykEnemyHealth.ReserveEnemyAttackSlot(ref nextEnemySlot, 5.1f, false);
         if (Mathf.Abs(firstAttack - 0.3f) > 0.001f || Mathf.Abs(secondAttack - 1.15f) > 0.001f ||
             Mathf.Abs(lateAttack - 5f) > 0.001f ||
             Mathf.Abs(clusteredFollowup - lateAttack - ScadrykEnemyHealth.OpeningAttackSpacing) > 0.001f)
@@ -822,15 +824,26 @@ public sealed partial class ScadrykGameDirector
         for (int biome = 0; biome < PhaseNames.Length; biome++)
         {
             for (int role = 0; role < 4; role++)
-                enemyWarningsMeetReactionFloor &= ScadrykEnemyHealth.AttackWindupDuration(false, biome, role) >= ScadrykEnemyHealth.MinimumAttackWarningDuration;
-            enemyWarningsMeetReactionFloor &= ScadrykEnemyHealth.AttackWindupDuration(true, biome, 0) >= ScadrykEnemyHealth.MinimumAttackWarningDuration;
+            {
+                float standard = ScadrykEnemyHealth.AttackWindupDurationForSettings(false, biome, role, false);
+                float extended = ScadrykEnemyHealth.AttackWindupDurationForSettings(false, biome, role, true);
+                enemyWarningsMeetReactionFloor &= standard >= ScadrykEnemyHealth.MinimumAttackWarningDuration &&
+                    Mathf.Abs(extended - standard - ScadrykEnemyHealth.ExtendedAttackWarningBonus) <= 0.001f;
+            }
+            float bossStandard = ScadrykEnemyHealth.AttackWindupDurationForSettings(true, biome, 0, false);
+            float bossExtended = ScadrykEnemyHealth.AttackWindupDurationForSettings(true, biome, 0, true);
+            enemyWarningsMeetReactionFloor &= bossStandard >= ScadrykEnemyHealth.MinimumAttackWarningDuration &&
+                Mathf.Abs(bossExtended - bossStandard - ScadrykEnemyHealth.ExtendedAttackWarningBonus) <= 0.001f;
         }
         for (int stage = 1; stage <= 3; stage++)
         {
             float expectedStarfallWarning = stage == 3 ? 1.64f : 1.81f;
+            float extendedStarfallWarning = expectedStarfallWarning + ScadrykEnemyHealth.ExtendedAttackWarningBonus;
             int expectedStarfallWarnings = stage == 1 ? 2 : stage == 2 ? 3 : 5;
-            enemyWarningsMeetReactionFloor &= ScadrykEnemyHealth.FinalBossWindupDuration(stage) >= ScadrykEnemyHealth.MinimumAttackWarningDuration &&
-                Mathf.Abs(ScadrykEnemyHealth.FinalStarfallWarningDuration(stage) - expectedStarfallWarning) <= 0.001f &&
+            enemyWarningsMeetReactionFloor &= ScadrykEnemyHealth.FinalBossWindupDurationForSettings(stage, false) >= ScadrykEnemyHealth.MinimumAttackWarningDuration &&
+                Mathf.Abs(ScadrykEnemyHealth.FinalBossWindupDurationForSettings(stage, true) - ScadrykEnemyHealth.FinalBossWindupDurationForSettings(stage, false) - ScadrykEnemyHealth.ExtendedAttackWarningBonus) <= 0.001f &&
+                Mathf.Abs(ScadrykEnemyHealth.FinalStarfallWarningDurationForSettings(stage, false) - expectedStarfallWarning) <= 0.001f &&
+                Mathf.Abs(ScadrykEnemyHealth.FinalStarfallWarningDurationForSettings(stage, true) - extendedStarfallWarning) <= 0.001f &&
                 ScadrykEnemyHealth.FinalVolleyWarningCount(stage) == stage * 2 + 1 &&
                 ScadrykEnemyHealth.FinalStarfallWarningCount(stage) == expectedStarfallWarnings &&
                 ScadrykEnemyHealth.MaximumFinalBossWarningCount(stage) <= ScadrykEnemyHealth.AttackWarningCapacity &&
@@ -847,7 +860,7 @@ public sealed partial class ScadrykGameDirector
             ScadrykEnemyHealth.ThreatDirectionArrow(Vector2.zero, new Vector2(1f, -1f)) != "↘" ||
             ScadrykEnemyHealth.ThreatDirectionArrow(Vector2.zero, Vector2.zero) != "•")
         { SmokeFail("Um padrão inimigo anuncia dano por menos que o tempo de reação definido ou as setas de direção falharam"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: avisos preservam 0,8 s e setas identificam a ameaça nas oito direções");
+        Debug.Log("SCADRYK_SMOKE: piso de 0,8 s e opção de +0,25 s preservam reação, setas e escalonamento de ameaças");
         if (ScadrykPlayerController.InputBufferCanStart(1.1f, 1.3f, 1.2f) ||
             !ScadrykPlayerController.InputBufferCanStart(1.21f, 1.3f, 1.2f) ||
             ScadrykPlayerController.InputBufferCanStart(1.31f, 1.3f, 1.2f) ||
@@ -1420,29 +1433,33 @@ public sealed partial class ScadrykGameDirector
         Rect lastCompactKey = CompactOptionsSelectionRect(1, 14);
         Rect lastCompactPad = CompactOptionsSelectionRect(2, 10);
         Rect compactPadDeadzone = CompactOptionsSelectionRect(2, 12);
-        Rect compactFullscreen = CompactOptionsSelectionRect(0, 9);
-        Rect compactFrameRate = CompactOptionsSelectionRect(0, 10);
+        Rect compactExtendedWarnings = CompactOptionsSelectionRect(0, 9);
+        Rect compactFullscreen = CompactOptionsSelectionRect(0, 10);
+        Rect compactFrameRate = CompactOptionsSelectionRect(0, 11);
         float keyListScroll = ScrollOptionItemIntoView(0f, shortOptionsViewport, lastCompactKey.y, lastCompactKey.height, CompactOptionsContentHeight(1));
         float padListScroll = ScrollOptionItemIntoView(0f, shortOptionsViewport, lastCompactPad.y, lastCompactPad.height, CompactOptionsContentHeight(2));
         float padDeadzoneScroll = ScrollOptionItemIntoView(0f, shortOptionsViewport, compactPadDeadzone.y, compactPadDeadzone.height, CompactOptionsContentHeight(2));
+        float extendedWarningsScroll = ScrollOptionItemIntoView(0f, shortOptionsViewport, compactExtendedWarnings.y, compactExtendedWarnings.height, CompactOptionsContentHeight(0));
         float fullscreenScroll = ScrollOptionItemIntoView(0f, shortOptionsViewport, compactFullscreen.y, compactFullscreen.height, CompactOptionsContentHeight(0));
         float frameRateScroll = ScrollOptionItemIntoView(0f, shortOptionsViewport, compactFrameRate.y, compactFrameRate.height, CompactOptionsContentHeight(0));
         if (!CompactOptionsLayoutFits(400f, 360f) || !CompactOptionsLayoutFits(700f, 600f) || keyListScroll <= 0f || padListScroll <= 0f ||
             lastCompactKey.y + lastCompactKey.height > keyListScroll + shortOptionsViewport + 0.001f ||
             lastCompactPad.y + lastCompactPad.height > padListScroll + shortOptionsViewport + 0.001f ||
             compactPadDeadzone.y + compactPadDeadzone.height > padDeadzoneScroll + shortOptionsViewport + 0.001f ||
+            compactExtendedWarnings.y + compactExtendedWarnings.height > extendedWarningsScroll + shortOptionsViewport + 0.001f ||
             compactFullscreen.y + compactFullscreen.height > fullscreenScroll + shortOptionsViewport + 0.001f ||
             compactFrameRate.y + compactFrameRate.height > frameRateScroll + shortOptionsViewport + 0.001f ||
             Mathf.Abs(compactPadDeadzone.height - 108f) > 0.001f ||
             keyListScroll > CompactOptionsContentHeight(1) - shortOptionsViewport ||
             padListScroll > CompactOptionsContentHeight(2) - shortOptionsViewport ||
             padDeadzoneScroll > CompactOptionsContentHeight(2) - shortOptionsViewport ||
+            extendedWarningsScroll > CompactOptionsContentHeight(0) - shortOptionsViewport ||
             fullscreenScroll > CompactOptionsContentHeight(0) - shortOptionsViewport ||
             frameRateScroll > CompactOptionsContentHeight(0) - shortOptionsViewport)
         { SmokeFail("As opções roláveis não mantêm as últimas ações, FPS, tela cheia ou zona morta visíveis em 400x360"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: opções roláveis preservam remapeamento, FPS, tela cheia e zona morta em 400x360");
-        if (!SoundOptionsLayoutFits(600f))
-        { SmokeFail("O controle de alto contraste ou as instruções de avisos saem do menu em janela baixa"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: opções roláveis preservam remapeamento, reação, FPS, tela cheia e zona morta em 400x360");
+        if (!SoundOptionsLayoutFits(600f) || !SoundOptionsLayoutFits(720f))
+        { SmokeFail("As opções de reação, alto contraste ou instruções de perigo saem do menu em janela baixa ou padrão"); yield break; }
         bool frameRateModesWork = ScadrykSettings.FrameRateTargetForMode(ScadrykSettings.FrameRateMonitor) == -1 &&
             ScadrykSettings.VSyncForFrameRateMode(ScadrykSettings.FrameRateMonitor) == 1 &&
             ScadrykSettings.FrameRateTargetForMode(ScadrykSettings.FrameRate30) == 30 &&

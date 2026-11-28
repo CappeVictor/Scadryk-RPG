@@ -342,6 +342,12 @@ public static class ScadrykSettings
         set { if (HighContrastWarnings == value) return; PlayerPrefs.SetInt("Scadryk.HighContrastWarnings", value ? 1 : 0); PlayerPrefs.Save(); }
     }
 
+    public static bool ExtendedAttackWarnings
+    {
+        get => PlayerPrefs.GetInt("Scadryk.ExtendedAttackWarnings", 0) != 0;
+        set { if (ExtendedAttackWarnings == value) return; PlayerPrefs.SetInt("Scadryk.ExtendedAttackWarnings", value ? 1 : 0); PlayerPrefs.Save(); }
+    }
+
     public static bool Fullscreen
     {
         get => PlayerPrefs.GetInt("Scadryk.Fullscreen", 1) != 0;
