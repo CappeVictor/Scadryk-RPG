@@ -1,6 +1,9 @@
 # Scadryk — diagnóstico e direção
 
 ## Revisão de estado (28/11/2026; branch `codex/unity-playable-phase-maps`)
+
+**Vulnerabilidade legível também na vida do alvo (28/11/2026, código `63557ca`):** enquanto Estouro expõe um Eco, a barra de vida passa para ciano e volta à cor definida para aquele inimigo quando a exposição acaba. O sprite já recebia tonalidade ciano; repetir o estado na barra acrescenta um sinal persistente sem flash. Unity `6000.6.9f1` compilou sem diagnósticos C# e a build Windows terminou com sucesso (`63557caca1c5`, `2026-11-28T13:39:58Z`). O contraste, a duração percebida e a leitura quando há vários Ecos expostos precisam de avaliação visual em combate.
+
 **Ramal dos desvios no mapa da jornada (28/11/2026, código `c37715f`):** o painel de campanha agora desenha as rotas laterais norte/sul dentro da sala central; o marcador do selo mostra pendente bloqueado, disponível ou liberado usando os estados de poder e save já existentes. Compilação em Unity `6000.6.9f1` sem erros/avisos C# e build Windows bem-sucedida (`c37715f2bc58`, `2026-11-28T13:35:48Z`). Ainda falta verificar visualmente o espaço entre o diagrama, o nome da sala e o estado em janelas pequenas.
 
 **Marcos de ressonância com arte própria por lugar (28/11/2026, código `ca50490`):** as interações de exploração usam a pedra rúnica do Vau, a poça de salmoura da Bacia, cristais ressonantes e o santuário da Costa; na Fileira das Bóias, o primeiro sinal mostra a boia-farol e o segundo o sino do recife. A associação usa sprites já incluídos no atlas ambiental. Unity `6000.6.9f1` importou/compilou sem diagnósticos C# e a build Windows terminou com sucesso (`ca50490288bc`, `2026-11-28T03:21:36Z`). Ainda falta observar se os marcos podem ser identificados sem depender da legenda e se o tamanho se mantém legível durante a exploração.
