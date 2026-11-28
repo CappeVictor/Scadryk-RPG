@@ -58,6 +58,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     internal const float AbilityBufferWindow = 0.18f;
     internal const float ShockwaveBufferWindow = 0.18f;
     internal const float DashBufferWindow = 0.12f;
+    internal const float GamepadAimActivationMagnitude = 0.05f;
     internal const float DashPostInvulnerabilityGrace = 0.08f;
     internal const float ShockwaveWindup = 0.08f;
     internal const float ShockwaveRecovery = 0.28f;
@@ -270,7 +271,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
         }
         Vector2 stick = ScadrykSettings.ReadGamepadStick("Scadryk Aim X", "Scadryk Aim Y");
         stick.y = -stick.y;
-        if (stick.sqrMagnitude > 0.09f)
+        if (stick.sqrMagnitude > GamepadAimActivationMagnitude * GamepadAimActivationMagnitude)
         {
             hasIndependentGamepadAim = true;
             facing = ResolveGamepadFacing(facing, stick, Vector2.zero, true);
@@ -296,8 +297,9 @@ public sealed class ScadrykPlayerController : MonoBehaviour
 
     internal static Vector2 ResolveGamepadFacing(Vector2 lastFacing, Vector2 aimStick, Vector2 moveStick, bool hasIndependentAim)
     {
-        if (aimStick.sqrMagnitude > 0.09f) return aimStick.normalized;
-        if (!hasIndependentAim && moveStick.sqrMagnitude > 0.01f) return moveStick.normalized;
+        float aimThresholdSquared = GamepadAimActivationMagnitude * GamepadAimActivationMagnitude;
+        if (aimStick.sqrMagnitude > aimThresholdSquared) return aimStick.normalized;
+        if (!hasIndependentAim && moveStick.sqrMagnitude > aimThresholdSquared) return moveStick.normalized;
         return lastFacing.sqrMagnitude > 0.001f ? lastFacing.normalized : Vector2.right;
     }
 
