@@ -2,6 +2,8 @@
 
 ## Revisão de estado (28/11/2026; branch `codex/unity-playable-phase-maps`)
 
+**Calibração da mira (28/11/2026, código `0c9f0f4`):** o painel de opções mostra o eixo vertical convertido para a mesma direção usada pela mira twin-stick. Extraí a conversão para um método comum, evitando que a calibração reporte `Y+` enquanto a mira aponta para baixo. Unity batch e build Windows passaram; o smoke compilou, mas não foi executado, e a interface não foi aberta para inspeção visual.
+
 **Detecção de atividade do controle (28/11/2026, código `48e2ace`):** aim e detecção de dispositivo agora compartilham o corte de 5% da faixa filtrada. Isso elimina a divergência em que um analógico já movia a mira, mas a interface ainda identificava teclado/mouse até um desvio maior. Unity batch e build Windows passaram; as novas asserções do smoke ainda não foram executadas nem a resposta foi conferida em controle físico.
 
 **Resposta da mira twin-stick (28/11/2026, código `51528ea`):** a zona morta radial já filtrava drift, então a mira não precisa de outro corte de 30% da faixa resultante. Reduzi o gatilho extra para 5%; no padrão de 19%, a ativação calculada passa de aproximadamente 43% para 23% do curso físico. O smoke verifica a direção logo abaixo e acima do limiar, mas não foi executado; precisão e drift precisam ser avaliados em controle físico.
