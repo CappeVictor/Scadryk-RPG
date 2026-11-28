@@ -21,6 +21,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     internal const float MinimumAttackWarningDuration = 0.7f;
     internal const float BasicFinisherKnockbackSpeed = 3.2f;
     internal const float BasicFinisherKnockbackDuration = 0.12f;
+    internal const float RangedStrafeSpeedScale = 0.42f;
     internal const float AreaPulseRadius = 3.2f;
     internal const float SaltPulseRadius = 3.65f;
     internal const float CoastalPulseRadius = 2.8f;
@@ -397,7 +398,18 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             return;
         }
 
-        if (!IsBoss && (combatRole == 1 || combatRole == 3))
+        if (!IsBoss && combatRole == 1)
+        {
+            if (distance > 5.5f) BodyVelocity = MoveWithObstacleAvoidance(delta.normalized, distance) * moveSpeed;
+            else if (distance < 3.2f) BodyVelocity = MoveWithObstacleAvoidance(-delta.normalized, distance) * moveSpeed * 0.8f;
+            else
+            {
+                int strafeSign = animationPhase < 0.5f ? 1 : -1;
+                Vector2 strafe = RangedStrafeHeading(delta, strafeSign);
+                BodyVelocity = MoveWithObstacleAvoidance(strafe, distance) * moveSpeed * RangedStrafeSpeedScale;
+            }
+        }
+        else if (!IsBoss && combatRole == 3)
         {
             if (distance > 5.5f) BodyVelocity = MoveWithObstacleAvoidance(delta.normalized, distance) * moveSpeed;
             else if (distance < 3.2f) BodyVelocity = MoveWithObstacleAvoidance(-delta.normalized, distance) * moveSpeed * 0.8f;
@@ -446,6 +458,13 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     }
 
     internal static bool SteeringQueryIsSaturated(int hitCount) => hitCount >= SteeringHitCapacity;
+
+    internal static Vector2 RangedStrafeHeading(Vector2 directionToPlayer, int strafeSign)
+    {
+        if (directionToPlayer.sqrMagnitude < 0.001f) return Vector2.zero;
+        Vector2 tangent = new Vector2(-directionToPlayer.y, directionToPlayer.x).normalized;
+        return strafeSign < 0 ? -tangent : tangent;
+    }
 
     internal static Vector2 SelectSteeringHeading(Vector2 desiredHeading, bool[] blocked)
     {

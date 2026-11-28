@@ -193,6 +193,15 @@ public sealed partial class ScadrykGameDirector
             !ScadrykEnemyHealth.SteeringQueryIsSaturated(ScadrykEnemyHealth.SteeringHitCapacity))
         { SmokeFail("A navegação dos Ecos não contorna um bloqueio ou não mantém avanço quando todos os lados estão fechados"); yield break; }
         Debug.Log("SCADRYK_SMOKE: direção de contorno mantém avanço, satura com segurança e tem fallback quando não há passagem livre");
+        Vector2 strafeClockwise = ScadrykEnemyHealth.RangedStrafeHeading(Vector2.right, 1);
+        Vector2 strafeCounterclockwise = ScadrykEnemyHealth.RangedStrafeHeading(Vector2.right, -1);
+        if (Vector2.Dot(strafeClockwise, Vector2.right) != 0f ||
+            Vector2.Distance(strafeClockwise, Vector2.up) > 0.001f ||
+            Vector2.Distance(strafeCounterclockwise, Vector2.down) > 0.001f ||
+            ScadrykEnemyHealth.RangedStrafeHeading(Vector2.zero, 1) != Vector2.zero ||
+            ScadrykEnemyHealth.RangedStrafeSpeedScale <= 0f || ScadrykEnemyHealth.RangedStrafeSpeedScale >= 1f)
+        { SmokeFail("O Atirador deve circular em velocidade reduzida, sem componente radial, e tratar alvo coincidente com segurança"); yield break; }
+        Debug.Log("SCADRYK_SMOKE: Atiradores mantêm distância com reposicionamento lateral de baixa velocidade");
         if (ScadrykEnemyHealth.AttackRecoveryDuration(false, false) <= 0f ||
             ScadrykEnemyHealth.AttackRecoveryDuration(true, false) <= ScadrykEnemyHealth.AttackRecoveryDuration(false, false) ||
             ScadrykEnemyHealth.AttackRecoveryDuration(false, true) <= ScadrykEnemyHealth.AttackRecoveryDuration(true, false))
