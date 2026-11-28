@@ -7,6 +7,9 @@ public sealed class ScadrykHealthBar : MonoBehaviour
     private ScadrykEnemyHealth enemy;
     private Transform fill;
     private SpriteRenderer fillRenderer;
+    private Transform exposureFill;
+    private SpriteRenderer exposureTrackRenderer;
+    private SpriteRenderer exposureFillRenderer;
     private Color baseFillColor;
     private GameObject barObject;
     private float barWidth = 0.82f;
@@ -29,6 +32,19 @@ public sealed class ScadrykHealthBar : MonoBehaviour
         fillRenderer = healthFill;
         baseFillColor = healthFill.color;
         fill = healthFill.transform;
+
+        if (enemy != null)
+        {
+            var exposureTrack = CreateBarPiece(bar.transform, "Exposure timer track", new Vector2(barWidth + 0.02f, 0.022f), new Color(0.015f, 0.055f, 0.075f, 0.96f), 151);
+            exposureTrack.transform.localPosition = new Vector3(0f, 0.054f, -0.015f);
+            exposureTrackRenderer = exposureTrack;
+            exposureTrackRenderer.enabled = false;
+            var exposureMeter = CreateBarPiece(bar.transform, "Exposure time remaining", new Vector2(barWidth, 0.009f), new Color(0.72f, 0.96f, 1f), 152);
+            exposureFill = exposureMeter.transform;
+            exposureFill.localPosition = new Vector3(0f, 0.054f, -0.02f);
+            exposureFillRenderer = exposureMeter;
+            exposureFillRenderer.enabled = false;
+        }
     }
 
     public void Hide() { if (barObject != null) barObject.SetActive(false); }
@@ -53,5 +69,17 @@ public sealed class ScadrykHealthBar : MonoBehaviour
         fill.localPosition = new Vector3(-barWidth * (1f - health) * 0.5f, 0f, -0.01f);
         if (fillRenderer != null)
             fillRenderer.color = enemy != null && enemy.IsExposed ? new Color(0.42f, 0.9f, 1f) : baseFillColor;
+        bool exposed = enemy != null && enemy.IsExposed;
+        if (exposureTrackRenderer != null) exposureTrackRenderer.enabled = exposed;
+        if (exposureFillRenderer != null)
+        {
+            exposureFillRenderer.enabled = exposed;
+            if (exposed)
+            {
+                float remaining = enemy.Exposure01;
+                exposureFill.localScale = new Vector3(barWidth * remaining, 0.009f, 1f);
+                exposureFill.localPosition = new Vector3(-barWidth * (1f - remaining) * 0.5f, 0.054f, -0.02f);
+            }
+        }
     }
 }

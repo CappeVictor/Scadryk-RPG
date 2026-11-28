@@ -1974,6 +1974,14 @@ public sealed partial class ScadrykGameDirector
                 bool tacticalEffect = phaseIndex == 0 ? testHealth.IsStaggered : phaseIndex == 1 ? testHealth.IsExposed : (testHealth.IsKnockedBack || testHealth.IsStaggered);
                 if (testHealth.Health >= 1000f || !tacticalEffect)
                 { SmokeFail("Poder da fase " + phaseIndex + " não causou dano ou não aplicou seu efeito tático"); yield break; }
+                if (phaseIndex == 1)
+                {
+                    float exposureBeforeWait = testHealth.Exposure01;
+                    yield return new WaitForSeconds(0.1f);
+                    float exposureAfterWait = testHealth.Exposure01;
+                    if (exposureBeforeWait <= 0f || exposureBeforeWait > 1f || exposureAfterWait < 0f || exposureAfterWait >= exposureBeforeWait)
+                    { SmokeFail("Estouro não manteve um contador de vulnerabilidade limitado e decrescente"); yield break; }
+                }
                 Debug.Log("SCADRYK_SMOKE: poder " + (phaseIndex + 1) + " causou dano e aplicou seu efeito tático");
                 Destroy(testTarget);
             }

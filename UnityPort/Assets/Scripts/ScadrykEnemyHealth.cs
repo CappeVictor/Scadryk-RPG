@@ -131,7 +131,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private int combatRole;
     private Color roleTint = Color.white;
     private float animationPhase;
-    private float staggerUntil, exposedUntil, knockbackUntil, recoveryUntil;
+    private float staggerUntil, exposedUntil, exposureStartedAt, exposureDuration, knockbackUntil, recoveryUntil;
     private Vector2 knockbackVelocity;
 
     public float Health => health;
@@ -140,6 +140,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     public bool IsFinalBoss => isFinalBoss;
     public bool IsStaggered => !dead && Time.time < staggerUntil;
     public bool IsExposed => !dead && Time.time < exposedUntil;
+    public float Exposure01 => !IsExposed ? 0f : Mathf.Clamp01((exposedUntil - Time.time) / Mathf.Max(0.05f, exposureDuration));
     public bool IsKnockedBack => !dead && Time.time < knockbackUntil;
     public int FinalStage => !isFinalBoss ? 0 : Health01 > 0.7f ? 1 : Health01 > 0.35f ? 2 : 3;
     public int DisplayStage => !isFinalBoss ? 0 : isWindup ? queuedFinalStage : FinalStage;
@@ -880,7 +881,20 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
 
     public void ApplySaltExposure(bool echo = false)
     {
-        if (!dead) exposedUntil = Mathf.Max(exposedUntil, Time.time + SaltExposureDuration(IsBoss, echo));
+        if (dead) return;
+        float duration = SaltExposureDuration(IsBoss, echo);
+        float nextUntil = Mathf.Max(exposedUntil, Time.time + duration);
+        if (Time.time >= exposedUntil)
+        {
+            exposureStartedAt = Time.time;
+            exposureDuration = duration;
+            exposedUntil = nextUntil;
+        }
+        else if (nextUntil > exposedUntil)
+        {
+            exposedUntil = nextUntil;
+            exposureDuration = exposedUntil - exposureStartedAt;
+        }
     }
 
     public void ApplyTidePush(Vector2 direction, bool echo = false)
