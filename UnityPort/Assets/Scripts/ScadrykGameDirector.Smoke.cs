@@ -767,8 +767,13 @@ public sealed partial class ScadrykGameDirector
         for (int stage = 1; stage <= 3; stage++)
         {
             float expectedStarfallWarning = stage == 3 ? 1.64f : 1.81f;
+            int expectedStarfallWarnings = stage == 1 ? 2 : stage == 2 ? 3 : 5;
             enemyWarningsMeetReactionFloor &= ScadrykEnemyHealth.FinalBossWindupDuration(stage) >= ScadrykEnemyHealth.MinimumAttackWarningDuration &&
-                Mathf.Abs(ScadrykEnemyHealth.FinalStarfallWarningDuration(stage) - expectedStarfallWarning) <= 0.001f;
+                Mathf.Abs(ScadrykEnemyHealth.FinalStarfallWarningDuration(stage) - expectedStarfallWarning) <= 0.001f &&
+                ScadrykEnemyHealth.FinalVolleyWarningCount(stage) == stage * 2 + 1 &&
+                ScadrykEnemyHealth.FinalStarfallWarningCount(stage) == expectedStarfallWarnings &&
+                ScadrykEnemyHealth.MaximumFinalBossWarningCount(stage) <= ScadrykEnemyHealth.AttackWarningCapacity &&
+                ScadrykEnemyHealth.FinalBossWarningsFit(stage);
         }
         if (!enemyWarningsMeetReactionFloor ||
             ScadrykEnemyHealth.ThreatDirectionArrow(Vector2.zero, Vector2.right) != "→" ||

@@ -31,6 +31,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     internal static float SupportPulseInnerDiameter => SupportPulseRadius * 0.9f;
     internal const float OpeningAttackSpacing = 0.52f;
     internal const int SteeringHitCapacity = 32;
+    internal const int AttackWarningCapacity = 8;
     internal static float AttackRecoveryDuration(bool boss, bool finalBoss) => finalBoss ? 0.42f : boss ? 0.36f : 0.24f;
     internal static float AttackWindupDuration(bool boss, int biome, int role) => boss ? Mathf.Clamp(biome, 0, 2) switch
     {
@@ -55,7 +56,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private static bool supportPulseFilterReady;
     private readonly RaycastHit2D[] steeringHits = new RaycastHit2D[SteeringHitCapacity];
     private readonly bool[] blockedSteeringHeadings = new bool[10];
-    private readonly GameObject[] attackWarnings = new GameObject[8];
+    private readonly GameObject[] attackWarnings = new GameObject[AttackWarningCapacity];
     private int attackWarningCount;
     internal static float AreaPulseDiameter => AreaPulseRadius * 2f;
     internal static float BellPulseDiameter => BellPulseRadius * 2f;
@@ -594,7 +595,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         if (queuedFinalPattern == 0)
         {
             Vector2 direction = (attackTarget - origin).normalized;
-            int halfCount = stage == 1 ? 1 : stage == 2 ? 2 : 3;
+            int halfCount = FinalVolleyHalfCount(stage);
             for (int i = -halfCount; i <= halfCount; i++)
             {
                 float shardWidth = ScadrykEnemyProjectile.HitboxDiameter(0.58f);
@@ -675,7 +676,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         if (pattern == 0)
         {
             Vector2 direction = (attackTarget - origin).normalized;
-            int halfCount = stage == 1 ? 1 : stage == 2 ? 2 : 3;
+            int halfCount = FinalVolleyHalfCount(stage);
             Sprite shot = stage == 1 ? ScadrykEffects.RootThrustSprite : stage == 2 ? ScadrykEffects.SaltShardSprite : ScadrykEffects.VoidburstSprite;
             Color color = stage == 1 ? new Color(0.66f, 1f, 0.52f) : stage == 2 ? new Color(1f, 0.84f, 0.5f) : new Color(1f, 0.72f, 0.92f);
             for (int i = -halfCount; i <= halfCount; i++)
@@ -725,6 +726,11 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     internal static float FinalStarfallVisualDiameter => FinalStarfallRadius * 2f;
     internal static bool FinalStarfallHits(Vector2 target, Vector2 center) => Vector2.Distance(target, center) <= FinalStarfallRadius;
     internal static int FinalStarfallSideProjectileCount(int stage) => stage == 2 ? 1 : stage == 3 ? 3 : 0;
+    internal static int FinalVolleyHalfCount(int stage) => Mathf.Clamp(stage, 1, 3);
+    internal static int FinalVolleyWarningCount(int stage) => FinalVolleyHalfCount(stage) * 2 + 1;
+    internal static int FinalStarfallWarningCount(int stage) => 2 + FinalStarfallSideProjectileCount(stage);
+    internal static int MaximumFinalBossWarningCount(int stage) => Mathf.Max(FinalVolleyWarningCount(stage), FinalStarfallWarningCount(stage), 2);
+    internal static bool FinalBossWarningsFit(int stage) => MaximumFinalBossWarningCount(stage) <= AttackWarningCapacity;
     internal static float FinalStarfallSideProjectileAngle(int stage, int index) =>
         (index - (FinalStarfallSideProjectileCount(stage) - 1) * 0.5f) * FinalStarfallProjectileAngleStep;
     internal static float OpeningAttackDelay(int enemyIndex, bool boss, bool campaignOpeningRoom = false) =>
