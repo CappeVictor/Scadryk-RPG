@@ -332,11 +332,13 @@ public sealed partial class ScadrykGameDirector : MonoBehaviour
 
     internal static bool MemoryDismissRequested(bool confirm, bool interact, bool cancel) => confirm || interact || cancel;
     internal static bool MemoryDismissedThisFrame(int dismissedFrame, int currentFrame) => dismissedFrame >= 0 && dismissedFrame == currentFrame;
+    internal static bool GamepadStickActivity(Vector2 stick) =>
+        stick.sqrMagnitude > ScadrykPlayerController.GamepadAimActivationMagnitude * ScadrykPlayerController.GamepadAimActivationMagnitude;
     private static bool GamepadActivityThisFrame() => ScadrykSettings.PadDown(0) || ScadrykSettings.PadDown(1) || ScadrykSettings.PadButtonDown(7) ||
         ScadrykSettings.PadDown(2) || ScadrykSettings.PadDown(3) || ScadrykSettings.PadDown(4) || ScadrykSettings.PadDown(5) || ScadrykSettings.PadDown(6) ||
         ScadrykSettings.PadDown(ScadrykSettings.UnclearAttackAction) ||
-        ScadrykSettings.ReadGamepadStick("Scadryk Move X", "Scadryk Move Y").sqrMagnitude > 0.09f ||
-        ScadrykSettings.ReadGamepadStick("Scadryk Aim X", "Scadryk Aim Y").sqrMagnitude > 0.09f;
+        GamepadStickActivity(ScadrykSettings.ReadGamepadStick("Scadryk Move X", "Scadryk Move Y")) ||
+        GamepadStickActivity(ScadrykSettings.ReadGamepadStick("Scadryk Aim X", "Scadryk Aim Y"));
     internal static string MemoryInputModeAfterActivity(string current, bool keyboardActivity, bool gamepadActivity) =>
         ResolveInputMode(ResolveInputMode(current, keyboardActivity ? "keyboard_mouse" : null), gamepadActivity ? "gamepad" : null);
     internal static string MemoryDismissHintText(bool gamepad, string interactBinding) => MemoryDismissHintText(gamepad, interactBinding, false);
