@@ -111,7 +111,9 @@ public static class ScadrykSettings
     };
     public static bool Down(int action) => Input.GetKeyDown(Key(action));
     public static bool Held(int action) => Input.GetKey(Key(action));
-    internal static bool CanBindKey(KeyCode key) => key != KeyCode.None && key != KeyCode.Escape && key != KeyCode.M;
+    internal static bool CanBindKey(KeyCode key) =>
+        System.Enum.IsDefined(typeof(KeyCode), key) && (int)key < (int)KeyCode.Mouse0 &&
+        key != KeyCode.None && key != KeyCode.Escape && key != KeyCode.M;
     internal static bool CanBindPadButton(int button) => button >= 0 && button < PadButtons.Length && button != 7 && button != 8;
     public static int PadButton(int action) => PadButton(action, "Scadryk.Pad.");
     internal static int PadButton(int action, string prefix) => action == UnclearAttackAction

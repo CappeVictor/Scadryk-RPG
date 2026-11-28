@@ -19,11 +19,13 @@ public sealed partial class ScadrykGameDirector
             int[] defaultButtons = { 0, 1, 2, 4, 5, 6, 3 };
             PlayerPrefs.SetInt(keyPrefix + "0", (int)KeyCode.M);
             PlayerPrefs.SetInt(padPrefix + "0", 8);
+            PlayerPrefs.SetInt(keyPrefix + "2", 987654);
             PlayerPrefs.SetInt(keyPrefix + "1", (int)KeyCode.G);
             PlayerPrefs.SetInt(padPrefix + "1", 19);
             PlayerPrefs.SetInt(unclearPadKey, 8);
             ScadrykSettings.ClearReservedBindings(keyPrefix, padPrefix, unclearPadKey);
             bool reservedBindingsCleared = ScadrykSettings.Key(0, keyPrefix) == defaultKeys[0] &&
+                ScadrykSettings.Key(2, keyPrefix) == defaultKeys[2] &&
                 ScadrykSettings.PadButton(0, padPrefix) == defaultButtons[0] &&
                 ScadrykSettings.Key(1, keyPrefix) == KeyCode.G && ScadrykSettings.PadButton(1, padPrefix) == 19 &&
                 ScadrykSettings.PadButton(ScadrykSettings.UnclearAttackAction, padPrefix) == 9;
@@ -150,6 +152,8 @@ public sealed partial class ScadrykGameDirector
         { SmokeFail("O selo opcional não permanece sutil ao longe e legível ao se aproximar"); yield break; }
         Debug.Log("SCADRYK_SMOKE: selos do Eco surgem em intensidade conforme Nara se aproxima");
         if (ScadrykSettings.CanBindKey(KeyCode.None) || ScadrykSettings.CanBindKey(KeyCode.Escape) ||
+            ScadrykSettings.CanBindKey(KeyCode.Mouse0) || ScadrykSettings.CanBindKey(KeyCode.JoystickButton0) ||
+            ScadrykSettings.CanBindKey((KeyCode)987654) ||
             !ScadrykSettings.CanBindKey(KeyCode.F8) || ScadrykSettings.CanBindKey(KeyCode.M) || !ScadrykSettings.CanBindKey(KeyCode.F) ||
             ScadrykSettings.CanBindPadButton(7) || ScadrykSettings.CanBindPadButton(8) || !ScadrykSettings.CanBindPadButton(9))
         { SmokeFail("Remapeamento permite tecla/botão de sistema ou rejeita um vínculo de QA normal"); yield break; }
