@@ -516,7 +516,8 @@ public sealed partial class ScadrykGameDirector
         Debug.Log("SCADRYK_SMOKE: surgimento dos encontros evita cobertura sólida nas nove salas");
         if (Mathf.Abs(ScadrykEnemyHealth.OpeningAttackDelay(0, false, true) - 2.6f) > 0.001f ||
             Mathf.Abs(ScadrykEnemyHealth.OpeningAttackDelay(0, false) - 0.3f) > 0.001f ||
-            Mathf.Abs(ScadrykEnemyHealth.OpeningAttackDelay(1, false) - 1.05f) > 0.001f ||
+            Mathf.Abs(ScadrykEnemyHealth.OpeningAttackDelay(1, false) - 1.15f) > 0.001f ||
+            Mathf.Abs(ScadrykEnemyHealth.OpeningAttackSpacing - 0.85f) > 0.001f ||
             ScadrykEnemyHealth.OpeningAttackSpacing < ScadrykEnemyHealth.MinimumAttackWarningDuration ||
             ScadrykEnemyHealth.OpeningAttackDelay(1, false) <= ScadrykEnemyHealth.OpeningAttackDelay(0, false) ||
             ScadrykEnemyHealth.OpeningAttackDelay(2, false) <= ScadrykEnemyHealth.OpeningAttackDelay(1, false) ||
@@ -528,7 +529,7 @@ public sealed partial class ScadrykGameDirector
         float secondAttack = ScadrykEnemyHealth.ReserveEnemyAttackSlot(ref nextEnemySlot, 0.82f);
         float lateAttack = ScadrykEnemyHealth.ReserveEnemyAttackSlot(ref nextEnemySlot, 5f);
         float clusteredFollowup = ScadrykEnemyHealth.ReserveEnemyAttackSlot(ref nextEnemySlot, 5.1f);
-        if (Mathf.Abs(firstAttack - 0.3f) > 0.001f || Mathf.Abs(secondAttack - 1.05f) > 0.001f ||
+        if (Mathf.Abs(firstAttack - 0.3f) > 0.001f || Mathf.Abs(secondAttack - 1.15f) > 0.001f ||
             Mathf.Abs(lateAttack - 5f) > 0.001f ||
             Mathf.Abs(clusteredFollowup - lateAttack - ScadrykEnemyHealth.OpeningAttackSpacing) > 0.001f)
         { SmokeFail("O escalonador não separou inimigos que voltaram a coincidir após o primeiro ciclo"); yield break; }
@@ -846,7 +847,7 @@ public sealed partial class ScadrykGameDirector
             ScadrykEnemyHealth.ThreatDirectionArrow(Vector2.zero, new Vector2(1f, -1f)) != "↘" ||
             ScadrykEnemyHealth.ThreatDirectionArrow(Vector2.zero, Vector2.zero) != "•")
         { SmokeFail("Um padrão inimigo anuncia dano por menos que o tempo de reação definido ou as setas de direção falharam"); yield break; }
-        Debug.Log("SCADRYK_SMOKE: avisos preservam 0,7 s e setas identificam a ameaça nas oito direções");
+        Debug.Log("SCADRYK_SMOKE: avisos preservam 0,8 s e setas identificam a ameaça nas oito direções");
         if (ScadrykPlayerController.InputBufferCanStart(1.1f, 1.3f, 1.2f) ||
             !ScadrykPlayerController.InputBufferCanStart(1.21f, 1.3f, 1.2f) ||
             ScadrykPlayerController.InputBufferCanStart(1.31f, 1.3f, 1.2f) ||

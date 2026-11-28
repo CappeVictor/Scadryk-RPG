@@ -19,7 +19,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     private const float FinalStarfallProjectileSpeed = 5.4f;
     internal const float FinalStageBreatherDuration = 0.9f;
     internal const float FinalStageAttackDelay = 3.1f;
-    internal const float MinimumAttackWarningDuration = 0.7f;
+    internal const float MinimumAttackWarningDuration = 0.8f;
     internal const float BasicFinisherKnockbackSpeed = 3.2f;
     internal const float BasicFinisherKnockbackDuration = 0.12f;
     internal const float RangedStrafeSpeedScale = 0.42f;
@@ -29,7 +29,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
     internal const float BellPulseRadius = 5.3f;
     internal const float SupportPulseRadius = 2.5f;
     internal static float SupportPulseInnerDiameter => SupportPulseRadius * 0.9f;
-    internal const float OpeningAttackSpacing = 0.75f;
+    internal const float OpeningAttackSpacing = 0.85f;
     internal const int SteeringHitCapacity = 32;
     internal const int AttackWarningCapacity = 8;
     internal static float AttackRecoveryDuration(bool boss, bool finalBoss) => finalBoss ? 0.42f : boss ? 0.36f : 0.24f;
@@ -40,7 +40,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         _ => 1.05f
     } : Mathf.Clamp(role, 0, 3) switch
     {
-        0 => 0.7f,
+        0 => 0.8f,
         1 => 0.85f,
         2 => 0.95f,
         _ => 1.1f
