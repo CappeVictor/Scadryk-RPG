@@ -2,6 +2,8 @@
 
 ## Revisão de estado (28/11/2026; branch `codex/unity-playable-phase-maps`)
 
+**Impasse do steering dos Ecos (28/11/2026, código `5269434`):** se o círculo de desvio marca todas as alternativas como bloqueadas, o inimigo fica parado até abrir uma direção; isso substitui o fallback anterior que continuava avançando contra a parede. O smoke compila a verificação de rota fechada e de desvio livre, mas não foi executado nem validado em arena real.
+
 **Reconhecimento do analógico esquerdo (28/11/2026, código `6275a1b`):** o movimento já respondia abaixo do limiar que o controlador usava para trocar dispositivo e selecionar a mira de movimento; agora ambas as respostas compartilham o corte de 5% da faixa filtrada. O smoke verifica as transições, mas não foi executado nem medido em controle físico.
 
 **Prioridade da legenda de ameaças (28/11/2026, código `c5e2ec1`):** as duas linhas de aviso agora são ordenadas de novo depois que duplicatas atualizam o tempo, mantendo o impacto mais próximo na primeira linha. O smoke cobre o caso; ainda falta observar legibilidade durante combate real.
