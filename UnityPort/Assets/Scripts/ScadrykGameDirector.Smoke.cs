@@ -642,9 +642,16 @@ public sealed partial class ScadrykGameDirector
         Vector2 intentionalAim = ScadrykSettings.ApplyRadialDeadzone(new Vector2(-0.4f, 0.3f), 0.19f);
         Vector2 fullStick = ScadrykSettings.ApplyRadialDeadzone(Vector2.right, 0.19f);
         Vector2 halfwayStick = ScadrykSettings.ApplyRadialDeadzone(Vector2.right * 0.595f, 0.19f);
+        Vector2 invalidStick = ScadrykSettings.ApplyRadialDeadzone(new Vector2(float.NaN, 0f), 0.19f);
+        Vector2 infiniteStick = ScadrykSettings.ApplyRadialDeadzone(new Vector2(0f, float.PositiveInfinity), 0.19f);
         string driftReadout = ScadrykSettings.GamepadStickReadout(new Vector2(0.12f, 0.03f), 0.19f);
         string movingReadout = ScadrykSettings.GamepadStickReadout(Vector2.right * 0.595f, 0.19f);
-        if (stickDrift != Vector2.zero || intentionalDiagonal == Vector2.zero || intentionalAim == Vector2.zero ||
+        if (stickDrift != Vector2.zero || invalidStick != Vector2.zero || infiniteStick != Vector2.zero ||
+            ScadrykSettings.ClampFiniteSetting(float.NaN, 0f, 1f, ScadrykSettings.DefaultMusicVolume) != ScadrykSettings.DefaultMusicVolume ||
+            ScadrykSettings.ClampFiniteSetting(float.PositiveInfinity, 0f, 1f, ScadrykSettings.DefaultEffectsVolume) != ScadrykSettings.DefaultEffectsVolume ||
+            Mathf.Abs(ScadrykSettings.ClampFiniteSetting(-10f, 0f, 1f, 0.5f)) > 0.001f ||
+            Mathf.Abs(ScadrykSettings.ClampFiniteSetting(2f, 0f, 1f, 0.5f) - 1f) > 0.001f ||
+            intentionalDiagonal == Vector2.zero || intentionalAim == Vector2.zero ||
             Mathf.Abs(intentionalAim.magnitude - ((0.5f - 0.19f) / 0.81f)) > 0.001f ||
             Mathf.Abs(fullStick.magnitude - 1f) > 0.001f || Mathf.Abs(halfwayStick.magnitude - 0.5f) > 0.001f ||
             driftReadout != "X+12 Y+03 12→00%" || movingReadout != "X+60 Y00 60→50%" ||

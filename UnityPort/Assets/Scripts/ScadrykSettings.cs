@@ -10,6 +10,8 @@ public static class ScadrykSettings
     internal const float DefaultGamepadDeadzone = 0.19f;
     internal const float MinimumGamepadDeadzone = 0.08f;
     internal const float MaximumGamepadDeadzone = 0.4f;
+    internal const float DefaultMusicVolume = 0.42f;
+    internal const float DefaultEffectsVolume = 0.65f;
     internal const int FrameRateMonitor = 0;
     internal const int FrameRate30 = 1;
     internal const int FrameRate60 = 2;
@@ -32,6 +34,16 @@ public static class ScadrykSettings
     internal static bool ShouldFlushDeferredSave(bool pending, float now, float dueAt) => pending && now >= dueAt;
     internal static float DeferredSaveDeadline(bool pending, float now, float currentDueAt) =>
         pending ? currentDueAt : now + DeferredSaveDelay;
+
+    internal static float ClampFiniteSetting(float value, float minimum, float maximum, float fallback) =>
+        float.IsNaN(value) || float.IsInfinity(value)
+            ? Mathf.Clamp(fallback, minimum, maximum)
+            : Mathf.Clamp(value, minimum, maximum);
+
+    private static Vector2 FiniteStickOrZero(Vector2 stick) =>
+        float.IsNaN(stick.x) || float.IsInfinity(stick.x) || float.IsNaN(stick.y) || float.IsInfinity(stick.y)
+            ? Vector2.zero
+            : stick;
 
     private static void SetFloatDeferred(string key, float value)
     {
@@ -109,7 +121,8 @@ public static class ScadrykSettings
         ApplyRadialDeadzone(new Vector2(Input.GetAxisRaw(horizontalAxis), Input.GetAxisRaw(verticalAxis)), GamepadDeadzone);
     internal static Vector2 ApplyRadialDeadzone(Vector2 stick, float deadzone)
     {
-        float threshold = Mathf.Clamp(deadzone, 0f, 0.95f);
+        stick = FiniteStickOrZero(stick);
+        float threshold = ClampFiniteSetting(deadzone, 0f, 0.95f, DefaultGamepadDeadzone);
         float magnitude = stick.magnitude;
         if (magnitude <= threshold) return Vector2.zero;
 
@@ -118,6 +131,7 @@ public static class ScadrykSettings
     }
     internal static string GamepadStickReadout(Vector2 raw, float deadzone)
     {
+        raw = FiniteStickOrZero(raw);
         int xPercent = Mathf.RoundToInt(Mathf.Clamp(raw.x, -1f, 1f) * 100f);
         int yPercent = Mathf.RoundToInt(Mathf.Clamp(raw.y, -1f, 1f) * 100f);
         int rawPercent = Mathf.RoundToInt(Mathf.Clamp01(raw.magnitude) * 100f);
@@ -286,28 +300,28 @@ public static class ScadrykSettings
 
     public static float MusicVolume
     {
-        get => PlayerPrefs.GetFloat("Scadryk.Music", 0.42f);
-        set { float clamped = Mathf.Clamp01(value); if (Mathf.Abs(MusicVolume - clamped) < 0.001f) return; SetFloatDeferred("Scadryk.Music", clamped); }
+        get => ClampFiniteSetting(PlayerPrefs.GetFloat("Scadryk.Music", DefaultMusicVolume), 0f, 1f, DefaultMusicVolume);
+        set { float clamped = ClampFiniteSetting(value, 0f, 1f, DefaultMusicVolume); if (Mathf.Abs(MusicVolume - clamped) < 0.001f) return; SetFloatDeferred("Scadryk.Music", clamped); }
     }
     public static float EffectsVolume
     {
-        get => PlayerPrefs.GetFloat("Scadryk.Effects", 0.65f);
-        set { float clamped = Mathf.Clamp01(value); if (Mathf.Abs(EffectsVolume - clamped) < 0.001f) return; SetFloatDeferred("Scadryk.Effects", clamped); }
+        get => ClampFiniteSetting(PlayerPrefs.GetFloat("Scadryk.Effects", DefaultEffectsVolume), 0f, 1f, DefaultEffectsVolume);
+        set { float clamped = ClampFiniteSetting(value, 0f, 1f, DefaultEffectsVolume); if (Mathf.Abs(EffectsVolume - clamped) < 0.001f) return; SetFloatDeferred("Scadryk.Effects", clamped); }
     }
     public static float GamepadDeadzone
     {
-        get => Mathf.Clamp(PlayerPrefs.GetFloat("Scadryk.GamepadDeadzone", DefaultGamepadDeadzone), MinimumGamepadDeadzone, MaximumGamepadDeadzone);
+        get => ClampFiniteSetting(PlayerPrefs.GetFloat("Scadryk.GamepadDeadzone", DefaultGamepadDeadzone), MinimumGamepadDeadzone, MaximumGamepadDeadzone, DefaultGamepadDeadzone);
         set
         {
-            float clamped = Mathf.Clamp(value, MinimumGamepadDeadzone, MaximumGamepadDeadzone);
+            float clamped = ClampFiniteSetting(value, MinimumGamepadDeadzone, MaximumGamepadDeadzone, DefaultGamepadDeadzone);
             if (Mathf.Abs(GamepadDeadzone - clamped) < 0.001f) return;
             SetFloatDeferred("Scadryk.GamepadDeadzone", clamped);
         }
     }
     public static float TextScale
     {
-        get => PlayerPrefs.GetFloat("Scadryk.TextScale", 1f);
-        set { float clamped = Mathf.Clamp(value, 1f, 1.5f); if (Mathf.Abs(TextScale - clamped) < 0.001f) return; SetFloatDeferred("Scadryk.TextScale", clamped); }
+        get => ClampFiniteSetting(PlayerPrefs.GetFloat("Scadryk.TextScale", 1f), 1f, 1.5f, 1f);
+        set { float clamped = ClampFiniteSetting(value, 1f, 1.5f, 1f); if (Mathf.Abs(TextScale - clamped) < 0.001f) return; SetFloatDeferred("Scadryk.TextScale", clamped); }
     }
     public static bool ReduceFlash
     {
