@@ -26,14 +26,33 @@ public sealed partial class ScadrykGameDirector
             anchor.transform.SetParent(levelRoot.transform);
             anchor.transform.position = roomCenter + offset;
             var renderer = anchor.AddComponent<SpriteRenderer>();
-            renderer.sprite = environmentSprites != null && environmentSprites.Length > (phaseIndex == 2 ? 14 : 8) ?
-                environmentSprites[phaseIndex == 0 ? 6 : phaseIndex == 1 ? 8 : 14] : CircleSprite;
+            int spriteIndex = RoomAnchorSpriteIndex(id, i);
+            renderer.sprite = environmentSprites != null && spriteIndex >= 0 && spriteIndex < environmentSprites.Length
+                ? environmentSprites[spriteIndex] : CircleSprite;
             renderer.color = new Color(0.8f, 0.9f, 0.88f, 0.95f);
             renderer.sortingOrder = 3;
             anchor.transform.localScale = Vector3.one * 1.35f;
             roomAnchors[i] = anchor;
             MakeDecoration(levelRoot.transform, "Resonance mark", anchor.transform.position, new Vector2(1.5f, 1.5f), PhaseAccentColors[phaseIndex] * 0.48f, true, 2);
         }
+    }
+
+    internal static int RoomAnchorSpriteIndex(int roomId, int anchorIndex)
+    {
+        if (roomId == 7) return anchorIndex == 0 ? 14 : 15; // Beacon buoy, then reef bell.
+        return roomId switch
+        {
+            1 => 7,  // The forest's rune-marked standing stone.
+            3 => 11, // The brine pool holding a suspended memory.
+            4 => 8,  // Salt crystal resonators.
+            6 => 15, // The coast's stranded bell shrine.
+            _ => roomId / RoomsPerPhase switch
+            {
+                0 => 6,
+                1 => 8,
+                _ => 14
+            }
+        };
     }
 
     private void BuildWitness()
