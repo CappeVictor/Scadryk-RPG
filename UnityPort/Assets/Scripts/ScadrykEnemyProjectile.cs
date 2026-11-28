@@ -19,6 +19,7 @@ public sealed class ScadrykEnemyProjectile : MonoBehaviour
     private float expiresAt;
     private float travelDistanceLimit;
     private int hitEffectBiome = -1;
+    private string sourceLabel;
     internal float TravelDistanceLimit => travelDistanceLimit;
 
     internal static float HitboxDiameter(float spriteScale) => ColliderRadius * 2f * spriteScale;
@@ -45,7 +46,7 @@ public sealed class ScadrykEnemyProjectile : MonoBehaviour
     private Vector2 BodyVelocity { set => body.velocity = value; }
 #endif
 
-    public static ScadrykEnemyProjectile Launch(Vector2 position, Vector2 direction, float speed, float damage, Sprite projectileSprite = null, Color? tint = null, float size = 0.34f, string projectileName = "Salt crystal shard", float travelDistance = -1f, int hitEffectBiome = -1, Transform roomRoot = null)
+    public static ScadrykEnemyProjectile Launch(Vector2 position, Vector2 direction, float speed, float damage, Sprite projectileSprite = null, Color? tint = null, float size = 0.34f, string projectileName = "Salt crystal shard", float travelDistance = -1f, int hitEffectBiome = -1, Transform roomRoot = null, string sourceLabel = null)
     {
         if (!ProjectileArgumentsAreValid(position, direction, speed, damage, size, travelDistance)) return null;
         ScadrykEnemyProjectile projectile = Acquire(roomRoot, projectileName);
@@ -61,7 +62,7 @@ public sealed class ScadrykEnemyProjectile : MonoBehaviour
         projectile.body.gravityScale = 0f;
         projectile.body.bodyType = RigidbodyType2D.Kinematic;
         projectile.body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
-        projectile.Configure(direction, speed, damage, travelDistance, hitEffectBiome);
+        projectile.Configure(direction, speed, damage, travelDistance, hitEffectBiome, sourceLabel);
         return projectile;
     }
 
@@ -95,11 +96,12 @@ public sealed class ScadrykEnemyProjectile : MonoBehaviour
         return projectile;
     }
 
-    private void Configure(Vector2 direction, float speed, float hitDamage, float travelDistance, int effectBiome)
+    private void Configure(Vector2 direction, float speed, float hitDamage, float travelDistance, int effectBiome, string attackSourceLabel)
     {
         body = GetComponent<Rigidbody2D>();
         damage = hitDamage;
         hitEffectBiome = effectBiome >= 0 ? Mathf.Clamp(effectBiome, 0, 2) : -1;
+        sourceLabel = attackSourceLabel;
         travelDistanceLimit = travelDistance >= 0f && speed > 0f ? travelDistance : Mathf.Max(0f, speed) * 3.2f;
         float lifetime = speed > 0f ? travelDistanceLimit / speed : 3.2f;
         expiresAt = Time.time + lifetime;
@@ -128,7 +130,7 @@ public sealed class ScadrykEnemyProjectile : MonoBehaviour
         if (other.TryGetComponent<ScadrykEnemyHealth>(out _)) return;
         if (other.TryGetComponent<ScadrykPlayerController>(out var target))
         {
-            bool damageApplied = target.TakeDamage(damage);
+            bool damageApplied = target.TakeDamage(damage, sourceLabel ?? LabelForBiome(hitEffectBiome));
             if (damageApplied) ApplyBiomeHitEffect(target, transform.position, hitEffectBiome);
             ScadrykEffects.Burst(transform.position, ImpactColor(hitEffectBiome), 0.72f);
         }

@@ -2,6 +2,8 @@
 
 ## Revisão de estado (28/11/2026; branch `codex/unity-playable-phase-maps`)
 
+**Golpe fatal identificado após a derrota (28/11/2026):** cada ataque que causa dano passa seu rótulo ao jogador; o último golpe recebido é preservado durante o reinício da sala e aparece na mensagem de retomada. Isso inclui ataques diretos, projéteis e padrões do Arauto. O smoke cobre o nome, o fallback genérico e a preservação da mensagem, mas não foi executado. Unity `6000.6.9f1` compilou sem diagnósticos C#; a build Windows teve sucesso (`30d426b1f425` mais 9 caminhos locais, `2026-11-28T14:44:58Z`). Ainda falta confirmar a leitura do resumo em combate.
+
 
 **Avisos estendidos como opção de acessibilidade (28/11/2026, commits `932217e` e `1243a2e`):** a aba de tela e som ganhou uma preferência salva que acrescenta 0,25 s à preparação de ataques comuns, guardiões e Arauto. O escalonamento inicial aumenta a mesma diferença. O smoke verifica ambos os modos e a tela rolável; também testa o encaixe em 600, 650 e 720 px. Não foi executado. Unity `6000.6.9f1` compilou sem diagnósticos C# e a build Windows passou com árvore limpa (`1243a2e1a213`, `2026-11-28T14:32:46Z`). Falta avaliar leitura e ritmo jogando.
 

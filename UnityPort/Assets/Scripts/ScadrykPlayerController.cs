@@ -36,6 +36,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     private int lastBasicAttackStep = -1;
     private float basicAttackComboUntil;
     private bool isDying;
+    private string lastDamageSource;
     private float invulnerableUntil;
     private float rootedUntil;
     private float saltCrustUntil;
@@ -86,6 +87,7 @@ public sealed class ScadrykPlayerController : MonoBehaviour
 
     public Vector2 Facing => facing;
     public float Health => health;
+    internal string LastDamageSource => lastDamageSource;
     public float MaxHealth => maxHealth;
     public float ShockwaveRadius => shockwaveRadius;
     public float Health01 => maxHealth <= 0f ? 0f : Mathf.Clamp01(health / maxHealth);
@@ -575,10 +577,11 @@ public sealed class ScadrykPlayerController : MonoBehaviour
     internal static bool AbilityPathIsBlocked(int index, Vector2 origin, Vector2 target) =>
         (index == 0 || index == 2) && ScadrykCombatRules.WorldBlocks(origin, target);
 
-    public bool TakeDamage(float amount)
+    public bool TakeDamage(float amount, string sourceLabel = null)
     {
         if (!ScadrykCombatRules.IsValidDamageAmount(amount) || isDying || Time.time < invulnerableUntil ||
             (director != null && director.IsPaused)) return false;
+        lastDamageSource = string.IsNullOrWhiteSpace(sourceLabel) ? null : sourceLabel.Trim();
         health -= amount;
         ScadrykAudio.Play(ScadrykCue.Hurt);
         invulnerableUntil = Time.time + 0.62f;

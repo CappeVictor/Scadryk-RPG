@@ -1132,9 +1132,16 @@ public sealed partial class ScadrykGameDirector
             deathCsvColumns[12] != "2" || deathCsvColumns[13] != "5" ||
             deathCsvColumns[15] != "1" || deathCsvColumns[16] != "2" || deathCsvColumns[17] != "2" || deathCsvColumns[18] != "3")
         { SmokeFail("O CSV de sessão perdeu duração, morte, marca de clareza, usos dos três poderes ou métricas ambientais"); yield break; }
+        var deathSourceField = typeof(ScadrykPlayerController).GetField("lastDamageSource",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        if (deathSourceField == null || DeathRestartMessage(null) != "Você caiu. Vida restaurada; poderes e memórias preservados." ||
+            DeathRestartMessage("  Raiz-Mor — avanço de raízes  ") != "Você caiu para Raiz-Mor — avanço de raízes. Vida restaurada; poderes e memórias preservados.")
+        { SmokeFail("A mensagem de retorno não identifica o golpe fatal nem mantém o fallback genérico"); yield break; }
+        const string smokeDeathSource = "Arauto fase 2 — onda de vazio · centro seguro";
+        deathSourceField.SetValue(player, smokeDeathSource);
         RestartCurrentRoom();
-        if (statusMessage != "Você caiu. Vida restaurada; poderes e memórias preservados." ||
-            player == null || (player.Facing - Vector2.right).sqrMagnitude > 0.001f ||
+        if (player == null || statusMessage != DeathRestartMessage(smokeDeathSource) || player.LastDamageSource != smokeDeathSource ||
+            (player.Facing - Vector2.right).sqrMagnitude > 0.001f ||
             roomActiveSeconds != 17f || roomDeaths != 1 || unclearAttackMarks != 1 ||
             roomPowerUses[0] != 2 || roomPowerUses[1] != 1 || roomPowerUses[2] != 1 || roomSecretsRevealed != 1 ||
             coastalCurrentEntries != 2 || Mathf.Abs(coastalCurrentSeconds - 4.6f) > 0.001f ||

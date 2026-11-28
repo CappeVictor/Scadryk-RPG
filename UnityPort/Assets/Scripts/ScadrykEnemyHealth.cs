@@ -691,20 +691,22 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             Sprite shot = stage == 1 ? ScadrykEffects.RootThrustSprite : stage == 2 ? ScadrykEffects.SaltShardSprite : ScadrykEffects.VoidburstSprite;
             Color color = stage == 1 ? new Color(0.66f, 1f, 0.52f) : stage == 2 ? new Color(1f, 0.84f, 0.5f) : new Color(1f, 0.72f, 0.92f);
             for (int i = -halfCount; i <= halfCount; i++)
-                ScadrykEnemyProjectile.Launch(origin + direction * FinalVolleySpawnOffset, Rotate(direction, i * FinalVolleyAngleStep), FinalVolleySpeed, 14f + stage, shot, color, 0.58f, "Arauto — remembered volley",
-                    Mathf.Max(0f, FinalVolleyLength - FinalVolleySpawnOffset - ScadrykEnemyProjectile.HitboxRadius(0.58f)), roomRoot: director != null ? director.ActiveRoomRoot : null);
+            ScadrykEnemyProjectile.Launch(origin + direction * FinalVolleySpawnOffset, Rotate(direction, i * FinalVolleyAngleStep), FinalVolleySpeed, 14f + stage, shot, color, 0.58f, "Arauto — remembered volley",
+                    Mathf.Max(0f, FinalVolleyLength - FinalVolleySpawnOffset - ScadrykEnemyProjectile.HitboxRadius(0.58f)), roomRoot: director != null ? director.ActiveRoomRoot : null,
+                    sourceLabel: lastAttackReadabilityLabel);
             ScadrykEffects.Voidburst(origin + direction * 1.1f, 2.3f, 0.26f);
         }
         else if (pattern == 1)
         {
             Vector2 target = attackTarget;
-            StartCoroutine(ResolveStarfall(target));
+            StartCoroutine(ResolveStarfall(target, lastAttackReadabilityLabel));
             Vector2 direction = (target - origin).normalized;
             if (stage > 1)
                 for (int i = 0; i < FinalStarfallSideProjectileCount(stage); i++)
                     ScadrykEnemyProjectile.Launch(origin, Rotate(direction, FinalStarfallSideProjectileAngle(stage, i)), FinalStarfallProjectileSpeed, 14f,
                         stage == 2 ? ScadrykEffects.SaltShardSprite : ScadrykEffects.VoidburstSprite, new Color(1f, 0.7f, 0.8f), FinalStarfallProjectileScale, "Arauto — falling memory",
-                        FinalStarfallProjectileLength - ScadrykEnemyProjectile.HitboxRadius(FinalStarfallProjectileScale), roomRoot: director != null ? director.ActiveRoomRoot : null);
+                        FinalStarfallProjectileLength - ScadrykEnemyProjectile.HitboxRadius(FinalStarfallProjectileScale), roomRoot: director != null ? director.ActiveRoomRoot : null,
+                        sourceLabel: lastAttackReadabilityLabel);
         }
         else
         {
@@ -712,7 +714,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
             float diameter = FinalWaveOuterDiameter;
             ScadrykEffects.Voidburst(origin, diameter, 0.42f);
             ScadrykEffects.Ring(origin, diameter, new Color(0.98f, 0.24f, 0.57f, 0.96f), 0.42f);
-            if (FinalWaveHitsAtDistance(distance)) player.TakeDamage(stage == 3 ? 27f : 23f);
+            if (FinalWaveHitsAtDistance(distance)) player.TakeDamage(stage == 3 ? 27f : 23f, lastAttackReadabilityLabel);
         }
     }
 
@@ -725,13 +727,13 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         BodyVelocity = Vector2.zero;
     }
 
-    private System.Collections.IEnumerator ResolveStarfall(Vector2 target)
+    private System.Collections.IEnumerator ResolveStarfall(Vector2 target, string sourceLabel)
     {
         yield return new WaitForSeconds(FinalStarfallImpactDelay);
         if (dead) yield break;
         ScadrykEffects.Voidburst(target, FinalStarfallVisualDiameter, 0.38f);
         if (player != null && FinalStarfallHits(player.transform.position, target))
-            player.TakeDamage(23f);
+            player.TakeDamage(23f, sourceLabel);
     }
 
     internal static float FinalStarfallVisualDiameter => FinalStarfallRadius * 2f;
@@ -776,7 +778,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         if (RootLaneHits(player.transform.position, start, end, width, PlayerCollisionRadius(player)) &&
             !ScadrykCombatRules.WorldBlocks(start, player.transform.position))
         {
-            bool hit = player.TakeDamage(IsBoss ? 21f : 13f);
+            bool hit = player.TakeDamage(IsBoss ? 21f : 13f, lastAttackReadabilityLabel);
             if (hit)
             {
                 if (biomeIndex == 0) player.ApplyRootSlow(IsBoss ? 1.55f : ForestPulseRootDuration);
@@ -801,7 +803,8 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
                 biomeIndex == 0 ? ScadrykEffects.RootThrustSprite : biomeIndex == 2 ? ScadrykEffects.BellPulseSprite : ScadrykEffects.SaltShardSprite,
                 size: 0.34f, projectileName: "Salt crystal shard",
                 travelDistance: Mathf.Max(0f, travelDistance - 0.55f - ScadrykEnemyProjectile.HitboxRadius(0.34f)),
-                hitEffectBiome: biomeIndex, roomRoot: director != null ? director.ActiveRoomRoot : null);
+                hitEffectBiome: biomeIndex, roomRoot: director != null ? director.ActiveRoomRoot : null,
+                sourceLabel: lastAttackReadabilityLabel);
         }
     }
 
@@ -813,7 +816,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         Color color = biomeIndex == 0 ? new Color(0.55f, 0.85f, 0.38f) : biomeIndex == 1 ? new Color(1f, 0.72f, 0.35f) : new Color(0.35f, 0.88f, 1f);
         Vector2 origin = transform.position;
         ScadrykEffects.Ring(origin, AreaPulseDiameterForBiome(biomeIndex), color, 0.32f);
-        if (!AreaPulseContains(origin, player.transform.position, biomeIndex) || !player.TakeDamage(12f)) return;
+        if (!AreaPulseContains(origin, player.transform.position, biomeIndex) || !player.TakeDamage(12f, lastAttackReadabilityLabel)) return;
         if (biomeIndex == 0) player.ApplyRootSlow(ForestPulseRootDuration);
         else if (biomeIndex == 1) player.ApplySaltCrustSlow(SaltPulseSlowDuration);
         else player.ApplyImpactKnockback(origin, CoastalPulseKnockbackSpeed, CoastalPulseKnockbackDuration);
@@ -939,7 +942,7 @@ public sealed class ScadrykEnemyHealth : MonoBehaviour
         ScadrykEffects.Burst(transform.position, new Color(0.24f, 0.72f, 0.94f, 0.24f), radius * 1.5f);
         if (IsBoss ? BellPulseContains(transform.position, player.transform.position) :
             Vector2.Distance(player.transform.position, transform.position) <= radius)
-            player.TakeDamage(IsBoss ? 21f : 12f);
+            player.TakeDamage(IsBoss ? 21f : 12f, lastAttackReadabilityLabel);
     }
 
     private static Vector2 Rotate(Vector2 vector, float radians)

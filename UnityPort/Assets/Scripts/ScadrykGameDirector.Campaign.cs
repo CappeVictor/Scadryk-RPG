@@ -497,12 +497,17 @@ public sealed partial class ScadrykGameDirector
     public void RestartCurrentRoom()
     {
         bool interludeWasPending = resumeFinalGuardianInterlude;
+        string deathSource = player != null ? player.LastDamageSource : null;
         if (player != null) player.ResetCombatCooldowns();
         BuildPhase(phaseIndex, roomIndex, false, true);
         resumeFinalGuardianInterlude = ShouldContinueFinalGuardianInterludeAfterRestart(interludeWasPending, resumeFinalGuardianInterlude);
         StartFinalGuardianInterlude();
-        ShowStatus("Você caiu. Vida restaurada; poderes e memórias preservados.", 2.5f);
+        ShowStatus(DeathRestartMessage(deathSource), 2.5f);
     }
+
+    internal static string DeathRestartMessage(string sourceLabel) => string.IsNullOrWhiteSpace(sourceLabel)
+        ? "Você caiu. Vida restaurada; poderes e memórias preservados."
+        : "Você caiu para " + sourceLabel.Trim() + ". Vida restaurada; poderes e memórias preservados.";
 
     public void RecordPlayerDeath() => roomDeaths++;
 
