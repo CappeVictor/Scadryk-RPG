@@ -10,10 +10,15 @@ function Assert-Condition([bool]$Condition, [string]$Message) {
     if (-not $Condition) { throw $Message }
 }
 
-function Invoke-Summary([string]$RatingsFile) {
+function Invoke-Summary([string]$RatingsFile, [string]$SessionId) {
     $warnings = @()
-    $captured = (& $summaryScript -SessionsPath (Join-Path $fixtureRoot 'sessions.csv') `
-        -RatingsPath (Join-Path $fixtureRoot $RatingsFile) -WarningVariable warnings 2>&1 | Out-String)
+    $parameters = @{
+        SessionsPath = Join-Path $fixtureRoot 'sessions.csv'
+        RatingsPath = Join-Path $fixtureRoot $RatingsFile
+        WarningVariable = 'warnings'
+    }
+    if (-not [string]::IsNullOrWhiteSpace($SessionId)) { $parameters.SessionId = $SessionId }
+    $captured = (& $summaryScript @parameters 2>&1 | Out-String)
     if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { throw "O resumo falhou: $captured" }
     return [pscustomobject]@{ Output = $captured; Warnings = @($warnings) }
 }
@@ -47,6 +52,16 @@ try {
     $orphan = Invoke-Summary 'orphan-ratings.csv'
     Assert-Condition (($orphan.Warnings.Count -eq 3) -and (($orphan.Warnings -join "`n") -match "unknown-session.*não corresponde a nenhuma sessão") -and
         (($orphan.Warnings -join "`n") -match "experiente.*faltam 2")) 'Uma ficha órfã foi descartada sem aviso ou alterou a cobertura das sessões válidas.'
+    $filtered = Invoke-Summary 'ratings.csv' 'beginner'
+    Assert-Condition (($filtered.Warnings.Count -eq 3) -and $filtered.Output.Contains('beginner') -and
+        -not $filtered.Output.Contains('intermediate1') -and -not $filtered.Output.Contains('intermediate2') -and
+        -not (($filtered.Warnings -join "`n") -match 'não corresponde a nenhuma sessão')) 'Filtrar uma sessão classificou as fichas de outras sessões conhecidas como órfãs ou manteve linhas fora do filtro.'
+    $filteredOrphan = Invoke-Summary 'orphan-ratings.csv' 'beginner'
+    $filteredOrphanWarnings = $filteredOrphan.Warnings -join "`n"
+    Assert-Condition (($filteredOrphan.Warnings.Count -eq 4) -and
+        (($filteredOrphanWarnings -match 'não corresponde a nenhuma sessão').Count -eq 1) -and
+        -not $filteredOrphanWarnings.Contains('intermediate1') -and -not $filteredOrphanWarnings.Contains('intermediate2') -and
+        $filteredOrphan.Output.Contains('beginner') -and -not $filteredOrphan.Output.Contains('intermediate1')) 'O filtro de sessão não distinguiu fichas órfãs de fichas pertencentes a outras sessões carregadas.'
     $v9SummaryPath = Join-Path $fixtureRoot 'v9-summary.csv'
     & $summaryScript -SessionsPath (Join-Path $fixtureRoot 'sessions.csv') -OutputPath $v9SummaryPath | Out-Null
     $v9Rows = @(Import-Csv -LiteralPath $v9SummaryPath)
@@ -76,7 +91,7 @@ try {
     catch { $invalidRatingRejected = $_.Exception.Message -match 'precisa ser de 1 a 5' }
     Assert-Condition $invalidRatingRejected 'A nota fora da escala de 1 a 5 não foi rejeitada.'
 
-    Write-Output 'PASS: amostra parcial, arquivo sem respostas, ficha duplicada e nota inválida.'
+    Write-Output 'PASS: amostra parcial/vazia, IDs órfãos, filtro por sessão, duplicata e nota inválida.'
 }
 finally {
     foreach ($name in @('sessions.csv', 'ratings.csv', 'empty-ratings.csv', 'orphan-ratings.csv', 'v9-summary.csv', 'legacy-v8.csv', 'legacy-summary.csv')) {
